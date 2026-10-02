@@ -38,6 +38,7 @@ export interface SubledgerItem {
   vat_amount: number;
   foreign_amount: number | null;
   currency: string;
+  exchange_rate?: number | null;
   settled_amount: number;
   remaining_amount: number;
   is_settled: boolean;
@@ -61,12 +62,18 @@ export interface GroupedSubledgerInvoice {
   journal_code: string;
   journal_number: number;
   currency: string;
+  exchange_rate?: number | null;
   description: string | null;
   status: string;
   is_settled: boolean;
   net_amount: number;
   vat_amount: number;
   amount: number;
+  foreign_amount?: number | null;
+  foreign_net_amount?: number | null;
+  foreign_vat_amount?: number | null;
+  foreign_settled_amount?: number | null;
+  foreign_remaining_amount?: number | null;
   settled_amount: number;
   remaining_amount: number;
   match_count: number;

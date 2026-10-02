@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { payrollQueryKeys, paramsToTaxParams } from '@/hooks/usePayrollData';
 import { isEligibleForYoung25, type TaxParameters, type EmployeeDeclarations } from '@/lib/payroll/taxEngine';
+import { getStatutoryWorkDays } from '@/lib/payroll/workdayCalculator';
 import WorksheetSidebar from './worksheet/WorksheetSidebar';
 import WorksheetEmployeeForm from './worksheet/WorksheetEmployeeForm';
 import WorksheetLivePayslip from './worksheet/WorksheetLivePayslip';
@@ -207,11 +208,17 @@ export default function EmployeeWorksheetView({
     return allEmployments.find(e => e.employee_id === currentEmployee.id) || null;
   }, [allEmployments, currentEmployee]);
 
+  const defaultWorkDays = useMemo(() => {
+    const year = cycle?.year || new Date().getFullYear();
+    const month = cycle?.month || (new Date().getMonth() + 1);
+    return getStatutoryWorkDays(year, month);
+  }, [cycle?.year, cycle?.month]);
+
   // Current Attendance
   const currentAttendance = useMemo(() => {
-    if (!currentEmployee) return { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
-    return attendanceData[currentEmployee.id] || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
-  }, [attendanceData, currentEmployee]);
+    if (!currentEmployee) return { workDays: defaultWorkDays, overtime: 0, sickDays: 0, leaveDays: 0 };
+    return attendanceData[currentEmployee.id] || { workDays: defaultWorkDays, overtime: 0, sickDays: 0, leaveDays: 0 };
+  }, [attendanceData, currentEmployee, defaultWorkDays]);
 
   // Current Commute Input
   const currentCommuteInput = useMemo(() => {
@@ -621,6 +628,7 @@ export default function EmployeeWorksheetView({
             employee={currentEmployee}
             employment={currentEmployment}
             attendance={currentAttendance}
+            defaultWorkDays={defaultWorkDays}
             onAttendanceChange={(field, val) => {
               if (currentEmployee) onAttendanceChange(currentEmployee.id, field, val);
             }}
@@ -657,6 +665,7 @@ export default function EmployeeWorksheetView({
             employee={currentEmployee}
             employment={currentEmployment}
             attendance={currentAttendance}
+            defaultWorkDays={defaultWorkDays}
             commuteInput={currentCommuteInput}
             bonus={currentBonus}
             serviceCharge={currentServiceCharge}

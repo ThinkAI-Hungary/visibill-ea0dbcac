@@ -88,9 +88,10 @@ export const SubledgerExportDialog: React.FC<SubledgerExportDialogProps> = ({
         ? items.filter((i) => !i.is_settled && i.remaining_amount > 0)
         : items;
 
-      csvContent += 'Bizonylatszám;Napló;Könyvelés dátuma;Esedékesség;Partner;Főkönyvi szám;T/K;Eredeti összeg;Pénznem;Rendezett;Nyitott egyenleg;Státusz\n';
+      csvContent += 'Bizonylatszám;Napló;Könyvelés dátuma;Esedékesség;Partner;Főkönyvi szám;T/K;Eredeti összeg (HUF);Deviza összeg;Pénznem;Rendezett (HUF);Nyitott egyenleg (HUF);Státusz\n';
       exportList.forEach((i) => {
-        csvContent += `"${i.document_id}";"${i.journal_code}-${i.journal_number}";"${i.posting_date}";"${i.due_date || ''}";"${i.partner_name}";"${i.gl_number}";"${i.dc_type}";${i.amount};"${i.currency}";${i.settled_amount};${i.remaining_amount};"${i.is_settled ? 'ZÁRT' : i.settled_amount > 0 ? 'RÉSZBEN RENDEZETT' : 'NYITOTT'}"\n`;
+        const foreignVal = i.currency !== 'HUF' ? (i.foreign_amount ?? '') : '';
+        csvContent += `"${i.document_id}";"${i.journal_code}-${i.journal_number}";"${i.posting_date}";"${i.due_date || ''}";"${i.partner_name}";"${i.gl_number}";"${i.dc_type}";${i.amount};"${foreignVal}";"${i.currency}";${i.settled_amount};${i.remaining_amount};"${i.is_settled ? 'ZÁRT' : i.settled_amount > 0 ? 'RÉSZBEN RENDEZETT' : 'NYITOTT'}"\n`;
       });
     }
 
@@ -191,9 +192,9 @@ export const SubledgerExportDialog: React.FC<SubledgerExportDialogProps> = ({
                     <td>${i.partner_name || '-'}</td>
                     <td>${i.gl_number}</td>
                     <td>${i.dc_type}</td>
-                    <td class="num">${formatCurrency(i.amount, i.currency)}</td>
-                    <td class="num">${formatCurrency(i.settled_amount, i.currency)}</td>
-                    <td class="num" style="font-weight: bold;">${formatCurrency(i.remaining_amount, i.currency)}</td>
+                    <td class="num">${i.currency !== 'HUF' && i.foreign_amount ? `${formatCurrency(i.foreign_amount, i.currency)} (${formatCurrency(i.amount, 'HUF')})` : formatCurrency(i.amount, 'HUF')}</td>
+                    <td class="num">${formatCurrency(i.settled_amount, 'HUF')}</td>
+                    <td class="num" style="font-weight: bold;">${formatCurrency(i.remaining_amount, 'HUF')}</td>
                   </tr>
                 `
                   )

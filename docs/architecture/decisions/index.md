@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-01  
-> **Összesen:** 207 döntés (192 egyedi döntési fájl) | ✅ Decided: 205 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-02  
+> **Összesen:** 209 döntés (194 egyedi döntési fájl) | ✅ Decided: 207 | ⛔ Superseded: 2
 
 
 ---
@@ -242,6 +242,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-187 | Számlatétel-szintű Kontextuális Időbeli Elhatárolások és Vegyes Napló Feladás | ✅ Decided | [A-187](./A-187-contextual-invoice-item-accruals-and-ve-journal-posting.md) |
 | A-188 | Dinamikus Könyvelési Naplók Létrehozása, Kezelése és Bankszámla-összerendelés | ✅ Decided | [A-188](./A-188-dynamic-accounting-journals-management-and-bank-linking.md) |
 | A-189 | Főkönyvi Kivonat és Naplófőkönyv RPC Teljesítmény-Optimalizálás (Statement Timeout 57014 Megszüntetése, CTE Materializáció és Hash Join) | ✅ Decided | [A-189](./A-189-gl-rpc-performance-optimization-and-timeout-elimination.md) |
+| A-191 | Folyószámla Kettős Devizakezelés, Árfolyam-számítás és Csoportosítási Architektúra | ✅ Decided | [A-191](./A-191-subledger-dual-currency-and-grouping-architecture.md) |
+| A-192 | Munka Törvénykönyve (Mt.) Szerinti Magyar Munkanap és Törvényes Bérszámfejtési Keret Motor | ✅ Decided | [A-192](./A-192-statutory-hungarian-workday-and-payroll-engine.md) |
 
 
 ## 💳 Fizetés

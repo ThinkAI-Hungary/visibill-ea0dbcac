@@ -43,7 +43,7 @@ export function useActivePreset(companyId: string | undefined, overrideCountryCo
     }
   };
 
-  const { data: presets, isLoading } = useQuery({
+  const { data: presets, isLoading, isFetching } = useQuery({
     queryKey: ['coaPresets', companyId, isCroatia],
     queryFn: async () => {
       if (!companyId) return [];
@@ -73,6 +73,12 @@ export function useActivePreset(companyId: string | undefined, overrideCountryCo
   });
 
   useEffect(() => {
+    // If presets are actively loading or refetching, and an activePresetId was already selected
+    // (e.g. freshly created or saved in localStorage), do not overwrite it with a fallback yet.
+    if ((isLoading || isFetching) && activePresetId) {
+      return;
+    }
+
     if (presets && presets.length > 0) {
       if (activePresetId && presets.some(p => p.id === activePresetId)) {
         // If this is a Croatian company, but active preset is the Hungarian generic preset, switch to HR default
@@ -105,8 +111,8 @@ export function useActivePreset(companyId: string | undefined, overrideCountryCo
         setActivePresetId(targetId);
       }
     }
-  }, [presets, companyId, activePresetId, isCroatia]);
+  }, [presets, companyId, activePresetId, isCroatia, isLoading, isFetching]);
 
-  return { activePresetId, setActivePresetId, presets, isLoading };
+  return { activePresetId, setActivePresetId, presets, isLoading, isFetching };
 }
 

@@ -160,10 +160,10 @@ export const BulkRoundingWriteOffModal: React.FC<BulkRoundingWriteOffModalProps>
 
                   <div className="text-right font-mono">
                     <div className="font-bold text-amber-600 dark:text-amber-400">
-                      {formatCurrency(item.remaining_amount)}
+                      {formatCurrency(item.remaining_amount, 'HUF')}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
-                      Eredeti: {formatCurrency(item.amount)}
+                      Eredeti: {item.currency !== 'HUF' && item.foreign_amount ? `${formatCurrency(item.foreign_amount, item.currency)} (${formatCurrency(item.amount, 'HUF')})` : formatCurrency(item.amount, 'HUF')}
                     </div>
                   </div>
                 </div>

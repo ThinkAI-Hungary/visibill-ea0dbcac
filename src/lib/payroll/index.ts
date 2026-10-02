@@ -109,3 +109,15 @@ export {
   getFeorTitle,
   formatJobTitleWithFeor,
 } from './feorCodes';
+
+// Munkanap és ünnepnap kalkulátor
+export {
+  getEasterSunday,
+  getHungarianHolidays,
+  isHungarianHoliday,
+  getStatutoryWorkDays,
+  getStatutoryWorkHours,
+  getMonthlyWorkDaysMap,
+  isWorkDay,
+  type HungarianHoliday,
+} from './workdayCalculator';

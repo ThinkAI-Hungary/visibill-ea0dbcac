@@ -35,6 +35,7 @@ export interface WorksheetEmployeeFormProps {
     sickDays: number;
     leaveDays: number;
   };
+  defaultWorkDays?: number;
   onAttendanceChange: (field: 'workDays' | 'workedHours' | 'overtime' | 'sickDays' | 'leaveDays', value: number) => void;
   commuteInput: {
     commuteType: 'none' | 'car' | 'public_transit';
@@ -97,6 +98,7 @@ export default function WorksheetEmployeeForm({
   onCostCenterChange,
   onSaveCostCenter,
   isSavingCostCenter = false,
+  defaultWorkDays = 21,
 }: WorksheetEmployeeFormProps) {
   if (!employee || !employment) {
     return (
@@ -110,7 +112,7 @@ export default function WorksheetEmployeeForm({
   const isHourly = employment.salary_type === 'hourly';
   const actualWorkedDays = Math.max(
     0,
-    (attendance.workDays || 22) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)
+    (attendance.workDays || defaultWorkDays) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)
   );
 
   const calculatedCommuteAmount = React.useMemo(() => {
@@ -249,11 +251,11 @@ export default function WorksheetEmployeeForm({
               type="number"
               min={0}
               max={31}
-              value={attendance.workDays ?? 22}
+              value={attendance.workDays ?? defaultWorkDays}
               onChange={(e) => onAttendanceChange('workDays', parseInt(e.target.value) || 0)}
               className="h-8 text-xs font-mono"
             />
-            <p className="text-[10px] text-muted-foreground">Általában 20-23 nap</p>
+            <p className="text-[10px] text-muted-foreground">Havi törvényes keret</p>
           </div>
 
           {isHourly ? (

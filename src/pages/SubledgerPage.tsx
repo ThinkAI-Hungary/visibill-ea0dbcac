@@ -43,6 +43,9 @@ import {
 } from '@/hooks/useSubledger';
 import type { SubledgerItem, SubledgerMode, SubledgerStatusFilter, GroupedSubledgerInvoice } from '@/types/subledger';
 import { formatCurrency } from '@/lib/utils';
+import { formatNumberLocale } from '@/lib/locale/formatters';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { groupSubledgerItems, deriveItemForeignAmounts } from '@/lib/subledgerGrouping';
 import { SubledgerItemMatchesModal } from '@/components/subledger/SubledgerItemMatchesModal';
 import { WriteOffSettlementModal } from '@/components/subledger/WriteOffSettlementModal';
 import { BulkRoundingWriteOffModal } from '@/components/subledger/BulkRoundingWriteOffModal';
@@ -147,76 +150,9 @@ export default function SubledgerPage() {
     );
   }, [items, searchTerm]);
 
-  // Group filtered items into single rows per invoice
+  // Group filtered items into single rows per invoice with proper dual currency calculations
   const groupedInvoices = useMemo<GroupedSubledgerInvoice[]>(() => {
-    const map = new Map<string, GroupedSubledgerInvoice>();
-
-    filteredItems.forEach((item) => {
-      const docId =
-        (item.document_id && item.document_id.trim()) ||
-        (item.settlement_number && item.settlement_number.trim()) ||
-        item.header_id;
-      const partnerKey = item.partner_id || item.partner_name || 'no-partner';
-      const key = `${partnerKey}___${docId}`;
-
-      const existing = map.get(key);
-      if (!existing) {
-        map.set(key, {
-          group_key: key,
-          document_id: docId,
-          partner_id: item.partner_id,
-          partner_name: item.partner_name,
-          posting_date: item.posting_date,
-          document_date: item.document_date || item.posting_date,
-          due_date: item.due_date,
-          journal_code: item.journal_code,
-          journal_number: item.journal_number,
-          currency: item.currency || 'HUF',
-          description: item.description,
-          status: item.status,
-          is_settled: item.is_settled,
-          net_amount: Number(item.net_amount || 0),
-          vat_amount: Number(item.vat_amount || 0),
-          amount: Number(item.amount || 0),
-          settled_amount: Number(item.settled_amount || 0),
-          remaining_amount: Number(item.remaining_amount || 0),
-          match_count: item.match_count || 0,
-          items: [item],
-          header_ids: [item.header_id],
-          line_ids: [item.line_id],
-          all_lines: item.all_lines ? [...item.all_lines] : [],
-        });
-      } else {
-        existing.items.push(item);
-        if (!existing.header_ids.includes(item.header_id)) {
-          existing.header_ids.push(item.header_id);
-        }
-        existing.line_ids.push(item.line_id);
-        if (item.all_lines) {
-          existing.all_lines.push(...item.all_lines);
-        }
-        existing.net_amount += Number(item.net_amount || 0);
-        existing.vat_amount += Number(item.vat_amount || 0);
-        existing.amount += Number(item.amount || 0);
-        existing.settled_amount += Number(item.settled_amount || 0);
-        existing.remaining_amount += Number(item.remaining_amount || 0);
-        existing.match_count += item.match_count || 0;
-
-        if (item.status === 'GEPI_JAVASLAT') {
-          existing.status = 'GEPI_JAVASLAT';
-        } else if (item.status === 'KEZI_PISZKOZAT' && existing.status !== 'GEPI_JAVASLAT') {
-          existing.status = 'KEZI_PISZKOZAT';
-        }
-
-        existing.is_settled = existing.remaining_amount <= 0.01;
-
-        if (item.due_date && (!existing.due_date || item.due_date > existing.due_date)) {
-          existing.due_date = item.due_date;
-        }
-      }
-    });
-
-    return Array.from(map.values());
+    return groupSubledgerItems(filteredItems);
   }, [filteredItems]);
 
   // Overall stats based on grouped invoices
@@ -283,11 +219,17 @@ export default function SubledgerPage() {
     let sumT = 0;
     let sumK = 0;
     let foreignSum = 0;
-    let currencies = new Set<string>();
-    let draftInvoices: GroupedSubledgerInvoice[] = [];
-    let draftHeaders: any[] = [];
+    const currencies = new Set<string>();
+    const foreignCurrencies = new Set<string>();
+    const draftInvoices: GroupedSubledgerInvoice[] = [];
 
     selectedInvoices.forEach((inv) => {
+      const invCurr = inv.currency || 'HUF';
+      currencies.add(invCurr);
+      if (invCurr !== 'HUF') {
+        foreignCurrencies.add(invCurr);
+      }
+
       inv.items.forEach((i) => {
         const val = !i.is_settled && i.remaining_amount > 0 ? i.remaining_amount : i.amount;
         if (i.dc_type === 'T') {
@@ -297,7 +239,6 @@ export default function SubledgerPage() {
         }
         if (i.currency !== 'HUF' && i.foreign_amount) {
           foreignSum += i.foreign_amount;
-          currencies.add(i.currency);
         }
       });
       if (inv.status === 'GEPI_JAVASLAT') {
@@ -309,6 +250,8 @@ export default function SubledgerPage() {
     const balance = sumT - sumK;
     const isBalanced = diff < 0.01 && selectedInvoices.length >= 2;
     const isSmallDiff = diff > 0.01 && diff <= 10;
+    const isMultiCurrency = currencies.size > 1;
+    const singleForeignCurrency = foreignCurrencies.size === 1 ? Array.from(foreignCurrencies)[0] : null;
 
     return {
       count: selectedInvoices.length,
@@ -320,6 +263,8 @@ export default function SubledgerPage() {
       isBalanced,
       isSmallDiff,
       foreignSum,
+      isMultiCurrency,
+      singleForeignCurrency,
       currencies: Array.from(currencies).join(', '),
       draftInvoices,
     };
@@ -768,21 +713,30 @@ export default function SubledgerPage() {
       {selectedGroupKeys.size > 0 && (
         <div className="sticky top-4 z-20 bg-indigo-950 text-white rounded-xl p-4 shadow-xl border border-indigo-700/60 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex flex-wrap items-center gap-6 text-sm">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge className="bg-indigo-500/30 text-white border border-indigo-400/40 font-semibold px-2.5 py-1">
                 {selectionTotals.count} számla ({selectionTotals.itemCount} tétel) kijelölve
               </Badge>
+              {selectionTotals.isMultiCurrency && (
+                <Badge
+                  variant="outline"
+                  className="bg-amber-500/20 text-amber-200 border-amber-500/40 text-[11px] font-medium flex items-center gap-1.5 px-2 py-0.5"
+                >
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Vegyes devizájú kijelölés: az egyenleg könyvviteli forintértéken (HUF) számítódik</span>
+                </Badge>
+              )}
             </div>
 
             <div className="flex items-center gap-4 text-xs font-mono">
               <div>
                 <span className="text-indigo-300">∑ Tartozik (T): </span>
-                <span className="font-bold text-white">{formatCurrency(selectionTotals.sumT)}</span>
+                <span className="font-bold text-white">{formatCurrency(selectionTotals.sumT, 'HUF')}</span>
               </div>
               <div className="text-indigo-500">|</div>
               <div>
                 <span className="text-indigo-300">∑ Követel (K): </span>
-                <span className="font-bold text-white">{formatCurrency(selectionTotals.sumK)}</span>
+                <span className="font-bold text-white">{formatCurrency(selectionTotals.sumK, 'HUF')}</span>
               </div>
               <div className="text-indigo-500">|</div>
               <div>
@@ -796,8 +750,13 @@ export default function SubledgerPage() {
                       : 'text-rose-400'
                   }`}
                 >
-                  {formatCurrency(selectionTotals.balance)}
+                  {formatCurrency(selectionTotals.balance, 'HUF')}
                 </span>
+                {!selectionTotals.isMultiCurrency && selectionTotals.singleForeignCurrency && (
+                  <span className="text-indigo-200 ml-1.5 font-normal">
+                    ({formatCurrency(selectionTotals.foreignSum, selectionTotals.singleForeignCurrency)})
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -930,6 +889,8 @@ export default function SubledgerPage() {
                     !inv.is_settled &&
                     inv.due_date &&
                     new Date(inv.due_date) < new Date();
+                  const isForeign = Boolean(inv.currency && inv.currency !== 'HUF');
+                  const rate = inv.exchange_rate;
 
                   return (
                     <React.Fragment key={inv.group_key}>
@@ -1050,37 +1011,104 @@ export default function SubledgerPage() {
 
                         {/* Nettó összeg */}
                         <td className="p-3 text-right font-mono whitespace-nowrap text-muted-foreground">
-                          {formatCurrency(inv.net_amount, inv.currency)}
+                          {isForeign ? (
+                            <div className="flex flex-col items-end">
+                              <span>{formatCurrency(inv.foreign_net_amount ?? 0, inv.currency)}</span>
+                              <span className="text-[10px] text-muted-foreground font-normal leading-tight">
+                                ({formatCurrency(inv.net_amount, 'HUF')})
+                              </span>
+                            </div>
+                          ) : (
+                            formatCurrency(inv.net_amount, 'HUF')
+                          )}
                         </td>
 
                         {/* ÁFA összeg */}
                         <td className="p-3 text-right font-mono whitespace-nowrap text-indigo-600 dark:text-indigo-400">
-                          {formatCurrency(inv.vat_amount, inv.currency)}
+                          {isForeign ? (
+                            <div className="flex flex-col items-end">
+                              <span>{formatCurrency(inv.foreign_vat_amount ?? 0, inv.currency)}</span>
+                              {inv.vat_amount > 0 && (
+                                <span className="text-[10px] text-muted-foreground/80 font-normal leading-tight">
+                                  ({formatCurrency(inv.vat_amount, 'HUF')})
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            formatCurrency(inv.vat_amount, 'HUF')
+                          )}
                         </td>
 
                         {/* Bruttó összeg */}
                         <td className="p-3 text-right font-mono font-bold whitespace-nowrap text-foreground">
-                          <div>{formatCurrency(inv.amount, inv.currency)}</div>
+                          {isForeign ? (
+                            <div className="flex flex-col items-end">
+                              <span>{formatCurrency(inv.foreign_amount ?? inv.amount, inv.currency)}</span>
+                              <Tooltip delayDuration={150}>
+                                <TooltipTrigger asChild>
+                                  <span className="text-[10px] text-muted-foreground font-normal leading-tight cursor-help hover:text-foreground transition-colors">
+                                    ({formatCurrency(inv.amount, 'HUF')})
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="text-xs">
+                                  <p className="font-medium">Napi MNB árfolyam ({inv.posting_date.replace(/-/g, '.')}):</p>
+                                  <p className="text-muted-foreground font-mono">
+                                    1 {inv.currency} = {rate ? formatNumberLocale(rate, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '-'} Ft
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          ) : (
+                            <div>{formatCurrency(inv.amount, 'HUF')}</div>
+                          )}
                         </td>
 
                         {/* Rendezett összeg */}
                         <td className="p-3 text-right font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                          {inv.settled_amount > 0 ? formatCurrency(inv.settled_amount, inv.currency) : '-'}
+                          {inv.settled_amount > 0 ? (
+                            isForeign ? (
+                              <div className="flex flex-col items-end">
+                                <span>{formatCurrency(inv.foreign_settled_amount ?? 0, inv.currency)}</span>
+                                <span className="text-[10px] text-muted-foreground/80 font-normal leading-tight">
+                                  ({formatCurrency(inv.settled_amount, 'HUF')})
+                                </span>
+                              </div>
+                            ) : (
+                              formatCurrency(inv.settled_amount, 'HUF')
+                            )
+                          ) : (
+                            '-'
+                          )}
                         </td>
 
                         {/* Nyitott összeg */}
                         <td className="p-3 text-right font-mono font-bold whitespace-nowrap">
-                          <span
-                            className={
-                              inv.remaining_amount > 0
-                                ? isOverdue
-                                  ? 'text-rose-600 dark:text-rose-400'
-                                  : 'text-amber-600 dark:text-amber-400'
-                                : 'text-muted-foreground font-normal'
-                            }
-                          >
-                            {formatCurrency(inv.remaining_amount, inv.currency)}
-                          </span>
+                          {inv.remaining_amount > 0 ? (
+                            isForeign ? (
+                              <div className="flex flex-col items-end">
+                                <span className={isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}>
+                                  {formatCurrency(inv.foreign_remaining_amount ?? 0, inv.currency)}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground font-normal leading-tight">
+                                  ({formatCurrency(inv.remaining_amount, 'HUF')})
+                                </span>
+                              </div>
+                            ) : (
+                              <span
+                                className={
+                                  isOverdue
+                                    ? 'text-rose-600 dark:text-rose-400'
+                                    : 'text-amber-600 dark:text-amber-400'
+                                }
+                              >
+                                {formatCurrency(inv.remaining_amount, 'HUF')}
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-muted-foreground font-normal">
+                              {formatCurrency(0, isForeign ? inv.currency : 'HUF')}
+                            </span>
+                          )}
                         </td>
 
                         {/* Műveletek */}
@@ -1172,15 +1200,30 @@ export default function SubledgerPage() {
 
                                 <div className="flex items-center gap-4 text-xs font-mono bg-muted/50 px-3 py-1.5 rounded-lg border">
                                   <span>
-                                    Nettó: <strong className="text-foreground">{formatCurrency(inv.net_amount, inv.currency)}</strong>
+                                    Nettó:{' '}
+                                    <strong className="text-foreground">
+                                      {isForeign
+                                        ? `${formatCurrency(inv.foreign_net_amount ?? 0, inv.currency)} (${formatCurrency(inv.net_amount, 'HUF')})`
+                                        : formatCurrency(inv.net_amount, 'HUF')}
+                                    </strong>
                                   </span>
                                   <span className="text-muted-foreground">|</span>
                                   <span>
-                                    ÁFA: <strong className="text-indigo-600 dark:text-indigo-400">{formatCurrency(inv.vat_amount, inv.currency)}</strong>
+                                    ÁFA:{' '}
+                                    <strong className="text-indigo-600 dark:text-indigo-400">
+                                      {isForeign
+                                        ? `${formatCurrency(inv.foreign_vat_amount ?? 0, inv.currency)} (${formatCurrency(inv.vat_amount, 'HUF')})`
+                                        : formatCurrency(inv.vat_amount, 'HUF')}
+                                    </strong>
                                   </span>
                                   <span className="text-muted-foreground">|</span>
                                   <span>
-                                    Bruttó: <strong className="text-foreground">{formatCurrency(inv.amount, inv.currency)}</strong>
+                                    Bruttó:{' '}
+                                    <strong className="text-foreground">
+                                      {isForeign
+                                        ? `${formatCurrency(inv.foreign_amount ?? inv.amount, inv.currency)} (${formatCurrency(inv.amount, 'HUF')})`
+                                        : formatCurrency(inv.amount, 'HUF')}
+                                    </strong>
                                   </span>
                                 </div>
                               </div>
@@ -1188,6 +1231,7 @@ export default function SubledgerPage() {
                               {/* Detailed Item List: Számlatételek felsorolása */}
                               <div className="space-y-3">
                                 {inv.items.map((item, itemIdx) => {
+                                  const itemAmounts = deriveItemForeignAmounts(item);
                                   const itemLines = item.all_lines && item.all_lines.length > 0 ? item.all_lines : [
                                     {
                                       id: item.line_id,
@@ -1196,6 +1240,7 @@ export default function SubledgerPage() {
                                       gl_short_name: item.gl_short_name,
                                       dc_type: item.dc_type,
                                       amount: item.amount,
+                                      foreign_amount: item.foreign_amount,
                                       vat_role: null,
                                       vat_code: null,
                                       description: item.description,
@@ -1220,15 +1265,30 @@ export default function SubledgerPage() {
 
                                         <div className="flex items-center gap-3 font-mono text-[11px]">
                                           <span className="text-muted-foreground">
-                                            Nettó: <strong className="text-foreground">{formatCurrency(item.net_amount, item.currency)}</strong>
+                                            Nettó:{' '}
+                                            <strong className="text-foreground">
+                                              {itemAmounts.isForeign
+                                                ? `${formatCurrency(itemAmounts.foreignNet ?? 0, item.currency)} (${formatCurrency(item.net_amount, 'HUF')})`
+                                                : formatCurrency(item.net_amount, 'HUF')}
+                                            </strong>
                                           </span>
                                           <span className="text-muted-foreground">|</span>
                                           <span className="text-muted-foreground">
-                                            ÁFA: <strong className="text-indigo-600 dark:text-indigo-400">{formatCurrency(item.vat_amount, item.currency)}</strong>
+                                            ÁFA:{' '}
+                                            <strong className="text-indigo-600 dark:text-indigo-400">
+                                              {itemAmounts.isForeign
+                                                ? `${formatCurrency(itemAmounts.foreignVat ?? 0, item.currency)} (${formatCurrency(item.vat_amount, 'HUF')})`
+                                                : formatCurrency(item.vat_amount, 'HUF')}
+                                            </strong>
                                           </span>
                                           <span className="text-muted-foreground">|</span>
                                           <span className="text-muted-foreground">
-                                            Bruttó: <strong className="text-foreground">{formatCurrency(item.amount, item.currency)}</strong>
+                                            Bruttó:{' '}
+                                            <strong className="text-foreground">
+                                              {itemAmounts.isForeign
+                                                ? `${formatCurrency(itemAmounts.foreignGross ?? item.amount, item.currency)} (${formatCurrency(item.amount, 'HUF')})`
+                                                : formatCurrency(item.amount, 'HUF')}
+                                            </strong>
                                           </span>
                                         </div>
                                       </div>
@@ -1246,7 +1306,7 @@ export default function SubledgerPage() {
                                               <th className="p-1.5 w-12 text-center">T/K</th>
                                               <th className="p-1.5 min-w-[200px]">Főkönyvi számla</th>
                                               <th className="p-1.5 w-24">ÁFA szerep</th>
-                                              <th className="p-1.5 text-right w-28">Összeg</th>
+                                              <th className="p-1.5 text-right w-32">Összeg</th>
                                               <th className="p-1.5">Sor leírása</th>
                                             </tr>
                                           </thead>
@@ -1286,7 +1346,12 @@ export default function SubledgerPage() {
                                                   )}
                                                 </td>
                                                 <td className="p-1.5 text-right font-mono font-bold text-foreground">
-                                                  {formatCurrency(l.amount, item.currency)}
+                                                  <div>{formatCurrency(l.amount, 'HUF')}</div>
+                                                  {itemAmounts.isForeign && l.foreign_amount != null && (
+                                                    <div className="text-[10px] text-muted-foreground font-normal">
+                                                      ({formatCurrency(l.foreign_amount, item.currency)})
+                                                    </div>
+                                                  )}
                                                 </td>
                                                 <td className="p-1.5 text-muted-foreground truncate max-w-[260px] text-[11px]">
                                                   {l.description || '-'}

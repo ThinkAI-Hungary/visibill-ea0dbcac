@@ -8,6 +8,7 @@ interface PayrollStep5Props {
   allEmployments: any[];
   items: any[];
   attendanceData?: Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number; workedHours?: number }>;
+  defaultWorkDays?: number;
   cycleId?: string;
   onSavingChange?: (isSaving: boolean) => void;
 }
@@ -17,6 +18,7 @@ export default function PayrollStep5({
   allEmployments,
   items,
   attendanceData = {},
+  defaultWorkDays = 21,
   cycleId,
   onSavingChange,
 }: PayrollStep5Props) {
@@ -176,7 +178,7 @@ export default function PayrollStep5({
               
               const rawBaseSalary = empEmployment ? Number(empEmployment.base_salary) : 0;
               const isHourly = empEmployment?.salary_type === 'hourly';
-              const att = attendanceData[emp.id] || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
+              const att = attendanceData[emp.id] || { workDays: defaultWorkDays, overtime: 0, sickDays: 0, leaveDays: 0 };
               
               const weeklyHours = empEmployment?.weekly_hours || 40;
               const dailyHours = weeklyHours / 5;
@@ -203,8 +205,9 @@ export default function PayrollStep5({
                 sickLeaveAmount = Math.round(hourlyRate * sickHours * 0.70);
                 leaveAmount = Math.round(hourlyRate * leaveHours * 1.0);
               } else {
-                dailyRate = rawBaseSalary / 22;
-                hourlyRate = rawBaseSalary / (dailyHours * 22);
+                const effectiveWorkDays = att.workDays || defaultWorkDays;
+                dailyRate = rawBaseSalary / effectiveWorkDays;
+                hourlyRate = rawBaseSalary / (dailyHours * effectiveWorkDays);
 
                 const baseReduction = Math.round(dailyRate * (att.sickDays || 0));
                 adjustedBase = Math.max(0, rawBaseSalary - baseReduction);

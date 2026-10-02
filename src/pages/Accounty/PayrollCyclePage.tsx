@@ -40,6 +40,7 @@ import { printPayslip, printAllPayslips, type PayslipData } from '@/lib/payroll/
 import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 import { convertToIban } from '@/lib/payroll/validators';
 import { postPayrollCycleToLedger } from '@/lib/payroll/payrollAutoPoster';
+import { getStatutoryWorkDays } from '@/lib/payroll/workdayCalculator';
 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -143,6 +144,12 @@ export default function PayrollCyclePage() {
   const [closingModalOpen, setClosingModalOpen] = useState(false);
   const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false);
 
+  const defaultWorkDays = React.useMemo(() => {
+    const year = cycle?.year || new Date().getFullYear();
+    const month = cycle?.month || (new Date().getMonth() + 1);
+    return getStatutoryWorkDays(year, month);
+  }, [cycle?.year, cycle?.month]);
+
   // Fetch all employments for this company
   const [allEmployments, setAllEmployments] = useState<any[]>([]);
   React.useEffect(() => {
@@ -169,7 +176,7 @@ export default function PayrollCyclePage() {
             if (emp && t.ocr_data) {
               const ocr = t.ocr_data as any;
               loadedAttendance[emp.employee_id] = {
-                workDays: ocr.workDays ?? 22,
+                workDays: ocr.workDays ?? defaultWorkDays,
                 workedHours: ocr.workedHours,
                 overtime: ocr.overtime ?? 0,
                 sickDays: ocr.sickDays ?? 0,
@@ -180,7 +187,7 @@ export default function PayrollCyclePage() {
           setAttendanceData(loadedAttendance);
         }
       });
-  }, [cycle?.id, allEmployments]);
+  }, [cycle?.id, allEmployments, defaultWorkDays]);
   
   const [attendanceData, setAttendanceData] = useState<Record<string, { workDays: number; workedHours?: number; overtime: number; sickDays: number; leaveDays: number }>>({});
 
@@ -212,11 +219,11 @@ export default function PayrollCyclePage() {
   }
   const [csvValidation, setCsvValidation] = useState<CsvValidationResult | null>(null);
 
-  const getAttendance = (empId: string) => attendanceData[empId] || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
+  const getAttendance = (empId: string) => attendanceData[empId] || { workDays: defaultWorkDays, overtime: 0, sickDays: 0, leaveDays: 0 };
 
   const handleAttendanceChange = (empId: string, field: 'workDays' | 'workedHours' | 'overtime' | 'sickDays' | 'leaveDays', value: number) => {
     setAttendanceData(prev => {
-      const current = prev[empId] || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
+      const current = prev[empId] || { workDays: defaultWorkDays, overtime: 0, sickDays: 0, leaveDays: 0 };
       return {
         ...prev,
         [empId]: {
@@ -242,7 +249,7 @@ export default function PayrollCyclePage() {
         const newData: typeof attendanceData = {};
         activeEmployees.forEach(emp => {
           newData[emp.id] = {
-            workDays: 22,
+            workDays: defaultWorkDays,
             overtime: 0,
             sickDays: 0,
             leaveDays: 0,
@@ -334,7 +341,7 @@ export default function PayrollCyclePage() {
           }
 
           newData[emp.id] = {
-            workDays: isNaN(workDays) ? 22 : workDays,
+            workDays: isNaN(workDays) ? defaultWorkDays : workDays,
             overtime,
             sickDays,
             leaveDays,
@@ -587,8 +594,9 @@ export default function PayrollCyclePage() {
       calculatedSickLeave = Math.round(hourlyRate * sickHours * 0.70);
       calculatedLeaveAmount = Math.round(hourlyRate * leaveHours * 1.0);
     } else {
-      dailyRate = rawBaseSalary / 22;
-      hourlyRate = rawBaseSalary / (dailyHours * 22);
+      const effectiveWorkDays = att.workDays ?? defaultWorkDays;
+      dailyRate = rawBaseSalary / effectiveWorkDays;
+      hourlyRate = rawBaseSalary / (dailyHours * effectiveWorkDays);
 
       const baseReduction = Math.round(dailyRate * (att.sickDays || 0));
       calculatedBase = Math.max(0, rawBaseSalary - baseReduction);
@@ -666,8 +674,8 @@ export default function PayrollCyclePage() {
       costCenter: employment?.cost_center || undefined,
       year: cycle?.year || new Date().getFullYear(),
       month: cycle?.month || new Date().getMonth() + 1,
-      workDays: att.workDays ?? 22,
-      workedDays: Math.max(0, (att.workDays ?? 22) - (att.sickDays || 0) - (att.leaveDays || 0)),
+      workDays: att.workDays ?? defaultWorkDays,
+      workedDays: Math.max(0, (att.workDays ?? defaultWorkDays) - (att.sickDays || 0) - (att.leaveDays || 0)),
       workedHours: att.workedHours ? Number(att.workedHours) : undefined,
       overtimeHours: att.overtime || 0,
       sickDays: att.sickDays || 0,
@@ -1184,6 +1192,7 @@ export default function PayrollCyclePage() {
               allEmployments={allEmployments}
               items={items}
               attendanceData={attendanceData}
+              defaultWorkDays={defaultWorkDays}
               cycleId={cycle?.id}
               onSavingChange={setStep5Saving}
             />

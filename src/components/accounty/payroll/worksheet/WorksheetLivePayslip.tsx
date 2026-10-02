@@ -22,6 +22,7 @@ export interface WorksheetLivePayslipProps {
     sickDays: number;
     leaveDays: number;
   };
+  defaultWorkDays?: number;
   commuteInput: {
     commuteType: 'none' | 'car' | 'public_transit';
     distanceKm: number;
@@ -55,6 +56,7 @@ export default function WorksheetLivePayslip({
   declarations = {},
   isKiva,
   taxParams,
+  defaultWorkDays = 21,
   className,
 }: WorksheetLivePayslipProps) {
   const calculationResult = useMemo(() => {
@@ -84,8 +86,9 @@ export default function WorksheetLivePayslip({
       calcSickLeave = Math.round(hourlyRate * (attendance.sickDays || 0) * dailyHours * 0.70);
       calcLeave = Math.round(hourlyRate * (attendance.leaveDays || 0) * dailyHours);
     } else {
-      dailyRate = baseSalary / 22;
-      hourlyRate = baseSalary / (dailyHours * 22);
+      const currentWorkDays = attendance.workDays || defaultWorkDays;
+      dailyRate = baseSalary / currentWorkDays;
+      hourlyRate = baseSalary / (dailyHours * currentWorkDays);
 
       const baseReduction = Math.round(dailyRate * (attendance.sickDays || 0));
       calcBase = Math.max(0, baseSalary - baseReduction);
@@ -96,7 +99,7 @@ export default function WorksheetLivePayslip({
 
     const actualWorkedDays = Math.max(
       0,
-      (attendance.workDays || 22) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)
+      (attendance.workDays || defaultWorkDays) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)
     );
 
     // Calculate birth age

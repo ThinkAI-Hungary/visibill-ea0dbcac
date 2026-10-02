@@ -94,3 +94,4 @@ Ha a könyvelő kijelöl egy vagy több sort:
 - [BRD 063: Folyószámla és Analitika Számviteli Szabályzat és Integritás](../../business/decisions/063-subledger-and-open-items-accounting-policy.md)
 - [P-055: Könyvelési Napló UX](./P-055-accounting-journals-ux.md)
 - [P-135: Főkönyvi Kivonat Klasszikus Nézet Oszlopszélességek és Összesítő Sáv UX](./P-135-general-ledger-classic-view-column-widths-and-totals-ux.md)
+- [P-152: Folyószámla Kettős Devizamegjelenítés, Árfolyam Tooltip és Vegyes Devizás Kijelölés UX](./P-152-subledger-dual-currency-display-and-multicurrency-selection-ux.md)

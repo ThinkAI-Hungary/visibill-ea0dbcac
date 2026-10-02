@@ -55,19 +55,41 @@ export const SubledgerItemMatchesModal: React.FC<SubledgerItemMatchesModalProps>
           <div>
             <div className="text-muted-foreground text-xs">Eredeti könyvelt összeg</div>
             <div className="font-semibold text-base">
-              {formatCurrency(item.amount, item.currency)} ({item.dc_type})
+              {item.currency !== 'HUF' && item.foreign_amount ? (
+                <span>
+                  {formatCurrency(item.foreign_amount, item.currency)}{' '}
+                  <span className="text-xs text-muted-foreground font-normal">({formatCurrency(item.amount, 'HUF')})</span>
+                </span>
+              ) : (
+                formatCurrency(item.amount, 'HUF')
+              )}{' '}
+              <span className="text-xs text-muted-foreground">({item.dc_type})</span>
             </div>
           </div>
           <div>
             <div className="text-muted-foreground text-xs">Eddig rendezve</div>
             <div className="font-semibold text-emerald-600">
-              {formatCurrency(item.settled_amount, item.currency)}
+              {item.currency !== 'HUF' && item.foreign_amount && item.amount ? (
+                <span>
+                  {formatCurrency(Number(((item.settled_amount / item.amount) * item.foreign_amount).toFixed(2)), item.currency)}{' '}
+                  <span className="text-xs text-muted-foreground font-normal">({formatCurrency(item.settled_amount, 'HUF')})</span>
+                </span>
+              ) : (
+                formatCurrency(item.settled_amount, 'HUF')
+              )}
             </div>
           </div>
           <div>
             <div className="text-muted-foreground text-xs">Fennmaradó nyitott</div>
             <div className={`font-semibold ${item.remaining_amount > 0 ? 'text-amber-600' : 'text-muted-foreground'}`}>
-              {formatCurrency(item.remaining_amount, item.currency)}
+              {item.currency !== 'HUF' && item.foreign_amount && item.amount ? (
+                <span>
+                  {formatCurrency(Number(((item.remaining_amount / item.amount) * item.foreign_amount).toFixed(2)), item.currency)}{' '}
+                  <span className="text-xs text-muted-foreground font-normal">({formatCurrency(item.remaining_amount, 'HUF')})</span>
+                </span>
+              ) : (
+                formatCurrency(item.remaining_amount, 'HUF')
+              )}
             </div>
           </div>
         </div>
@@ -138,7 +160,16 @@ export const SubledgerItemMatchesModal: React.FC<SubledgerItemMatchesModalProps>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <div className="font-semibold text-sm text-foreground">
-                        {formatCurrency(m.settled_amount_huf)}
+                        {m.settled_amount_foreign != null && m.currency !== 'HUF' ? (
+                          <div>
+                            <div>{formatCurrency(m.settled_amount_foreign, m.currency)}</div>
+                            <div className="text-[10px] text-muted-foreground font-normal">
+                              ({formatCurrency(m.settled_amount_huf, 'HUF')})
+                            </div>
+                          </div>
+                        ) : (
+                          formatCurrency(m.settled_amount_huf, 'HUF')
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         Rendezve: {new Date(m.settled_at).toLocaleDateString('hu-HU')}

@@ -509,21 +509,50 @@ export function SubledgerPostingModal({
               <div className="p-2.5 rounded-lg bg-card border">
                 <div className="text-[11px] text-muted-foreground uppercase font-medium">Nettó összeg</div>
                 <div className="text-lg font-bold text-foreground font-mono">
-                  {formatCurrency(currentInvoice.net_amount, currentInvoice.currency)}
+                  {currentInvoice.currency !== 'HUF' ? (
+                    <div>
+                      <div>{formatCurrency(currentInvoice.foreign_net_amount ?? 0, currentInvoice.currency)}</div>
+                      <div className="text-xs text-muted-foreground font-normal">
+                        ({formatCurrency(currentInvoice.net_amount, 'HUF')})
+                      </div>
+                    </div>
+                  ) : (
+                    formatCurrency(currentInvoice.net_amount, 'HUF')
+                  )}
                 </div>
               </div>
 
               <div className="p-2.5 rounded-lg bg-card border">
                 <div className="text-[11px] text-muted-foreground uppercase font-medium">ÁFA összeg</div>
                 <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400 font-mono">
-                  {formatCurrency(currentInvoice.vat_amount, currentInvoice.currency)}
+                  {currentInvoice.currency !== 'HUF' ? (
+                    <div>
+                      <div>{formatCurrency(currentInvoice.foreign_vat_amount ?? 0, currentInvoice.currency)}</div>
+                      {currentInvoice.vat_amount > 0 && (
+                        <div className="text-xs text-muted-foreground font-normal">
+                          ({formatCurrency(currentInvoice.vat_amount, 'HUF')})
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    formatCurrency(currentInvoice.vat_amount, 'HUF')
+                  )}
                 </div>
               </div>
 
               <div className="p-2.5 rounded-lg bg-card border">
                 <div className="text-[11px] text-muted-foreground uppercase font-medium">Bruttó összeg</div>
                 <div className="text-lg font-bold text-foreground font-mono">
-                  {formatCurrency(currentInvoice.amount, currentInvoice.currency)}
+                  {currentInvoice.currency !== 'HUF' ? (
+                    <div>
+                      <div>{formatCurrency(currentInvoice.foreign_amount ?? currentInvoice.amount, currentInvoice.currency)}</div>
+                      <div className="text-xs text-muted-foreground font-normal">
+                        ({formatCurrency(currentInvoice.amount, 'HUF')})
+                      </div>
+                    </div>
+                  ) : (
+                    formatCurrency(currentInvoice.amount, 'HUF')
+                  )}
                 </div>
               </div>
             </div>
@@ -556,7 +585,7 @@ export function SubledgerPostingModal({
                     <span className="font-mono font-bold">#{idx + 1}</span>
                     <span className="max-w-[160px] truncate">{it.description || `Tétel #${idx + 1}`}</span>
                     <span className={`font-mono text-[11px] ${activeItemIndex === idx ? 'text-indigo-100' : 'text-muted-foreground'}`}>
-                      ({formatCurrency(it.amount, it.currency)})
+                      ({it.currency !== 'HUF' && it.foreign_amount ? `${formatCurrency(it.foreign_amount, it.currency)} / ` : ''}{formatCurrency(it.amount, 'HUF')})
                     </span>
                   </button>
                 ))}
@@ -593,7 +622,7 @@ export function SubledgerPostingModal({
                       <th className="p-2.5 w-12 text-center">#</th>
                       <th className="p-2.5 w-24 text-center">Oldal (T/K)</th>
                       <th className="p-2.5 min-w-[260px]">Főkönyvi számla (Kontír)</th>
-                      <th className="p-2.5 w-40 text-right">Összeg</th>
+                      <th className="p-2.5 w-40 text-right">Összeg (Ft)</th>
                       <th className="p-2.5 w-28">Szerepkör</th>
                       <th className="p-2.5 min-w-[180px]">Megjegyzés / Sor leírás</th>
                       <th className="p-2.5 w-12 text-center"></th>
@@ -755,12 +784,12 @@ export function SubledgerPostingModal({
               <div className="flex flex-wrap items-center gap-6">
                 <div>
                   <span className="text-slate-400">∑ Tartozik (T): </span>
-                  <span className="font-bold text-white">{formatCurrency(sumT, currentInvoice.currency)}</span>
+                  <span className="font-bold text-white">{formatCurrency(sumT, 'HUF')}</span>
                 </div>
                 <div className="text-slate-600">|</div>
                 <div>
                   <span className="text-slate-400">∑ Követel (K): </span>
-                  <span className="font-bold text-white">{formatCurrency(sumK, currentInvoice.currency)}</span>
+                  <span className="font-bold text-white">{formatCurrency(sumK, 'HUF')}</span>
                 </div>
                 <div className="text-slate-600">|</div>
                 <div>
@@ -770,7 +799,7 @@ export function SubledgerPostingModal({
                       isBalanced ? 'text-emerald-400' : 'text-rose-400'
                     }`}
                   >
-                    {formatCurrency(diff, currentInvoice.currency)}
+                    {formatCurrency(diff, 'HUF')}
                   </span>
                 </div>
               </div>

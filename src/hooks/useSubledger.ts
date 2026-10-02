@@ -85,6 +85,7 @@ export function useSubledgerItems(
         net_amount: Number(row.net_amount ?? row.amount ?? 0),
         vat_amount: Number(row.vat_amount ?? 0),
         foreign_amount: row.foreign_amount ? Number(row.foreign_amount) : null,
+        exchange_rate: row.exchange_rate ? Number(row.exchange_rate) : null,
         settled_amount: Number(row.settled_amount || 0),
         remaining_amount: Number(row.remaining_amount || 0),
         journal_number: Number(row.journal_number || 0),

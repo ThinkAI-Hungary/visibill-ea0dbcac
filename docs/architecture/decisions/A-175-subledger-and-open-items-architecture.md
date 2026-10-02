@@ -108,3 +108,4 @@ A lekönyvelt naplófejek módosítása szigorúan tiltott (`acc_enforce_header_
 - [BRD 063: Folyószámla és Analitika Számviteli Szabályzat és Integritás](../../business/decisions/063-subledger-and-open-items-accounting-policy.md)
 - [A-043: Könyvelési Naplók és Kettős Könyvviteli Folyószámlák](./A-043-accounting-journals.md)
 - [A-111: Közvetlen Bizonylat-visszanyitás és Sorszámfolytonossági Védelem](./A-111-accounting-journal-unpost-gl-storno-and-numbering-integrity.md)
+- [A-191: Folyószámla Kettős Devizakezelés, Árfolyam-számítás és Csoportosítási Architektúra](./A-191-subledger-dual-currency-and-grouping-architecture.md)

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { getStatutoryWorkDays } from '@/lib/payroll/workdayCalculator';
 
 const REASONS = [
   'Közös megegyezés', 'Munkavállaló felmondása', 'Munkáltatói felmondás',
@@ -53,7 +54,12 @@ export default function EmployeeExitWizardPage() {
   const [notes, setNotes] = useState('');
   const [checkedDocs, setCheckedDocs] = useState<Set<string>>(new Set());
 
-  const leavePayAmount = activeJob ? Number(leavePayDays) * Math.round((activeJob.base_salary || 0) / 22) : 0;
+  const exitDate = new Date(lastDay);
+  const exitWorkDays = !isNaN(exitDate.getTime())
+    ? getStatutoryWorkDays(exitDate.getFullYear(), exitDate.getMonth() + 1)
+    : 21;
+
+  const leavePayAmount = activeJob ? Number(leavePayDays) * Math.round((activeJob.base_salary || 0) / exitWorkDays) : 0;
 
   const canNext = () => {
     if (step === 0) return !!reason;
@@ -201,7 +207,7 @@ export default function EmployeeExitWizardPage() {
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Szabadság megváltás (napok)</label>
             <input type="number" min={0} value={leavePayDays} onChange={e => setLeavePayDays(e.target.value)} className="w-full max-w-xs px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" />
-            <p className="text-[10px] text-muted-foreground mt-1">Napi bér: {activeJob ? Math.round((activeJob.base_salary || 0) / 22).toLocaleString('hu-HU') : 0} Ft | Megváltás: {leavePayAmount.toLocaleString('hu-HU')} Ft</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Napi bér: {activeJob ? Math.round((activeJob.base_salary || 0) / exitWorkDays).toLocaleString('hu-HU') : 0} Ft | Megváltás: {leavePayAmount.toLocaleString('hu-HU')} Ft</p>
           </div>
           <div className="flex items-center justify-between p-4 rounded-lg border border-border">
             <div><p className="text-sm font-bold">Végkielégítés</p><p className="text-xs text-muted-foreground">Mt. 77. § szerint</p></div>

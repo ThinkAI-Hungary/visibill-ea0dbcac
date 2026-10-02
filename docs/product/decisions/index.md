@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-10-01  
-> **Összesen:** 162 döntés | ✅ Decided: 158 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-10-02  
+> **Összesen:** 164 döntés | ✅ Decided: 160 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -265,4 +265,6 @@
 | P-149 | Munkavállalói Pótszabadságok Törzsadat-alapú Feloldása és Szabadság Tájékoztató Kártya UX | ✅ Decided | [P-149](./P-149-payroll-leave-entitlements-and-guidance-card-ux.md) |
 | P-150 | Számlatétel-szintű Kontextuális Időbeli Elhatárolások (AIE/PIE) Varázsló és Feladási UX | ✅ Decided | [P-150](./P-150-contextual-invoice-item-accruals-and-ve-journal-posting-ux.md) |
 | P-151 | Dinamikus Könyvelési Naplók Létrehozása és Bankszámla-összerendelés UX | ✅ Decided | [P-151](./P-151-dynamic-accounting-journals-management-and-bank-linking-ux.md) |
+| P-152 | Folyószámla Kettős Devizamegjelenítés, Árfolyam Tooltip és Vegyes Devizás Kijelölés UX | ✅ Decided | [P-152](./P-152-subledger-dual-currency-display-and-multicurrency-selection-ux.md) |
+| P-153 | Dinamikus Törvényes Munkanapkeret és Bérszámfejtési Munkanap Választó UX | ✅ Decided | [P-153](./P-153-dynamic-statutory-workday-framework-and-payroll-ux.md) |
 

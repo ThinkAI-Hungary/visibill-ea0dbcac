@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { TaxParameters } from '@/lib/payroll/taxEngine';
+import { getStatutoryWorkDays } from '@/lib/payroll/workdayCalculator';
 
 // ═══════════════════════════════════════════════════════════════
 // TÍPUSOK (DB row típusok)
@@ -1208,6 +1209,7 @@ export function useRunBatchPayroll() {
 
       // 4. Run calculations per employment
       const results: any[] = [];
+      const statutoryWorkDays = getStatutoryWorkDays(input.year, input.month);
 
       for (const employment of (employments as any[])) {
         const employee = employment.accounty_employees;
@@ -1219,7 +1221,7 @@ export function useRunBatchPayroll() {
 
         // Fetch timesheet attendance
         const tsRow = (timesheets || []).find((t: any) => t.employment_id === employment.id);
-        const attendance = (tsRow?.ocr_data as any) || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
+        const attendance = (tsRow?.ocr_data as any) || { workDays: statutoryWorkDays, overtime: 0, sickDays: 0, leaveDays: 0 };
 
         // Calculate auto attendance values
         const weeklyHours = employment.weekly_hours || 40;
@@ -1249,8 +1251,9 @@ export function useRunBatchPayroll() {
           leaveAmount = Math.round(hourlyRate * leaveHours * 1.0);
         } else {
           // For Monthly employees: baseSalary is the full monthly salary (e.g. 150,000 Ft/month)
-          dailyRate = baseSalary / 22;
-          hourlyRate = baseSalary / (dailyHours * 22);
+          const effectiveWorkDays = attendance.workDays || statutoryWorkDays;
+          dailyRate = baseSalary / effectiveWorkDays;
+          hourlyRate = baseSalary / (dailyHours * effectiveWorkDays);
 
           const baseReduction = Math.round(dailyRate * (attendance.sickDays || 0));
           adjustedBaseSalary = Math.max(0, baseSalary - baseReduction);
@@ -1464,7 +1467,7 @@ export function useRunBatchPayroll() {
           travelReimbursement: {
             commuteType: (employment.commute_type || 'none') as 'none' | 'car' | 'public_transit',
             commuteKm: Number(employment.commute_distance_km || 0),
-            commuteDays: Math.max(0, (attendance.workDays || 22) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)),
+            commuteDays: Math.max(0, (attendance.workDays || statutoryWorkDays) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)),
             commuteCarRate: companyCommuteCarRate,
             commuteTransitPassCost: empItems.find((i: any) => i.item_type === 'commute_reimbursement')
               ? Number(empItems.find((i: any) => i.item_type === 'commute_reimbursement')?.amount)
@@ -1521,7 +1524,7 @@ export function useRunBatchPayroll() {
             calculated_at: new Date().toISOString(),
             travel_reimbursement: result.travelReimbursementAmount || 0,
             commute_type: employment.commute_type || 'none',
-            commute_days: Math.max(0, (attendance.workDays || 22) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)),
+            commute_days: Math.max(0, (attendance.workDays || statutoryWorkDays) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)),
           },
         });
       }
