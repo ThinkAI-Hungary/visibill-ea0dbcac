@@ -20,11 +20,30 @@ export function isFadItem(it: any, inv: any, isDomestic: boolean): boolean {
   const itVat = Number(it.vat_amount || 0);
   const itNet = Number(it.net_amount || 0);
   const rateStr = String(it.vat_rate || '').trim().toUpperCase();
+  const codeStr = String(it.vat_code || it.vat_code_code || inv?.vat_code || '').trim().toUpperCase();
+
+  // If item or invoice has an explicit EU or non-FAD code, it is NOT domestic FAD
+  if (
+    codeStr.startsWith('EU_') ||
+    codeStr.startsWith('BE_EU') ||
+    codeStr.startsWith('KI_EU') ||
+    codeStr.startsWith('3_ORSZ') ||
+    codeStr.startsWith('KI_EXP') ||
+    codeStr.startsWith('BE_27') ||
+    codeStr.startsWith('BE_18') ||
+    codeStr.startsWith('BE_5') ||
+    codeStr.startsWith('BE_MENTES') ||
+    it.is_eu === true
+  ) {
+    return false;
+  }
 
   // If the line item already has positive VAT charged by supplier, it is standard VAT, not reverse charge
   if (itVat > 0) return false;
 
   if (
+    codeStr.includes('FAD') ||
+    codeStr.includes('FORD') ||
     rateStr.includes('FAD') ||
     rateStr.includes('DOMESTIC_REVERSE_CHARGE') ||
     rateStr.includes('ACEL') ||
@@ -79,7 +98,7 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
       if ((inv as any)?.id) {
         const { data: navItems } = await supabase
           .from('nav_invoice_items')
-          .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage, product_code, net_weight_kg')
+          .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage, product_code, net_weight_kg, vat_code, vat_code_id')
           .eq('nav_invoice_id', (inv as any).id)
           .order('line_number');
         if (navItems && navItems.length > 0) return navItems as any[];
@@ -96,7 +115,7 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
       if ((appInv as any)?.id) {
         const { data: appItems } = await supabase
           .from('invoice_items')
-          .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage, product_code, net_weight_kg')
+          .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate, deductible_percentage, product_code, net_weight_kg, vat_code, vat_code_id')
           .eq('invoice_id', (appInv as any).id)
           .order('line_number');
         if (appItems && appItems.length > 0) return appItems as any[];
@@ -136,10 +155,15 @@ export function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNum
         return (
           <div key={j} className="grid grid-cols-12 gap-2 px-3 py-1 text-[11px] text-muted-foreground hover:bg-muted/20 transition-colors items-center">
             <div className="col-span-4 flex items-center gap-1.5 truncate" title={item.line_description}>
-              <span className="truncate">{item.line_description || '—'}</span>
+              <span className="truncate font-medium text-foreground/85">{item.line_description || '—'}</span>
               {item.product_code && (
                 <span className="shrink-0 text-[10px] font-mono px-1 py-0.2 rounded bg-muted text-muted-foreground border border-border/40">
                   {item.product_code}
+                </span>
+              )}
+              {item.vat_code && (
+                <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                  {item.vat_code}
                 </span>
               )}
               {item.net_weight_kg != null && (
@@ -335,8 +359,8 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         .from('nav_invoices')
         .select(`
           id, invoice_number, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_direction,
-          invoice_delivery_date, invoice_issue_date, ti_override, calculated_ti, currency, invoice_net_amount, invoice_vat_amount, is_reverse_charge, vat_row_override,
-          nav_invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage, product_code, net_weight_kg)
+          invoice_delivery_date, invoice_issue_date, ti_override, calculated_ti, currency, invoice_net_amount, invoice_vat_amount, is_reverse_charge, vat_row_override, vat_code_id,
+          nav_invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage, product_code, net_weight_kg, vat_code, vat_code_id)
         `)
         .eq('company_id', companyId)
         .gte('invoice_delivery_date', dateFrom)
@@ -355,8 +379,8 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         .from('invoices')
         .select(`
           id, bizonylatsorszam, elado_nev, vevo_nev, elado_vat_id, vevo_vat_id, invoice_direction,
-          teljesites_datuma, kibocsatas_datuma, penznem, adoalap_osszesen, afa_osszeg_osszesen, forditott_adozas, vat_row_override,
-          invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage, product_code, net_weight_kg)
+          teljesites_datuma, kibocsatas_datuma, penznem, adoalap_osszesen, afa_osszeg_osszesen, forditott_adozas, vat_row_override, vat_code_id,
+          invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage, product_code, net_weight_kg, vat_code, vat_code_id)
         `)
         .eq('company_id', companyId)
         .or(
@@ -382,6 +406,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
           invoice_vat_amount: u.afa_osszeg_osszesen || 0,
           is_reverse_charge: u.forditott_adozas || false,
           vat_row_override: u.vat_row_override,
+          vat_code_id: u.vat_code_id,
           nav_invoice_items: u.invoice_items || [],
         }));
         candidateInvoices = [...candidateInvoices, ...mappedUploaded] as any;
@@ -396,7 +421,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
       if (invNumbers.length > 0) {
         const { data: appInvs } = await supabase
           .from('invoices')
-          .select('bizonylatsorszam, vevo_nev, vat_row_override, invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage, product_code, net_weight_kg, gl_classifications)')
+          .select('bizonylatsorszam, vevo_nev, vat_row_override, vat_code_id, invoice_items(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price, deductible_percentage, product_code, net_weight_kg, gl_classifications, vat_code, vat_code_id)')
           .eq('company_id', companyId)
           .in('bizonylatsorszam', invNumbers);
         (appInvs || []).forEach((ai: any) => {
@@ -473,6 +498,18 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
             desc.includes('palackdij')
           )) {
             return false;
+          }
+
+          // Check if item or invoice has an assigned VAT code matching configured vat_codes
+          const itemVatCodeId = it.vat_code_id || inv.vat_code_id;
+          const itemVatCodeStr = String(it.vat_code || it.vat_code_code || '').trim().toUpperCase();
+          const matchedCode = (vatCodes as VatCode[]).find(vc => 
+            (itemVatCodeId && vc.id === itemVatCodeId) || 
+            (itemVatCodeStr && vc.code.toUpperCase() === itemVatCodeStr)
+          );
+
+          if (matchedCode && matchedCode.target_rows && Array.isArray(matchedCode.target_rows) && matchedCode.target_rows.length > 0) {
+            return matchedCode.target_rows.some((tr: any) => String(tr.row) === String(rowNumber));
           }
 
           const rateStr = String(it.vat_rate || '').trim().toUpperCase();
@@ -570,29 +607,36 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         if (items.length > 0) {
           matchesInvoice = matchingItems.length > 0;
         } else {
-          const net = Number(inv.invoice_net_amount || 0);
-          const vat = Number(inv.invoice_vat_amount || 0);
-          if (rowNumber === '63') {
-            matchesInvoice = isDomestic && !inv.is_reverse_charge && vat === 0 && net !== 0;
-          } else if (rowNumber === '29') {
-            matchesInvoice = isDomestic && inv.is_reverse_charge;
-          } else if (rowNumber === '66') {
-            matchesInvoice = isDomestic && (inv.is_reverse_charge || (vat > 0 && Math.round((vat / net) * 100) === 27));
-          } else if (rowNumber === '18') {
-            matchesInvoice = (isEuSupplier || isForeign);
-          } else if (['11', '12', '13', '14', '15', '16', '69'].includes(rowNumber || '')) {
-            matchesInvoice = isEuSupplier;
-          } else if (rowNumber === '67') {
-            matchesInvoice = isForeign;
-          } else if (rowNumber === '02') {
-            matchesInvoice = isEuCustomer;
-          } else if (rowNumber === '91' || rowNumber === '92') {
-            matchesInvoice = isEuCustomer;
-          } else if (net > 0 && vat > 0) {
-            const calcRate = Math.round((vat / net) * 100);
-            matchesInvoice = vatPercents.some((p: any) => Math.abs(Number(p) - calcRate) <= 1);
-          } else if (vatPercents.some((p: any) => Number(p) === 0) && vat === 0 && net !== 0) {
-            matchesInvoice = true;
+          // If invoice has a known vat_code assigned, test its target_rows
+          const invVatCodeId = inv.vat_code_id;
+          const invCodeObj = (vatCodes as VatCode[]).find(vc => vc.id === invVatCodeId);
+          if (invCodeObj && invCodeObj.target_rows && Array.isArray(invCodeObj.target_rows) && invCodeObj.target_rows.length > 0) {
+            matchesInvoice = invCodeObj.target_rows.some((tr: any) => String(tr.row) === String(rowNumber));
+          } else {
+            const net = Number(inv.invoice_net_amount || 0);
+            const vat = Number(inv.invoice_vat_amount || 0);
+            if (rowNumber === '63') {
+              matchesInvoice = isDomestic && !inv.is_reverse_charge && vat === 0 && net !== 0;
+            } else if (rowNumber === '29') {
+              matchesInvoice = isDomestic && inv.is_reverse_charge;
+            } else if (rowNumber === '66') {
+              matchesInvoice = isDomestic && (inv.is_reverse_charge || (vat > 0 && Math.round((vat / net) * 100) === 27));
+            } else if (rowNumber === '18') {
+              matchesInvoice = (isEuSupplier || isForeign);
+            } else if (['11', '12', '13', '14', '15', '16', '69'].includes(rowNumber || '')) {
+              matchesInvoice = isEuSupplier;
+            } else if (rowNumber === '67') {
+              matchesInvoice = isForeign;
+            } else if (rowNumber === '02') {
+              matchesInvoice = isEuCustomer;
+            } else if (rowNumber === '91' || rowNumber === '92') {
+              matchesInvoice = isEuCustomer;
+            } else if (net > 0 && vat > 0) {
+              const calcRate = Math.round((vat / net) * 100);
+              matchesInvoice = vatPercents.some((p: any) => Math.abs(Number(p) - calcRate) <= 1);
+            } else if (vatPercents.some((p: any) => Number(p) === 0) && vat === 0 && net !== 0) {
+              matchesInvoice = true;
+            }
           }
         }
 
@@ -795,14 +839,18 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                 itVat = Math.round((Number(i.net_amount) || 0) * 0.27);
               } else if (rowNumber === '66' && isFadItem(i, inv, isDomestic) && itVat === 0) {
                 itVat = Math.round((Number(i.net_amount) || 0) * 0.27);
+              } else if (['14', '15', '16', '18', '27', '67', '69'].includes(rowNumber || '') && itVat === 0) {
+                itVat = Math.round((Number(i.net_amount) || 0) * (rowNumber === '13' ? 0.18 : rowNumber === '12' ? 0.05 : 0.27));
               }
               return s + (itVat * ratio);
             }, 0)
-          : (rowNumber === '29' && Number(inv.invoice_vat_amount || 0) === 0
-              ? Math.round(Number(inv.invoice_net_amount || 0) * 0.27)
-              : (rowNumber === '66' && inv.is_reverse_charge && Number(inv.invoice_vat_amount || 0) === 0
+          : (['14', '15', '16', '18', '27', '67', '69'].includes(rowNumber || '') && Number(inv.invoice_vat_amount || 0) === 0
+              ? Math.round(Number(inv.invoice_net_amount || 0) * (rowNumber === '13' ? 0.18 : rowNumber === '12' ? 0.05 : 0.27))
+              : (rowNumber === '29' && Number(inv.invoice_vat_amount || 0) === 0
                   ? Math.round(Number(inv.invoice_net_amount || 0) * 0.27)
-                  : Number(inv.invoice_vat_amount || 0)));
+                  : (rowNumber === '66' && inv.is_reverse_charge && Number(inv.invoice_vat_amount || 0) === 0
+                      ? Math.round(Number(inv.invoice_net_amount || 0) * 0.27)
+                      : Number(inv.invoice_vat_amount || 0))));
 
         const totalNet = Math.round(origNet * rate);
         const totalVat = Math.round(origVat * rate);
@@ -877,6 +925,8 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                   let calculatedVat = rawItemVat;
                   if ((rowNumber === '29' || rowNumber === '66') && isItemFad && rawItemVat === 0) {
                     calculatedVat = Math.round(itemNet * 0.27);
+                  } else if (['14', '15', '16', '18', '27', '67', '69'].includes(rowNumber || '') && rawItemVat === 0) {
+                    calculatedVat = Math.round(itemNet * (rowNumber === '13' ? 0.18 : rowNumber === '12' ? 0.05 : 0.27));
                   }
                   const itemVat = calculatedVat;
                   const itemNetHuf = Math.round(itemNet * rate * (rowNumber === '29' ? 1.0 : (deductible / 100.0)));
@@ -904,8 +954,13 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                           </span>
                         )}
                         {isItemFad && (
-                          <span className="shrink-0 text-[9px] font-medium px-1 py-0.2 rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                          <span className="shrink-0 text-[9px] font-medium px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
                             FAD 27%
+                          </span>
+                        )}
+                        {item.vat_code && !isItemFad && (
+                          <span className="shrink-0 text-[9px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                            {item.vat_code}
                           </span>
                         )}
                         {isPartial && (

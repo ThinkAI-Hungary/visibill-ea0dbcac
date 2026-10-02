@@ -1182,11 +1182,46 @@ export function InvoiceItemsDialog({
       }
 
       queryClient.invalidateQueries({ queryKey: ['invoiceItems'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['nav_invoices'] });
       queryClient.invalidateQueries({ queryKey: ['vat_code_overrides_log'] });
       queryClient.invalidateQueries({ queryKey: ['vat_codes'] });
       queryClient.invalidateQueries({ queryKey: ['vatCollectorItems'] });
       queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices'] });
       queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_returns'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return_m_lines'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_row_drill'] });
+
+      // Automatically recalculate VAT return for this invoice's period
+      const deliveryDate = (parentInvoice as any)?.invoice_delivery_date ||
+        (parentInvoice as any)?.teljesites_datuma ||
+        (parentInvoice as any)?.invoice_issue_date ||
+        (parentInvoice as any)?.kibocsatas_datuma;
+      if (deliveryDate && selectedCompany?.id) {
+        const d = new Date(deliveryDate);
+        if (!isNaN(d.getTime())) {
+          const yr = d.getFullYear();
+          const mo = d.getMonth() + 1;
+          (supabase.rpc as any)('calculate_vat_return', {
+            p_company_id: selectedCompany.id,
+            p_year: yr,
+            p_month: mo,
+            p_frequency: 'H',
+            p_scope: 'all'
+          }).then(() => {
+            queryClient.invalidateQueries({ queryKey: ['vat_return'] });
+            queryClient.invalidateQueries({ queryKey: ['vat_returns'] });
+            queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
+            queryClient.invalidateQueries({ queryKey: ['vat_return_m_lines'] });
+            queryClient.invalidateQueries({ queryKey: ['vat_row_drill'] });
+          }).catch((err: any) => {
+            reportError({ type: 'rpc', component: 'InvoiceItemsDialog', action: 'recalculate_vat', message: 'Recalculate VAT return after code override failed', error: err });
+          });
+        }
+      }
     }
   }, [selectedCompany?.id, session?.user.id, isSubmittingVatCode, source, isOutbound, parentInvoice, supplierName, vatCodes, activePresetId, findTwinItems, queryClient, toast]);
 

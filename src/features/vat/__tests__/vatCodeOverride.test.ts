@@ -81,4 +81,34 @@ describe('VAT Code & 2665 Declaration Target Row Mapping', () => {
     expect(targetRows).toContain('66');
     expect(targetRows).toContain('77');
   });
+
+  it('correctly maps EU acquisition of goods (EU_TERM_27) to rows 14 and 69, excluding row 29', () => {
+    const item = {
+      line_description: 'Töltési szolgáltatás',
+      vat_code: 'EU_TERM_27',
+      net_amount: 12699,
+      vat_amount: 0,
+      deductible_percentage: 100,
+    };
+
+    const vatCodes = [
+      {
+        code: 'EU_TERM_27',
+        target_rows: [
+          { row: '14', col: 'base' },
+          { row: '14', col: 'tax' },
+          { row: '69', col: 'base' },
+          { row: '69', col: 'tax' },
+        ],
+      },
+    ];
+
+    const matchedCode = vatCodes.find(vc => vc.code === item.vat_code);
+    const targetRowNumbers = (matchedCode?.target_rows || []).map(tr => tr.row);
+
+    expect(targetRowNumbers).toContain('14');
+    expect(targetRowNumbers).toContain('69');
+    expect(targetRowNumbers).not.toContain('29');
+    expect(targetRowNumbers).not.toContain('66');
+  });
 });
