@@ -30,14 +30,17 @@
   - Távközlési számlák (Telekom, Yettel, Vodafone/One, Digi) automatikus észlelése és egykattintásos 70/30 beállítása a 27%-os telefon tételekre (az 5%-os internet tételek 100%-os levonhatóságának megőrzésével)
   - `calculate_vat_return` motorban a levonható arányos adóalap és adó összegzése a 66. sorba és az M-lapokra
   - Transzparens megjelenítés a `VatRowDrillDown` fúrási nézetben
-- **ÁNYK XML & PDF Export (ADR A-080, A-131, P-097):**
+- **ÁNYK XML & PDF Export (ADR A-080, A-131, P-097, P-154):**
   - 2665 / 2565 / 2465 nyomtatványnak megfelelő hivatalos AbevJava XML generálás és XML struktúra validáció
+  - 65M Kettős Skála: M-02 tételes sorok és 37. sor Forintban (HUF), M-01 partnerösszesítő és 0F főlap ezer forintban (eFt)
+  - ÁNYK belső összefüggések védelme: 36. és 76. sorok részletezőkből számítása, 66. sori 27%-os kulcsgarancia, 109. sor törvényi képlete
   - Pre-export hiányos 6/B acélipari ellenőrző kapu (`AlertDialog`), közvetlen átirányítással a tételek pótlására
   - PDF nyomtatási lehetőség a hivatalos formátum szerint
 
 **Rationale:** A tab-alapú és replika megközelítés lehetővé teszi a könyvelőnek a NAV 65-ös nyomtatvány szerinti közvetlen áttekintést. Az A60-as keresztellenőrzés, az acélipari 6/B analitika és a tételszintű 70/30-as levonhatósági motor garantálja, hogy a távközlési, acélipari és közösségi számlák adatai pontosan és automatikusan egyezzenek a bevallás soraival.
 
 ## Kapcsolódó
+- [P-154: NAV ÁNYK 2665A/2665M XML Export, M-lapok Kettős Skálája és Validáció UX](./P-154-nav-anyk-vat-return-and-m-lines-scaling-and-validation-ux.md)
 - [P-097: NAV 2665 Nyomtatvány Replika, 6/B Acélipari Analitika és ÁNYK Validáció UX](./P-097-nav-2665-replica-steel-analytics-and-anyk-validation-ux.md)
 - [A-131: NAV 2665 ÁFA Bevallás Sormegfeleltetés, Gyűjtőkódok Tisztítása, 6/B Acélipari Nyilatkozat és Egész Kilogrammos Kerekítés](../../architecture/decisions/A-131-nav-2665-vat-return-restructuring-and-steel-reporting.md)
 - [A-080: NAV ÁNYK 2665 ÁFA-Bevallás és 65M Összesítő Jelentés Szabványos XML Export](../../architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md)

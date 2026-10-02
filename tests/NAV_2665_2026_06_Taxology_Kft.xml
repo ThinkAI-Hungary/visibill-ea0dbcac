@@ -1,0 +1,614 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nyomtatvanyok xmlns="http://www.apeh.hu/abev/nyomtatvanyok/2005/01">
+  <abev>
+    <hibakszama>0</hibakszama>
+    <hash>92cdcdebdf28f27b52e27850fac4b1ab26b443ca</hash>
+    <programverzio>v.3.50.0</programverzio>
+  </abev>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665A</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - Áfa bevallás</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001E001A">14160877243</mezo>
+      <mezo eazon="0A0001E007A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001E008A">Jámbor Viktor</mezo>
+      <mezo eazon="0A0001E009A">36704240024</mezo>
+      <mezo eazon="0A0001F001A">20260601</mezo>
+      <mezo eazon="0A0001F002A">20260630</mezo>
+      <mezo eazon="0A0001F006A">H</mezo>
+      <mezo eazon="0A0001F021A">11</mezo>
+      <mezo eazon="0A0001I001A">Budapest</mezo>
+      <mezo eazon="0A0001I002A">20261002</mezo>
+      <mezo eazon="0B0001B001A">14160877243</mezo>
+      <mezo eazon="0B0001C0018BA">33</mezo>
+      <mezo eazon="0B0001C0018CA">9</mezo>
+      <mezo eazon="0B0001C0027BA">6</mezo>
+      <mezo eazon="0B0001C0027CA">2</mezo>
+      <mezo eazon="0B0001C0036BA">4339</mezo>
+      <mezo eazon="0B0001C0036CA">1172</mezo>
+      <mezo eazon="0B0001C0007BA">4300</mezo>
+      <mezo eazon="0B0001C0007CA">1161</mezo>
+      <mezo eazon="0C0001B001A">14160877243</mezo>
+      <mezo eazon="0C0001C0063BA">588</mezo>
+      <mezo eazon="0C0001C0064BA">5</mezo>
+      <mezo eazon="0C0001C0064CA">0</mezo>
+      <mezo eazon="0C0001C0066BA">919</mezo>
+      <mezo eazon="0C0001C0066CA">255</mezo>
+      <mezo eazon="0C0001C0067BA">40</mezo>
+      <mezo eazon="0C0001C0067CA">11</mezo>
+      <mezo eazon="0D0001B001A">14160877243</mezo>
+      <mezo eazon="0D0001C0076BA">1552</mezo>
+      <mezo eazon="0D0001C0076CA">265</mezo>
+      <mezo eazon="0D0001D0083CA">906</mezo>
+      <mezo eazon="0D0001D0084CA">906</mezo>
+      <mezo eazon="0E0001B001A">14160877243</mezo>
+      <mezo eazon="0F0001B001A">14160877243</mezo>
+      <mezo eazon="0F0001D0105BA">11</mezo>
+      <mezo eazon="0F0001D0105CA">16</mezo>
+      <mezo eazon="0F0001D0105DA">923</mezo>
+      <mezo eazon="0F0001D0105EA">245</mezo>
+      <mezo eazon="0F0001D0106BA">0</mezo>
+      <mezo eazon="0F0001D0106CA">0</mezo>
+      <mezo eazon="0F0001D0106DA">0</mezo>
+      <mezo eazon="0F0001D0106EA">0</mezo>
+      <mezo eazon="0F0001D0108BA">11</mezo>
+      <mezo eazon="0F0001D0108CA">16</mezo>
+      <mezo eazon="0F0001D0108DA">923</mezo>
+      <mezo eazon="0F0001D0108EA">245</mezo>
+      <mezo eazon="0F0001D0109CA">245</mezo>
+      <mezo eazon="0F0001D0109EA">0</mezo>
+      <mezo eazon="0K0001B001A">1</mezo>
+      <mezo eazon="0K0001B002A">14160877243</mezo>
+      <mezo eazon="0N0001B001A">1</mezo>
+      <mezo eazon="0N0001B002A">14160877243</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>Hovány Premium Automotive Kft. (Budaörs)</megnevezes>
+        <azonosito>13914350</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">13914350</mezo>
+      <mezo eazon="0A0001C006A">Hovány Premium Automotive Kft. (Budaörs)</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">1</mezo>
+      <mezo eazon="0A0001E0004CA">400</mezo>
+      <mezo eazon="0A0001E0004DA">108</mezo>
+      <mezo eazon="0A0001E0007BA">1</mezo>
+      <mezo eazon="0A0001E0007CA">400</mezo>
+      <mezo eazon="0A0001E0007DA">108</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">13914350</mezo>
+      <mezo eazon="0B0001B005A">Hovány Premium Automotive Kft. (Budaörs)</mezo>
+      <mezo eazon="0B0001C0001AA">AMESMF003401/2026</mezo>
+      <mezo eazon="0B0001C0001BA">20260603</mezo>
+      <mezo eazon="0B0001C0001CA">400240</mezo>
+      <mezo eazon="0B0001C0001DA">108062</mezo>
+      <mezo eazon="0B0001C0037CA">400240</mezo>
+      <mezo eazon="0B0001C0037DA">108062</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">13914350</mezo>
+      <mezo eazon="0C0001B005A">Hovány Premium Automotive Kft. (Budaörs)</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>Regvillszer kft</megnevezes>
+        <azonosito>32507960</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">32507960</mezo>
+      <mezo eazon="0A0001C006A">Regvillszer kft</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">1</mezo>
+      <mezo eazon="0A0001E0004CA">195</mezo>
+      <mezo eazon="0A0001E0004DA">53</mezo>
+      <mezo eazon="0A0001E0007BA">1</mezo>
+      <mezo eazon="0A0001E0007CA">195</mezo>
+      <mezo eazon="0A0001E0007DA">53</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">32507960</mezo>
+      <mezo eazon="0B0001B005A">Regvillszer kft</mezo>
+      <mezo eazon="0B0001C0001AA">E-RGVLL-2026-71</mezo>
+      <mezo eazon="0B0001C0001BA">20260616</mezo>
+      <mezo eazon="0B0001C0001CA">194925</mezo>
+      <mezo eazon="0B0001C0001DA">52630</mezo>
+      <mezo eazon="0B0001C0037CA">194925</mezo>
+      <mezo eazon="0B0001C0037DA">52630</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">32507960</mezo>
+      <mezo eazon="0C0001B005A">Regvillszer kft</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>Adriana Automatik Kft</megnevezes>
+        <azonosito>26383738</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">26383738</mezo>
+      <mezo eazon="0A0001C006A">Adriana Automatik Kft</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">2</mezo>
+      <mezo eazon="0A0001E0004CA">142</mezo>
+      <mezo eazon="0A0001E0004DA">38</mezo>
+      <mezo eazon="0A0001E0007BA">2</mezo>
+      <mezo eazon="0A0001E0007CA">142</mezo>
+      <mezo eazon="0A0001E0007DA">38</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">26383738</mezo>
+      <mezo eazon="0B0001B005A">Adriana Automatik Kft</mezo>
+      <mezo eazon="0B0001C0001AA">AA / 2026-006321</mezo>
+      <mezo eazon="0B0001C0001BA">20260601</mezo>
+      <mezo eazon="0B0001C0001CA">94780</mezo>
+      <mezo eazon="0B0001C0001DA">25591</mezo>
+      <mezo eazon="0B0001C0002AA">AA/2026-006321</mezo>
+      <mezo eazon="0B0001C0002BA">20260601</mezo>
+      <mezo eazon="0B0001C0002CA">47390</mezo>
+      <mezo eazon="0B0001C0002DA">12795</mezo>
+      <mezo eazon="0B0001C0037CA">142170</mezo>
+      <mezo eazon="0B0001C0037DA">38386</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">26383738</mezo>
+      <mezo eazon="0C0001B005A">Adriana Automatik Kft</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>E.ON Energiamegoldások Kft.</megnevezes>
+        <azonosito>13322142</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">13322142</mezo>
+      <mezo eazon="0A0001C006A">E.ON Energiamegoldások Kft.</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">2</mezo>
+      <mezo eazon="0A0001E0004CA">62</mezo>
+      <mezo eazon="0A0001E0004DA">15</mezo>
+      <mezo eazon="0A0001E0007BA">2</mezo>
+      <mezo eazon="0A0001E0007CA">62</mezo>
+      <mezo eazon="0A0001E0007DA">15</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">13322142</mezo>
+      <mezo eazon="0B0001B005A">E.ON Energiamegoldások Kft.</mezo>
+      <mezo eazon="0B0001C0001AA">831300078501</mezo>
+      <mezo eazon="0B0001C0001BA">20260609</mezo>
+      <mezo eazon="0B0001C0001CA">10757</mezo>
+      <mezo eazon="0B0001C0001DA">2585</mezo>
+      <mezo eazon="0B0001C0002AA">832000064022</mezo>
+      <mezo eazon="0B0001C0002BA">20260624</mezo>
+      <mezo eazon="0B0001C0002CA">51471</mezo>
+      <mezo eazon="0B0001C0002DA">12024</mezo>
+      <mezo eazon="0B0001C0037CA">62228</mezo>
+      <mezo eazon="0B0001C0037DA">14609</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">13322142</mezo>
+      <mezo eazon="0C0001B005A">E.ON Energiamegoldások Kft.</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>SBA GROUP ZRT.</megnevezes>
+        <azonosito>25566552</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">25566552</mezo>
+      <mezo eazon="0A0001C006A">SBA GROUP ZRT.</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">2</mezo>
+      <mezo eazon="0A0001E0004CA">50</mezo>
+      <mezo eazon="0A0001E0004DA">15</mezo>
+      <mezo eazon="0A0001E0007BA">2</mezo>
+      <mezo eazon="0A0001E0007CA">50</mezo>
+      <mezo eazon="0A0001E0007DA">15</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">25566552</mezo>
+      <mezo eazon="0B0001B005A">SBA GROUP ZRT.</mezo>
+      <mezo eazon="0B0001C0001AA">CASHBOOK / 2026-002815</mezo>
+      <mezo eazon="0B0001C0001BA">20260601</mezo>
+      <mezo eazon="0B0001C0001CA">33400</mezo>
+      <mezo eazon="0B0001C0001DA">10822</mezo>
+      <mezo eazon="0B0001C0002AA">CASHBOOK/2026-002815</mezo>
+      <mezo eazon="0B0001C0002BA">20260601</mezo>
+      <mezo eazon="0B0001C0002CA">16700</mezo>
+      <mezo eazon="0B0001C0002DA">4509</mezo>
+      <mezo eazon="0B0001C0037CA">50100</mezo>
+      <mezo eazon="0B0001C0037DA">15331</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">25566552</mezo>
+      <mezo eazon="0C0001B005A">SBA GROUP ZRT.</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>Magyar Telekom Nyrt.</megnevezes>
+        <azonosito>10773381</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">10773381</mezo>
+      <mezo eazon="0A0001C006A">Magyar Telekom Nyrt.</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">2</mezo>
+      <mezo eazon="0A0001E0004CA">29</mezo>
+      <mezo eazon="0A0001E0004DA">3</mezo>
+      <mezo eazon="0A0001E0007BA">2</mezo>
+      <mezo eazon="0A0001E0007CA">29</mezo>
+      <mezo eazon="0A0001E0007DA">3</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">10773381</mezo>
+      <mezo eazon="0B0001B005A">Magyar Telekom Nyrt.</mezo>
+      <mezo eazon="0B0001C0001AA">5120260006235809</mezo>
+      <mezo eazon="0B0001C0001BA">20260616</mezo>
+      <mezo eazon="0B0001C0001CA">23845</mezo>
+      <mezo eazon="0B0001C0001DA">3148</mezo>
+      <mezo eazon="0B0001C0002AA">5379409714940016</mezo>
+      <mezo eazon="0B0001C0002BA">20260623</mezo>
+      <mezo eazon="0B0001C0002CA">5420</mezo>
+      <mezo eazon="0B0001C0002DA">271</mezo>
+      <mezo eazon="0B0001C0037CA">29265</mezo>
+      <mezo eazon="0B0001C0037DA">3419</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">10773381</mezo>
+      <mezo eazon="0C0001B005A">Magyar Telekom Nyrt.</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>Profil-Copy 2002 Kft.</megnevezes>
+        <azonosito>12933086</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">12933086</mezo>
+      <mezo eazon="0A0001C006A">Profil-Copy 2002 Kft.</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">1</mezo>
+      <mezo eazon="0A0001E0004CA">20</mezo>
+      <mezo eazon="0A0001E0004DA">6</mezo>
+      <mezo eazon="0A0001E0007BA">1</mezo>
+      <mezo eazon="0A0001E0007CA">20</mezo>
+      <mezo eazon="0A0001E0007DA">6</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">12933086</mezo>
+      <mezo eazon="0B0001B005A">Profil-Copy 2002 Kft.</mezo>
+      <mezo eazon="0B0001C0001AA">MSPC26010306</mezo>
+      <mezo eazon="0B0001C0001BA">20260601</mezo>
+      <mezo eazon="0B0001C0001CA">20400</mezo>
+      <mezo eazon="0B0001C0001DA">5508</mezo>
+      <mezo eazon="0B0001C0037CA">20400</mezo>
+      <mezo eazon="0B0001C0037DA">5508</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">12933086</mezo>
+      <mezo eazon="0C0001B005A">Profil-Copy 2002 Kft.</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>Hajtás Pajtás Kft.</megnevezes>
+        <azonosito>11954161</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">11954161</mezo>
+      <mezo eazon="0A0001C006A">Hajtás Pajtás Kft.</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">2</mezo>
+      <mezo eazon="0A0001E0004CA">12</mezo>
+      <mezo eazon="0A0001E0004DA">3</mezo>
+      <mezo eazon="0A0001E0007BA">2</mezo>
+      <mezo eazon="0A0001E0007CA">12</mezo>
+      <mezo eazon="0A0001E0007DA">3</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">11954161</mezo>
+      <mezo eazon="0B0001B005A">Hajtás Pajtás Kft.</mezo>
+      <mezo eazon="0B0001C0001AA">HP / 2026-006317</mezo>
+      <mezo eazon="0B0001C0001BA">20260626</mezo>
+      <mezo eazon="0B0001C0001CA">5860</mezo>
+      <mezo eazon="0B0001C0001DA">1582</mezo>
+      <mezo eazon="0B0001C0002AA">HP/2026-006317</mezo>
+      <mezo eazon="0B0001C0002BA">20260626</mezo>
+      <mezo eazon="0B0001C0002CA">5860</mezo>
+      <mezo eazon="0B0001C0002DA">1582</mezo>
+      <mezo eazon="0B0001C0037CA">11720</mezo>
+      <mezo eazon="0B0001C0037DA">3164</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">11954161</mezo>
+      <mezo eazon="0C0001B005A">Hajtás Pajtás Kft.</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>ALTE-GO Kft.</megnevezes>
+        <azonosito>17783893</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">17783893</mezo>
+      <mezo eazon="0A0001C006A">ALTE-GO Kft.</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">1</mezo>
+      <mezo eazon="0A0001E0004CA">8</mezo>
+      <mezo eazon="0A0001E0004DA">2</mezo>
+      <mezo eazon="0A0001E0007BA">1</mezo>
+      <mezo eazon="0A0001E0007CA">8</mezo>
+      <mezo eazon="0A0001E0007DA">2</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">17783893</mezo>
+      <mezo eazon="0B0001B005A">ALTE-GO Kft.</mezo>
+      <mezo eazon="0B0001C0001AA">AG-2026-2708</mezo>
+      <mezo eazon="0B0001C0001BA">20260613</mezo>
+      <mezo eazon="0B0001C0001CA">8290</mezo>
+      <mezo eazon="0B0001C0001DA">2238</mezo>
+      <mezo eazon="0B0001C0037CA">8290</mezo>
+      <mezo eazon="0B0001C0037DA">2238</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">17783893</mezo>
+      <mezo eazon="0C0001B005A">ALTE-GO Kft.</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>Integrated e-Solutions 2000 Kft.</megnevezes>
+        <azonosito>13049081</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">13049081</mezo>
+      <mezo eazon="0A0001C006A">Integrated e-Solutions 2000 Kft.</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">1</mezo>
+      <mezo eazon="0A0001E0004CA">5</mezo>
+      <mezo eazon="0A0001E0004DA">1</mezo>
+      <mezo eazon="0A0001E0007BA">1</mezo>
+      <mezo eazon="0A0001E0007CA">5</mezo>
+      <mezo eazon="0A0001E0007DA">1</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">13049081</mezo>
+      <mezo eazon="0B0001B005A">Integrated e-Solutions 2000 Kft.</mezo>
+      <mezo eazon="0B0001C0001AA">2026/00591</mezo>
+      <mezo eazon="0B0001C0001BA">20260605</mezo>
+      <mezo eazon="0B0001C0001CA">5039</mezo>
+      <mezo eazon="0B0001C0001DA">1361</mezo>
+      <mezo eazon="0B0001C0037CA">5039</mezo>
+      <mezo eazon="0B0001C0037DA">1361</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">13049081</mezo>
+      <mezo eazon="0C0001B005A">Integrated e-Solutions 2000 Kft.</mezo>
+    </mezok>
+  </nyomtatvany>
+  <nyomtatvany>
+    <nyomtatvanyinformacio>
+      <nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>
+      <nyomtatvanyverzio>2.0</nyomtatvanyverzio>
+      <adozo>
+        <nev>Taxology Kft.</nev>
+        <adoszam>14160877243</adoszam>
+      </adozo>
+      <albizonylatazonositas>
+        <megnevezes>Fővárosi Vízművek Zártkörűen Működő Részvénytársaság</megnevezes>
+        <azonosito>10898824</azonosito>
+      </albizonylatazonositas>
+      <idoszak>
+        <tol>20260601</tol>
+        <ig>20260630</ig>
+      </idoszak>
+      <megjegyzes>Taxology Kft. - 2665M</megjegyzes>
+    </nyomtatvanyinformacio>
+    <mezok>
+      <mezo eazon="0A0001C001A">14160877243</mezo>
+      <mezo eazon="0A0001C004A">Taxology Kft.</mezo>
+      <mezo eazon="0A0001C005A">10898824</mezo>
+      <mezo eazon="0A0001C006A">Fővárosi Vízművek Zártkörűen Működő Részvénytársaság</mezo>
+      <mezo eazon="0A0001D001A">20260601</mezo>
+      <mezo eazon="0A0001D002A">20260630</mezo>
+      <mezo eazon="0A0001E0004BA">1</mezo>
+      <mezo eazon="0A0001E0004CA">0</mezo>
+      <mezo eazon="0A0001E0004DA">1</mezo>
+      <mezo eazon="0A0001E0007BA">1</mezo>
+      <mezo eazon="0A0001E0007CA">0</mezo>
+      <mezo eazon="0A0001E0007DA">1</mezo>
+      <mezo eazon="0B0001B001A">1</mezo>
+      <mezo eazon="0B0001B002A">14160877243</mezo>
+      <mezo eazon="0B0001B004A">10898824</mezo>
+      <mezo eazon="0B0001B005A">Fővárosi Vízművek Zártkörűen Működő Részvénytársaság</mezo>
+      <mezo eazon="0B0001C0001AA">100000842273</mezo>
+      <mezo eazon="0B0001C0001BA">20260610</mezo>
+      <mezo eazon="0B0001C0001CA">237</mezo>
+      <mezo eazon="0B0001C0001DA">870</mezo>
+      <mezo eazon="0B0001C0037CA">237</mezo>
+      <mezo eazon="0B0001C0037DA">870</mezo>
+      <mezo eazon="0C0001B001A">1</mezo>
+      <mezo eazon="0C0001B002A">14160877243</mezo>
+      <mezo eazon="0C0001B004A">10898824</mezo>
+      <mezo eazon="0C0001B005A">Fővárosi Vízművek Zártkörűen Működő Részvénytársaság</mezo>
+    </mezok>
+  </nyomtatvany>
+</nyomtatvanyok>

@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-02  
-> **Összesen:** 164 döntés | ✅ Decided: 160 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 165 döntés | ✅ Decided: 161 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -267,4 +267,5 @@
 | P-151 | Dinamikus Könyvelési Naplók Létrehozása és Bankszámla-összerendelés UX | ✅ Decided | [P-151](./P-151-dynamic-accounting-journals-management-and-bank-linking-ux.md) |
 | P-152 | Folyószámla Kettős Devizamegjelenítés, Árfolyam Tooltip és Vegyes Devizás Kijelölés UX | ✅ Decided | [P-152](./P-152-subledger-dual-currency-display-and-multicurrency-selection-ux.md) |
 | P-153 | Dinamikus Törvényes Munkanapkeret és Bérszámfejtési Munkanap Választó UX | ✅ Decided | [P-153](./P-153-dynamic-statutory-workday-framework-and-payroll-ux.md) |
+| P-154 | NAV ÁNYK 2665A/2665M XML Export, M-lapok Kettős Skálája (HUF vs eFt), Webes Konzisztens Forint Nézet és Összefüggés-vizsgálati Validáció UX | ✅ Decided | [P-154](./P-154-nav-anyk-vat-return-and-m-lines-scaling-and-validation-ux.md) |
 

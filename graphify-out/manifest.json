@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1790959278.7154248,
-    "ast_hash": "eedc0cd7bc777ae7d58118a3448f1d46",
+    "mtime": 1790962714.2429218,
+    "ast_hash": "f0c7f048e32ec48c2d0a0331ac2985b0",
     "semantic_hash": ""
   },
   "src/main.tsx": {
@@ -3090,8 +3090,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790958395.808115,
-    "ast_hash": "748785354f1770da90951b8d83f48ee1",
+    "mtime": 1790963366.8452954,
+    "ast_hash": "56d404aac40e01bccf458481248394d6",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3535,8 +3535,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-032-vat-return-workflow.md": {
-    "mtime": 1789910901.8751924,
-    "ast_hash": "7ec79f42c9e6834885fb665d6d4b45bc",
+    "mtime": 1790963383.508557,
+    "ast_hash": "7fe7f72eb595a98f0370dfc41e42910f",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-033-payroll-cycle.md": {
@@ -3565,8 +3565,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790958395.809785,
-    "ast_hash": "120f249a04db1dbfab9c43c205ea730c",
+    "mtime": 1790963350.7198942,
+    "ast_hash": "8bb850bfb1620e5dbaca74c4667fa5f8",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -7380,8 +7380,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/documentEngine.test.ts": {
-    "mtime": 1789613827.302878,
-    "ast_hash": "da9ba1cf6cd2c3535cbb6d9fbe3aa635",
+    "mtime": 1790962256.9017606,
+    "ast_hash": "ede5985e07da62dde95261dd3d735ac7",
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/hungarianEncoding.test.ts": {
@@ -8185,13 +8185,13 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatReturnXml.test.ts": {
-    "mtime": 1790959526.8019125,
-    "ast_hash": "709cf5ae0965390a07a39ff839daa795",
+    "mtime": 1790962159.2154496,
+    "ast_hash": "f19fae94b7005fcf0f64a2b999a5aedc",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
-    "mtime": 1790959671.5121467,
-    "ast_hash": "68d6e1999d629fee4b2b520b59285b36",
+    "mtime": 1790962214.2825468,
+    "ast_hash": "ffb2f4e237821db9941ac35630b996c3",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollReconstructionDialog.tsx": {
@@ -13907,6 +13907,16 @@
   "session-summary/\u00c1ron/2026-10-02/summary-114800-subledger-foreign-currency-workday-calculator-and-ticket-support.md": {
     "mtime": 1790958395.809785,
     "ast_hash": "fa8d1db1edce7b18fd38aaa11de4f757",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-154-nav-anyk-vat-return-and-m-lines-scaling-and-validation-ux.md": {
+    "mtime": 1790963333.6448574,
+    "ast_hash": "d2de9362d46fc2aded8aaf605c8e0336",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-02/summary-194400-anyk-vat-return-validation-and-formula-standardization.md": {
+    "mtime": 1790963066.89853,
+    "ast_hash": "412b1ab498c3424b1c24566ac9ab516a",
     "semantic_hash": ""
   }
 }

@@ -146,7 +146,7 @@ describe('DocumentEngine', () => {
       expect(contentString).toContain('<nyomtatvanyok xmlns="http://www.apeh.hu/abev/nyomtatvanyok/2005/01">');
       expect(contentString).toContain('<nyomtatvanyazonosito>2665A</nyomtatvanyazonosito>');
       expect(contentString).toContain('<mezo eazon="0A0001E001A">11223344241</mezo>');
-      expect(contentString).toContain('<mezo eazon="0A0001E006A">Példa &amp; Társa Kft.</mezo>');
+      expect(contentString).toContain('<mezo eazon="0A0001E007A">Példa &amp; Társa Kft.</mezo>');
       expect(contentString).toContain('<mezo eazon="0B0001C0001BA">1000</mezo>');
       expect(contentString).toContain('<nyomtatvanyazonosito>2665M</nyomtatvanyazonosito>');
       expect(contentString).toContain('<mezo eazon="0A0001C005A">99887766</mezo>');

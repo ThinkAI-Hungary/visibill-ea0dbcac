@@ -65,12 +65,25 @@ A hiteles NAV ÁNYK XML referenciaminta (`docs/think_ai_2465_11.xml`) és a hat�
    - **VatXmlExportModal (Async Modal UX):** Ha a cégben még nincs elmentve az ügyintéző vagy telefonszám, a rendszer automatikusan felugró ablakban kéri be, és menti el a céghez. Ha mindkettő ki van töltve, a letöltés azonnal végbemegy (Opció B UX), de az Export menüből bármikor elérhető az "Ügyintéző adatai (ÁNYK)" menüpont a szerkesztéshez.
    - **ÁNYK Sablon Felülbírálás (`formIdOverride`):** A könyvelő a modálban szükség esetén expliciten választhat régebbi sablont is (pl. 2565A vagy a 2465A v4.0 referenciát).
 
+6. **ÁNYK Belső Összefüggés-vizsgálatok és Számított Mezők Szabványosítása (2026-10-02):**
+   - **Nem létező mezők kizárása (0C0001C0066DA):** A 0C lap 66. sorában kizárólag `0C0001C0066BA` (adóalap) és `0C0001C0066CA` (adó) létezik az ÁNYK sablonban. A korábbi tesztkódokból bent ragadt `0C0001C0066DA` mező generálása véglegesen megszüntetésre került, elhárítva a sablonhibát.
+   - **Részletezőkből Számított Összesítők (Round-then-Sum):**
+     - **36. sor (Fizetendő áfa összesítés - R621 / R622):** Az ÁNYK megköveteli, hogy a 36b (`0B0001C0036BA`) és 36c (`0B0001C0036CA`) pontosan megegyezzen a 01..35. részletező sorok összegével. A kerekítési eltérések elkerülése érdekében az XML generátor nem az adatbázisban tárolt nyers összesítőt, hanem a kibocsátott 0B részletező sorok összegét írja ki.
+     - **76. sor (Levonható áfa összesítés - R767):** Az ÁNYK megköveteli, hogy a 76b (`0D0001C0076BA`) és 76c (`0D0001C0076CA`) pontosan egyezzen a 63..75. és 111. levonható részletező sorok összegével. Az XML generátor a kibocsátott sorok kerekített összegeként képezi.
+     - **83. és 84. sor (Elszámolási lánc):** A különbözet (`0D0001D0083CA`) közvetlenül a számított 36c és 76c mezők alapján ($36c - 76c - 82c$), a befizetendő adó (`0D0001D0084CA`) pedig ennek pozitív értékeként kerül kiszámításra.
+   - **Kulcskonzisztencia Kikényszerítése (R914):**
+     - A 66. sor levonható adójának (66c) egyeznie kell a 66b adóalap 27%-ával. Ha számlaszintű kerekítések miatt eltérés mutatkozna, a generátor a törvényes `Math.round(base * 0.27)` értéket kényszeríti ki (hasonlóan a 65. sornál 18%-ra és 64. sornál 5%-ra).
+   - **Főlap 109. sor Törvényi Képlete (R975):**
+     - A 109. sor (`0F0001D0109CA`) az áthárított adó számított összege. Az ÁNYK szabálya szerint: $64c - 64a + 65c - 65a + 66c - 66a + 68c - 68a - 31a$. A generátor korábban tévesen ide az M-lapok adóját (`mTotalTax`) írta; ezt felváltotta a fenti törvényi képlet szerinti összeg.
+
 ## Consequences
 **Pozitív:**
 - Az exportált XML fájlok hiba nélkül, azonnal importálhatók és hibátlanul ellenőrizhetők az ÁNYK 2665 / 2565 / 2465 nyomtatványában.
+- Megszűntek a kerekítési összeadási hibák az ÁNYK-ban (R621, R622, R767), mivel az összesítő sorok (36., 76.) automatikusan a részletező sorokból származnak.
+- Megszűnt a 66. sori kulcseltérési hiba (R914) és a 109. sori képlethiba (R975).
 - A 65M-02 tételes számlasorok és a 37. sor pontos Forint (HUF) értéket tartalmaznak, míg a 65M-01 összesítő lap a jogszabálynak megfelelően eFt-ban összesít.
 - A webes felületen megszűnt a kerekített eFt számok Forintként való kiírása: a `VatMLineMasterDetail`, `VatCalculatorView` és `VatMLineDrillDown` egységesen, átláthatóan és forintra pontosan jeleníti meg az adatokat.
-- Megszűnt az *„alnyomtatvány nem a főnyomtatványhoz tartozik”* importálási hiba.
+- Megszűnt az *„alnyomtatvány nem a főnyomtatványhoz tartozik”* és az *„ismeretlen mezőkód (0C0001C0066DA)”* importálási hiba.
 - A 65M lapok tételes számlaszintű részletezést kapnak a NAV előírásai szerint, 36 számlánként automatikus oldaltördeléssel.
 - Teljes számszaki összhang a főlap 0F összesítő lapja, az M-01 lapok és az M-02 oldalak között.
 
