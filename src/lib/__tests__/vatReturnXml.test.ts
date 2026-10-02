@@ -16,7 +16,7 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
         { row_number: '01', base_amount_rounded: 1, tax_amount_rounded: 0 },
         { row_number: '07', base_amount_rounded: 7375, tax_amount_rounded: 1991 },
         { row_number: '64', base_amount_rounded: 17, tax_amount_rounded: 1 },
-        { row_number: '66', base_amount_rounded: 54, tax_amount_rounded: 6 },
+        { row_number: '66', base_amount_rounded: 22, tax_amount_rounded: 6 },
         { row_number: '83', base_amount_rounded: 0, tax_amount_rounded: 1984 },
       ],
       mLines: [
@@ -77,7 +77,7 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
     expect(xml).toContain('<mezo eazon="0C0001B001A">13086905208</mezo>');
     expect(xml).toContain('<mezo eazon="0C0001C0064BA">17</mezo>');
     expect(xml).toContain('<mezo eazon="0C0001C0064CA">1</mezo>');
-    expect(xml).toContain('<mezo eazon="0C0001C0066BA">54</mezo>');
+    expect(xml).toContain('<mezo eazon="0C0001C0066BA">22</mezo>');
     expect(xml).toContain('<mezo eazon="0C0001C0066CA">6</mezo>');
 
     // 0D Elszámolás sorok
@@ -325,8 +325,8 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
     });
   });
 
-  describe('Row 66 FAD (Reverse Charge) deductible tax sub-box export', () => {
-    it('correctly exports 0C0001C0066DA when 66_fad line is provided', () => {
+  describe('Row 66 validation and exclusion of invalid 0C0001C0066DA', () => {
+    it('does not emit non-existent 0C0001C0066DA even if 66_fad line is provided', () => {
       const xml = buildVatReturnXml({
         companyName: 'Test FAD Kft',
         companyTaxNumber: '12345678-2-41',
@@ -343,10 +343,10 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
 
       expect(xml).toContain('<mezo eazon="0C0001C0066BA">262</mezo>');
       expect(xml).toContain('<mezo eazon="0C0001C0066CA">71</mezo>');
-      expect(xml).toContain('<mezo eazon="0C0001C0066DA">27</mezo>');
+      expect(xml).not.toContain('0C0001C0066DA');
     });
 
-    it('falls back to row 29 tax when 66_fad is not explicitly in lines', () => {
+    it('emits row 29 on 0B and row 66 on 0C without invalid DA field', () => {
       const xml = buildVatReturnXml({
         companyName: 'Test FAD Kft',
         companyTaxNumber: '12345678-2-41',
@@ -361,9 +361,11 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
         mLines: [],
       });
 
+      expect(xml).toContain('<mezo eazon="0B0001C0029BA">100</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0029CA">27</mezo>');
       expect(xml).toContain('<mezo eazon="0C0001C0066BA">262</mezo>');
       expect(xml).toContain('<mezo eazon="0C0001C0066CA">71</mezo>');
-      expect(xml).toContain('<mezo eazon="0C0001C0066DA">27</mezo>');
+      expect(xml).not.toContain('0C0001C0066DA');
     });
   });
 
@@ -458,6 +460,78 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
       // Mandatory representative fields on E008A and E009A
       expect(xml).toContain('<mezo eazon="0A0001E008A">Jámbor Viktor</mezo>');
       expect(xml).toContain('<mezo eazon="0A0001E009A">36704240024</mezo>');
+    });
+  });
+
+  describe('ÁNYK validation rules: auto-computed row 36, row 76, row 83, row 109 and row 66 rate consistency', () => {
+    it('resolves rounding mismatch between details and totals, adjusts row 66 tax, and computes row 109 (Taxology July 2026 case)', () => {
+      const xml = buildVatReturnXml({
+        companyName: 'Taxology Kft.',
+        companyTaxNumber: '12345678-2-41',
+        companyAddress: 'Budapest',
+        periodYear: 2026,
+        periodMonth: 7,
+        frequency: 'H',
+        lines: [
+          // 0B sheet details
+          { row_number: '07', base_amount_rounded: 3702, tax_amount_rounded: 1000 },
+          { row_number: '18', base_amount_rounded: 31, tax_amount_rounded: 8 },
+          { row_number: '27', base_amount_rounded: 7, tax_amount_rounded: 2 },
+          { row_number: '29', base_amount_rounded: 13, tax_amount_rounded: 2 },
+          // Summary row 36 in input has the unadjusted sum-then-round value from DB
+          { row_number: '36', base_amount_rounded: 3752, tax_amount_rounded: 1013 },
+
+          // 0C sheet details
+          { row_number: '63', base_amount_rounded: 222, tax_amount_rounded: 0 },
+          { row_number: '64', base_amount_rounded: 5, tax_amount_rounded: 0 },
+          { row_number: '66', base_amount_rounded: 2528, tax_amount_rounded: 680 }, // deviates from 27% (683)
+          { row_number: '67', base_amount_rounded: 38, tax_amount_rounded: 10 },
+          // Summary row 76 in input has the unadjusted sum-then-round value from DB
+          { row_number: '76', base_amount_rounded: 2794, tax_amount_rounded: 690 },
+
+          // 0D sheet
+          { row_number: '82', base_amount_rounded: 0, tax_amount_rounded: 0 },
+          { row_number: '83', base_amount_rounded: 0, tax_amount_rounded: 323 },
+          { row_number: '84', base_amount_rounded: 0, tax_amount_rounded: 323 },
+        ],
+        mLines: [
+          {
+            partner_tax_number: '98765432-1-42',
+            partner_name: 'Partner Kft',
+            invoice_count: 5,
+            base_amount_rounded: 2000,
+            tax_amount_rounded: 540,
+            invoice_items: [],
+          },
+        ],
+      });
+
+      // 1. ÁNYK 1087150/R621 & 1087151/R622: Row 36 must equal detail sums (3753 / 1012), not DB raw (3752 / 1013)
+      expect(xml).toContain('<mezo eazon="0B0001C0036BA">3753</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0036CA">1012</mezo>');
+      expect(xml).not.toContain('<mezo eazon="0B0001C0036BA">3752</mezo>');
+      expect(xml).not.toContain('<mezo eazon="0B0001C0036CA">1013</mezo>');
+
+      // 2. ÁNYK 1087305/R914: Row 66c must strictly equal 27% of row 66b (2528 * 0.27 = 683)
+      expect(xml).toContain('<mezo eazon="0C0001C0066BA">2528</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0066CA">683</mezo>');
+      expect(xml).not.toContain('<mezo eazon="0C0001C0066CA">680</mezo>');
+
+      // 3. Template issue: 0C0001C0066DA must never be emitted
+      expect(xml).not.toContain('0C0001C0066DA');
+
+      // 4. ÁNYK 1087248/R767: Row 76 must equal deductible detail sums (2793 / 693), not DB raw (2794 / 690)
+      expect(xml).toContain('<mezo eazon="0D0001C0076BA">2793</mezo>');
+      expect(xml).toContain('<mezo eazon="0D0001C0076CA">693</mezo>');
+      expect(xml).not.toContain('<mezo eazon="0D0001C0076BA">2794</mezo>');
+
+      // 5. Settlement row 83 & 84: 1012 - 693 = 319
+      expect(xml).toContain('<mezo eazon="0D0001D0083CA">319</mezo>');
+      expect(xml).toContain('<mezo eazon="0D0001D0084CA">319</mezo>');
+
+      // 6. ÁNYK 1095069/R975: Row 109c = 64c + 65c + 66c + 68c = 0 + 0 + 683 + 0 = 683 (NOT mTotalTax which is 540)
+      expect(xml).toContain('<mezo eazon="0F0001D0109CA">683</mezo>');
+      expect(xml).not.toContain('<mezo eazon="0F0001D0109CA">540</mezo>');
     });
   });
 });
