@@ -103,17 +103,17 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
     expect(xml).toContain('<mezo eazon="0A0001E0004CA">72</mezo>');
     expect(xml).toContain('<mezo eazon="0A0001E0004DA">7</mezo>');
 
-    // 65M 0B tételes számlák
+    // 65M 0B tételes számlák (forintban a 65M-02 előírásai szerint)
     expect(xml).toContain('<mezo eazon="0B0001C0001AA">INV-2026-001</mezo>');
     expect(xml).toContain('<mezo eazon="0B0001C0001BA">20260710</mezo>');
-    expect(xml).toContain('<mezo eazon="0B0001C0001CA">32</mezo>');
-    expect(xml).toContain('<mezo eazon="0B0001C0001DA">3</mezo>');
+    expect(xml).toContain('<mezo eazon="0B0001C0001CA">32000</mezo>');
+    expect(xml).toContain('<mezo eazon="0B0001C0001DA">3000</mezo>');
     expect(xml).toContain('<mezo eazon="0B0001C0002AA">INV-2026-002</mezo>');
     expect(xml).toContain('<mezo eazon="0B0001C0002BA">20260720</mezo>');
-    expect(xml).toContain('<mezo eazon="0B0001C0002CA">40</mezo>');
-    expect(xml).toContain('<mezo eazon="0B0001C0002DA">4</mezo>');
-    expect(xml).toContain('<mezo eazon="0B0001C0037CA">72</mezo>');
-    expect(xml).toContain('<mezo eazon="0B0001C0037DA">7</mezo>');
+    expect(xml).toContain('<mezo eazon="0B0001C0002CA">40000</mezo>');
+    expect(xml).toContain('<mezo eazon="0B0001C0002DA">4000</mezo>');
+    expect(xml).toContain('<mezo eazon="0B0001C0037CA">72000</mezo>');
+    expect(xml).toContain('<mezo eazon="0B0001C0037DA">7000</mezo>');
 
     // Záró gyökércímke
     expect(xml).toContain('</nyomtatvanyok>');
@@ -255,12 +255,13 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
         ],
       });
 
-      // Net and VAT on M-02 lap should be 0, not 450
-      expect(xml).toContain('<mezo eazon="0B0001C0001CA">0</mezo>');
-      expect(xml).toContain('<mezo eazon="0B0001C0001DA">0</mezo>');
-      expect(xml).toContain('<mezo eazon="0B0001C0037CA">0</mezo>');
-      expect(xml).toContain('<mezo eazon="0B0001C0037DA">0</mezo>');
-      expect(xml).not.toContain('<mezo eazon="0B0001C0001CA">450</mezo>');
+      // On M-02 lap, exact HUF (450 Ft and 122 Ft) is preserved; on M-01 lap it rounds to 0 E Ft
+      expect(xml).toContain('<mezo eazon="0B0001C0001CA">450</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0001DA">122</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0037CA">450</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0037DA">122</mezo>');
+      expect(xml).toContain('<mezo eazon="0A0001E0004CA">0</mezo>');
+      expect(xml).toContain('<mezo eazon="0A0001E0004DA">0</mezo>');
     });
   });
 
@@ -300,27 +301,27 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
       expect(xml).toContain('<mezo eazon="0B0001B001A">1</mezo>');
       expect(xml).toContain('<mezo eazon="0B0001C0001AA">INV-PAGE-001</mezo>');
       expect(xml).toContain('<mezo eazon="0B0001C0036AA">INV-PAGE-036</mezo>');
-      // 1. Oldal összesítő (36 * 10 = 360, 36 * 3 = 108)
-      expect(xml).toContain('<mezo eazon="0B0001C0037CA">360</mezo>');
-      expect(xml).toContain('<mezo eazon="0B0001C0037DA">108</mezo>');
+      // 1. Oldal összesítő forintban (36 * 10000 = 360000, 36 * 2700 = 97200)
+      expect(xml).toContain('<mezo eazon="0B0001C0037CA">360000</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0037DA">97200</mezo>');
 
       // 2. Oldal (0B0002): 37..40. számlák (a 2. oldalon a sorszám újra 0001..0004)
       expect(xml).toContain('<mezo eazon="0B0002B001A">2</mezo>');
       expect(xml).toContain('<mezo eazon="0B0002C0001AA">INV-PAGE-037</mezo>');
       expect(xml).toContain('<mezo eazon="0B0002C0004AA">INV-PAGE-040</mezo>');
-      // 2. Oldal összesítő (4 * 10 = 40, 4 * 3 = 12)
-      expect(xml).toContain('<mezo eazon="0B0002C0037CA">40</mezo>');
-      expect(xml).toContain('<mezo eazon="0B0002C0037DA">12</mezo>');
+      // 2. Oldal összesítő forintban (4 * 10000 = 40000, 4 * 2700 = 10800)
+      expect(xml).toContain('<mezo eazon="0B0002C0037CA">40000</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0002C0037DA">10800</mezo>');
 
-      // Partner 0A összefoglaló: 40 számla, összesen 360 + 40 = 400 net, 108 + 12 = 120 vat
+      // Partner 0A összefoglaló ezer forintban: 40 számla, összesen (360000 + 40000) / 1000 = 400 eFt net, (97200 + 10800) / 1000 = 108 eFt vat
       expect(xml).toContain('<mezo eazon="0A0001E0004BA">40</mezo>');
       expect(xml).toContain('<mezo eazon="0A0001E0004CA">400</mezo>');
-      expect(xml).toContain('<mezo eazon="0A0001E0004DA">120</mezo>');
+      expect(xml).toContain('<mezo eazon="0A0001E0004DA">108</mezo>');
 
-      // Főlap 0F összesítő: 40 számla, 400 net, 120 vat
+      // Főlap 0F összesítő ezer forintban: 40 számla, 400 net, 108 vat
       expect(xml).toContain('<mezo eazon="0F0001D0105CA">40</mezo>');
       expect(xml).toContain('<mezo eazon="0F0001D0105DA">400</mezo>');
-      expect(xml).toContain('<mezo eazon="0F0001D0105EA">120</mezo>');
+      expect(xml).toContain('<mezo eazon="0F0001D0105EA">108</mezo>');
     });
   });
 

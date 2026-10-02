@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-01  
-**Utoljára frissítve:** 2026-09-29 (Ügyintéző és Telefonszám Perzisztencia a companies táblában, 0A0001E007A/0A0001E008A kikényszerítés, VatXmlExportModal Async UX és ÁNYK sablon felülbírálás)
+**Utoljára frissítve:** 2026-10-02 (NAV ÁNYK 65M-02 Forint vs 65M-01 eFt Kettős Skála & Webes Felület Teljes Forint Nézet - Opció A)
 
 ## Context
 A Visibill / eaisyBooks rendszer ÁFA moduljában a 65-ös ÁFA-bevallás XML letöltése korábban fiktív szöveges mezőneveket használt (`sor_01_alap`, `01_0001_adoszam_torzs`), és az azonosítója `2665` volt az ÁNYK által megkövetelt `2665A` (Főlap) és `2665M` (Alnyomtatványok) helyett. Továbbá az M-lapok belföldi összesítő adatai nem önálló `<nyomtatvany>` blokkokként, hanem a főnyomtatvány mezői közé ágyazva jelentek meg.
@@ -14,7 +14,11 @@ Később az adómentes export értékesítést (01. sor) tartalmazó bevallások
 > *„A sablon nem tartalmazza az adatállományban található (0B0001C0001CA mezőkódú) mezőt. Ez az adat nem kerül...”*  
 > *„[2010] Az 0. nyomtatványon a nyomtatványinformációs rész nincs összhangban az adatrésszel...”*
 
-A hiteles NAV ÁNYK XML referenciaminta (`docs/think_ai_2465_11.xml`) és a hatályos 2665 sablonszabályzat alapján a teljes generálási architektúra szabványosításra került.
+A 65M-02 tételes számlarészletező lapon pedig a mértékegységi skála okozott eltérést: ha a 65M-02 tételes számlasorai ezer forintra (eFt) lettek volna kerekítve, az ÁNYK a 37. sor összegét még egyszer elosztotta volna 1000-rel az M-01 laphoz viszonyítva. A NAV ÁNYK 2665M kitöltési útmutatója szerint:
+- A **65M-01 lap (0A lap)** fejlécén kifejezetten szerepel: *„Az adatokat ezer forintban kell feltüntetni!”* (eFt mértékegység).
+- A **65M-02 lap (0B lap)** tételes számlasorai (01–36. sorok) és a 37. sor lapösszesítője viszont **forintra pontosan (HUF)** kötelezőek.
+
+A hiteles NAV ÁNYK XML referenciaminta (`docs/think_ai_2465_11.xml`) és a hatályos 2665 sablonszabályzat alapján a teljes generálási és megjelenítési architektúra szabványosításra került.
 
 ## Decision
 1. **Hivatalos ÁNYK Burkoló (Envelope) és Névtér:**
@@ -38,13 +42,17 @@ A hiteles NAV ÁNYK XML referenciaminta (`docs/think_ai_2465_11.xml`) és a hat�
      Fejléc `0F0001B001A`. 105. sor (összes számlatétel): `0F0001D0105BA` (partnerek száma), `0F0001D0105CA` (számlák darabszáma), `0F0001D0105DA` (összes alap eFt), `0F0001D0105EA` (összes adó eFt). 106. sor (korrekciók: 0). 108. sor (mindösszesen: 105 + 106).
    - **Záró lapok:** `0E`, `0K`, `0N` lapok szabályos fejléc-regisztrációja.
 
-3. **65M Alnyomtatványok Strukturális Elkülönítése & Oldaltördelés:**
+3. **65M Alnyomtatványok Strukturális Elkülönítése, Kettős Skála (HUF vs eFt) & Oldaltördelés:**
    - Minden belföldi partner önálló `<nyomtatvany>` blokként kerül kódolásra a gyökérelemben.
    - Fejléc tartalmazza az `<albizonylatazonositas>` blokkot a partner nevével és 8 számjegyű törzsszámával.
-   - **0A lap (M-01):** Partner-szintű összesítés (`0A0001C001A` adózó adószám, `0A0001C005A` partner törzsszám, `0A0001E0004BA`..`DA` és `0A0001E0007BA`..`DA`).
+   - **0A lap (M-01):** Partner-szintű összesítés (`0A0001C001A` adózó adószám, `0A0001C005A` partner törzsszám, `0A0001E0004BA`..`DA` és `0A0001E0007BA`..`DA`). Az adatok a jogszabályi előírás szerint **ezer forintban (eFt)** szerepelnek (`summary.totalBase` és `summary.totalTax`).
    - **0B lap (M-02) Tételes Számlák és 36 Soros Oldaltördelés:** Tételes számlasorok a `vat_return_m_lines.invoice_details` rekordból. Az ÁNYK fizikai lapkorlátjának megfelelően 36 számlánként új M-02 oldal nyílik (`0B0001`, `0B0002` stb.), oldalankénti záró összesítő sorral (`0B{pagePad}C0037CA` és `DA`).
-   - **Mértékegység & Mikroszámla Kezelés (`convertToEFt`):** Az adatbázisban tárolt valós Forint összegeket a `convertToEFt` kerekíti E Ft-ra. A mikroszámlák (< 500 Ft) szabályosan 0 E Ft értéket kapnak ahelyett, hogy heurisztikusan tévesen százezer forintos nagyságrendűnek minősülnének. Támogatott az explicit `amount_unit: 'E_FT'` / `is_e_ft: true` jelölő is.
-   - **Számtani Koherencia:** Az M-02 oldalak 37. sorainak összege garantáltan és matematikailag megegyezik az M-01 lap (0A) 04. és 07. soraival, valamint a főlap (65A) 0F lapjának 105. és 108. soraival.
+   - **Kettős Mértékegység-kezelés (`convertToHuf` & `convertToEFt`):**
+     - Az M-02 tételes számlák adóalap (`CA`) és adó (`DA`) oszlopai, valamint a 37. sor lapösszesítője **forintra pontosan (HUF)** kerülnek exportálásra (pl. `2 219 200` és `599 184`).
+     - Az M-01 (0A) és főlap 0F összesítője ezer forintban (eFt) szerepel (`Math.round(totalBaseHuf / 1000)` = `2 219` és `599`).
+     - Az ÁNYK belső összefüggés-vizsgálata a 37. sor HUF értékét osztja 1000-rel az M-01 laphoz viszonyítva, így a bevallás hiba és figyelmeztetés nélkül érvényesíthető.
+   - **Webes Felület Megjelenítés (Opció A - Konzisztens Forint nézet):**
+     - Az M-lap felületeken (`VatMLineMasterDetail`, `VatCalculatorView`, `VatMLineDrillDown`) a felület egységesen és konzisztensen forintra pontosan (Ft) mutatja a levonható adóalap és ÁFA összegeket (`formatCurrency`), kiküszöbölve a korábbi félrevezető kerekített számok (pl. `2219 Ft` vs `599 184 Ft`) anomáliáját.
 
 4. **DocumentEngine & Felületi Integráció:**
    - A `vatReturnTemplate.ts` DocumentEngine sablon közvetlenül a szabványos `buildVatReturnXml` motort futtatja, garantálva a 100%-os séma-egyezséget mind a közvetlen letöltésnél, mind a DocumentEngine exportnál.
@@ -59,10 +67,11 @@ A hiteles NAV ÁNYK XML referenciaminta (`docs/think_ai_2465_11.xml`) és a hat�
 
 ## Consequences
 **Pozitív:**
-- Az exportált XML fájlok hiba nélkül, azonnal importálhatók az ÁNYK 2665 / 2565 / 2465 nyomtatványába.
+- Az exportált XML fájlok hiba nélkül, azonnal importálhatók és hibátlanul ellenőrizhetők az ÁNYK 2665 / 2565 / 2465 nyomtatványában.
+- A 65M-02 tételes számlasorok és a 37. sor pontos Forint (HUF) értéket tartalmaznak, míg a 65M-01 összesítő lap a jogszabálynak megfelelően eFt-ban összesít.
+- A webes felületen megszűnt a kerekített eFt számok Forintként való kiírása: a `VatMLineMasterDetail`, `VatCalculatorView` és `VatMLineDrillDown` egységesen, átláthatóan és forintra pontosan jeleníti meg az adatokat.
 - Megszűnt az *„alnyomtatvány nem a főnyomtatványhoz tartozik”* importálási hiba.
 - A 65M lapok tételes számlaszintű részletezést kapnak a NAV előírásai szerint, 36 számlánként automatikus oldaltördeléssel.
-- A mikroszámlák és kisösszegű tételek matematikai kerekítése hibátlan, kizárva a téves E Ft felülértékelést.
 - Teljes számszaki összhang a főlap 0F összesítő lapja, az M-01 lapok és az M-02 oldalak között.
 
 ## Kapcsolódó

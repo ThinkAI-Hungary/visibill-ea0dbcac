@@ -48,6 +48,8 @@ export interface MLine {
   partner_name: string;
   partner_tax_number: string;
   invoice_count: number;
+  base_amount?: number | null;
+  tax_amount?: number | null;
   base_amount_rounded: number;
   tax_amount_rounded: number;
   tax_5_amount: number;

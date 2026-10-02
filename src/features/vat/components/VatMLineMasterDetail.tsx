@@ -560,10 +560,10 @@ export function VatMLineMasterDetail({
                         <TableCell className="font-mono text-muted-foreground">-</TableCell>
                         <TableCell className="text-center font-mono">{p.invoice_count || 1}</TableCell>
                         <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">
-                          {formatCurrency(p.base_amount_rounded)}
+                          {formatCurrency(p.base_amount ?? (p.base_amount_rounded * 1000))}
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums font-bold text-foreground whitespace-nowrap">
-                          {formatCurrency(p.tax_amount_rounded)}
+                          {formatCurrency(p.tax_amount ?? (p.tax_amount_rounded * 1000))}
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
                           {p.tax_5_amount ? formatCurrency(p.tax_5_amount) : '0'}
@@ -572,7 +572,7 @@ export function VatMLineMasterDetail({
                           {p.tax_18_amount ? formatCurrency(p.tax_18_amount) : '0'}
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums text-foreground whitespace-nowrap">
-                          {p.tax_27_amount ? formatCurrency(p.tax_27_amount) : formatCurrency(p.tax_amount_rounded)}
+                          {p.tax_27_amount ? formatCurrency(p.tax_27_amount) : formatCurrency(p.tax_amount ?? (p.tax_amount_rounded * 1000))}
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">0</TableCell>
                       </TableRow>
