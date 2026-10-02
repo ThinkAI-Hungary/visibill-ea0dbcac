@@ -36,6 +36,8 @@ export interface XmlExportData {
     partner_name: string;
     partner_tax_number: string;
     invoice_count: number;
+    base_amount?: number | null;
+    tax_amount?: number | null;
     base_amount_rounded: number;
     tax_amount_rounded: number;
     tax_5_amount?: number;
@@ -60,9 +62,7 @@ export const ROWS_WITH_TAX_ON_0B = new Set([
 
 /**
  * Converts invoice net/vat amounts to thousand HUF (E Ft).
- * By database and app contract (vat_return_m_lines.invoice_details), amounts in invoice_details
- * are stored in exact HUF (whole currency, e.g. 567000 Ft or micro-invoices like 450 Ft).
- * If explicitly flagged with is_e_ft: true or amount_unit: 'E_FT', it is treated as already in E Ft.
+ * Used for 65A main return and 65M-01 partner summary.
  */
 export function convertToEFt(amount: number | null | undefined, isEFt?: boolean): number {
   if (amount == null || isNaN(Number(amount))) return 0;
@@ -74,7 +74,22 @@ export function convertToEFt(amount: number | null | undefined, isEFt?: boolean)
 }
 
 /**
- * Computes partner-level totals and chunked M-02 pages (max 36 invoices per page).
+ * Converts invoice net/vat amounts to exact whole HUF (Forint).
+ * Used for 65M-02 (and 65M-02-K) itemized invoice lines and the 37. total row,
+ * which by statutory NAV ÁNYK instruction must be filled in FORINT (whole currency),
+ * not in thousand HUF.
+ */
+export function convertToHuf(amount: number | null | undefined, isEFt?: boolean): number {
+  if (amount == null || isNaN(Number(amount))) return 0;
+  const num = Number(amount);
+  if (isEFt === true) {
+    return Math.round(num * 1000);
+  }
+  return Math.round(num);
+}
+
+/**
+ * Computes partner-level totals (in thousands for 65M-01) and chunked M-02 pages (in exact HUF for 65M-02, max 36 invoices per page).
  */
 function getPartnerComputedTotals(m: XmlExportData['mLines'][0], periodTo: string) {
   const invCount = (m.invoice_details && m.invoice_details.length > 0)
@@ -82,10 +97,19 @@ function getPartnerComputedTotals(m: XmlExportData['mLines'][0], periodTo: strin
     : (m.invoice_count || 1);
 
   if (!m.invoice_details || m.invoice_details.length === 0) {
+    const totalBaseHuf = m.base_amount != null
+      ? Math.round(m.base_amount)
+      : Math.round((m.base_amount_rounded || 0) * 1000);
+    const totalTaxHuf = m.tax_amount != null
+      ? Math.round(m.tax_amount)
+      : Math.round((m.tax_amount_rounded || 0) * 1000);
+
     return {
       invCount,
-      totalBase: m.base_amount_rounded || 0,
-      totalTax: m.tax_amount_rounded || 0,
+      totalBase: m.base_amount_rounded ?? Math.round(totalBaseHuf / 1000),
+      totalTax: m.tax_amount_rounded ?? Math.round(totalTaxHuf / 1000),
+      totalBaseHuf,
+      totalTaxHuf,
       pages: [],
     };
   }
@@ -96,32 +120,33 @@ function getPartnerComputedTotals(m: XmlExportData['mLines'][0], periodTo: strin
     invoices: {
       invNum: string;
       invDate: string;
-      net: number;
-      vat: number;
+      net: number; // exact HUF for 65M-02
+      vat: number; // exact HUF for 65M-02
     }[];
-    pageBaseTotal: number;
-    pageTaxTotal: number;
+    pageBaseTotal: number; // exact HUF for 65M-02 37. row
+    pageTaxTotal: number;  // exact HUF for 65M-02 37. row
   }[] = [];
 
-  let partnerBaseTotal = 0;
-  let partnerTaxTotal = 0;
+  let partnerBaseTotalHuf = 0;
+  let partnerTaxTotalHuf = 0;
 
   for (let i = 0; i < m.invoice_details.length; i += INVOICES_PER_M02_PAGE) {
     const chunk = m.invoice_details.slice(i, i + INVOICES_PER_M02_PAGE);
     const pageNum = Math.floor(i / INVOICES_PER_M02_PAGE) + 1;
-    let pageBaseTotal = 0;
-    let pageTaxTotal = 0;
+    let pageBaseTotalHuf = 0;
+    let pageTaxTotalHuf = 0;
 
     const invoices = chunk.map((inv, idx) => {
       const invNum = inv.invoice_number || `SZ-${i + idx + 1}`;
       const rawDate = inv.delivery_date || inv.issue_date || periodTo;
       const invDate = String(rawDate).replace(/\D/g, '').slice(0, 8);
       const isEFt = inv.is_e_ft ?? (inv.amount_unit === 'E_FT' ? true : isPartnerEFt);
-      const net = convertToEFt(inv.net, isEFt);
-      const vat = convertToEFt(inv.vat, isEFt);
+      // NAV ÁNYK 2665M-02 lap: forintban kitöltendő!
+      const net = convertToHuf(inv.net, isEFt);
+      const vat = convertToHuf(inv.vat, isEFt);
 
-      pageBaseTotal += net;
-      pageTaxTotal += vat;
+      pageBaseTotalHuf += net;
+      pageTaxTotalHuf += vat;
 
       return {
         invNum,
@@ -131,21 +156,23 @@ function getPartnerComputedTotals(m: XmlExportData['mLines'][0], periodTo: strin
       };
     });
 
-    partnerBaseTotal += pageBaseTotal;
-    partnerTaxTotal += pageTaxTotal;
+    partnerBaseTotalHuf += pageBaseTotalHuf;
+    partnerTaxTotalHuf += pageTaxTotalHuf;
 
     pages.push({
       pageNum,
       invoices,
-      pageBaseTotal,
-      pageTaxTotal,
+      pageBaseTotal: pageBaseTotalHuf,
+      pageTaxTotal: pageTaxTotalHuf,
     });
   }
 
   return {
     invCount,
-    totalBase: partnerBaseTotal,
-    totalTax: partnerTaxTotal,
+    totalBase: Math.round(partnerBaseTotalHuf / 1000), // eFt for 65M-01 and 65A 0F
+    totalTax: Math.round(partnerTaxTotalHuf / 1000),   // eFt for 65M-01 and 65A 0F
+    totalBaseHuf: partnerBaseTotalHuf,
+    totalTaxHuf: partnerTaxTotalHuf,
     pages,
   };
 }
@@ -426,17 +453,17 @@ export function buildVatReturnXml(data: XmlExportData): string {
           xml += `      <mezo eazon="0B${pagePad}C0037DA">${page.pageTaxTotal}</mezo>\n`;
         });
       } else {
-        // Nincs tételes számlarészletezés: 1 szintetikus oldal
+        // Nincs tételes számlarészletezés: 1 szintetikus oldal (forintban a 65M-02 előírásai szerint)
         xml += `      <mezo eazon="0B0001B001A">1</mezo>\n`;
         xml += `      <mezo eazon="0B0001B002A">${taxNum11}</mezo>\n`;
         xml += `      <mezo eazon="0B0001B004A">${escapeXml(partnerTaxBase)}</mezo>\n`;
         xml += `      <mezo eazon="0B0001B005A">${escapeXml(m.partner_name)}</mezo>\n`;
         xml += `      <mezo eazon="0B0001C0001AA">SZ-${periodFrom}-01</mezo>\n`;
         xml += `      <mezo eazon="0B0001C0001BA">${periodTo}</mezo>\n`;
-        xml += `      <mezo eazon="0B0001C0001CA">${m.base_amount_rounded}</mezo>\n`;
-        xml += `      <mezo eazon="0B0001C0001DA">${m.tax_amount_rounded}</mezo>\n`;
-        xml += `      <mezo eazon="0B0001C0037CA">${m.base_amount_rounded}</mezo>\n`;
-        xml += `      <mezo eazon="0B0001C0037DA">${m.tax_amount_rounded}</mezo>\n`;
+        xml += `      <mezo eazon="0B0001C0001CA">${summary.totalBaseHuf}</mezo>\n`;
+        xml += `      <mezo eazon="0B0001C0001DA">${summary.totalTaxHuf}</mezo>\n`;
+        xml += `      <mezo eazon="0B0001C0037CA">${summary.totalBaseHuf}</mezo>\n`;
+        xml += `      <mezo eazon="0B0001C0037DA">${summary.totalTaxHuf}</mezo>\n`;
       }
 
       // 0C lap (M-03: korrekciós lap fejléc)

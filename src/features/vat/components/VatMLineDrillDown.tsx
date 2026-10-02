@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { InvoiceItemsDrillDown } from '@/components/vat/VatRowDrillDown';
 import { fmtEft, isProformaInvoice, shouldExcludeFromMLine } from '../types';
 import type { MLine, VatFrequency } from '../types';
+import { formatCurrency } from '@/lib/utils';
 
 interface VatMLineDrillDownProps {
   mLine: MLine;
@@ -177,8 +178,8 @@ export function VatMLineDrillDown({
           <div className="grid grid-cols-12 gap-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider pb-1 mb-1 border-b border-border/20 pl-4">
             <div className="col-span-3">Számlaszám</div>
             <div className="col-span-2">Teljesítés</div>
-            <div className="col-span-2 text-right">Nettó (eFt)</div>
-            <div className="col-span-2 text-right">ÁFA (eFt)</div>
+            <div className="col-span-2 text-right">Nettó (Ft)</div>
+            <div className="col-span-2 text-right">ÁFA (Ft)</div>
             <div className="col-span-3 text-right">ÁFA kulcs / sor</div>
           </div>
           {finalInvoices.map((inv: any, i: number) => {
@@ -214,10 +215,10 @@ export function VatMLineDrillDown({
                     {inv.delivery_date ? String(inv.delivery_date).substring(0, 10) : '—'}
                   </div>
                   <div className="col-span-2 text-right tabular-nums">
-                    {fmtEft(Math.round(netVal / 1000))}
+                    {formatCurrency(netVal)}
                   </div>
                   <div className="col-span-2 text-right tabular-nums font-medium text-foreground">
-                    {fmtEft(Math.round(vatVal / 1000))}
+                    {formatCurrency(vatVal)}
                   </div>
                   <div className="col-span-3 text-right font-medium">
                     <span className="inline-flex items-center px-1.5 py-0.2 rounded bg-muted/60 text-[10px]">

@@ -44,7 +44,7 @@ import {
   Calculator,
   CornerDownRight,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { VatTrendChart } from '@/components/vat/VatTrendChart';
 import { ReturnHistoryTable } from '@/components/vat/ReturnHistoryTable';
 import { VatRowDrillDown, InvoiceItemsDrillDown } from '@/components/vat/VatRowDrillDown';
@@ -953,9 +953,9 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                     <div className="col-span-3">Partner</div>
                     <div className="col-span-2">Adószám</div>
                     <div className="col-span-1 text-center">Számlák</div>
-                    <div className="col-span-2 text-right">Adóalap (eFt)</div>
-                    <div className="col-span-2 text-right">Adó (eFt)</div>
-                    <div className="col-span-2 text-right">27% / 18% / 5%</div>
+                    <div className="col-span-2 text-right">{isCroatia ? 'Adóalap (€)' : 'Adóalap (Ft)'}</div>
+                    <div className="col-span-2 text-right">{isCroatia ? 'Adó (€)' : 'Adó (Ft)'}</div>
+                    <div className="col-span-2 text-right">{isCroatia ? '27% / 18% / 5% (€)' : '27% / 18% / 5%'}</div>
                   </div>
                   {filteredMLines.map((ml) => (
                     <React.Fragment key={ml.id}>
@@ -1046,17 +1046,20 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
                             );
                           })()}
                         </div>
-                        <div className="col-span-1 text-center">{ml.invoice_count}</div>
                         <div className="col-span-2 text-right tabular-nums">
-                          {formatAmount(ml.base_amount_rounded)}
+                          {isCroatia
+                            ? fmtEur(ml.base_amount ?? (ml.base_amount_rounded != null ? ml.base_amount_rounded * 1000 : 0))
+                            : formatCurrency(ml.base_amount ?? (ml.base_amount_rounded != null ? ml.base_amount_rounded * 1000 : 0))}
                         </div>
                         <div className="col-span-2 text-right tabular-nums">
-                          {formatAmount(ml.tax_amount_rounded)}
+                          {isCroatia
+                            ? fmtEur(ml.tax_amount ?? (ml.tax_amount_rounded != null ? ml.tax_amount_rounded * 1000 : 0))
+                            : formatCurrency(ml.tax_amount ?? (ml.tax_amount_rounded != null ? ml.tax_amount_rounded * 1000 : 0))}
                         </div>
                         <div className="col-span-2 text-right text-xs tabular-nums text-muted-foreground">
-                          {Math.round(ml.tax_27_amount / 1000)} /{' '}
-                          {Math.round(ml.tax_18_amount / 1000)} /{' '}
-                          {Math.round(ml.tax_5_amount / 1000)}
+                          {formatThousands(ml.tax_27_amount || 0)} /{' '}
+                          {formatThousands(ml.tax_18_amount || 0)} /{' '}
+                          {formatThousands(ml.tax_5_amount || 0)}
                         </div>
                       </div>
                       {expandedPartners.has(ml.id) && (

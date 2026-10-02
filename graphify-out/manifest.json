@@ -900,8 +900,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useActivePreset.ts": {
-    "mtime": 1790162683.1875594,
-    "ast_hash": "3314a3c413316e7752bedfb5fc0ca527",
+    "mtime": 1790958395.8146126,
+    "ast_hash": "d92f9570b155eb0f9fdb7f76c0ffd688",
     "semantic_hash": ""
   },
   "src/hooks/useAppReady.ts": {
@@ -1005,8 +1005,8 @@
     "semantic_hash": "ec57152c309e9d33b65709bb6ed22a2a"
   },
   "src/hooks/usePayrollData.ts": {
-    "mtime": 1790775646.1942863,
-    "ast_hash": "a5f4266f1db3fcdfc6a1e8439b7bcf7a",
+    "mtime": 1790958395.8146126,
+    "ast_hash": "7d667f227088a419cc2dc794e1a87ff9",
     "semantic_hash": ""
   },
   "src/hooks/useProjectLaborCosts.ts": {
@@ -1200,8 +1200,8 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/index.ts": {
-    "mtime": 1790806135.232017,
-    "ast_hash": "52e05d5aa3484d63358d4a069ba1e074",
+    "mtime": 1790958395.8161678,
+    "ast_hash": "14819747255f7aca2bb0e42b0c885bb1",
     "semantic_hash": ""
   },
   "src/lib/payroll/leaveCalculator.ts": {
@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1790716904.663864,
-    "ast_hash": "5995053d83b949e47a1a29a20198436f",
+    "mtime": 1790959278.7154248,
+    "ast_hash": "eedc0cd7bc777ae7d58118a3448f1d46",
     "semantic_hash": ""
   },
   "src/main.tsx": {
@@ -1390,8 +1390,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollCyclePage.tsx": {
-    "mtime": 1790804254.3586357,
-    "ast_hash": "ea8672a2282b5e8108521e72e7b74186",
+    "mtime": 1790958395.8177168,
+    "ast_hash": "118fcf7bbeb3af84011439bea603e2f3",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollDashboardPage.tsx": {
@@ -2775,8 +2775,8 @@
     "semantic_hash": "7f4fb5701a41700be413a278eb539b78"
   },
   "index.html": {
-    "mtime": 1786048611.9225893,
-    "ast_hash": "979a875bb8ffb03bf35e0be6d9f8445f",
+    "mtime": 1790893828.035785,
+    "ast_hash": "b5534b68153bd52d9eda91b970ede290",
     "semantic_hash": ""
   },
   "playwright-report/index.html": {
@@ -2855,9 +2855,9 @@
     "semantic_hash": "d957fd0907dcdb1dcf758dcef9333133"
   },
   "public/favicon.png": {
-    "mtime": 1772416213.6218038,
-    "ast_hash": "4601d358a5283a147dc43961bc31fc10",
-    "semantic_hash": "4601d358a5283a147dc43961bc31fc10"
+    "mtime": 1790893790.5273414,
+    "ast_hash": "1af8d915f860c979412f8a4736b674d5",
+    "semantic_hash": ""
   },
   "public/favicon.svg": {
     "mtime": 1781432449.5074482,
@@ -3090,8 +3090,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790880287.7924368,
-    "ast_hash": "f7c617464f551126f4a652aab29f464c",
+    "mtime": 1790958395.808115,
+    "ast_hash": "748785354f1770da90951b8d83f48ee1",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3565,8 +3565,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790820773.6720245,
-    "ast_hash": "3f801a9e0728a3ad2ff15d876f42c392",
+    "mtime": 1790958395.809785,
+    "ast_hash": "120f249a04db1dbfab9c43c205ea730c",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -3970,8 +3970,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeExitWizardPage.tsx": {
-    "mtime": 1790168409.1975665,
-    "ast_hash": "85198eb31fc097ce3139aaabcc1bf6ca",
+    "mtime": 1790958395.8177168,
+    "ast_hash": "47aa783e02245167c46d5b161a4ee8d5",
     "semantic_hash": ""
   },
   "src/pages/Accounty/EmployeeImportPage.tsx": {
@@ -4605,8 +4605,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep5.tsx": {
-    "mtime": 1789340761.206141,
-    "ast_hash": "c6625c8910f81741ed674fe9ae99243d",
+    "mtime": 1790958395.8113415,
+    "ast_hash": "d6952dc41d041e016c74a8de34cbd2f2",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollStep6.tsx": {
@@ -7955,8 +7955,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatCalculatorView.tsx": {
-    "mtime": 1790775646.1903532,
-    "ast_hash": "31b0f844718af4fa74079c94d5279f6f",
+    "mtime": 1790959409.1114585,
+    "ast_hash": "4114f96548958068e091241dc50033e9",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatNav65Replica.tsx": {
@@ -7995,8 +7995,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/types.ts": {
-    "mtime": 1790775646.1913576,
-    "ast_hash": "ddfc11d58389df5c24915e5e3b062f72",
+    "mtime": 1790959222.2305644,
+    "ast_hash": "e84641bacefcfae62d612f20ea911b8d",
     "semantic_hash": ""
   },
   "src/components/ui/__tests__/date-picker.test.tsx": {
@@ -8185,13 +8185,13 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatReturnXml.test.ts": {
-    "mtime": 1790716904.6628656,
-    "ast_hash": "31f0a12e479e2d113ed4fe8f190860c2",
+    "mtime": 1790959526.8019125,
+    "ast_hash": "709cf5ae0965390a07a39ff839daa795",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
-    "mtime": 1790706841.6467364,
-    "ast_hash": "fc798a4d3d51494c1d025840d00262fe",
+    "mtime": 1790959671.5121467,
+    "ast_hash": "68d6e1999d629fee4b2b520b59285b36",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollReconstructionDialog.tsx": {
@@ -9505,18 +9505,18 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/EmployeeWorksheetView.tsx": {
-    "mtime": 1790804474.7353601,
-    "ast_hash": "ed22b9a5b922cbfd76bb1abbf709564d",
+    "mtime": 1790958395.809785,
+    "ast_hash": "01103068e30678f15a75e3fff85e3e16",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetEmployeeForm.tsx": {
-    "mtime": 1790804437.108621,
-    "ast_hash": "4abe034eb0192daba887bbe3975ebf20",
+    "mtime": 1790958395.8113415,
+    "ast_hash": "55aa8be68e74a922764d740cee521e3b",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetLivePayslip.tsx": {
-    "mtime": 1790804519.528008,
-    "ast_hash": "82e439a9f6b2c14bf40056eeed48499d",
+    "mtime": 1790958395.8113415,
+    "ast_hash": "adc7ae3fa99abd57e70c6905b8820a55",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetSidebar.tsx": {
@@ -10740,8 +10740,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatMLineDrillDown.tsx": {
-    "mtime": 1790716904.6583486,
-    "ast_hash": "ae715bd6e9294d16ec795f7cdf18cdd8",
+    "mtime": 1790959453.581198,
+    "ast_hash": "a5c1f170a79d0ff0f0f1dee71952414f",
     "semantic_hash": ""
   },
   "src/hooks/useDividends.ts": {
@@ -11970,8 +11970,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatMLineMasterDetail.tsx": {
-    "mtime": 1790775646.1913576,
-    "ast_hash": "a2ebeea4554cf96b272b0d465d991e2c",
+    "mtime": 1790959293.2853682,
+    "ast_hash": "de760ca134b3b7befdc6a77d02f989c5",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatOsaCheckDialog.tsx": {
@@ -12910,23 +12910,23 @@
     "semantic_hash": ""
   },
   "src/components/subledger/BulkRoundingWriteOffModal.tsx": {
-    "mtime": 1790769604.6210413,
-    "ast_hash": "7db3fcb73e202d7116ba1df0f559172a",
+    "mtime": 1790958395.8113415,
+    "ast_hash": "91b297746c0f8c4bc558cab135b0acca",
     "semantic_hash": ""
   },
   "src/components/subledger/SubledgerExportDialog.tsx": {
-    "mtime": 1790769604.6210413,
-    "ast_hash": "9427c237bdf469abd7c75dffc897bcfe",
+    "mtime": 1790958395.8128955,
+    "ast_hash": "6cc92ea589ca985b14b5f923da872687",
     "semantic_hash": ""
   },
   "src/components/subledger/SubledgerItemMatchesModal.tsx": {
-    "mtime": 1790769604.6223276,
-    "ast_hash": "1b5d53d0488ae5c14eb829cd966932ae",
+    "mtime": 1790958395.8128955,
+    "ast_hash": "9c8c89a33b844d944b282dc5bc6907b5",
     "semantic_hash": ""
   },
   "src/components/subledger/WriteOffSettlementModal.tsx": {
-    "mtime": 1790769604.6228476,
-    "ast_hash": "b9c2de617eb4a04c67a33ac99cbeaf45",
+    "mtime": 1790958395.8128955,
+    "ast_hash": "4b5f007af25ae5d9674c4041233bcdbd",
     "semantic_hash": ""
   },
   "src/components/transaction-details/__tests__/MatchedCourierReportsCard.test.tsx": {
@@ -12935,13 +12935,13 @@
     "semantic_hash": ""
   },
   "src/hooks/useSubledger.ts": {
-    "mtime": 1790769604.6236777,
-    "ast_hash": "be8bbe517a9cc88a05b4512692284af2",
+    "mtime": 1790958395.8146126,
+    "ast_hash": "f617da509e931c9dcf44872af83abc54",
     "semantic_hash": ""
   },
   "src/pages/SubledgerPage.tsx": {
-    "mtime": 1790775646.202741,
-    "ast_hash": "d3a60bca601161cddeba2cb1ede3bff0",
+    "mtime": 1790958395.8192625,
+    "ast_hash": "ae821e1f45033fb0e8a8d7d77f4f3950",
     "semantic_hash": ""
   },
   "src/test/accounty/payrollIdempotencyAndCycleLock.test.ts": {
@@ -12955,8 +12955,8 @@
     "semantic_hash": ""
   },
   "src/types/subledger.ts": {
-    "mtime": 1790769604.6252797,
-    "ast_hash": "a2ed9cc95abf4d6d1256843a349e9633",
+    "mtime": 1790958395.8192625,
+    "ast_hash": "d4bac03e195c5cd2d448c3f92f01a391",
     "semantic_hash": ""
   },
   "supabase/migrations/20260928160000_subledger_and_open_items_schema.sql": {
@@ -12975,8 +12975,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-175-subledger-and-open-items-architecture.md": {
-    "mtime": 1790635570.4240828,
-    "ast_hash": "6d93523ee0d5ddcfcf1cef16a8243ed5",
+    "mtime": 1790958395.8070896,
+    "ast_hash": "fa6db0f0e6634204e1ffc511fb5957e0",
     "semantic_hash": ""
   },
   "docs/business/decisions/063-subledger-and-open-items-accounting-policy.md": {
@@ -12995,8 +12995,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-136-subledger-and-open-items-ux.md": {
-    "mtime": 1790635570.4280884,
-    "ast_hash": "8012c02e382149c9996dd275f484cee1",
+    "mtime": 1790958395.8086433,
+    "ast_hash": "2b8be8d4dd6af9be81aabf34c84fd93f",
     "semantic_hash": ""
   },
   "session-summary/\u00c1ron/2026-09-28/summary-202200-subledger-open-items-auto-settle-and-ticket-support.md": {
@@ -13405,8 +13405,8 @@
     "semantic_hash": ""
   },
   "src/components/subledger/SubledgerPostingModal.tsx": {
-    "mtime": 1790775646.1860359,
-    "ast_hash": "ddd720c63cea849f1e9dbc7eb1be647d",
+    "mtime": 1790958395.8128955,
+    "ast_hash": "cbc7ea7784e6c9b897d77abde82e37d9",
     "semantic_hash": ""
   },
   "supabase/migrations/20260924140500_exclude_drs_deposit_fee_from_vat_return.sql": {
@@ -13857,6 +13857,56 @@
   "session-summary/Jani/2026-10-02/summary-001800-eb-0230-eb-0231-payroll-payslip-formatting-and-efo-audit.md": {
     "mtime": 1790893033.0897934,
     "ast_hash": "4fef76278353cb41f923b56a9b85fccd",
+    "semantic_hash": ""
+  },
+  "src/hooks/__tests__/useActivePreset.test.ts": {
+    "mtime": 1790958395.8146126,
+    "ast_hash": "36e70524a2ecfdf27550ca1e8e933e77",
+    "semantic_hash": ""
+  },
+  "src/lib/__tests__/subledgerGrouping.test.ts": {
+    "mtime": 1790958395.8161678,
+    "ast_hash": "3a7a8c8935f537d6b69e62bdb0cb2f0e",
+    "semantic_hash": ""
+  },
+  "src/lib/payroll/__tests__/workdayCalculator.test.ts": {
+    "mtime": 1790958395.8161678,
+    "ast_hash": "c1071386604748bbc499852289a2c51f",
+    "semantic_hash": ""
+  },
+  "src/lib/payroll/workdayCalculator.ts": {
+    "mtime": 1790958395.8161678,
+    "ast_hash": "b989514898a0ca5c3e3c2c6cdd87a7b1",
+    "semantic_hash": ""
+  },
+  "src/lib/subledgerGrouping.ts": {
+    "mtime": 1790958395.8177168,
+    "ast_hash": "de491d470ecc72bc825724afb31797ef",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-191-subledger-dual-currency-and-grouping-architecture.md": {
+    "mtime": 1790958395.8070896,
+    "ast_hash": "177544b256158dcdacdf410620c4be53",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-192-statutory-hungarian-workday-and-payroll-engine.md": {
+    "mtime": 1790958395.8075979,
+    "ast_hash": "9cd2c8878df83b172191146e669352f1",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-152-subledger-dual-currency-display-and-multicurrency-selection-ux.md": {
+    "mtime": 1790958395.8091936,
+    "ast_hash": "d02774a1523c2cf16e1276e6972f165e",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-153-dynamic-statutory-workday-framework-and-payroll-ux.md": {
+    "mtime": 1790958395.8091936,
+    "ast_hash": "b0ac708a53c03ce82f5f00aedc2730b2",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-10-02/summary-114800-subledger-foreign-currency-workday-calculator-and-ticket-support.md": {
+    "mtime": 1790958395.809785,
+    "ast_hash": "fa8d1db1edce7b18fd38aaa11de4f757",
     "semantic_hash": ""
   }
 }
