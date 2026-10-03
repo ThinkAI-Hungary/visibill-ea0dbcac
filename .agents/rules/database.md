@@ -100,3 +100,36 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
   * Ha egy migrációt közvetlenül lefuttatsz egy távoli adatbázison (pl. MCP tool-lal), gondoskodj róla, hogy a verzió bekerüljön a `supabase_migrations.schema_migrations` táblába, különben a Supabase Git integráció a következő merge-kor újra megpróbálja lefuttatni és hibát dob.
 * **Frontend TypeScript típusok:**
   * Bármilyen séma-, oszlop- vagy RPC-módosítás után ellenőrizd vagy frissítsd a TypeScript típusokat (`src/integrations/supabase/types.ts`).
+
+---
+
+## 🔌 7. PostgREST RPC Hívások & Timeout Védelem (Kritikus API Szabályok)
+
+* **Szigorú Paraméternév Illeszkedés (PGRST202 védelem):**
+  * A PostgREST schema cache szigorúan a deklarált SQL argumentumnevek alapján azonosítja a függvényeket.
+  * Tilos feltételezni a paraméterneveket! Például a `get_filtered_nav_invoices` lapozása nem `p_limit` / `p_offset`, hanem:
+    ```typescript
+    // ✅ HELYES:
+    await supabase.rpc('get_filtered_nav_invoices', {
+      p_company_id: companyId,
+      p_page: 1,
+      p_page_size: 50,
+      p_direction: 'inbound', // vagy 'outbound'
+    });
+
+    // ❌ HIBÁS (PGRST202 hibát dob):
+    await supabase.rpc('get_filtered_nav_invoices', {
+      p_company_id: companyId,
+      p_limit: 50,
+      p_offset: 0,
+    });
+    ```
+  * Új RPC hívás írásakor mindig ellenőrizd a pontos SQL deklarációt a migrációs fájlban vagy az `information_schema.parameters` táblában.
+
+* **Supabase 8s Statement Timeout (57014) & Dashboard Résiliencia:**
+  * A Supabase szerepkörökön 8 másodperces `statement_timeout` él.
+  * Olyan Edge Function-ökben vagy felületeken, amelyek összetett aggregáló RPC-t hívnak (pl. `get_company_counts`, `get_management_files`):
+    1. **In-Memory Caching:** Használj modul-szintű memóriagyorsítótárat (pl. 2 perc TTL), hogy több egymást követő kérés ne terhelje feleslegesen a PostgreSQL-t.
+    2. **Graceful Fallback:** DB timeout (57014) vagy hálózati hiba esetén a kód szolgáljon ki stale adatot vagy biztonságos üres állapotot ahelyett, hogy kivételt dobna és összeomlasztaná a képernyőt.
+    3. **Slice-First Index-Only elv:** Az RPC-ken belül a lapozási szeletet (LIMIT/OFFSET) mindig a relációs JOIN-ok és komplex JSONB mezőextrakciók előtt kell képezni.
+
