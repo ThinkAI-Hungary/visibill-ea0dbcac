@@ -32,3 +32,29 @@ description: Apply when working on React components, UI styling, frontend state,
   * Szigorúan kerüld az `any` típus használatát!
   * Minden komponens propjaihoz definiálj explicit `interface` vagy `type` leírást.
   * Az adatbázisból érkező adatokhoz mindig a generált Supabase típusokat használd (`src/integrations/supabase/types.ts`).
+
+## 5. Gyors Kódminőség és Hook Ellenőrzés (Oxlint)
+* **Aktív és kötelező használat frontend módosítások után:**
+  * Komponensek és hookok írásakor vagy refaktorálásakor kötelező azonnal lefuttatni az érintett fájlra az oxlintet:
+    ```powershell
+    npx oxlint src/components/.../MyComponent.tsx
+    ```
+  * Kiemelt figyelemmel vizsgáld az alábbi hibamintákat:
+    * `react(purity)`: Ne hívj meg impure funkciót (pl. `new Date()`) renderelés közben közvetlenül.
+    * `react(set-state-in-effect)`: Kerüld a szinkron `setState`-et a `useEffect`-ben (cascading re-render kivédése).
+    * `preserve-manual-memoization`: A `useMemo`/`useCallback` dependency tömbjének pontosnak kell lennie.
+
+## 6. Infinite Scroll és PostgREST Lapozási Architektúra (PGRST103 & Loop Védelem)
+* **PostgREST 416 (PGRST103 Range Not Satisfiable) Trap:**
+  * A Supabase `.range(from, to)` metódus PostgREST alatt azonnal HTTP 416 hibát dob, ha `from >= total_rows`.
+  * A lapozó lekérdezésekben a `PGRST103` hibát kötelező csendesen lekezelni, és kivétel dobása helyett üres listával `{ items: [], totalCount }` visszatérni, jelezve hogy elértük az adathalmaz végét.
+* **Kezdeti Lapozási Invariáns (First-Page Invariant):**
+  * Ha a legelső lekérdezés (`from === 0` vagy `page === 1`) kevesebb elemet adott vissza mint a `PAGE_SIZE` (pl. 22 < 50), akkor az adatbázisban **fizikailag nincs több sor**.
+  * Ilyenkor a `hasMore` állapotnak **azonnal és garantáltan `false`-nak kell lennie** (`(initialData?.items?.length ?? 0) >= PAGE_SIZE`), függetlenül attól, hogy a `totalCount` mező mit tartalmaz!
+* **SQL-szintű szűrés a PostgREST Count Torzulás Ellen:**
+  * Ha a felületen kizárunk bizonyos rekordokat (pl. 0 Ft-os adminisztratív tételek: `invoice_gross_amount != 0`), azt **mindig az SQL lekérdezés szintjén kell megtenni** (`.neq('invoice_gross_amount', 0)`).
+  * Ha a szűrés csak kliensoldalon történik, a PostgREST `count` értéke mesterségesen magasabb lesz mint a valós elemek száma, ami hamis `items.length < totalCount` állapotot és túlcsorduló, 416-os hibát kiváltó lapozást generál.
+* **Végtelen Ciklus Megszakítása Hibánál (Break-on-Error):**
+  * `IntersectionObserver` alapú görgetésnél ha a `handleLoadMore` hívás bármilyen hibára fut (`catch (err)`), **kötelező lekapcsolni a lapozást (`setHasMore(false)`)**! Ellenkező esetben a képernyőn maradó sentinel másodpercenként többször újratriggereli a hibát, lefagyasztva a böngészőt.
+
+

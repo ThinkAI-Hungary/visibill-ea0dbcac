@@ -10,8 +10,8 @@
     "semantic_hash": "bc484741cdf3591af5da7d9f3da3a647"
   },
   "package.json": {
-    "mtime": 1790893214.1095362,
-    "ast_hash": "58ec701b53fa95808fd4b3bc22b52510",
+    "mtime": 1791062784.2996898,
+    "ast_hash": "06c90372529b59ec6442e2cdd85a7360",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -4870,8 +4870,8 @@
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
-    "mtime": 1791031616.6752336,
-    "ast_hash": "6b67052ee0e29a90e6538891b7029e1f",
+    "mtime": 1791062889.2619834,
+    "ast_hash": "09b99de42896f1eb2a17779516d014d8",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-dev/SKILL.md": {
@@ -9995,18 +9995,18 @@
     "semantic_hash": ""
   },
   ".agents/rules/frontend.md": {
-    "mtime": 1789354346.5223513,
-    "ast_hash": "50ea48f4f477040f8754648ed5784623",
+    "mtime": 1791063722.4388976,
+    "ast_hash": "01cbb2318ce2363ca1667fcbcae8547e",
     "semantic_hash": ""
   },
   ".agents/rules/ui-ux.md": {
-    "mtime": 1790990533.9720473,
-    "ast_hash": "a7d44d180d85f8b69f733ee1eb919a80",
+    "mtime": 1791063732.0482533,
+    "ast_hash": "bd6db65d44e6dcb6f8e10e070e2d34ac",
     "semantic_hash": ""
   },
   ".agents/rules/verification.md": {
-    "mtime": 1791031633.1778977,
-    "ast_hash": "2c5b43287271bb5c97f7ca4eedc6cdd8",
+    "mtime": 1791062881.7291632,
+    "ast_hash": "72722094e5c5d336f31ed8900af7de55",
     "semantic_hash": ""
   },
   "src/components/transactions/BulkBookTransactionsDialog.tsx": {
@@ -12718,13 +12718,13 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/UnifiedFinancialCockpit.tsx": {
-    "mtime": 1790660812.4521115,
-    "ast_hash": "eeb21a04823236c44b2631887939dc82",
+    "mtime": 1791063338.467597,
+    "ast_hash": "b1bd3a7dcaeea6d43b2d0529d03125cf",
     "semantic_hash": ""
   },
   "src/test/unifiedFinancialCockpit.test.tsx": {
-    "mtime": 1790660863.411281,
-    "ast_hash": "61f40d23febfcc708f354372dc020017",
+    "mtime": 1791063359.7434688,
+    "ast_hash": "71b4373372b51255231f5d0827038575",
     "semantic_hash": ""
   },
   "src/test/dashboardMetricsProfit.test.tsx": {
@@ -13680,6 +13680,16 @@
   "session-summary/Jani/2026-10-03/summary-193000-nav-hybrid-async-sync-and-atomic-item-idempotency.md": {
     "mtime": 1791048697.9535387,
     "ast_hash": "c718a553848fb345210f0494d6aa7231",
+    "semantic_hash": ""
+  },
+  ".oxlintrc.json": {
+    "mtime": 1791062769.8140142,
+    "ast_hash": "1c5010d7e297477f1b974a1ffd955a51",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-03/summary-233900-oxlint-integration-and-cockpit-missing-vouchers-range-fix.md": {
+    "mtime": 1791063572.7366247,
+    "ast_hash": "8ed3b5982abb2f3091d8f617c050fa95",
     "semantic_hash": ""
   }
 }

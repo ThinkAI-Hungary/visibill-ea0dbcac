@@ -67,3 +67,13 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
 * **Skeleton kizárólag ELSŐ betöltésre ([07-loading-patterns.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/07-loading-patterns.md)):**
   * Tilos fülváltáskor Skeletonra visszaváltani! Háttérfrissítésnél a meglévő tartalom látható marad, és diszkrét spinner jelzi a lekérdezést.
 
+---
+
+## 🔄 7. Infinite Scroll & Lapozási UX Szabályzat
+* **Kötelező Végső Lezárási Állapot (All Loaded State):**
+  * Ha egy lista összes eleme betöltődött (`!hasMore`), a betöltő gombot/spinnert kötelező elrejteni, és egy diszkrét lezáró szöveget megjeleníteni:
+    * Pl.: *„Mind a(z) {{count}} tétel betöltve”*
+* **Sentinel és Hiba-védelem:**
+  * Ha a háttérben futó lapozás hálózati hibába ütközik, a betöltő gomb nem villoghat és nem ragadhat végtelen spinner állapotban. A lapozást azonnal le kell állítani (`hasMore = false`), és egyértelmű hibaüzenetet kell mutatni manuális *„Újrapróbálkozás”* lehetőséggel.
+
+

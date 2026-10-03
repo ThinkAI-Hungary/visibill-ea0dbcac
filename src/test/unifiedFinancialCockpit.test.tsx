@@ -153,6 +153,7 @@ vi.mock('@/integrations/supabase/client', () => ({
         lte: vi.fn().mockReturnThis(),
         is: vi.fn().mockReturnThis(),
         not: vi.fn().mockReturnThis(),
+        neq: vi.fn().mockReturnThis(),
         or: vi.fn().mockImplementation((condition: string) => {
           if (condition.includes('submitted')) isMissing = true;
           return builder;
@@ -419,6 +420,26 @@ describe('UnifiedFinancialCockpit - Option 2 Action Hub', () => {
     );
     expect(duplicateKeyWarnings).toHaveLength(0);
     consoleWarnSpy.mockRestore();
+  });
+
+  it('regression: disables load-more when missing vouchers < PAGE_SIZE, preventing PostgREST 416 infinite loop', async () => {
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <UnifiedFinancialCockpit />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    // Initial load: mockNavInvoices has only 1 valid missing invoice (nav-missing-1)
+    await waitFor(() => {
+      expect(screen.getByText('INV-2026-MISSING')).toBeInTheDocument();
+    });
+
+    // Verify "all items loaded" message is displayed, and NO "Továbbiak betöltése..." button exists
+    expect(screen.getByText(/Mind a\(z\) 1 tétel betöltve/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Továbbiak betöltése/i)).not.toBeInTheDocument();
   });
 });
 

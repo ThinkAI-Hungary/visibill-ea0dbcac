@@ -1,0 +1,23 @@
+{
+  "plugins": [
+    "unicorn",
+    "typescript",
+    "oxc",
+    "react"
+  ],
+  "categories": {
+    "correctness": "warn"
+  },
+  "rules": {
+    "no-unused-vars": "off",
+    "typescript/no-unused-vars": "off"
+  },
+  "ignorePatterns": [
+    "dist/**",
+    "node_modules/**",
+    "coverage/**",
+    "playwright-report/**",
+    "scratch/**",
+    "supabase/.branches/**"
+  ]
+}

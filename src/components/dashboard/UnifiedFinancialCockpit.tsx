@@ -198,10 +198,16 @@ const fetchMissingVouchersBatch = async (
     .eq('company_id', companyId)
     .eq('invoice_direction', 'INBOUND')
     .or('submitted.is.null,submitted.eq.false')
+    .neq('invoice_gross_amount', 0)
     .order('invoice_issue_date', { ascending: false });
 
   const { data, count, error } = await query.range(from, to);
-  if (error) throw error;
+  if (error) {
+    if ((error as any).code === 'PGRST103' || (error as any).message?.includes('satisfiable')) {
+      return { items: [], totalCount: count ?? from };
+    }
+    throw error;
+  }
 
   const rawRows = (data || []) as NavInvoiceItem[];
   const nonZero = rawRows.filter((inv) => Math.abs(Number(inv.invoice_gross_amount) || 0) > 0);
@@ -228,10 +234,13 @@ const fetchMissingVouchersBatch = async (
     (inv) => !uploadedSet.has(normalizeInv(inv.invoice_number || ''))
   );
 
+  const eliminatedCount = (rawRows.length - nonZero.length) + (nonZero.length - filtered.length);
   const totalCount =
-    count !== null && count !== undefined
-      ? Math.max(0, count - (nonZero.length - filtered.length))
-      : filtered.length;
+    from === 0 && rawRows.length < PAGE_SIZE
+      ? filtered.length
+      : count !== null && count !== undefined
+        ? Math.max(filtered.length, count - eliminatedCount)
+        : filtered.length;
 
   return { items: filtered, totalCount };
 };
@@ -265,7 +274,12 @@ const fetchUnmatchedTransactionsBatch = async (
     .order('transaction_date', { ascending: false })
     .range(from, to);
 
-  if (error) throw error;
+  if (error) {
+    if ((error as any).code === 'PGRST103' || (error as any).message?.includes('satisfiable')) {
+      return { items: [], totalCount: count ?? from };
+    }
+    throw error;
+  }
   const items = (data || []) as BankTransactionItem[];
   const totalCount = count !== null && count !== undefined ? count : items.length;
   return { items, totalCount };
@@ -444,28 +458,40 @@ export default function UnifiedFinancialCockpit() {
     [initialMissingData?.items, extraMissingItems]
   );
   const missingTotalCount = initialMissingData?.totalCount ?? allMissingItems.length;
-  const hasMoreMissing = hasMoreMap.missing && allMissingItems.length < missingTotalCount;
+  const hasMoreMissing =
+    hasMoreMap.missing &&
+    (initialMissingData?.items?.length ?? 0) >= PAGE_SIZE &&
+    allMissingItems.length < missingTotalCount;
 
   const allPayableItems = useMemo(
     () => dedupeById([...(initialPayableData?.items || []), ...extraPayableItems]),
     [initialPayableData?.items, extraPayableItems]
   );
   const payableTotalCount = initialPayableData?.totalCount ?? allPayableItems.length;
-  const hasMorePayable = hasMoreMap.payable && allPayableItems.length < payableTotalCount;
+  const hasMorePayable =
+    hasMoreMap.payable &&
+    (initialPayableData?.items?.length ?? 0) >= PAGE_SIZE &&
+    allPayableItems.length < payableTotalCount;
 
   const allBankItems = useMemo(
     () => dedupeById([...(initialBankData?.items || []), ...extraBankItems]),
     [initialBankData?.items, extraBankItems]
   );
   const bankTotalCount = initialBankData?.totalCount ?? allBankItems.length;
-  const hasMoreBank = hasMoreMap.bank && allBankItems.length < bankTotalCount;
+  const hasMoreBank =
+    hasMoreMap.bank &&
+    (initialBankData?.items?.length ?? 0) >= PAGE_SIZE &&
+    allBankItems.length < bankTotalCount;
 
   const allReceivablesItems = useMemo(
     () => dedupeById([...(initialReceivablesData?.items || []), ...extraReceivablesItems]),
     [initialReceivablesData?.items, extraReceivablesItems]
   );
   const receivablesTotalCount = initialReceivablesData?.totalCount ?? allReceivablesItems.length;
-  const hasMoreReceivables = hasMoreMap.receivables && allReceivablesItems.length < receivablesTotalCount;
+  const hasMoreReceivables =
+    hasMoreMap.receivables &&
+    (initialReceivablesData?.items?.length ?? 0) >= PAGE_SIZE &&
+    allReceivablesItems.length < receivablesTotalCount;
 
   // Exact gross totals: use aggregates if available, otherwise compute from loaded items
   const payableGrossTotal = useMemo(() => {
@@ -684,6 +710,7 @@ export default function UnifiedFinancialCockpit() {
           }
         } catch (err) {
           console.error('Failed to load more bank transactions:', err);
+          setHasMoreMap((prev) => ({ ...prev, bank: false }));
         } finally {
           inFlightRef.current['bank'] = false;
           setIsLoadingMoreBank(false);
@@ -723,6 +750,7 @@ export default function UnifiedFinancialCockpit() {
           }
         } catch (err) {
           console.error('Failed to load more payable invoices:', err);
+          setHasMoreMap((prev) => ({ ...prev, payable: false }));
         } finally {
           inFlightRef.current['payable'] = false;
           setIsLoadingMorePayable(false);
@@ -762,6 +790,7 @@ export default function UnifiedFinancialCockpit() {
           }
         } catch (err) {
           console.error('Failed to load more receivables invoices:', err);
+          setHasMoreMap((prev) => ({ ...prev, receivables: false }));
         } finally {
           inFlightRef.current['receivables'] = false;
           setIsLoadingMoreReceivables(false);
@@ -796,6 +825,7 @@ export default function UnifiedFinancialCockpit() {
           }
         } catch (err) {
           console.error('Failed to load more missing vouchers:', err);
+          setHasMoreMap((prev) => ({ ...prev, missing: false }));
         } finally {
           inFlightRef.current['missing'] = false;
           setIsLoadingMoreMissing(false);
