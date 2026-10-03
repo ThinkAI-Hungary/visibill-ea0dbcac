@@ -5085,8 +5085,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/14-eaisybooks-payroll.md": {
-    "mtime": 1790514518.2190113,
-    "ast_hash": "66b27b8db8a7c51647bb11b510e2d72a",
+    "mtime": 1790985921.194487,
+    "ast_hash": "d8d148c1faa8db7c0ec90686f6c2c151",
     "semantic_hash": ""
   },
   "docs/architecture/database/15-eaisybooks-tax-legal.md": {
@@ -8065,8 +8065,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/overviewHandler.ts": {
-    "mtime": 1789090841.5803952,
-    "ast_hash": "850bddbdcbb0304985790f0bc5ce1678",
+    "mtime": 1790988830.3444488,
+    "ast_hash": "1d4eb2d753c9dca1af2866800826a3c6",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/permissionsHandler.ts": {
@@ -13927,6 +13927,11 @@
   "supabase/migrations/20261003020000_fix_accounty_declarations_declaration_type_check.sql": {
     "mtime": 1790984574.6649308,
     "ast_hash": "180a6b3cd8bc404f2d8fd75f76d2637b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261003030000_optimize_timeout_rpcs_and_indexes.sql": {
+    "mtime": 1790988711.9199479,
+    "ast_hash": "1f8e597e3cc9c1a24fa900cf42a8be79",
     "semantic_hash": ""
   }
 }

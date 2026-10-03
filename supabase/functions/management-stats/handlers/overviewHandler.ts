@@ -60,6 +60,42 @@ export async function fetchMultiProjectMonthlyLlm(admin: ReturnType<typeof creat
   return { data: results.flat(), error: null };
 }
 
+interface CompanyCountsData {
+  invoices: Record<string, number>;
+  nav_invoices: Record<string, number>;
+  transactions: Record<string, number>;
+  salary: Record<string, number>;
+}
+
+let cachedCompanyCounts: { data: CompanyCountsData; timestamp: number } | null = null;
+const COUNTS_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes in-memory cache
+
+export async function fetchCompanyCountsWithCache(admin: ReturnType<typeof createClient>): Promise<CompanyCountsData> {
+  const now = Date.now();
+  if (cachedCompanyCounts && (now - cachedCompanyCounts.timestamp) < COUNTS_CACHE_TTL_MS) {
+    return cachedCompanyCounts.data;
+  }
+
+  try {
+    const { data, error } = await admin.rpc("get_company_counts");
+    if (error) {
+      console.warn("[overviewHandler] get_company_counts RPC error:", error);
+      if (cachedCompanyCounts) {
+        console.warn("[overviewHandler] Serving stale cached company counts.");
+        return cachedCompanyCounts.data;
+      }
+      return { invoices: {}, nav_invoices: {}, transactions: {}, salary: {} };
+    }
+    const countsData = (data as CompanyCountsData) || { invoices: {}, nav_invoices: {}, transactions: {}, salary: {} };
+    cachedCompanyCounts = { data: countsData, timestamp: now };
+    return countsData;
+  } catch (err) {
+    console.error("[overviewHandler] Unexpected error fetching company counts:", err);
+    if (cachedCompanyCounts) return cachedCompanyCounts.data;
+    return { invoices: {}, nav_invoices: {}, transactions: {}, salary: {} };
+  }
+}
+
 export async function buildOverview(admin: ReturnType<typeof createClient>) {
   const monthStart = startOfMonthIso();
 
@@ -67,7 +103,7 @@ export async function buildOverview(admin: ReturnType<typeof createClient>) {
     companiesRes,
     membersRes,
     profilesRes,
-    countsRes,
+    rawCounts,
     monthlyLlmRes,
     emailByUserId,
     accountyAssignmentsRes,
@@ -75,13 +111,13 @@ export async function buildOverview(admin: ReturnType<typeof createClient>) {
     admin.from("companies").select("id, name, tax_number, created_at").order("created_at", { ascending: false }),
     admin.from("company_members").select("company_id, user_id, role, created_at"),
     admin.from("profiles").select("id, user_id, name, role, created_at"),
-    admin.rpc("get_company_counts"),
+    fetchCompanyCountsWithCache(admin),
     fetchMultiProjectMonthlyLlm(admin, monthStart),
     listAllAuthUsers(admin),
     admin.from("accounty_assignments").select("company_id"),
   ]);
 
-  for (const res of [companiesRes, membersRes, profilesRes, countsRes, monthlyLlmRes, accountyAssignmentsRes]) {
+  for (const res of [companiesRes, membersRes, profilesRes, monthlyLlmRes, accountyAssignmentsRes]) {
     if (res.error) throw res.error;
   }
 
@@ -101,7 +137,6 @@ export async function buildOverview(admin: ReturnType<typeof createClient>) {
     emailByUserId,
   });
 
-  const rawCounts = (countsRes.data as { invoices: Record<string, number>; nav_invoices: Record<string, number>; transactions: Record<string, number>; salary: Record<string, number> }) || { invoices: {}, nav_invoices: {}, transactions: {}, salary: {} };
   const invoiceCounts   = new Map(Object.entries(rawCounts.invoices   || {}));
   const navInvoiceCounts = new Map(Object.entries(rawCounts.nav_invoices || {}));
   const txCounts        = new Map(Object.entries(rawCounts.transactions || {}));
