@@ -8,7 +8,7 @@ description: Apply when designing, styling, or implementing user interfaces, for
 ## 🔄 1. A 4 Kötelező UI Állapot (The 4 States Rule)
 Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kötelező expliciten kezelni mind a 4 állapotot:
 1. **Loading állapot:**
-   * Sose hagyj villódzó, üres területeket! Használj a tartalom körvonalát előrevetítő **Skeleton loadert** ([07-loading-patterns.md](file:///d:/ThinkAI/visibill/eaisybill-prod/docs/design/07-loading-patterns.md)).
+   * Sose hagyj villódzó, üres területeket! Használj a tartalom körvonalát előrevetítő **Skeleton loadert** ([07-loading-patterns.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/07-loading-patterns.md)).
 2. **Empty állapot:**
    * Ha egy lista vagy szűrés üres, **szigorúan tilos üres fehér/sötét dobozt vagy üres táblázatot hagyni**!
    * Kötelező: releváns ikon + érthető magyarázó szöveg + **CTA (Call-to-Action) gomb** (pl. *„Még nem töltöttél fel számlát. [Első számla feltöltése]”*).

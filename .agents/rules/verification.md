@@ -12,7 +12,7 @@ description: Quality gates, type checking, phantom claim prevention, and verific
 * **Tilos a "Láthatatlan Verifikáció" (No Phantom Testing):**
   * Szigorúan tilos azt állítani, hogy *"a build sikeres"*, *"lefutottak a tesztek"* vagy *"nincs típushiba"*, ha a jelenlegi lépésben NEM futtattad le ténylegesen az ellenőrző parancsot (`npx tsc --noEmit` vagy `npm run build`), és nem láttad a parancs valós kimenetét.
 * **Fizikai Hivatkozás Kötelezettsége:**
-  * Bármilyen implementáció befejezésekor **kötelező kattintható markdown linkkel** hivatkozni a ténylegesen módosított fájlra és sorszámokra (pl. `[CompanySwitcher.tsx](file:///d:/ThinkAI/visibill/eaisybill-prod/src/components/accounty/CompanySwitcher.tsx#L45-L60)`).
+  * Bármilyen implementáció befejezésekor **kötelező kattintható markdown linkkel** hivatkozni a ténylegesen módosított fájlra és sorszámokra (pl. `[CompanySwitcher.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/components/accounty/CompanySwitcher.tsx#L45-L60)`).
 * **Részleges Teljesítés Őszinte Kommunikációja:**
   * Ha egy kérés több lépésből állt, és csak egy része készült el, vagy technikai akadályba ütköztél, **tilos azt mondani, hogy "Kész van"**. Pontosan és transzparensen le kell írni: mi az, ami fizikailag elkészült, és mi az, ami még hátravan vagy további döntést igényel.
 
@@ -31,7 +31,9 @@ Mielőtt bármilyen kódolási feladatot befejezettnek jelentesz a felhasználó
    * Ha a parancs fordítási vagy típussérülést jelez, javítsd ki mielőtt válaszolsz.
 2. **Konzol- és Kódtisztaság:**
    * Ellenőrizd, hogy nem hagytál hátra elfelejtett `console.log` debug sorokat, fel nem használt importokat vagy szintaktikai hibákat.
-3. **UI és Működési Útmutatás:**
+3. **Windows PowerShell Szintaxis Fegyelem:**
+   * A projekt Windows alatt fut PowerShell shellben. Szigorúan tilos POSIX / Bash stílusú `&&` parancsláncolást használni, mert szintaktikai hibát dob! Mindig a pontosvesszőt (`;`) használd parancsok egymás utáni futtatásakor (pl. `git add . ; git commit -m '...' ; git push`).
+4. **UI és Működési Útmutatás:**
    * Ha felületet módosítottál, pontosan írd le, hogy a felhasználó hol (melyik útvonalon, melyik gombra kattintva) és hogyan tudja ellenőrizni az eredményt.
 
 ---

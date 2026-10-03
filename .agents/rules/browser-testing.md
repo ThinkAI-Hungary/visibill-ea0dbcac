@@ -1,6 +1,6 @@
 ---
-trigger: always_on
-description: Browser testing, subagent authentication, and test credentials rules.
+trigger: model_decision
+description: Apply when running browser tests, launching browser_subagent, authenticating in the Visibill web app, or testing UI flows.
 ---
 
 # Browser Testing & Subagent Authentication Rules

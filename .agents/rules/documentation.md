@@ -9,20 +9,20 @@ description: Apply when creating new UI components, modifying screens, making ar
 Mielőtt bármilyen új vizuális komponenst, gombot, táblázatot vagy modált létrehozol, **kötelező ellenőrizni a `docs/design/` dokumentációt**:
 
 1. **Ne találj fel létező elemeket:**
-   * Olvasd el a [docs/design/04-component-library.md](file:///d:/ThinkAI/visibill/eaisybill-prod/docs/design/04-component-library.md) fájlt. Használd a már meglévő `shadcn/ui` és egyedi komponenseket (pl. `StatusBadge`, `MetricCard`, `UnifiedPagination`).
+   * Olvasd el a [docs/design/04-component-library.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/04-component-library.md) fájlt. Használd a már meglévő `shadcn/ui` és egyedi komponenseket (pl. `StatusBadge`, `MetricCard`, `UnifiedPagination`).
 2. **Színek és Tokenek:**
-   * Lásd: [docs/design/02-design-tokens.md](file:///d:/ThinkAI/visibill/eaisybill-prod/docs/design/02-design-tokens.md).
+   * Lásd: [docs/design/02-design-tokens.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/02-design-tokens.md).
    * **Szigorúan tilos** hardkódolt hexadecimális kódokat és ad-hoc Tailwind osztályokat használni (pl. `bg-blue-600`). Kizárólag a platform szintű HSL tokeneket és szemantikus osztályokat használd (`bg-primary`, `text-muted-foreground`, `border-border`, stb.).
 3. **Ikonok:**
-   * Lásd: [docs/design/03-typography-icons.md](file:///d:/ThinkAI/visibill/eaisybill-prod/docs/design/03-typography-icons.md). Kizárólag **Lucide** ikonokat használj egységes méretezéssel (16px / 20px).
+   * Lásd: [docs/design/03-typography-icons.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/03-typography-icons.md). Kizárólag **Lucide** ikonokat használj egységes méretezéssel (16px / 20px).
 4. **Táblázatok & Lapozás:**
-   * Lásd: [docs/design/11-data-display-tables.md](file:///d:/ThinkAI/visibill/eaisybill-prod/docs/design/11-data-display-tables.md). Használd a kompakt táblázat elrendezést és a központi `UnifiedPagination` komponenst.
+   * Lásd: [docs/design/11-data-display-tables.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/11-data-display-tables.md). Használd a kompakt táblázat elrendezést és a központi `UnifiedPagination` komponenst.
 5. **Dialógusok & Felugró ablakok:**
-   * Lásd: [docs/design/12-dialogs-modals.md](file:///d:/ThinkAI/visibill/eaisybill-prod/docs/design/12-dialogs-modals.md). Dialógusokhoz a shadcn `Dialog`, `Sheet` vagy `Drawer` elemeket használd.
+   * Lásd: [docs/design/12-dialogs-modals.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/12-dialogs-modals.md). Dialógusokhoz a shadcn `Dialog`, `Sheet` vagy `Drawer` elemeket használd.
 6. **Fájlelőnézet:**
-   * Lásd: [docs/design/13-file-preview-pattern.md](file:///d:/ThinkAI/visibill/eaisybill-prod/docs/design/13-file-preview-pattern.md). Új fájl (PDF, kép, Excel) megjelenítéséhez mindig a közös `FilePreviewModal`-t kell behívni.
+   * Lásd: [docs/design/13-file-preview-pattern.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/13-file-preview-pattern.md). Új fájl (PDF, kép, Excel) megjelenítéséhez mindig a közös `FilePreviewModal`-t kell behívni.
 7. **Betöltési állapotok:**
-   * Lásd: [docs/design/07-loading-patterns.md](file:///d:/ThinkAI/visibill/eaisybill-prod/docs/design/07-loading-patterns.md). Sose írj ki sima "Loading..." szöveget; kötelező Skeleton loader mintát használni.
+   * Lásd: [docs/design/07-loading-patterns.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/07-loading-patterns.md). Sose írj ki sima "Loading..." szöveget; kötelező Skeleton loader mintát használni.
 
 ---
 
@@ -44,4 +44,4 @@ A Visibill projektben a döntéshozatal dokumentált (116+ elfogadott ADR).
 ## 📋 3. Termék és Funkció Döntések (PRD Fegyelem)
 * Ha egy új felhasználói felület, üzleti folyamat (pl. új számlázási/adózási kalkuláció) kerül megtervezésre:
   * Hozz létre új bejegyzést: `docs/product/decisions/P-XXX-<kebab-case-cim>.md`.
-  * Vezesd fel a [docs/product/decisions/index.md](file:///d:/ThinkAI/visibill/eaisybill-prod/docs/product/decisions/index.md) fájlba.
+  * Vezesd fel a [docs/product/decisions/index.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/product/decisions/index.md) fájlba.
