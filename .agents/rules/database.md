@@ -122,8 +122,21 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
 ## 🔄 6. Migrációs Nyilvántartás & Git Szinkron (Baseline Garancia)
 * **Zero Phantom Migrations:**
   * Soha ne állítsd a felhasználónak, hogy egy migráció elkészült, amíg a fájl fizikailag meg nem íródott a `supabase/migrations/` mappában.
-* **`schema_migrations` konzisztencia:**
-  * Ha egy migrációt közvetlenül lefuttatsz egy távoli adatbázison (pl. MCP tool-lal), gondoskodj róla, hogy a verzió bekerüljön a `supabase_migrations.schema_migrations` táblába, különben a Supabase Git integráció a következő merge-kor újra megpróbálja lefuttatni és hibát dob.
+* **`schema_migrations` teljes körű regisztráció (Név és SQL tartalom kötelező):**
+  * Ha egy migrációt közvetlenül futtatsz le egy távoli adatbázison (pl. MCP `execute_sql` vagy `apply_migration`), **szigorúan kötelező** a `version` mellett a `name` és a `statements` oszlopokat is kitölteni a `supabase_migrations.schema_migrations` táblában!
+  * **Tilos csak a verziót beszúrni**, mert a `name` hiányában a Supabase Studio felülete *"Name not available"* hibát jelenít meg, a `statements` hiányában pedig a *"View migration SQL"* gomb üres marad.
+  * **Kötelező regisztrációs minta:**
+    ```sql
+    INSERT INTO supabase_migrations.schema_migrations (version, name, statements)
+    VALUES (
+      '<YYYYMMDDHHMMSS>',
+      '<migracio_neve_snake_case>',
+      ARRAY[$stmt$ <teljes_futtatott_sql_kod> $stmt$]
+    )
+    ON CONFLICT (version) DO UPDATE SET
+      name = EXCLUDED.name,
+      statements = EXCLUDED.statements;
+    ```
 * **Frontend TypeScript típusok:**
   * Bármilyen séma-, oszlop- vagy RPC-módosítás után ellenőrizd vagy frissítsd a TypeScript típusokat (`src/integrations/supabase/types.ts`).
 
