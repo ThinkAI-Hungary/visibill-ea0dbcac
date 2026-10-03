@@ -1,7 +1,7 @@
 # A-018: Hibajegy Rendszer Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12 (utolsó frissítés: 2026-09-11)
+**Date:** 2025-12 (utolsó frissítés: 2026-10-03 — EaisyWorks integráció)
 
 ## Context
 
@@ -34,6 +34,9 @@ feedback (fő tábla)
 ├── resolution_requested_at: timestamptz (megoldás kérés ideje)
 ├── resolution_requested_by: uuid (FK → profiles, megerősítést kérő admin)
 ├── resolution_confirmed_at: timestamptz (ügyfél megerősítés ideje)
+├── eaisyworks_ticket_id: text (EaisyWorks feladat belső UUID)
+├── eaisyworks_ticket_key: text (EaisyWorks feladatkulcs, pl. PROJ-108)
+├── eaisyworks_synced_at: timestamptz (EaisyWorks szinkronizálás ideje)
 ├── slack_sent: boolean + slack_sent_at: timestamptz
 ├── created_at / updated_at: timestamptz
 │
@@ -263,4 +266,26 @@ idx_ticket_reads_feedback_user  ON ticket_reads(feedback_id, user_id)
   - **Kereshető Kategóriaválasztó (`TicketCategorySelect`):** Billentyűzet-barát, gépelésre szűrő Popover/Combobox komponens badge-előnézettel és gyors törlés lehetőséggel.
   - **Retroaktív Kategorizálás:** Support és Management jogosultságú felhasználók utólag is módosíthatják vagy törölhetik a hibajegy kategóriáját közvetlenül a `TicketDetailView` jobb oldali strukturált adatok kártyáján (`useUpdateTicketCategory` mutáció segítségével).
   - **Központi Szűrés és Keresés (`TicketsPage`):** A hibajegylistában dedikált kategória szűrő elérhető ("Összes kategória", "Kategória nélküliek", illetve a 37 kategória), a táblázatban és a Kezelőkonzolon megjelenik a `TicketCategoryBadge`, valamint a szabadszavas globális kereső (`matchTicketSearch`) a kategória szövegére is egyezést ad.
+
+## EaisyWorks Integráció és Feladatszinkronizáció (2026-10 frissítés)
+
+A rendszer támogatja a hibajegyek közvetlen szinkronizálását az eaisyWorks feladatkezelő rendszerbe:
+- **Cél:** A support/management munkatárs a Management Dashboardon (`/management?view=tickets`) a hibajegy részleteinél (`TicketDetailView`) egyetlen kattintással áttöltheti a feladatot a külső eaisyWorks projektbe.
+- **REST API kapcsolat:**
+  - Végpont: `POST /api/v1/tickets`
+  - Hitelesítés: `Authorization: Bearer <EAISYWORKS_API_KEY>` (a projekt API kulcsának `tickets:create` jogosultsággal kell rendelkeznie).
+  - Cél workspace és projekt: az API kulcshoz rendelt alapértelmezett munkaterület az eaisyWorks oldalon.
+- **Adatmodell és Összerendelés:**
+  - `feedback.eaisyworks_ticket_id`: az eaisyWorks által visszaadott belső UUID azonosító (`ticket.id`).
+  - `feedback.eaisyworks_ticket_key`: a generált publikus feladatkulcs (`ticket.key`, pl. `EB-103`).
+  - `feedback.eaisyworks_synced_at`: a sikeres szinkronizálás időbélyege.
+  - Tárolt eljárás: `link_eaisyworks_ticket(p_ticket_id uuid, p_works_id text, p_works_key text)` `SECURITY DEFINER` RPC, amely biztosítja az idempotens összerendelést és jogosultság-ellenőrzést.
+- **Cím és Mező Leképezési Konvenció:**
+  - **Feladat címe:** `${typeLabel}: ${cleanSubject}` (pl. `Hiba: Fizetési hiba lépett fel...`). A cím szándékosan **nem tartalmazza** a redundáns Eaisybill jegyazonosítót (`[EB-XXXX]`), mivel az eaisyWorks saját kulcsot generál a jegyhez.
+  - **Azonosítók és visszakövethetőség:** A jegyazonosító (`EB-XXXX`) az `external_id` mezőben és a jegy leírásában (`### 📌 Eaisybill Rendszerinformációk`) kerül átadásra közvetlen kezelői hivatkozással (`/management?view=tickets&id=...`).
+  - **Prioritás leképezés:** `critical` → `urgent`, `high` → `high`, `medium` → `medium`, `low` → `low`.
+- **Hálózati & CORS Kezelés (Vite Dev Server Proxy):**
+  - Mivel az eaisyWorks API közvetlen IP-n (`http://2.28.55.167`) fut és nem küld megengedő böngészős CORS fejléceket (`OPTIONS` preflight), a helyi fejlesztői környezetben a `vite.config.ts` `/eaisyworks-api` proxy-ja közvetíti a kéréseket.
+  - A [src/services/eaisyworksService.ts](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/services/eaisyworksService.ts) automatikusan felismeri a localhost futási környezetet és a proxy-n keresztül továbbítja a hívást, megelőzve a böngészős `Failed to fetch` hibákat.
+
 

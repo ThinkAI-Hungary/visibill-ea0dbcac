@@ -1,7 +1,7 @@
 # 🎫 Hibajegy Rendszer
 
 > Ügyfélszolgálati hibajegy kommentek, olvasottsági állapot, események.
-> A hibajegyek szülő táblája a `feedback` (dokumentálva: `19-platform-ops.md`), amely tartalmazza a státuszt, prioritást és az opcionális `category` mezőt (`idx_feedback_category`).
+> A hibajegyek szülő táblája a `feedback` (dokumentálva: `19-platform-ops.md`), amely tartalmazza a státuszt, prioritást, az opcionális `category` mezőt (`idx_feedback_category`), valamint az eaisyWorks szinkronizációs mezőket (`eaisyworks_ticket_id`, `eaisyworks_ticket_key`, `eaisyworks_synced_at`, `link_eaisyworks_ticket` RPC).
 
 **Táblák ebben a csoportban:** 3
 

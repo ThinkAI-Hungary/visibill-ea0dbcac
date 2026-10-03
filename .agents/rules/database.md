@@ -5,6 +5,10 @@ description: Apply when touching database schemas, writing migrations, RPC funct
 
 # Database & Migration Guidelines (Visibill / eaisybill-prod)
 
+> [!TIP]
+> **Külső Hivatalos Szabványok:**
+> A projekt specifikus szabályain felül kötelezően alkalmazandók a globális [supabase-postgres-best-practices](file:///C:/Users/Morfi/.gemini/config/skills/supabase-postgres-best-practices/SKILL.md) és [supabase](file:///C:/Users/Morfi/.gemini/config/skills/supabase/SKILL.md) skillek iránymutatásai (pl. RLS performance, BOLA védelem, composite indexek, lock management, valamint pg_cron / pgmq kezelés).
+
 ## 🎯 1. Zero Silent DB Decisions
 * **Kifejezett jóváhagyás kötelező:**
   * Bármilyen új tábla létrehozása, meglévő tábla oszlopainak módosítása, típusváltása vagy törlése előtt kötelező bemutatni a tervezett sémát a felhasználónak.

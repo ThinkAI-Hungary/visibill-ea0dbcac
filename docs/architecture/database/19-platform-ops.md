@@ -117,6 +117,9 @@
 | service | text | ✓ |  |
 | assigned_to | uuid | ✓ |  |
 | category | text | ✓ |  |
+| eaisyworks_ticket_id | text | ✓ |  |
+| eaisyworks_ticket_key | text | ✓ |  |
+| eaisyworks_synced_at | timestamp with time zone | ✓ |  |
 
 **FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`, `assigned_to` → `auth.users.id`
 
@@ -131,6 +134,12 @@
 
 **Kategóriák (`category`):**
 Opcionális mező (`text`, default NULL), a 37 előre definiált könyvelési, banki, bér és rendszer kategóriával (lásd: `src/utils/ticketCategories.ts`, migráció: `20260924210000_add_category_to_feedback.sql`).
+
+**eaisyWorks Integráció:**
+- `eaisyworks_ticket_id`: eaisyWorks feladat UUID.
+- `eaisyworks_ticket_key`: publikus feladat azonosító (pl. `EB-103`).
+- `eaisyworks_synced_at`: szinkronizálás időbélyege.
+- Tárolt eljárás: `link_eaisyworks_ticket(p_ticket_id uuid, p_works_id text, p_works_key text)` `SECURITY DEFINER` RPC (migráció: `20261003140000_add_eaisyworks_ticket_fields.sql`).
 
 ---
 

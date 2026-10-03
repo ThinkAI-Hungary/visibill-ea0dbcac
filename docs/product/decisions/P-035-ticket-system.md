@@ -89,8 +89,12 @@
   - Ha egy kolléga által nyitott jegyre válasz érkezik, a rendszer csak a konkrét bejelentő számára emeli ki olvasatlanként a jegyet és csak az ő oldalsávjában növeli az olvasatlan számlálót (`canBeUnreadForUser`), megkímélve az iroda többi tagját a félrevezető értesítésektől.
 - **Kollaboratív Jóváhagyás és Versenyhelyzet Védelem:**
   - A jegyet kezelő iroda bármely tagja jóváhagyhatja a megoldást a `TicketResolutionBanner`-en keresztül. Az adatbázis tárolt eljárása (`respond_to_ticket_resolution`) tranzakciós szinten védi a párhuzamos jóváhagyási kísérleteket, megakadályozva a versenyhelyzeteket és a duplikált audit naplóbejegyzéseket.
+- **eaisyWorks Feladat Szinkronizáció (`EaisyWorksSyncCard`):**
+  - **Elhelyezés:** A Management Dashboard jegyrészletező felületén (`TicketDetailView`), a jobb oldali sávban a Kategória kártya alatt kapott helyet.
+  - **Művelet:** Egykattintásos "eaisyWorks hibajegy létrehozása" gomb aszinkron töltés- és hibaállapottal (`useEaisyWorksSync`).
+  - **Szinkronizált állapot:** Ha a feladat már létrejött a külső rendszerben, a kártya kiemelt kék `ExternalLink` gombbal jeleníti meg a feladatkulcsot (pl. `EB-103`), amely új lapon (`target="_blank"`) közvetlenül megnyitja a feladatot az eaisyWorks munkaterületén, és mutatja az utolsó szinkronizáció pontos időpontját.
 
-**Rationale:** Egy beépített ticket rendszer gyorsabb visszajelzési ciklust biztosít mint az email, és kontextust ad a fejlesztőknek (melyik oldalon, melyik cég kontextusban keletkezett a hiba). Az ügyfél általi megerősítő folyamat garantálja, hogy egyetlen hibajegy se záródjon le a felhasználó valós jóváhagyása nélkül. A könyvelőirodai hibrid megosztás és a céges keresősáv megszünteti az irodán belüli információs silókat anélkül, hogy a kollégákat felesleges unread értesítésekkel árasztaná el.
+**Rationale:** Egy beépített ticket rendszer gyorsabb visszajelzési ciklust biztosít mint az email, és kontextust ad a fejlesztőknek (melyik oldalon, melyik cég kontextusban keletkezett a hiba). Az ügyfél általi megerősítő folyamat garantálja, hogy egyetlen hibajegy se záródjon le a felhasználó valós jóváhagyása nélkül. A könyvelőirodai hibrid megosztás és a céges keresősáv megszünteti az irodán belüli információs silókat anélkül, hogy a kollégákat felesleges unread értesítésekkel árasztaná el. A közvetlen eaisyWorks szinkronizáció áthidalja az ügyfélszolgálati kommunikáció és a fejlesztői sprint feladatkezelés közötti szakadékot.
 
 ## Kapcsolódó
 - [A-148: Könyvelőirodai Hibajegy Megosztás és Hibrid RLS](../../architecture/decisions/A-148-accounting-firm-ticket-sharing-and-hybrid-access.md)

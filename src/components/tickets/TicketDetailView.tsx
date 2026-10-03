@@ -60,6 +60,7 @@ import { TicketSlaBadge } from "./TicketSlaBadge";
 import { TicketSlaWarningBanner } from "./TicketSlaWarningBanner";
 import { TicketCategoryBadge } from "./TicketCategoryBadge";
 import { TicketCategorySelect } from "./TicketCategorySelect";
+import { EaisyWorksSyncCard } from "./EaisyWorksSyncCard";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RichTextContent } from "@/components/ui/rich-text-content";
 import {
@@ -1762,6 +1763,11 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                     </div>
                   </div>
                 </div>
+
+                <Separator />
+
+                {/* eaisyWorks Integráció */}
+                <EaisyWorksSyncCard ticket={ticket} canManage={canManage} />
               </CardContent>
             </Card>
 

@@ -10,6 +10,13 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/eaisyworks-api': {
+        target: 'http://2.28.55.167',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/eaisyworks-api/, ''),
+      },
+    },
   },
   plugins: [
     react(),

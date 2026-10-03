@@ -60,6 +60,9 @@ export interface Ticket {
   needs_staff_response?: boolean;
   last_customer_message_at?: string | null;
   sla?: TicketSlaInfo;
+  eaisyworks_ticket_id?: string | null;
+  eaisyworks_ticket_key?: string | null;
+  eaisyworks_synced_at?: string | null;
 }
 
 export interface TicketComment {

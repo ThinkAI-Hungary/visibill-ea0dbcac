@@ -4,30 +4,10 @@
     "ast_hash": "237367fea9ecc053a2edc802502d67ae",
     "semantic_hash": "237367fea9ecc053a2edc802502d67ae"
   },
-  "deploy_edge_functions.ps1": {
-    "mtime": 1789888302.1277368,
-    "ast_hash": "3c788980a7eeea46c59ae11bd90264a9",
-    "semantic_hash": ""
-  },
   "eslint.config.js": {
     "mtime": 1772416213.6192977,
     "ast_hash": "bc484741cdf3591af5da7d9f3da3a647",
     "semantic_hash": "bc484741cdf3591af5da7d9f3da3a647"
-  },
-  "extract_edge_functions.ps1": {
-    "mtime": 1780305936.25606,
-    "ast_hash": "6795eed811aedb2718fe1602de78f476",
-    "semantic_hash": "6795eed811aedb2718fe1602de78f476"
-  },
-  "gen_waves.py": {
-    "mtime": 1780952199.9641073,
-    "ast_hash": "8319f2f4df9288aef98eb48d2e5eada6",
-    "semantic_hash": "8319f2f4df9288aef98eb48d2e5eada6"
-  },
-  "generic-coa-seed.sql": {
-    "mtime": 1780305936.257061,
-    "ast_hash": "b6fd1b3049065ccb1081335d010ab75f",
-    "semantic_hash": ""
   },
   "package.json": {
     "mtime": 1790893214.1095362,
@@ -475,8 +455,8 @@
     "semantic_hash": ""
   },
   "src/components/tickets/TicketDetailView.tsx": {
-    "mtime": 1790281310.584793,
-    "ast_hash": "db8b20b584fb1ddc71d99da843d103dc",
+    "mtime": 1791028134.9420378,
+    "ast_hash": "19d06b78a13e528dea4752b672193866",
     "semantic_hash": ""
   },
   "src/components/tickets/TicketPriorityBadge.tsx": {
@@ -1030,8 +1010,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTickets.ts": {
-    "mtime": 1790284776.009422,
-    "ast_hash": "f68c97f2b960e692e5ddfe3bdfa7aa38",
+    "mtime": 1791028066.862615,
+    "ast_hash": "82930bbff8e2bec2b0ba7729089954db",
     "semantic_hash": ""
   },
   "src/hooks/useTimeEntries.ts": {
@@ -2710,8 +2690,8 @@
     "semantic_hash": "ea3b5c2d9c1cc5d2b3fb3af706f2ca1a"
   },
   "vite.config.ts": {
-    "mtime": 1789410160.2163935,
-    "ast_hash": "8161dcf5d7fd41c2997fe0f2ee5f2f7c",
+    "mtime": 1791029424.0696409,
+    "ast_hash": "7e8c500925da1c586582f232a14a3913",
     "semantic_hash": ""
   },
   "vsweb_cron_jobs.sql": {
@@ -2739,11 +2719,6 @@
     "ast_hash": "627a443d2dbe9c85e8efac6e4fb7aa08",
     "semantic_hash": ""
   },
-  "FELHASZNALOI_UTMUTATO.md": {
-    "mtime": 1787753315.8218594,
-    "ast_hash": "6b5e8123e5bbe7ed5f1519a89adbaf4a",
-    "semantic_hash": ""
-  },
   "PROJECT_DOCUMENTATION.md": {
     "mtime": 1788773029.6050675,
     "ast_hash": "dcd16df025a0bd32524cf5de52559828",
@@ -2763,16 +2738,6 @@
     "mtime": 1774268918.1471503,
     "ast_hash": "5a9dc7116f11be95f48f1147b0cf6a18",
     "semantic_hash": ""
-  },
-  "dashboard_analysis_report.html": {
-    "mtime": 1773980524.9014733,
-    "ast_hash": "e6dff6391aec5d7e92a55d3882b9885a",
-    "semantic_hash": ""
-  },
-  "database_audit_report.html": {
-    "mtime": 1774984028.9440594,
-    "ast_hash": "7f4fb5701a41700be413a278eb539b78",
-    "semantic_hash": "7f4fb5701a41700be413a278eb539b78"
   },
   "index.html": {
     "mtime": 1790893828.035785,
@@ -3075,8 +3040,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-018-ticket-system.md": {
-    "mtime": 1790282268.6828547,
-    "ast_hash": "8d6d098fe57de5dec2c8edd9008a43af",
+    "mtime": 1791030100.2822046,
+    "ast_hash": "72d9c2c4529a0524d38bbf8a2a444574",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
@@ -3550,8 +3515,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-035-ticket-system.md": {
-    "mtime": 1790285279.325833,
-    "ast_hash": "94f70f1551efe8368486c67a1b64190e",
+    "mtime": 1791030110.849413,
+    "ast_hash": "b5bb5bce2174bdcc2c3cbad1c8dba729",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-036-management-dashboard.md": {
@@ -3805,8 +3770,8 @@
     "semantic_hash": ""
   },
   "src/components/vat/VatRowDrillDown.tsx": {
-    "mtime": 1790984410.4298604,
-    "ast_hash": "9421351d208db6cd4bb5eeef4796b552",
+    "mtime": 1791025702.1433065,
+    "ast_hash": "addfbced186d9fc811e61d72967b0638",
     "semantic_hash": ""
   },
   "src/components/vat/VatTrendChart.tsx": {
@@ -4397,11 +4362,6 @@
   "docs/architecture/shipment-matching.md": {
     "mtime": 1784159403.3958435,
     "ast_hash": "c1ae4f02e50d657c9ea0cc8aea377a62",
-    "semantic_hash": ""
-  },
-  "magyarorszagi_extracted.txt": {
-    "mtime": 1781806414.7746146,
-    "ast_hash": "ca73c9fa1ee418e96b35ab5f7666d76a",
     "semantic_hash": ""
   },
   "public/mockup_permissions_redesign.html": {
@@ -4995,8 +4955,8 @@
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
-    "mtime": 1790992870.4169893,
-    "ast_hash": "cbe4543cd429d631d8769965d30f8c2f",
+    "mtime": 1790994460.9474616,
+    "ast_hash": "efb0aa287ed7cbaa3e50fac598d1adfa",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-dev/SKILL.md": {
@@ -5110,13 +5070,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/19-platform-ops.md": {
-    "mtime": 1790291146.0382307,
-    "ast_hash": "8181fbc90d9f44b64e6a8b730552038b",
+    "mtime": 1791030131.8876588,
+    "ast_hash": "ee8c6adcd7d66e41a813e1f708c41d85",
     "semantic_hash": ""
   },
   "docs/architecture/database/20-tickets.md": {
-    "mtime": 1790283600.2094958,
-    "ast_hash": "a588a4e41fd3a00baf642ecbccd74ea9",
+    "mtime": 1791030144.034178,
+    "ast_hash": "f930d4d7e4f3b0c868fca7a54f2490fa",
     "semantic_hash": ""
   },
   "docs/architecture/database/21-master-data.md": {
@@ -5492,11 +5452,6 @@
   "docs/architecture/decisions/A-033-exclude-service-role-from-audit.md": {
     "mtime": 1783608679.5517395,
     "ast_hash": "a4384479bfe7d2f7a41704e747131751",
-    "semantic_hash": ""
-  },
-  "mockups.html": {
-    "mtime": 1783610126.140864,
-    "ast_hash": "7d898954034cdda19927055c1e85fb44",
     "semantic_hash": ""
   },
   "dev-dist/registerSW.js": {
@@ -6402,31 +6357,6 @@
   "check_uploads_columns.js": {
     "mtime": 1785406504.2149265,
     "ast_hash": "e7e333ec9173aa5e20ac2b7ce8cd7e1b",
-    "semantic_hash": ""
-  },
-  "debug_nav_select.js": {
-    "mtime": 1785406504.2149265,
-    "ast_hash": "8412a6f71f0f8000eef6684de21286bb",
-    "semantic_hash": ""
-  },
-  "debug_nav_select_by_id.js": {
-    "mtime": 1785406504.2149265,
-    "ast_hash": "4ba4aecf6f598baed19edad02fb696c7",
-    "semantic_hash": ""
-  },
-  "debug_sportsbase_nav.js": {
-    "mtime": 1785406504.2159293,
-    "ast_hash": "da8ef2512147b3da213a89b2314cb41c",
-    "semantic_hash": ""
-  },
-  "decrypt_creds.js": {
-    "mtime": 1785406504.2159293,
-    "ast_hash": "4a90ea57cd72f5a59dbfc632108538a4",
-    "semantic_hash": ""
-  },
-  "list_all_companies.js": {
-    "mtime": 1785406504.2159293,
-    "ast_hash": "a4d653e7e57e5bc1802366a9779ed753",
     "semantic_hash": ""
   },
   "print_all_nav_creds.js": {
@@ -9614,11 +9544,6 @@
     "ast_hash": "fa85702d9e2c3bc21ee1c3d2384901b9",
     "semantic_hash": ""
   },
-  "docs/THINKAI.png": {
-    "mtime": 1773891692.8536873,
-    "ast_hash": "bb95ccfa77fcc23ceb58b97dfaba0ea2",
-    "semantic_hash": ""
-  },
   "public/thinkai-icon.svg": {
     "mtime": 1788974604.8405845,
     "ast_hash": "940144fd868cc19f4b738b67a63ccd2b",
@@ -10255,8 +10180,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/database.md": {
-    "mtime": 1790992837.5282817,
-    "ast_hash": "934f35de25a30432437fe843ae457b89",
+    "mtime": 1790994468.871744,
+    "ast_hash": "d423822891bf13fb4eada632976b792d",
     "semantic_hash": ""
   },
   ".agents/rules/documentation.md": {
@@ -11254,11 +11179,6 @@
     "ast_hash": "45482198dccc16d668ce90627b7e460c",
     "semantic_hash": ""
   },
-  "docs/integrations_layout_mockup.html": {
-    "mtime": 1790095135.5490556,
-    "ast_hash": "64c56fdf00d5af8efce094e34cc0562b",
-    "semantic_hash": ""
-  },
   "src/components/transactions/TransactionDataExportDialog.tsx": {
     "mtime": 1790095135.3889587,
     "ast_hash": "228df37574d02b330024e4acf06cfb52",
@@ -11834,11 +11754,6 @@
     "ast_hash": "81f3a74866baa83cd0347f6c55dbe049",
     "semantic_hash": ""
   },
-  "docs/nav_api_jogosultsag_riport.html": {
-    "mtime": 1790534682.9811654,
-    "ast_hash": "12ed6b1f61ee63d4a1f4842213df7d1b",
-    "semantic_hash": ""
-  },
   "docs/product/decisions/P-113-general-ledger-granularity-kontirok-teteles-view.md": {
     "mtime": 1790332717.883275,
     "ast_hash": "d5119e85028571149a0bea0e1cdd40b5",
@@ -11862,11 +11777,6 @@
   "docs/AFA_kodok_HR_Obracun_PDV_20260917_172127.pdf": {
     "mtime": 1790341701.7229595,
     "ast_hash": "bcdf158e483b812aece66d7f8f24dc0c",
-    "semantic_hash": ""
-  },
-  "docs/nav_api_jogosultsag_riport.pdf": {
-    "mtime": 1790336079.8363998,
-    "ast_hash": "805afb41ba83bb1bddd60bbd06ad1098",
     "semantic_hash": ""
   },
   "src/test/accounty/AccountyAccessGuard.test.tsx": {
@@ -12306,24 +12216,6 @@
     "mtime": 1780064699.2424479,
     "seen": 1790531663.74896,
     "ast_hash": "29e0b85be56f1497cba1d7ebc75a14d5",
-    "semantic_hash": ""
-  },
-  "decode_jwt.cjs": {
-    "mtime": 1788168962.294252,
-    "seen": 1790531663.7489831,
-    "ast_hash": "b7c274173af8206bb81a42893ee8b8dd",
-    "semantic_hash": ""
-  },
-  "get_vault_secrets.js": {
-    "mtime": 1785352528.9780343,
-    "seen": 1790531663.749002,
-    "ast_hash": "af0f42e9b34eabe85eaed91ef78ddb33",
-    "semantic_hash": ""
-  },
-  "lookup_dns.cjs": {
-    "mtime": 1788168973.8840802,
-    "seen": 1790531663.7490067,
-    "ast_hash": "562c93b8ed389cf042a0c35a3c8c1cf8",
     "semantic_hash": ""
   },
   "scripts/refactor_eaisybooks_indigo_and_animations.cjs": {
@@ -13464,16 +13356,6 @@
     "ast_hash": "0e5c15081a54f52bb09dd68613ae18c8",
     "semantic_hash": ""
   },
-  "fix_files.py": {
-    "mtime": 1790775646.178521,
-    "ast_hash": "84a6ce423b2f945f7a48c5da936277bc",
-    "semantic_hash": ""
-  },
-  "fix_subledger.py": {
-    "mtime": 1790775646.178521,
-    "ast_hash": "45078dccfeca0b3d16b80e3f54bd3f2a",
-    "semantic_hash": ""
-  },
   "src/integrations/supabase/previewAuthStorage.ts": {
     "mtime": 1790775646.1942863,
     "ast_hash": "de67a0198c54d41d095b33ab3ded86e9",
@@ -13952,6 +13834,41 @@
   "docs/architecture/decisions/A-190-management-dashboard-counts-caching-and-worker-vault-offloading.md": {
     "mtime": 1790993459.306451,
     "ast_hash": "d1a3c0b514a127e78a8d4687dee0abeb",
+    "semantic_hash": ""
+  },
+  "src/components/tickets/EaisyWorksSyncCard.tsx": {
+    "mtime": 1791028107.2591252,
+    "ast_hash": "9fe280d5413c058a1a98823faf39ac5f",
+    "semantic_hash": ""
+  },
+  "src/hooks/useEaisyWorksSync.ts": {
+    "mtime": 1791028097.8202772,
+    "ast_hash": "b9cfbc2946816b92e962a01f956a50a6",
+    "semantic_hash": ""
+  },
+  "src/services/eaisyworksService.ts": {
+    "mtime": 1791029859.2080379,
+    "ast_hash": "aae00fb561c86ca4be0a7c3db646a16e",
+    "semantic_hash": ""
+  },
+  "src/test/tickets/eaisyworksSync.test.tsx": {
+    "mtime": 1791029870.387122,
+    "ast_hash": "5e7889ae5f0509c7787d1dc133ad2ead",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261003140000_add_eaisyworks_ticket_fields.sql": {
+    "mtime": 1791028014.1295195,
+    "ast_hash": "eb9e4d81f30d27cbede759d06e3cd96f",
+    "semantic_hash": ""
+  },
+  "docs/eaisyworks-api-docs/eaisyworks-api-v1-docs.md": {
+    "mtime": 1791027385.672115,
+    "ast_hash": "3bd6fb27be289dccb54f7f7dc33cd863",
+    "semantic_hash": ""
+  },
+  "implementation-plans/eaisyworks-ticket-sync-plan.md": {
+    "mtime": 1791027940.1497757,
+    "ast_hash": "f8807bdd6408028d2c7547af054b0b08",
     "semantic_hash": ""
   }
 }

@@ -791,9 +791,10 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
       items = items.filter((it: any) => !isFadItem(it, inv, isDomestic));
     }
     const isInbound = inv.invoice_direction === 'INBOUND';
+    const isPayableRow = ['01', '02', '03', '04', '05', '06', '07', '08', '11', '12', '13', '14', '15', '16', '18', '27', '29', '91', '92'].includes(rowNumber || '');
     const netSum = items.length > 0
       ? items.reduce((is: number, i: any) => {
-          const ratio = (isInbound && rowNumber !== '29') ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
+          const ratio = (isInbound && !isPayableRow) ? (Number(i.deductible_percentage ?? 100) / 100.0) : 1.0;
           return is + ((Number(i.net_amount) || 0) * ratio);
         }, 0)
       : Number(inv.invoice_net_amount || 0);
@@ -813,6 +814,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
     } else if (rowNumber === '66' && subFilter === 'NORMAL') {
       items = items.filter((it: any) => !isFadItem(it, inv, isDomestic));
     }
+    const isInbound = inv.invoice_direction === 'INBOUND';
     const isPayableRow = ['01', '02', '03', '04', '05', '06', '07', '08', '11', '12', '13', '14', '15', '16', '18', '27', '29', '91', '92'].includes(rowNumber || '');
     const vatSum = items.length > 0
       ? items.reduce((is: number, i: any) => {
