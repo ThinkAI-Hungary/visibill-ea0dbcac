@@ -10,16 +10,17 @@ async function calculateDynamicDateFrom(
   supabase: any,
   companyId: string,
   direction: 'OUTBOUND' | 'INBOUND',
-  requestedDateFrom?: string
+  requestedDateFrom?: string,
+  maxLookbackDays = 7
 ): Promise<string> {
   if (requestedDateFrom) return requestedDateFrom;
 
   const now = new Date();
   const maxLookbackDate = new Date(now);
-  maxLookbackDate.setDate(maxLookbackDate.getDate() - 365); // maximum 365 days lookback
+  maxLookbackDate.setDate(maxLookbackDate.getDate() - maxLookbackDays); // default 7 days lookback in cron
 
   const defaultLookbackDate = new Date(now);
-  defaultLookbackDate.setDate(defaultLookbackDate.getDate() - 90); // default 90 days
+  defaultLookbackDate.setDate(defaultLookbackDate.getDate() - Math.min(maxLookbackDays, 7)); // default 7 days
 
   try {
     const { data: lastSuccessLog, error } = await supabase
@@ -197,6 +198,18 @@ Deno.serve(async (req) => {
     const companiesToCategorize: { companyId: string; userId: string }[] = [];
 
     for (const company of activeCompanies) {
+      // Time budget guard: Edge Functions have a 150s limit. Stop loop at 100s to avoid 504 Gateway Timeout.
+      const elapsedMs = Date.now() - startTime;
+      if (elapsedMs > 100_000) {
+        console.warn(`[NAV-AUTO-SYNC] Time budget (100s) reached (${elapsedMs}ms). Stopping loop gracefully to prevent 504 timeout.`);
+        results.details.push({
+          company_id: company.company_id,
+          status: 'deferred',
+          reason: `Time budget limit (100s) reached (${Math.round(elapsedMs / 1000)}s elapsed)`
+        });
+        break;
+      }
+
       console.log(`[NAV-AUTO-SYNC] [Bucket ${targetBucket !== null ? targetBucket : 'all'}] Processing company: ${company.company_id} (user: ${company.user_id})`);
 
       try {
@@ -230,11 +243,15 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Calculate dynamic dateFrom independently per direction (up to 365 days lookback)
-        const outboundDateFromStr = await calculateDynamicDateFrom(supabase, company.company_id, 'OUTBOUND', requestBody.dateFrom);
-        const inboundDateFromStr = await calculateDynamicDateFrom(supabase, company.company_id, 'INBOUND', requestBody.dateFrom);
+        // Calculate dynamic dateFrom independently per direction (up to 7 days lookback in cron mode)
+        const outboundDateFromStr = await calculateDynamicDateFrom(supabase, company.company_id, 'OUTBOUND', requestBody.dateFrom, 7);
+        const inboundDateFromStr = await calculateDynamicDateFrom(supabase, company.company_id, 'INBOUND', requestBody.dateFrom, 7);
 
         console.log(`[NAV-AUTO-SYNC] Company ${company.company_id} date ranges - OUTBOUND: ${outboundDateFromStr} to ${dateToStr}, INBOUND: ${inboundDateFromStr} to ${dateToStr}`);
+
+        // In automated dawn cron mode, fetch headers only (fetchDetailedItems: false).
+        // Line item details are enqueued to PGMQ for asynchronous worker processing.
+        const shouldFetchDetails = requestBody.fetchDetailedItems === true;
 
         // Execute OUTBOUND sync
         let outboundResult: any = null;
@@ -246,7 +263,7 @@ Deno.serve(async (req) => {
             direction: 'OUTBOUND',
             dateFrom: outboundDateFromStr,
             dateTo: dateToStr,
-            fetchDetailedItems: true,
+            fetchDetailedItems: shouldFetchDetails,
             syncType: 'cron'
           });
         } catch (oErr: any) {
@@ -264,7 +281,7 @@ Deno.serve(async (req) => {
             direction: 'INBOUND',
             dateFrom: inboundDateFromStr,
             dateTo: dateToStr,
-            fetchDetailedItems: true,
+            fetchDetailedItems: shouldFetchDetails,
             syncType: 'cron'
           });
         } catch (iErr: any) {
@@ -278,6 +295,25 @@ Deno.serve(async (req) => {
             companyId: company.company_id,
             userId: company.user_id,
           });
+        }
+
+        // Enqueue background line-item fetch job via PGMQ if new invoices were fetched and details not loaded inline
+        const totalNewInvoices = (outboundResult?.totalInserted || 0) + (inboundResult?.totalInserted || 0);
+        if (totalNewInvoices > 0 && !shouldFetchDetails) {
+          try {
+            await supabase.rpc('pgmq_send_retry', {
+              queue_name: 'nav_item_jobs',
+              msg: {
+                job_type: 'fetch_nav_items',
+                company_id: company.company_id,
+                user_id: company.user_id,
+                created_at: new Date().toISOString()
+              }
+            });
+            console.log(`[NAV-AUTO-SYNC] Enqueued nav_item_jobs for company ${company.company_id} (${totalNewInvoices} new invoices)`);
+          } catch (qErr) {
+            console.warn(`[NAV-AUTO-SYNC] Could not enqueue nav_item_jobs for ${company.company_id}:`, qErr);
+          }
         }
 
         if (outboundError && inboundError) {

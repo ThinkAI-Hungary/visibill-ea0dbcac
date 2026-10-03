@@ -385,22 +385,27 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
 
   const triggerInitialSync = async (accessToken: string) => {
     try {
-      // Dynamic sync window: look back to the latest successful sync date (minus 2 days), up to 365 days ago, default 90 days
+      // Dinamikus szinkronizációs ablak: jelszójavítás / credential mentés esetén legalább 30 napos catch-up ablak
       const dateTo = new Date();
       const dateFrom = new Date();
+      const catchUpDate = new Date(dateTo);
+      catchUpDate.setDate(catchUpDate.getDate() - 30);
+
       const lastCompletedStr = directionalStatus.inbound?.completed_at || directionalStatus.outbound?.completed_at;
       if (lastCompletedStr) {
         const lastDate = new Date(lastCompletedStr);
         if (!isNaN(lastDate.getTime())) {
           lastDate.setDate(lastDate.getDate() - 2);
+          // Ha az utolsó sikeres szinkron régebbi mint 30 nap, onnan indulunk; ha újabb, akkor is legalább 30 napos catch-upot garantálunk
+          const effectiveDate = lastDate < catchUpDate ? lastDate : catchUpDate;
           const maxLookback = new Date(dateTo);
           maxLookback.setDate(maxLookback.getDate() - 365);
-          const effectiveDate = lastDate < maxLookback ? maxLookback : lastDate;
-          dateFrom.setTime(effectiveDate.getTime());
+          dateFrom.setTime(effectiveDate < maxLookback ? maxLookback.getTime() : effectiveDate.getTime());
         } else {
-          dateFrom.setDate(dateFrom.getDate() - 90);
+          dateFrom.setTime(catchUpDate.getTime());
         }
       } else {
+        // Ha soha nem volt még befejezett szinkron ezen a cégen, alapértelmezett 90 nap
         dateFrom.setDate(dateFrom.getDate() - 90);
       }
       
@@ -409,7 +414,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       
       toast({
         title: 'Adatok szinkronizálása',
-        description: `NAV számlák letöltése (${dateFromStr} – ${dateToStr})...`,
+        description: `NAV számlák letöltése (30 napos catch-up: ${dateFromStr} – ${dateToStr})...`,
       });
 
       let totalOutbound = 0;

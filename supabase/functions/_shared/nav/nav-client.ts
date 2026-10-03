@@ -19,6 +19,16 @@ export class NavClient {
       : 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
   }
 
+  private async safeTransport(url: string, init: RequestInit, timeoutMs = 25000): Promise<Response> {
+    const signal = (typeof AbortSignal !== 'undefined' && typeof (AbortSignal as any).timeout === 'function')
+      ? (AbortSignal as any).timeout(timeoutMs)
+      : undefined;
+    return await this.transport(url, {
+      ...init,
+      signal: init.signal || signal
+    });
+  }
+
   /**
    * Hitelesítő adatok inline vagy tárolt validálása a tokenExchange végponton keresztül.
    */
@@ -60,7 +70,7 @@ export class NavClient {
       const requestSignature = createSignature(this.creds, requestId, timestamp);
       const xmlRequest = buildTokenExchangeXml(this.creds, requestId, timestamp, passwordHash, requestSignature);
 
-      const response = await this.transport(`${this.baseUrl}/tokenExchange`, {
+      const response = await this.safeTransport(`${this.baseUrl}/tokenExchange`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/xml; charset=UTF-8',
@@ -154,7 +164,7 @@ export class NavClient {
 
     const xmlRequest = buildTokenExchangeXml(this.creds, requestId, timestamp, passwordHash, requestSignature);
 
-    const response = await this.transport(`${this.baseUrl}/tokenExchange`, {
+    const response = await this.safeTransport(`${this.baseUrl}/tokenExchange`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/xml; charset=UTF-8',
@@ -186,7 +196,7 @@ export class NavClient {
 
     const xmlRequest = buildQueryDigestXml(this.creds, params, requestId, timestamp, passwordHash, requestSignature);
 
-    const response = await this.transport(`${this.baseUrl}/queryInvoiceDigest`, {
+    const response = await this.safeTransport(`${this.baseUrl}/queryInvoiceDigest`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/xml; charset=UTF-8',
@@ -210,7 +220,7 @@ export class NavClient {
 
     const xmlRequest = buildQueryInvoiceDataXml(this.creds, invoiceNumber, invoiceDirection, requestId, timestamp, passwordHash, requestSignature);
 
-    const response = await this.transport(`${this.baseUrl}/queryInvoiceData`, {
+    const response = await this.safeTransport(`${this.baseUrl}/queryInvoiceData`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/xml; charset=UTF-8',
@@ -297,7 +307,7 @@ export class NavClient {
       requestSignature
     );
 
-    const response = await this.transport(`${this.baseUrl}/queryTaxpayer`, {
+    const response = await this.safeTransport(`${this.baseUrl}/queryTaxpayer`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/xml; charset=UTF-8',

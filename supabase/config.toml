@@ -96,3 +96,6 @@ verify_jwt = false
 [functions.customer-api]
 verify_jwt = false
 
+[functions.nav-fetch-details]
+verify_jwt = false
+

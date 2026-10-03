@@ -215,7 +215,7 @@ export function InvoiceItemsDialog({
       const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
       const selectFields = source === 'submitted'
         ? 'company_id, project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number'
-        : 'company_id, project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number';
+        : 'company_id, project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched';
 
       const { data, error } = await supabase
         .from(table as any)
@@ -272,6 +272,7 @@ export function InvoiceItemsDialog({
         partner_gl_number: (data as any)?.partner_gl_number || null,
         vat_gl_number: (data as any)?.vat_gl_number || null,
         invoice_number: (data as any)?.invoice_number || (data as any)?.bizonylatsorszam || null,
+        details_fetched: (data as any)?.details_fetched ?? null,
       } as {
         project_id?: string | null;
         invoice_direction?: string;
@@ -291,6 +292,7 @@ export function InvoiceItemsDialog({
         vat_gl_number?: string | null;
         bizonylatsorszam?: string | null;
         invoice_number?: string | null;
+        details_fetched?: boolean | null;
       } | null;
     },
     enabled: open && !!invoiceId,
@@ -444,9 +446,39 @@ export function InvoiceItemsDialog({
           if (fallbackError) throw fallbackError;
           return (fallbackData || []) as unknown as InvoiceLineItem[];
         }
-        throw error;
       }
-      return (data || []) as unknown as InvoiceLineItem[];
+
+      let fetchedItems = (data || []) as unknown as InvoiceLineItem[];
+
+      // Ha NAV számla és még nincsenek letöltve a tételek (pl. a hajnali gyors szinkron során deferálva lettek),
+      // automatikusan lekérjük a részleteket a nav-fetch-details Edge Function segítségével
+      if (source !== 'submitted' && fetchedItems.length === 0 && parentInvoice?.details_fetched === false) {
+        try {
+          const { data: detailData, error: detailError } = await supabase.functions.invoke('nav-fetch-details', {
+            body: {
+              companyId: (parentInvoice as any)?.company_id || selectedCompany?.id,
+              invoiceId: invoiceId,
+            }
+          });
+
+          if (!detailError && detailData?.success) {
+            const { data: reloadedData } = await supabase
+              .from('nav_invoice_items')
+              .select(baseCols)
+              .eq('nav_invoice_id', invoiceId)
+              .order('line_number', { ascending: true });
+
+            if (reloadedData && reloadedData.length > 0) {
+              fetchedItems = reloadedData as unknown as InvoiceLineItem[];
+              queryClient.invalidateQueries({ queryKey: ['parentInvoice', source, invoiceId] });
+            }
+          }
+        } catch (fetchErr) {
+          console.warn('[InvoiceItemsDialog] On-demand detail fetch warning:', fetchErr);
+        }
+      }
+
+      return fetchedItems;
     },
     enabled: open && !!invoiceId,
     placeholderData: keepPreviousData,

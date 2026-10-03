@@ -145,8 +145,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1790963874.6485283,
-    "ast_hash": "3215b7daf703be137d6685add1b4d191",
+    "mtime": 1791045020.5694582,
+    "ast_hash": "88c162ae8fc5c028c896d8ff5a885275",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -385,8 +385,8 @@
     "semantic_hash": ""
   },
   "src/components/nav/NavCredentialsForm.tsx": {
-    "mtime": 1790534332.9664962,
-    "ast_hash": "ce85b211fda937521f373670772f6453",
+    "mtime": 1791045642.2264209,
+    "ast_hash": "16d8d3d7cf00819b055e4077c19a0d96",
     "semantic_hash": ""
   },
   "src/components/salaries/EmployeeAccordion.tsx": {
@@ -1680,13 +1680,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
-    "mtime": 1789980177.4567149,
-    "ast_hash": "83cb26aa80ddc169672c5739ec2fd00e",
+    "mtime": 1791044333.0911703,
+    "ast_hash": "b9b98b4df51340c3857d7aa917ff1943",
     "semantic_hash": ""
   },
   "supabase/functions/nav-query-outbound-invoices/index.ts": {
-    "mtime": 1788712027.5715625,
-    "ast_hash": "5b656edf833e7adc7fee8bdb1bcb0ad6",
+    "mtime": 1791046203.2950077,
+    "ast_hash": "a10ef058ffec9d5b9ac5647ad97c0e2c",
     "semantic_hash": ""
   },
   "supabase/functions/nav-sync/index.ts": {
@@ -2855,8 +2855,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/visibill-db-audit/SKILL.md": {
-    "mtime": 1783210835.1543088,
-    "ast_hash": "7f580d96072323a3337ef7d8e41ec6d6",
+    "mtime": 1791042501.006944,
+    "ast_hash": "5acef2e69d80645144fcf82de2bf9a6c",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-db-checklist/SKILL.md": {
@@ -7580,13 +7580,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/nav-client.ts": {
-    "mtime": 1790657381.7620177,
-    "ast_hash": "c385c2924825c17d10a38f0251f9e142",
+    "mtime": 1791044354.1961408,
+    "ast_hash": "b3535883cf40fea46a36f8f39a25b188",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/nav-ingestion-service.ts": {
-    "mtime": 1790657422.2106495,
-    "ast_hash": "b37776d3e002c856cfd49366fe97ab6a",
+    "mtime": 1791046218.5728648,
+    "ast_hash": "cf4b29ddd817dad27cd60d746737c8bf",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/types.ts": {
@@ -9980,8 +9980,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/database.md": {
-    "mtime": 1790994468.871744,
-    "ast_hash": "d423822891bf13fb4eada632976b792d",
+    "mtime": 1791042723.6724741,
+    "ast_hash": "92b313b93ef32654ae50b304875dce58",
     "semantic_hash": ""
   },
   ".agents/rules/documentation.md": {
@@ -13650,6 +13650,26 @@
   "supabase/migrations/20261003180000_optimize_query_performance_phase1_indexes.sql": {
     "mtime": 1791042002.7147868,
     "ast_hash": "56b4c28f58b01b2497cd537185a200e0",
+    "semantic_hash": ""
+  },
+  "src/test/navSyncOrchestration.test.ts": {
+    "mtime": 1791046267.4151185,
+    "ast_hash": "527b8f6ee10f1365d8ffd1d690e319d2",
+    "semantic_hash": ""
+  },
+  "supabase/functions/nav-fetch-details/index.ts": {
+    "mtime": 1791045224.4177785,
+    "ast_hash": "335429fd4ba4a0d919768e3c29551b44",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261003190000_create_nav_item_jobs_pgmq_queue.sql": {
+    "mtime": 1791044278.658331,
+    "ast_hash": "7693ab1037af901f4979482fb6fd6f0f",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261003200000_idempotent_nav_invoice_items_and_vt.sql": {
+    "mtime": 1791045544.7202702,
+    "ast_hash": "a1ef5b529b23301c9d9f968b4066f863",
     "semantic_hash": ""
   }
 }

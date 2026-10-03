@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { dateFrom, dateTo, additionalFilters, invoiceDirection = 'OUTBOUND', companyId } = await req.json();
+    const { dateFrom, dateTo, additionalFilters, invoiceDirection = 'OUTBOUND', companyId, fetchDetailedItems = false } = await req.json();
 
     if (!dateFrom || !dateTo) {
       return new Response(
@@ -56,6 +56,10 @@ Deno.serve(async (req) => {
 
     const ingestionService = new NavIngestionService(serviceClient);
 
+    const shouldFetchDetailsInline = fetchDetailedItems === true;
+
+    // Manuális szinkron esetén is a fejlécek gyors (másodpercek alatti) letöltése történik meg,
+    // megvédve a kérést a több hónapos / nagy tételszámú timeoutoktól.
     const result = await ingestionService.executeSync({
       userId: user.id,
       companyId,
@@ -63,9 +67,28 @@ Deno.serve(async (req) => {
       dateFrom,
       dateTo,
       additionalFilters,
-      fetchDetailedItems: true,
+      fetchDetailedItems: shouldFetchDetailsInline,
       syncType: 'manual'
     });
+
+    // Ha új számlák érkeztek és a tételeket nem szinkronban töltöttük le,
+    // beütemezzük a tétellekérdezést a PGMQ nav_item_jobs sorba a háttérmunkásnak.
+    if (result.totalInserted > 0 && !shouldFetchDetailsInline) {
+      try {
+        await serviceClient.rpc('pgmq_send_retry', {
+          queue_name: 'nav_item_jobs',
+          msg: {
+            job_type: 'fetch_nav_items',
+            company_id: companyId,
+            user_id: user.id,
+            created_at: new Date().toISOString()
+          }
+        });
+        console.log(`[NAV-QUERY-OUTBOUND] Enqueued nav_item_jobs for company ${companyId} (${result.totalInserted} new invoices)`);
+      } catch (qErr) {
+        console.warn(`[NAV-QUERY-OUTBOUND] Could not enqueue nav_item_jobs for ${companyId}:`, qErr);
+      }
+    }
 
     return new Response(
       JSON.stringify({
@@ -73,7 +96,8 @@ Deno.serve(async (req) => {
         totalInvoices: result.totalFetched,
         count: result.totalFetched,
         invoices: result.invoices,
-        detailsFetched: result.totalFetched,
+        detailsFetched: shouldFetchDetailsInline ? result.totalFetched : 0,
+        queuedForDetails: !shouldFetchDetailsInline && result.totalInserted > 0,
         logId: result.syncLogId
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

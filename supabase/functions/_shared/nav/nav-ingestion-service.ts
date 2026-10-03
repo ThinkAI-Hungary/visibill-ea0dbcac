@@ -285,10 +285,13 @@ export class NavIngestionService {
         }
       }
 
-      // 3. Batch INSERT új partnereknek - NAV adóalanyi lekérdezéssel gazdagítva 8-1-2-re
+      // 3. Batch INSERT új partnereknek - NAV adóalanyi lekérdezéssel gazdagítva 8-1-2-re (max 10 partner/szinkron a timeout megelőzésére)
       if (toInsert.length > 0) {
         if (navClient) {
+          const maxTaxpayerEnrichment = 10;
+          let enrichedCount = 0;
           for (const item of toInsert) {
+            if (enrichedCount >= maxTaxpayerEnrichment) break;
             const clean8 = sanitizeTaxNumber(item.tax_number);
             if (clean8 && clean8.length === 8) {
               try {
@@ -302,6 +305,7 @@ export class NavIngestionService {
                     item.address = taxpayerDetails.address.formattedAddress;
                   }
                 }
+                enrichedCount++;
               } catch {
                 // Nem blokkoló: ha a NAV queryTaxpayer sikertelen, marad a számla fejlécéből vett adat
               }
@@ -367,16 +371,144 @@ export class NavIngestionService {
             }
           }
 
-          await this.supabase
-            .from('nav_invoices')
-            .update(invoiceUpdates)
-            .eq('id', dbInvoice.id);
+          // 2. Szülő rekord és tételsorok atomi, idempotens mentése tárolt eljárással (RPC)
+          const resolvedCompanyId = dbInvoice.company_id || companyId || null;
+          const itemsToInsert = (details.lineItems && details.lineItems.length > 0)
+            ? details.lineItems.map(item => ({
+                company_id: resolvedCompanyId,
+                line_number: item.lineNumber,
+                line_description: item.lineDescription || null,
+                quantity: item.quantity || null,
+                unit_of_measure: item.unitOfMeasure || null,
+                unit_price: item.unitPrice || null,
+                net_amount: item.netAmount || 0,
+                vat_rate: item.vatRate || null,
+                vat_amount: item.vatAmount || 0,
+                gross_amount: item.grossAmount || 0,
+                product_code: item.productCode || null,
+                line_delivery_period_from: item.lineDeliveryPeriodFrom || null,
+                line_delivery_period_to: item.lineDeliveryPeriodTo || null
+              }))
+            : [];
 
-          // 2. Tételsorok idempotens mentése (korábbi tételek törlése + batch beszúrás)
-          if (details.lineItems && details.lineItems.length > 0) {
-            const resolvedCompanyId = dbInvoice.company_id || companyId || null;
-            const itemsToInsert = details.lineItems.map(item => ({
-              nav_invoice_id: dbInvoice.id,
+          const { error: rpcErr } = await this.supabase.rpc('save_nav_invoice_details_and_items', {
+            p_invoice_id: dbInvoice.id,
+            p_invoice_updates: invoiceUpdates,
+            p_line_items: itemsToInsert,
+          });
+
+          if (rpcErr) {
+            console.error(`[NavIngestionService] Failed to persist details via RPC for ${inv.invoice_number}:`, rpcErr);
+            throw rpcErr;
+          }
+        }
+      } catch (detailErr) {
+        console.warn(`[NavIngestionService] Failed to fetch details for invoice ${inv.invoice_number}:`, detailErr);
+      }
+    }
+  }
+
+  /**
+   * Hiányzó számlarészletek és tételsorok kötegelt lekérése a háttérmunkás (Worker) vagy UI számára.
+   */
+  async fetchDetailsBatch(
+    userId: string,
+    companyId: string,
+    options?: {
+      limit?: number;
+      invoiceId?: string;
+      invoiceNumbers?: string[];
+    }
+  ): Promise<{
+    processedCount: number;
+    failedCount: number;
+    remainingCount: number;
+  }> {
+    // 1. Hitelesítő adatok lekérése
+    let effectiveUserId = userId;
+    if (!effectiveUserId) {
+      const { data: credRow } = await this.supabase
+        .from('user_nav_credentials')
+        .select('user_id')
+        .eq('company_id', companyId)
+        .eq('validation_status', 'valid')
+        .limit(1)
+        .maybeSingle();
+
+      if (credRow?.user_id) {
+        effectiveUserId = credRow.user_id;
+      } else {
+        throw new Error(`Nem található érvényes NAV hitelesítő adat a(z) ${companyId} céghez.`);
+      }
+    }
+
+    const credentials = await this.getCredentials(effectiveUserId, companyId);
+    const navClient = new NavClient(credentials);
+
+    // 2. Érintett számlák lekérdezése
+    let query = this.supabase
+      .from('nav_invoices')
+      .select('id, invoice_number, invoice_direction, company_id')
+      .eq('company_id', companyId)
+      .or('details_fetched.is.null,details_fetched.eq.false');
+
+    if (options?.invoiceId) {
+      query = query.eq('id', options.invoiceId);
+    } else if (options?.invoiceNumbers && options.invoiceNumbers.length > 0) {
+      query = query.in('invoice_number', options.invoiceNumbers);
+    } else {
+      const limit = Math.min(Math.max(options?.limit || 20, 1), 50);
+      query = query.order('invoice_issue_date', { ascending: false }).limit(limit);
+    }
+
+    const { data: pendingInvoices, error: queryErr } = await query;
+    if (queryErr) throw queryErr;
+
+    if (!pendingInvoices || pendingInvoices.length === 0) {
+      const { count: remainingCount } = await this.supabase
+        .from('nav_invoices')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', companyId)
+        .or('details_fetched.is.null,details_fetched.eq.false');
+
+      return { processedCount: 0, failedCount: 0, remainingCount: remainingCount || 0 };
+    }
+
+    let processedCount = 0;
+    let failedCount = 0;
+
+    for (const inv of pendingInvoices) {
+      try {
+        const direction = (inv.invoice_direction as 'INBOUND' | 'OUTBOUND') || 'INBOUND';
+        let details: any = null;
+        try {
+          details = await navClient.queryInvoiceData(inv.invoice_number, direction);
+        } catch (dirErr: any) {
+          const altDirection = direction === 'INBOUND' ? 'OUTBOUND' : 'INBOUND';
+          try {
+            details = await navClient.queryInvoiceData(inv.invoice_number, altDirection);
+          } catch {
+            throw dirErr;
+          }
+        }
+
+        const invoiceUpdates: Record<string, any> = { details_fetched: true };
+        if (details.supplierAddress) invoiceUpdates.supplier_address = details.supplierAddress;
+        if (details.customerAddress) invoiceUpdates.customer_address = details.customerAddress;
+        if (details.isCashAccounting !== undefined) invoiceUpdates.is_cash_accounting = details.isCashAccounting;
+        if (details.originalInvoiceNumber) invoiceUpdates.original_invoice_number = details.originalInvoiceNumber;
+        if (details.vatSummary) {
+          invoiceUpdates.vat_summary = details.vatSummary;
+          if (details.vatSummary.hasReverseCharge) {
+            invoiceUpdates.is_reverse_charge = true;
+            invoiceUpdates.reverse_charge_category = 'DOMESTIC_142';
+          }
+        }
+
+        // Szülő rekord és tételsorok atomi, idempotens mentése tárolt eljárással (RPC)
+        const resolvedCompanyId = inv.company_id || companyId;
+        const itemsToInsert = (details.lineItems && details.lineItems.length > 0)
+          ? details.lineItems.map((item: any) => ({
               company_id: resolvedCompanyId,
               line_number: item.lineNumber,
               line_description: item.lineDescription || null,
@@ -390,22 +522,44 @@ export class NavIngestionService {
               product_code: item.productCode || null,
               line_delivery_period_from: item.lineDeliveryPeriodFrom || null,
               line_delivery_period_to: item.lineDeliveryPeriodTo || null
-            }));
+            }))
+          : [];
 
-            await this.supabase
-              .from('nav_invoice_items')
-              .delete()
-              .eq('nav_invoice_id', dbInvoice.id);
+        const { error: rpcErr } = await this.supabase.rpc('save_nav_invoice_details_and_items', {
+          p_invoice_id: inv.id,
+          p_invoice_updates: invoiceUpdates,
+          p_line_items: itemsToInsert,
+        });
 
-            await this.supabase
-              .from('nav_invoice_items')
-              .insert(itemsToInsert);
-          }
+        if (rpcErr) {
+          throw rpcErr;
         }
-      } catch (detailErr) {
-        console.warn(`[NavIngestionService] Failed to fetch details for invoice ${inv.invoice_number}:`, detailErr);
+
+        processedCount++;
+      } catch (err: any) {
+        console.warn(`[NavIngestionService] Failed to fetch details for ${inv.invoice_number}:`, err);
+        failedCount++;
+        const msg = String(err?.message || err);
+        if (msg.includes('nem található') || msg.includes('Nem létező') || msg.includes('INVALID_INVOICE')) {
+          await this.supabase
+            .from('nav_invoices')
+            .update({ details_fetched: true })
+            .eq('id', inv.id);
+        }
       }
     }
+
+    const { count: remainingCount } = await this.supabase
+      .from('nav_invoices')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .or('details_fetched.is.null,details_fetched.eq.false');
+
+    return {
+      processedCount,
+      failedCount,
+      remainingCount: remainingCount || 0
+    };
   }
 
   /**
