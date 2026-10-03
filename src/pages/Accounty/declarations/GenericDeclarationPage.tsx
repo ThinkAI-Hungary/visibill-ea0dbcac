@@ -147,9 +147,15 @@ export default function GenericDeclarationPage() {
   const handleSave = async () => {
     if (!empId) return;
     try {
+      const canonicalDeclType: string =
+        declType === 'young' ? 'young_25' :
+        declType === 'mothers' ? 'young_mother_30' :
+        declType === 'first-marriage' ? 'first_marriage' :
+        declType;
+
       await addDeclaration.mutateAsync({
         employee_id: empId,
-        declaration_type: declType,
+        declaration_type: canonicalDeclType,
         valid_from: formData.startDate || new Date().toISOString().split('T')[0],
         valid_until: endDate || undefined,
         parameters: { ...formData, monthlyBase: config.monthlyBase, monthlySaving: config.monthlySaving },

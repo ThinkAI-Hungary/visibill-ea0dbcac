@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1790854006.8939552,
-    "ast_hash": "c65279c2d7935c2f3420b8f9830aa7a2",
+    "mtime": 1790963874.6485283,
+    "ast_hash": "3215b7daf703be137d6685add1b4d191",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -1290,7 +1290,7 @@
     "semantic_hash": ""
   },
   "src/lib/vatReturnXml.ts": {
-    "mtime": 1790962714.2429218,
+    "mtime": 1790963874.8513815,
     "ast_hash": "f0c7f048e32ec48c2d0a0331ac2985b0",
     "semantic_hash": ""
   },
@@ -3090,7 +3090,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790963366.8452954,
+    "mtime": 1790963874.794579,
     "ast_hash": "56d404aac40e01bccf458481248394d6",
     "semantic_hash": ""
   },
@@ -3535,7 +3535,7 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-032-vat-return-workflow.md": {
-    "mtime": 1790963383.508557,
+    "mtime": 1790963874.7955847,
     "ast_hash": "7fe7f72eb595a98f0370dfc41e42910f",
     "semantic_hash": ""
   },
@@ -3565,7 +3565,7 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790963350.7198942,
+    "mtime": 1790963874.796584,
     "ast_hash": "8bb850bfb1620e5dbaca74c4667fa5f8",
     "semantic_hash": ""
   },
@@ -3805,8 +3805,8 @@
     "semantic_hash": ""
   },
   "src/components/vat/VatRowDrillDown.tsx": {
-    "mtime": 1790775646.1870358,
-    "ast_hash": "3de05c7d63798d2be019263c3afb4360",
+    "mtime": 1790984410.4298604,
+    "ast_hash": "9421351d208db6cd4bb5eeef4796b552",
     "semantic_hash": ""
   },
   "src/components/vat/VatTrendChart.tsx": {
@@ -4150,8 +4150,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/declarations/GenericDeclarationPage.tsx": {
-    "mtime": 1790168409.1896632,
-    "ast_hash": "8c68432bc859e2314b8f5be18457b411",
+    "mtime": 1790985121.7332857,
+    "ast_hash": "f81ed35d1bfd3099220ac1f9a2e3fca5",
     "semantic_hash": ""
   },
   "src/pages/Accounty/documents/DocumentCenterPage.tsx": {
@@ -7380,8 +7380,8 @@
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/documentEngine.test.ts": {
-    "mtime": 1790962256.9017606,
-    "ast_hash": "ede5985e07da62dde95261dd3d735ac7",
+    "mtime": 1790963874.8513815,
+    "ast_hash": "72138cf5a6cf3fdda43124429f747eb2",
     "semantic_hash": ""
   },
   "src/lib/documents/__tests__/hungarianEncoding.test.ts": {
@@ -8185,13 +8185,13 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatReturnXml.test.ts": {
-    "mtime": 1790962159.2154496,
+    "mtime": 1790963874.850381,
     "ast_hash": "f19fae94b7005fcf0f64a2b999a5aedc",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-080-nav-anyk-vat-return-xml-standardization.md": {
-    "mtime": 1790962214.2825468,
-    "ast_hash": "ffb2f4e237821db9941ac35630b996c3",
+    "mtime": 1790963874.794579,
+    "ast_hash": "6bb3d94d52bc47556debd8d90c907b75",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/PayrollReconstructionDialog.tsx": {
@@ -10735,8 +10735,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/__tests__/vatCodeOverride.test.ts": {
-    "mtime": 1789881969.3741477,
-    "ast_hash": "be7f1a6caa146adffdfa3460ecaaa1b5",
+    "mtime": 1790963874.6495292,
+    "ast_hash": "6b5709ff3b79c2c32653d35a7fcab274",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatMLineDrillDown.tsx": {
@@ -13910,13 +13910,23 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-154-nav-anyk-vat-return-and-m-lines-scaling-and-validation-ux.md": {
-    "mtime": 1790963333.6448574,
-    "ast_hash": "d2de9362d46fc2aded8aaf605c8e0336",
+    "mtime": 1790963874.7955847,
+    "ast_hash": "bc92e693135ecf46d4340ce7f9c5f56f",
     "semantic_hash": ""
   },
   "session-summary/Jani/2026-10-02/summary-194400-anyk-vat-return-validation-and-formula-standardization.md": {
-    "mtime": 1790963066.89853,
-    "ast_hash": "412b1ab498c3424b1c24566ac9ab516a",
+    "mtime": 1790963874.850381,
+    "ast_hash": "35845fe607ffa3180dab1388ec686146",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261002191500_sync_invoice_item_vat_code_override_and_fad.sql": {
+    "mtime": 1790963874.6530364,
+    "ast_hash": "c7ddcbdc12d72b23a3dd8ecdc3d04d3a",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261003020000_fix_accounty_declarations_declaration_type_check.sql": {
+    "mtime": 1790984574.6649308,
+    "ast_hash": "180a6b3cd8bc404f2d8fd75f76d2637b",
     "semantic_hash": ""
   }
 }

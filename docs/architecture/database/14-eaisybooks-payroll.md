@@ -233,7 +233,7 @@
 
 ### `accounty_declarations`
 
-> Adóelőleg-nyilatkozatok: 9 különböző kedvezmény-típus, foglalkoztatottanként.
+> Adóelőleg- és pótszabadság-nyilatkozatok: családi kedvezmény, gyermekek utáni pótszabadság (Mt. 118. §), fiatalok, anyák kedvezményei, személyi kedvezmény és EKHO.
 
 **RLS:** ✅ | **Sorok:** ~1
 
