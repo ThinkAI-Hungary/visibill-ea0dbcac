@@ -108,6 +108,12 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
   * Minden idegen kulcs oszlopra kötelező B-tree indexet tenni a JOIN műveletek és kaszkádolt törlések felgyorsítására.
 * **Gyakran szűrt mezők:**
   * A `company_id, status`, `created_at DESC` típusú lekérdezésekhez készíts összetett (composite) indexet.
+* **Szimmetrikus Parciális Indexelés:**
+  * Ha egy nullable mezőre (pl. `matched_invoice_id`) parciális indexet hozol létre a kitöltött értékekre (`WHERE matched_invoice_id IS NOT NULL`), és az üzleti logika a nyitott/párosítatlan elemeket is lekérdezi (`WHERE matched_invoice_id IS NULL`), **kötelező mindkét ágra célzott indexet definiálni**!
+* **RLS Szülő-Gyermek Index Kényszer:**
+  * Ha egy gyermek tábla (pl. `acc_journal_lines`) RLS szabálya allekérdezéssel a szülő táblához fordul (`header_id IN (SELECT id FROM acc_journal_headers WHERE company_id = ...)`), a szülő táblán kötelező a közvetlen index a szűrt oszlopra (`company_id`).
+* **Tömeges Adatmozgatás utáni VACUUM:**
+  * Tömeges szinkronizáció, backfill vagy nagy törlések után a nagy forgalmú táblákon (`nav_invoice_items`, `transactions`, `accounty_missing_items`) kötelező a `VACUUM ANALYZE` futtatása a Visibility Map és a statisztikák frissítéséhez.
 * **Nagy lekérdezések védelme:**
   * Frontend lekérdezéseknél szigorúan tilos `SELECT *` jellegű lekérdezést futtatni nagy táblákon vagy JSONB mezőkön; csak a szükséges mezőket kérd le.
 

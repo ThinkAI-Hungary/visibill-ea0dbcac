@@ -46,8 +46,16 @@ Az AI asszisztensnek az alábbi lépéseken kell végigmennie a hibák felderít
    - Keresd meg a Graphify gráf segítségével az összes olyan frontend/backend fájlt, amely közvetlenül futtat Supabase lekérdezéseket.
    - Ellenőrizd az indexeltség hiányát a foreign key (FK) oszlopokon.
 
-4. **Visibill-specifikus ellenőrzési pontok (Audit Checkpoints):**
+4. **Élő lekérdezési statisztikák és szekvenciális bejárások elemzése:**
+   - **`pg_stat_statements` lassú lekérdezések:** Kérdezd le a top lekérdezéseket `mean_exec_time > 50ms` és `total_exec_time` szerint rendezve (kiszűrve a pgmq_read hosszú várakozásait).
+   - **Szekvenciális bejárások aránya (`pg_stat_user_tables`):** Vizsgáld meg a táblákat, ahol a `seq_tup_read` magas és az `idx_scan_pct` alacsony (<80%). Ha egy 1000+ soros táblán magas a `seq_scan`, szinte biztosan hiányzik egy `company_id` vagy státusz index!
+   - **Halott sorok és Vacuum Drift:** Kérdezd le a dead tuple arányt (`n_dead_tup / (n_live_tup + n_dead_tup)`). Ha >10%, a tábla vacuumra szorul.
+   - **Visibility Map és Heap Fetches:** `EXPLAIN (ANALYZE, BUFFERS)` során vizsgáld meg az `Index Only Scan`-eket: ha tízezres `Heap Fetches` szerepel bennük, a Visibility Map elavult, és `VACUUM ANALYZE` szükséges.
+
+5. **Visibill-specifikus ellenőrzési pontok (Audit Checkpoints):**
    - **RLS InitPlan optimalizáltság:** Keresd azokat az RLS policy-ket, amelyek közvetlenül `auth.uid()`-t vagy `current_setting()`-et használnak `(SELECT auth.uid())` subquery helyett (ami megakadályozza a per-row kiértékelést).
+   - **Szimmetrikus parciális indexelés:** Ha egy táblán van `WHERE col IS NOT NULL` parciális index, vizsgáld meg, hogy a kód keres-e `WHERE col IS NULL` feltétellel (pl. párosítatlan tranzakciók, feldolgozatlan számlák). Ha igen, a hiányzó ágra is kötelező parciális index!
+   - **RLS szülő-tábla lefedettség:** Ha gyermek-tábla RLS-e szülő táblán (`headers`) keresztül ellenőriz bérlőt, a szülő táblán kötelező a közvetlen `(company_id)` index.
    - **Redundáns RLS szabályok:** Ellenőrizd, hogy van-e olyan tábla, amin `ALL` (pl. `modify`) és `SELECT` (pl. `select`) szabály is van teljesen azonos feltétellel (az `ALL` már eleve lefedi a `SELECT`-et, így a különálló `SELECT` feleslegesen duplázza a futási időt).
    - **SECURITY DEFINER jogok:** Ellenőrizd a `public` sémában lévő `SECURITY DEFINER` függvények `EXECUTE` jogosultságait. A kizárólag worker vagy belső triggerek által használt függvényekről le kell tiltani a `PUBLIC`, `anon` és `authenticated` hozzáférést (kizárólag a `service_role` hívhatja őket).
      * **FIGYELEM (Kritikus):** Ha a függvény PostgREST pre-request hook-ként (pl. `pgrst.db_pre_request = 'public.check_request'`) fut a háttérben, akkor az `anon` és `authenticated` szerepköröknek **KÖTELEZŐ** megadni az explicit `EXECUTE` jogosultságot. Ha erről a függvényről letiltjuk a hozzáférést, a teljes REST API megbénul, és minden kliens-oldali hívás (pl. cégadatok lekérdezése) 403 / permission denied hibával elbukik.
