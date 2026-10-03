@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-02  
-> **Összesen:** 209 döntés (194 egyedi döntési fájl) | ✅ Decided: 207 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-03  
+> **Összesen:** 210 döntés (195 egyedi döntési fájl) | ✅ Decided: 208 | ⛔ Superseded: 2
 
 
 ---
@@ -31,13 +31,14 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
-| A-005 | Edge Functions (Deno) — 66 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
+| A-005 | Edge Functions (Deno) — 67 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
 | A-023 | Upload Dedup Védelem (DB Trigger + Frontend Mutex) | ✅ Decided | [A-023](./A-023-upload-dedup-protection.md) |
 | A-074 | PDF Export Edge Function Invocation Resilience | ✅ Decided | [A-074](./A-074-pdf-export-edge-function-invocation-resilience.md) |
 | A-130 | NAV Auto-Sync Hajnali Időablakos Terheléselosztás (Dawn Load Staggering) | ✅ Decided | [A-130](./A-130-nav-auto-sync-dawn-load-staggering.md) |
 | A-132 | NAV Online Számla v3.0 queryTaxpayer Integráció és Think AI Kft. Kulcs Fallback | ✅ Decided | [A-132](./A-132-nav-query-taxpayer-auto-fill.md) |
 | A-133 | NAV Online Számla v3.0 Hivatalos ÁFA Összesítő (<invoiceSummary>) és Áfakulcs-Megbontás Integráció | ✅ Decided | [A-133](./A-133-nav-official-invoice-summary-vat-breakdown.md) |
 | A-154 | NAV ÜPO (Ügyfélportál) M2M Integráció és Hitelesítési Biztonsági Architektúra | ✅ Decided | [A-154](./A-154-nav-upo-m2m-integration-and-credential-security.md) |
+| A-193 | Hibrid Aszinkron NAV Számlaszinkronizáció, PGMQ Tétel-feldolgozás, Atomi Idempotens Mentés és NAV 503 Reziliencia | ✅ Decided | [A-193](./A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md) |
 
 ## 🤖 AI & Feldolgozás
 

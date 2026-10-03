@@ -10,9 +10,9 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — **66 deployed function** + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — **67 deployed function** + `_shared/` közös kód.
 
-> 📖 **Teljes, részletes katalógus:** Mind a 66 Edge Function részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza.
+> 📖 **Teljes, részletes katalógus:** Mind a 67 Edge Function részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza.
 
 **Közös kód:** `_shared/` mappa:
 - `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
@@ -21,18 +21,19 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ---
 
-### Teljes Edge Function Katalógus (66 db)
+### Teljes Edge Function Katalógus (67 db)
 
-#### 🏛️ NAV Integráció (9 db)
+#### 🏛️ NAV Integráció (10 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
 | `nav` | ❌ | NAV API proxy — általános NAV hívások |
-| `nav-auto-sync` | ❌ | Automatikus NAV szinkronizáció és webhook triggerelés (`NavIngestionService`) |
+| `nav-auto-sync` | ❌ | Automatikus NAV szinkronizáció, fejléc-mentés és PGMQ tétel-ütemezés (`NavIngestionService`, [A-193](./A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md)) |
 | `nav-sync` | ✅ | Manuális NAV számla szinkronizáció (`NavIngestionService`) |
 | `nav-token` | ✅ | NAV API hitelesítő adatok validálása és token exchange (`NavClient`) |
 | `nav-query-taxpayer` | ✅ | NAV v3.0 /queryTaxpayer hívás adózói név, székhely és ÁFA-kód kinyerésére, Think AI Kft. fallback kulcsokkal |
-| `nav-query-outbound-invoices` | ✅ | Kimenő számlák és tételsorok lekérdezése (`NavIngestionService`) |
+| `nav-query-outbound-invoices` | ✅ | Kimenő/bejövő számlák gyors aszinkron lekérdezése (fast-path) + PGMQ tétel-ütemezés ([A-193](./A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md)) |
+| `nav-fetch-details` | ❌ | Hiányzó számlarészletek és tételsorok kötegelt vagy on-demand lekérése és atomi mentése (Worker PGMQ & UI on-demand, [A-193](./A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md)) |
 | `query-nav-invoices` | ✅ | NAV számlák keresése és szűrése (`NavIngestionService`) |
 | `nav-tax-profile-sync` | ❌ | Adószám profil szinkronizáció NAV-ból |
 | `nav-m2m-proxy` | ✅ | NAV ÜPO M2M (Ügyfélportál gép-gép) proxy, aktiválás, EFO és biztosítotti jogviszony szinkron |
