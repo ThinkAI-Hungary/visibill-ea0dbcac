@@ -13933,5 +13933,10 @@
     "mtime": 1790988711.9199479,
     "ast_hash": "1f8e597e3cc9c1a24fa900cf42a8be79",
     "semantic_hash": ""
+  },
+  "src/test/rpcPerformanceAndResilience.test.ts": {
+    "mtime": 1790989206.6810896,
+    "ast_hash": "7c54c92cb1ecc9854dd8a03970c9a492",
+    "semantic_hash": ""
   }
 }
