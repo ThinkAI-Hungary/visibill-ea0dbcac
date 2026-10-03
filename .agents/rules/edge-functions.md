@@ -79,5 +79,5 @@ A rendszer védve van a jogosulatlan szkript-alapú automatizációk és a kontr
     ```
   * Enélkül a Supabase automatikus Git deploymentje kihagyja a JWT ellenőrzési szintet, vagy hibás konfigurációval deployolja a funkciót!
 * **Környezeti titkok (Secrets) kezelése:**
-  * Ha egy Edge Function új API kulcsot vagy secret-et igényel (`Deno.env.get("...")`), azt **mind a Staging, mind a Production Supabase projektben** be kell állítani (Settings $\rightarrow$ Secrets).
+  * Ha egy Edge Function új API kulcsot vagy secret-et igényel (`Deno.env.get("...")`), azt **mind a Staging, mind a Production Supabase projektben** be kell állítani (Settings → Secrets).
   * Kódban API kulcsot hardkódolni szigorúan tilos!

@@ -35,10 +35,16 @@ Ne használj feleslegesen nehéz tervezési fázist egyszerű kérdésekre, de n
 
 ## 📋 Szakterületi Szabályok és Minőségbiztosítás
 
-* **Frontend szabályzat:** Komponens kompozíció, Tailwind, Vercel optimalizációk és TypeScript típusbiztonság $\rightarrow$ [rules/frontend.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/frontend.md)
-* **UI & UX szabályzat:** 4 kötelező állapot, double-submit védelem, pénzügyi formázás és villogásvédelem $\rightarrow$ [rules/ui-ux.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/ui-ux.md)
-* **Adatbázis szabályzat:** RLS, indexelés, Supabase típusok és biztonsági előírások $\rightarrow$ [rules/database.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/database.md)
-* **Edge Functions szabályzat:** Deno runtime, kötelező `checkAutomationShield` és hibakezelés $\rightarrow$ [rules/edge-functions.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/edge-functions.md)
-* **Verifikáció és Lezárás:** Kötelező build és típusellenőrzés bejelentés előtt $\rightarrow$ [rules/verification.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/verification.md)
-* **Design Rendszer & Dokumentáció (ADR/PRD):** Új komponensek létrehozása design tokenekkel és döntési nyilvántartás $\rightarrow$ [rules/documentation.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/documentation.md)
-* **Kódbázis Tudásgráf:** Architektúrális összefüggések felderítése és AST frissítés $\rightarrow$ [rules/graphify.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/graphify.md)
+* **Frontend szabályzat:** Komponens kompozíció, Tailwind, Vercel optimalizációk és TypeScript típusbiztonság → [rules/frontend.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/frontend.md)
+* **UI & UX szabályzat:** 4 kötelező állapot, double-submit védelem, pénzügyi formázás és villogásvédelem → [rules/ui-ux.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/ui-ux.md)
+* **Adatbázis szabályzat:** RLS, indexelés, Supabase típusok és biztonsági előírások → [rules/database.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/database.md)
+* **Edge Functions szabályzat:** Deno runtime, kötelező `checkAutomationShield` és hibakezelés → [rules/edge-functions.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/edge-functions.md)
+* **Verifikáció és Lezárás:** Kötelező build és típusellenőrzés bejelentés előtt → [rules/verification.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/verification.md)
+* **Design Rendszer & Dokumentáció (ADR/PRD):** Új komponensek létrehozása design tokenekkel és döntési nyilvántartás → [rules/documentation.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/documentation.md)
+* **Kódbázis Tudásgráf:** Architektúrális összefüggések felderítése és AST frissítés → [rules/graphify.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/graphify.md)
+
+---
+
+## ✍️ Formázási és Kommunikációs Szabály
+* **Tiszta Unicode szimbólumok:** Válaszokban, felületeken és dokumentációban szigorúan tilos LaTeX matematikai formázást (pl. `$\rightarrow$`, `\approx`, `\le`) használni; helyette mindig a tiszta Unicode szimbólumokat használd (`→`, `≈`, `≤`).
+
