@@ -2,7 +2,7 @@
 
 ## 🎯 3 Nem-alkuképes Alapelv (Core Invariants)
 1. **Zero Silent Decisions:** Architektúrális, adatbázis- vagy üzleti logikai döntést soha ne hozz önhatalmúan; mindig vázold fel az opciókat a felhasználónak.
-2. **Evidence Before Assertions:** Soha ne állítsd, hogy egy módosítás működik vagy kész van, amíg meg nem bizonyosodtál róla (típusellenőrzés: `npm run build` vagy `npx tsc --noEmit`).
+2. **Evidence Before Assertions:** Soha ne állítsd, hogy egy módosítás működik vagy kész van, amíg meg nem bizonyosodtál róla (típusellenőrzés: `npm run build` vagy `npx tsc --noEmit`, valamint kötelező tesztek futtatása: `npm test`).
 3. **Docs & Spec Integrity:** Ha a kód struktúrája, sémája vagy üzleti logikája változik, a kapcsolódó specifikációknak és ADR-eknek szinkronban kell maradniuk.
 
 ---
@@ -39,7 +39,7 @@ Ne használj feleslegesen nehéz tervezési fázist egyszerű kérdésekre, de n
 * **UI & UX szabályzat:** 4 kötelező állapot, double-submit védelem, pénzügyi formázás és villogásvédelem → [rules/ui-ux.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/ui-ux.md)
 * **Adatbázis szabályzat:** RLS, indexelés, Supabase típusok és biztonsági előírások → [rules/database.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/database.md)
 * **Edge Functions szabályzat:** Deno runtime, kötelező `checkAutomationShield` és hibakezelés → [rules/edge-functions.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/edge-functions.md)
-* **Verifikáció és Lezárás:** Kötelező build és típusellenőrzés bejelentés előtt → [rules/verification.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/verification.md)
+* **Verifikáció és Lezárás:** Kötelező build, típusellenőrzés és tesztek futtatása bejelentés előtt → [rules/verification.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/verification.md)
 * **Design Rendszer & Dokumentáció (ADR/PRD):** Új komponensek létrehozása design tokenekkel és döntési nyilvántartás → [rules/documentation.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/documentation.md)
 * **Kódbázis Tudásgráf:** Architektúrális összefüggések felderítése és AST frissítés → [rules/graphify.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/graphify.md)
 

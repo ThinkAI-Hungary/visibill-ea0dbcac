@@ -81,3 +81,16 @@ A rendszer védve van a jogosulatlan szkript-alapú automatizációk és a kontr
 * **Környezeti titkok (Secrets) kezelése:**
   * Ha egy Edge Function új API kulcsot vagy secret-et igényel (`Deno.env.get("...")`), azt **mind a Staging, mind a Production Supabase projektben** be kell állítani (Settings → Secrets).
   * Kódban API kulcsot hardkódolni szigorúan tilos!
+
+---
+
+## 🧪 6. Kötelező Edge Function Tesztelés és Verifikáció
+* **Kötelező automatizált teszt:**
+  * Bármilyen új Edge Function létrehozásakor vagy meglévő módosításakor **szigorúan kötelező automatizált tesztet írni** (Deno teszt a funkció mellett / `deno test`, vagy kliensoldali integrációs teszt a `src/test/` alatt).
+* **Kötelező futtatási kapu:**
+  * A feladat befejezése előtt a tesztek fizikai lefutása kötelező verifikációs kapu. Tilos átadni a munkát, amíg a funkció tesztjei zölden le nem futottak!
+* **Alapvető tesztelési esetek (Invariánsok):**
+  * CORS preflight (`OPTIONS` válasz és fejlécek).
+  * Shield védelem (`checkAutomationShield` blokkolja a hiányzó/illegitim fejléceket).
+  * Auth token validáció (jogosulatlan 401/403 válaszok).
+  * Sikeres üzleti lefutás és strukturált JSON válaszforma.

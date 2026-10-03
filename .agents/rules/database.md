@@ -65,6 +65,19 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
   * **`STABLE`:** Ha a függvény csak lekérdez (nem módosít adatot). Ez teszi lehetővé a Postgres query optimizer számára a hatékony végrehajtást és indexhasználatot.
   * **`VOLATILE`:** Ha a függvény módosítást (INSERT/UPDATE/DELETE/TRUNCATE) végez.
   * **`IMMUTABLE`:** Ha a függvény tiszta matematikai/szöveges transzformációt végez, és az adatbázis állapotától független.
+* **⚠️ CREATE OR REPLACE Volatilitás-csapda (Regression Guard):**
+  * PostgreSQL-ben a `CREATE OR REPLACE FUNCTION` futtatásakor, ha nincs explicit kiírva a `STABLE` kulcsszó a fejlécben, a motor **automatikusan és csendben visszaállítja `VOLATILE`-ra** a függvényt (még akkor is, ha korábban egy másik migrációban `ALTER FUNCTION ... STABLE` futott rá!).
+  * Minden lekérdező vagy riportáló RPC újradefiniálásakor a fejlécben kötelező a `LANGUAGE plpgsql STABLE` deklaráció!
+* **⚠️ PostgreSQL DEFAULT PUBLIC GRANT Csapda (Jogosultság-szivárgás védelem):**
+  * A PostgreSQL automatikusan `GRANT EXECUTE TO PUBLIC` jogot ad minden új függvényre. A `GRANT EXECUTE ... TO authenticated, service_role;` kiadása **nem vonja vissza** az `anon` jogosultságot!
+  * Új vagy módosított `SECURITY DEFINER` eljárásnál kötelező a kétlépcsős jogosultság-kezelés:
+    ```sql
+    REVOKE EXECUTE ON FUNCTION public.my_rpc(...) FROM PUBLIC, anon;
+    GRANT EXECUTE ON FUNCTION public.my_rpc(...) TO authenticated, service_role;
+    ```
+* **🧪 Kötelező RPC Tesztelés és Verifikáció:**
+  * Bármilyen RPC létrehozásakor vagy módosításakor **szigorúan kötelező hozzá tesztet írni** (kliensoldali Vitest regressziós/szerződésteszt a `src/test/` könyvtárban, pl. `src/test/rpcPerformanceAndResilience.test.ts`), és a verifikációs kapuban le is kell futtatni!
+  * Élő adatbázison a katalógus attribútumokat (`pg_proc` provolatile és jogosultságok) is ellenőrizni kell.
 * **Strukturált visszatérési értékek:**
   * Mindig határozz meg pontos visszatérési típust (`RETURNS jsonb`, `RETURNS boolean`, vagy `RETURNS TABLE (id uuid, name text, ...)`). Kerüld a generikus, nem típusos `RETURNS record` használatát.
 
@@ -78,6 +91,9 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
     ```
 * **Explicit szabályok:**
   * Mindig definiálj explicit `SELECT`, `INSERT`, `UPDATE`, `DELETE` szabályokat a bérlői/cég jogosultságok (`company_id`, `auth.uid()`) alapján.
+* **⚠️ Multi-Tenant CTE Izoláció (Cross-Tenant Scan Védelem):**
+  * Amikor egy soronkénti allekérdezést `MATERIALIZED CTE`-be vagy hash join aggregációba emelsz ki teljesítményoptimalizálás céljából, és a belső táblán (pl. `invoice_items`, `nav_invoice_items`) nincs közvetlen `company_id`, **kötelező összekapcsolni a szülő táblával és rászűrni a `company_id = p_company_id`-ra**!
+  * Ennek elmulasztása esetén a PostgreSQL minden bérlői lekérdezésnél az adatbázis összes cégének adatait végigpásztázza, ami súlyos cross-tenant adatszivárgást és exponenciális lassulást okoz.
 * **Service Role bypass tudatosság:**
   * RLS házirendek írásakor vedd figyelembe, hogy a háttér worker (`service_role`) átlépi az RLS-t, míg a frontend kliensek szigorúan a felhasználó JWT tokenjével hajtják végre a szabályokat.
 

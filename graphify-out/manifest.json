@@ -4995,8 +4995,8 @@
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
-    "mtime": 1790775655.2072856,
-    "ast_hash": "aaf6950e8fd0c9ee8b98fb222b599a18",
+    "mtime": 1790992870.4169893,
+    "ast_hash": "cbe4543cd429d631d8769965d30f8c2f",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-dev/SKILL.md": {
@@ -8845,8 +8845,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1790859426.7255116,
-    "ast_hash": "72a917d1e90fc387c897136da4a6a63d",
+    "mtime": 1790993536.684052,
+    "ast_hash": "4d23485d214595f897a15a96fb67c1b6",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
@@ -10255,18 +10255,18 @@
     "semantic_hash": ""
   },
   ".agents/rules/database.md": {
-    "mtime": 1790731362.6514857,
-    "ast_hash": "30110e4c5f8626c64a81d560928053b0",
+    "mtime": 1790992837.5282817,
+    "ast_hash": "934f35de25a30432437fe843ae457b89",
     "semantic_hash": ""
   },
   ".agents/rules/documentation.md": {
-    "mtime": 1789354730.5171258,
-    "ast_hash": "36ec29e473a36a8e3121f2da426813d0",
+    "mtime": 1790990549.4723797,
+    "ast_hash": "32d22b659694efd6c7c219151a409727",
     "semantic_hash": ""
   },
   ".agents/rules/edge-functions.md": {
-    "mtime": 1790731373.49167,
-    "ast_hash": "581983c8b8efa96768888191f6f9b917",
+    "mtime": 1790992845.8482509,
+    "ast_hash": "a4cbf23ddbbc26347ea3c4e33df3d291",
     "semantic_hash": ""
   },
   ".agents/rules/frontend.md": {
@@ -10275,13 +10275,13 @@
     "semantic_hash": ""
   },
   ".agents/rules/ui-ux.md": {
-    "mtime": 1790095135.5450468,
-    "ast_hash": "a7f308a53fe77e9aa15d584377aaef02",
+    "mtime": 1790990533.9720473,
+    "ast_hash": "a7d44d180d85f8b69f733ee1eb919a80",
     "semantic_hash": ""
   },
   ".agents/rules/verification.md": {
-    "mtime": 1789355721.0178487,
-    "ast_hash": "0d2d2fb2d7d3542c14243a1ea0f52638",
+    "mtime": 1790992854.254879,
+    "ast_hash": "32017f78e358b06dcded1bc83c942eaf",
     "semantic_hash": ""
   },
   "src/components/transactions/BulkBookTransactionsDialog.tsx": {
@@ -12510,8 +12510,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/browser-testing.md": {
-    "mtime": 1790716904.8635745,
-    "ast_hash": "58f2f44a4bf96ffddfd416cbbf924b74",
+    "mtime": 1790990512.6506975,
+    "ast_hash": "891b83646d304b88736af767e0d7a5be",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-164-development-reserve-fixed-assets-db-and-depreciation.md": {
@@ -13770,8 +13770,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-189-gl-rpc-performance-optimization-and-timeout-elimination.md": {
-    "mtime": 1790858448.1933835,
-    "ast_hash": "239861987c55b368f3357f5c7df20959",
+    "mtime": 1790992351.9657016,
+    "ast_hash": "b3d3c7b90d608516836d6a2b82939cff",
     "semantic_hash": ""
   },
   "supabase/migrations/20261001142500_fix_system_error_hunter_audit_issues.sql": {
@@ -13935,8 +13935,23 @@
     "semantic_hash": ""
   },
   "src/test/rpcPerformanceAndResilience.test.ts": {
-    "mtime": 1790989206.6810896,
-    "ast_hash": "7c54c92cb1ecc9854dd8a03970c9a492",
+    "mtime": 1790993285.663072,
+    "ast_hash": "f44dbcf1ae4b3875870795b011116db5",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261003040000_optimize_gl_and_filter_rpcs_stability_and_tenant_isolation.sql": {
+    "mtime": 1790992262.709236,
+    "ast_hash": "6dd8c13ad9ca656aae025e408cef275c",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261003043000_create_company_counts_cache_and_pg_cron_schedule.sql": {
+    "mtime": 1790993244.1891756,
+    "ast_hash": "82db68ca49320b3eb370c15c6d29c982",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-190-management-dashboard-counts-caching-and-worker-vault-offloading.md": {
+    "mtime": 1790993459.306451,
+    "ast_hash": "d1a3c0b514a127e78a8d4687dee0abeb",
     "semantic_hash": ""
   }
 }

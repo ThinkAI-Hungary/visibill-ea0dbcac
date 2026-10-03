@@ -29,11 +29,22 @@ Mielőtt bármilyen kódolási feladatot befejezettnek jelentesz a felhasználó
      npx tsc --noEmit
      ```
    * Ha a parancs fordítási vagy típussérülést jelez, javítsd ki mielőtt válaszolsz.
-2. **Konzol- és Kódtisztaság:**
+2. **Kötelező Tesztelés & Tesztek Futtatása (Különösen RPC és Edge Function esetén):**
+   * **Kötelező tesztírás:** Bármilyen RPC-t vagy Edge Function-t hozol létre vagy módosítasz, **szigorúan kötelező automatizált tesztet írni hozzá** (Vitest kliensoldali regressziós/szerződésteszt a `src/test/` alatt, vagy Deno teszt az Edge Function mellett).
+   * **Kötelező futtatási kapu:** A verifikáció kötelező része a tesztek fizikai lefuttatása:
+     ```powershell
+     npm test
+     # vagy célzottan:
+     npx vitest run src/test/rpcPerformanceAndResilience.test.ts
+     ```
+   * Szigorúan tilos késznek nyilvánítani a feladatot a tesztek fizikai lefutása és zöld státusza nélkül!
+3. **RPC és Adatbázis Katalógus Ellenőrzés (Élő DB):**
+   * Ha RPC-t módosítottál, a katalógus lekérdezéssel (`pg_proc`) igazolni kell a volatilitást (`provolatile = 's'`) és a jogosultság-megvonást (`anon_can_execute = false`), valamint teszthívást kell futtatni egy valós adathalmazon.
+4. **Konzol- és Kódtisztaság:**
    * Ellenőrizd, hogy nem hagytál hátra elfelejtett `console.log` debug sorokat, fel nem használt importokat vagy szintaktikai hibákat.
-3. **Windows PowerShell Szintaxis Fegyelem:**
+5. **Windows PowerShell Szintaxis Fegyelem:**
    * A projekt Windows alatt fut PowerShell shellben. Szigorúan tilos POSIX / Bash stílusú `&&` parancsláncolást használni, mert szintaktikai hibát dob! Mindig a pontosvesszőt (`;`) használd parancsok egymás utáni futtatásakor (pl. `git add . ; git commit -m '...' ; git push`).
-4. **UI és Működési Útmutatás:**
+6. **UI és Működési Útmutatás:**
    * Ha felületet módosítottál, pontosan írd le, hogy a felhasználó hol (melyik útvonalon, melyik gombra kattintva) és hogyan tudja ellenőrizni az eredményt.
 
 ---

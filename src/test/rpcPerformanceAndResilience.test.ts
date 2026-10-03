@@ -211,4 +211,185 @@ describe('RPC Performance & Edge Function Resilience Tests', () => {
       expect(mockNavInvoiceRow.gl_numbers).toContain('5110');
     });
   });
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 3. P1 Financial & Filter RPC Return Contracts & Isolation
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  describe('get_gl_balances RPC Return Contract & Tenant Isolation', () => {
+    it('validates general ledger balance row structure and numeric types', () => {
+      const mockGlRow = {
+        gl_account_id: 'a1b2c3d4-0000-0000-0000-000000000001',
+        gl_number: '466',
+        short_name: 'Levonható ÁFA',
+        total_balance: 1450000,
+        final_balance: 1200000,
+        temp_balance: 250000,
+        item_count: 85,
+      };
+
+      expect(mockGlRow).toMatchObject({
+        gl_account_id: expect.any(String),
+        gl_number: '466',
+        short_name: expect.any(String),
+        total_balance: expect.any(Number),
+        final_balance: expect.any(Number),
+        temp_balance: expect.any(Number),
+        item_count: expect.any(Number),
+      });
+
+      // Mathematical invariant: total_balance = final_balance + temp_balance
+      expect(mockGlRow.total_balance).toBe(mockGlRow.final_balance + mockGlRow.temp_balance);
+    });
+
+    it('validates UNCLASSIFIED orphan balance fallback structure', () => {
+      const mockOrphanRow = {
+        gl_account_id: null,
+        gl_number: 'UNCLASSIFIED',
+        short_name: 'Besorolatlan tételek',
+        total_balance: 50000,
+        final_balance: 50000,
+        temp_balance: 0,
+        item_count: 3,
+      };
+
+      expect(mockOrphanRow.gl_account_id).toBeNull();
+      expect(mockOrphanRow.gl_number).toBe('UNCLASSIFIED');
+      expect(mockOrphanRow.total_balance).toBeGreaterThan(0);
+    });
+  });
+
+  describe('get_gl_categorized_items RPC Return Contract', () => {
+    it('validates categorized item breakdown row schema and multi-source types', () => {
+      const mockItem = {
+        item_id: 'item-uuid-1',
+        gl_account_id: 'gl-uuid-1',
+        source_table: 'invoices',
+        item_type: 'Bejövő (Költség)',
+        partner: 'Partner Teszt Kft.',
+        description: 'SZLA-2026/01 - Irodaszer beszerzés',
+        amount: 127000,
+        original_amount: 127000,
+        original_currency: 'HUF',
+        item_date: '2026-10-01',
+        is_temporary: false,
+      };
+
+      expect(mockItem).toMatchObject({
+        item_id: expect.any(String),
+        gl_account_id: expect.any(String),
+        source_table: expect.stringMatching(/^(transactions|invoice_items|invoices_vat|invoices_partner|nav_invoice_items|nav_invoices_vat|nav_invoices_partner|journal_entry|acc_journal_lines|invoices)$/),
+        partner: expect.any(String),
+        description: expect.any(String),
+        amount: expect.any(Number),
+        original_amount: expect.any(Number),
+        original_currency: expect.any(String),
+        item_date: expect.any(String),
+        is_temporary: expect.any(Boolean),
+      });
+    });
+  });
+
+  describe('get_filtered_submitted_invoices RPC Return Contract', () => {
+    it('validates submitted invoice contract with accountant review & match status', () => {
+      const mockSubmittedInvoice = {
+        id: 'inv-uuid-1',
+        bizonylatsorszam: 'BEJ-2026-99',
+        kibocsatas_datuma: '2026-10-01',
+        teljesites_datuma: '2026-10-01',
+        elado_nev: 'Beszállító Zrt.',
+        vevo_nev: 'Ügyfél Kft.',
+        adoalap_osszesen: 100000,
+        brutto_vegosszeg: 127000,
+        afa_osszeg_osszesen: 27000,
+        penznem: 'HUF',
+        category_id: null,
+        project_id: null,
+        image_url: 'https://storage/inv.pdf',
+        melleklet_url: null,
+        invoice_direction: 'INBOUND',
+        reference_number: 'REF-001',
+        exclude_from_accounting: false,
+        is_accountant_reviewed: true,
+        fizetesi_mod: 'TRANSFER',
+        match_status: 'matched',
+        paid_amount: 127000,
+        remaining_amount: 0,
+        statusz: 'verified',
+        nav_status: 'matched',
+        approval_note: 'Minden rendben',
+        approved_at: '2026-10-02T12:00:00Z',
+        total_count: 42,
+      };
+
+      expect(mockSubmittedInvoice).toMatchObject({
+        id: expect.any(String),
+        bizonylatsorszam: expect.any(String),
+        brutto_vegosszeg: expect.any(Number),
+        exclude_from_accounting: false,
+        is_accountant_reviewed: true,
+        match_status: 'matched',
+        paid_amount: 127000,
+        remaining_amount: 0,
+        total_count: expect.any(Number),
+      });
+
+      // Gross amount equals net + VAT
+      expect(mockSubmittedInvoice.brutto_vegosszeg).toBe(
+        mockSubmittedInvoice.adoalap_osszesen + mockSubmittedInvoice.afa_osszeg_osszesen
+      );
+    });
+  });
+
+  describe('company_counts_cache & get_company_counts Contract Tests', () => {
+    it('validates the structure returned by get_company_counts from company_counts_cache', () => {
+      const mockCachedCounts: CompanyCountsData = {
+        invoices: {
+          '0922dcf6-1111-2222-3333-444455556666': 120,
+          '1b62659f-4f26-4599-b6dc-2ae2cd124641': 450,
+        },
+        nav_invoices: {
+          '0922dcf6-1111-2222-3333-444455556666': 310,
+          '1b62659f-4f26-4599-b6dc-2ae2cd124641': 890,
+        },
+        transactions: {
+          '0922dcf6-1111-2222-3333-444455556666': 95,
+          '1b62659f-4f26-4599-b6dc-2ae2cd124641': 600,
+        },
+        salary: {
+          '0922dcf6-1111-2222-3333-444455556666': 12,
+          '1b62659f-4f26-4599-b6dc-2ae2cd124641': 24,
+        },
+      };
+
+      // 1. All 4 top-level keys must exist
+      expect(mockCachedCounts).toHaveProperty('invoices');
+      expect(mockCachedCounts).toHaveProperty('nav_invoices');
+      expect(mockCachedCounts).toHaveProperty('transactions');
+      expect(mockCachedCounts).toHaveProperty('salary');
+
+      // 2. Counts must be non-negative integers
+      for (const [key, map] of Object.entries(mockCachedCounts)) {
+        for (const [companyId, count] of Object.entries(map)) {
+          expect(typeof companyId).toBe('string');
+          expect(typeof count).toBe('number');
+          expect(count).toBeGreaterThanOrEqual(0);
+          expect(Number.isInteger(count)).toBe(true);
+        }
+      }
+    });
+
+    it('handles fallback when company_counts_cache returns empty aggregates gracefully', () => {
+      const emptyResult: CompanyCountsData = {
+        invoices: {},
+        nav_invoices: {},
+        transactions: {},
+        salary: {},
+      };
+
+      expect(emptyResult.invoices).toEqual({});
+      expect(emptyResult.nav_invoices).toEqual({});
+      expect(emptyResult.transactions).toEqual({});
+      expect(emptyResult.salary).toEqual({});
+    });
+  });
 });

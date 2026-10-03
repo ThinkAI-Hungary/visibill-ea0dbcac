@@ -114,7 +114,23 @@ A mérések a rendszer legnagyobb adatállományával rendelkező cégén (*Mand
 
 ### Érintett Fájlok:
 - `supabase/migrations/20261001143000_optimize_gl_balances_and_categorized_items_timeout.sql`
+- `supabase/migrations/20261003040000_optimize_gl_and_filter_rpcs_stability_and_tenant_isolation.sql`
 - `src/lib/glData.ts`
 - `src/lib/glData.test.ts`
 - `docs/architecture/rpc-catalog.md`
 - `docs/architecture/decisions/index.md`
+
+---
+
+## 5. Kiegészítő Határozat A-189.1: STABLE Volatilitás Helyreállítása és Bérlői CTE Izoláció (2026-10-03)
+
+### Kontextus & Regresszió:
+Az A-189 (`20261001143000`) bevezetése után az átfogó RPC audit két kritikus regressziót tárt fel:
+1. **Elveszett `STABLE` attribútum:** A `CREATE OR REPLACE FUNCTION` fejlécéből kimaradt a `STABLE` kulcsszó, így a PostgreSQL csendben visszaállította `VOLATILE`-ra a `get_gl_balances` és `get_gl_categorized_items` eljárásokat. Ez a `get_pnl_report` 1 372 ms-os lassulásához vezetett, és letiltotta a Read Replica offloadingot.
+2. **Keresztbérlős CTE szkennelés:** Az `inv_partial_deductible` és `nav_partial_deductible` CTE-k nem szűrtek `company_id`-ra, így egyetlen cég lekérdezésekor az adatbázis összes cégének parciális ÁFA tételeit aggregálták.
+
+### Megoldás (`20261003040000_optimize_gl_and_filter_rpcs_stability_and_tenant_isolation.sql`):
+- Explicit `STABLE` kulcsszó mindkét főkönyvi eljárás és a `get_filtered_submitted_invoices` fejlécében.
+- Mindkét parciális ÁFA CTE összekapcsolása a szülő számla táblákkal (`invoices` / `nav_invoices`) a `WHERE company_id = p_company_id` feltétellel.
+- Jogosultságok szigorítása (`REVOKE FROM PUBLIC, anon; GRANT TO authenticated, service_role;`).
+
