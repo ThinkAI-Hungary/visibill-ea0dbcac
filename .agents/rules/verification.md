@@ -46,6 +46,9 @@ Mielőtt bármilyen kódolási feladatot befejezettnek jelentesz a felhasználó
    * A projekt Windows alatt fut PowerShell shellben. Szigorúan tilos POSIX / Bash stílusú `&&` parancsláncolást használni, mert szintaktikai hibát dob! Mindig a pontosvesszőt (`;`) használd parancsok egymás utáni futtatásakor (pl. `git add . ; git commit -m '...' ; git push`).
 6. **UI és Működési Útmutatás:**
    * Ha felületet módosítottál, pontosan írd le, hogy a felhasználó hol (melyik útvonalon, melyik gombra kattintva) és hogyan tudja ellenőrizni az eredményt.
+7. **Scratch Mappa és Gyökérkönyvtár Fegyelem (Zero Workspace Clutter):**
+   * Minden átmeneti segéd- vagy tesztszkriptet (`.js`, `.cjs`, `.ts`, `.py`), ideiglenes adatdumpot (`.sql`), vizsgálati kimenetet vagy szövegfájlt kötelezően a `scratch/` mappába (`d:\ThinkAI\Visibill\eaisybill-prod\scratch\`) kell elhelyezni.
+   * Szigorúan tilos bármilyen egyszer használatos vagy vizsgálati fájlt a projekt gyökérkönyvtárába menteni vagy ott hagyni. A munkakönyvtárnak és a git státusznak mindig rendezettnek és tisztának kell maradnia.
 
 ---
 
