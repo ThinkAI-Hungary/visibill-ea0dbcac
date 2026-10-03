@@ -2905,8 +2905,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1790812509.1530418,
-    "ast_hash": "cf081e77a9a61e9a99590fcf946de5b8",
+    "mtime": 1791046835.8653212,
+    "ast_hash": "c8d4b88f9ebe64f748121a7d511f3c8a",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -2985,8 +2985,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1790963874.794579,
-    "ast_hash": "56d404aac40e01bccf458481248394d6",
+    "mtime": 1791046821.5976026,
+    "ast_hash": "c76beec1514ac341c39c1c38bef08766",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -8570,8 +8570,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1790812524.4913294,
-    "ast_hash": "dcdca652480debd723f0622df6c0a495",
+    "mtime": 1791047319.7619452,
+    "ast_hash": "776b7cca20a3b62aecc494de8c205322",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
@@ -13670,6 +13670,16 @@
   "supabase/migrations/20261003200000_idempotent_nav_invoice_items_and_vt.sql": {
     "mtime": 1791045544.7202702,
     "ast_hash": "a1ef5b529b23301c9d9f968b4066f863",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md": {
+    "mtime": 1791046798.904812,
+    "ast_hash": "166182628debaf70d884b810b597951f",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-03/summary-193000-nav-hybrid-async-sync-and-atomic-item-idempotency.md": {
+    "mtime": 1791048697.9535387,
+    "ast_hash": "c718a553848fb345210f0494d6aa7231",
     "semantic_hash": ""
   }
 }
