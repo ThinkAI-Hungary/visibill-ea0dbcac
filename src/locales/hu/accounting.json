@@ -2243,6 +2243,15 @@
       "bulk_delete_partial_title": "{{deleted}} piszkozat törölve",
       "bulk_delete_partial_desc": "{{skipped}} db tétel megőrzésre került, mivel hivatalos naplósorszámmal rendelkezik (sorszámfolytonosság védelme).",
       "bulk_delete_success_title": "Kijelölt piszkozatok sikeresen törölve"
-    }
+    },
+    "accounting_rules": "Könyvelési szabályok"
+  },
+  "rules": {
+    "breadcrumb": "Könyvelési szabályok",
+    "title": "Könyvelési szabályok",
+    "dialog_title": "Könyvelési Szabályok",
+    "dialog_desc": "Kezeld a számlatételek automatikus kontírozási és ÁFA szabályait, valamint az egyedi AI prompt instrukciókat.",
+    "tab_item_rules": "Számlatétel szabályok",
+    "tab_ai_prompts": "AI Prompt könyvtár"
   }
 }

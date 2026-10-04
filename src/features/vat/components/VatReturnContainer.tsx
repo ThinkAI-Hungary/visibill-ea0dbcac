@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import {
   Calculator,
@@ -11,12 +11,15 @@ import {
   UtensilsCrossed,
   Settings2,
   AlertTriangle,
+  Sliders,
 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
+import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { AccountingRulesDialog } from '@/components/accounting/AccountingRulesDialog';
 import { VatCodeConfigTab } from '@/components/vat/VatCodeConfigTab';
 import { VatReturnViewTab } from './VatReturnViewTab';
 import { VatCollectorAnalyticsView } from './VatCollectorAnalyticsView';
@@ -24,6 +27,7 @@ import { VatMLineMasterDetail } from './VatMLineMasterDetail';
 import { VatAnnualMatrixView } from './VatAnnualMatrixView';
 import { VatSteelProductsSection } from './VatSteelProductsSection';
 import { VatA60Table } from './VatA60Table';
+import { VatNavA60Replica } from './VatNavA60Replica';
 import { VatItemizedJournalView } from './VatItemizedJournalView';
 import { VatTourismTaxSection } from './VatTourismTaxSection';
 import { VatScopeRadioGroup } from './VatScopeRadioGroup';
@@ -78,6 +82,25 @@ export function VatReturnContainer() {
   const navigate = useNavigate();
   const rawTab = searchParams.get('tab') || pathTab || 'return';
   const currentTab = rawTab === 'replica' ? 'return' : rawTab;
+  const a60SubView = (searchParams.get('a60View') as 'table' | 'replica') || 'table';
+
+  const setA60SubView = useCallback(
+    (view: 'table' | 'replica') => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (view === 'table') {
+            next.delete('a60View');
+          } else {
+            next.set('a60View', view);
+          }
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   const vatData = useVatReturnData();
   const {
@@ -137,6 +160,8 @@ export function VatReturnContainer() {
     [navigate, pathTab, setSearchParams]
   );
 
+  const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
+
   if (!selectedCompany) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -174,6 +199,20 @@ export function VatReturnContainer() {
                 'accounting:vat_return.description',
                 '2665-ös nyomtatvány — Hivatalos ÁFA bevallás, M-lapok, éves mátrix és tételes analitikus kimutatások'
               )
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRulesDialogOpen(true)}
+              className="gap-1.5 shadow-2xs"
+            >
+              <Sliders className="h-4 w-4 text-primary" />
+              <span>{t('accounting:journals.accounting_rules', { defaultValue: 'Könyvelési szabályok' })}</span>
+            </Button>
+            <AccountingRulesDialog open={rulesDialogOpen} onOpenChange={setRulesDialogOpen} />
+          </div>
         }
       />
 
@@ -337,13 +376,69 @@ export function VatReturnContainer() {
         {!isCroatia && (
           <TabsContent value="a60" className="mt-0">
             <VatReturnErrorBoundary>
-              <VatA60Table
-                a60Calculations={a60Calculations}
-                viesStatuses={viesStatuses}
-                isValidatingVies={isValidatingVies}
-                handleViesCheck={handleViesCheck}
-                setEuTypeOverrides={setEuTypeOverrides}
-              />
+              <div className="space-y-4">
+                {/* Sub-view switcher: Table vs Replica */}
+                <div className="flex items-center justify-between bg-muted/40 p-1.5 rounded-xl border border-border/60 print:hidden">
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant={a60SubView === 'table' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setA60SubView('table')}
+                      className={cn(
+                        'h-8 text-xs font-medium gap-1.5',
+                        a60SubView === 'table'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Keresztellenőrzés & Számlák</span>
+                    </Button>
+                    <Button
+                      variant={a60SubView === 'replica' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setA60SubView('replica')}
+                      className={cn(
+                        'h-8 text-xs font-medium gap-1.5',
+                        a60SubView === 'replica'
+                          ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      <span>Hivatalos 26A60 Nyomtatvány Replika</span>
+                    </Button>
+                  </div>
+
+                  <span className="text-[11px] text-muted-foreground pr-2 hidden sm:inline">
+                    {a60SubView === 'replica'
+                      ? 'ÁNYK hivatalos nyomtatvány A4 lapszimuláció'
+                      : 'Közösségi ügyletek számlaszintű tételes ellenőrzése'}
+                  </span>
+                </div>
+
+                {a60SubView === 'replica' ? (
+                  <VatNavA60Replica
+                    selectedCompany={selectedCompany}
+                    year={year}
+                    month={month}
+                    frequency={frequency}
+                    a60Calculations={a60Calculations}
+                    onRecalculate={async () => {
+                      await calculate.mutateAsync();
+                    }}
+                    isRecalculating={calculate.isPending}
+                  />
+                ) : (
+                  <VatA60Table
+                    a60Calculations={a60Calculations}
+                    viesStatuses={viesStatuses}
+                    isValidatingVies={isValidatingVies}
+                    handleViesCheck={handleViesCheck}
+                    setEuTypeOverrides={setEuTypeOverrides}
+                  />
+                )}
+              </div>
             </VatReturnErrorBoundary>
           </TabsContent>
         )}

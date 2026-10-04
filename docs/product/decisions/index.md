@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-10-02  
-> **Összesen:** 165 döntés | ✅ Decided: 161 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-10-04  
+> **Összesen:** 168 döntés (151 egyedi döntési fájl) | ✅ Decided: 164 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -268,4 +268,6 @@
 | P-152 | Folyószámla Kettős Devizamegjelenítés, Árfolyam Tooltip és Vegyes Devizás Kijelölés UX | ✅ Decided | [P-152](./P-152-subledger-dual-currency-display-and-multicurrency-selection-ux.md) |
 | P-153 | Dinamikus Törvényes Munkanapkeret és Bérszámfejtési Munkanap Választó UX | ✅ Decided | [P-153](./P-153-dynamic-statutory-workday-framework-and-payroll-ux.md) |
 | P-154 | NAV ÁNYK 2665A/2665M XML Export, M-lapok Kettős Skálája (HUF vs eFt), Webes Konzisztens Forint Nézet és Összefüggés-vizsgálati Validáció UX | ✅ Decided | [P-154](./P-154-nav-anyk-vat-return-and-m-lines-scaling-and-validation-ux.md) |
+| P-155 | NAV 26A60 Hivatalos Nyomtatvány Digitális Replika UX | ✅ Decided | [P-155](./P-155-nav-26a60-official-tax-form-digital-replica-ux.md) |
+| P-156 | Könyvelési Szabályok Elérése az ÁFA Bevallás és Napló Alól, Valamint Egységes Szabálykezelő Dialógus UX | ✅ Decided | [P-156](./P-156-accounting-rules-integration-in-vat-and-journals.md) |
 

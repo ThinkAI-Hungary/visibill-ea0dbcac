@@ -2243,6 +2243,15 @@
       "bulk_delete_partial_title": "{{deleted}} nacrta obrisano",
       "bulk_delete_partial_desc": "{{skipped}} stavki je sačuvano jer posjeduju službeni redni broj dnevnika (zaštita kontinuiteta brojeva).",
       "bulk_delete_success_title": "Označeni nacrti uspješno obrisani"
-    }
+    },
+    "accounting_rules": "Knjigovodstvena pravila"
+  },
+  "rules": {
+    "breadcrumb": "Knjigovodstvena pravila",
+    "title": "Knjigovodstvena pravila",
+    "dialog_title": "Knjigovodstvena Pravila",
+    "dialog_desc": "Upravljajte automatskim pravilima kontiranja stavki računa i PDV pravilima, kao i prilagođenim AI prompt uputama.",
+    "tab_item_rules": "Pravila stavki računa",
+    "tab_ai_prompts": "AI Prompt biblioteka"
   }
 }

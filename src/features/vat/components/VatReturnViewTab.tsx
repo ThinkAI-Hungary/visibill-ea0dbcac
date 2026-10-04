@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Calculator,
@@ -57,6 +58,7 @@ import { VatPoreznaExportDialog } from './VatPoreznaExportDialog';
 import { VatXmlExportModal } from './VatXmlExportModal';
 
 export function VatReturnViewTab() {
+  const [, setSearchParams] = useSearchParams();
   const { t, i18n } = useTranslation(['accounting', 'common']);
   const { toast } = useToast();
   const vatData = useVatReturnData();
@@ -451,6 +453,24 @@ export function VatReturnViewTab() {
                   <FileSpreadsheet className="w-4 h-4 mr-2 text-blue-500" />
                   <span>{isCroatia ? 'Obrazac PDV replika megnyitása' : 'NAV 65 nyomtatvány replika megnyitása'}</span>
                 </DropdownMenuItem>
+                {!isCroatia && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSearchParams(
+                        (prev) => {
+                          const next = new URLSearchParams(prev);
+                          next.set('tab', 'a60');
+                          next.set('a60View', 'replica');
+                          return next;
+                        },
+                        { replace: true }
+                      );
+                    }}
+                  >
+                    <FileSpreadsheet className="w-4 h-4 mr-2 text-indigo-500" />
+                    <span>NAV A60 nyomtatvány replika megnyitása</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => {
                     if (!vatReturn || !selectedCompany) return;

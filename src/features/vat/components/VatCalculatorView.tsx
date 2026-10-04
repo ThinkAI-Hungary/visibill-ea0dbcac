@@ -54,6 +54,7 @@ import { VatRateSummaryCards } from './VatRateSummaryCards';
 import { VatXmlValidationDialog } from './VatXmlValidationDialog';
 import { VatProRataSettingsCard } from './VatProRataSettingsCard';
 import { VatProRataCalculatorModal } from './VatProRataCalculatorModal';
+import { VatNonDeclarableItemsSection } from './VatNonDeclarableItemsSection';
 import { fmtEft, fmtEur, fmtVatAmount, formatThousands } from '../types';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import type { useVatReturnData } from '../hooks/useVatReturnData';
@@ -1079,6 +1080,17 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
               )}
             </CardContent>
           </Card>
+
+          {/* Non-Declarable Items Section */}
+          {selectedCompany?.id && (
+            <VatNonDeclarableItemsSection
+              companyId={selectedCompany.id}
+              year={year}
+              month={month}
+              frequency={frequency}
+              isCroatia={isCroatia}
+            />
+          )}
 
           {/* Previous Returns History */}
           {selectedCompany?.id && (

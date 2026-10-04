@@ -758,8 +758,11 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
             if (['5%', '0.05', '5', '5.0', '5.00'].includes(effectiveRate)) {
               return rowNumber === '64';
             }
-            // Domestic 0%, AAM, TAM, MENTES, etc.
-            return rowNumber === '63';
+            // Domestic Row 63 is strictly for investment gold or explicit override (not general AAM/TAM)
+            if (rowNumber === '63') {
+              return inv.vat_row_override === '63' || codeStr === 'BE_ARANY' || codeStr === 'BE_63';
+            }
+            return false;
           } else {
             // Outbound rows
             if (rowNumber === '01') return isEuCustomer && !isServiceItem && (codeStr.includes('EXP') || rateFilters.includes(effectiveRate));
@@ -1103,6 +1106,12 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
                   if (calculatedVat === 0 && rowNumber !== '63') {
                     if (rowNumber === '29' || ((rowNumber === '66' || rowNumber === '66_fad') && isItemFad)) {
                       calculatedVat = Math.round(itemNet * 0.27 * 100) / 100;
+                    } else if (itemNet < 0 && (rowNumber === '66' || rowNumber === '66_fad')) {
+                      calculatedVat = Math.round(itemNet * 0.27 * 100) / 100;
+                    } else if (itemNet < 0 && rowNumber === '65') {
+                      calculatedVat = Math.round(itemNet * 0.18 * 100) / 100;
+                    } else if (itemNet < 0 && rowNumber === '64') {
+                      calculatedVat = Math.round(itemNet * 0.05 * 100) / 100;
                     } else if (['14', '15', '16', '18', '27', '67', '69'].includes(rowNumber || '')) {
                       calculatedVat = Math.round(itemNet * 0.27 * 100) / 100;
                     } else if (rowNumber === '13') {

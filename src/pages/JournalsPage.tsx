@@ -39,8 +39,10 @@ import {
   Download,
   ExternalLink,
   Copy,
-  Settings2
+  Settings2,
+  Sliders,
 } from 'lucide-react';
+import { AccountingRulesDialog } from '@/components/accounting/AccountingRulesDialog';
 import { extractStoragePath } from '@/lib/utils';
 import { formatCurrencyLocale, formatNumberLocale } from '@/lib/locale/formatters';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
@@ -266,6 +268,7 @@ export default function JournalsPage() {
 
   // Manage Journals dialog state
   const [manageJournalsOpen, setManageJournalsOpen] = useState(false);
+  const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
 
   // Lookup GL accounts for preset
   const { data: glAccounts = [] } = useQuery({
@@ -307,17 +310,21 @@ export default function JournalsPage() {
     enabled: !!selectedCompany?.id,
   });
 
-  // Fetch pending drafts count for Munkalista badge
+  // Fetch pending drafts count for Munkalista badge (respecting selected date range)
   const { data: munkalistaCount = 0 } = useQuery({
-    queryKey: ['acc-munkalista-count', selectedCompany?.id],
+    queryKey: ['acc-munkalista-count', selectedCompany?.id, dateFrom, dateTo],
     queryFn: async () => {
       if (!selectedCompany?.id) return 0;
-      const { count, error } = await supabase
+      let query = supabase
         .from('acc_journal_headers')
         .select('id', { count: 'exact', head: true })
         .eq('company_id', selectedCompany.id)
         .in('status', ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT']);
 
+      if (dateFrom) query = query.gte('posting_date', dateFrom);
+      if (dateTo) query = query.lte('posting_date', dateTo);
+
+      const { count, error } = await query;
       if (error) return 0;
       return count || 0;
     },
@@ -469,9 +476,10 @@ export default function JournalsPage() {
         query = query.in('status', ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT']);
       } else {
         query = query.eq('journal_id', selectedJournalId);
-        if (dateFrom) query = query.gte('posting_date', dateFrom);
-        if (dateTo) query = query.lte('posting_date', dateTo);
       }
+
+      if (dateFrom) query = query.gte('posting_date', dateFrom);
+      if (dateTo) query = query.lte('posting_date', dateTo);
 
       const { data, error } = await query
         .order('posting_date', { ascending: false })
@@ -1084,6 +1092,16 @@ export default function JournalsPage() {
                 </p>
               </TooltipContent>
             </Tooltip>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 shadow-2xs"
+              onClick={() => setRulesDialogOpen(true)}
+            >
+              <Sliders className="w-4 h-4 text-primary" />
+              <span>{t('accounting:journals.accounting_rules', { defaultValue: 'Könyvelési szabályok' })}</span>
+            </Button>
+            <AccountingRulesDialog open={rulesDialogOpen} onOpenChange={setRulesDialogOpen} />
             <Button
               variant="outline"
               size="sm"

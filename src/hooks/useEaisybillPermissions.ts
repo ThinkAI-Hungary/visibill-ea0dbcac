@@ -148,6 +148,8 @@ export const URL_TO_MODULE: Record<string, EaisybillModule> = {
   '/annual-report': 'annual_report',
   '/vat-return': 'vat_return',
   '/journals': 'journals',
+  '/accounting-rules': 'journals',
+  '/prompts': 'journals',
   '/salaries': 'salaries',
   '/working-time': 'working_time',
   '/teny': 'fixed_assets',

@@ -29,6 +29,8 @@ export function Nav2665PageFrame({
   const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
   const currentTime = new Date().toTimeString().slice(0, 8);
 
+  const isFolap = sheetCode === '2665A' || /^\d{2}A60$/.test(sheetCode);
+
   return (
     <div
       className={cn(
@@ -40,7 +42,7 @@ export function Nav2665PageFrame({
       }}
     >
       {/* Top Header Row for Sub-sheets (if not main Főlap) */}
-      {sheetCode !== '2665A' && (
+      {!isFolap && (
         <div className="border-b-2 border-black pb-2 mb-3 print:pb-1 print:mb-1.5">
           <div className="flex justify-between items-start">
             <div>

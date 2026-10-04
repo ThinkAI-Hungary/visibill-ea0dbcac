@@ -582,7 +582,6 @@ export function useVatReturnData() {
 
       const KNOWN_EU_VENDORS = [
         { pattern: /google/i, country: 'IE', vatNumber: 'IE3668997OH', isService: true },
-        { pattern: /anthropic/i, country: 'IE', vatNumber: 'IE4276970QH', isService: true },
         { pattern: /zoho/i, country: 'NL', vatNumber: 'NL855264263B01', isService: true },
         { pattern: /openai/i, country: 'IE', vatNumber: 'IE3868789HH', isService: true },
         { pattern: /meta platforms|facebook/i, country: 'IE', vatNumber: 'IE9692928F', isService: true },
@@ -592,6 +591,7 @@ export function useVatReturnData() {
         { pattern: /amazon web services|aws/i, country: 'LU', vatNumber: 'LU26372897', isService: true },
         { pattern: /linkedin ireland/i, country: 'IE', vatNumber: 'IE9740425P', isService: true },
         { pattern: /apple distribution/i, country: 'IE', vatNumber: 'IE9700053D', isService: true },
+        { pattern: /digital charging/i, country: 'DE', vatNumber: 'DE312237805', isService: false },
       ];
 
       // 1. Fetch nav_invoices (OSA)
@@ -633,8 +633,21 @@ export function useVatReturnData() {
 
       const partnerTaxMap = new Map<string, any>();
       partners?.forEach((p) => {
-        if (p.name) partnerTaxMap.set(p.name.trim().toLowerCase(), p);
+        const nameKey = p.name ? p.name.trim().toLowerCase() : '';
+        if (nameKey) {
+          const existing = partnerTaxMap.get(nameKey);
+          const pTax = (p.tax_number || '').toUpperCase();
+          const pEuTax = (p.eu_tax_number || '').toUpperCase();
+          const isEu =
+            (pTax && !pTax.startsWith('HU') && euPrefixes.some((pref) => pTax.startsWith(pref))) ||
+            (pEuTax && !pEuTax.startsWith('HU') && euPrefixes.some((pref) => pEuTax.startsWith(pref))) ||
+            (p.country_code && p.country_code !== 'HU' && euPrefixes.includes(p.country_code.toUpperCase()));
+          if (!existing || isEu) {
+            partnerTaxMap.set(nameKey, p);
+          }
+        }
         if (p.tax_number) partnerTaxMap.set(p.tax_number.replace(/[\s.-]/g, '').trim().toUpperCase(), p);
+        if (p.eu_tax_number) partnerTaxMap.set(p.eu_tax_number.replace(/[\s.-]/g, '').trim().toUpperCase(), p);
       });
 
       const checkEuPartner = (
@@ -665,10 +678,24 @@ export function useVatReturnData() {
             };
           }
         }
+        if (pRecord?.tax_number) {
+          const pClean = pRecord.tax_number.replace(/[\s.-]/g, '').trim().toUpperCase();
+          if (euPrefixes.some((pref) => pClean.startsWith(pref)) && !pClean.startsWith('HU')) {
+            return {
+              isEu: true,
+              cleanTax: pClean,
+              country: pRecord.country_code || pClean.slice(0, 2),
+              isKnownService: known?.isService,
+            };
+          }
+        }
         if (pRecord?.country_code && euPrefixes.includes(pRecord.country_code.toUpperCase())) {
           return {
             isEu: true,
-            cleanTax: clean || `${pRecord.country_code.toUpperCase()}${clean}`,
+            cleanTax:
+              clean && !clean.startsWith('HU')
+                ? clean
+                : pRecord.eu_tax_number || `${pRecord.country_code.toUpperCase()}${clean}`,
             country: pRecord.country_code.toUpperCase(),
             isKnownService: known?.isService,
           };
@@ -676,7 +703,7 @@ export function useVatReturnData() {
         if (known) {
           return {
             isEu: true,
-            cleanTax: clean || known.vatNumber,
+            cleanTax: clean && !clean.startsWith('HU') ? clean : known.vatNumber,
             country: known.country,
             isKnownService: known.isService,
           };
@@ -731,7 +758,7 @@ export function useVatReturnData() {
             invoice_net_amount: inv.adoalap_osszesen || 0,
             currency: inv.penznem || 'HUF',
             isEu: eu.isEu,
-            isKnownService: eu.isKnownService || isServiceType,
+            isKnownService: eu.isKnownService !== undefined ? eu.isKnownService : (isServiceType || undefined),
             source_table: 'invoices' as const,
           };
         });
@@ -764,7 +791,7 @@ export function useVatReturnData() {
         const chunk = subIds.slice(i, i + 50);
         const { data: items } = await supabase
           .from('invoice_items')
-          .select('invoice_id, vat_rate, line_description')
+          .select('invoice_id, vat_rate, vat_code, line_description')
           .in('invoice_id', chunk);
 
         if (items) {
@@ -777,8 +804,21 @@ export function useVatReturnData() {
 
       return filtered.map((inv) => {
         const items = itemsMap[inv.id] || [];
-        let isService = inv.isKnownService ?? false;
-        if (!isService && items.length > 0) {
+        const hasExplicitProductVatCode = items.some((item) =>
+          (item.vat_code || '').toUpperCase().includes('TERM')
+        );
+        const hasExplicitServiceVatCode = items.some((item) =>
+          (item.vat_code || '').toUpperCase().includes('SZOLG')
+        );
+
+        let isService: boolean;
+        if (hasExplicitProductVatCode) {
+          isService = false;
+        } else if (hasExplicitServiceVatCode) {
+          isService = true;
+        } else if (inv.isKnownService !== undefined) {
+          isService = inv.isKnownService;
+        } else if (items.length > 0) {
           isService = items.some((item) => {
             const rate = (item.vat_rate || '').toUpperCase();
             const desc = (item.line_description || '').toLowerCase();
@@ -805,6 +845,8 @@ export function useVatReturnData() {
               desc.includes('hirdetés')
             );
           });
+        } else {
+          isService = false;
         }
 
         return {

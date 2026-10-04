@@ -222,6 +222,70 @@ describe('VatEngine', () => {
       expect(result.itemsList.find((i) => i.id === 'inv-in-google')?.category).toBe('services_in');
     });
 
+    it('correctly categorizes Digital Charging Solutions as EU product acquisition (goods_in) and Google as EU service (services_in) matching declarations', () => {
+      const euInvoices = [
+        {
+          id: 'b738d8b1-eca6-45eb-b6f3-cfb395efa163',
+          invoice_number: 'DHU00037003',
+          invoice_direction: 'INBOUND' as const,
+          partner_name: 'Digital Charging Solutions GmbH',
+          partner_tax_number: 'DE312237805',
+          country_code: 'DE',
+          invoice_delivery_date: '2026-07-31',
+          invoice_net_amount: 12699,
+          currency: 'HUF',
+          defaultIsService: false,
+          source_table: 'invoices' as const,
+        },
+        {
+          id: 'inv-google',
+          invoice_number: '5646683756',
+          invoice_direction: 'INBOUND' as const,
+          partner_name: 'Google Cloud EMEA Limited',
+          partner_tax_number: 'IE3668997OH',
+          country_code: 'IE',
+          invoice_delivery_date: '2026-07-31',
+          invoice_net_amount: 86.23,
+          currency: 'EUR',
+          defaultIsService: true,
+          source_table: 'invoices' as const,
+        },
+      ];
+
+      const rates = { EUR: 395.5 };
+      // Digital Charging: 12699 HUF / 1000 = 13 eFt goods_in
+      // Google: 86.23 EUR * 395.5 = 34103.965 HUF = 34 eFt services_in
+      const result = calculateA60Aggregations(
+        euInvoices,
+        {},
+        {
+          goodsOut: 0,
+          goodsIn: 13,
+          servicesOut: 0,
+          servicesIn: 34,
+        },
+        0,
+        rates
+      );
+
+      expect(result.goodsInSum).toBe(13);
+      expect(result.expectedGoodsIn).toBe(13);
+      expect(result.goodsInMismatch).toBe(false);
+
+      expect(result.servicesInSum).toBe(34);
+      expect(result.expectedServicesIn).toBe(34);
+      expect(result.servicesInMismatch).toBe(false);
+
+      expect(result.taxErrors).toHaveLength(0);
+      expect(result.isValid).toBe(true);
+
+      const dcItem = result.itemsList.find((i) => i.id === 'b738d8b1-eca6-45eb-b6f3-cfb395efa163');
+      expect(dcItem).toBeDefined();
+      expect(dcItem?.category).toBe('goods_in');
+      expect(dcItem?.partner_tax_number).toBe('DE312237805');
+      expect(dcItem?.amountEft).toBe(13);
+    });
+
     it('handles full-year multi-vendor community service aggregation with rounded matching', () => {
       const annualEuInvoices = [
         {

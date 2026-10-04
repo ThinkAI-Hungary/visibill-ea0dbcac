@@ -115,7 +115,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
       case '29': return '29. sor — Belföldi fordított adózás fizetendő adója (FAD)';
       case '43': return '43. sor — Tájékoztató adat: Tárgyi eszköz értékesítés adóalapja';
       case '45': return '45. sor — Tájékoztató adat: Értékesítéshez kapott előleg adóalapja';
-      case '63': return '63. sor — Adólevonásra nem jogosító belföldi beszerzés (mentes)';
+      case '63': return '63. sor — Befektetési arany és egyéb adólevonásra nem jogosító beszerzés';
       case '64': return '64. sor — Belföldi 5%-os beszerzés levonható adója';
       case '65': return '65. sor — Belföldi 18%-os beszerzés levonható adója';
       case '66': return '66. sor — Belföldi 27%-os beszerzés levonható adója';
@@ -123,6 +123,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
       case '77': return '77. sor — Tárgyi eszköz beszerzés, beruházás levonható adója';
       case '91': return '91. sor — ÁFA területi hatályán kívüli 3. országbeli szolgáltatások';
       case '92': return '92. sor — ÁFA területi hatályán kívüli EU szolgáltatások (Áfa tv. 37. §)';
+      case 'NON_DECLARABLE': return 'Nem szerepel a bevallásban';
       default: return `${row}. sor`;
     }
   };
@@ -227,7 +228,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         const fadTax = effVat > 0 ? effVat : Math.round(effNet * 0.27);
         rows.push({ row: '29', base: effNet, vat: fadTax, gross: effNet + fadTax });
         rows.push({ row: '66', base: effNet, vat: fadTax, gross: effNet + fadTax });
-      } else if (code === '25') {
+      } else if (code === '27' || code === '25') {
         rows.push({ row: '66', base: effNet, vat: effVat, gross: gross });
         if (isTangibleAsset) {
           rows.push({ row: '77', base: 0, vat: effVat, gross: effVat });
@@ -236,14 +237,18 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         rows.push({ row: '65', base: effNet, vat: effVat, gross: gross });
       } else if (code === '05') {
         rows.push({ row: '64', base: effNet, vat: effVat, gross: gross });
-      } else if (code === 'TAM' || code === 'AAM') {
+      } else if (code === 'BE_ARANY' || code === 'BE_63') {
         rows.push({ row: '63', base: effNet, vat: 0, gross: effNet });
+      } else if (code === 'TAM' || code === 'AAM' || code === 'DRS' || code === 'ÁHK' || code === 'AHK' || code === 'MENTES') {
+        rows.push({ row: 'NON_DECLARABLE', base: effNet, vat: 0, gross: effNet });
       } else if (code === 'EUK_SZOLG') {
         rows.push({ row: '18', base: effNet, vat: effVat, gross: gross });
         rows.push({ row: '67', base: effNet, vat: effVat, gross: gross });
       } else if (code === 'ATHK_SZOLG') {
         rows.push({ row: '27', base: effNet, vat: effVat, gross: gross });
         rows.push({ row: '67', base: effNet, vat: effVat, gross: gross });
+      } else if (effVat === 0) {
+        rows.push({ row: 'NON_DECLARABLE', base: effNet, vat: 0, gross: effNet });
       } else {
         rows.push({ row: '66', base: effNet, vat: effVat, gross: gross });
         if (isTangibleAsset) rows.push({ row: '77', base: 0, vat: effVat, gross: effVat });
@@ -1105,6 +1110,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
 
     if (viewMode === 'row') {
       return Array.from(map.values()).sort((a, b) => {
+        if (a.code === 'NON_DECLARABLE') return 1;
+        if (b.code === 'NON_DECLARABLE') return -1;
         const numA = parseInt(a.code.replace(/\D/g, ''), 10);
         const numB = parseInt(b.code.replace(/\D/g, ''), 10);
         if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
