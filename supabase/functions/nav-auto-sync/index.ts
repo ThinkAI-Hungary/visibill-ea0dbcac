@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { NavIngestionService } from '../_shared/nav/index.ts';
+import { planNavItemJob, NAV_ITEM_QUEUE } from './navItemJobPlanner.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -190,12 +191,14 @@ Deno.serve(async (req) => {
       total_companies: activeCompanies.length,
       successful: 0,
       failed: 0,
+      worker_jobs_enqueued: 0,
+      auto_categorize_queued: 0,
+      enqueue_failed: 0,
       details: [] as any[]
     };
 
     const dateTo = new Date();
     const dateToStr = dateTo.toISOString().split('T')[0];
-    const companiesToCategorize: { companyId: string; userId: string }[] = [];
 
     for (const company of activeCompanies) {
       // Time budget guard: Edge Functions have a 150s limit. Stop loop at 100s to avoid 504 Gateway Timeout.
@@ -290,29 +293,36 @@ Deno.serve(async (req) => {
         }
 
         const inboundFetched = inboundResult?.totalFetched ?? 0;
-        if (inboundFetched > 0) {
-          companiesToCategorize.push({
-            companyId: company.company_id,
-            userId: company.user_id,
-          });
-        }
 
-        // Enqueue background line-item fetch job via PGMQ if new invoices were fetched and details not loaded inline
+        // Hand-off to the worker (A-193 follow-up): line-item fetch and, for new inbound
+        // invoices, auto-categorization AFTER the items are loaded (auto_categorize flag).
+        // Replaces the former synchronous auto-categorize tail (504 risk, no line items).
         const totalNewInvoices = (outboundResult?.totalInserted || 0) + (inboundResult?.totalInserted || 0);
-        if (totalNewInvoices > 0 && !shouldFetchDetails) {
+        const workerJob = planNavItemJob({
+          companyId: company.company_id,
+          userId: company.user_id,
+          totalNewInvoices,
+          inboundFetched,
+          shouldFetchDetails,
+          detailsOnly,
+        });
+        if (workerJob) {
           try {
-            await supabase.rpc('pgmq_send_retry', {
-              queue_name: 'nav_item_jobs',
-              msg: {
-                job_type: 'fetch_nav_items',
-                company_id: company.company_id,
-                user_id: company.user_id,
-                created_at: new Date().toISOString()
-              }
+            const { error: enqueueError } = await supabase.rpc('pgmq_send_retry', {
+              queue_name: NAV_ITEM_QUEUE,
+              msg: workerJob,
             });
-            console.log(`[NAV-AUTO-SYNC] Enqueued nav_item_jobs for company ${company.company_id} (${totalNewInvoices} new invoices)`);
+            if (enqueueError) {
+              results.enqueue_failed++;
+              console.error(`[NAV-AUTO-SYNC] Could not enqueue ${NAV_ITEM_QUEUE} for ${company.company_id}:`, enqueueError);
+            } else {
+              results.worker_jobs_enqueued++;
+              if (workerJob.auto_categorize) results.auto_categorize_queued++;
+              console.log(`[NAV-AUTO-SYNC] Enqueued ${NAV_ITEM_QUEUE} for company ${company.company_id} (${totalNewInvoices} new invoices, auto_categorize=${workerJob.auto_categorize})`);
+            }
           } catch (qErr) {
-            console.warn(`[NAV-AUTO-SYNC] Could not enqueue nav_item_jobs for ${company.company_id}:`, qErr);
+            results.enqueue_failed++;
+            console.error(`[NAV-AUTO-SYNC] Could not enqueue ${NAV_ITEM_QUEUE} for ${company.company_id}:`, qErr);
           }
         }
 
@@ -351,36 +361,6 @@ Deno.serve(async (req) => {
           status: 'error',
           error: companyErr?.message || String(companyErr)
         });
-      }
-    }
-
-    // Trigger automatic background categorization for companies with new inbound invoices
-    if (companiesToCategorize.length > 0 && !detailsOnly) {
-      console.log(`[NAV-AUTO-SYNC] Triggering auto-categorization for ${companiesToCategorize.length} companies...`);
-      for (const item of companiesToCategorize) {
-        try {
-          const autoCatResponse = await fetch(`${supabaseUrl}/functions/v1/auto-categorize-invoices`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${supabaseServiceRoleKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              companyId: item.companyId,
-              userId: item.userId,
-              limit: 200,
-            }),
-          });
-          if (!autoCatResponse.ok) {
-            const errText = await autoCatResponse.text();
-            console.warn(`[NAV-AUTO-SYNC] Auto-categorization failed for company ${item.companyId}: ${autoCatResponse.status} ${errText}`);
-          } else {
-            const autoCatData = await autoCatResponse.json();
-            console.log(`[NAV-AUTO-SYNC] Auto-categorization completed for company ${item.companyId}:`, autoCatData);
-          }
-        } catch (catErr: any) {
-          console.warn(`[NAV-AUTO-SYNC] Auto-categorization invocation error for ${item.companyId}:`, catErr);
-        }
       }
     }
 

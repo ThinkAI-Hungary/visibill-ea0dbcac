@@ -1680,8 +1680,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/nav-auto-sync/index.ts": {
-    "mtime": 1791044333.0911703,
-    "ast_hash": "b9b98b4df51340c3857d7aa917ff1943",
+    "mtime": 1791072100.7723958,
+    "ast_hash": "d221f95f55e7460232d1377728a58ecb",
     "semantic_hash": ""
   },
   "supabase/functions/nav-query-outbound-invoices/index.ts": {
@@ -7585,8 +7585,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/nav-ingestion-service.ts": {
-    "mtime": 1791046218.5728648,
-    "ast_hash": "cf4b29ddd817dad27cd60d746737c8bf",
+    "mtime": 1791072231.6096232,
+    "ast_hash": "569e2c26af56d7ad467761b643555e9e",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/types.ts": {
@@ -8570,8 +8570,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1791047319.7619452,
-    "ast_hash": "776b7cca20a3b62aecc494de8c205322",
+    "mtime": 1791072416.7680213,
+    "ast_hash": "caa73c44d566959c8363b94479a930b9",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
@@ -13673,8 +13673,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md": {
-    "mtime": 1791046798.904812,
-    "ast_hash": "166182628debaf70d884b810b597951f",
+    "mtime": 1791072414.7462292,
+    "ast_hash": "6f230e97ad5f398e634251a1f8005704",
     "semantic_hash": ""
   },
   "session-summary/Jani/2026-10-03/summary-193000-nav-hybrid-async-sync-and-atomic-item-idempotency.md": {
@@ -13690,6 +13690,31 @@
   "session-summary/Jani/2026-10-03/summary-233900-oxlint-integration-and-cockpit-missing-vouchers-range-fix.md": {
     "mtime": 1791063572.7366247,
     "ast_hash": "8ed3b5982abb2f3091d8f617c050fa95",
+    "semantic_hash": ""
+  },
+  "src/test/serviceOnlyRpcGrants.test.ts": {
+    "mtime": 1791068733.378507,
+    "ast_hash": "f5337bc86deaaba5a97409f2b1f3de43",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261003225350_restrict_service_only_queue_and_nav_rpcs.sql": {
+    "mtime": 1791068175.9663298,
+    "ast_hash": "ebf7a54a6a7bcba84e6bf0736b82cdf5",
+    "semantic_hash": ""
+  },
+  "supabase/tests/database/service_only_queue_and_nav_rpcs.test.sql": {
+    "mtime": 1791068067.4497302,
+    "ast_hash": "3bfb863a18bcfb65ca1faf15766f766e",
+    "semantic_hash": ""
+  },
+  "src/test/navAutoSyncWorkerHandoff.test.ts": {
+    "mtime": 1791072053.560623,
+    "ast_hash": "622826fa7846292357719984d7aeff33",
+    "semantic_hash": ""
+  },
+  "supabase/functions/nav-auto-sync/navItemJobPlanner.ts": {
+    "mtime": 1791072032.7319024,
+    "ast_hash": "7c0b047801f93a12365f3598dbc1f0c6",
     "semantic_hash": ""
   }
 }

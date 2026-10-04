@@ -2,7 +2,7 @@
 // NAV Online Számla v3 – Szinkronizációs & Adatbázis Ingestion Szolgáltatás
 // =============================================================================
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
-import { NavCredentials, NavSyncOptions, NavSyncResult, NavInvoiceDigest } from './types.ts';
+import { NavCredentials, NavSyncOptions, NavSyncResult, NavInvoiceDigest, NavInvoiceDirection } from './types.ts';
 import { NavClient } from './nav-client.ts';
 import { sanitizeTaxNumber } from './crypto.ts';
 

@@ -66,10 +66,24 @@ A rendszer átállt a **Hibrid Aszinkron NAV Orkesztrációs Modellre**, amely s
 ### 3. PGMQ Láthatóság-Elhalasztás NAV 503 Karbantartás Esetén (`public.pgmq_set_vt`)
 * Létrejött a `public.pgmq_set_vt(queue_name text, msg_id bigint, vt integer)` wrapper eljárás.
 * A Python worker `nav_item_processor.py` modulja felismeri a HTTP 503 állapotkódot és a NAV karbantartási üzeneteit.
-* 503 esetén nem engedi növelni az instant hiba-számlálót (`read_ct`), hanem 15 percre (**vt = 900 másodperc**) elhalasztja az üzenet láthatóságát a sorban, majd dob egy `JobPostponedException`-t, megakadályozva az üzenet korai dead-letter státuszba kerülését.
+* 503 esetén 15 percre (**vt = 900 másodperc**) elhalasztja az üzenet láthatóságát a sorban, majd dob egy `JobPostponedException`-t, amit a listener nem archivál. A `read_ct` minden újraolvasáskor nő, így `MAX_READ_CT = 20` mellett kb. 5 óra folyamatos karbantartás után kerül dead-letterbe.
+* *Javítás 2026-10-04 (worker ADR-078):* az első implementáció a `JobPostponedException`-t elnyelte (az üzenete „503”-at tartalmaz) és archiválta a jobot, illetve `_msg_id` helyett `msg_id`-t olvasott. A hosszú jobokhoz chunkonkénti VT lease megújítás került be (`pgmq_set_vt(..., 300)`).
 
 ### 4. Kötelező 30 Napos Catch-Up Garancia Mentéskor
 * A `NavCredentialsForm.tsx` jelszójavítás vagy hitelesítő adat mentésekor felülbírálja a szűk (2 napos) visszatekintést, és **legalább 30 napos catch-up szinkronizációt** kényszerít ki (`dateTo - 30 nap`), így a lejárt jelszó miatt korábban kimaradt számlák maradéktalanul bekerülnek.
+
+### 5. Automatikus Kategorizálás a Workerben, Tételsorok Után (follow-up, 2026-10-04)
+* **Probléma:** a `nav-auto-sync` a cégciklus után szinkron hívta az `auto-categorize-invoices`-t (p50 27 s, max 58 s), a 100 s time-budgeten kívül → 504-es futások. Ráadásul a fejléc-only szinkron miatt az új NAV számlák tételsorok nélkül kerültek kategorizálásra.
+* **Döntés:** a `nav-auto-sync` a [`navItemJobPlanner.ts`](../../../supabase/functions/nav-auto-sync/navItemJobPlanner.ts) alapján cégenként egy `nav_item_jobs` üzenetet küld `auto_categorize: true` jelzővel, ha bejövő számla érkezett vagy frissült. A worker a tételek letöltése **után** hívja az `auto-categorize-invoices` EF-et (best-effort: hibánál a job sikeres marad, nincs dupla NAV/AI költség).
+* A `pgmq_send_retry` PostgREST hibáját a kód mostantól ellenőrzi (`enqueue_failed` számláló a válaszban); a supabase-js nem dob kivételt.
+* **Deploy sorrend:** előbb a worker (visszafelé kompatibilis), utána a `nav-auto-sync`.
+* Tesztek: [`navAutoSyncWorkerHandoff.test.ts`](../../../src/test/navAutoSyncWorkerHandoff.test.ts), worker `test/unit_test/test_nav_item_processor.py`.
+
+### 6. Biztonsági Keményítés: Csak service_role Hívhatja a Belső RPC-ket (2026-10-04)
+* Migráció: [`20261003225350_restrict_service_only_queue_and_nav_rpcs.sql`](../../../supabase/migrations/20261003225350_restrict_service_only_queue_and_nav_rpcs.sql).
+* `save_nav_invoice_details_and_items`, `pgmq_set_vt`, `pgmq_send_retry`, `peek_queue_items`, `pgmq_metrics_all`, `refresh_company_counts_cache`: `REVOKE EXECUTE FROM PUBLIC, anon, authenticated` + `GRANT ... TO service_role`. Korábban bármely bejelentkezett felhasználó UUID alapján felülírhatta más cég NAV számláját, illetve rejthetett, beszúrhatott vagy olvashatott queue jobokat.
+* A `save_nav_invoice_details_and_items` a tételsor `company_id`-ját mindig a szülő számlából veszi (a payloadban kapott értéket figyelmen kívül hagyja → nincs cross-tenant beszúrás).
+* Tesztek: pgTAP [`service_only_queue_and_nav_rpcs.test.sql`](../../../supabase/tests/database/service_only_queue_and_nav_rpcs.test.sql) (27 teszt), Vitest [`serviceOnlyRpcGrants.test.ts`](../../../src/test/serviceOnlyRpcGrants.test.ts).
 
 ---
 
