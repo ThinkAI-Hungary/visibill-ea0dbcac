@@ -30,6 +30,7 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import { formatCurrency, cn } from '@/lib/utils';
 import { exportVatCollectorAnalyticsExcel, VatCollectorGroup } from '@/lib/glExport';
+import { downloadVatAnalyticsPdf } from '@/lib/vatAnalyticsPdf';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -74,6 +75,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
 
   const [collapsedCodes, setCollapsedCodes] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [viewMode, setViewMode] = useState<'collector' | 'row'>('collector');
 
   // Helper for friendly declaration row labels in Row View mode
@@ -137,6 +139,11 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
     const isTangibleAsset = item.is_tangible_asset || code === 'TARGYESZKOZ' || code === 'KIM_TE_ERT' || override === '77' || override === '43';
     const isFad = code === 'FAD' || override === '29' || override === '04';
 
+    // Inbound deductible percentage handling (e.g. 70/30 telephone, 50/50 leasing)
+    const dedPct = item.deductible_percentage != null ? Number(item.deductible_percentage) : 100;
+    const effNet = (!isOutbound && dedPct < 100) ? Math.round(net * (dedPct / 100)) : net;
+    const effVat = (!isOutbound && dedPct < 100) ? Math.round(vat * (dedPct / 100)) : vat;
+
     const rows: Array<{ row: string; base: number; vat: number; gross: number }> = [];
 
     if (override) {
@@ -151,16 +158,16 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         return rows;
       }
       if (override === '77') {
-        rows.push({ row: '66', base: net, vat: vat, gross: gross });
-        rows.push({ row: '77', base: 0, vat: vat, gross: vat });
+        rows.push({ row: '66', base: effNet, vat: effVat, gross: gross });
+        rows.push({ row: '77', base: 0, vat: effVat, gross: effVat });
         return rows;
       }
       if (override === '29') {
-        rows.push({ row: '29', base: net, vat: vat, gross: gross });
-        rows.push({ row: '66', base: net, vat: vat, gross: gross });
+        rows.push({ row: '29', base: effNet, vat: effVat, gross: gross });
+        rows.push({ row: '66', base: effNet, vat: effVat, gross: gross });
         return rows;
       }
-      rows.push({ row: override, base: net, vat: vat, gross: gross });
+      rows.push({ row: override, base: effNet, vat: effVat, gross: gross });
       return rows;
     }
 
@@ -174,15 +181,15 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         else rows.push({ row: 'II.3', base: net, vat: vat, gross: gross });
       } else {
         if (code === '25') {
-          rows.push({ row: 'III.3', base: net, vat: vat, gross: gross });
+          rows.push({ row: 'III.3', base: effNet, vat: effVat, gross: gross });
         } else if (code === '13') {
-          rows.push({ row: 'III.2', base: net, vat: vat, gross: gross });
+          rows.push({ row: 'III.2', base: effNet, vat: effVat, gross: gross });
         } else if (code === '05') {
-          rows.push({ row: 'III.1', base: net, vat: vat, gross: gross });
+          rows.push({ row: 'III.1', base: effNet, vat: effVat, gross: gross });
         } else if (code === 'TAM' || code === 'AAM') {
-          rows.push({ row: 'III.12', base: net, vat: 0, gross: net });
+          rows.push({ row: 'III.12', base: effNet, vat: 0, gross: effNet });
         } else {
-          rows.push({ row: 'III.3', base: net, vat: vat, gross: gross });
+          rows.push({ row: 'III.3', base: effNet, vat: effVat, gross: gross });
         }
       }
       return rows;
@@ -217,29 +224,29 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
     } else {
       // Inbound
       if (isFad) {
-        const fadTax = vat > 0 ? vat : Math.round(net * 0.27);
-        rows.push({ row: '29', base: net, vat: fadTax, gross: net + fadTax });
-        rows.push({ row: '66', base: net, vat: fadTax, gross: net + fadTax });
+        const fadTax = effVat > 0 ? effVat : Math.round(effNet * 0.27);
+        rows.push({ row: '29', base: effNet, vat: fadTax, gross: effNet + fadTax });
+        rows.push({ row: '66', base: effNet, vat: fadTax, gross: effNet + fadTax });
       } else if (code === '25') {
-        rows.push({ row: '66', base: net, vat: vat, gross: gross });
+        rows.push({ row: '66', base: effNet, vat: effVat, gross: gross });
         if (isTangibleAsset) {
-          rows.push({ row: '77', base: 0, vat: vat, gross: vat });
+          rows.push({ row: '77', base: 0, vat: effVat, gross: effVat });
         }
       } else if (code === '18') {
-        rows.push({ row: '65', base: net, vat: vat, gross: gross });
+        rows.push({ row: '65', base: effNet, vat: effVat, gross: gross });
       } else if (code === '05') {
-        rows.push({ row: '64', base: net, vat: vat, gross: gross });
+        rows.push({ row: '64', base: effNet, vat: effVat, gross: gross });
       } else if (code === 'TAM' || code === 'AAM') {
-        rows.push({ row: '63', base: net, vat: 0, gross: net });
+        rows.push({ row: '63', base: effNet, vat: 0, gross: effNet });
       } else if (code === 'EUK_SZOLG') {
-        rows.push({ row: '18', base: net, vat: vat, gross: gross });
-        rows.push({ row: '67', base: net, vat: vat, gross: gross });
+        rows.push({ row: '18', base: effNet, vat: effVat, gross: gross });
+        rows.push({ row: '67', base: effNet, vat: effVat, gross: gross });
       } else if (code === 'ATHK_SZOLG') {
-        rows.push({ row: '27', base: net, vat: vat, gross: gross });
-        rows.push({ row: '67', base: net, vat: vat, gross: gross });
+        rows.push({ row: '27', base: effNet, vat: effVat, gross: gross });
+        rows.push({ row: '67', base: effNet, vat: effVat, gross: gross });
       } else {
-        rows.push({ row: '66', base: net, vat: vat, gross: gross });
-        if (isTangibleAsset) rows.push({ row: '77', base: 0, vat: vat, gross: vat });
+        rows.push({ row: '66', base: effNet, vat: effVat, gross: gross });
+        if (isTangibleAsset) rows.push({ row: '77', base: 0, vat: effVat, gross: effVat });
       }
     }
 
@@ -275,6 +282,42 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
     });
     return map;
   }, [glAccounts]);
+
+  // Fetch posted journal headers for company to map invoice_number -> formatted journal reference (e.g. S26/000127)
+  const { data: journalMap = new Map<string, string>() } = useQuery({
+    queryKey: ['accJournalHeadersByDocId', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return new Map<string, string>();
+      const { data, error } = await supabase
+        .from('acc_journal_headers')
+        .select('document_id, journal_number, accounting_year, acc_journals(code)')
+        .eq('company_id', selectedCompany.id)
+        .not('journal_number', 'is', null);
+
+      if (error || !data) return new Map<string, string>();
+
+      const map = new Map<string, string>();
+      data.forEach((row: any) => {
+        const code = (row.acc_journals?.code || 'SZ').toUpperCase();
+        const yearShort = String(row.accounting_year || new Date().getFullYear()).slice(-2);
+        const numPadded = String(row.journal_number).padStart(6, '0');
+        let prefix = code;
+        if (code === 'SZ') prefix = `S${yearShort}`;
+        else if (code === 'V') prefix = `K${yearShort}`;
+        else if (code === 'VE') prefix = 'V';
+        else if (code === 'B') prefix = 'B';
+        else if (code === 'P') prefix = 'P1';
+
+        const formatted = `${prefix}/${numPadded}`;
+        if (row.document_id) {
+          map.set(row.document_id.trim().toUpperCase(), formatted);
+        }
+      });
+      return map;
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 60_000,
+  });
 
   // Query invoice items with VAT codes, direction & GL classifications filtered by interval
   const { data: rawItems = [], isLoading } = useQuery({
@@ -335,7 +378,9 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
       });
 
       const navIds = navInvs.map((i) => i.id);
-      const subIds = standaloneSubInvs.map((i) => i.id);
+      // Fetch subItems for all submitted invoices so that if any nav_invoice lacks item details,
+      // its matched submitted invoice items can be used as fallback!
+      const subIds = subInvs.map((i) => i.id);
 
       // Safe chunked fetching in batches of 50 IDs to avoid HTTP 400 Bad Request (URI Too Long)
       const navItemPromises: any[] = [];
@@ -344,7 +389,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         navItemPromises.push(
           supabase
             .from('nav_invoice_items')
-            .select('id, nav_invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications, line_description')
+            .select('id, nav_invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications, line_description, deductible_percentage')
             .in('nav_invoice_id', chunk)
             .limit(10000)
         );
@@ -356,7 +401,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         subItemPromises.push(
           supabase
             .from('invoice_items')
-            .select('id, invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications, line_description')
+            .select('id, invoice_id, net_amount, vat_amount, vat_rate, vat_code, gl_classifications, line_description, deductible_percentage')
             .in('invoice_id', chunk)
             .limit(10000)
         );
@@ -471,7 +516,16 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         return firstVal?.gl_number ? String(firstVal.gl_number) : null;
       };
 
-      // Process nav items - aggregated by (nav_invoice_id + code + gl_number + vat_code)
+      // Build map of subItems by invoice_id so nav_invoices without items can fall back to their matched uploaded invoice items
+      const subItemsByInvId = new Map<string, any[]>();
+      subItems.forEach((item: any) => {
+        if (!subItemsByInvId.has(item.invoice_id)) {
+          subItemsByInvId.set(item.invoice_id, []);
+        }
+        subItemsByInvId.get(item.invoice_id)!.push(item);
+      });
+
+      // Process nav items - aggregated by (nav_invoice_id + code + gl_number + vat_code + dedPct)
       // so each invoice appears cleanly as a document entry per VAT code & GL classification
       const processedNavIds = new Set<string>();
       const navItemAggMap = new Map<string, any>();
@@ -514,7 +568,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           (i.vat_code && i.vat_code.includes('TARGYESZKOZ')) ||
           (glNum && (glNum.startsWith('16') || glNum.startsWith('12') || glNum.startsWith('13') || glNum.startsWith('14')));
 
-        const aggKey = `${i.nav_invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}`;
+        const dedPct = i.deductible_percentage != null ? Number(i.deductible_percentage) : 100;
+        const aggKey = `${i.nav_invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}_${dedPct}`;
         const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || '';
 
         const net = Number(i.net_amount) || 0;
@@ -530,6 +585,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           existing.gross_amount += (net + vat);
           existing.is_advance = existing.is_advance || isAdvance;
           existing.is_tangible_asset = existing.is_tangible_asset || isTangibleAsset;
+          existing.line_description = existing.line_description || i.line_description || null;
         } else {
           const resolvedCustomer = inv?.customer_name || matchedSub?.vevo_nev;
           const isCustomerFromSubmitted = isOutbound && !inv?.customer_name && !!matchedSub?.vevo_nev;
@@ -538,7 +594,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
             : (inv?.supplier_name || matchedSub?.elado_nev || t('accounting:vat_return.analytics_view.unknown_supplier', 'Ismeretlen szállító'));
 
           navItemAggMap.set(aggKey, {
-            id: `nav_${i.nav_invoice_id}_${code}_${glNum || 'none'}`,
+            id: `nav_${i.nav_invoice_id}_${code}_${glNum || 'none'}_${dedPct}`,
             invoice_id: i.nav_invoice_id,
             code,
             vat_code: vatCode,
@@ -556,11 +612,11 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
             is_advance: isAdvance,
             is_tangible_asset: isTangibleAsset,
             vat_row_override: override,
+            line_description: i.line_description || null,
+            deductible_percentage: dedPct,
           });
         }
       });
-
-      items.push(...Array.from(navItemAggMap.values()));
 
       // Fallback for nav_invoices without item records yet
       navInvs.forEach((inv: any) => {
@@ -575,6 +631,90 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           }
 
           const matchedSub = subByNumMap.get(normalizeInvNum(inv?.invoice_number));
+          const fallbackItems = matchedSub ? subItemsByInvId.get(matchedSub.id) : null;
+
+          if (fallbackItems && fallbackItems.length > 0) {
+            fallbackItems.forEach((i: any) => {
+              const code = getCode(
+                i.vat_rate,
+                i.vat_code,
+                i.line_description,
+                i.vat_amount,
+                isOutbound,
+                matchedSub?.adomentesseg_hivatkozas
+              );
+              const glNum = resolveItemGl(i.gl_classifications) || resolveItemGl((inv as any)?.gl_classifications) || resolveItemGl(matchedSub?.gl_classifications);
+              const vatCode = i.vat_code || null;
+              const override = (inv as any)?.vat_row_override || matchedSub?.vat_row_override || null;
+              const isAdvance =
+                (inv as any)?.invoice_type === 'ADVANCE' ||
+                (inv as any)?.invoice_type === 'elolegszamla' ||
+                matchedSub?.invoice_type === 'ADVANCE' ||
+                matchedSub?.invoice_type === 'elolegszamla' ||
+                override === '45' ||
+                i.vat_code === 'KIM_27_ELOLEG' ||
+                (i.vat_code && i.vat_code.includes('ELOLEG')) ||
+                (i.line_description && (i.line_description.toLowerCase().includes('előleg') || i.line_description.toLowerCase().includes('eloleg')));
+              const isTangibleAsset =
+                override === '77' ||
+                i.vat_code === 'BE_27_TARGYESZKOZ' ||
+                i.vat_code === 'BEJ_27_TARGYESZKOZ' ||
+                (i.vat_code && i.vat_code.includes('TARGYESZKOZ')) ||
+                (glNum && (glNum.startsWith('16') || glNum.startsWith('12') || glNum.startsWith('13') || glNum.startsWith('14')));
+
+              const dedPct = i.deductible_percentage != null ? Number(i.deductible_percentage) : 100;
+              const aggKey = `${inv.id}_${code}_${glNum || 'none'}_${vatCode || 'none'}_${dedPct}`;
+              const dateStr = inv?.invoice_delivery_date || inv?.invoice_issue_date || matchedSub?.teljesites_datuma || '';
+
+              const net = Number(i.net_amount) || 0;
+              let vat = Number(i.vat_amount) || 0;
+              if (code === 'FAD' && !isOutbound && vat === 0 && net !== 0) {
+                vat = Math.round(net * 0.27);
+              }
+
+              if (navItemAggMap.has(aggKey)) {
+                const existing = navItemAggMap.get(aggKey);
+                existing.net_amount += net;
+                existing.vat_amount += vat;
+                existing.gross_amount += (net + vat);
+                existing.is_advance = existing.is_advance || isAdvance;
+                existing.is_tangible_asset = existing.is_tangible_asset || isTangibleAsset;
+                existing.line_description = existing.line_description || i.line_description || null;
+              } else {
+                const resolvedCustomer = inv?.customer_name || matchedSub?.vevo_nev;
+                const isCustomerFromSubmitted = isOutbound && !inv?.customer_name && !!matchedSub?.vevo_nev;
+                const partnerName = isOutbound
+                  ? (resolvedCustomer || t('accounting:vat_return.analytics_view.unknown_customer', 'Ismeretlen vevő'))
+                  : (inv?.supplier_name || matchedSub?.elado_nev || t('accounting:vat_return.analytics_view.unknown_supplier', 'Ismeretlen szállító'));
+
+                navItemAggMap.set(aggKey, {
+                  id: `nav_fallback_${inv.id}_${i.id}`,
+                  invoice_id: inv.id,
+                  code,
+                  vat_code: vatCode,
+                  gl_number: glNum,
+                  direction,
+                  partner_gl_number: (inv as any)?.partner_gl_number || matchedSub?.partner_gl_number || null,
+                  vat_gl_number: (inv as any)?.vat_gl_number || matchedSub?.vat_gl_number || null,
+                  invoice_number: inv?.invoice_number || matchedSub?.bizonylatsorszam || t('accounting:vat_return.analytics_view.unnamed_invoice', 'Névtelen'),
+                  partner_name: partnerName,
+                  is_customer_from_submitted: isCustomerFromSubmitted,
+                  fulfillment_date: dateStr,
+                  net_amount: net,
+                  vat_amount: vat,
+                  gross_amount: net + vat,
+                  is_advance: isAdvance,
+                  is_tangible_asset: isTangibleAsset,
+                  vat_row_override: override,
+                  line_description: i.line_description || null,
+                  deductible_percentage: dedPct,
+                });
+              }
+            });
+            processedNavIds.add(inv.id);
+            return;
+          }
+
           const net = Number(inv.invoice_net_amount || 0);
           const vat = Number(inv.invoice_vat_amount || 0);
           if (net !== 0 || vat !== 0) {
@@ -615,17 +755,21 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
               is_advance: isAdvance,
               is_tangible_asset: isTangibleAsset,
               vat_row_override: override,
+              deductible_percentage: 100,
             });
           }
         }
       });
 
+      items.push(...Array.from(navItemAggMap.values()));
+
       const processedSubIds = new Set<string>();
       const subItemAggMap = new Map<string, any>();
 
       subItems.forEach((i: any) => {
-        processedSubIds.add(i.invoice_id);
         const inv = subMap.get(i.invoice_id);
+        if (!inv) return;
+        processedSubIds.add(i.invoice_id);
         const direction = ((inv as any)?.invoice_direction || 'INBOUND').toUpperCase() as 'INBOUND' | 'OUTBOUND';
         const isOutbound = direction === 'OUTBOUND';
         if (!isOutbound && effectiveScope === 'with_image') {
@@ -659,7 +803,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           (i.vat_code && i.vat_code.includes('TARGYESZKOZ')) ||
           (glNum && (glNum.startsWith('16') || glNum.startsWith('12') || glNum.startsWith('13') || glNum.startsWith('14')));
 
-        const aggKey = `${i.invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}`;
+        const dedPct = i.deductible_percentage != null ? Number(i.deductible_percentage) : 100;
+        const aggKey = `${i.invoice_id}_${code}_${glNum || 'none'}_${vatCode || 'none'}_${dedPct}`;
         const dateStr = inv?.teljesites_datuma || inv?.kibocsatas_datuma || '';
 
         const net = Number(i.net_amount) || 0;
@@ -675,13 +820,14 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
           existing.gross_amount += (net + vat);
           existing.is_advance = existing.is_advance || isAdvance;
           existing.is_tangible_asset = existing.is_tangible_asset || isTangibleAsset;
+          existing.line_description = existing.line_description || i.line_description || null;
         } else {
           const partnerName = isOutbound
             ? (inv?.vevo_nev || t('accounting:vat_return.analytics_view.unknown_customer', 'Ismeretlen vevő'))
             : (inv?.elado_nev || t('accounting:vat_return.analytics_view.unknown_supplier', 'Ismeretlen szállító'));
 
           subItemAggMap.set(aggKey, {
-            id: `sub_${i.invoice_id}_${code}_${glNum || 'none'}`,
+            id: `sub_${i.invoice_id}_${code}_${glNum || 'none'}_${dedPct}`,
             invoice_id: i.invoice_id,
             code,
             vat_code: vatCode,
@@ -699,6 +845,8 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
             is_advance: isAdvance,
             is_tangible_asset: isTangibleAsset,
             vat_row_override: override,
+            line_description: i.line_description || null,
+            deductible_percentage: dedPct,
           });
         }
       });
@@ -753,6 +901,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
               is_advance: isAdvance,
               is_tangible_asset: isTangibleAsset,
               vat_row_override: override,
+              deductible_percentage: 100,
             });
           }
         }
@@ -936,10 +1085,21 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         }
 
         const grp = map.get(item.code)!;
-        grp.items.push(item);
-        grp.total_net += item.net_amount;
-        grp.total_vat += item.vat_amount;
-        grp.total_gross += item.gross_amount;
+        const isOutbound = item.direction === 'OUTBOUND';
+        const dedPct = item.deductible_percentage != null ? Number(item.deductible_percentage) : 100;
+        const effNet = (!isOutbound && dedPct < 100) ? Math.round(item.net_amount * (dedPct / 100)) : item.net_amount;
+        const effVat = (!isOutbound && dedPct < 100) ? Math.round(item.vat_amount * (dedPct / 100)) : item.vat_amount;
+        const effGross = (!isOutbound && dedPct < 100) ? (effNet + effVat) : item.gross_amount;
+
+        grp.items.push({
+          ...item,
+          effective_net: effNet,
+          effective_vat: effVat,
+          effective_gross: effGross,
+        });
+        grp.total_net += effNet;
+        grp.total_vat += effVat;
+        grp.total_gross += effGross;
       }
     });
 
@@ -1003,6 +1163,35 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
       toast({ title: t('common:status.error', 'Export hiba'), description: e.message, variant: 'destructive' });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (groups.length === 0) return;
+    setIsExportingPdf(true);
+    try {
+      const activeYear = year || (effectiveDateFrom ? parseInt(effectiveDateFrom.substring(0, 4), 10) : new Date().getFullYear());
+      downloadVatAnalyticsPdf({
+        groups,
+        companyName: selectedCompany?.name || (isCroatia ? 'Tvrtka' : 'Cég'),
+        companyTaxNumber: (selectedCompany as any)?.tax_number || (selectedCompany as any)?.adoszam || undefined,
+        year: activeYear,
+        dateFrom: effectiveDateFrom,
+        dateTo: effectiveDateTo,
+        targetCurrency,
+        viewMode,
+        journalMap,
+      });
+      toast({
+        title: t('accounting:vat_return.analytics_view.toast_export_success_title', 'Sikeres exportálás'),
+        description: viewMode === 'row'
+          ? (isCroatia ? 'Izvoz analitike PDV obrasca u PDF je dovršen.' : 'A 2665 Bevallási Sor Analitika PDF riport elkészült.')
+          : t('accounting:vat_return.analytics_view.toast_export_pdf_success_desc', 'Az ÁFA Gyűjtőkódos Analitika PDF riport elkészült.'),
+      });
+    } catch (e: any) {
+      toast({ title: t('common:status.error', 'Export hiba'), description: e.message, variant: 'destructive' });
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -1130,6 +1319,16 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
               </SelectContent>
             </Select>
           </div>
+
+          <Button
+            onClick={handleExportPdf}
+            disabled={isExportingPdf || groups.length === 0}
+            variant="outline"
+            className="gap-2 border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-500/10 cursor-pointer h-8 text-xs shadow-2xs shrink-0 whitespace-nowrap"
+          >
+            {isExportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-red-600 dark:text-red-400" />}
+            {t('accounting:vat_return.analytics_view.export_pdf', 'Export (PDF)')}
+          </Button>
 
           <Button
             onClick={handleExport}
@@ -1579,13 +1778,20 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
                               )}
                             </TableCell>
                             <TableCell className="text-right font-mono tabular-nums">
-                              {formatCurrency(item.net_amount, targetCurrency)}
+                              {formatCurrency(viewMode === 'row' ? item.net_amount : (item.effective_net ?? item.net_amount), targetCurrency)}
                             </TableCell>
                             <TableCell className="text-right font-mono tabular-nums text-primary font-medium">
-                              {formatCurrency(item.vat_amount, targetCurrency)}
+                              <div className="flex items-center justify-end gap-1.5">
+                                {item.deductible_percentage != null && item.deductible_percentage < 100 && item.direction !== 'OUTBOUND' && (
+                                  <span className="text-[10px] px-1 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold border border-amber-500/20" title={`Levonható ÁFA hányad: ${item.deductible_percentage}%`}>
+                                    {item.deductible_percentage}%
+                                  </span>
+                                )}
+                                <span>{formatCurrency(viewMode === 'row' ? item.vat_amount : (item.effective_vat ?? item.vat_amount), targetCurrency)}</span>
+                              </div>
                             </TableCell>
                             <TableCell className="text-right font-mono tabular-nums font-medium">
-                              {formatCurrency(item.gross_amount, targetCurrency)}
+                              {formatCurrency(viewMode === 'row' ? item.gross_amount : (item.effective_gross ?? item.gross_amount), targetCurrency)}
                             </TableCell>
                           </TableRow>
                         ))}

@@ -1285,6 +1285,7 @@
       "all_items": "Sve stavke",
       "items_count": "{{count}} stavki",
       "export_excel": "Izvoz (Excel)",
+      "export_pdf": "Izvoz (PDF)",
       "empty": "Nema dokumenata sa zbirnim kodom PDV-a za odabrano razdoblje.",
       "filter_all_docs": "Svi dokumenti",
       "filter_outbound": "Izlazni računi (Kupci)",

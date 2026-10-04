@@ -562,7 +562,7 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
         const isFromSub = isOutbound && (!inv.customer_name || inv.customer_name === 'Ismeretlen partner' || inv.customer_name === 'Ismeretlen vevő') && !!submittedVevo;
         const effectiveCustomer = isFromSub ? submittedVevo : inv.customer_name;
 
-        const rawItems = inv.is_nav ? (navItems.length > 0 ? navItems : []) : (navItems.length > 0 ? navItems : appItems);
+        const rawItems = navItems.length > 0 ? navItems : appItems;
         const invNet = Number(inv.invoice_net_amount || 0);
         const invVat = Number(inv.invoice_vat_amount || 0);
         const headerVatRate = (invNet > 0 && invVat > 0 && Math.round((invVat / invNet) * 100) === 27) ? '27%'

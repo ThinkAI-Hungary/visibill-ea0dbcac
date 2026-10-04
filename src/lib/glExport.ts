@@ -478,6 +478,7 @@ export interface VatCollectorGroup {
     direction?: string | null;
     is_customer_from_submitted?: boolean;
     declaration_row?: string | null;
+    line_description?: string | null;
     net_amount: number;
     vat_amount: number;
     gross_amount: number;
@@ -568,9 +569,9 @@ export const exportVatCollectorAnalyticsExcel = async (
         col3: item.fulfillment_date ? item.fulfillment_date.substring(0, 10).replace(/-/g, '.') : '-',
         col4: item.vat_code || '-',
         col5: item.gl_number || '-',
-        net: item.net_amount,
-        vat: item.vat_amount,
-        gross: item.gross_amount,
+        net: (item as any).effective_net != null ? (item as any).effective_net : item.net_amount,
+        vat: (item as any).effective_vat != null ? (item as any).effective_vat : item.vat_amount,
+        gross: (item as any).effective_gross != null ? (item as any).effective_gross : item.gross_amount,
       });
 
       itemRow.font = { size: 9, color: { argb: 'FF374151' } };

@@ -1285,6 +1285,7 @@
       "all_items": "Összes tétel",
       "items_count": "{{count}} tétel",
       "export_excel": "Export (Excel)",
+      "export_pdf": "Export (PDF)",
       "empty": "Nincsenek ÁFA gyűjtőkódos bizonylatok az adott időszakban.",
       "filter_all_docs": "Összes bizonylat",
       "filter_outbound": "Vevői számlák (Kimenő)",

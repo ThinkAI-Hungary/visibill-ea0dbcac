@@ -245,6 +245,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-189 | Főkönyvi Kivonat és Naplófőkönyv RPC Teljesítmény-Optimalizálás (Statement Timeout 57014 Megszüntetése, CTE Materializáció és Hash Join) | ✅ Decided | [A-189](./A-189-gl-rpc-performance-optimization-and-timeout-elimination.md) |
 | A-191 | Folyószámla Kettős Devizakezelés, Árfolyam-számítás és Csoportosítási Architektúra | ✅ Decided | [A-191](./A-191-subledger-dual-currency-and-grouping-architecture.md) |
 | A-192 | Munka Törvénykönyve (Mt.) Szerinti Magyar Munkanap és Törvényes Bérszámfejtési Keret Motor | ✅ Decided | [A-192](./A-192-statutory-hungarian-workday-and-payroll-engine.md) |
+| A-194 | ÁFA Analitika PDF Export (NAV 2665 Bevallási Sorok & Gyűjtőkódok) RLB-60 Standard Szerint | ✅ Decided | [A-194](./A-194-vat-analytics-pdf-export-rlb60-standard.md) |
 
 
 ## 💳 Fizetés
