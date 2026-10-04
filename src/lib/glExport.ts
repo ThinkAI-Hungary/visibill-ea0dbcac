@@ -482,6 +482,10 @@ export interface VatCollectorGroup {
     net_amount: number;
     vat_amount: number;
     gross_amount: number;
+    deductible_percentage?: number | null;
+    effective_net?: number;
+    effective_vat?: number;
+    effective_gross?: number;
   }[];
   total_net: number;
   total_vat: number;
