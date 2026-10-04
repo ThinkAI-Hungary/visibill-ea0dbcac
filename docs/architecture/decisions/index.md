@@ -283,6 +283,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-126 | Műveleti Napló E-mail Metaadatok Megőrzése és Retrospektív Számla-Összekapcsolás | ✅ Decided | [A-126](./A-126-audit-trail-email-ingestion-and-invoice-linking.md) |
 | A-149 | In-App Fejlesztői Napló (Patchnotes) Rendszer és Publikációs Pipeline | ✅ Decided | [A-149](./A-149-in-app-changelog-and-patchnotes-system.md) |
 | A-171 | Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció | ✅ Decided | [A-171](./A-171-croatian-minimax-api-invoice-intermediary-sync.md) |
+| A-195 | NAV 26A60 v3.0 Közösségi Összesítő Nyilatkozat ÁNYK XML Export & Rekonciliáció | ✅ Decided | [A-195](./A-195-nav-26a60-community-summary-anyk-xml-export-and-reconciliation.md) |
 
 
 

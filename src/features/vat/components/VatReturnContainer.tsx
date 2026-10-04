@@ -88,6 +88,7 @@ export function VatReturnContainer() {
     mLines,
     getVal,
     a60Calculations,
+    a60Lines,
     viesStatuses,
     isValidatingVies,
     handleViesCheck,
@@ -343,6 +344,11 @@ export function VatReturnContainer() {
                 isValidatingVies={isValidatingVies}
                 handleViesCheck={handleViesCheck}
                 setEuTypeOverrides={setEuTypeOverrides}
+                selectedCompany={selectedCompany}
+                year={year}
+                month={month}
+                frequency={frequency}
+                a60Lines={a60Lines}
               />
             </VatReturnErrorBoundary>
           </TabsContent>

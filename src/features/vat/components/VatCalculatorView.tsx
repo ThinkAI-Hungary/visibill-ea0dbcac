@@ -90,6 +90,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
     unpaidVatEft,
     euInvoices,
     a60Calculations,
+    a60Lines,
     partnerValidations,
     reverseChargeSuspiciousInvoices,
     calculate,
@@ -167,13 +168,18 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
   return (
     <>
       {/* Közösségi (A60) Keresztellenőrzés */}
-      {vatReturn && euInvoices.length > 0 && (
+      {vatReturn && (euInvoices.length > 0 || (a60Lines && a60Lines.length > 0)) && (
         <VatA60Table
           a60Calculations={a60Calculations}
           viesStatuses={viesStatuses}
           isValidatingVies={isValidatingVies}
           handleViesCheck={handleViesCheck}
           setEuTypeOverrides={setEuTypeOverrides}
+          selectedCompany={selectedCompany}
+          year={year}
+          month={month}
+          frequency={frequency}
+          a60Lines={a60Lines}
         />
       )}
 

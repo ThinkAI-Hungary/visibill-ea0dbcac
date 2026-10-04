@@ -1220,7 +1220,9 @@ BEGIN
     LEFT JOIN LATERAL (
       SELECT 
         nii_inner.vat_rate,
+        nii_inner.net_amount,
         nii_inner.vat_amount,
+        nii_inner.gross_amount,
         nii_inner.deductible_percentage,
         nii_inner.line_description
       FROM public.nav_invoice_items nii_inner
@@ -1230,7 +1232,9 @@ BEGIN
 
       SELECT 
         ii_inner.vat_rate,
+        ii_inner.net_amount,
         ii_inner.vat_amount,
+        ii_inner.gross_amount,
         ii_inner.deductible_percentage,
         ii_inner.line_description
       FROM public.invoices inv_inner
