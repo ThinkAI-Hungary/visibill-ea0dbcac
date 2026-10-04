@@ -489,7 +489,7 @@ A **Pipeline** szekció és a **Queue** lista a kiválasztott konténer projektj
 - Konténer kiválasztása → `activeProject` meghatározása (heartbeat `project` mező)
 - Pipeline-ok: `${project}:${pipeline}` prefix alapján szűrve
 - Queue-k: projekt mező alapján szűrve, **mindig alfabetikus sorrendben**
-- PGMQ queue-k: `public.pgmq_metrics_all()` wrapper RPC-n keresztül érhetők el (mindhárom projektben létrehozva)
+- PGMQ queue-k: `public.pgmq_metrics_all()` wrapper RPC-n keresztül érhetők el (mindhárom projektben létrehozva; A-193 §6 óta szigorúan `service_role`-ra korlátozva, a `management-stats` EF-en keresztül hívva)
 
 > **Megjegyzés:** A globális KPI panelek (showProcessing / showAllQueues) felülírják a projekt szűrést — ilyenkor minden projekt adata megjelenik.
 

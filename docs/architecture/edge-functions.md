@@ -1,7 +1,7 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-10-03  
-> **Összesen:** 67 Deno Edge Function + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
+> **Utoljára frissítve:** 2026-10-04  
+> **Összesen:** 67 dokumentált Deno Edge Function a repó 69-éből (hiányzik: `minimax-sync`, `sync-szamlazz-outbound-invoices`; deploy-állapot: [A-005](./decisions/A-005-edge-functions.md)) + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
 A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) könyvtárban található. A technikai architektúra döntést az [A-005: Edge Functions a Serverless Logikához](./decisions/A-005-edge-functions.md), az adatbázis sémát a [database-schema.md](./database-schema.md), az eljárásokat pedig az [rpc-catalog.md](./rpc-catalog.md) írja le.
@@ -167,7 +167,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
 | [`management-stats`](../../supabase/functions/management-stats/index.ts) | ❌ Nyilvános / Belső | Frontend (Management Dashboard) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Központi adminisztrációs API — 14 moduláris action (cégek, userek, jogosultságok, hibák, worker állapot, PGMQ retry, A-077). |
-| [`auto-categorize-invoices`](../../supabase/functions/auto-categorize-invoices/index.ts) | ✅ Kötelező | Frontend (InvoiceActions / useAutoCategorizeInvoices / trigger-nav-categorization) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY` | Kétfázisú aszinkron számlakategorizáció: Phase 1 partner-történeti többségi előszűrés (0 token), Phase 2 AI kötegelt feldolgozás job követéssel, konkurenciavédelemmel és kijelölt számlák (forceInvoiceIds) felülbírálásával (A-129, P-096). |
+| [`auto-categorize-invoices`](../../supabase/functions/auto-categorize-invoices/index.ts) | ✅ Kötelező | Frontend (InvoiceActions / useAutoCategorizeInvoices / trigger-nav-categorization) / Worker (`nav_item_processor.py`, `nav_item_jobs` + `auto_categorize`, A-193 §5) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY` | Kétfázisú aszinkron számlakategorizáció: Phase 1 partner-történeti többségi előszűrés (0 token), Phase 2 AI kötegelt feldolgozás job követéssel, konkurenciavédelemmel és kijelölt számlák (forceInvoiceIds) felülbírálásával (A-129, P-096). |
 | [`impersonate-company`](../../supabase/functions/impersonate-company/index.ts) | ✅ Kötelező | Frontend (Management / Support Admin) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Ideiglenes support admin megszemélyesítés indítása és leállítása auditált időkorláttal (A-026). |
 | [`export-user-data`](../../supabase/functions/export-user-data/index.ts) | ✅ Kötelező | Frontend (Settings / Privacy) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | GDPR adathordozhatósági export generálása a felhasználó összes számlájával, tranzakciójával és naplóbejegyzésével ZIP formátumban. |
 | [`get-invoice-image-url`](../../supabase/functions/get-invoice-image-url/index.ts) | ❌ Nyilvános / Belső | Frontend (InvoiceImageViewer) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Időkorlátos, biztonságos Signed URL generálása a védett Supabase Storage számlaképekhez. |

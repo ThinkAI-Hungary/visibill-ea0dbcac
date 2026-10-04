@@ -33,7 +33,7 @@ Az átfogó PostgreSQL tárolt eljárás (RPC) audit és skálázhatósági elem
 
 2. **Frissítő eljárás (`refresh_company_counts_cache`):**
    * Egy biztonságos (`SECURITY DEFINER`, `search_path = public, pg_temp`) PL/pgSQL függvény, amely `INSERT ... ON CONFLICT (company_id) DO UPDATE` mechanizmussal újraszámolja a számlálókat cégekre lebontva, és eltávolítja a megszűnt cégeket.
-   * Jogosultságok: `REVOKE EXECUTE ... FROM PUBLIC, anon;`, kizárólag `authenticated` és `service_role` számára engedélyezett.
+   * Jogosultságok: `REVOKE EXECUTE ... FROM PUBLIC, anon, authenticated;`, kizárólag `service_role` számára engedélyezett (2026-10-04, [A-193](./A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md) §6). A frontendről nem hívható közvetlenül, kizárólag a `pg_cron` és a `management-stats` Edge Function futtathatja.
 
 3. **Natív `pg_cron` ütemezés:**
    A már meglévő, aktív Supabase `pg_cron` kiterjesztést felhasználva regisztráltuk a `refresh-company-counts-cache` jobot 10 perces intervallummal (`*/10 * * * *`).

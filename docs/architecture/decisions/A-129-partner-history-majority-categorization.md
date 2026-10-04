@@ -2,9 +2,10 @@
 
 > **Státusz:** Decided  
 > **Dátum:** 2026-09-20  
+> **Utoljára frissítve:** 2026-10-04 (NAV számlák tételsorok utáni kategorizálása: [A-193](./A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md) §5)  
 > **Szerző:** ThinkAI / Morfi  
-> **Érintett komponensek:** `invoices`, `nav_invoices`, `auto_categorize_jobs`, `auto-categorize-invoices` (Edge Function), Python Worker (`category_classifier.py`)  
-> **Kapcsolódó:** [BRD 059](../../business/decisions/059-partner-history-majority-categorization.md), [PRD P-096](../../product/decisions/P-096-auto-categorize-invoices-batch-progress-and-toast-ux.md), [ADR A-130](./A-130-nav-auto-sync-dawn-load-staggering.md)  
+> **Érintett komponensek:** `invoices`, `nav_invoices`, `auto_categorize_jobs`, `auto-categorize-invoices` (Edge Function), Python Worker (`category_classifier.py`, `nav_item_processor.py`)  
+> **Kapcsolódó:** [BRD 059](../../business/decisions/059-partner-history-majority-categorization.md), [PRD P-096](../../product/decisions/P-096-auto-categorize-invoices-batch-progress-and-toast-ux.md), [ADR A-130](./A-130-nav-auto-sync-dawn-load-staggering.md), [ADR A-193](./A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md)  
 
 ---
 

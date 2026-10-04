@@ -1,7 +1,7 @@
 # PostgreSQL RPC és Függvény Katalógus
 
-> **Utoljára frissítve:** 2026-10-01  
-> **Összesen:** 141 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
+> **Utoljára frissítve:** 2026-10-04  
+> **Összesen:** 143 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
 > **Tesztelési Követelmények:** Lásd a [PostgreSQL RPC Tesztelési Stratégia és Blueprint](./rpc-testing-blueprint.md) dokumentumot.
 
 Ez a dokumentáció az eaisybill-prod és eaisyBooks rendszerekben használt összes PostgreSQL tárolt eljárást és RPC (Remote Procedure Call) függvényt tartalmazza. Részletezi a függvény szignatúráját, biztonsági környezetét (`SECURITY DEFINER` vs `INVOKER`), hívó komponensét és funkcionális szerepét.
@@ -166,13 +166,15 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `claim_transaction_jobs(p_batch_size integer)` | `INVOKER` | `SETOF transaction_uploads` | Python Worker (Tx Pipeline) | Zárol és feldolgozásra kiad N db bankkivonat feltöltést. |
 | `debug_llm_costs_count(—)` | `DEFINER` | `jsonb` | Belső / PostgREST | Adatbázis eljárás. |
 | `get_unclassified_gl_items(p_company_id uuid, p_preset_id text)` | `DEFINER` | `TABLE(id uuid, source_table text, direction text, partner_name text, document_number text, document_date text, description text, product_code text, amount numeric, quantity numeric, unit text, vat_rate text, is_reverse_charge boolean)` | Python Worker (GL Classifier) | Optimalizált kötegelt tétel-lekérdező az AI főkönyvi automatikus osztályozáshoz. |
-| `peek_queue_items(queue_name text, max_items integer)` | `DEFINER` | `TABLE(msg_id bigint, enqueued_at timestamp with time zone, read_ct integer, file_name text, company_name text, company_id uuid, source text, document_category text)` | Management Dashboard | Betekintés a PGMQ várakozási sor tetején lévő üzenetekbe zárolás nélkül. |
+| `peek_queue_items(queue_name text, max_items integer)` | `DEFINER` | `TABLE(msg_id bigint, enqueued_at timestamp with time zone, read_ct integer, file_name text, company_name text, company_id uuid, source text, document_category text)` | Management Dashboard (management-stats EF, service_role) | Betekintés a PGMQ várakozási sor tetején lévő üzenetekbe zárolás nélkül. **Csak service_role** (A-193 §6). |
 | `pgmq_archive(queue_name text, msg_id bigint)` | `DEFINER` | `boolean` | Worker PGMQ | Feldolgozott üzenet archiválása a PGMQ archívumba. |
 | `pgmq_delete(queue_name text, msg_id bigint)` | `DEFINER` | `boolean` | Worker PGMQ | Üzenet végleges törlése a PGMQ sorból. |
 | `pgmq_metrics(queue_name text)` | `DEFINER` | `SETOF jsonb` | Management Dashboard | Egy adott PGMQ sor mérőszámai (sorhossz, legöregebb üzenet). |
-| `pgmq_metrics_all(—)` | `DEFINER` | `TABLE(queue_name text, queue_length bigint, newest_msg_age_sec integer, oldest_msg_age_sec integer, total_messages bigint)` | Management Dashboard | Az összes aktív PGMQ üzenetsor aggregált metrikái (hossz, késleltetés). |
+| `pgmq_metrics_all(—)` | `DEFINER` | `TABLE(queue_name text, queue_length bigint, newest_msg_age_sec integer, oldest_msg_age_sec integer, total_messages bigint)` | Management Dashboard (management-stats EF, service_role) | Az összes aktív PGMQ üzenetsor aggregált metrikái (hossz, késleltetés). **Csak service_role** (A-193 §6). |
 | `pgmq_read(queue_name text, vt integer, qty integer, max_poll_seconds integer, poll_interval_ms integer)` | `DEFINER` | `SETOF jsonb` | Worker / EF PGMQ | Üzenetek olvasása a megadott PGMQ sorból láthatósági időkorláttal (VT). |
-| `pgmq_send_retry(queue_name text, msg jsonb)` | `DEFINER` | `bigint` | management-stats EF | RPC wrapper sikertelenül futott PGMQ üzenetek újrapróbálására. |
+| `pgmq_send_retry(queue_name text, msg jsonb)` | `DEFINER` | `bigint` | management-stats EF, nav-auto-sync, nav-query-outbound-invoices | RPC wrapper PGMQ üzenet küldésére (retry és `nav_item_jobs` ütemezés). **Csak service_role** (A-193 §6). |
+| `pgmq_set_vt(queue_name text, msg_id bigint, vt integer)` | `DEFINER` | `jsonb` | Python Worker (`nav_item_processor.py`) | Üzenet láthatósági idejének beállítása: NAV 503 halasztás (`vt = 900`) és hosszú jobok lease-megújítása (`vt = 300`). **Csak service_role** ([A-193](./decisions/A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md) §3, §6). |
+| `save_nav_invoice_details_and_items(p_invoice_id uuid, p_invoice_updates jsonb, p_line_items jsonb)` | `DEFINER` | `boolean` | nav-fetch-details EF, `NavIngestionService` | Atomi, idempotens NAV fejléc-részlet és tételsor mentés (`ON CONFLICT (nav_invoice_id, line_number) DO UPDATE`). A tétel `company_id`-ja mindig a szülő számlából jön. **Csak service_role** ([A-193](./decisions/A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md) §2, §6). |
 | `worker_daily_counts(days_back integer)` | `DEFINER` | `TABLE(pipeline text, day_key date, cnt bigint)` | Worker Health Dashboard | Napi feldolgozott munkák száma pipeline-onként. |
 | `worker_pipeline_stats(since_ts timestamp with time zone)` | `DEFINER` | `TABLE(pipeline text, worker_id text, jobs bigint, total_duration_ms bigint, total_cost numeric, avg_duration_ms numeric)` | Worker Health Dashboard | Worker pipeline teljesítmény-statisztikák (átlagos futási idő, költség, job szám). |
 
@@ -189,7 +191,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `delete_upload_with_data(p_upload_id uuid, p_upload_type text)` | `DEFINER` | `jsonb` | Upload History / Actions | Feltöltött fájl és a belőle generált összes rekord tranzakcionális törlése. |
 | `generate_api_key(p_company_id uuid, p_name text)` | `DEFINER` | `jsonb` | Settings / API Keys | Új titkosított API kulcs generálása külső integrációkhoz (OpenClaw). |
 | `get_company_counts(—)` | `DEFINER` | `json` | Management Overview | Rendszerszintű összesítő (számlák, NAV számlák, bank, bér cégek szerint). A `company_counts_cache` táblából olvas szub-milliszekundumos idővel (ADR A-190). |
-| `refresh_company_counts_cache(—)` | `DEFINER` | `void` | pg_cron / Management | 10 percenként futó háttérkarbantartó eljárás, amely frissíti a `company_counts_cache` gyorsítótár táblát (ADR A-190). |
+| `refresh_company_counts_cache(—)` | `DEFINER` | `void` | pg_cron / Management | 10 percenként futó háttérkarbantartó eljárás, amely frissíti a `company_counts_cache` gyorsítótár táblát (ADR A-190). **Csak service_role** (A-193 §6). |
 | `get_company_record_counts(—)` | `DEFINER` | `TABLE(company_id uuid, invoice_count bigint, nav_invoice_count bigint, transaction_count bigint, salary_count bigint)` | Management Companies | Cégenkénti rekord-számlálók (számlák, NAV számlák, tranzakciók, bérek). |
 | `get_llm_cost_full_agg(since_date timestamp with time zone)` | `DEFINER` | `jsonb` | Management LLM Tab | Teljes LLM költség és token-felhasználás aggregáció modellenként és feladatonként. |
 | `get_llm_cost_summary(period_start timestamp with time zone)` | `DEFINER` | `jsonb` | Management LLM Tab | Időszaki LLM költségösszesítő (bemeneti/kimeneti tokenek, költség USD-ben). |

@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-10-03  
-**Utoljára frissítve:** 2026-10-03  
+**Utoljára frissítve:** 2026-10-04  
 
 ---
 
@@ -36,7 +36,7 @@ A rendszer átállt a **Hibrid Aszinkron NAV Orkesztrációs Modellre**, amely s
 [ Kliens / Cron ] 
        │ 
        ▼
-[ nav-auto-sync / nav-query-outbound-invoices ] ──( 3-5 sec fast-path )──► Fejlécek mentése (nav_invoices)
+[ nav-auto-sync / nav-query-outbound-invoices ] ──( fast-path, ~2–34 s / cég )──► Fejlécek mentése (nav_invoices)
        │                                                                            │
        ├────────────────────────────────────────┐                                   ▼
        ▼                                        ▼                       [ Rematch PGMQ Queue ]
@@ -54,7 +54,7 @@ A rendszer átállt a **Hibrid Aszinkron NAV Orkesztrációs Modellre**, amely s
 ```
 
 ### 1. Kétfázisú Szétválasztott Szinkronizáció (Fast-Path & Background Queue)
-* **Azonnali réteg (Fast-Path):** A `nav-query-outbound-invoices` és a `nav-auto-sync` alapértelmezetten `fetchDetailedItems: false` beállítással fut. A számlák fejlécei, összegei és adószámai 3–5 másodperc alatt bekerülnek az adatbázisba, garantálva a timeout-mentes működést akár több száz számla esetén is.
+* **Azonnali réteg (Fast-Path):** A `nav-query-outbound-invoices` és a `nav-auto-sync` alapértelmezetten `fetchDetailedItems: false` beállítással fut. A számlák fejlécei, összegei és adószámai cégenként mérten ~2–34 másodperc alatt bekerülnek az adatbázisba (a számlaszámtól függően; pl. 2026-10-04: 1,8 s és 2,1 s, 2026-10-03: Ván Iroda 32,8 s), így a tételsorok letöltése már nem terheli a kérés időkeretét.
 * **Aszinkron tétel-letöltés:** Ha új számlák érkeznek, a rendszer egy `fetch_nav_items` feladatot helyez el a PostgreSQL-natív `nav_item_jobs` PGMQ sorba.
 * **On-Demand Kliens Fallback:** Ha a felhasználó a felületen azonnal megnyitja egy számla tételeit az `InvoiceItemsDialog`-ban, a komponens észleli a hiányzó sorokat, és a dedikált `nav-fetch-details` Edge Function segítségével 1 másodperc alatt lekéri és elmenti a tételeket.
 
@@ -90,7 +90,7 @@ A rendszer átállt a **Hibrid Aszinkron NAV Orkesztrációs Modellre**, amely s
 ## Consequences
 
 ### Pozitív
-* **Zéró Timeout Veszély:** A manuális és automatikus szinkronizáció soha többé nem fut futási idő limitbe, a képernyő másodpercek alatt megjeleníti az új számlákat.
+* **Jelentősen csökkent timeout-kockázat:** A tételsor-letöltés (A-193 §1) és az automatikus kategorizálás (§5) a workerben fut, így a `nav-auto-sync` cégenkénti futása csak a fejlécek mentéséből áll. A cégenkénti soros ciklus viszont továbbra is a 150 s-os EF limiten belül fut (lásd Negatív).
 * **Azonnali Tranzakció-Párosítás:** Mivel a számla fejlécek (bruttó összeg, partner, számlaszám) azonnal rendelkezésre állnak, a banki tranzakció-párosító algoritmus (`job_type: 'rematch'`) azonnal le tud futni anélkül, hogy a lassú tétellekérdezésre kellene várnia.
 * **Tökéletes Adatintegritás:** Az adatbázis szintű egyedi index és az atomi RPC miatt lehetetlen duplikált tételsorokat létrehozni.
 * **Karbantartás-Tűrő Háttérmunkás:** A NAV éjszakai és hétvégi karbantartásai nem eredményeznek hibajegyeket vagy beragadt poison-pill üzeneteket.
@@ -98,6 +98,8 @@ A rendszer átállt a **Hibrid Aszinkron NAV Orkesztrációs Modellre**, amely s
 ### Negatív / Költségek
 * Új PGMQ queue (`nav_item_jobs`) és új Deno Edge Function (`nav-fetch-details`) üzemeltetési és monitorozási feladata.
 * A számlák tételsorai nem azonnal, hanem 10–60 másodperces késleltetéssel jelennek meg a háttérben (kivéve on-demand megnyitáskor, ahol azonnali).
+* **Időkeret csak cégindítás előtt:** a `nav-auto-sync` 100 s-os time budgetje egy cég *indítása előtt* ellenőrződik. Egy 99 s-nál induló, ~30 s-os cég a futást 130 s fölé viheti.
+* **A „deferred” cégek aznap nem futnak újra:** ha a time budget miatt egy cég kimarad, nincs automatikus újrahívás (a `depth` / `MAX_DEPTH` paraméter létezik, de semmi nem hívja). A bucket UUID alapján fix, így a cég csak másnap ugyanabban az órában kerül sorra ([A-130](./A-130-nav-auto-sync-dawn-load-staggering.md)).
 
 ---
 

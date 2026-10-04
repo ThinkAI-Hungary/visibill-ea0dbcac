@@ -2905,8 +2905,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1791046835.8653212,
-    "ast_hash": "c8d4b88f9ebe64f748121a7d511f3c8a",
+    "mtime": 1791074672.501911,
+    "ast_hash": "708a05944d14a0ea61b299db1cddf43b",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -2975,8 +2975,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-019-management-dashboard.md": {
-    "mtime": 1788494821.9247513,
-    "ast_hash": "15ae77d6d051e78b5dda774aa1c971de",
+    "mtime": 1791074853.7961736,
+    "ast_hash": "80ca402bc908110747e5f75b979f87a6",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-020-auth-trigger-chain-incident.md": {
@@ -2985,8 +2985,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791046821.5976026,
-    "ast_hash": "c76beec1514ac341c39c1c38bef08766",
+    "mtime": 1791074874.033279,
+    "ast_hash": "5c017bf85a8168cc0c77193fa183a9be",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -8570,13 +8570,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1791072416.7680213,
-    "ast_hash": "caa73c44d566959c8363b94479a930b9",
+    "mtime": 1791074688.5855937,
+    "ast_hash": "c16ee5b153b4510b30c6c4ed56f3c1f7",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1790993536.684052,
-    "ast_hash": "4d23485d214595f897a15a96fb67c1b6",
+    "mtime": 1791074640.8668013,
+    "ast_hash": "f5adcd4846ba401f2c7c9b5ae39eb690",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
@@ -10625,13 +10625,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-129-partner-history-majority-categorization.md": {
-    "mtime": 1789896827.245017,
-    "ast_hash": "5a96152eb688fb1d2f1ab438ea643ba9",
+    "mtime": 1791074843.707531,
+    "ast_hash": "e59c6121eda11ebcf9775457602b56e0",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-130-nav-auto-sync-dawn-load-staggering.md": {
-    "mtime": 1789893361.643334,
-    "ast_hash": "9d41062248483a6e9808fa2ab7a70618",
+    "mtime": 1791074793.310979,
+    "ast_hash": "e95f5d4ea6c249bc6564746a3689a990",
     "semantic_hash": ""
   },
   "docs/business/decisions/059-partner-history-majority-categorization.md": {
@@ -13608,8 +13608,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-190-management-dashboard-counts-caching-and-worker-vault-offloading.md": {
-    "mtime": 1790993459.306451,
-    "ast_hash": "d1a3c0b514a127e78a8d4687dee0abeb",
+    "mtime": 1791074863.7468238,
+    "ast_hash": "611d7e8094a1b465371fee28d1980c91",
     "semantic_hash": ""
   },
   "src/components/tickets/EaisyWorksSyncCard.tsx": {
@@ -13673,8 +13673,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md": {
-    "mtime": 1791072414.7462292,
-    "ast_hash": "6f230e97ad5f398e634251a1f8005704",
+    "mtime": 1791074717.407166,
+    "ast_hash": "538bdd8dd507c0622009fb66fa5fad34",
     "semantic_hash": ""
   },
   "session-summary/Jani/2026-10-03/summary-193000-nav-hybrid-async-sync-and-atomic-item-idempotency.md": {
@@ -13715,6 +13715,16 @@
   "supabase/functions/nav-auto-sync/navItemJobPlanner.ts": {
     "mtime": 1791072032.7319024,
     "ast_hash": "7c0b047801f93a12365f3598dbc1f0c6",
+    "semantic_hash": ""
+  },
+  ".agents/skills/visibill-nav-sync-e2e/SKILL.md": {
+    "mtime": 1791074408.6690273,
+    "ast_hash": "fc630dc33b0b062b0c96ebeac142e129",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-04/summary-023600-nav-autocategorize-worker-rpc-hardening-e2e.md": {
+    "mtime": 1791074186.0886748,
+    "ast_hash": "724f56358b2025a55d4b71fc5f273c38",
     "semantic_hash": ""
   }
 }
