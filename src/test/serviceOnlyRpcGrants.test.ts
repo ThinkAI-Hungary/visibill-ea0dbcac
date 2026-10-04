@@ -28,6 +28,7 @@ const SERVICE_ONLY_FUNCTIONS: Array<{ name: string; signature: string }> = [
 /** Removes `-- ...` line comments so assertions only look at executable SQL. */
 function stripSqlLineComments(sql: string): string {
   return sql
+    .replace(/\r/g, '')
     .split('\n')
     .map((line) => line.replace(/--.*$/, ''))
     .join('\n');

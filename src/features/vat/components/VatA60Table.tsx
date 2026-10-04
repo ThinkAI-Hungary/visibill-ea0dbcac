@@ -9,6 +9,9 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Filter,
+  Download,
+  FileSpreadsheet,
+  FileText,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { type A60CalculationsResult, fmtEft, formatThousands } from '../types';
+import { type A60CalculationsResult, type A60Line, fmtEft, formatThousands } from '../types';
+import { VatXmlExportModal } from './VatXmlExportModal';
 
 interface VatA60TableProps {
   a60Calculations: A60CalculationsResult;
@@ -24,6 +28,12 @@ interface VatA60TableProps {
   isValidatingVies: boolean;
   handleViesCheck: (singleTaxNumber?: string) => Promise<void>;
   setEuTypeOverrides: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  selectedCompany?: any;
+  year?: number;
+  month?: number;
+  frequency?: string;
+  a60Lines?: A60Line[];
+  onExportClick?: () => void;
 }
 
 export function VatA60Table({
@@ -32,7 +42,14 @@ export function VatA60Table({
   isValidatingVies,
   handleViesCheck,
   setEuTypeOverrides,
+  selectedCompany,
+  year,
+  month,
+  frequency,
+  a60Lines = [],
+  onExportClick,
 }: VatA60TableProps) {
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [directionFilter, setDirectionFilter] = useState<'ALL' | 'OUTBOUND' | 'INBOUND'>('ALL');
 
   const filteredItems = useMemo(() => {
@@ -68,30 +85,47 @@ export function VatA60Table({
             A60-as összesítő nyilatkozat számláinak összevetése a 65-ös bevallás soraival (02., 11–16., 91–92. és 18. sorok)
           </CardDescription>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => handleViesCheck()}
-          disabled={isValidatingVies}
-          title={
-            a60Calculations.itemsList.length === 0
-              ? 'Nincs közösségi adószámmal rendelkező partner ebben az időszakban'
-              : 'Összes közösségi adószám lekérdezése az EU VIES adatbázisból'
-          }
-          className="h-8 text-xs font-semibold gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 border-indigo-500/20 dark:text-indigo-400 shrink-0"
-        >
-          {isValidatingVies ? (
-            <>
-              <Loader2 className="w-3 h-3 animate-spin" />
-              VIES Lekérdezés...
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500" />
-              VIES Adószám Ellenőrzés
-            </>
-          )}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleViesCheck()}
+            disabled={isValidatingVies}
+            title={
+              a60Calculations.itemsList.length === 0
+                ? 'Nincs közösségi adószámmal rendelkező partner ebben az időszakban'
+                : 'Összes közösségi adószám lekérdezése az EU VIES adatbázisból'
+            }
+            className="h-8 text-xs font-semibold gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 border-indigo-500/20 dark:text-indigo-400 shrink-0"
+          >
+            {isValidatingVies ? (
+              <>
+                <Loader2 className="w-3 h-3 animate-spin" />
+                VIES Lekérdezés...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500" />
+                VIES Adószám Ellenőrzés
+              </>
+            )}
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={() => {
+              if (onExportClick) {
+                onExportClick();
+              } else {
+                setIsExportModalOpen(true);
+              }
+            }}
+            className="h-8 text-xs font-semibold gap-1.5 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>ÁNYK A60 Export</span>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Status Info Banner */}
@@ -308,6 +342,99 @@ export function VatA60Table({
             )}
           </div>
         </div>
+
+        {/* A60 Official Sheets Aggregation (0B, 0C, 0D, 0E lapok) */}
+        {a60Lines && a60Lines.length > 0 && (
+          <div className="border border-border/70 rounded-lg overflow-hidden space-y-0">
+            <div className="bg-muted/50 p-2.5 text-xs font-semibold border-b border-border/60 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4 text-primary" />
+                <span>Hivatalos 26A60 Nyilatkozat Lapjai ({a60Lines.length} partner tétel)</span>
+                <span className="text-[10px] text-muted-foreground font-normal">
+                  (ÁNYK 26A60-ba importálásra kerülő adatok)
+                </span>
+              </div>
+              <Badge variant="outline" className="text-[10px] font-mono">
+                Összesen:{' '}
+                {fmtEft(
+                  a60Lines.reduce((sum, l) => sum + (l.base_amount_rounded || 0) * 1000, 0)
+                )}
+              </Badge>
+            </div>
+
+            <div className="divide-y divide-border/50">
+              {[
+                { key: 'goods_out', sheet: '0B lap', name: 'Termékértékesítés más tagállamba', refRow: '65-ös bevallás: 02. sor' },
+                { key: 'goods_in', sheet: '0C lap', name: 'Termékbeszerzés más tagállamból', refRow: '65-ös bevallás: 11–16. sorok' },
+                { key: 'services_out', sheet: '0D lap', name: 'Szolgáltatásnyújtás tagállami partnernek', refRow: '65-ös bevallás: 91–92. sorok' },
+                { key: 'services_in', sheet: '0E lap', name: 'Szolgáltatás igénybevétele tagállami partnertől', refRow: '65-ös bevallás: 18. sor' },
+              ].map((sheetDef) => {
+                const sheetLines = a60Lines.filter((l) => l.category === sheetDef.key);
+                if (sheetLines.length === 0) return null;
+
+                const sheetTotalEft = sheetLines.reduce((sum, l) => sum + (l.base_amount_rounded || 0), 0);
+
+                return (
+                  <div key={sheetDef.key} className="p-3 bg-card space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <Badge className="text-[10px] font-bold bg-primary/10 text-primary border-primary/20">
+                          {sheetDef.sheet}
+                        </Badge>
+                        <span className="font-semibold text-foreground">{sheetDef.name}</span>
+                        <span className="text-[10px] text-muted-foreground">({sheetDef.refRow})</span>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-foreground">
+                        {sheetTotalEft.toLocaleString('hu-HU')} eFt
+                      </span>
+                    </div>
+
+                    <Table className="text-xs">
+                      <TableHeader>
+                        <TableRow className="text-[11px] text-muted-foreground border-b border-border/40">
+                          <TableHead className="w-16">Ország</TableHead>
+                          <TableHead className="w-36">Közösségi adószám</TableHead>
+                          <TableHead>Partner neve</TableHead>
+                          <TableHead className="text-center w-24">Számlák</TableHead>
+                          <TableHead className="text-right w-28">Adóalap (eFt)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sheetLines.map((line) => (
+                          <TableRow key={line.id} className="hover:bg-muted/20">
+                            <TableCell className="font-mono font-bold text-foreground">
+                              {line.country_code || '—'}
+                            </TableCell>
+                            <TableCell className="font-mono font-semibold">
+                              {line.partner_vat_number}
+                            </TableCell>
+                            <TableCell className="font-medium text-foreground">
+                              {line.partner_name || 'Ismeretlen partner'}
+                            </TableCell>
+                            <TableCell className="text-center font-mono">
+                              {line.invoice_count} db
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-bold">
+                              {(line.base_amount_rounded || 0).toLocaleString('hu-HU')} eFt
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted/20 font-bold border-t border-border/60">
+                          <TableCell colSpan={4} className="text-right text-[11px] text-muted-foreground">
+                            {sheetDef.sheet} összesen (25. sor):
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-primary">
+                            {sheetTotalEft.toLocaleString('hu-HU')} eFt
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Invoices list filter bar and table */}
         <div className="border border-border/60 rounded-lg overflow-hidden">
@@ -573,6 +700,20 @@ export function VatA60Table({
           </ScrollArea>
         </div>
       </CardContent>
+
+      {/* Internal A60 XML Export Modal if triggered locally */}
+      {isExportModalOpen && selectedCompany && year && month && frequency && (
+        <VatXmlExportModal
+          open={isExportModalOpen}
+          onOpenChange={setIsExportModalOpen}
+          selectedCompany={selectedCompany}
+          year={year}
+          month={month}
+          frequency={frequency}
+          formKind="A60"
+          a60Lines={a60Lines || []}
+        />
+      )}
     </Card>
   );
 }

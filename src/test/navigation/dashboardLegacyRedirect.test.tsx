@@ -47,6 +47,10 @@ vi.mock("@/hooks/useHasEaisybillAccess", () => ({
     hasAccess: true,
     isLoading: false,
   }),
+  useHasAccountyAccess: () => ({
+    hasAccess: false,
+    isLoading: false,
+  }),
 }));
 
 vi.mock("@/integrations/supabase/client", () => ({

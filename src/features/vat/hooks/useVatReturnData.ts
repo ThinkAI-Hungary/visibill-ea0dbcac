@@ -10,6 +10,7 @@ import { getVatReturnXmlString } from '@/lib/vatReturnXml';
 import type {
   ReturnLine,
   MLine,
+  A60Line,
   FormRow,
   VatFrequency,
   TaxValidationResult,
@@ -288,6 +289,32 @@ export function useVatReturnData() {
           }
           return ml;
         });
+    },
+    enabled: !!vatReturn?.id,
+  });
+
+  // 3b. A60 Lines for current return (persisted in vat_return_a60_lines)
+  const { data: a60Lines = [], isLoading: isA60LinesLoading } = useQuery({
+    queryKey: ['vat_return_a60_lines', vatReturn?.id],
+    queryFn: async () => {
+      if (!vatReturn?.id) return [];
+      const { data, error } = await supabase
+        .from('vat_return_a60_lines' as any)
+        .select('*')
+        .eq('vat_return_id', vatReturn.id)
+        .order('category')
+        .order('country_code');
+      if (error) {
+        reportError({
+          type: 'db_query',
+          component: 'VatReturnPage',
+          action: 'error',
+          message: 'vat_return_a60_lines error:',
+          error,
+        });
+        return [];
+      }
+      return (data || []) as unknown as A60Line[];
     },
     enabled: !!vatReturn?.id,
   });
@@ -969,6 +996,7 @@ export function useVatReturnData() {
       qc.invalidateQueries({ queryKey: ['vat_return'] });
       qc.invalidateQueries({ queryKey: ['vat_return_lines'] });
       qc.invalidateQueries({ queryKey: ['vat_return_m_lines'] });
+      qc.invalidateQueries({ queryKey: ['vat_return_a60_lines'] });
       qc.invalidateQueries({ queryKey: ['vat_scope_inbound_counts'] });
       qc.invalidateQueries({ queryKey: ['vat_annual_matrix'] });
       qc.invalidateQueries({ queryKey: ['vat_itemized_journal'] });
@@ -1338,6 +1366,8 @@ export function useVatReturnData() {
     lines: effectiveLines,
     mLines,
     filteredMLines,
+    a60Lines,
+    isA60LinesLoading,
     formRows,
     prevReturn,
     prevLines,

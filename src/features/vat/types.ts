@@ -58,6 +58,22 @@ export interface MLine {
   invoice_details: any[];
 }
 
+export interface A60Line {
+  id: string;
+  vat_return_id: string;
+  company_id: string;
+  category: A60ItemCategory;
+  country_code: string | null;
+  partner_vat_number: string;
+  partner_name: string | null;
+  invoice_count: number;
+  base_amount: number;
+  base_amount_rounded: number;
+  invoice_details: any[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface XmlValidationCheck {
   id: string;
   name: string;

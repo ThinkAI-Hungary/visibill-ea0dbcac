@@ -1080,8 +1080,8 @@
     "semantic_hash": ""
   },
   "src/lib/glExport.ts": {
-    "mtime": 1790647210.4531896,
-    "ast_hash": "62e4f30ab3ba66f3456b38673523acbe",
+    "mtime": 1791122129.1409655,
+    "ast_hash": "123f62b1f61603c853bb8195313d6fdd",
     "semantic_hash": ""
   },
   "src/lib/helpers.ts": {
@@ -2985,8 +2985,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791074874.033279,
-    "ast_hash": "5c017bf85a8168cc0c77193fa183a9be",
+    "mtime": 1791122129.1389315,
+    "ast_hash": "5200d33c7a89c1f3d111ef266d90e37c",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3690,8 +3690,8 @@
     "semantic_hash": ""
   },
   "src/components/vat/VatRowDrillDown.tsx": {
-    "mtime": 1791025702.1433065,
-    "ast_hash": "addfbced186d9fc811e61d72967b0638",
+    "mtime": 1791122129.1394525,
+    "ast_hash": "df39f71a6b1567a9a7fc6685c2fa47b0",
     "semantic_hash": ""
   },
   "src/components/vat/VatTrendChart.tsx": {
@@ -7680,13 +7680,13 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatA60Table.tsx": {
-    "mtime": 1790775646.1903532,
-    "ast_hash": "3d07dc0e0086a26da16da5b6076d7046",
+    "mtime": 1791126729.4153986,
+    "ast_hash": "30c23882d6b9f6ef438655d52e7404dc",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatCalculatorView.tsx": {
-    "mtime": 1790959409.1114585,
-    "ast_hash": "4114f96548958068e091241dc50033e9",
+    "mtime": 1791126771.610155,
+    "ast_hash": "165feee31d644434d22785faf0e118be",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatNav65Replica.tsx": {
@@ -7695,13 +7695,13 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnContainer.tsx": {
-    "mtime": 1790534876.6710362,
-    "ast_hash": "c3173872a1401cfa523b9fd19ee304b0",
+    "mtime": 1791126817.2113435,
+    "ast_hash": "724e94170e9622aa1c6e3e8aaf48ff83",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnViewTab.tsx": {
-    "mtime": 1790707054.6708872,
-    "ast_hash": "bd19c9cff17c419771302c1de4105c26",
+    "mtime": 1791126911.011469,
+    "ast_hash": "91faceb6c412fb258c419984749aaa02",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatXmlValidationDialog.tsx": {
@@ -7715,8 +7715,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/hooks/useVatReturnData.ts": {
-    "mtime": 1790775646.1913576,
-    "ast_hash": "2fc1ef42489ea91b04b8580bd90a6da5",
+    "mtime": 1791126481.0747232,
+    "ast_hash": "4f0ed795d20532d8325b03b4e3e9a416",
     "semantic_hash": ""
   },
   "src/features/vat/index.ts": {
@@ -7725,8 +7725,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/types.ts": {
-    "mtime": 1790959222.2305644,
-    "ast_hash": "e84641bacefcfae62d612f20ea911b8d",
+    "mtime": 1791126296.545319,
+    "ast_hash": "c8348ed7934389f545c665a6a57151a7",
     "semantic_hash": ""
   },
   "src/components/ui/__tests__/date-picker.test.tsx": {
@@ -9260,8 +9260,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatCollectorAnalyticsView.tsx": {
-    "mtime": 1790716904.656844,
-    "ast_hash": "df4f20a3061ead55f8d4865d5554516f",
+    "mtime": 1791122129.1399615,
+    "ast_hash": "4ab94443c92ec9dc808e8089b85781b6",
     "semantic_hash": ""
   },
   "src/test/accounty/sportsbaseVatAlignment.test.ts": {
@@ -9470,8 +9470,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/accounting.json": {
-    "mtime": 1790692096.0343845,
-    "ast_hash": "b0a47c910e6d466447bb2aad16a805f8",
+    "mtime": 1791122129.1429045,
+    "ast_hash": "7c865432438b59bf13fc2ee026f84a50",
     "semantic_hash": ""
   },
   "src/locales/hr/categories.json": {
@@ -9510,8 +9510,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/accounting.json": {
-    "mtime": 1790692096.0353835,
-    "ast_hash": "0c83b0da133706ce02209852c4034e02",
+    "mtime": 1791122129.1439083,
+    "ast_hash": "fd2045b6e2bdebaf19b75e0d7db0b236",
     "semantic_hash": ""
   },
   "src/locales/hu/categories.json": {
@@ -12878,8 +12878,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatXmlExportModal.tsx": {
-    "mtime": 1790707081.3837757,
-    "ast_hash": "bbadef9a16277870f6f82f54f7276772",
+    "mtime": 1791127584.0592742,
+    "ast_hash": "b969c9ff290d11911bf59e54da6a642f",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-180-fixed-assets-periodic-depreciation-posting-service.md": {
@@ -13723,8 +13723,63 @@
     "semantic_hash": ""
   },
   "session-summary/Jani/2026-10-04/summary-023600-nav-autocategorize-worker-rpc-hardening-e2e.md": {
-    "mtime": 1791074186.0886748,
-    "ast_hash": "724f56358b2025a55d4b71fc5f273c38",
+    "mtime": 1791075151.891572,
+    "ast_hash": "b173e91d40c68e611891c6361465ea02",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/__tests__/VatA60Table.test.tsx": {
+    "mtime": 1791127224.079666,
+    "ast_hash": "b7130a116a4665cb97a0c803dfcb7d7b",
+    "semantic_hash": ""
+  },
+  "src/lib/__tests__/vatA60Xml.test.ts": {
+    "mtime": 1791126247.0322783,
+    "ast_hash": "19f43a5ab8a72ccb3b02aaa02a58d5b6",
+    "semantic_hash": ""
+  },
+  "src/lib/vatA60Xml.ts": {
+    "mtime": 1791127663.3260427,
+    "ast_hash": "1107e2340da3eadd0a146e0495769468",
+    "semantic_hash": ""
+  },
+  "src/lib/vatAnalyticsPdf.ts": {
+    "mtime": 1791122129.1409655,
+    "ast_hash": "d7a75368f45a561026fc2c5aa7567fbf",
+    "semantic_hash": ""
+  },
+  "src/test/vat/vatAnalyticsPdf.test.ts": {
+    "mtime": 1791122129.1439083,
+    "ast_hash": "353b6f796f3bf65859365fac4cca39e6",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261004120000_exclude_proforma_and_dedup_uploaded_in_vat_return.sql": {
+    "mtime": 1791115675.791741,
+    "ast_hash": "0477eabd74a390b115f74b9923690a80",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261004130000_dedup_ocr_partner_and_sync_vat_return.sql": {
+    "mtime": 1791115675.791741,
+    "ast_hash": "3425540bcc95b395a3be3baf673b5a7c",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261004140000_fix_apply_invoice_item_rules_schema_columns.sql": {
+    "mtime": 1791115675.7927449,
+    "ast_hash": "0af3ccd734ea719eab9ea3359764cb12",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261004143000_sync_paired_nav_invoice_items_and_vat_breakdown.sql": {
+    "mtime": 1791125433.8499985,
+    "ast_hash": "0d0b00046e705041c0af6bf186bfa47f",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261004150000_add_vat_return_a60_lines.sql": {
+    "mtime": 1791125760.155433,
+    "ast_hash": "fc4f7af02130d8c509c11b2d11d88745",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-194-vat-analytics-pdf-export-rlb60-standard.md": {
+    "mtime": 1791122129.1377378,
+    "ast_hash": "e740191b44cc94da0f612bc1d041238c",
     "semantic_hash": ""
   }
 }

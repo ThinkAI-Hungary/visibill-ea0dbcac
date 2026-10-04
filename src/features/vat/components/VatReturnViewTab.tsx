@@ -13,6 +13,7 @@ import {
   Scale,
   CheckCircle2,
   User,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +78,7 @@ export function VatReturnViewTab() {
     isFinalized,
     lines,
     mLines,
+    a60Lines,
     formRows,
     deadlineCountdown,
     postingAudit,
@@ -101,6 +103,7 @@ export function VatReturnViewTab() {
   );
 
   const [isXmlExportModalOpen, setIsXmlExportModalOpen] = React.useState(false);
+  const [isA60XmlExportModalOpen, setIsA60XmlExportModalOpen] = React.useState(false);
 
   const executeXmlDownload = () => {
     if (!vatReturn || !selectedCompany) return;
@@ -502,7 +505,11 @@ export function VatReturnViewTab() {
                   <>
                     <DropdownMenuItem onClick={handleXmlDownloadClick}>
                       <Download className="w-4 h-4 mr-2" />
-                      {t('accounting:vat_return.period.xml_download', 'ÁNYK XML letöltés')}
+                      {t('accounting:vat_return.period.xml_download', 'ÁNYK 65 XML letöltés')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsA60XmlExportModalOpen(true)}>
+                      <FileText className="w-4 h-4 mr-2 text-indigo-500" />
+                      <span>ÁNYK A60 XML letöltés (Közösségi összesítő)</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setIsXmlExportModalOpen(true)}>
                       <User className="w-4 h-4 mr-2 text-muted-foreground" />
@@ -778,7 +785,7 @@ export function VatReturnViewTab() {
         />
       )}
 
-      {/* NAV ÁNYK XML Export & Representative Modal */}
+      {/* NAV ÁNYK 65 XML Export & Representative Modal */}
       {!isCroatia && (
         <VatXmlExportModal
           open={isXmlExportModalOpen}
@@ -787,8 +794,23 @@ export function VatReturnViewTab() {
           year={year}
           month={month}
           frequency={frequency}
+          formKind="65"
           lines={lines as any[]}
           mLines={mLines as any[]}
+        />
+      )}
+
+      {/* NAV ÁNYK A60 XML Export Modal */}
+      {!isCroatia && (
+        <VatXmlExportModal
+          open={isA60XmlExportModalOpen}
+          onOpenChange={setIsA60XmlExportModalOpen}
+          selectedCompany={selectedCompany}
+          year={year}
+          month={month}
+          frequency={frequency}
+          formKind="A60"
+          a60Lines={a60Lines as any[]}
         />
       )}
     </div>

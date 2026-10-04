@@ -41,6 +41,6 @@ A felület pixelpontosan modellezi a NAV által kiadott 6 lapos 26A60 nyomtatvá
 ---
 
 ## Kapcsolódó
-- [A-195: NAV 26A60 Hivatalos Nyomtatvány Digitális Replika Architektúra](../../architecture/decisions/A-195-nav-26a60-official-tax-form-digital-replica.md)
+- [A-197: NAV 26A60 Hivatalos Nyomtatvány Digitális Replika Architektúra](../../architecture/decisions/A-197-nav-26a60-official-tax-form-digital-replica.md)
 - [P-126: NAV 2665 Hivatalos Nyomtatvány Digitális Replika UX](./P-126-nav-2665-official-tax-form-digital-replica-ux.md)
 - [P-144: A60 Közösségi Összesítő és VIES Keresztellenőrzés](./P-144-vat-a60-community-summary-and-vies-crosscheck-ux.md)
