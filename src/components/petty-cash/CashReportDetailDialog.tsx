@@ -303,7 +303,7 @@ export function CashReportDetailDialog({
                   <div className="space-y-3 text-xs">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 bg-muted/30 rounded-lg border">
                       <div>
-                        <span className="text-muted-foreground block text-[11px]">Könyv szerinti záró:</span>
+                        <span className="text-muted-foreground block text-[11px]">Pénztárkönyv szerinti záró:</span>
                         <span className="font-mono font-semibold">{fmtBalance(protocol.book_balance, currency)}</span>
                       </div>
                       <div>

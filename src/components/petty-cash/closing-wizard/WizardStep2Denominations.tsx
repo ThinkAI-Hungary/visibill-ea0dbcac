@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, CheckCircle2, AlertTriangle, RotateCcw, Coins } from 'lucide-react';
+import { Calculator, CheckCircle2, AlertTriangle, RotateCcw, Coins, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DenominationRow } from '../types';
 import { fmtBalance } from '../types';
@@ -47,9 +47,10 @@ export function WizardStep2Denominations({
     onChangeRows(reset);
   };
 
-  const isMatch = Math.abs(difference) < 0.01;
-  const isSurplus = difference > 0.01;
-  const isShortage = difference < -0.01;
+  const isInitialEmpty = actualBalance === 0 && rows.every(r => (Number(r.count) || 0) === 0);
+  const isMatch = !isInitialEmpty && Math.abs(difference) < 0.01;
+  const isSurplus = !isInitialEmpty && difference > 0.01;
+  const isShortage = !isInitialEmpty && difference < -0.01;
 
   return (
     <div className="space-y-4 text-xs">
@@ -57,7 +58,12 @@ export function WizardStep2Denominations({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         <Card className="bg-card shadow-none border-border/70">
           <CardContent className="p-3">
-            <div className="text-[11px] text-muted-foreground mb-1">Könyv szerinti záró</div>
+            <div 
+              className="text-[11px] text-muted-foreground mb-1 cursor-help"
+              title="A kiválasztott időszak alatti pénztárbizonylatok alapján számított pénztárkönyvi egyenleg (nem a főkönyv!)"
+            >
+              Pénztárkönyv szerinti záró
+            </div>
             <div className="text-base font-bold tabular-nums font-mono">
               {fmtBalance(bookClosingBalance, currency)}
             </div>
@@ -78,18 +84,24 @@ export function WizardStep2Denominations({
 
         <Card className={cn(
           "shadow-none transition-colors",
-          isMatch && "border-emerald-500/40 bg-emerald-500/5 text-emerald-800 dark:text-emerald-400",
-          isSurplus && "border-blue-500/40 bg-blue-500/5 text-blue-800 dark:text-blue-400",
-          isShortage && "border-destructive/60 bg-destructive/5 text-destructive"
+          isInitialEmpty && "border-border/70 bg-muted/20 text-muted-foreground",
+          !isInitialEmpty && isMatch && "border-emerald-500/40 bg-emerald-500/5 text-emerald-800 dark:text-emerald-400",
+          !isInitialEmpty && isSurplus && "border-blue-500/40 bg-blue-500/5 text-blue-800 dark:text-blue-400",
+          !isInitialEmpty && isShortage && "border-destructive/60 bg-destructive/5 text-destructive"
         )}>
           <CardContent className="p-3">
             <div className="text-[11px] font-semibold mb-1 flex items-center justify-between">
-              <span>Eltérés (tényleges − könyv)</span>
-              {isMatch && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
-              {!isMatch && <AlertTriangle className="w-3.5 h-3.5 text-destructive" />}
+              <span>Eltérés (megszámolt − pénztárkönyv)</span>
+              {isInitialEmpty && <Info className="w-3.5 h-3.5 text-muted-foreground" />}
+              {!isInitialEmpty && isMatch && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+              {!isInitialEmpty && !isMatch && <AlertTriangle className="w-3.5 h-3.5 text-destructive" />}
             </div>
             <div className="text-base font-bold tabular-nums font-mono">
-              {isMatch ? '0 Ft (Nincs eltérés)' : `${difference > 0 ? '+' : ''}${fmtBalance(difference, currency)}`}
+              {isInitialEmpty 
+                ? 'Megszámolásra vár' 
+                : isMatch 
+                  ? '0 Ft (Nincs eltérés)' 
+                  : `${difference > 0 ? '+' : ''}${fmtBalance(difference, currency)}`}
             </div>
           </CardContent>
         </Card>
@@ -151,8 +163,21 @@ export function WizardStep2Denominations({
         </div>
       </div>
 
+      {/* Tájékoztató üres állapotban */}
+      {isInitialEmpty && (
+        <div className="p-3 rounded-xl border border-blue-500/20 bg-blue-500/5 text-blue-900 dark:text-blue-300 flex items-start gap-2.5">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" />
+          <div className="space-y-0.5">
+            <p className="font-semibold text-xs">Címletjegyzék kitöltése</p>
+            <p className="text-[11px] opacity-90 leading-relaxed">
+              Számolja meg a fizikai kasszában található készpénzt, és adja meg a címletek darabszámát az alábbi jegyzékben! A rendszer automatikusan összesíti a tényleges készpénzállományt és összeveti a pénztárkönyvi záróegyenleggel.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Tájékoztató sáv az eltérés következményéről */}
-      {!isMatch && (
+      {!isInitialEmpty && !isMatch && (
         <div className={cn(
           "p-3 rounded-xl border flex items-start gap-2.5",
           isSurplus ? "bg-blue-500/10 border-blue-500/30 text-blue-900 dark:text-blue-300" : "bg-red-500/10 border-red-500/30 text-red-900 dark:text-red-300"

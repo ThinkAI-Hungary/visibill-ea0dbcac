@@ -29,11 +29,11 @@
   "calculator": {
     "title": "Címletszámoló",
     "register": "Pénztár",
-    "theoretical_balance": "Könyv szerinti egyenleg",
+    "theoretical_balance": "Pénztárkönyv szerinti egyenleg",
     "notes": "Papírpénzek (Bankjegyek)",
     "coins": "Fémpénzek (Érmék)",
     "no_coins": "Nincsenek érmék ehhez a devizához.",
-    "theoretical": "Könyv szerinti",
+    "theoretical": "Pénztárkönyv szerinti",
     "calculated": "Számolt fizikai",
     "discrepancy": "Eltérés",
     "clear_all": "Minden törlése",

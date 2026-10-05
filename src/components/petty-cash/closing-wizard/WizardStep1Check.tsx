@@ -144,8 +144,8 @@ export function WizardStep1Check({
             : "border-primary/40 bg-primary/5"
         )}>
           <CardContent className="p-3">
-            <div className="flex items-center gap-1.5 text-muted-foreground mb-1 text-[11px] font-semibold">
-              Könyv szerinti záró
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-1 text-[11px] font-semibold" title="A házipénztárba rögzített bizonylatok alapján számított pénztárkönyvi egyenleg (nem a főkönyv)">
+              Pénztárkönyv szerinti záró
             </div>
             <div className={cn(
               "text-base font-bold tabular-nums font-mono",
@@ -166,7 +166,7 @@ export function WizardStep1Check({
             <div>
               <p className="font-semibold">Figyelmeztetés: Negatív készpénzegyenleg!</p>
               <p className="text-[11px] opacity-90 mt-0.5">
-                A könyv szerinti záróegyenleg ({fmtBalance(bookClosingBalance, currency)}) negatív, ami a számviteli törvény szerint szabálytalan. Ellenőrizd a kiadásokat vagy rögzíts nyitó/befizetési tételt!
+                A pénztárkönyv szerinti záróegyenleg ({fmtBalance(bookClosingBalance, currency)}) negatív, ami a számviteli törvény szerint szabálytalan. Ellenőrizd a kiadásokat vagy rögzíts nyitó/befizetési tételt!
               </p>
             </div>
           </div>

@@ -142,7 +142,7 @@ export function printCashReport({
         <div class="kpi-val red">-${fmtBalance(report.total_out, cur)}</div>
       </td>
       <td>
-        <div class="kpi-label">Könyv szerinti záró</div>
+        <div class="kpi-label">Pénztárkönyv szerinti záró</div>
         <div class="kpi-val">${fmtBalance(report.closing_balance_book, cur)}</div>
       </td>
       <td style="background: #eef2ff;">
@@ -208,7 +208,7 @@ export function printCashReport({
       <div class="box-title">Zárási Jegyzőkönyv (Sztv. 165–168. §)</div>
       <div style="line-height: 1.4; font-size: 9px;">
         <div>A pénztár tényleges záró készpénzállománya a címletjegyzék alapján: <strong>${fmtBalance(report.closing_balance_actual ?? report.closing_balance_book, cur)}</strong>.</div>
-        <div>Könyv szerinti záró egyenleg: <strong>${fmtBalance(report.closing_balance_book, cur)}</strong>.</div>
+        <div>Pénztárkönyv szerinti záró egyenleg: <strong>${fmtBalance(report.closing_balance_book, cur)}</strong>.</div>
         <div>Megállapított eltérés: <strong>${report.difference && report.difference !== 0 ? fmtBalance(report.difference, cur) : '0 Ft (Nincs eltérés)'}</strong>.</div>
         ${protocol?.difference_reason ? `<div style="margin-top: 4px; padding: 3px 5px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 3px;"><strong>Eltérés indoklása:</strong> ${protocol.difference_reason}</div>` : ''}
         ${protocol?.action ? `<div style="margin-top: 3px;"><strong>Elrendelt intézkedés:</strong> ${protocol.action === 'booked_as_shortage' ? 'Pénztári hiányként lekönyvelve (3681)' : protocol.action === 'booked_as_surplus' ? 'Pénztári többletként lekönyvelve (4791)' : protocol.action}</div>` : ''}

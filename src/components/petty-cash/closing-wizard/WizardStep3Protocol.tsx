@@ -76,7 +76,7 @@ export function WizardStep3Protocol({
             <span className="font-mono font-semibold">{fmtBalance(openingBalance, currency)}</span>
           </div>
           <div>
-            <span className="text-muted-foreground block">Könyv szerinti záró:</span>
+            <span className="text-muted-foreground block">Pénztárkönyv szerinti záró:</span>
             <span className="font-mono font-semibold">{fmtBalance(bookClosingBalance, currency)}</span>
           </div>
           <div>

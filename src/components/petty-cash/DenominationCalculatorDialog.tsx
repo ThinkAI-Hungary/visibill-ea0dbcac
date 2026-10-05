@@ -284,7 +284,7 @@ export default function DenominationCalculatorDialog({
           </DialogTitle>
           <DialogDescription className="text-xs">
             {t('pettyCash:calculator.register', 'Pénztár')}: <strong className="text-foreground">{registerName}</strong> | 
-            {' '}{t('pettyCash:calculator.theoretical_balance', 'Könyv szerinti egyenleg')}: <strong className="text-foreground font-mono">{fmtBalance(theoreticalBalance, currency)}</strong>
+            {' '}{t('pettyCash:calculator.theoretical_balance', 'Pénztárkönyv szerinti egyenleg')}: <strong className="text-foreground font-mono">{fmtBalance(theoreticalBalance, currency)}</strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -327,7 +327,7 @@ export default function DenominationCalculatorDialog({
             
             {/* Theoretical balance */}
             <div className="space-y-0.5">
-              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">{t('pettyCash:calculator.theoretical', 'Könyv szerinti')}</span>
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">{t('pettyCash:calculator.theoretical', 'Pénztárkönyv szerinti')}</span>
               <span className="text-sm font-bold font-mono text-foreground leading-none tabular-nums">
                 {fmtBalance(theoreticalBalance, currency)}
               </span>
