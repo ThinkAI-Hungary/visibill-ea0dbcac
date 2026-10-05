@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Sparkles, ArrowRight, ShieldCheck, Car, Bus, Home, AlertCircle, Briefcase } from 'lucide-react';
+import { Sparkles, ArrowRight, ShieldCheck, Car, Bus, Home, AlertCircle, Briefcase, CreditCard, Moon } from 'lucide-react';
 import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 
 export interface WorksheetLivePayslipProps {
@@ -32,9 +32,11 @@ export interface WorksheetLivePayslipProps {
   };
   bonus: number;
   serviceCharge: number;
+  nightShift?: number;
   otherExtras?: number;
   itemDeductions?: number;
   homeOffice?: number;
+  cafeteriaItems?: any[];
   garnishments?: any[];
   declarations?: EmployeeDeclarations;
   isKiva: boolean;
@@ -49,9 +51,11 @@ export default function WorksheetLivePayslip({
   commuteInput,
   bonus,
   serviceCharge,
+  nightShift = 0,
   otherExtras = 0,
   itemDeductions = 0,
   homeOffice = 0,
+  cafeteriaItems = [],
   garnishments = [],
   declarations = {},
   isKiva,
@@ -113,7 +117,7 @@ export default function WorksheetLivePayslip({
       grossComponents: {
         baseSalary: calcBase,
         overtime: calcOvertime,
-        nightShift: 0,
+        nightShift: Number(nightShift || 0),
         sundayPremium: 0,
         holidayPremium: 0,
         bonus: Number(bonus || 0),
@@ -135,7 +139,11 @@ export default function WorksheetLivePayslip({
       isSzochoDiscount: !!employment.is_szocho_discount,
       szochoDiscountType: employment.szocho_discount_type || 'none',
       szochoDiscountMonthsElapsed: 0,
-      cafeteria: [],
+      cafeteria: (cafeteriaItems || []).map((c: any) => ({
+        amount: Number(c.amount || 0),
+        subType: (c.benefit_type === 'szep_recreation' || c.benefit_type?.startsWith('szep_')) ? 'recreation' : 'basic',
+        isHousingAllowance: c.benefit_type === 'housing',
+      })),
       minimumContributionBaseRule: (employment.minimum_contribution_base_rule || 'none') as any,
       hasMinimumBase: !!employment.has_minimum_base,
       isMinBaseExemptGyesGyed: !!employment.is_min_base_exempt_gyes_gyed,
@@ -170,6 +178,7 @@ export default function WorksheetLivePayslip({
       calcBase,
       calcOvertime,
       calcSickLeave,
+      calcNightShift: Number(nightShift || 0),
       bonus: Number(bonus || 0),
       serviceCharge: Number(serviceCharge || 0),
       taxResult,
@@ -186,9 +195,11 @@ export default function WorksheetLivePayslip({
     commuteInput,
     bonus,
     serviceCharge,
+    nightShift,
     otherExtras,
     itemDeductions,
     homeOffice,
+    cafeteriaItems,
     garnishments,
     declarations,
     isKiva,
@@ -207,6 +218,7 @@ export default function WorksheetLivePayslip({
     calcBase,
     calcOvertime,
     calcSickLeave,
+    calcNightShift,
     bonus: calcBonus,
     serviceCharge: calcSC,
     taxResult,
@@ -284,6 +296,12 @@ export default function WorksheetLivePayslip({
               <div className="flex justify-between text-amber-600 dark:text-amber-400">
                 <span>Betegszabadság (70%)</span>
                 <span className="font-mono">+{calcSickLeave.toLocaleString('hu-HU')} Ft</span>
+              </div>
+            )}
+            {calcNightShift > 0 && (
+              <div className="flex justify-between text-indigo-600 dark:text-indigo-400">
+                <span>Éjszakai pótlék (15%)</span>
+                <span className="font-mono">+{calcNightShift.toLocaleString('hu-HU')} Ft</span>
               </div>
             )}
             {calcBonus > 0 && (
@@ -385,6 +403,52 @@ export default function WorksheetLivePayslip({
                   <span className="font-mono font-semibold">+{homeOffice.toLocaleString('hu-HU')} Ft</span>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Cafeteria / SZÉP Kártya blokk */}
+        {cafeteriaItems && cafeteriaItems.filter((c: any) => c.benefit_type !== 'home_office' && c.sub_type !== 'home_office').length > 0 && (
+          <div className="space-y-1.5 bg-teal-500/5 p-3 rounded-lg border border-teal-500/20">
+            <div className="flex items-center justify-between font-semibold text-teal-800 dark:text-teal-300 pb-1 border-b border-teal-500/20">
+              <span className="flex items-center gap-1">
+                <CreditCard className="w-3.5 h-3.5 text-teal-600" />
+                Béren kívüli juttatás (SZÉP)
+              </span>
+              <span className="font-mono text-teal-600 dark:text-teal-400">
+                +{cafeteriaItems
+                  .filter((c: any) => c.benefit_type !== 'home_office' && c.sub_type !== 'home_office')
+                  .reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0)
+                  .toLocaleString('hu-HU')} Ft
+              </span>
+            </div>
+            <div className="space-y-1 pt-1 text-[11px] text-muted-foreground">
+              {cafeteriaItems
+                .filter((c: any) => c.benefit_type !== 'home_office' && c.sub_type !== 'home_office')
+                .map((c: any, idx: number) => {
+                  const isSzep = c.benefit_type === 'szep_recreation' || c.benefit_type?.startsWith('szep_');
+                  const subTypeLabel = c.sub_type === 'vendeglatas' ? 'Vendéglátás' :
+                                       c.sub_type === 'szallashely' ? 'Szálláshely' :
+                                       c.sub_type === 'szabadido' ? 'Szabadidő' : (c.sub_type || '');
+                  const title = isSzep ? `SZÉP (${subTypeLabel || 'Rekreáció'})` : (c.benefit_type === 'housing' ? 'Lakhatási tám.' : c.benefit_type);
+
+                  const empMeta = (employment?.metadata as any) || {};
+                  const effectiveProvider = c.provider || (isSzep ? empMeta.szep_provider : null);
+
+                  return (
+                    <div key={c.id || idx} className="flex justify-between items-center text-teal-700 dark:text-teal-300">
+                      <span className="truncate max-w-[170px]" title={title}>
+                        {title} {effectiveProvider ? `(${effectiveProvider})` : ''}
+                      </span>
+                      <span className="font-mono font-semibold">
+                        +{Number(c.amount || 0).toLocaleString('hu-HU')} Ft
+                      </span>
+                    </div>
+                  );
+                })}
+              <p className="text-[10px] text-muted-foreground italic pt-0.5">
+                Külön kártyaszámlára utalandó, a nettó bérátutalást nem növeli.
+              </p>
             </div>
           </div>
         )}

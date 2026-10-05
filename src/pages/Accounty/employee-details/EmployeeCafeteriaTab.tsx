@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Gift, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Gift, Loader2, Sparkles, AlertCircle, CreditCard, Save, Check, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   usePayrollCafeteria,
   useCreateCafeteriaItem,
@@ -28,6 +30,106 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
   const [amount, setAmount] = useState<string>('');
   const [cardNumber, setCardNumber] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Permanent card states
+  const [permanentProvider, setPermanentProvider] = useState<string>('OTP');
+  const [permanentCardNumber, setPermanentCardNumber] = useState<string>('');
+  const [isSavingPermanent, setIsSavingPermanent] = useState(false);
+  const [isPermanentCardSaved, setIsPermanentCardSaved] = useState(false);
+
+  // Load permanent card details from employment metadata or existing items
+  useEffect(() => {
+    if (!employmentId) return;
+    supabase
+      .from('accounty_employments')
+      .select('metadata')
+      .eq('id', employmentId)
+      .maybeSingle()
+      .then(({ data }) => {
+        const meta = (data?.metadata as any) || {};
+        if (meta.szep_card_number) {
+          setPermanentCardNumber(meta.szep_card_number);
+          setPermanentProvider(meta.szep_provider || 'OTP');
+          setProvider(meta.szep_provider || 'OTP');
+          setCardNumber(meta.szep_card_number);
+          setIsPermanentCardSaved(true);
+        } else {
+          // Check if any existing cafeteria items have card_number
+          const existingWithCard = cafeteriaItems.find(i => i.card_number);
+          if (existingWithCard) {
+            setPermanentCardNumber(existingWithCard.card_number);
+            setPermanentProvider(existingWithCard.provider || 'OTP');
+            setProvider(existingWithCard.provider || 'OTP');
+            setCardNumber(existingWithCard.card_number);
+            setIsPermanentCardSaved(true);
+          }
+        }
+      });
+  }, [employmentId, cafeteriaItems]);
+
+  const handleSavePermanentCard = async () => {
+    if (!employmentId || !permanentCardNumber.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Hiányzó kártyaszám',
+        description: 'Kérjük, add meg a kártyaszámot az állandó mentéshez!',
+      });
+      return;
+    }
+    setIsSavingPermanent(true);
+    try {
+      const { data: empData, error: empFetchErr } = await supabase
+        .from('accounty_employments')
+        .select('metadata')
+        .eq('id', employmentId)
+        .maybeSingle();
+
+      if (empFetchErr) throw empFetchErr;
+
+      const currentMeta = (empData?.metadata as any) || {};
+      const updatedMeta = {
+        ...currentMeta,
+        szep_provider: permanentProvider,
+        szep_card_number: permanentCardNumber.trim(),
+      };
+
+      const { error: updateErr } = await supabase
+        .from('accounty_employments')
+        .update({ metadata: updatedMeta })
+        .eq('id', employmentId);
+
+      if (updateErr) throw updateErr;
+
+      // Update existing szep_recreation records for this employment
+      await supabase
+        .from('accounty_cafeteria')
+        .update({
+          card_number: permanentCardNumber.trim(),
+          provider: permanentProvider,
+        })
+        .eq('employment_id', employmentId)
+        .eq('benefit_type', 'szep_recreation');
+
+      setIsPermanentCardSaved(true);
+      setCardNumber(permanentCardNumber.trim());
+      setProvider(permanentProvider);
+
+      toast({
+        title: 'Állandó SZÉP Kártya elmentve!',
+        description: `${permanentProvider} (${permanentCardNumber.trim()}) elmentve a dolgozóhoz. Ezentúl nem kell minden alkalommal újra beírni a kártyaszámot!`,
+      });
+
+      refetch();
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Hiba a mentés során',
+        description: err.message,
+      });
+    } finally {
+      setIsSavingPermanent(false);
+    }
+  };
 
   // Totals & limits (2026 rules)
   const szepHospitality = cafeteriaItems
@@ -62,23 +164,53 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
     try {
       const isHousing = benefitType === 'housing';
       const isSzepActive = benefitType === 'szep_active';
+      const isSzep = benefitType === 'szep_recreation';
+
+      const effectiveProvider = isSzep ? (provider || permanentProvider || 'OTP') : null;
+      const effectiveCardNumber = isSzep ? (cardNumber.trim() || permanentCardNumber.trim() || null) : null;
       
       await createItemMutation.mutateAsync({
         employment_id: employmentId,
         cycle_id: null,
         benefit_type: benefitType,
         amount: numAmount,
-        provider: benefitType === 'szep_recreation' ? provider : null,
-        card_number: benefitType === 'szep_recreation' && cardNumber ? cardNumber : null,
+        provider: effectiveProvider,
+        card_number: effectiveCardNumber,
         tax_rate: 0.28, // Default 28% employer tax
         status: 'pending',
         sub_type: isHousing ? 'basic' : (isSzepActive ? 'recreation' : subType),
         is_housing_allowance: isHousing
       });
 
+      // If user typed a card number and there was no permanent card saved yet, save it as permanent!
+      if (isSzep && effectiveCardNumber && !isPermanentCardSaved) {
+        setPermanentCardNumber(effectiveCardNumber);
+        setPermanentProvider(effectiveProvider || 'OTP');
+        setIsPermanentCardSaved(true);
+
+        const { data: empData } = await supabase
+          .from('accounty_employments')
+          .select('metadata')
+          .eq('id', employmentId)
+          .maybeSingle();
+
+        const currentMeta = (empData?.metadata as any) || {};
+        await supabase
+          .from('accounty_employments')
+          .update({
+            metadata: {
+              ...currentMeta,
+              szep_provider: effectiveProvider,
+              szep_card_number: effectiveCardNumber,
+            }
+          })
+          .eq('id', employmentId);
+      }
+
       toast({ title: 'Siker', description: 'Cafeteria juttatás sikeresen hozzáadva.' });
       setAmount('');
-      setCardNumber('');
+      // Keep card number prefilled from permanent!
+      setCardNumber(effectiveCardNumber || '');
       refetch();
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Hiba a mentés során', description: err.message });
@@ -178,6 +310,75 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
         </div>
       </div>
 
+      {/* Állandó SZÉP Kártya Törzsadat Rögzítése */}
+      <div className="p-4 rounded-lg border border-teal-500/30 bg-teal-500/5 dark:bg-teal-500/10 shadow-xs space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center text-teal-600 dark:text-teal-400">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <span>Dolgozó Állandó SZÉP Kártya Adatai</span>
+                {isPermanentCardSaved && (
+                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-semibold gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Állandóra rögzítve
+                  </Badge>
+                )}
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Itt egyszer kell rögzítened a dolgozó SZÉP kártyáját. A rendszer elmenti a törzsadatok közé, és minden juttatásnál, számfejtésnél és bérlapon automatikusan ezt használja.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end pt-1">
+          <div className="sm:col-span-3 space-y-1">
+            <label className="block text-[11px] font-bold text-muted-foreground">Kibocsátó Bank</label>
+            <select
+              value={permanentProvider}
+              onChange={e => {
+                setPermanentProvider(e.target.value);
+                setProvider(e.target.value);
+              }}
+              className="w-full h-8 px-2.5 rounded border border-border bg-background text-xs font-semibold"
+            >
+              <option value="OTP">OTP Bank</option>
+              <option value="MBH">MBH Bank</option>
+              <option value="K&H">K&H Bank</option>
+            </select>
+          </div>
+
+          <div className="sm:col-span-6 space-y-1">
+            <label className="block text-[11px] font-bold text-muted-foreground">Állandó Kártyaszám / Számlaszám</label>
+            <input
+              type="text"
+              value={permanentCardNumber}
+              onChange={e => {
+                setPermanentCardNumber(e.target.value);
+                setCardNumber(e.target.value);
+              }}
+              placeholder="pl. 20080004-99910000-35181659"
+              className="w-full h-8 px-2.5 rounded border border-border bg-background text-xs font-mono font-medium"
+            />
+          </div>
+
+          <div className="sm:col-span-3">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSavePermanentCard}
+              disabled={isSavingPermanent || !permanentCardNumber.trim()}
+              className="w-full h-8 text-xs gap-1.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold"
+            >
+              {isSavingPermanent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Állandó Kártya Mentése
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form panel */}
         <div className="lg:col-span-1 border border-border rounded-lg p-5 bg-card shadow-sm space-y-4">
@@ -237,14 +438,26 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-muted-foreground mb-1">Kártyaszám (opcionális)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-muted-foreground">Kártyaszám</label>
+                    {isPermanentCardSaved && (
+                      <span className="text-[10px] text-teal-600 dark:text-teal-400 font-semibold flex items-center gap-0.5">
+                        <Check className="w-3 h-3" /> Állandó kártyából
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={cardNumber}
                     onChange={e => setCardNumber(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded border border-border bg-background text-xs"
-                    placeholder="pl. 1234-5678-..."
+                    className="w-full px-2.5 py-1.5 rounded border border-border bg-background text-xs font-mono font-medium"
+                    placeholder={permanentCardNumber || "pl. 20080004-99910000-35181659"}
                   />
+                  {isPermanentCardSaved && (
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Automatikusan kitöltve a dolgozó állandó kártyájából.
+                    </p>
+                  )}
                 </div>
               </>
             )}
@@ -306,7 +519,9 @@ export function EmployeeCafeteriaTab({ employmentId }: EmployeeCafeteriaTabProps
                         {item.benefit_type === 'szep_recreation' ? (
                           <div className="flex flex-col">
                             <span className="capitalize">{item.sub_type}</span>
-                            <span className="text-[10px]">{item.provider} {item.card_number ? `(${item.card_number})` : ''}</span>
+                            <span className="text-[10px]">
+                              {item.provider || permanentProvider} {(item.card_number || permanentCardNumber) ? `(${item.card_number || permanentCardNumber})` : ''}
+                            </span>
                           </div>
                         ) : (
                           <span>–</span>

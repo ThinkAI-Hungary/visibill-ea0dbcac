@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { FileDown, BookOpen, TrendingUp, TrendingDown, Wallet, AlertTriangle } from 'lucide-react';
+import { FileDown, BookOpen, TrendingUp, TrendingDown, Wallet, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,10 +29,11 @@ interface CashClosingDialogProps {
   registers: PettyCashRegister[];
   registerMap: Record<string, PettyCashRegister>;
   companyId?: string;
+  onOpenWizard?: () => void;
 }
 
 export default function CashClosingDialog({
-  open, onOpenChange, entries, registers, registerMap, companyId,
+  open, onOpenChange, entries, registers, registerMap, companyId, onOpenWizard,
 }: CashClosingDialogProps) {
   const { t } = useTranslation(['pettyCash', 'common']);
   const { dateFromFormatted, dateToFormatted } = useDateRange();
@@ -476,11 +477,32 @@ export default function CashClosingDialog({
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('pettyCash:closing_dialog.close')}</Button>
-          <Button onClick={handleExportPdf} disabled={filteredEntries.length === 0 && currencySummary.every(s => s[1].opening === 0)}>
-            <FileDown className="w-4 h-4 mr-2" /> {t('pettyCash:closing_dialog.print_pdf')}
-          </Button>
+        <DialogFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 border-t pt-3">
+          <div className="text-[11px] text-muted-foreground text-left">
+            {onOpenWizard ? (
+              <span>Címletjegyzékes formális záráshoz indítsd el a zárási varázslót.</span>
+            ) : (
+              <span>Hivatalos időszaki zárás a Pénztárjelentések fülön érhető el.</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>{t('pettyCash:closing_dialog.close')}</Button>
+            <Button variant="outline" onClick={handleExportPdf} disabled={filteredEntries.length === 0 && currencySummary.every(s => s[1].opening === 0)}>
+              <FileDown className="w-4 h-4 mr-2" /> {t('pettyCash:closing_dialog.print_pdf')}
+            </Button>
+            {onOpenWizard && (
+              <Button
+                onClick={() => {
+                  onOpenChange(false);
+                  onOpenWizard();
+                }}
+                className="gap-1.5 bg-primary text-primary-foreground font-medium text-xs shadow-sm"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Időszaki Zárási Varázsló
+              </Button>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

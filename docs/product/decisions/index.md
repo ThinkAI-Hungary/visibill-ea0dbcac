@@ -141,6 +141,7 @@
 | P-130 | Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) UX | ✅ Decided | [P-130](./P-130-croatian-eporezna-vat-xml-export-pdv-s-and-zp-ux.md) |
 | P-143 | eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX | ✅ Decided | [P-143](./P-143-payroll-3column-dashboard-and-efo-separation-ux.md) |
 | P-144 | ÁFA A60 Közösségi Összesítő és VIES Keresztellenőrzés UX | ✅ Decided | [P-144](./P-144-vat-a60-community-summary-and-vies-crosscheck-ux.md) |
+| P-158 | NAV 65M-02-K Korrekciós és Sztornó Számlák Felhasználói Élménye és Tételes Megjelenítése (UX) | ✅ Decided | [P-158](./P-158-nav-65m-02-k-correction-and-storno-invoices-ux.md) |
 
 
 ## 🔍 Keresés
@@ -221,6 +222,7 @@
 | P-123 | Fejlesztési Tartalék és Tárgyi Eszköz Nyilvántartás (TENY) Összekapcsolása UX | ✅ Decided | [P-123](./P-123-development-reserve-teny-ux.md) |
 | P-124 | Kapcsolt Vállalkozások Kezelése és Forgalmi Kimutatása a Partnertörzsben | ✅ Decided | [P-124](./P-124-related-parties-management-and-turnover-ux.md) |
 | P-141 | Tárgyi Eszközök Időszaki Értékcsökkenés (ÉCS) Elszámolás és Vegyes Napló Feladási Varázsló UX | ✅ Decided | [P-141](./P-141-fixed-assets-periodic-depreciation-posting-wizard-ux.md) |
+| P-157 | Tárgyi Eszközök és Nyitó Állomány Tömeges Import (Excel/CSV) Felhasználói Élmény (UX) | ✅ Decided | [P-157](./P-157-fixed-assets-bulk-excel-csv-import-and-opening-balances-ux.md) |
 
 
 ## 📖 Könyvelés & Banki Utalások
@@ -270,4 +272,6 @@
 | P-154 | NAV ÁNYK 2665A/2665M XML Export, M-lapok Kettős Skálája (HUF vs eFt), Webes Konzisztens Forint Nézet és Összefüggés-vizsgálati Validáció UX | ✅ Decided | [P-154](./P-154-nav-anyk-vat-return-and-m-lines-scaling-and-validation-ux.md) |
 | P-155 | NAV 26A60 Hivatalos Nyomtatvány Digitális Replika UX | ✅ Decided | [P-155](./P-155-nav-26a60-official-tax-form-digital-replica-ux.md) |
 | P-156 | Könyvelési Szabályok Elérése az ÁFA Bevallás és Napló Alól, Valamint Egységes Szabálykezelő Dialógus UX | ✅ Decided | [P-156](./P-156-accounting-rules-integration-in-vat-and-journals.md) |
+| P-157 | Tárgyi Eszközök és Nyitó Állomány Tömeges Import (Excel/CSV) Felhasználói Élmény (UX) | ✅ Decided | [P-157](./P-157-fixed-assets-bulk-excel-csv-import-and-opening-balances-ux.md) |
+
 

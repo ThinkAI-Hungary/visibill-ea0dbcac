@@ -98,6 +98,13 @@ export interface PayslipData {
 
   // Nettó
   netSalary: number;
+
+  // Cafeteria & béren kívüli juttatások (SZÉP Kártya stb.)
+  cafeteriaBenefits?: {
+    name: string;
+    amount: number;
+    cardOrAccount?: string;
+  }[];
 }
 
 const MONTHS_HU = [
@@ -260,6 +267,29 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
     </div>
     <span class="amount">${fmt(data.netSalary)} Ft</span>
   </div>
+
+  ${data.cafeteriaBenefits && data.cafeteriaBenefits.length > 0 ? `
+  <div class="section" style="margin-top: 14px;">
+    <div class="section-title">Béren kívüli juttatások (Cafeteria / SZÉP Kártya)</div>
+    <table style="margin-top: 4px;">
+      <thead>
+        <tr><th>Juttatás megnevezése</th><th>Kártyaszám / Szolgáltató</th><th class="right">Összeg (Ft)</th></tr>
+      </thead>
+      <tbody>
+        ${data.cafeteriaBenefits.map(b => `
+          <tr>
+            <td>${escHtml(b.name)}</td>
+            <td style="font-size: 10px; color: #4b5563;">${escHtml(b.cardOrAccount || '–')}</td>
+            <td class="right" style="font-weight: 600; color: #0f7467;">+${fmt(b.amount)} Ft</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    <div style="font-size: 9px; color: #6b7280; margin-top: -8px; font-style: italic;">
+      * A béren kívüli juttatások közvetlenül a megadott kártyaszámlára/alszámlára kerülnek átutalásra, a nettó bérkifizetést nem növelik. A munkáltatói közterhet (28%) a munkáltató teljesíti.
+    </div>
+  </div>
+  ` : ''}
 
   ${data.ytd ? `
   <div class="section" style="margin-top: 18px;">

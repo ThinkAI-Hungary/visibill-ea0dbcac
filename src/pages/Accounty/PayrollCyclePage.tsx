@@ -620,9 +620,11 @@ export default function PayrollCyclePage() {
     const bonusAmount = Number(empItems.find(i => i.item_type === 'bonus')?.amount || 0);
     const serviceChargeItem = empItems.find(i => i.item_type === 'service_charge');
     const serviceChargeAmount = serviceChargeItem ? Number(serviceChargeItem.amount) : 0;
+    const nightShiftItem = empItems.find(i => i.item_type === 'night_shift');
+    const nightShiftAmount = nightShiftItem ? Number(nightShiftItem.amount) : 0;
 
     const otherPremiums = empItems
-      .filter(i => !['base_salary', 'overtime', 'sick_leave', 'bonus', 'service_charge'].includes(i.item_type))
+      .filter(i => !['base_salary', 'overtime', 'sick_leave', 'bonus', 'service_charge', 'night_shift'].includes(i.item_type))
       .reduce((s, i) => s + (i.amount || 0), 0);
 
     // Fetch Home Office reimbursement for this employment
@@ -631,6 +633,34 @@ export default function PayrollCyclePage() {
     );
     const hoAmount = hoItem ? Number(hoItem.amount) : 0;
     const commuteAmount = Number((meta as any)?.travel_reimbursement || 0);
+
+    // Fetch master data cafeteria benefits (excluding home office)
+    const empCafeteria = cafeteriaItems
+      .filter(i => i.employment_id === employment?.id && i.benefit_type !== 'home_office' && i.sub_type !== 'home_office')
+      .map(i => {
+        let name = 'Béren kívüli juttatás';
+        if (i.benefit_type === 'szep_recreation' || i.benefit_type?.startsWith('szep_')) {
+          const subTypeLabel = i.sub_type === 'vendeglatas' ? 'Vendéglátás' :
+                               i.sub_type === 'szallashely' ? 'Szálláshely' :
+                               i.sub_type === 'szabadido' ? 'Szabadidő' : (i.sub_type || '');
+          name = `SZÉP Kártya${subTypeLabel ? ` (${subTypeLabel})` : ''}`;
+        } else if (i.benefit_type === 'housing') {
+          name = 'Lakhatási támogatás';
+        } else if (i.benefit_type) {
+          name = i.benefit_type;
+        }
+
+        const empMeta = (employment?.metadata as any) || {};
+        const effectiveProvider = i.provider || (i.benefit_type?.startsWith('szep') ? empMeta.szep_provider : null);
+        const effectiveCardNumber = i.card_number || (i.benefit_type?.startsWith('szep') ? empMeta.szep_card_number : null);
+        const cardOrAccount = [effectiveProvider, effectiveCardNumber].filter(Boolean).join(' - ');
+
+        return {
+          name,
+          amount: Number(i.amount || 0),
+          cardOrAccount: cardOrAccount || undefined,
+        };
+      });
 
     const isKiva = companyDetails?.tax_regime === 'KIVA' || (companyDetails as any)?.tax_regime === 'KIVA';
     const rawAccount = emp?.bank_account || '';
@@ -694,10 +724,12 @@ export default function PayrollCyclePage() {
       },
       baseSalary: baseSalary,
       supplements: finalOvertime + finalSickLeave,
+      night15Amount: nightShiftAmount > 0 ? nightShiftAmount : undefined,
       bonuses: bonusAmount + otherPremiums,
       serviceCharge: serviceChargeAmount,
       homeOffice: hoAmount,
       commuteReimbursement: commuteAmount,
+      cafeteriaBenefits: empCafeteria.length > 0 ? empCafeteria : undefined,
       otherIncome: calculatedLeaveAmount,
       grossTotal: calc.gross_salary || 0,
       szjaBase: calc.szja_base || calc.gross_salary || 0,

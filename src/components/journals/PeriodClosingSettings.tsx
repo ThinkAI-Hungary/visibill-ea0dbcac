@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -64,7 +64,7 @@ export default function PeriodClosingSettings({ open, onOpenChange }: PeriodClos
 
         if (countErr) throw countErr;
         if (count && count > 0) {
-          throw new Error(`A hónapban ${count} függő/piszkozat könyvelési tétel található. Kérjük könyvelje le vagy törölje őket a lezárás előtt!`);
+          throw new Error(`A hónapban ${count} lekönyveletlen (függő vagy javaslat státuszú) könyvelési tétel található a főkönyvben. Kérjük könyvelje le vagy törölje őket a főkönyvi zárolás előtt! (Megjegyzés: A házipénztár pénzforgalmi zárása és a címletjegyzék a Pénzügyek → Házipénztár menüpontban érhető el, amihez nem szükséges előzetes könyvelés.)`);
         }
 
         // Lock period
@@ -114,8 +114,12 @@ export default function PeriodClosingSettings({ open, onOpenChange }: PeriodClos
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="w-5 h-5 text-primary" /> Időszakok lezárása
+            <Lock className="w-5 h-5 text-primary" /> Főkönyvi időszakok zárolása
           </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-1">
+            Kettős könyvviteli adóidőszakok zárolása a visszadátumozott könyvelések megakadályozására.
+            (A házipénztár pénzforgalmi zárása és a címletjegyzék készítése a Pénzügyek → Házipénztár menüpontban végezhető el.)
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">

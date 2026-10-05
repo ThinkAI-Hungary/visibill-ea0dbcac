@@ -28,6 +28,7 @@ import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice, SummaryRow, OpenSettlementInvoice } from './types';
 import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf, sanitizePartnerId, validatePettyCashEntryPayload, parseCleanAmount } from './types';
 import CashClosingDialog from './CashClosingDialog';
+import { CashClosingWizardDialog } from './closing-wizard/CashClosingWizardDialog';
 import TransferDialog from './TransferDialog';
 import { getLocalizedRegisterName, getLocalizedEntryDescription, isPendingPettyCashInvoice } from '@/lib/pettyCashUtils';
 import { formatNumberLocale, formatDateLocale } from '@/lib/locale/formatters';
@@ -80,6 +81,7 @@ export default function EntriesTab() {
   const [showManualDialog, setShowManualDialog] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [showClosingDialog, setShowClosingDialog] = useState(false); // F4
+  const [showClosingWizard, setShowClosingWizard] = useState(false);
   const [moveEntry, setMoveEntry] = useState<PettyCashEntry | null>(null);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [editingEntry, setEditingEntry] = useState<PettyCashEntry | null>(null);
@@ -901,6 +903,22 @@ export default function EntriesTab() {
         registers={registers}
         registerMap={registerMap}
         companyId={companyId}
+        onOpenWizard={() => setShowClosingWizard(true)}
+      />
+
+      {/* 3-Step Időszaki Pénztárzárás Varázsló */}
+      <CashClosingWizardDialog
+        open={showClosingWizard}
+        onOpenChange={(v) => {
+          setShowClosingWizard(v);
+          if (!v) {
+            qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
+            qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
+          }
+        }}
+        companyId={companyId}
+        registers={registers}
+        defaultRegisterId={filterRegister !== 'all' ? filterRegister : undefined}
       />
 
       {/* Inter-register Transfer Dialog */}

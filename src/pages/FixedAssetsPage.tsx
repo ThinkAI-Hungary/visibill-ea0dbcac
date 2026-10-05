@@ -9,7 +9,7 @@ import { DevelopmentReservesTab } from '@/components/fixed-assets/DevelopmentRes
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
-import { Package2, ShieldCheck, PiggyBank, Calculator, Plus } from 'lucide-react';
+import { Package2, ShieldCheck, PiggyBank, Calculator, Plus, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 // Lazy-load heavy dialogs to keep initial chunk small
@@ -22,6 +22,9 @@ const DepreciationRunDialog = lazy(() =>
 const CreateFixedAssetDialog = lazy(() =>
   import('@/components/fixed-assets/CreateFixedAssetDialog').then(m => ({ default: m.CreateFixedAssetDialog }))
 );
+const AssetImportModal = lazy(() =>
+  import('@/components/fixed-assets/AssetImportModal').then(m => ({ default: m.AssetImportModal }))
+);
 
 export default function FixedAssetsPage() {
   const { t } = useTranslation(['hr', 'common']);
@@ -30,6 +33,7 @@ export default function FixedAssetsPage() {
   const [inventoryCheckOpen, setInventoryCheckOpen] = useState(false);
   const [depreciationDialogOpen, setDepreciationDialogOpen] = useState(false);
   const [createAssetOpen, setCreateAssetOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('fixed_assets');
@@ -155,6 +159,17 @@ export default function FixedAssetsPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="gap-2 font-medium"
+                  onClick={() => setImportModalOpen(true)}
+                  disabled={!writable}
+                >
+                  <Upload className="h-4 w-4" />
+                  {t('hr:fixed_assets.import_assets', 'Eszközök importálása')}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="gap-2 text-primary hover:text-primary font-medium"
                   onClick={() => setDepreciationDialogOpen(true)}
                   disabled={activeCount === 0 || !writable}
@@ -195,6 +210,7 @@ export default function FixedAssetsPage() {
               selectedAssetId={selectedAssetId}
               onSelectAsset={handleSelectAsset}
               onCreateAsset={() => setCreateAssetOpen(true)}
+              onImportAssets={() => setImportModalOpen(true)}
             />
           </div>
 
@@ -233,6 +249,16 @@ export default function FixedAssetsPage() {
           <CreateFixedAssetDialog
             open={createAssetOpen}
             onOpenChange={setCreateAssetOpen}
+          />
+        )}
+      </Suspense>
+
+      {/* Asset Import Modal — lazy loaded */}
+      <Suspense fallback={null}>
+        {importModalOpen && (
+          <AssetImportModal
+            open={importModalOpen}
+            onOpenChange={setImportModalOpen}
           />
         )}
       </Suspense>

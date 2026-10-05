@@ -27,6 +27,8 @@ export default function PayrollStep5({
   const [localBonusTextMap, setLocalBonusTextMap] = React.useState<Record<string, string>>({});
   const [customServiceChargeMap, setCustomServiceChargeMap] = React.useState<Record<string, number>>({});
   const [localServiceChargeTextMap, setLocalServiceChargeTextMap] = React.useState<Record<string, string>>({});
+  const [customNightShiftMap, setCustomNightShiftMap] = React.useState<Record<string, number>>({});
+  const [localNightShiftTextMap, setLocalNightShiftTextMap] = React.useState<Record<string, string>>({});
   const [savingMap, setSavingMap] = React.useState<Record<string, boolean>>({});
 
   const isSaving = React.useMemo(() => Object.values(savingMap).some(Boolean), [savingMap]);
@@ -34,6 +36,61 @@ export default function PayrollStep5({
   React.useEffect(() => {
     onSavingChange?.(isSaving);
   }, [isSaving, onSavingChange]);
+
+  const handleNightShiftChange = async (empId: string, employmentId: string, amount: number) => {
+    const safeAmount = Math.max(0, amount);
+    setCustomNightShiftMap(prev => ({ ...prev, [empId]: safeAmount }));
+
+    if (!cycleId || !employmentId) return;
+
+    setSavingMap(prev => ({ ...prev, [`ns_${empId}`]: true }));
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: existing } = await supabase
+        .from('accounty_payroll_items')
+        .select('id')
+        .eq('cycle_id', cycleId)
+        .eq('employment_id', employmentId)
+        .eq('item_type', 'night_shift')
+        .maybeSingle();
+
+      if (safeAmount > 0) {
+        if (existing) {
+          await supabase
+            .from('accounty_payroll_items')
+            .update({ amount: safeAmount })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('accounty_payroll_items')
+            .insert({
+              cycle_id: cycleId,
+              employment_id: employmentId,
+              item_type: 'night_shift',
+              description: 'Éjszakai pótlék (15% Mt. 142. §)',
+              amount: safeAmount,
+              is_deduction: false,
+            });
+        }
+      } else if (existing) {
+        await supabase
+          .from('accounty_payroll_items')
+          .delete()
+          .eq('id', existing.id);
+      }
+
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.items(cycleId) });
+    } catch (err) {
+      console.error('Error saving custom night shift item:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Mentési hiba',
+        description: 'Nem sikerült elmenteni az éjszakai pótlékot.',
+      });
+    } finally {
+      setSavingMap(prev => ({ ...prev, [`ns_${empId}`]: false }));
+    }
+  };
 
   const handleBonusChange = async (empId: string, employmentId: string, bonusAmount: number) => {
     const safeAmount = Math.max(0, bonusAmount);
@@ -167,6 +224,7 @@ export default function PayrollStep5({
               <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Alapbér</th>
               <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Pótlék</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Prémium / Jutalom (Ft)</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Éjszakai pótlék (Ft)</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Felszolgálási díj (Ft)</th>
               <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Bruttó összesen</th>
             </tr>
@@ -231,15 +289,18 @@ export default function PayrollStep5({
               const storedBonus = empItems.find(i => i.item_type === 'bonus')?.amount || 0;
               const currentBonus = customBonusMap[emp.id] !== undefined ? customBonusMap[emp.id] : storedBonus;
 
+              const storedNightShift = empItems.find(i => i.item_type === 'night_shift')?.amount || 0;
+              const currentNightShift = customNightShiftMap[emp.id] !== undefined ? customNightShiftMap[emp.id] : storedNightShift;
+
               const storedServiceCharge = empItems.find(i => i.item_type === 'service_charge')?.amount || 0;
               const currentServiceCharge = customServiceChargeMap[emp.id] !== undefined ? customServiceChargeMap[emp.id] : storedServiceCharge;
               
               const otherPremiums = empItems
-                .filter(i => !['base_salary', 'overtime', 'sick_leave', 'bonus', 'service_charge'].includes(i.item_type))
+                .filter(i => !['base_salary', 'overtime', 'sick_leave', 'bonus', 'service_charge', 'night_shift'].includes(i.item_type))
                 .reduce((s, i) => s + (i.amount || 0), 0);
                 
               const premium = currentBonus + otherPremiums + leaveAmount;
-              const totalGross = base + potlek + premium + currentServiceCharge;
+              const totalGross = base + potlek + premium + currentServiceCharge + currentNightShift;
 
               return (
                 <tr key={emp.id} className="hover:bg-muted/50">
@@ -269,6 +330,25 @@ export default function PayrollStep5({
                         handleBonusChange(emp.id, empEmployment?.id || '', numVal);
                       }}
                       className="w-28 text-right rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400 focus:border-primary focus:outline-none"
+                    />
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      value={localNightShiftTextMap[emp.id] !== undefined ? localNightShiftTextMap[emp.id] : (currentNightShift ? String(currentNightShift) : '')}
+                      onChange={(e) => {
+                        const strVal = e.target.value.replace(/^-+/, '');
+                        const numVal = Math.max(0, parseInt(strVal) || 0);
+                        setLocalNightShiftTextMap(prev => ({ ...prev, [emp.id]: strVal }));
+                        setCustomNightShiftMap(prev => ({ ...prev, [emp.id]: numVal }));
+                      }}
+                      onBlur={(e) => {
+                        const numVal = Math.max(0, parseInt(e.target.value.replace(/^-+/, '')) || 0);
+                        handleNightShiftChange(emp.id, empEmployment?.id || '', numVal);
+                      }}
+                      className="w-28 text-right rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono font-bold text-indigo-600 dark:text-indigo-400 focus:border-primary focus:outline-none"
                     />
                   </td>
                   <td className="px-4 py-2 text-center">

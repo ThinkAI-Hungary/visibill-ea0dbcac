@@ -243,6 +243,8 @@
     "title": "Tárgyi Eszköz Nyilvántartó",
     "subtitle": "{{company}} — {{total}} eszköz ({{active}} aktív)",
     "inventory_check": "Leltár ellenőrzés",
+    "import_assets": "Eszközök importálása",
+    "import_assets_btn": "Eszközök importálása",
     "select_asset": "Válassz egy eszközt",
     "select_asset_desc": "Kattints egy eszközre a bal oldali listában a részletek megtekintéséhez.",
     "search_placeholder": "Keresés eszközök, projektek, helyszínek között...",

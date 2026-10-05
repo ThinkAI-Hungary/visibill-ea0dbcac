@@ -8,6 +8,11 @@ import { escapeXml } from './documents/encoding/xmlSanitizer';
 import { downloadString } from './documents/core/downloadHelper';
 import { parseTaxNumber } from './validationUtils';
 import { shouldExcludeFromMLine } from '@/features/vat/types';
+import {
+  detectCorrectionType,
+  resolveCorrectionDetails,
+  RawInvoiceCandidate,
+} from '@/features/vat/utils/vatCorrectionResolver';
 
 export interface VatInvoiceDetail {
   invoice_number?: string;
@@ -18,6 +23,20 @@ export interface VatInvoiceDetail {
   gross?: number | null;
   amount_unit?: 'HUF' | 'E_FT';
   is_e_ft?: boolean;
+  is_correction?: boolean;
+  corr_type?: 'Normál' | 'Sztornó' | 'Helyesbítő';
+  anyk_code?: '02' | '02-K';
+  original_invoice_number?: string | null;
+  original_issue_date?: string | null;
+  original_delivery_date?: string | null;
+  original_net?: number | null;
+  original_vat?: number | null;
+  correction_net?: number | null;
+  correction_vat?: number | null;
+  invoice_operation?: string | null;
+  invoice_type?: string | null;
+  reference_number?: string | null;
+  elolegszamla_hivatkozas?: string | null;
 }
 
 export interface XmlExportData {
@@ -49,6 +68,28 @@ export interface XmlExportData {
 }
 
 export const INVOICES_PER_M02_PAGE = 36;
+export const CORRECTIONS_PER_M02K_PAGE = 18; // 18 correction pairs = 36 rows per 65M-02-K page
+
+export interface M02Invoice {
+  invNum: string;
+  invDate: string;
+  net: number; // exact whole HUF
+  vat: number; // exact whole HUF
+}
+
+export interface M02KCorrection {
+  modInvoiceNumber: string;
+  corrType: 'Normál' | 'Sztornó' | 'Helyesbítő';
+  originalInvoiceNumber: string;
+  originalIssueDate: string;
+  originalFulfillmentDate: string;
+  originalNet: number; // exact whole HUF (positive)
+  originalVat: number; // exact whole HUF (positive)
+  issueDate: string;
+  fulfillmentDate: string;
+  correctionNet: number; // exact whole HUF (negative for storno!)
+  correctionVat: number; // exact whole HUF (negative for storno!)
+}
 
 /**
  * Rows on the official NAV 65A 0B lap that have a payable tax (CA) column.
@@ -89,7 +130,8 @@ export function convertToHuf(amount: number | null | undefined, isEFt?: boolean)
 }
 
 /**
- * Computes partner-level totals (in thousands for 65M-01) and chunked M-02 pages (in exact HUF for 65M-02, max 36 invoices per page).
+ * Computes partner-level totals (in thousands for 65M-01) and chunked M-02 pages (in exact HUF for 65M-02, max 36 invoices per page)
+ * as well as M-02-K correction pages (in exact HUF for 65M-02-K, max 18 pairs = 36 rows per page).
  */
 function getPartnerComputedTotals(m: XmlExportData['mLines'][0], periodTo: string) {
   const invCount = (m.invoice_details && m.invoice_details.length > 0)
@@ -106,45 +148,69 @@ function getPartnerComputedTotals(m: XmlExportData['mLines'][0], periodTo: strin
 
     return {
       invCount,
+      normalCount: invCount,
+      normalBase: m.base_amount_rounded ?? Math.round(totalBaseHuf / 1000),
+      normalTax: m.tax_amount_rounded ?? Math.round(totalTaxHuf / 1000),
+      corrCount: 0,
+      corrBase: 0,
+      corrTax: 0,
       totalBase: m.base_amount_rounded ?? Math.round(totalBaseHuf / 1000),
       totalTax: m.tax_amount_rounded ?? Math.round(totalTaxHuf / 1000),
       totalBaseHuf,
       totalTaxHuf,
       pages: [],
+      correctionPages: [],
     };
   }
 
   const isPartnerEFt = m.amount_unit === 'E_FT';
+
+  // Separate normal invoices (65M-02) and correction invoices (65M-02-K)
+  const normalInvoiceDetails: any[] = [];
+  const corrInvoiceDetails: any[] = [];
+
+  m.invoice_details.forEach((inv: any) => {
+    const isExplicitCorr = inv.is_correction === true || inv.anyk_code === '02-K' || inv.corr_type === 'Sztornó' || inv.corr_type === 'Helyesbítő';
+    const isExplicitNormal = inv.is_correction === false && inv.anyk_code === '02';
+    
+    if (isExplicitCorr) {
+      corrInvoiceDetails.push(inv);
+    } else if (isExplicitNormal) {
+      normalInvoiceDetails.push(inv);
+    } else {
+      const detection = detectCorrectionType(inv as RawInvoiceCandidate);
+      if (detection.isCorrection) {
+        corrInvoiceDetails.push(inv);
+      } else {
+        normalInvoiceDetails.push(inv);
+      }
+    }
+  });
+
+  // 1. Chunk normal invoices into 65M-02 pages (max 36 per page)
   const pages: {
     pageNum: number;
-    invoices: {
-      invNum: string;
-      invDate: string;
-      net: number; // exact HUF for 65M-02
-      vat: number; // exact HUF for 65M-02
-    }[];
+    invoices: M02Invoice[];
     pageBaseTotal: number; // exact HUF for 65M-02 37. row
     pageTaxTotal: number;  // exact HUF for 65M-02 37. row
   }[] = [];
 
-  let partnerBaseTotalHuf = 0;
-  let partnerTaxTotalHuf = 0;
+  let normalBaseTotalHuf = 0;
+  let normalTaxTotalHuf = 0;
 
-  for (let i = 0; i < m.invoice_details.length; i += INVOICES_PER_M02_PAGE) {
-    const chunk = m.invoice_details.slice(i, i + INVOICES_PER_M02_PAGE);
+  for (let i = 0; i < normalInvoiceDetails.length; i += INVOICES_PER_M02_PAGE) {
+    const chunk = normalInvoiceDetails.slice(i, i + INVOICES_PER_M02_PAGE);
     const pageNum = Math.floor(i / INVOICES_PER_M02_PAGE) + 1;
     let pageBaseTotalHuf = 0;
     let pageTaxTotalHuf = 0;
 
     const invoices = chunk.map((inv: any, idx) => {
-      const invNum = inv.invoice_number || inv.invNum || `SZ-${i + idx + 1}`;
-      const rawDate = inv.delivery_date || inv.issue_date || inv.invDate || periodTo;
+      const invNum = inv.invoice_number || inv.bizonylatsorszam || inv.invNum || `SZ-${i + idx + 1}`;
+      const rawDate = inv.delivery_date || inv.teljesites_datuma || inv.issue_date || inv.kibocsatas_datuma || inv.invDate || periodTo;
       const invDate = String(rawDate).replace(/\D/g, '').slice(0, 8);
       const isEFt = inv.is_e_ft ?? (inv.amount_unit === 'E_FT' ? true : isPartnerEFt);
-      // Support both mock formats ({ net, vat }) and live DB formats ({ net_amount, vat_amount })
-      const rawNet = inv.net ?? inv.net_amount ?? inv.netAmount ?? 0;
-      const rawVat = inv.vat ?? inv.vat_amount ?? inv.vatAmount ?? 0;
-      // NAV ÁNYK 2665M-02 lap: forintban kitöltendő!
+      const rawNet = inv.net ?? inv.net_amount ?? inv.netAmount ?? inv.adoalap_osszesen ?? 0;
+      const rawVat = inv.vat ?? inv.vat_amount ?? inv.vatAmount ?? inv.afa_osszeg_osszesen ?? 0;
       const net = convertToHuf(rawNet, isEFt);
       const vat = convertToHuf(rawVat, isEFt);
 
@@ -159,8 +225,8 @@ function getPartnerComputedTotals(m: XmlExportData['mLines'][0], periodTo: strin
       };
     });
 
-    partnerBaseTotalHuf += pageBaseTotalHuf;
-    partnerTaxTotalHuf += pageTaxTotalHuf;
+    normalBaseTotalHuf += pageBaseTotalHuf;
+    normalTaxTotalHuf += pageTaxTotalHuf;
 
     pages.push({
       pageNum,
@@ -170,13 +236,86 @@ function getPartnerComputedTotals(m: XmlExportData['mLines'][0], periodTo: strin
     });
   }
 
+  // 2. Chunk correction invoices into 65M-02-K pages (max 18 pairs = 36 rows per page)
+  const correctionPages: {
+    pageNum: number;
+    corrections: M02KCorrection[];
+  }[] = [];
+
+  let corrBaseTotalHuf = 0;
+  let corrTaxTotalHuf = 0;
+
+  for (let i = 0; i < corrInvoiceDetails.length; i += CORRECTIONS_PER_M02K_PAGE) {
+    const chunk = corrInvoiceDetails.slice(i, i + CORRECTIONS_PER_M02K_PAGE);
+    const pageNum = Math.floor(i / CORRECTIONS_PER_M02K_PAGE) + 1;
+
+    const corrections: M02KCorrection[] = chunk.map((inv: any, idx) => {
+      const isEFt = inv.is_e_ft ?? (inv.amount_unit === 'E_FT' ? true : isPartnerEFt);
+      const modInvNum = inv.invoice_number || inv.bizonylatsorszam || inv.invNum || `SZ-KORR-${i + idx + 1}`;
+
+      const resolved = resolveCorrectionDetails(inv, m.invoice_details || []);
+
+      const origInvNum = inv.original_invoice_number || resolved.originalInvoiceNumber || 'KORÁBBI SZÁMLA';
+      const origIssue = inv.original_issue_date || resolved.originalIssueDate || inv.issue_date || inv.kibocsatas_datuma || periodTo;
+      const origDelivery = inv.original_delivery_date || resolved.originalFulfillmentDate || inv.delivery_date || inv.teljesites_datuma || periodTo;
+
+      const origNet = convertToHuf(inv.original_net != null ? inv.original_net : resolved.originalNet, isEFt);
+      const origVat = convertToHuf(inv.original_vat != null ? inv.original_vat : resolved.originalVat, isEFt);
+
+      const currIssue = inv.issue_date || inv.kibocsatas_datuma || origIssue;
+      const currDelivery = inv.delivery_date || inv.teljesites_datuma || origDelivery;
+
+      const rawCorrNet = inv.correction_net != null
+        ? inv.correction_net
+        : resolved.correctionNet;
+      const rawCorrVat = inv.correction_vat != null
+        ? inv.correction_vat
+        : resolved.correctionVat;
+
+      const corrNet = convertToHuf(rawCorrNet, isEFt);
+      const corrVat = convertToHuf(rawCorrVat, isEFt);
+
+      corrBaseTotalHuf += corrNet;
+      corrTaxTotalHuf += corrVat;
+
+      return {
+        modInvoiceNumber: modInvNum,
+        corrType: resolved.corrType,
+        originalInvoiceNumber: origInvNum,
+        originalIssueDate: String(origIssue).replace(/\D/g, '').slice(0, 8),
+        originalFulfillmentDate: String(origDelivery).replace(/\D/g, '').slice(0, 8),
+        originalNet: Math.abs(origNet),
+        originalVat: Math.abs(origVat),
+        issueDate: String(currIssue).replace(/\D/g, '').slice(0, 8),
+        fulfillmentDate: String(currDelivery).replace(/\D/g, '').slice(0, 8),
+        correctionNet: corrNet,
+        correctionVat: corrVat,
+      };
+    });
+
+    correctionPages.push({
+      pageNum,
+      corrections,
+    });
+  }
+
+  const partnerBaseTotalHuf = normalBaseTotalHuf + corrBaseTotalHuf;
+  const partnerTaxTotalHuf = normalTaxTotalHuf + corrTaxTotalHuf;
+
   return {
     invCount,
+    normalCount: normalInvoiceDetails.length,
+    normalBase: Math.round(normalBaseTotalHuf / 1000),
+    normalTax: Math.round(normalTaxTotalHuf / 1000),
+    corrCount: corrInvoiceDetails.length,
+    corrBase: Math.round(corrBaseTotalHuf / 1000),
+    corrTax: Math.round(corrTaxTotalHuf / 1000),
     totalBase: Math.round(partnerBaseTotalHuf / 1000), // eFt for 65M-01 and 65A 0F
     totalTax: Math.round(partnerTaxTotalHuf / 1000),   // eFt for 65M-01 and 65A 0F
     totalBaseHuf: partnerBaseTotalHuf,
     totalTaxHuf: partnerTaxTotalHuf,
     pages,
+    correctionPages,
   };
 }
 
@@ -490,22 +629,53 @@ export function buildVatReturnXml(data: XmlExportData): string {
   let mTotalInvoices = 0;
   let mTotalBase = 0;
   let mTotalTax = 0;
+  let mNormalPartnerCount = 0;
+  let mNormalInvoicesCount = 0;
+  let mNormalBase = 0;
+  let mNormalTax = 0;
+  let mCorrPartnerCount = 0;
+  let mCorrInvoicesCount = 0;
+  let mCorrBase = 0;
+  let mCorrTax = 0;
+
   if (eligibleMLines && eligibleMLines.length > 0) {
     eligibleMLines.forEach((m) => {
       const summary = getPartnerComputedTotals(m, periodTo);
       mTotalInvoices += summary.invCount;
       mTotalBase += summary.totalBase;
       mTotalTax += summary.totalTax;
+
+      if (summary.normalCount > 0) {
+        mNormalPartnerCount += 1;
+        mNormalInvoicesCount += summary.normalCount;
+        mNormalBase += summary.normalBase;
+        mNormalTax += summary.normalTax;
+      }
+      if (summary.corrCount > 0) {
+        mCorrPartnerCount += 1;
+        mCorrInvoicesCount += summary.corrCount;
+        mCorrBase += summary.corrBase;
+        mCorrTax += summary.corrTax;
+      }
     });
   }
-  xml += `      <mezo eazon="0F0001D0105BA">${mPartnerCount}</mezo>\n`;
-  xml += `      <mezo eazon="0F0001D0105CA">${mTotalInvoices}</mezo>\n`;
-  xml += `      <mezo eazon="0F0001D0105DA">${mTotalBase}</mezo>\n`;
-  xml += `      <mezo eazon="0F0001D0105EA">${mTotalTax}</mezo>\n`;
-  xml += `      <mezo eazon="0F0001D0106BA">0</mezo>\n`;
-  xml += `      <mezo eazon="0F0001D0106CA">0</mezo>\n`;
-  xml += `      <mezo eazon="0F0001D0106DA">0</mezo>\n`;
-  xml += `      <mezo eazon="0F0001D0106EA">0</mezo>\n`;
+
+  // Ha nem voltak tételes számlák, de van mPartnerCount, a normál sorba írjuk
+  if (mNormalPartnerCount === 0 && mCorrPartnerCount === 0 && mPartnerCount > 0) {
+    mNormalPartnerCount = mPartnerCount;
+    mNormalInvoicesCount = mTotalInvoices;
+    mNormalBase = mTotalBase;
+    mNormalTax = mTotalTax;
+  }
+
+  xml += `      <mezo eazon="0F0001D0105BA">${mNormalPartnerCount}</mezo>\n`;
+  xml += `      <mezo eazon="0F0001D0105CA">${mNormalInvoicesCount}</mezo>\n`;
+  xml += `      <mezo eazon="0F0001D0105DA">${mNormalBase}</mezo>\n`;
+  xml += `      <mezo eazon="0F0001D0105EA">${mNormalTax}</mezo>\n`;
+  xml += `      <mezo eazon="0F0001D0106BA">${mCorrPartnerCount}</mezo>\n`;
+  xml += `      <mezo eazon="0F0001D0106CA">${mCorrInvoicesCount}</mezo>\n`;
+  xml += `      <mezo eazon="0F0001D0106DA">${mCorrBase}</mezo>\n`;
+  xml += `      <mezo eazon="0F0001D0106EA">${mCorrTax}</mezo>\n`;
   xml += `      <mezo eazon="0F0001D0108BA">${mPartnerCount}</mezo>\n`;
   xml += `      <mezo eazon="0F0001D0108CA">${mTotalInvoices}</mezo>\n`;
   xml += `      <mezo eazon="0F0001D0108DA">${mTotalBase}</mezo>\n`;
@@ -573,7 +743,7 @@ export function buildVatReturnXml(data: XmlExportData): string {
       xml += `      <mezo eazon="0A0001E0007CA">${summary.totalBase}</mezo>\n`;
       xml += `      <mezo eazon="0A0001E0007DA">${summary.totalTax}</mezo>\n`;
 
-      // 0B lap (M-02: tételes számlák oldalanként tördelve, max 36 számla/oldal)
+      // 0B lap (M-02: tételes normál számlák oldalanként tördelve, max 36 számla/oldal)
       if (summary.pages.length > 0) {
         summary.pages.forEach((page) => {
           const pagePad = String(page.pageNum).padStart(4, '0');
@@ -595,8 +765,8 @@ export function buildVatReturnXml(data: XmlExportData): string {
           xml += `      <mezo eazon="0B${pagePad}C0037CA">${page.pageBaseTotal}</mezo>\n`;
           xml += `      <mezo eazon="0B${pagePad}C0037DA">${page.pageTaxTotal}</mezo>\n`;
         });
-      } else {
-        // Nincs tételes számlarészletezés: 1 szintetikus oldal (forintban a 65M-02 előírásai szerint)
+      } else if (summary.correctionPages.length === 0) {
+        // Nincs tételes számlarészletezés és nincs korrekció sem: 1 szintetikus oldal (forintban a 65M-02 előírásai szerint)
         xml += `      <mezo eazon="0B0001B001A">1</mezo>\n`;
         xml += `      <mezo eazon="0B0001B002A">${taxNum11}</mezo>\n`;
         xml += `      <mezo eazon="0B0001B004A">${escapeXml(partnerTaxBase)}</mezo>\n`;
@@ -609,11 +779,45 @@ export function buildVatReturnXml(data: XmlExportData): string {
         xml += `      <mezo eazon="0B0001C0037DA">${summary.totalTaxHuf}</mezo>\n`;
       }
 
-      // 0C lap (M-03: korrekciós lap fejléc)
-      xml += `      <mezo eazon="0C0001B001A">1</mezo>\n`;
-      xml += `      <mezo eazon="0C0001B002A">${taxNum11}</mezo>\n`;
-      xml += `      <mezo eazon="0C0001B004A">${escapeXml(partnerTaxBase)}</mezo>\n`;
-      xml += `      <mezo eazon="0C0001B005A">${escapeXml(m.partner_name)}</mezo>\n`;
+      // 0C lap (65M-02-K: korrekciós és sztornó számlák lapja)
+      if (summary.correctionPages.length > 0) {
+        summary.correctionPages.forEach((page) => {
+          const pagePad = String(page.pageNum).padStart(4, '0');
+          xml += `      <mezo eazon="0C${pagePad}B001A">${page.pageNum}</mezo>\n`;
+          xml += `      <mezo eazon="0C${pagePad}B002A">${taxNum11}</mezo>\n`;
+          xml += `      <mezo eazon="0C${pagePad}B004A">${escapeXml(partnerTaxBase)}</mezo>\n`;
+          xml += `      <mezo eazon="0C${pagePad}B005A">${escapeXml(m.partner_name)}</mezo>\n`;
+
+          page.corrections.forEach((corr, idx) => {
+            const rowPadE = String(idx * 2 + 1).padStart(4, '0');
+            const rowPadKT = String(idx * 2 + 2).padStart(4, '0');
+
+            // 1. E sor: Eredeti (módosított) számla adatai pozitív összegekkel
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadE}AA">${escapeXml(corr.modInvoiceNumber)}</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadE}BA">E</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadE}CA">${escapeXml(corr.originalInvoiceNumber)}</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadE}DA">${corr.originalIssueDate}</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadE}EA">${corr.originalFulfillmentDate}</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadE}FA">${corr.originalNet}</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadE}GA">${corr.originalVat}</mezo>\n`;
+
+            // 2. KT sor: Korrekciós / sztornó számla adatai tárgyidőszakban (sztornó esetén mínusz előjellel!)
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadKT}AA">${escapeXml(corr.modInvoiceNumber)}</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadKT}BA">KT</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadKT}CA">${escapeXml(corr.originalInvoiceNumber)}</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadKT}DA">${corr.issueDate}</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadKT}EA">${corr.fulfillmentDate}</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadKT}FA">${corr.correctionNet}</mezo>\n`;
+            xml += `      <mezo eazon="0C${pagePad}C${rowPadKT}GA">${corr.correctionVat}</mezo>\n`;
+          });
+        });
+      } else {
+        // Nincs korrekciós tétel: 1 szintetikus fejléc regisztráció (meglévő kompatibilitás)
+        xml += `      <mezo eazon="0C0001B001A">1</mezo>\n`;
+        xml += `      <mezo eazon="0C0001B002A">${taxNum11}</mezo>\n`;
+        xml += `      <mezo eazon="0C0001B004A">${escapeXml(partnerTaxBase)}</mezo>\n`;
+        xml += `      <mezo eazon="0C0001B005A">${escapeXml(m.partner_name)}</mezo>\n`;
+      }
       xml += `    </mezok>\n`;
       xml += `  </nyomtatvany>\n`;
     });

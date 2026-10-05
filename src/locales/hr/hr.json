@@ -243,6 +243,8 @@
     "title": "Dugotrajna imovina",
     "subtitle": "{{company}} — {{total}} stavki ({{active}} aktivno)",
     "inventory_check": "Provjera inventure",
+    "import_assets": "Uvoz imovine",
+    "import_assets_btn": "Uvoz imovine",
     "select_asset": "Odaberite imovinu",
     "select_asset_desc": "Kliknite na stavku imovine na popisu s lijeve strane za pregled detalja.",
     "search_placeholder": "Traži po imovini, projektima, lokacijama...",

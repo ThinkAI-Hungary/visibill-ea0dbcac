@@ -249,6 +249,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-195 | NAV 26A60 v3.0 Közösségi Összesítő Nyilatkozat ÁNYK XML Export & Rekonciliáció | ✅ Decided | [A-195](./A-195-nav-26a60-community-summary-anyk-xml-export-and-reconciliation.md) |
 | A-196 | Könyvelési Szabályok Modális és Keresztmodul Integrációja (ÁFA, Napló és Főkönyvi Szabálykezelő) | ✅ Decided | [A-196](./A-196-accounting-rules-dialog-and-cross-module-integration.md) |
 | A-197 | NAV 26A60 Hivatalos Nyomtatvány Digitális Replika Architektúra | ✅ Decided | [A-197](./A-197-nav-26a60-official-tax-form-digital-replica.md) |
+| A-198 | Tárgyi Eszközök és Nyitó Állomány Tömeges Excel/CSV Import Architektúra | ✅ Decided | [A-198](./A-198-fixed-assets-bulk-excel-csv-import-and-opening-balances.md) |
+| A-199 | NAV 65M-02-K Korrekciós és Sztornó Számlák Feldolgozási és ÁNYK XML Export Architektúrája | ✅ Decided | [A-199](./A-199-nav-65m-02-k-correction-and-storno-invoices-architecture.md) |
 
 
 ## 💳 Fizetés

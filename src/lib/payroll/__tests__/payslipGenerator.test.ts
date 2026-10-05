@@ -244,4 +244,33 @@ describe('generatePayslipHtml', () => {
     expect(html).not.toContain('+373');
     expect(html).not.toContain('25 év alattiak kedvezménye');
   });
+
+  it('should render night shift allowance when night15Amount is provided', () => {
+    const withNightShift = {
+      ...basePayslip,
+      night15Amount: 18500,
+      grossTotal: 518500,
+    };
+    const html = generatePayslipHtml(withNightShift);
+    expect(html).toContain('Éjszakai pótlék (15%)');
+    expect(html).toContain('18');
+  });
+
+  it('should render cafeteria / SZÉP Kártya fringe benefits when cafeteriaBenefits are provided', () => {
+    const withCafeteria = {
+      ...basePayslip,
+      cafeteriaBenefits: [
+        {
+          name: 'SZÉP Kártya (Szálláshely)',
+          amount: 10000,
+          cardOrAccount: 'OTP - 20080004-99910000-35181659',
+        },
+      ],
+    };
+    const html = generatePayslipHtml(withCafeteria);
+    expect(html).toContain('Béren kívüli juttatások (Cafeteria / SZÉP Kártya)');
+    expect(html).toContain('SZÉP Kártya (Szálláshely)');
+    expect(html).toContain('10');
+    expect(html).toContain('OTP - 20080004-99910000-35181659');
+  });
 });

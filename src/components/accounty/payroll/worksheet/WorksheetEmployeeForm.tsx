@@ -16,6 +16,8 @@ import {
   Save,
   AlertTriangle,
   Info,
+  CreditCard,
+  Moon,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,8 +52,11 @@ export interface WorksheetEmployeeFormProps {
   onBonusChange: (value: number) => void;
   serviceCharge: number;
   onServiceChargeChange: (value: number) => void;
+  nightShift?: number;
+  onNightShiftChange?: (value: number) => void;
   homeOffice: number;
   onHomeOfficeChange: (value: number) => void;
+  cafeteriaItems?: any[];
   itemDeductions: number;
   onItemDeductionsChange: (value: number) => void;
   garnishments: any[];
@@ -81,8 +86,11 @@ export default function WorksheetEmployeeForm({
   onBonusChange,
   serviceCharge,
   onServiceChargeChange,
+  nightShift = 0,
+  onNightShiftChange,
   homeOffice,
   onHomeOfficeChange,
+  cafeteriaItems = [],
   itemDeductions,
   onItemDeductionsChange,
   garnishments,
@@ -499,7 +507,7 @@ export default function WorksheetEmployeeForm({
             <CardTitle className="text-sm font-bold">3. Bérpótlékok, Prémium & Felszolgálási Díj</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-1.5 p-3 rounded-lg bg-muted/40 border border-border/60">
             <div className="flex items-center justify-between">
               <Label className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
@@ -520,6 +528,30 @@ export default function WorksheetEmployeeForm({
             />
             <p className="text-[10px] text-muted-foreground">
               Szja tv. 1. sz. melléklet 4.38 pontja alapján adómentes, kizárólag 18.5% TB terheli.
+            </p>
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-lg bg-muted/40 border border-border/60">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
+                <Moon className="w-3 h-3 text-indigo-500" />
+                Éjszakai pótlék (Ft)
+              </Label>
+              <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
+                15% MT. 142. §
+              </Badge>
+            </div>
+            <Input
+              type="number"
+              min={0}
+              step={1000}
+              value={nightShift || ''}
+              onChange={(e) => onNightShiftChange?.(parseFloat(e.target.value) || 0)}
+              placeholder="0 Ft"
+              className="h-8 text-xs font-mono font-bold text-indigo-700 dark:text-indigo-400"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              22:00 és 06:00 közötti munkavégzés törvényi 15%-os bérpótléka.
             </p>
           </div>
 
@@ -549,23 +581,74 @@ export default function WorksheetEmployeeForm({
             <CardTitle className="text-sm font-bold">4. Cafeteria & Home Office Átalány</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Home Office költségtérítés (Ft)</Label>
-            <Input
-              type="number"
-              min={0}
-              max={32280}
-              step={1000}
-              value={homeOffice || ''}
-              onChange={(e) => onHomeOfficeChange(parseFloat(e.target.value) || 0)}
-              placeholder="0 Ft"
-              className="h-8 text-xs font-mono"
-            />
-            <p className="text-[10px] text-muted-foreground">
-              Adómentes átalánytérítés (max minimálbér 10%-a / hó, 32 280 Ft).
-            </p>
+        <CardContent className="p-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Home Office költségtérítés (Ft)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={32280}
+                step={1000}
+                value={homeOffice || ''}
+                onChange={(e) => onHomeOfficeChange(parseFloat(e.target.value) || 0)}
+                placeholder="0 Ft"
+                className="h-8 text-xs font-mono"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Adómentes átalánytérítés (max minimálbér 10%-a / hó, 32 280 Ft).
+              </p>
+            </div>
           </div>
+
+          {/* Aktív Cafeteria / SZÉP Kártya juttatások a törzsadatból */}
+          {cafeteriaItems && cafeteriaItems.filter((c: any) => c.benefit_type !== 'home_office' && c.sub_type !== 'home_office').length > 0 && (
+            <div className="space-y-2 pt-3 border-t border-border/60">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Rögzített Cafeteria / SZÉP Kártya juttatások</span>
+                </Label>
+                <Badge variant="outline" className="text-[10px] bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/20 font-medium">
+                  Munkavállaló Törzsadatából
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {cafeteriaItems
+                  .filter((c: any) => c.benefit_type !== 'home_office' && c.sub_type !== 'home_office')
+                  .map((c: any, idx: number) => {
+                    const isSzep = c.benefit_type === 'szep_recreation' || c.benefit_type?.startsWith('szep_');
+                    const subTypeLabel = c.sub_type === 'vendeglatas' ? 'Vendéglátás' :
+                                         c.sub_type === 'szallashely' ? 'Szálláshely' :
+                                         c.sub_type === 'szabadido' ? 'Szabadidő' : (c.sub_type || '');
+                    const title = isSzep ? `SZÉP Kártya${subTypeLabel ? ` – ${subTypeLabel}` : ''}` : (c.benefit_type === 'housing' ? 'Lakhatási támogatás' : c.benefit_type);
+
+                    const empMeta = (employment?.metadata as any) || {};
+                    const effectiveProvider = c.provider || (isSzep ? empMeta.szep_provider : null);
+                    const effectiveCardNumber = c.card_number || (isSzep ? empMeta.szep_card_number : null);
+
+                    return (
+                      <div key={c.id || idx} className="p-3 rounded-lg bg-teal-500/5 border border-teal-500/20 flex flex-col justify-between">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-xs font-semibold text-foreground">{title}</span>
+                          <span className="font-mono font-bold text-xs text-teal-600 dark:text-teal-400">
+                            {Number(c.amount || 0).toLocaleString('hu-HU')} Ft / hó
+                          </span>
+                        </div>
+                        <div className="mt-2 text-[11px] text-muted-foreground flex flex-col gap-0.5">
+                          {effectiveProvider && <span>Szolgáltató: <strong className="text-foreground/80">{effectiveProvider}</strong></span>}
+                          {effectiveCardNumber && <span>Kártyaszám: <strong className="text-foreground/80 font-mono text-[10px]">{effectiveCardNumber}</strong></span>}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground/80 mt-1 italic">
+                          Béren kívüli juttatás, külön kártyaszámlára utalandó (28% munkáltatói adó).
+                        </p>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

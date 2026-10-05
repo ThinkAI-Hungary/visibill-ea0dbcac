@@ -337,6 +337,11 @@ export default function EmployeeWorksheetView({
     return sc ? Number(sc.amount) : 0;
   }, [currentItems]);
 
+  const currentNightShift = useMemo(() => {
+    const ns = currentItems.find(i => i.item_type === 'night_shift');
+    return ns ? Number(ns.amount) : 0;
+  }, [currentItems]);
+
   const currentItemDeductions = useMemo(() => {
     return currentItems
       .filter(i => i.is_deduction)
@@ -349,6 +354,11 @@ export default function EmployeeWorksheetView({
       i => i.employment_id === currentEmployment.id && (i.sub_type === 'home_office' || i.benefit_type === 'home_office')
     );
     return ho ? Number(ho.amount) : 0;
+  }, [cafeteriaItems, currentEmployment]);
+
+  const currentEmployeeCafeteria = useMemo(() => {
+    if (!currentEmployment) return [];
+    return cafeteriaItems.filter(i => i.employment_id === currentEmployment.id);
   }, [cafeteriaItems, currentEmployment]);
 
   // Handle Item (bonus, service charge, deduction) changes
@@ -640,8 +650,11 @@ export default function EmployeeWorksheetView({
             onBonusChange={(val) => handleItemChange('bonus', val, false, 'Egyedi prémium / jutalom')}
             serviceCharge={currentServiceCharge}
             onServiceChargeChange={(val) => handleItemChange('service_charge', val, false, 'Vendéglátóipari felszolgálási díj (15% SZJA mentes)')}
+            nightShift={currentNightShift}
+            onNightShiftChange={(val) => handleItemChange('night_shift', val, false, 'Éjszakai pótlék (15% Mt. 142. §)')}
             homeOffice={currentHomeOffice}
             onHomeOfficeChange={(val) => handleItemChange('home_office', val, false, 'Home Office adómentes átalánytérítés')}
+            cafeteriaItems={currentEmployeeCafeteria}
             itemDeductions={currentItemDeductions}
             onItemDeductionsChange={(val) => handleItemChange('deduction', val, true, 'Egyéb bérlevonás / előleg')}
             garnishments={garnishments.filter(g => g.employee_id === currentEmployee?.id)}
@@ -669,8 +682,10 @@ export default function EmployeeWorksheetView({
             commuteInput={currentCommuteInput}
             bonus={currentBonus}
             serviceCharge={currentServiceCharge}
+            nightShift={currentNightShift}
             itemDeductions={currentItemDeductions}
             homeOffice={currentHomeOffice}
+            cafeteriaItems={currentEmployeeCafeteria}
             garnishments={garnishments.filter(g => g.employee_id === currentEmployee?.id)}
             declarations={currentEmployee ? declarationsMap[currentEmployee.id] : {}}
             isKiva={isKiva}

@@ -40,6 +40,12 @@ import {
   isInsurancePartnerOrInvoice,
 } from '../types';
 import { VatOsaCheckDialog } from './VatOsaCheckDialog';
+import {
+  resolveCorrectionDetails,
+  detectCorrectionType,
+  RawInvoiceCandidate,
+  ResolvedCorrectionDetails,
+} from '../utils/vatCorrectionResolver';
 
 interface VatMLineMasterDetailProps {
   mLines: MLine[];
@@ -63,8 +69,19 @@ export function VatMLineMasterDetail({
   const [search, setSearch] = useState('');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [isOsaDialogOpen, setIsOsaDialogOpen] = useState(false);
+  const [invFilter, setInvFilter] = useState<'all' | 'normal' | 'correction'>('all');
+  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
   const [searchParams] = useSearchParams();
   const effectiveScope: VatScope = vatScope || (searchParams.get('vat_scope') as VatScope) || 'all';
+
+  const toggleExpand = (id: string) => {
+    setExpandedRowIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Compute period dates
   const { dateFrom, dateTo, periodLabel } = useMemo(() => {
@@ -253,10 +270,19 @@ export function VatMLineMasterDetail({
 
       // If activePartner has pre-populated invoice_details JSONB, use it directly
       if ((activePartner as any).invoice_details && Array.isArray((activePartner as any).invoice_details) && (activePartner as any).invoice_details.length > 0) {
-        return (activePartner as any).invoice_details.map((inv: any, idx: number) => {
-          const net = Math.round(Number(inv.net_amount || inv.base_amount) || 0);
-          const vat = Math.round(Number(inv.vat_amount || inv.tax_amount) || 0);
-          const rate = net > 0 && vat > 0 ? Math.round((vat / net) * 100) : 27;
+        const detailsArray = (activePartner as any).invoice_details;
+        return detailsArray.map((inv: any, idx: number) => {
+          const corrDetails = resolveCorrectionDetails(inv, detailsArray);
+          const rawNet = Number(inv.net_amount || inv.base_amount || inv.net || 0);
+          const rawVat = Number(inv.vat_amount || inv.tax_amount || inv.vat || 0);
+          const net = Math.round(rawNet);
+          const vat = Math.round(rawVat);
+          const absNet = Math.abs(net);
+          const absVat = Math.abs(vat);
+          const rate = absNet > 0 && absVat > 0 ? Math.round((absVat / absNet) * 100) : 27;
+
+          const effectiveNet = corrDetails.isCorrection ? corrDetails.correctionNet : net;
+          const effectiveVat = corrDetails.isCorrection ? corrDetails.correctionVat : vat;
 
           return {
             id: inv.id || `inv_detail_${idx}`,
@@ -265,25 +291,40 @@ export function VatMLineMasterDetail({
             issueDate: inv.issue_date || inv.kibocsatas_datuma || '-',
             netOnInvoice: net,
             vatOnInvoice: vat,
-            netEffective: net,
-            vatEffective: vat,
-            vat5: rate === 5 ? vat : 0,
-            vat18: rate === 18 ? vat : 0,
-            vat27: rate === 27 || (rate !== 5 && rate !== 18) ? vat : 0,
+            netEffective: effectiveNet,
+            vatEffective: effectiveVat,
+            vat5: rate === 5 ? effectiveVat : 0,
+            vat18: rate === 18 ? effectiveVat : 0,
+            vat27: rate === 27 || (rate !== 5 && rate !== 18) ? effectiveVat : 0,
             proRata: 0,
-            anykCode: '02',
+            anykCode: corrDetails.anykCode,
+            isCorrection: corrDetails.isCorrection,
             isFinalInvoice: Boolean(inv.is_final_invoice || inv.elolegszamla_hivatkozas),
-            refInvoiceNumber: inv.ref_invoice_number || inv.elolegszamla_hivatkozas || '-',
-            corrType: inv.corr_type || 'Normál',
+            refInvoiceNumber: corrDetails.originalInvoiceNumber || inv.ref_invoice_number || inv.elolegszamla_hivatkozas || '-',
+            corrType: corrDetails.corrType,
+            correctionDetails: corrDetails,
           };
         });
       }
 
-      // Otherwise query nav_invoices and submitted invoices
-      const [navRes, subRes] = await Promise.all([
+      // Query candidate historical invoices for this partner across all periods to resolve referenced originals
+      const [allPartnerNavRes, allPartnerSubRes, navRes, subRes] = await Promise.all([
         supabase
           .from('nav_invoices')
-          .select('id, invoice_number, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount')
+          .select('id, invoice_number, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount, original_invoice_number, invoice_operation')
+          .eq('company_id', companyId)
+          .eq('invoice_direction', 'INBOUND')
+          .ilike('supplier_tax_number', `${tax8}%`)
+          .limit(1000),
+        supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, elolegszamla_hivatkozas, reference_number, invoice_type')
+          .eq('company_id', companyId)
+          .ilike('elado_vat_id', `${tax8}%`)
+          .limit(1000),
+        supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_delivery_date, invoice_issue_date, invoice_net_amount, invoice_vat_amount, original_invoice_number, invoice_operation')
           .eq('company_id', companyId)
           .eq('invoice_direction', 'INBOUND')
           .ilike('supplier_tax_number', `${tax8}%`)
@@ -291,13 +332,18 @@ export function VatMLineMasterDetail({
           .or(`invoice_delivery_date.lte.${dateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${dateTo})`),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, elolegszamla_hivatkozas, invoice_type')
+          .select('id, bizonylatsorszam, teljesites_datuma, kibocsatas_datuma, adoalap_osszesen, afa_osszeg_osszesen, elolegszamla_hivatkozas, reference_number, invoice_type')
           .eq('company_id', companyId)
           .not('invoice_type', 'in', '("dijbekero_proforma","dijbekero","proforma","garanciajegy")')
           .ilike('elado_vat_id', `${tax8}%`)
           .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
           .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`),
       ]);
+
+      const allAvailableCandidates: RawInvoiceCandidate[] = [
+        ...(allPartnerNavRes.data || []),
+        ...(allPartnerSubRes.data || []),
+      ];
 
       const navInvs = navRes.data || [];
       const subInvs = subRes.data || [];
@@ -318,9 +364,15 @@ export function VatMLineMasterDetail({
           return;
         }
 
+        const corrDetails = resolveCorrectionDetails(inv, allAvailableCandidates);
         const net = Math.round(Number(inv.invoice_net_amount) || 0);
         const vat = Math.round(Number(inv.invoice_vat_amount) || 0);
-        const rate = net > 0 && vat > 0 ? Math.round((vat / net) * 100) : 27;
+        const absNet = Math.abs(net);
+        const absVat = Math.abs(vat);
+        const rate = absNet > 0 && absVat > 0 ? Math.round((absVat / absNet) * 100) : 27;
+
+        const effectiveNet = corrDetails.isCorrection ? corrDetails.correctionNet : net;
+        const effectiveVat = corrDetails.isCorrection ? corrDetails.correctionVat : vat;
 
         combined.push({
           id: inv.id,
@@ -329,16 +381,18 @@ export function VatMLineMasterDetail({
           issueDate: inv.invoice_issue_date ? String(inv.invoice_issue_date).substring(0, 10) : '-',
           netOnInvoice: net,
           vatOnInvoice: vat,
-          netEffective: net,
-          vatEffective: vat,
-          vat5: rate === 5 ? vat : 0,
-          vat18: rate === 18 ? vat : 0,
-          vat27: rate === 27 || (rate !== 5 && rate !== 18) ? vat : 0,
+          netEffective: effectiveNet,
+          vatEffective: effectiveVat,
+          vat5: rate === 5 ? effectiveVat : 0,
+          vat18: rate === 18 ? effectiveVat : 0,
+          vat27: rate === 27 || (rate !== 5 && rate !== 18) ? effectiveVat : 0,
           proRata: 0,
-          anykCode: '02',
+          anykCode: corrDetails.anykCode,
+          isCorrection: corrDetails.isCorrection,
           isFinalInvoice: false,
-          refInvoiceNumber: '-',
-          corrType: 'Normál',
+          refInvoiceNumber: corrDetails.originalInvoiceNumber || inv.original_invoice_number || '-',
+          corrType: corrDetails.corrType,
+          correctionDetails: corrDetails,
         });
       });
 
@@ -353,9 +407,15 @@ export function VatMLineMasterDetail({
           return;
         }
 
+        const corrDetails = resolveCorrectionDetails(inv, allAvailableCandidates);
         const net = Math.round(Number(inv.adoalap_osszesen) || 0);
         const vat = Math.round(Number(inv.afa_osszeg_osszesen) || 0);
-        const rate = net > 0 && vat > 0 ? Math.round((vat / net) * 100) : 27;
+        const absNet = Math.abs(net);
+        const absVat = Math.abs(vat);
+        const rate = absNet > 0 && absVat > 0 ? Math.round((absVat / absNet) * 100) : 27;
+
+        const effectiveNet = corrDetails.isCorrection ? corrDetails.correctionNet : net;
+        const effectiveVat = corrDetails.isCorrection ? corrDetails.correctionVat : vat;
 
         combined.push({
           id: inv.id,
@@ -364,16 +424,18 @@ export function VatMLineMasterDetail({
           issueDate: inv.kibocsatas_datuma ? String(inv.kibocsatas_datuma).substring(0, 10) : '-',
           netOnInvoice: net,
           vatOnInvoice: vat,
-          netEffective: net,
-          vatEffective: vat,
-          vat5: rate === 5 ? vat : 0,
-          vat18: rate === 18 ? vat : 0,
-          vat27: rate === 27 || (rate !== 5 && rate !== 18) ? vat : 0,
+          netEffective: effectiveNet,
+          vatEffective: effectiveVat,
+          vat5: rate === 5 ? effectiveVat : 0,
+          vat18: rate === 18 ? effectiveVat : 0,
+          vat27: rate === 27 || (rate !== 5 && rate !== 18) ? effectiveVat : 0,
           proRata: 0,
-          anykCode: '02',
+          anykCode: corrDetails.anykCode,
+          isCorrection: corrDetails.isCorrection,
           isFinalInvoice: Boolean(inv.elolegszamla_hivatkozas),
-          refInvoiceNumber: inv.elolegszamla_hivatkozas || '-',
-          corrType: 'Normál',
+          refInvoiceNumber: corrDetails.originalInvoiceNumber || inv.reference_number || inv.elolegszamla_hivatkozas || '-',
+          corrType: corrDetails.corrType,
+          correctionDetails: corrDetails,
         });
       });
 
@@ -381,6 +443,20 @@ export function VatMLineMasterDetail({
     },
     enabled: !!companyId && !!activePartner?.partner_tax_number,
   });
+
+  // Filtered partner invoices based on quick filter toggle
+  const filteredPartnerInvoices = useMemo(() => {
+    if (invFilter === 'normal') {
+      return partnerInvoices.filter((i: any) => !i.isCorrection);
+    }
+    if (invFilter === 'correction') {
+      return partnerInvoices.filter((i: any) => i.isCorrection);
+    }
+    return partnerInvoices;
+  }, [partnerInvoices, invFilter]);
+
+  const normalCount = useMemo(() => partnerInvoices.filter((i: any) => !i.isCorrection).length, [partnerInvoices]);
+  const corrCount = useMemo(() => partnerInvoices.filter((i: any) => i.isCorrection).length, [partnerInvoices]);
 
   // Rollup totals
   const totals = useMemo(() => {
@@ -587,7 +663,7 @@ export function VatMLineMasterDetail({
 
       {/* Detail Table: Selected Partner's Invoices */}
       <Card className="border border-border/80 shadow-sm">
-        <CardHeader className="py-3 px-4 border-b border-border/60 flex flex-row items-center justify-between">
+        <CardHeader className="py-3 px-4 border-b border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <CardTitle className="text-sm font-semibold">
@@ -603,26 +679,68 @@ export function VatMLineMasterDetail({
             )}
           </div>
 
-          <div className="text-xs text-muted-foreground">
-            {partnerInvoices.length} db számla rögzítve
+          <div className="flex items-center gap-2">
+            {/* Quick Filters */}
+            <div className="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/60 text-xs">
+              <button
+                type="button"
+                onClick={() => setInvFilter('all')}
+                className={cn(
+                  'px-2.5 py-1 rounded-md transition-all font-medium text-[11px]',
+                  invFilter === 'all'
+                    ? 'bg-background shadow-xs text-foreground font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Összes ({partnerInvoices.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setInvFilter('normal')}
+                className={cn(
+                  'px-2.5 py-1 rounded-md transition-all font-medium text-[11px]',
+                  invFilter === 'normal'
+                    ? 'bg-background shadow-xs text-foreground font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Normál 02 ({normalCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setInvFilter('correction')}
+                className={cn(
+                  'px-2.5 py-1 rounded-md transition-all font-medium text-[11px] flex items-center gap-1',
+                  invFilter === 'correction'
+                    ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 shadow-xs font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Korrekciós 02-K ({corrCount})
+              </button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-auto max-h-72">
+          <div className="overflow-auto max-h-80">
             {isLoadingInvoices ? (
               <div className="flex items-center justify-center py-10 gap-2 text-muted-foreground text-xs">
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
                 <span>Számlák betöltése...</span>
               </div>
-            ) : partnerInvoices.length === 0 ? (
+            ) : filteredPartnerInvoices.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-xs">
-                Ehhez a partnerhez nem található részletező számla a megadott időszakban.
+                {invFilter === 'all'
+                  ? 'Ehhez a partnerhez nem található részletező számla a megadott időszakban.'
+                  : invFilter === 'normal'
+                  ? 'Ehhez a partnerhez nem található normál (02) számla a megadott időszakban.'
+                  : 'Ehhez a partnerhez nem található korrekciós / sztornó (02-K) számla a megadott időszakban.'}
               </div>
             ) : (
               <Table className="text-xs">
                 <TableHeader className="bg-muted/50 sticky top-0 z-10 border-b border-border/70">
                   <TableRow>
-                    <TableHead className="w-36">Számla sorszáma</TableHead>
+                    <TableHead className="w-40">Számla sorszáma</TableHead>
                     <TableHead className="w-24 text-center font-mono">Teljesítés</TableHead>
                     <TableHead className="w-28 text-right">Adóalap (számlán)</TableHead>
                     <TableHead className="w-24 text-right">Adó (számlán)</TableHead>
@@ -639,30 +757,189 @@ export function VatMLineMasterDetail({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {partnerInvoices.map((inv) => (
-                    <TableRow key={inv.id} className="hover:bg-muted/30">
-                      <TableCell className="font-mono font-medium whitespace-nowrap">{inv.invoiceNumber}</TableCell>
-                      <TableCell className="text-center font-mono whitespace-nowrap">{inv.fulfillmentDate}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">{formatCurrency(inv.netOnInvoice)}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">{formatCurrency(inv.vatOnInvoice)}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums font-semibold whitespace-nowrap">{formatCurrency(inv.netEffective)}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                        {formatCurrency(inv.vatEffective)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">{inv.vat5 ? formatCurrency(inv.vat5) : '0'}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">{inv.vat18 ? formatCurrency(inv.vat18) : '0'}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">{inv.vat27 ? formatCurrency(inv.vat27) : '0'}</TableCell>
-                      <TableCell className="text-center font-mono whitespace-nowrap">
-                        <Badge variant="outline" className="text-[10px] px-1 py-0">
-                          {inv.anykCode}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center text-muted-foreground whitespace-nowrap">{inv.isFinalInvoice ? 'Igen' : '-'}</TableCell>
-                      <TableCell className="font-mono text-muted-foreground truncate max-w-[120px] whitespace-nowrap">{inv.refInvoiceNumber}</TableCell>
-                      <TableCell className="text-center font-mono text-muted-foreground whitespace-nowrap">{inv.issueDate}</TableCell>
-                      <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">{inv.corrType}</TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredPartnerInvoices.map((inv: any) => {
+                    const isExpanded = expandedRowIds.has(inv.id);
+                    return (
+                      <React.Fragment key={inv.id}>
+                        <TableRow className={cn('hover:bg-muted/30 transition-colors', isExpanded && 'bg-muted/20')}>
+                          <TableCell className="font-mono font-medium whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              {inv.isCorrection ? (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleExpand(inv.id)}
+                                  className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                  title={isExpanded ? 'Részletek összecsukása' : '65M-02-K részletek megtekintése'}
+                                >
+                                  {isExpanded ? (
+                                    <ChevronDown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                                  ) : (
+                                    <ChevronRight className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                                  )}
+                                </button>
+                              ) : (
+                                <span className="w-4" />
+                              )}
+                              <span>{inv.invoiceNumber}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center font-mono whitespace-nowrap">{inv.fulfillmentDate}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">{formatCurrency(inv.netOnInvoice)}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">{formatCurrency(inv.vatOnInvoice)}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums font-semibold whitespace-nowrap">{formatCurrency(inv.netEffective)}</TableCell>
+                          <TableCell
+                            className={cn(
+                              'text-right font-mono tabular-nums font-bold whitespace-nowrap',
+                              inv.vatEffective < 0
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : 'text-emerald-600 dark:text-emerald-400'
+                            )}
+                          >
+                            {formatCurrency(inv.vatEffective)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">{inv.vat5 ? formatCurrency(inv.vat5) : '0'}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">{inv.vat18 ? formatCurrency(inv.vat18) : '0'}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">{inv.vat27 ? formatCurrency(inv.vat27) : '0'}</TableCell>
+                          <TableCell className="text-center font-mono whitespace-nowrap">
+                            {inv.isCorrection ? (
+                              <Badge
+                                variant="outline"
+                                className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 text-[10px] px-1.5 py-0 font-bold"
+                              >
+                                02-K
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                02
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center text-muted-foreground whitespace-nowrap">{inv.isFinalInvoice ? 'Igen' : '-'}</TableCell>
+                          <TableCell className="font-mono text-muted-foreground truncate max-w-[120px] whitespace-nowrap" title={inv.refInvoiceNumber}>
+                            {inv.refInvoiceNumber}
+                          </TableCell>
+                          <TableCell className="text-center font-mono text-muted-foreground whitespace-nowrap">{inv.issueDate}</TableCell>
+                          <TableCell className="text-[11px] whitespace-nowrap">
+                            {inv.corrType === 'Sztornó' ? (
+                              <span className="font-semibold text-rose-600 dark:text-rose-400">Sztornó</span>
+                            ) : inv.corrType === 'Helyesbítő' ? (
+                              <span className="font-semibold text-amber-600 dark:text-amber-400">Helyesbítő</span>
+                            ) : (
+                              <span className="text-muted-foreground">Normál</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Expandable sub-card for 65M-02-K items */}
+                        {inv.isCorrection && isExpanded && (
+                          <TableRow className="bg-amber-50/20 dark:bg-amber-950/10 border-b border-border/60">
+                            <TableCell colSpan={14} className="py-2.5 px-6">
+                              <div className="rounded-lg border border-amber-200/70 dark:border-amber-900/50 bg-background/95 p-3.5 space-y-2.5 shadow-xs">
+                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
+                                  <div className="flex items-center gap-2">
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-200 text-[11px] font-bold"
+                                    >
+                                      NAV 65M-02-K Korrekciós Tétel
+                                    </Badge>
+                                    <span className="text-xs font-semibold text-foreground">
+                                      {inv.corrType} bizonylat kapcsolati adatai
+                                    </span>
+                                  </div>
+                                  <div>
+                                    {inv.correctionDetails?.isOriginalFound ? (
+                                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px]">
+                                        ✓ Hivatkozott számla feloldva az adatbázisból
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 text-[10px]">
+                                        ⚠ Hivatkozott számla korábbi időszaki / becsült adat
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-0.5">
+                                  {/* E sor: Eredeti számla adatai */}
+                                  <div className="p-3 rounded-md border border-blue-200/60 dark:border-blue-900/40 bg-blue-50/20 dark:bg-blue-950/10 space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs pb-1.5 border-b border-border/40">
+                                      <span className="flex items-center gap-1.5 font-semibold text-blue-900 dark:text-blue-300">
+                                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                                          E sor
+                                        </span>
+                                        Eredeti (módosított) számla adatai
+                                      </span>
+                                      <span className="font-mono text-foreground font-bold">
+                                        {inv.correctionDetails?.originalInvoiceNumber || '-'}
+                                      </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-y-1 text-[11px] pt-0.5">
+                                      <div>
+                                        <span className="text-muted-foreground mr-1">Kelt:</span>
+                                        <span className="font-mono font-medium">{inv.correctionDetails?.originalIssueDate || '-'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground mr-1">Teljesítés:</span>
+                                        <span className="font-mono font-medium">{inv.correctionDetails?.originalFulfillmentDate || '-'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground mr-1">Adóalap:</span>
+                                        <span className="font-mono font-bold text-foreground">
+                                          +{formatCurrency(inv.correctionDetails?.originalNet || 0)}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground mr-1">Levonható adó:</span>
+                                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                          +{formatCurrency(inv.correctionDetails?.originalVat || 0)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* KT sor: Korrekció a tárgyidőszakban */}
+                                  <div className="p-3 rounded-md border border-amber-200/60 dark:border-amber-900/40 bg-amber-50/20 dark:bg-amber-950/10 space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs pb-1.5 border-b border-border/40">
+                                      <span className="flex items-center gap-1.5 font-semibold text-amber-900 dark:text-amber-300">
+                                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                                          KT sor
+                                        </span>
+                                        Korrekció / sztornó (tárgyidőszak)
+                                      </span>
+                                      <span className="font-mono text-foreground font-bold">{inv.invoiceNumber}</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-y-1 text-[11px] pt-0.5">
+                                      <div>
+                                        <span className="text-muted-foreground mr-1">Kelt:</span>
+                                        <span className="font-mono font-medium">{inv.issueDate || '-'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground mr-1">Teljesítés:</span>
+                                        <span className="font-mono font-medium">{inv.fulfillmentDate || '-'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground mr-1">Adóalap:</span>
+                                        <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                                          {formatCurrency(inv.correctionDetails?.correctionNet || 0)}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground mr-1">Levonható adó:</span>
+                                        <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                                          {formatCurrency(inv.correctionDetails?.correctionVat || 0)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

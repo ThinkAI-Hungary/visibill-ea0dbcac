@@ -534,6 +534,95 @@ describe('vatReturnXml (NAV ÁNYK 2665A / 2665M Generator)', () => {
       expect(xml).not.toContain('<mezo eazon="0F0001D0109CA">540</mezo>');
     });
   });
+
+  describe('NAV 65M-02-K Correction & Storno Invoices (0C lap)', () => {
+    it('correctly routes normal invoices to 0B and storno/modification invoices to 0C with E (positive) and KT (negative) rows', () => {
+      const xml = buildVatReturnXml({
+        companyName: 'Mandala Fogadó Kft.',
+        companyTaxNumber: '25566552-2-41',
+        companyAddress: '1011 Budapest, Fő utca 1.',
+        periodYear: 2026,
+        periodMonth: 9,
+        frequency: 'H',
+        lines: [
+          { row_number: '66', base_amount_rounded: 100, tax_amount_rounded: 27 },
+        ],
+        mLines: [
+          {
+            partner_name: 'Beszállító Partner Zrt.',
+            partner_tax_number: '12345678-2-42',
+            invoice_count: 3,
+            base_amount_rounded: 100,
+            tax_amount_rounded: 27,
+            invoice_details: [
+              // 1. Normal invoice (02 lap)
+              {
+                invoice_number: 'SZ-NORM-01',
+                delivery_date: '2026-09-05',
+                issue_date: '2026-09-06',
+                net: 100000,
+                vat: 27000,
+              },
+              // 2. An older original invoice to be stornoed (for matching)
+              {
+                invoice_number: 'SZ-ORIG-100',
+                delivery_date: '2026-08-15',
+                issue_date: '2026-08-16',
+                net: 50000,
+                vat: 13500,
+              },
+              // 3. Storno invoice cancelling SZ-ORIG-100 (02-K lap)
+              {
+                invoice_number: 'SZ-STORNO-100',
+                delivery_date: '2026-09-20',
+                issue_date: '2026-09-21',
+                invoice_operation: 'STORNO',
+                original_invoice_number: 'SZ-ORIG-100',
+                net: -50000,
+                vat: -13500,
+              },
+            ],
+          },
+        ],
+      });
+
+      // 1. Főlap 0F lap has:
+      // - 105. sor (normal invoices): 2 db, 150 eFt base, 41 eFt tax
+      // - 106. sor (corrections): 1 db, -50 eFt base, -14 eFt tax
+      // - 108. sor (total): 3 db, 100 eFt base, 27 eFt tax
+      expect(xml).toContain('<mezo eazon="0F0001D0105CA">2</mezo>');
+      expect(xml).toContain('<mezo eazon="0F0001D0106CA">1</mezo>');
+      expect(xml).toContain('<mezo eazon="0F0001D0108CA">3</mezo>');
+
+      // 2. 65M-02 (0B lap) contains the normal invoices SZ-NORM-01 and SZ-ORIG-100
+      expect(xml).toContain('<mezo eazon="0B0001C0001AA">SZ-NORM-01</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0001CA">100000</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0001DA">27000</mezo>');
+
+      expect(xml).toContain('<mezo eazon="0B0001C0002AA">SZ-ORIG-100</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0002CA">50000</mezo>');
+      expect(xml).toContain('<mezo eazon="0B0001C0002DA">13500</mezo>');
+
+      // 3. 65M-02-K (0C lap) contains the storno invoice with E and KT rows:
+      // Row 1 (E): Original invoice data with positive amounts
+      expect(xml).toContain('<mezo eazon="0C0001C0001AA">SZ-STORNO-100</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0001BA">E</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0001CA">SZ-ORIG-100</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0001DA">20260816</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0001EA">20260815</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0001FA">50000</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0001GA">13500</mezo>');
+
+      // Row 2 (KT): Storno invoice data with EXACT NEGATIVE amounts (-50000, -13500)
+      expect(xml).toContain('<mezo eazon="0C0001C0002AA">SZ-STORNO-100</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0002BA">KT</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0002CA">SZ-ORIG-100</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0002DA">20260921</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0002EA">20260920</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0002FA">-50000</mezo>');
+      expect(xml).toContain('<mezo eazon="0C0001C0002GA">-13500</mezo>');
+    });
+  });
 });
 
 
