@@ -297,7 +297,7 @@ export default function TransferDialog({
             {isOverBalance && (
               <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 mt-1">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                <span>Az összeg meghaladja a forrás pénztár jelenlegi egyenlegét!</span>
+                <span>{t('pettyCash:transfer_dialog.amount_exceeds_balance', 'Az összeg meghaladja a forrás pénztár jelenlegi egyenlegét!')}</span>
               </div>
             )}
 
@@ -305,7 +305,7 @@ export default function TransferDialog({
             {isLargeAmount && !isOverBalance && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-500" />
-                <span>Nagy összegű készpénzmozgás — kérjük, ellenőrizd a bizonylatot.</span>
+                <span>{t('pettyCash:transfer_dialog.large_amount_warning', 'Nagy összegű készpénzmozgás — kérjük, ellenőrizd a bizonylatot.')}</span>
               </div>
             )}
           </div>
@@ -318,7 +318,7 @@ export default function TransferDialog({
             <Input
               id="transfer-desc"
               className="h-9 text-xs"
-              placeholder={`Pénztárközi átvezetés: ${fromRegister?.name || ''} ➔ ${toRegister?.name || ''}`}
+              placeholder={t('pettyCash:transfer_dialog.transfer_desc_default', { defaultValue: 'Pénztárközi átvezetés: {{from}} ➔ {{to}}', from: fromRegister?.name || '', to: toRegister?.name || '' })}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />

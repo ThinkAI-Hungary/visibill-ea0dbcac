@@ -23,8 +23,8 @@ describe("Unified Knowledge Base Hierarchical Dataset", () => {
     expect(categoryIds).toContain("books_admin");
   });
 
-  it("contains 63 rich audited articles covering all eaisyBill and eaisyBooks menus", () => {
-    expect(FALLBACK_KNOWLEDGE_ARTICLES).toHaveLength(63);
+  it("contains 64 rich audited articles covering all eaisyBill and eaisyBooks menus", () => {
+    expect(FALLBACK_KNOWLEDGE_ARTICLES).toHaveLength(64);
     const validCategoryIds = new Set(FALLBACK_KNOWLEDGE_CATEGORIES.map((c) => c.id));
 
     for (const article of FALLBACK_KNOWLEDGE_ARTICLES) {
@@ -187,7 +187,7 @@ describe("Unified Knowledge Base Hierarchical Dataset", () => {
     const systemArticles = FALLBACK_KNOWLEDGE_ARTICLES.filter(
       (a) => a.category_id === "system"
     );
-    expect(systemArticles.length).toBe(6);
+    expect(systemArticles.length).toBe(7);
   });
 
   it("supports client-side search filtering across title, summary, tags and content", () => {
@@ -237,7 +237,7 @@ describe("Unified Knowledge Base Hierarchical Dataset", () => {
 
   it("maps article menu_paths correctly to modules or valid sections", () => {
     const articlesWithMenu = FALLBACK_KNOWLEDGE_ARTICLES.filter((a) => a.menu_path);
-    expect(articlesWithMenu.length).toBe(63);
+    expect(articlesWithMenu.length).toBe(64);
 
     for (const article of articlesWithMenu) {
       const path = article.menu_path!;
@@ -262,7 +262,7 @@ describe("Unified Knowledge Base Hierarchical Dataset", () => {
     expect(existsFake).toBe(false);
   });
 
-  it("accurately partitions articles for the 2-tier landing page navigation (eaisyBill: 29, eaisyBooks: 34)", () => {
+  it("accurately partitions articles for the 2-tier landing page navigation (eaisyBill: 30, eaisyBooks: 34)", () => {
     const eaisyBillArticles = FALLBACK_KNOWLEDGE_ARTICLES.filter(
       (a) => !a.category_id.startsWith("books_")
     );
@@ -270,9 +270,9 @@ describe("Unified Knowledge Base Hierarchical Dataset", () => {
       (a) => a.category_id.startsWith("books_")
     );
 
-    expect(eaisyBillArticles).toHaveLength(29);
+    expect(eaisyBillArticles).toHaveLength(30);
     expect(eaisyBooksArticles).toHaveLength(34);
-    expect(eaisyBillArticles.length + eaisyBooksArticles.length).toBe(63);
+    expect(eaisyBillArticles.length + eaisyBooksArticles.length).toBe(64);
 
     // Verify eaisyBooks categories
     const booksCatIds = new Set(eaisyBooksArticles.map((a) => a.category_id));

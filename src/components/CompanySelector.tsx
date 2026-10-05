@@ -21,7 +21,7 @@ import { reportError } from '@/lib/errorReporter';
 import { useTranslation } from 'react-i18next';
 
 const CompanySelector = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['common']);
   const queryClient = useQueryClient();
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
@@ -69,8 +69,8 @@ const CompanySelector = () => {
     const cleanCore = newCompanyTaxNumber.replace(/[^0-9]/g, '').slice(0, 8);
     if (!cleanCore || cleanCore.length !== 8) {
       toast({
-        title: 'Érvénytelen adószám',
-        description: 'Kérjük, adj meg legalább 8 számjegyet az adószámból a lekérdezéshez!',
+        title: t('common:company_selector.toast_invalid_tax_title'),
+        description: t('common:company_selector.toast_invalid_tax_desc'),
         variant: 'destructive',
       });
       return;
@@ -81,8 +81,8 @@ const CompanySelector = () => {
       const res = await queryTaxpayerFromNav(newCompanyTaxNumber, selectedCompany?.id);
       if (!res.success || !res.taxpayer) {
         toast({
-          title: 'Nem sikerült lekérdezni a cégadatokat',
-          description: res.error || 'A NAV nem adott vissza adatot a megadott adószámra.',
+          title: t('common:company_selector.toast_nav_lookup_failed_title'),
+          description: res.error || t('common:company_selector.toast_nav_lookup_no_data'),
           variant: 'destructive',
         });
         return;
@@ -105,12 +105,12 @@ const CompanySelector = () => {
       }
 
       toast({
-        title: 'Cégadatok sikeresen betöltve a NAV-ból!',
+        title: t('common:company_selector.toast_nav_lookup_success_title'),
         description: `${tp.taxpayerName || ''} (${tp.taxNumber})`,
       });
     } catch (err: any) {
       toast({
-        title: 'Hiba a NAV lekérdezés során',
+        title: t('common:company_selector.toast_nav_lookup_error_title'),
         description: err?.message || 'Ismeretlen hiba történt.',
         variant: 'destructive',
       });
@@ -158,8 +158,8 @@ const CompanySelector = () => {
 
   const handleCreateCompany = async () => {
     if (!newCompanyName.trim() || !newCompanyTaxNumber.trim() || !user) {
-      if (!newCompanyName.trim()) toast({ title: 'A cég neve kötelező!', variant: 'destructive' });
-      if (!newCompanyTaxNumber.trim()) toast({ title: 'Az adószám kötelező!', variant: 'destructive' });
+      if (!newCompanyName.trim()) toast({ title: t('common:company_selector.toast_company_name_required'), variant: 'destructive' });
+      if (!newCompanyTaxNumber.trim()) toast({ title: t('common:company_selector.toast_tax_number_required'), variant: 'destructive' });
       return;
     }
 
@@ -190,11 +190,11 @@ const CompanySelector = () => {
       setNewCompanyVatRegime('normal');
       setNewCompanyCountry('HU');
       setIsCreateDialogOpen(false);
-      toast({ title: 'Cég sikeresen létrehozva!' });
+      toast({ title: t('common:company_selector.toast_create_success') });
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'CompanySelector', action: 'error', message: 'Error creating company:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
-      toast({ title: 'Hiba történt a cég létrehozása során', description: msg, variant: 'destructive' });
+      toast({ title: t('common:company_selector.toast_create_error'), description: msg, variant: 'destructive' });
     } finally {
       setIsCreating(false);
     }
@@ -202,7 +202,7 @@ const CompanySelector = () => {
 
   const handleJoinCompany = async () => {
     if (!joinCode.trim()) {
-      toast({ title: 'A csatlakozási kód kötelező!', variant: 'destructive' });
+      toast({ title: t('common:company_selector.toast_join_code_required'), variant: 'destructive' });
       return;
     }
 
@@ -221,15 +221,15 @@ const CompanySelector = () => {
       if (error) throw error;
 
       if (data?.error === 'already_member') {
-        toast({ title: 'Már tagja vagy ennek a cégnek!', variant: 'destructive' });
+        toast({ title: t('common:company_selector.toast_already_member'), variant: 'destructive' });
         return;
       }
       if (data?.error === 'invalid_code') {
-        toast({ title: 'Érvénytelen csatlakozási kód!', variant: 'destructive' });
+        toast({ title: t('common:company_selector.toast_invalid_join_code'), variant: 'destructive' });
         return;
       }
       if (data?.error === 'token_expired') {
-        toast({ title: 'A csatlakozási kód lejárt! Kérj új kódot a cég tulajdonosától.', variant: 'destructive' });
+        toast({ title: t('common:company_selector.toast_join_code_expired'), variant: 'destructive' });
         return;
       }
       if (data?.error) {
@@ -243,11 +243,11 @@ const CompanySelector = () => {
       }
       setJoinCode('');
       setIsCreateDialogOpen(false);
-      toast({ title: 'Sikeresen csatlakoztál a céghez!' });
+      toast({ title: t('common:company_selector.toast_join_success') });
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'CompanySelector', action: 'error', message: 'Error joining company:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
-      toast({ title: 'Hiba történt a csatlakozás során', description: msg, variant: 'destructive' });
+      toast({ title: t('common:company_selector.toast_join_error'), description: msg, variant: 'destructive' });
     } finally {
       setIsJoining(false);
     }
@@ -296,11 +296,11 @@ const CompanySelector = () => {
       
       setIsEditDialogOpen(false);
       setEditingCompany(null);
-      toast({ title: 'Cég sikeresen frissítve!' });
+      toast({ title: t('common:company_selector.toast_update_success') });
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'CompanySelector', action: 'error', message: 'Error updating company:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
-      toast({ title: 'Hiba történt a cég frissítése során', description: msg, variant: 'destructive' });
+      toast({ title: t('common:company_selector.toast_update_error'), description: msg, variant: 'destructive' });
     } finally {
       setIsUpdating(false);
     }
@@ -352,11 +352,11 @@ const CompanySelector = () => {
         navigate(isHr ? '/hr' : '/', { replace: true });
       }
 
-      toast({ title: 'Cég sikeresen törölve!' });
+      toast({ title: t('common:company_selector.toast_delete_success') });
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'CompanySelector', action: 'error', message: 'Error deleting company:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
-      toast({ title: 'Hiba történt a cég törlése során', description: msg || 'Lehet, hogy vannak még hozzá kapcsolódó adatok.', variant: 'destructive' });
+      toast({ title: t('common:company_selector.toast_delete_error'), description: msg, variant: 'destructive' });
     } finally {
       setIsDeleting(false);
     }
@@ -439,27 +439,27 @@ const CompanySelector = () => {
             </TabsList>
             <TabsContent value="create" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="newCompanyCountry">Ország / Joghatóság</Label>
+                <Label htmlFor="newCompanyCountry">{t('common:company_selector.country_label')}</Label>
                 <Select value={newCompanyCountry} onValueChange={(v: 'HU' | 'HR') => setNewCompanyCountry(v)}>
                   <SelectTrigger id="newCompanyCountry">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="HU">🇭🇺 Magyarország (NAV Online Számla)</SelectItem>
-                    <SelectItem value="HR">🇭🇷 Hrvatska / Horvátország (OIB, PDV)</SelectItem>
+                    <SelectItem value="HU">{t('common:company_selector.country_hu')}</SelectItem>
+                    <SelectItem value="HR">{t('common:company_selector.country_hr')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="newTaxNumber">
-                  {newCompanyCountry === 'HR' ? 'OIB / Horvát adószám (11 számjegy)' : t('common:company_selector.tax_label')}
+                  {newCompanyCountry === 'HR' ? t('common:company_selector.oib_label') : t('common:company_selector.tax_label')}
                 </Label>
                 <div className="flex gap-2">
                   <Input 
                     id="newTaxNumber" 
                     value={newCompanyTaxNumber} 
                     onChange={(e) => setNewCompanyTaxNumber(e.target.value)} 
-                    placeholder={newCompanyCountry === 'HR' ? 'Pl. 95114485977' : 'Pl. 12345678-2-42 vagy 12345678'} 
+                    placeholder={newCompanyCountry === 'HR' ? t('common:company_selector.oib_placeholder') : t('common:company_selector.tax_placeholder')} 
                     className="flex-1"
                   />
                   {newCompanyCountry === 'HU' && (
@@ -469,30 +469,30 @@ const CompanySelector = () => {
                       onClick={handleNavLookup}
                       disabled={isNavLoading || !newCompanyTaxNumber.trim()}
                       className="shrink-0 gap-1.5"
-                      title="Cégadatok automatikus kitöltése a NAV-ból"
+                      title={t('common:company_selector.nav_lookup_title')}
                     >
                       {isNavLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       ) : (
                         <Search className="h-4 w-4 text-primary" />
                       )}
-                      <span>NAV lekérdezés</span>
+                      <span>{t('common:company_selector.nav_lookup_button')}</span>
                     </Button>
                   )}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   {newCompanyCountry === 'HR'
-                    ? 'Horvát cég esetén add meg a 11 számjegyű hivatalos OIB azonosítót.'
-                    : 'Írd be az adószámot és kattints a lekérdezésre az adatok automatikus betöltéséhez!'}
+                    ? t('common:company_selector.oib_hint')
+                    : t('common:company_selector.nav_hint')}
                 </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="newCompanyName">{t('common:company_selector.name_label')}</Label>
-                <Input id="newCompanyName" value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} placeholder="Pl. Példa Kft." />
+                <Input id="newCompanyName" value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} placeholder={t('common:company_selector.name_placeholder')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="newAddress">{t('common:company_selector.address_label')}</Label>
-                <Input id="newAddress" value={newCompanyAddress} onChange={(e) => setNewCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." />
+                <Input id="newAddress" value={newCompanyAddress} onChange={(e) => setNewCompanyAddress(e.target.value)} placeholder={t('common:company_selector.address_placeholder')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="newVatRegime">{t('common:company_selector.vat_regime_label')}</Label>
@@ -536,28 +536,28 @@ const CompanySelector = () => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="editCountry">Ország / Joghatóság</Label>
+              <Label htmlFor="editCountry">{t('common:company_selector.country_label')}</Label>
               <Select value={editCountry} onValueChange={(v: 'HU' | 'HR') => setEditCountry(v)}>
                 <SelectTrigger id="editCountry">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="HU">🇭🇺 Magyarország (NAV Online Számla)</SelectItem>
-                  <SelectItem value="HR">🇭🇷 Hrvatska / Horvátország (OIB, PDV)</SelectItem>
+                  <SelectItem value="HU">{t('common:company_selector.country_hu')}</SelectItem>
+                  <SelectItem value="HR">{t('common:company_selector.country_hr')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="editName">{t('common:company_selector.name_label')}</Label>
-              <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Pl. Példa Kft." />
+              <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t('common:company_selector.name_placeholder')} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="editTaxNumber">{t('common:company_selector.tax_label')}</Label>
-              <Input id="editTaxNumber" value={editTaxNumber} onChange={(e) => setEditTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" />
+              <Input id="editTaxNumber" value={editTaxNumber} onChange={(e) => setEditTaxNumber(e.target.value)} placeholder={t('common:company_selector.tax_placeholder')} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="editAddress">{t('common:company_selector.address_label')}</Label>
-              <Input id="editAddress" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." />
+              <Input id="editAddress" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} placeholder={t('common:company_selector.address_placeholder')} />
             </div>
             <Button onClick={handleUpdateCompany} disabled={!editName.trim() || !editTaxNumber.trim() || isUpdating} className="w-full">
               {isUpdating ? t('common:company_selector.creating') : t('common:company_selector.save_changes')}

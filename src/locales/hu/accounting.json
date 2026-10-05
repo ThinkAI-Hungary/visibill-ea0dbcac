@@ -3,6 +3,11 @@
     "breadcrumb": "Főkönyv",
     "title": "Főkönyv",
     "description": "Hierarchikus főkönyvi kivonat és kategóriák",
+    "ai_progress": {
+      "title": "AI Tételbesorolás folyamatban",
+      "status_with_count": "{{processed}} / {{total}} tétel besorolva a számlatükör alapján...",
+      "status_starting": "Kontextus gyűjtése és tételek előkészítése a mesterséges intelligenciának..."
+    },
     "tax_year": "Adóév",
     "period": "Időszak",
     "extract_title": "Főkönyvi Kivonat",
@@ -786,7 +791,8 @@
       "pdf_document": "PDF Dokumentum",
       "e_document": "e-Bizonylat",
       "serial_number": "Sorszám",
-      "net": "Nettó"
+      "net": "Nettó",
+      "no_items": "Nincsenek részletes tételek ehhez a főkönyvi számhoz a megadott időszakban."
     },
     "rows": {
       "I": "Értékesítés nettó árbevétele",
@@ -883,6 +889,7 @@
     },
     "toasts": {
       "export_error_empty": "Nincs mit exportálni.",
+      "export_loading_items": "Részletes könyvelési tételek letöltése az exporthoz...",
       "export_success": "Az eredménykimutatás letöltése megkezdődött.",
       "export_success_title": "Sikeres exportálás",
       "export_error": "Nem sikerült legenerálni az Excel fájlt.",
@@ -1157,7 +1164,8 @@
       "calculating": "Számítás...",
       "export": "Export",
       "pdf_print": "PDF nyomtatás",
-      "xml_download": "ÁNYK XML letöltés"
+      "xml_download": "ÁNYK XML letöltés",
+      "edit_representative": "Ügyintéző adatai (ÁNYK)"
     },
     "deadlines": {
       "label": "Beadási határidő:",
@@ -1273,7 +1281,28 @@
       "missing_tax_num_title": "Hiányzó adószám",
       "missing_tax_num_desc": "A cég adószáma hiányzik a beállításokból, kérlek ellenőrizd!",
       "xml_downloaded_title": "ÁNYK XML letöltve",
-      "xml_downloaded_desc": "A {{formCode}} ÁNYK-kompatibilis XML fájl elkészült és letöltésre került."
+      "xml_downloaded_desc": "A {{formCode}} ÁNYK-kompatibilis XML fájl elkészült és letöltésre került.",
+      "a60_xml_downloaded_title": "ÁNYK A60 XML letöltve",
+      "a60_xml_downloaded_desc": "Az A60 összesítő nyilatkozat sikeresen letöltve."
+    },
+    "steel_warning": {
+      "title": "Hiányos 6/B Acélipari adatok!"
+    },
+    "export_modal": {
+      "title": "ÁNYK XML Export — Ügyintéző kijelölése",
+      "preset_label": "Ügyintéző kijelölése",
+      "rep_name_label": "Ügyintéző neve",
+      "rep_name_placeholder": "pl. Surányi Pál vagy Jámbor Viktor",
+      "rep_name_help": "A bevallás főlapjára (0A0001E007A) kerülő hivatalos kapcsolattartó.",
+      "phone_label": "Telefonszám",
+      "phone_help": "Az ÁNYK főlapra (0A0001E008A) tisztított formátumban kerül (pl. 36301234...).",
+      "template_label": "ÁNYK sablon típusa",
+      "template_auto": "Automatikus",
+      "downloading": "Generálás...",
+      "save_and_download": "Mentés & XML letöltés",
+      "errors": {
+        "name_required": "Az ügyintéző neve kötelező az ÁNYK 0A főlaphoz!"
+      }
     },
     "analytics_view": {
       "card_title": "ÁFA Gyűjtőkód Szerinti Analitikus Kimutatás",
@@ -1643,7 +1672,8 @@
         "edit_existing_btn": "Nyitó tétel módosítása",
         "modify_hint": "A meglévő nyitó bizonylat megnyitható és szerkeszthető:",
         "next_blocked_tooltip": "Már létezik nyitó tétel erre az évre. További nyitás nem rögzíthető.",
-        "next_gl": "Tovább a Főkönyvhöz"
+        "next_gl": "Tovább a Főkönyvhöz",
+        "currency": "Pénznem"
       },
       "step2": {
         "upload_coa": "Számlatükör importálása",
@@ -1666,7 +1696,8 @@
         "comment_placeholder": "Megjegyzés...",
         "delete_row_tooltip": "Sor törlése",
         "validation_error": "Sztv. validációs hiba: A nyitó bizonylat nem könyvelhető le, mert a Tartozik és Követel oldal nem egyezik meg (a 491. Nyitó mérleg számla egyenlege eltér a nullától).",
-        "next_subledger": "Tovább az Analitikához"
+        "next_subledger": "Tovább az Analitikához",
+        "no_lines_warning": "Nincsenek nyitó összegek"
       },
       "step3": {
         "reconciliation_title": "Analitika vs. Főkönyv egyeztetési kontroll",
@@ -1702,7 +1733,25 @@
         "coa_imported_title": "Számlatükör sikeresen importálva!",
         "coa_imported_desc": "Az új számlatükör aktív, a mérlegszámlák azonnal használhatók a nyitáshoz.",
         "edit_unpost_title": "Nyitó tétel megnyitása",
-        "edit_unpost_desc": "A nyitó bizonylat megnyílt a szerkesztőfelületen."
+        "edit_unpost_desc": "A nyitó bizonylat megnyílt a szerkesztőfelületen.",
+        "import_partial_title": "Részleges import",
+        "import_partial_desc": "{{linesCount}} számla sikeresen betöltve. {{unmatchedCount}} számla nem található a számlatükörben.",
+        "import_success_title": "Sikeres import",
+        "import_success_desc": "{{linesCount}} nyitó tétel sikeresen betöltve.",
+        "import_empty_title": "Sikertelen betöltés",
+        "import_empty_desc": "Nem sikerült számlákat párosítani az aktív számlatükörrel.",
+        "mnb_rate_loaded_title": "MNB árfolyam betöltve",
+        "mnb_rate_loaded_desc": "{{curr}}: {{rate}} Ft ({{date}}{{closest}})",
+        "mnb_closest_day": " - legközelebbi korábbi MNB nap",
+        "mnb_rate_not_found_title": "Árfolyam nem található",
+        "mnb_rate_not_found_desc": "Nincs elérhető MNB árfolyam a(z) {{curr}} devizához a megadott időszakra ({{postingDate}}).",
+        "mnb_rates_updated_title": "MNB árfolyamok frissítve",
+        "mnb_rates_updated_desc": "{{count}} devizás tételhez betöltöttük a hivatalos MNB árfolyamot.",
+        "mnb_rates_none_title": "Nem található devizás tétel vagy árfolyam",
+        "mnb_rates_none_desc": "Nincs elérhető árfolyam az aktuális devizanemekhez."
+      },
+      "validation": {
+        "at_least_one_valid_line": "Legalább egy érvényes, kitöltött nyitó tételsor szükséges a könyveléshez."
       }
     },
     "opening_csv_import": {
@@ -2083,7 +2132,8 @@
       "edit_entry": "Piszkozat szerkesztése",
       "edit_entry_aria": "Bizonylat szerkesztése",
       "delete_disabled_tooltip": "A számozott bizonylatok a sorszámfolytonosság védelme miatt nem törölhetők!",
-      "delete_draft": "Piszkozat törlése"
+      "delete_draft": "Piszkozat törlése",
+      "clone_entry": "Bizonylat klónozása (másolása új tételként)"
     },
     "batch_bar": {
       "selected_count": "tétel kijelölve a tömeges műveletekhez",
@@ -2091,6 +2141,7 @@
       "submit_for_approval": "Jóváhagyásra küldés",
       "reject_selected": "Kijelöltek elvetése",
       "delete_selected": "Kijelöltek törlése",
+      "reassign_gl": "Tömeges kontírozás",
       "cancel": "Mégse"
     },
     "status": {
@@ -2242,9 +2293,83 @@
       "delete_error_title": "Törlési hiba",
       "bulk_delete_partial_title": "{{deleted}} piszkozat törölve",
       "bulk_delete_partial_desc": "{{skipped}} db tétel megőrzésre került, mivel hivatalos naplósorszámmal rendelkezik (sorszámfolytonosság védelme).",
-      "bulk_delete_success_title": "Kijelölt piszkozatok sikeresen törölve"
+      "bulk_delete_success_title": "Kijelölt piszkozatok sikeresen törölve",
+      "bulk_gl_success_title": "Főkönyvi számlaszám sikeresen módosítva!",
+      "bulk_gl_success_desc": "A kijelölt tételek kontírozása sikeresen frissítve.",
+      "bulk_gl_error_title": "Hiba a kontírozás módosításakor"
     },
-    "accounting_rules": "Könyvelési szabályok"
+    "bulk_gl": {
+      "title": "Tömeges főkönyvi szám módosítás",
+      "desc": "A kijelölt tételek Tartozik vagy Követel oldali főkönyvi számának tömeges módosítása.",
+      "side_label": "Módosítandó oldal",
+      "side_debit": "T (Tartozik / Költség)",
+      "side_credit": "K (Követel / Pénzforgalom)",
+      "account_label": "Új főkönyvi szám kiválasztása",
+      "search_placeholder": "Keresés számlaszámra vagy névre (pl. 526, 4541)...",
+      "summary_info": "Kijelölt tételek: {{count}} db. A jóváhagyás után az összes kijelölt tétel {{side}} oldali sora frissül a kiválasztott számlaszámra.",
+      "btn_submit": "Kontírozás módosítása"
+    },
+    "accounting_rules": "Könyvelési szabályok",
+    "create_modal": {
+      "title": "Új Könyvelési Napló Létrehozása",
+      "description": "Hozzon létre új analitikus könyvelési naplót a banki, pénztári vagy vegyes tételek önálló sorszámozásához.",
+      "field_type": "Naplótípus *",
+      "type_placeholder": "Válassz típust...",
+      "field_code": "Naplókód *",
+      "field_name": "Napló megnevezése *",
+      "name_placeholder": "pl. OTP Bank HUF vagy VÚB Banka EUR",
+      "field_currency": "Pénznem *",
+      "currency_placeholder": "Pénznem",
+      "field_gl_account": "Kapcsolt főkönyvi szám",
+      "gl_placeholder": "Válassz számlát...",
+      "gl_none": "Nincs hozzárendelve",
+      "btn_cancel": "Mégse",
+      "btn_submit": "Napló Létrehozása",
+      "btn_submitting": "Mentés...",
+      "toast_missing_code_title": "Hiányzó naplókód",
+      "toast_missing_code_desc": "Kérjük adjon meg egy naplókódot (pl. B3).",
+      "toast_missing_name_title": "Hiányzó megnevezés",
+      "toast_missing_name_desc": "Kérjük adja meg a napló megnevezését (pl. OTP Bank HUF).",
+      "toast_duplicate_title": "Már létező naplókód",
+      "toast_duplicate_desc": "A(z) \"{{code}}\" kódú napló már létezik ennél a cégnél. Kérjük válasszon másikat!",
+      "toast_success_title": "Napló sikeresen létrehozva",
+      "toast_success_desc": "{{code}} - {{name}} ({{currency}}) rögzítve.",
+      "toast_error_title": "Hiba a napló mentésekor",
+      "toast_error_desc": "Nem sikerült menteni az új könyvelési naplót.",
+      "types": {
+        "BANK": "Banki napló (BANK)",
+        "PETTY_CASH": "Házipénztár napló (PETTY_CASH)",
+        "MIXED": "Vegyes napló (MIXED)",
+        "CUSTOMER": "Vevő napló (CUSTOMER)",
+        "SUPPLIER": "Szállító napló (SUPPLIER)",
+        "OPENING": "Nyitó napló (OPENING)",
+        "CLOSING": "Záró napló (CLOSING)",
+        "SYSTEM": "Rendszer feladási napló (SYSTEM)"
+      }
+    },
+    "manage_modal": {
+      "title": "Könyvelési Naplótörzs Kezelése",
+      "description": "Tekintse át, nevezze át és szabja testre a cég könyvelési naplóit (bankok, pénztárak, vegyes és forgalmi naplók).",
+      "btn_new": "Új Napló",
+      "col_code": "Kód",
+      "col_name": "Megnevezés",
+      "col_type": "Típus",
+      "col_currency": "Deviza",
+      "col_gl": "Kapcsolt Főkönyv",
+      "col_status": "Státusz",
+      "col_actions": "Művelet",
+      "placeholder_name": "Napló neve",
+      "placeholder_gl": "pl. 3842",
+      "badge_active": "Aktív",
+      "badge_inactive": "Inaktív",
+      "aria_active": "Aktív napló",
+      "total_count": "Összesen {{count}} db napló rögzítve ennél a cégnél.",
+      "btn_close": "Bezárás",
+      "toast_name_required": "A megnevezés kötelező",
+      "toast_success": "Napló sikeresen frissítve",
+      "toast_error_title": "Hiba a mentés során",
+      "toast_error_desc": "Nem sikerült frissíteni a naplót."
+    }
   },
   "rules": {
     "breadcrumb": "Könyvelési szabályok",
@@ -2253,5 +2378,170 @@
     "dialog_desc": "Kezeld a számlatételek automatikus kontírozási és ÁFA szabályait, valamint az egyedi AI prompt instrukciókat.",
     "tab_item_rules": "Számlatétel szabályok",
     "tab_ai_prompts": "AI Prompt könyvtár"
+  },
+  "subledger": {
+    "page_title": "Folyószámla és Analitika",
+    "page_desc": "Vevő, szállító és egyéb analitikus számlák nyitott tételeinek kezelése, automatikus és kézi párosítása és leírása.",
+    "auto_settle_btn": "Automatikus Párosítás",
+    "rounding_btn": "Kerekítések leírása ({{count}})",
+    "export_btn": "Kimutatás Export",
+    "help_tooltip": "Útmutató megjelenítése",
+    "refresh_tooltip": "Frissítés",
+    "kpi": {
+      "open_items": "Nyitott Tételek",
+      "open_items_count": "{{count}} db",
+      "draft_hint": "Ebből {{count}} javaslat / piszkozat",
+      "open_balance": "Nyitott Egyenleg",
+      "net_vat_hint": "Nettó: {{net}} | ÁFA: {{vat}}",
+      "closed_items": "Zárt / Rendezett",
+      "closed_count": "{{count}} db lezárt",
+      "rounding_diff": "Kis kerekítési különbözet",
+      "rounding_diff_desc": "≤ 10 Ft automatikusan leírható"
+    },
+    "tabs": {
+      "open": "Nyitott tételek",
+      "all": "Minden tétel",
+      "closed": "Csak lezártak"
+    },
+    "filters": {
+      "all_accounts": "Minden analitikus számla",
+      "all_partners": "Minden partner",
+      "status_all_active": "Aktív (Javaslat + Könyvelt)",
+      "status_posted_only": "Csak véglegesen könyvelt (KÖNYVELT)",
+      "status_drafts_only": "Csak javaslatok (GEPI / PISZKOZAT)",
+      "status_placeholder": "Könyvelési státusz...",
+      "gl_placeholder": "Főkönyvi számla...",
+      "partner_placeholder": "Partner...",
+      "search_placeholder": "Keresés bizonylatszámra, partnerre, kontóra..."
+    },
+    "table": {
+      "select_all": "Összes kijelölése",
+      "collapse_all": "Összes becsukása",
+      "expand_all": "Összes lenyitása",
+      "date": "Dátum",
+      "doc_id": "Számlasorszám",
+      "journal": "Napló",
+      "posting": "Könyvelés",
+      "due_date": "Esedékesség",
+      "partner": "Partner",
+      "gl_account": "Főkönyv",
+      "net": "Nettó",
+      "vat": "ÁFA",
+      "gross_amount": "Bruttó összeg",
+      "settled": "Rendezve",
+      "open_amount": "Nyitott összeg",
+      "open_balance": "Nyitott egyenleg",
+      "status": "Státusz",
+      "actions": "Műveletek",
+      "loading": "Folyószámla adatok betöltése...",
+      "empty": "Nem található folyószámla tétel a megadott szűrési feltételekkel.",
+      "empty_title": "Nincs a megadott szűrési feltételeknek megfelelő folyószámla számla.",
+      "empty_desc": "Próbáld meg módosítani a dátumtartományt, a partner szűrőt, vagy váltsd át a könyvelési státuszt az „Összes (Könyvelt + Javaslat)” opcióra.",
+      "status_closed": "Zárt",
+      "status_partial": "Részben",
+      "status_open": "Nyitott",
+      "status_draft": "Javaslat",
+      "status_overdue": "Lejárt",
+      "items_count_badge": "{{count}} tétel",
+      "btn_post": "Könyvelés",
+      "btn_edit": "Módosítás",
+      "view_matches": "Párosítások megtekintése",
+      "write_off": "Különbözet leírása",
+      "edit_draft": "Piszkozat szerkesztése",
+      "tooltip_post": "Kontírozás ellenőrzése és könyvelése",
+      "tooltip_edit_draft": "Számla tételeinek és kontírjainak szerkesztése",
+      "tooltip_edit_posted": "Lekönyvelt számla visszanyitása és módosítása",
+      "tooltip_matches": "Párosítások megtekintése ({{count}})",
+      "tooltip_write_off": "Különbözet leírása (Kerekítés vagy Árfolyam)",
+      "expanded_title": "Számla tételei ({{count}} tétel)",
+      "expanded_desc": "A teljes számlához tartozó számlatételek és azok főkönyvi kontírozása",
+      "expanded_lines_title": "Kontírozás (Főkönyvi könyvelési sorok: T / K):",
+      "expanded_lines_count": "{{count}} sor",
+      "col_seq": "#",
+      "col_dc": "T/K",
+      "col_vat_role": "ÁFA szerep",
+      "col_amount": "Összeg",
+      "col_desc": "Sor leírása"
+    },
+    "floating_bar": {
+      "selected_count": "{{count}} számla ({{itemCount}} tétel) kijelölve",
+      "multi_currency_warning": "Vegyes devizájú kijelölés: az egyenleg könyvviteli forintértéken (HUF) számítódik",
+      "sum_debit": "∑ Tartozik (T): ",
+      "sum_credit": "∑ Követel (K): ",
+      "balance_formula": "Egyenleg (∑T-∑K): ",
+      "pair_btn": "Párosítás / Rendezés",
+      "batch_post_btn": "Könyvelés ({{count}} számla)",
+      "write_off_rounding_btn": "Kerekítés leírása",
+      "cancel_btn": "Mégse",
+      "imbalance_warning": "Párosításhoz legalább 1 Tartozik (T) és 1 Követel (K) tétel kijelölése szükséges!",
+      "clear_selection": "Kijelölés törlése"
+    },
+    "posting_modal": {
+      "title": "Folyószámla Tétel Kontírozása és Könyvelése",
+      "title_edit": "Folyószámla Piszkozat Szerkesztése",
+      "partner_label": "Partner:",
+      "doc_id_label": "Bizonylatszám:",
+      "due_date_label": "Esedékesség:",
+      "net_amount": "Nettó összeg",
+      "vat_amount": "ÁFA összeg",
+      "gross_amount": "Bruttó összeg",
+      "sub_items_title": "Számlatételek ({{count}}): válaszd ki a tételt a kontírok megtekintéséhez/szerkesztéséhez",
+      "active_item_hint": "Aktív: {{current}} / {{total}} tétel",
+      "lines_title": "Kontírozási tételek",
+      "lines_count": "({{count}} sor)",
+      "add_line_btn": "Új sor hozzáadása",
+      "col_side": "Oldal (T/K)",
+      "col_gl": "Főkönyvi számla (Kontír)",
+      "col_amount": "Összeg (Ft)",
+      "col_role": "Szerepkör",
+      "col_desc": "Megjegyzés / Sor leírás",
+      "balanced_badge": "Mérlegben (∑T = ∑K)",
+      "imbalance_badge": "Nincs egyensúlyban",
+      "open_full_editor": "Teljes kézi szerkesztő megnyitása →",
+      "btn_cancel": "Mégse",
+      "btn_save_draft": "Mentés piszkozatként",
+      "btn_post": "Végleges Könyvelés"
+    },
+    "toasts": {
+      "settle_success_title": "Sikeres rendezés",
+      "settle_success_desc": "A kiválasztott tételek sikeresen össze lettek párosítva.",
+      "settle_error_title": "Hiba a rendezés során",
+      "auto_settle_success_title": "Automatikus párosítás befejeződött",
+      "auto_settle_success_desc": "{{count}} tételpár sikeresen összerendezve {{amount}} Ft értékben.",
+      "auto_settle_empty_title": "Nincs új párosítható tétel",
+      "auto_settle_empty_desc": "Nem található azonos hivatkozású vagy összegű rendezetlen tétel a folyószámlán.",
+      "auto_settle_error_title": "Hiba az automatikus párosítás során",
+      "batch_post_success_title": "Tételek sikeresen lekönyvelve",
+      "batch_post_success_desc": "{{count}} bizonylat státusza végleges könyveltre (KÖNYVELT) módosult.",
+      "batch_post_error_title": "Hiba a könyvelés során",
+      "unsettle_success_title": "Rendezés felbontva",
+      "unsettle_success_desc": "A tétel párosítása sikeresen meg lett szüntetve, visszakerült a nyitott tételek közé.",
+      "unsettle_error_title": "Hiba a felbontás során",
+      "write_off_rounding_title": "Kerekítés sikeresen leírva",
+      "write_off_fx_title": "Árfolyamkülönbözet sikeresen leírva",
+      "write_off_desc": "A vegyes bizonylat automatikusan le lett könyvelve és a tétel le lett zárva.",
+      "write_off_error_title": "Hiba a leírás során",
+      "unpost_success_title": "Bizonylat visszanyitva piszkozattá",
+      "unpost_success_desc": "A tétel sikeresen visszanyitva szerkesztésre.",
+      "unpost_error_title": "Hiba a bizonylat visszanyitásakor",
+      "delete_line_min_one_title": "Nem törölhető",
+      "delete_line_min_one_desc": "A bizonylatnak legalább egy tétellel rendelkeznie kell.",
+      "save_lines_error_title": "Mentési hiba",
+      "post_entry_success_title": "Számla sikeresen lekönyvelve",
+      "post_entry_success_desc": "A(z) {{docId}} számla ({{itemsCount}} tétel) véglegesen rögzítve lett.",
+      "post_entry_error_title": "Könyvelési hiba",
+      "save_draft_success_title": "Változtatások elmentve",
+      "save_draft_success_desc": "A(z) {{docId}} számla kontírozása piszkozatként sikeresen frissítve lett.",
+      "imbalance_title": "Nincs egyensúlyban",
+      "imbalance_desc": "A könyveléshez a Tartozik és Követel összegeknek egyezniük kell (∑T = ∑K)!"
+    },
+    "unpost_dialog": {
+      "title": "Számla visszanyitása módosításra",
+      "body_part1": "A(z) {{docId}} számlasorszámú bizonylat ({{count}} tétel) már le van könyvelve ({{journalCode}}-{{journalNumber}}).",
+      "body_part2": "A módosításhoz a rendszer visszanyitja a számla tételeit szerkeszthető piszkozat státuszba (nyitott pénzügyi időszakban). A bizonylat naplósorszáma megmarad, a javítások után a számla újból lekönyvelhető.",
+      "confirm_question": "Biztosan vissza szeretnéd nyitni a számlát módosításra?",
+      "cancel_btn": "Mégse",
+      "confirm_btn": "Visszanyitás és Módosítás"
+    }
   }
 }

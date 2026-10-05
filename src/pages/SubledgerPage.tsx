@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -64,6 +65,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function SubledgerPage() {
+  const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
   const companyId = selectedCompany?.id;
   const companyName = selectedCompany?.name || 'Cég';
@@ -375,7 +377,7 @@ export default function SubledgerPage() {
     const kItems = [...selectedItems.filter((i) => i.dc_type === 'K')];
 
     if (tItems.length === 0 || kItems.length === 0) {
-      alert('Párosításhoz legalább 1 Tartozik (T) és 1 Követel (K) tétel kijelölése szükséges!');
+      alert(t('accounting:subledger.floating_bar.imbalance_warning', 'Párosításhoz legalább 1 Tartozik (T) és 1 Követel (K) tétel kijelölése szükséges!'));
       return;
     }
 
@@ -442,8 +444,8 @@ export default function SubledgerPage() {
     <div className="space-y-6 pb-20">
       {/* Page Header */}
       <PageHeader
-        title="Folyószámla és Analitika"
-        description="Vevő, szállító és egyéb analitikus számlák nyitott tételeinek kezelése, automatikus és kézi párosítása és leírása."
+        title={t('accounting:subledger.page_title', 'Folyószámla és Analitika')}
+        description={t('accounting:subledger.page_desc', 'Vevő, szállító és egyéb analitikus számlák nyitott tételeinek kezelése, automatikus és kézi párosítása és leírása.')}
         actions={<div className="flex flex-wrap items-center gap-2">
           {/* 1-Click Auto Settle Button */}
           <Button
@@ -456,7 +458,7 @@ export default function SubledgerPage() {
             ) : (
               <Zap className="w-4 h-4 text-amber-300" />
             )}
-            <span>Automatikus Párosítás</span>
+            <span>{t('accounting:subledger.auto_settle_btn', 'Automatikus Párosítás')}</span>
           </Button>
 
           {/* Bulk Rounding Button */}
@@ -466,7 +468,7 @@ export default function SubledgerPage() {
             className="flex items-center gap-1.5 shadow-sm border-slate-300 dark:border-slate-700 text-foreground"
           >
             <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>Kerekítések leírása ({stats.smallRoundingCount})</span>
+            <span>{t('accounting:subledger.rounding_btn', { count: stats.smallRoundingCount, defaultValue: `Kerekítések leírása (${stats.smallRoundingCount})` })}</span>
           </Button>
 
           {/* Export Dialog Trigger */}
@@ -476,7 +478,7 @@ export default function SubledgerPage() {
             className="flex items-center gap-1.5 shadow-sm border-slate-300 dark:border-slate-700 text-foreground"
           >
             <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
-            <span>Kimutatás Export</span>
+            <span>{t('accounting:subledger.export_btn', 'Kimutatás Export')}</span>
           </Button>
 
           {/* Help Toggle */}
@@ -484,7 +486,7 @@ export default function SubledgerPage() {
             variant="ghost"
             size="sm"
             onClick={() => setShowHelpGuide(!showHelpGuide)}
-            title="Útmutató megjelenítése"
+            title={t('accounting:subledger.help_tooltip', 'Útmutató megjelenítése')}
             className="text-muted-foreground hover:text-foreground"
           >
             <HelpCircle className="w-4 h-4" />
@@ -494,7 +496,7 @@ export default function SubledgerPage() {
             variant="ghost"
             size="sm"
             onClick={() => refetchItems()}
-            title="Frissítés"
+            title={t('accounting:subledger.refresh_tooltip', 'Frissítés')}
             className="p-2 text-muted-foreground hover:text-foreground"
           >
             <RotateCcw className="w-4 h-4" />
@@ -541,14 +543,14 @@ export default function SubledgerPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-1">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Nyitott Tételek
+                {t('accounting:subledger.kpi.open_items', 'Nyitott Tételek')}
               </div>
               <div className="text-2xl font-bold text-foreground">
-                {stats.openCount} <span className="text-xs font-normal text-muted-foreground">db</span>
+                {t('accounting:subledger.kpi.open_items_count', { count: stats.openCount, defaultValue: `${stats.openCount} db` })}
               </div>
               {stats.draftCount > 0 && (
                 <div className="text-[11px] text-muted-foreground">
-                  Ebből {stats.draftCount} javaslat / piszkozat
+                  {t('accounting:subledger.kpi.draft_hint', { count: stats.draftCount, defaultValue: `Ebből ${stats.draftCount} javaslat / piszkozat` })}
                 </div>
               )}
             </div>
@@ -562,13 +564,17 @@ export default function SubledgerPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-1">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Nyitott Egyenleg
+                {t('accounting:subledger.kpi.open_balance', 'Nyitott Egyenleg')}
               </div>
               <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                 {formatCurrency(stats.openSumHuf)}
               </div>
               <div className="text-[11px] text-muted-foreground">
-                Nettó: {formatCurrency(stats.totalNetHuf)} | ÁFA: {formatCurrency(stats.totalVatHuf)}
+                {t('accounting:subledger.kpi.net_vat_hint', {
+                  net: formatCurrency(stats.totalNetHuf),
+                  vat: formatCurrency(stats.totalVatHuf),
+                  defaultValue: `Nettó: ${formatCurrency(stats.totalNetHuf)} | ÁFA: ${formatCurrency(stats.totalVatHuf)}`
+                })}
               </div>
             </div>
             <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl text-amber-600">
@@ -631,15 +637,15 @@ export default function SubledgerPage() {
               <TabsList className="grid grid-cols-3 w-full sm:w-[380px]">
                 <TabsTrigger value="OPEN" className="flex items-center gap-1.5 text-xs">
                   <Clock className="w-3.5 h-3.5 text-amber-500" />
-                  Nyitott ({stats.openCount})
+                  {t('accounting:subledger.tabs.open', 'Nyitott')} ({stats.openCount})
                 </TabsTrigger>
                 <TabsTrigger value="CLOSED" className="flex items-center gap-1.5 text-xs">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                  Zárt tételek
+                  {t('accounting:subledger.tabs.closed', 'Zárt tételek')}
                 </TabsTrigger>
                 <TabsTrigger value="ALL" className="flex items-center gap-1.5 text-xs">
                   <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                  Teljes analitika
+                  {t('accounting:subledger.tabs.all', 'Teljes analitika')}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -650,12 +656,12 @@ export default function SubledgerPage() {
               <div className="w-full sm:w-[200px]">
                 <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as SubledgerStatusFilter)}>
                   <SelectTrigger className="text-xs">
-                    <SelectValue placeholder="Könyvelési státusz..." />
+                    <SelectValue placeholder={t('accounting:subledger.filters.status_placeholder', 'Könyvelési státusz...')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL_ACTIVE">Összes (Könyvelt + Javaslat)</SelectItem>
-                    <SelectItem value="POSTED_ONLY">Csak véglegesen könyvelt</SelectItem>
-                    <SelectItem value="DRAFT_ONLY">Csak javaslatok / piszkozatok</SelectItem>
+                    <SelectItem value="ALL_ACTIVE">{t('accounting:subledger.filters.status_all_active', 'Összes (Könyvelt + Javaslat)')}</SelectItem>
+                    <SelectItem value="POSTED_ONLY">{t('accounting:subledger.filters.status_posted_only', 'Csak véglegesen könyvelt')}</SelectItem>
+                    <SelectItem value="DRAFT_ONLY">{t('accounting:subledger.filters.status_drafts_only', 'Csak javaslatok / piszkozatok')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -664,10 +670,10 @@ export default function SubledgerPage() {
               <div className="w-full sm:w-[210px]">
                 <Select value={selectedGlAccountId} onValueChange={setSelectedGlAccountId}>
                   <SelectTrigger className="text-xs">
-                    <SelectValue placeholder="Főkönyvi számla..." />
+                    <SelectValue placeholder={t('accounting:subledger.filters.gl_placeholder', 'Főkönyvi számla...')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    <SelectItem value="all">Összes analitikus számla</SelectItem>
+                    <SelectItem value="all">{t('accounting:subledger.filters.all_accounts', 'Összes analitikus számla')}</SelectItem>
                     {accounts.map((acc: any) => (
                       <SelectItem key={acc.id} value={acc.id}>
                         {acc.gl_number} - {acc.short_name}
@@ -681,10 +687,10 @@ export default function SubledgerPage() {
               <div className="w-full sm:w-[210px]">
                 <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
                   <SelectTrigger className="text-xs">
-                    <SelectValue placeholder="Partner..." />
+                    <SelectValue placeholder={t('accounting:subledger.filters.partner_placeholder', 'Partner...')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    <SelectItem value="all">Minden partner</SelectItem>
+                    <SelectItem value="all">{t('accounting:subledger.filters.all_partners', 'Minden partner')}</SelectItem>
                     {partners.map((p: any) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}
@@ -698,7 +704,7 @@ export default function SubledgerPage() {
               <div className="relative w-full sm:w-[200px]">
                 <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Keresés bizonylat, név..."
+                  placeholder={t('accounting:subledger.filters.search_placeholder', 'Keresés bizonylat, név...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8 text-xs h-9"
@@ -715,7 +721,10 @@ export default function SubledgerPage() {
           <div className="flex flex-wrap items-center gap-6 text-sm">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="bg-indigo-500/30 text-white border border-indigo-400/40 font-semibold px-2.5 py-1">
-                {selectionTotals.count} számla ({selectionTotals.itemCount} tétel) kijelölve
+                {t('accounting:subledger.floating_bar.selected_count', '{{count}} számla ({{itemCount}} tétel) kijelölve', {
+                  count: selectionTotals.count,
+                  itemCount: selectionTotals.itemCount,
+                })}
               </Badge>
               {selectionTotals.isMultiCurrency && (
                 <Badge
@@ -723,24 +732,24 @@ export default function SubledgerPage() {
                   className="bg-amber-500/20 text-amber-200 border-amber-500/40 text-[11px] font-medium flex items-center gap-1.5 px-2 py-0.5"
                 >
                   <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Vegyes devizájú kijelölés: az egyenleg könyvviteli forintértéken (HUF) számítódik</span>
+                  <span>{t('accounting:subledger.floating_bar.multi_currency_warning', 'Vegyes devizájú kijelölés: az egyenleg könyvviteli forintértéken (HUF) számítódik')}</span>
                 </Badge>
               )}
             </div>
 
             <div className="flex items-center gap-4 text-xs font-mono">
               <div>
-                <span className="text-indigo-300">∑ Tartozik (T): </span>
+                <span className="text-indigo-300">{t('accounting:subledger.floating_bar.sum_debit', '∑ Tartozik (T): ')}</span>
                 <span className="font-bold text-white">{formatCurrency(selectionTotals.sumT, 'HUF')}</span>
               </div>
               <div className="text-indigo-500">|</div>
               <div>
-                <span className="text-indigo-300">∑ Követel (K): </span>
+                <span className="text-indigo-300">{t('accounting:subledger.floating_bar.sum_credit', '∑ Követel (K): ')}</span>
                 <span className="font-bold text-white">{formatCurrency(selectionTotals.sumK, 'HUF')}</span>
               </div>
               <div className="text-indigo-500">|</div>
               <div>
-                <span className="text-indigo-300">Egyenleg (∑T-∑K): </span>
+                <span className="text-indigo-300">{t('accounting:subledger.floating_bar.balance_formula', 'Egyenleg (∑T-∑K): ')}</span>
                 <span
                   className={`font-bold ${
                     selectionTotals.isBalanced
@@ -771,7 +780,7 @@ export default function SubledgerPage() {
                 className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs flex items-center gap-1.5"
               >
                 <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Könyvelés ({selectionTotals.draftInvoices.length} számla)</span>
+                <span>{t('accounting:subledger.floating_bar.batch_post_btn', 'Könyvelés ({{count}} számla)', { count: selectionTotals.draftInvoices.length })}</span>
               </Button>
             )}
 
@@ -787,7 +796,7 @@ export default function SubledgerPage() {
               ) : (
                 <Link2 className="w-3.5 h-3.5" />
               )}
-              <span>Párosítás / Rendezés</span>
+              <span>{t('accounting:subledger.floating_bar.pair_btn', 'Párosítás / Rendezés')}</span>
             </Button>
 
             {/* Rounding write-off trigger if difference <= 10 Ft */}
@@ -799,7 +808,7 @@ export default function SubledgerPage() {
                 className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium flex items-center gap-1.5 text-xs"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Kerekítés leírása</span>
+                <span>{t('accounting:subledger.floating_bar.write_off_rounding_btn', 'Kerekítés leírása')}</span>
               </Button>
             )}
 
@@ -810,7 +819,7 @@ export default function SubledgerPage() {
               onClick={() => setSelectedGroupKeys(new Set())}
               className="text-indigo-300 hover:text-white hover:bg-white/10 text-xs"
             >
-              Mégse
+              {t('accounting:subledger.floating_bar.cancel_btn', 'Mégse')}
             </Button>
           </div>
         </div>
@@ -831,8 +840,8 @@ export default function SubledgerPage() {
                       className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                       title={
                         expandedGroupKeys.size === groupedInvoices.length && groupedInvoices.length > 0
-                          ? 'Összes becsukása'
-                          : 'Összes lenyitása'
+                          ? t('accounting:subledger.table.collapse_all', 'Összes becsukása')
+                          : t('accounting:subledger.table.expand_all', 'Összes lenyitása')
                       }
                     >
                       {expandedGroupKeys.size === groupedInvoices.length && groupedInvoices.length > 0 ? (
@@ -850,18 +859,18 @@ export default function SubledgerPage() {
                     />
                   </div>
                 </th>
-                <th className="p-3">Státusz</th>
-                <th className="p-3">Számlasorszám</th>
-                <th className="p-3">Napló</th>
-                <th className="p-3">Könyvelés</th>
-                <th className="p-3">Esedékesség</th>
-                <th className="p-3">Partner</th>
-                <th className="p-3 text-right">Nettó</th>
-                <th className="p-3 text-right">ÁFA</th>
-                <th className="p-3 text-right">Bruttó összeg</th>
-                <th className="p-3 text-right">Rendezve</th>
-                <th className="p-3 text-right">Nyitott összeg</th>
-                <th className="p-3 text-center">Műveletek</th>
+                <th className="p-3">{t('accounting:subledger.table.status', 'Státusz')}</th>
+                <th className="p-3">{t('accounting:subledger.table.doc_id', 'Számlasorszám')}</th>
+                <th className="p-3">{t('accounting:subledger.table.journal', 'Napló')}</th>
+                <th className="p-3">{t('accounting:subledger.table.posting', 'Könyvelés')}</th>
+                <th className="p-3">{t('accounting:subledger.table.due_date', 'Esedékesség')}</th>
+                <th className="p-3">{t('accounting:subledger.table.partner', 'Partner')}</th>
+                <th className="p-3 text-right">{t('accounting:subledger.table.net', 'Nettó')}</th>
+                <th className="p-3 text-right">{t('accounting:subledger.table.vat', 'ÁFA')}</th>
+                <th className="p-3 text-right">{t('accounting:subledger.table.gross_amount', 'Bruttó összeg')}</th>
+                <th className="p-3 text-right">{t('accounting:subledger.table.settled', 'Rendezve')}</th>
+                <th className="p-3 text-right">{t('accounting:subledger.table.open_amount', 'Nyitott összeg')}</th>
+                <th className="p-3 text-center">{t('accounting:subledger.table.actions', 'Műveletek')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -869,15 +878,15 @@ export default function SubledgerPage() {
                 <tr>
                   <td colSpan={13} className="py-12 text-center text-muted-foreground">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-600" />
-                    Folyószámla adatok betöltése...
+                    {t('accounting:subledger.table.loading', 'Folyószámla adatok betöltése...')}
                   </td>
                 </tr>
               ) : groupedInvoices.length === 0 ? (
                 <tr>
                   <td colSpan={13} className="py-12 text-center text-muted-foreground space-y-2">
-                    <div className="text-sm font-medium">Nincs a megadott szűrési feltételeknek megfelelő folyószámla számla.</div>
+                    <div className="text-sm font-medium">{t('accounting:subledger.table.empty_title', 'Nincs a megadott szűrési feltételeknek megfelelő folyószámla számla.')}</div>
                     <div className="text-xs text-muted-foreground max-w-md mx-auto">
-                      Próbáld meg módosítani a dátumtartományt, a partner szűrőt, vagy váltsd át a könyvelési státuszt az <strong>„Összes (Könyvelt + Javaslat)”</strong> opcióra.
+                      {t('accounting:subledger.table.empty_desc', 'Próbáld meg módosítani a dátumtartományt, a partner szűrőt, vagy váltsd át a könyvelési státuszt az „Összes (Könyvelt + Javaslat)” opcióra.')}
                     </div>
                   </td>
                 </tr>
@@ -907,7 +916,7 @@ export default function SubledgerPage() {
                               size="sm"
                               onClick={() => handleToggleExpand(inv.group_key)}
                               className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                              title={isExpanded ? 'Tételek becsukása' : 'Tételek lenyitása'}
+                              title={isExpanded ? t('accounting:subledger.table.collapse_all', 'Tételek becsukása') : t('accounting:subledger.table.expand_all', 'Tételek lenyitása')}
                             >
                               {isExpanded ? (
                                 <ChevronDown className="w-3.5 h-3.5 text-indigo-600" />
@@ -927,21 +936,21 @@ export default function SubledgerPage() {
                           <div className="flex items-center gap-1.5">
                             {inv.is_settled ? (
                               <Badge variant="outline" className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[10px]">
-                                Zárt
+                                {t('accounting:subledger.table.status_closed', 'Zárt')}
                               </Badge>
                             ) : inv.settled_amount > 0 ? (
                               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 text-[10px]">
-                                Részben
+                                {t('accounting:subledger.table.status_partial', 'Részben')}
                               </Badge>
                             ) : (
                               <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px]">
-                                Nyitott
+                                {t('accounting:subledger.table.status_open', 'Nyitott')}
                               </Badge>
                             )}
 
                             {inv.status === 'GEPI_JAVASLAT' && (
                               <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
-                                Javaslat
+                                {t('accounting:subledger.table.status_draft', 'Javaslat')}
                               </Badge>
                             )}
                           </div>
@@ -962,7 +971,7 @@ export default function SubledgerPage() {
                                 variant="secondary"
                                 className="bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 text-[10px] font-semibold px-1.5 py-0"
                               >
-                                {inv.items.length} tétel
+                                {t('accounting:subledger.table.items_count_badge', '{{count}} tétel', { count: inv.items.length })}
                               </Badge>
                             )}
                           </div>
@@ -995,7 +1004,7 @@ export default function SubledgerPage() {
                               <span>{inv.due_date}</span>
                               {isOverdue && (
                                 <Badge variant="destructive" className="text-[9px] px-1 py-0 font-sans">
-                                  Lejárt
+                                  {t('accounting:subledger.table.status_overdue', 'Lejárt')}
                                 </Badge>
                               )}
                             </div>
@@ -1120,11 +1129,11 @@ export default function SubledgerPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleOpenPostSingle(inv)}
-                                title="Kontírozás ellenőrzése és könyvelése"
+                                title={t('accounting:subledger.table.tooltip_post', 'Kontírozás ellenőrzése és könyvelése')}
                                 className="h-7 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 text-[11px] font-medium flex items-center gap-1"
                               >
                                 <FileCheck className="w-3.5 h-3.5 text-indigo-600" />
-                                <span>Könyvelés</span>
+                                <span>{t('accounting:subledger.table.btn_post', 'Könyvelés')}</span>
                               </Button>
                             )}
 
@@ -1135,13 +1144,13 @@ export default function SubledgerPage() {
                               onClick={() => handleOpenEdit(inv)}
                               title={
                                 inv.status === 'GEPI_JAVASLAT'
-                                  ? 'Számla tételeinek és kontírjainak szerkesztése'
-                                  : 'Lekönyvelt számla visszanyitása és módosítása'
+                                  ? t('accounting:subledger.table.tooltip_edit_draft', 'Számla tételeinek és kontírjainak szerkesztése')
+                                  : t('accounting:subledger.table.tooltip_edit_posted', 'Lekönyvelt számla visszanyitása és módosítása')
                               }
                               className="h-7 px-2 text-slate-700 hover:text-slate-900 dark:text-slate-300 hover:bg-muted"
                             >
                               <Edit3 className="w-3.5 h-3.5 mr-1 text-slate-500" />
-                              <span className="text-[11px]">Módosítás</span>
+                              <span className="text-[11px]">{t('accounting:subledger.table.btn_edit', 'Módosítás')}</span>
                             </Button>
 
                             {/* Matches inspection */}
@@ -1150,7 +1159,7 @@ export default function SubledgerPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setActiveItemForMatches(inv.items[0])}
-                                title={`Párosítások megtekintése (${inv.match_count})`}
+                                title={t('accounting:subledger.table.tooltip_matches', 'Párosítások megtekintése ({{count}})', { count: inv.match_count })}
                                 className="h-7 px-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
                               >
                                 <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
@@ -1164,7 +1173,7 @@ export default function SubledgerPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setActiveItemForWriteOff(inv.items[0])}
-                                title="Különbözet leírása (Kerekítés vagy Árfolyam)"
+                                title={t('accounting:subledger.table.tooltip_write_off', 'Különbözet leírása (Kerekítés vagy Árfolyam)')}
                                 className="h-7 px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
                               >
                                 <Sparkles className="w-3.5 h-3.5" />
@@ -1187,20 +1196,20 @@ export default function SubledgerPage() {
                                   </div>
                                   <div>
                                     <div className="font-bold text-foreground text-sm flex items-center gap-2">
-                                      <span>Számla tételei ({inv.items.length} tétel)</span>
+                                      <span>{t('accounting:subledger.table.expanded_title', 'Számla tételei ({{count}} tétel)', { count: inv.items.length })}</span>
                                       <span className="font-mono text-xs text-muted-foreground font-normal">
                                         — {inv.document_id}
                                       </span>
                                     </div>
                                     <div className="text-xs text-muted-foreground">
-                                      A teljes számlához tartozó számlatételek és azok főkönyvi kontírozása
+                                      {t('accounting:subledger.table.expanded_desc', 'A teljes számlához tartozó számlatételek és azok főkönyvi kontírozása')}
                                     </div>
                                   </div>
                                 </div>
 
                                 <div className="flex items-center gap-4 text-xs font-mono bg-muted/50 px-3 py-1.5 rounded-lg border">
                                   <span>
-                                    Nettó:{' '}
+                                    {t('accounting:subledger.table.net', 'Nettó')}:{' '}
                                     <strong className="text-foreground">
                                       {isForeign
                                         ? `${formatCurrency(inv.foreign_net_amount ?? 0, inv.currency)} (${formatCurrency(inv.net_amount, 'HUF')})`
@@ -1209,7 +1218,7 @@ export default function SubledgerPage() {
                                   </span>
                                   <span className="text-muted-foreground">|</span>
                                   <span>
-                                    ÁFA:{' '}
+                                    {t('accounting:subledger.table.vat', 'ÁFA')}:{' '}
                                     <strong className="text-indigo-600 dark:text-indigo-400">
                                       {isForeign
                                         ? `${formatCurrency(inv.foreign_vat_amount ?? 0, inv.currency)} (${formatCurrency(inv.vat_amount, 'HUF')})`
@@ -1218,7 +1227,7 @@ export default function SubledgerPage() {
                                   </span>
                                   <span className="text-muted-foreground">|</span>
                                   <span>
-                                    Bruttó:{' '}
+                                    {t('accounting:subledger.table.gross_amount', 'Bruttó')}:{' '}
                                     <strong className="text-foreground">
                                       {isForeign
                                         ? `${formatCurrency(inv.foreign_amount ?? inv.amount, inv.currency)} (${formatCurrency(inv.amount, 'HUF')})`
@@ -1265,7 +1274,7 @@ export default function SubledgerPage() {
 
                                         <div className="flex items-center gap-3 font-mono text-[11px]">
                                           <span className="text-muted-foreground">
-                                            Nettó:{' '}
+                                            {t('accounting:subledger.table.net', 'Nettó')}:{' '}
                                             <strong className="text-foreground">
                                               {itemAmounts.isForeign
                                                 ? `${formatCurrency(itemAmounts.foreignNet ?? 0, item.currency)} (${formatCurrency(item.net_amount, 'HUF')})`
@@ -1274,7 +1283,7 @@ export default function SubledgerPage() {
                                           </span>
                                           <span className="text-muted-foreground">|</span>
                                           <span className="text-muted-foreground">
-                                            ÁFA:{' '}
+                                            {t('accounting:subledger.table.vat', 'ÁFA')}:{' '}
                                             <strong className="text-indigo-600 dark:text-indigo-400">
                                               {itemAmounts.isForeign
                                                 ? `${formatCurrency(itemAmounts.foreignVat ?? 0, item.currency)} (${formatCurrency(item.vat_amount, 'HUF')})`
@@ -1283,7 +1292,7 @@ export default function SubledgerPage() {
                                           </span>
                                           <span className="text-muted-foreground">|</span>
                                           <span className="text-muted-foreground">
-                                            Bruttó:{' '}
+                                            {t('accounting:subledger.table.gross_amount', 'Bruttó')}:{' '}
                                             <strong className="text-foreground">
                                               {itemAmounts.isForeign
                                                 ? `${formatCurrency(itemAmounts.foreignGross ?? item.amount, item.currency)} (${formatCurrency(item.amount, 'HUF')})`
@@ -1296,18 +1305,18 @@ export default function SubledgerPage() {
                                       {/* Kontírozási sorok az adott tételhez */}
                                       <div className="p-2.5">
                                         <div className="text-[11px] text-muted-foreground mb-1.5 font-medium px-1 flex items-center justify-between">
-                                          <span>Kontírozás (Főkönyvi könyvelési sorok: T / K):</span>
-                                          <span className="font-mono text-[10px]">{itemLines.length} sor</span>
+                                          <span>{t('accounting:subledger.table.expanded_lines_title', 'Kontírozás (Főkönyvi könyvelési sorok: T / K):')}</span>
+                                          <span className="font-mono text-[10px]">{t('accounting:subledger.table.expanded_lines_count', '{{count}} sor', { count: itemLines.length })}</span>
                                         </div>
                                         <table className="w-full text-xs text-left border-collapse">
                                           <thead>
                                             <tr className="bg-muted/30 border-b text-muted-foreground font-semibold text-[10px]">
-                                              <th className="p-1.5 w-8 text-center">#</th>
-                                              <th className="p-1.5 w-12 text-center">T/K</th>
-                                              <th className="p-1.5 min-w-[200px]">Főkönyvi számla</th>
-                                              <th className="p-1.5 w-24">ÁFA szerep</th>
-                                              <th className="p-1.5 text-right w-32">Összeg</th>
-                                              <th className="p-1.5">Sor leírása</th>
+                                              <th className="p-1.5 w-8 text-center">{t('accounting:subledger.table.col_seq', '#')}</th>
+                                              <th className="p-1.5 w-12 text-center">{t('accounting:subledger.table.col_dc', 'T/K')}</th>
+                                              <th className="p-1.5 min-w-[200px]">{t('accounting:subledger.table.gl_account', 'Főkönyvi számla')}</th>
+                                              <th className="p-1.5 w-24">{t('accounting:subledger.table.col_vat_role', 'ÁFA szerep')}</th>
+                                              <th className="p-1.5 text-right w-32">{t('accounting:subledger.table.col_amount', 'Összeg')}</th>
+                                              <th className="p-1.5">{t('accounting:subledger.table.col_desc', 'Sor leírása')}</th>
                                             </tr>
                                           </thead>
                                           <tbody className="divide-y divide-border/40 text-[11px]">
@@ -1416,22 +1425,27 @@ export default function SubledgerPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-amber-500" />
-              <span>Számla visszanyitása módosításra</span>
+              <span>{t('accounting:subledger.unpost_dialog.title', 'Számla visszanyitása módosításra')}</span>
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2 text-xs text-muted-foreground pt-1">
               <div>
-                A(z) <strong className="text-foreground">{unpostConfirmInvoice?.document_id}</strong> számlasorszámú bizonylat ({unpostConfirmInvoice?.items.length || 1} tétel) már le van könyvelve ({unpostConfirmInvoice?.journal_code}-{unpostConfirmInvoice?.journal_number}).
+                {t('accounting:subledger.unpost_dialog.body_part1', 'A(z) {{docId}} számlasorszámú bizonylat ({{count}} tétel) már le van könyvelve ({{journalCode}}-{{journalNumber}}).', {
+                  docId: unpostConfirmInvoice?.document_id,
+                  count: unpostConfirmInvoice?.items.length || 1,
+                  journalCode: unpostConfirmInvoice?.journal_code,
+                  journalNumber: unpostConfirmInvoice?.journal_number || 0,
+                })}
               </div>
               <div>
-                A módosításhoz a rendszer visszanyitja a számla tételeit szerkeszthető piszkozat státuszba (nyitott pénzügyi időszakban). A bizonylat naplósorszáma megmarad, a javítások után a számla újból lekönyvelhető.
+                {t('accounting:subledger.unpost_dialog.body_part2', 'A módosításhoz a rendszer visszanyitja a számla tételeit szerkeszthető piszkozat státuszba (nyitott pénzügyi időszakban). A bizonylat naplósorszáma megmarad, a javítások után a számla újból lekönyvelhető.')}
               </div>
               <div className="font-semibold text-foreground pt-1">
-                Biztosan vissza szeretnéd nyitni a számlát módosításra?
+                {t('accounting:subledger.unpost_dialog.confirm_question', 'Biztosan vissza szeretnéd nyitni a számlát módosításra?')}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={unpostMutation.isPending}>Mégse</AlertDialogCancel>
+            <AlertDialogCancel disabled={unpostMutation.isPending}>{t('accounting:subledger.unpost_dialog.cancel_btn', 'Mégse')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmUnpost}
               disabled={unpostMutation.isPending}
@@ -1442,7 +1456,7 @@ export default function SubledgerPage() {
               ) : (
                 <Edit3 className="w-4 h-4 mr-1.5" />
               )}
-              <span>Visszanyitás és Módosítás</span>
+              <span>{t('accounting:subledger.unpost_dialog.confirm_btn', 'Visszanyitás és Módosítás')}</span>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

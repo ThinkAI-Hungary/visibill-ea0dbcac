@@ -1,4 +1,5 @@
-﻿import { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ interface InventoryCheckDialogProps {
 }
 
 export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCheckDialogProps) {
+  const { t } = useTranslation(['hr', 'common']);
   const { toast } = useToast();
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -71,7 +73,7 @@ export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCh
         user_id: user.id,
         event_type: 'inventory_check' as const,
         event_date: new Date().toISOString().split('T')[0],
-        description: 'Leltár — Fellelve ✅',
+        description: t('hr:fixed_assets.inventory_dialog.event_found', 'Leltár — Fellelve ✅'),
       }));
 
       const { error } = await supabase
@@ -100,7 +102,7 @@ export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCh
           user_id: user.id,
           event_type: 'inventory_check' as const,
           event_date: new Date().toISOString().split('T')[0],
-          description: 'Leltár — Nem fellelve ❌',
+          description: t('hr:fixed_assets.inventory_dialog.event_missing', 'Leltár — Nem fellelve ❌'),
         }));
 
         await supabase.from('asset_events').insert(missingEvents);
@@ -112,17 +114,28 @@ export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCh
 
       const foundCount = checkedIds.size;
       const missingCount = missingIds.length;
+      const missingPart = missingCount > 0
+        ? t('hr:fixed_assets.inventory_dialog.toast_missing_part', { defaultValue: `, ${missingCount} hiányzik`, missing: missingCount })
+        : '';
 
       toast({
-        title: 'Leltár rögzítve',
-        description: `${foundCount} fellelve${missingCount > 0 ? `, ${missingCount} hiányzik` : ''}.`,
+        title: t('hr:fixed_assets.inventory_dialog.toast_success_title', 'Leltár rögzítve'),
+        description: t('hr:fixed_assets.inventory_dialog.toast_success_desc', {
+          defaultValue: `${foundCount} fellelve${missingPart}.`,
+          found: foundCount,
+          missingDesc: missingPart,
+        }),
       });
 
       onOpenChange(false);
       setCheckedIds(new Set());
       setSearch('');
     } catch (error: any) {
-      toast({ title: 'Hiba', description: error?.message || 'Leltár rögzítése sikertelen.', variant: 'destructive' });
+      toast({
+        title: t('common:status.error', 'Hiba'),
+        description: error?.message || t('common:status.error', 'Leltár rögzítése sikertelen.'),
+        variant: 'destructive',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -138,10 +151,10 @@ export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCh
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-primary" />
-            Leltár Ellenőrzés
+            {t('hr:fixed_assets.inventory_dialog.title', 'Leltár Ellenőrzés')}
           </DialogTitle>
           <DialogDescription>
-            Jelöld be a fizikailag fellelve eszközöket. A nem kijelölt eszközök "Hiányzik" státuszt kapnak.
+            {t('hr:fixed_assets.inventory_dialog.desc', 'Jelöld be a fizikailag fellelve eszközöket. A nem kijelölt eszközök "Hiányzik" státuszt kapnak.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -149,14 +162,14 @@ export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCh
         <div className="flex gap-3 text-sm">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/10 text-success">
             <CheckCircle2 className="h-3.5 w-3.5" />
-            Fellelve: {foundCount}
+            {t('hr:fixed_assets.inventory_dialog.found_badge', { defaultValue: `Fellelve: ${foundCount}`, count: foundCount })}
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive">
             <AlertCircle className="h-3.5 w-3.5" />
-            Hiányzik: {missingCount > 0 ? missingCount : 0}
+            {t('hr:fixed_assets.inventory_dialog.missing_badge', { defaultValue: `Hiányzik: ${missingCount > 0 ? missingCount : 0}`, count: missingCount > 0 ? missingCount : 0 })}
           </div>
           <div className="text-muted-foreground px-2 py-1.5">
-            Összesen: {activeAssets.length} aktív eszköz
+            {t('hr:fixed_assets.inventory_dialog.total_active', { defaultValue: `Összesen: ${activeAssets.length} aktív eszköz`, count: activeAssets.length })}
           </div>
         </div>
 
@@ -164,7 +177,7 @@ export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCh
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Keresés leltári szám, név vagy helyszín alapján..."
+            placeholder={t('hr:fixed_assets.inventory_dialog.search_placeholder', 'Keresés leltári szám, név vagy helyszín alapján...')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9 h-9"
@@ -179,10 +192,10 @@ export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCh
                 <TableHead className="w-10">
                   <Checkbox checked={allChecked} onCheckedChange={toggleAll} />
                 </TableHead>
-                <TableHead className="font-semibold">Leltári Szám</TableHead>
-                <TableHead className="font-semibold">Megnevezés</TableHead>
-                <TableHead className="font-semibold">Helyszín</TableHead>
-                <TableHead className="text-center font-semibold w-[80px]">Státusz</TableHead>
+                <TableHead className="font-semibold">{t('hr:fixed_assets.inventory_dialog.col_inv_number', 'Leltári Szám')}</TableHead>
+                <TableHead className="font-semibold">{t('hr:fixed_assets.inventory_dialog.col_name', 'Megnevezés')}</TableHead>
+                <TableHead className="font-semibold">{t('hr:fixed_assets.inventory_dialog.col_location', 'Helyszín')}</TableHead>
+                <TableHead className="text-center font-semibold w-[80px]">{t('hr:fixed_assets.inventory_dialog.col_status', 'Státusz')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -208,7 +221,7 @@ export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCh
                       </span>
                     ) : (
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ASSET_STATUS_COLORS[asset.status]}`}>
-                        {ASSET_STATUS_LABELS[asset.status]}
+                        {t(`hr:fixed_assets.statuses.${asset.status}`, ASSET_STATUS_LABELS[asset.status])}
                       </span>
                     )}
                   </TableCell>
@@ -219,14 +232,16 @@ export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCh
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Mégse</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common:actions.cancel', 'Mégse')}</Button>
           <Button
             onClick={handleSubmit}
             disabled={submitting || checkedIds.size === 0}
             className="gap-2"
           >
             <ShieldCheck className="h-4 w-4" />
-            {submitting ? 'Rögzítés...' : `Leltár rögzítése (${foundCount} fellelve)`}
+            {submitting
+              ? t('hr:fixed_assets.inventory_dialog.submitting', 'Rögzítés...')
+              : t('hr:fixed_assets.inventory_dialog.btn_submit', { defaultValue: `Leltár rögzítése (${foundCount} fellelve)`, count: foundCount })}
           </Button>
         </DialogFooter>
       </DialogContent>

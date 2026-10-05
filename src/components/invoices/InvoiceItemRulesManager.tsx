@@ -172,7 +172,7 @@ export function InvoiceItemRulesManager({
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['invoice_item_rules', companyId] });
     } catch (e: any) {
-      toast({ title: 'Hiba a státusz módosításakor', description: e.message, variant: 'destructive' });
+      toast({ title: t('invoices:item_rules.toast_status_error', 'Hiba a státusz módosításakor'), description: e.message, variant: 'destructive' });
     }
   };
 
@@ -184,10 +184,10 @@ export function InvoiceItemRulesManager({
         .eq('id', ruleId);
 
       if (error) throw error;
-      toast({ title: 'Szabály törölve' });
+      toast({ title: t('invoices:item_rules.toast_deleted', 'Szabály törölve') });
       queryClient.invalidateQueries({ queryKey: ['invoice_item_rules', companyId] });
     } catch (e: any) {
-      toast({ title: 'Hiba a törléskor', description: e.message, variant: 'destructive' });
+      toast({ title: t('invoices:item_rules.toast_delete_error', 'Hiba a törléskor'), description: e.message, variant: 'destructive' });
     }
   };
 
@@ -224,19 +224,19 @@ export function InvoiceItemRulesManager({
           .update(payload)
           .eq('id', editingRule.id);
         if (error) throw error;
-        toast({ title: 'Szabály sikeresen frissítve' });
+        toast({ title: t('invoices:item_rules.toast_updated', 'Szabály sikeresen frissítve') });
       } else {
         const { error } = await supabase
           .from('invoice_item_rules' as any)
           .insert([payload]);
         if (error) throw error;
-        toast({ title: 'Új szabály létrehozva' });
+        toast({ title: t('invoices:item_rules.toast_created', 'Új szabály létrehozva') });
       }
 
       queryClient.invalidateQueries({ queryKey: ['invoice_item_rules', companyId] });
       setViewMode('list');
     } catch (e: any) {
-      toast({ title: 'Mentési hiba', description: e.message, variant: 'destructive' });
+      toast({ title: t('invoices:item_rules.toast_save_error', 'Mentési hiba'), description: e.message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -257,10 +257,10 @@ export function InvoiceItemRulesManager({
 
       const total = (data as any)?.total_updated || 0;
       toast({
-        title: 'Szabályok alkalmazása befejeződött',
+        title: t('invoices:item_rules.toast_applied_title', 'Szabályok alkalmazása befejeződött'),
         description: total > 0
-          ? `${total} számlatétel automatikusan besorolva a szabályok alapján.`
-          : 'Nem található olyan besorolatlan számlatétel, amely megfelelt a szabályoknak.',
+          ? t('invoices:item_rules.toast_applied_desc', { count: total, defaultValue: `${total} számlatétel automatikusan besorolva a szabályok alapján.` })
+          : t('invoices:item_rules.toast_applied_none', 'Nem található olyan besorolatlan számlatétel, amely megfelelt a szabályoknak.'),
       });
 
       queryClient.invalidateQueries({ queryKey: ['invoiceItems'] });
@@ -269,7 +269,7 @@ export function InvoiceItemRulesManager({
       queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices'] });
       queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
     } catch (e: any) {
-      toast({ title: 'Hiba a szabályok futtatásakor', description: e.message, variant: 'destructive' });
+      toast({ title: t('invoices:item_rules.toast_apply_error', 'Hiba a szabályok futtatásakor'), description: e.message, variant: 'destructive' });
     } finally {
       setApplyingRules(false);
     }
@@ -298,31 +298,31 @@ export function InvoiceItemRulesManager({
             {asDialog ? (
               <DialogTitle className="text-base font-bold text-foreground">
                 {viewMode === 'list'
-                  ? 'Számlakontírozási Szabályok'
+                  ? t('invoices:item_rules.title_rules', 'Számlakontírozási Szabályok')
                   : editingRule
-                  ? 'Számlaszabály szerkesztése'
-                  : 'Új számlakontírozási szabály létrehozása'}
+                  ? t('invoices:item_rules.title_edit', 'Számlaszabály szerkesztése')
+                  : t('invoices:item_rules.title_new', 'Új számlakontírozási szabály létrehozása')}
               </DialogTitle>
             ) : (
               <h3 className="text-base font-bold text-foreground">
                 {viewMode === 'list'
-                  ? 'Számlakontírozási Szabályok'
+                  ? t('invoices:item_rules.title_rules', 'Számlakontírozási Szabályok')
                   : editingRule
-                  ? 'Számlaszabály szerkesztése'
-                  : 'Új számlakontírozási szabály létrehozása'}
+                  ? t('invoices:item_rules.title_edit', 'Számlaszabály szerkesztése')
+                  : t('invoices:item_rules.title_new', 'Új számlakontírozási szabály létrehozása')}
               </h3>
             )}
             {asDialog ? (
               <DialogDescription className="text-xs text-muted-foreground">
                 {viewMode === 'list'
-                  ? 'Automatikus tételszintű szabályok számlákhoz (főkönyvi szám és áfakód hozzárendelés).'
-                  : 'Állítsd be a keresendő mintát és a hozzárendelt könyvelési adatokat.'}
+                  ? t('invoices:item_rules.desc_list', 'Automatikus tételszintű szabályok számlákhoz (főkönyvi szám és áfakód hozzárendelés).')
+                  : t('invoices:item_rules.desc_form', 'Állítsd be a keresendő mintát és a hozzárendelt könyvelési adatokat.')}
               </DialogDescription>
             ) : (
               <p className="text-xs text-muted-foreground">
                 {viewMode === 'list'
-                  ? 'Automatikus tételszintű szabályok számlákhoz (főkönyvi szám és áfakód hozzárendelés).'
-                  : 'Állítsd be a keresendő mintát és a hozzárendelt könyvelési adatokat.'}
+                  ? t('invoices:item_rules.desc_list', 'Automatikus tételszintű szabályok számlákhoz (főkönyvi szám és áfakód hozzárendelés).')
+                  : t('invoices:item_rules.desc_form', 'Állítsd be a keresendő mintát és a hozzárendelt könyvelési adatokat.')}
               </p>
             )}
           </div>
@@ -342,7 +342,7 @@ export function InvoiceItemRulesManager({
               ) : (
                 <Play className="w-3.5 h-3.5" />
               )}
-              Szabályok futtatása
+              {t('invoices:item_rules.btn_run', 'Szabályok futtatása')}
             </Button>
             <Button
               size="sm"
@@ -350,7 +350,7 @@ export function InvoiceItemRulesManager({
               className="h-8 gap-1 text-xs bg-primary hover:bg-primary/90"
             >
               <Plus className="w-3.5 h-3.5" />
-              Új szabály
+              {t('invoices:item_rules.btn_new', 'Új szabály')}
             </Button>
           </div>
         ) : (
@@ -361,7 +361,7 @@ export function InvoiceItemRulesManager({
             className="h-8 gap-1 text-xs self-start sm:self-auto"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Vissza a listához
+            {t('invoices:item_rules.btn_back', 'Vissza a listához')}
           </Button>
         )}
       </div>
@@ -373,7 +373,7 @@ export function InvoiceItemRulesManager({
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Keresés szabálynév, minta, főkönyvi szám vagy partner alapján..."
+              placeholder={t('invoices:item_rules.search_placeholder', 'Keresés szabálynév, minta, főkönyvi szám vagy partner alapján...')}
               className="pl-8 text-xs h-8"
             />
           </div>
@@ -386,9 +386,9 @@ export function InvoiceItemRulesManager({
             ) : filteredRules.length === 0 ? (
               <div className="text-center p-8 border border-dashed rounded-lg text-muted-foreground space-y-2">
                 <Sparkles className="w-8 h-8 mx-auto opacity-40" />
-                <p className="text-xs font-medium">Nincs rögzített számlaszabály</p>
+                <p className="text-xs font-medium">{t('invoices:item_rules.empty_title', 'Nincs rögzített számlaszabály')}</p>
                 <p className="text-[11px]">
-                  Kontírozz számlát a felületen a gyors szabálymentéshez, vagy hozz létre egy újat a fenti gombbal.
+                  {t('invoices:item_rules.empty_desc', 'Kontírozz számlát a felületen a gyors szabálymentéshez, vagy hozz létre egy újat a fenti gombbal.')}
                 </p>
               </div>
             ) : (
@@ -427,11 +427,11 @@ export function InvoiceItemRulesManager({
                         >
                           {rule.scope === 'tenant' ? (
                             <>
-                              <Globe className="w-2.5 h-2.5 text-amber-500" /> Iroda
+                              <Globe className="w-2.5 h-2.5 text-amber-500" /> {t('invoices:item_rules.scope_tenant', 'Iroda')}
                             </>
                           ) : (
                             <>
-                              <Building2 className="w-2.5 h-2.5" /> Cég
+                              <Building2 className="w-2.5 h-2.5" /> {t('invoices:item_rules.scope_company', 'Cég')}
                             </>
                           )}
                         </Badge>
@@ -439,12 +439,12 @@ export function InvoiceItemRulesManager({
 
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap">
                         <span>
-                          Minta: <code className="bg-muted px-1 rounded text-foreground font-mono">{rule.description_pattern}</code>
+                          {t('invoices:item_rules.label_pattern', 'Minta:')} <code className="bg-muted px-1 rounded text-foreground font-mono">{rule.description_pattern}</code>
                         </span>
                         {rule.partner_name && (
-                          <span>• Partner: {rule.partner_name}</span>
+                          <span>• {t('invoices:item_rules.label_partner', 'Partner:')} {rule.partner_name}</span>
                         )}
-                        <span>• Irány: {rule.direction === 'ALL' ? 'Összes' : rule.direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}</span>
+                        <span>• {t('invoices:item_rules.label_direction', 'Irány:')} {rule.direction === 'ALL' ? t('invoices:item_rules.dir_all', 'Összes') : rule.direction === 'INBOUND' ? t('invoices:item_rules.dir_inbound', 'Bejövő') : t('invoices:item_rules.dir_outbound', 'Kimenő')}</span>
                       </div>
                     </div>
 
@@ -458,7 +458,7 @@ export function InvoiceItemRulesManager({
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-foreground"
                         onClick={() => handleOpenEdit(rule)}
-                        title="Szerkesztés"
+                        title={t('invoices:item_rules.tooltip_edit', 'Szerkesztés')}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </Button>
@@ -467,7 +467,7 @@ export function InvoiceItemRulesManager({
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive"
                         onClick={() => handleDeleteRule(rule.id)}
-                        title="Törlés"
+                        title={t('invoices:item_rules.tooltip_delete', 'Törlés')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
@@ -481,34 +481,34 @@ export function InvoiceItemRulesManager({
       ) : (
         <div className="space-y-4 pt-2 pr-1">
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Szabály megnevezése</Label>
+            <Label className="text-xs font-medium">{t('invoices:item_rules.form_name_label', 'Szabály megnevezése')}</Label>
             <Input
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              placeholder="pl. Telekom számlák kontírozása"
+              placeholder={t('invoices:item_rules.form_name_placeholder', 'pl. Telekom számlák kontírozása')}
               className="text-xs h-8"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Keresendő szövegminta a tétel leírásában</Label>
+            <Label className="text-xs font-medium">{t('invoices:item_rules.form_pattern_label', 'Keresendő szövegminta a tétel leírásában')}</Label>
             <Input
               value={formPattern}
               onChange={(e) => setFormPattern(e.target.value)}
-              placeholder="pl. Telekom, Üzemanyag, Előfizetés..."
+              placeholder={t('invoices:item_rules.form_pattern_placeholder', 'pl. Telekom, Üzemanyag, Előfizetés...')}
               className="text-xs font-mono h-8"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Cél főkönyvi szám</Label>
+              <Label className="text-xs font-medium">{t('invoices:item_rules.form_gl_label', 'Cél főkönyvi szám')}</Label>
               <select
                 value={formGlAccountId}
                 onChange={(e) => setFormGlAccountId(e.target.value)}
                 className="w-full text-xs h-8 rounded-md border border-input bg-background px-2 font-mono"
               >
-                <option value="">Válassz főkönyvi számot...</option>
+                <option value="">{t('invoices:item_rules.form_gl_placeholder', 'Válassz főkönyvi számot...')}</option>
                 {glAccounts.map((gl: any) => (
                   <option key={gl.id} value={gl.id}>
                     {gl.gl_number} - {gl.short_name}
@@ -518,13 +518,13 @@ export function InvoiceItemRulesManager({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Cél áfakód (opcionális)</Label>
+              <Label className="text-xs font-medium">{t('invoices:item_rules.form_vat_label', 'Cél áfakód (opcionális)')}</Label>
               <select
                 value={formVatCodeId}
                 onChange={(e) => setFormVatCodeId(e.target.value)}
                 className="w-full text-xs h-8 rounded-md border border-input bg-background px-2 font-mono"
               >
-                <option value="">Nincs hozzárendelt áfakód</option>
+                <option value="">{t('invoices:item_rules.form_vat_none', 'Nincs hozzárendelt áfakód')}</option>
                 {vatCodes.map((vc: any) => (
                   <option key={vc.id} value={vc.id}>
                     {vc.code} {vc.description ? `(${vc.description})` : ''}
@@ -536,51 +536,51 @@ export function InvoiceItemRulesManager({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Számla iránya</Label>
+              <Label className="text-xs font-medium">{t('invoices:item_rules.form_dir_label', 'Számla iránya')}</Label>
               <select
                 value={formDirection}
                 onChange={(e: any) => setFormDirection(e.target.value)}
                 className="w-full text-xs h-8 rounded-md border border-input bg-background px-2"
               >
-                <option value="ALL">Összes számla (Bejövő & Kimenő)</option>
-                <option value="INBOUND">Csak Bejövő (Költség / Beszerzés)</option>
-                <option value="OUTBOUND">Csak Kimenő (Árbevétel / Értékesítés)</option>
+                <option value="ALL">{t('invoices:item_rules.form_dir_all', 'Összes számla (Bejövő & Kimenő)')}</option>
+                <option value="INBOUND">{t('invoices:item_rules.form_dir_inbound', 'Csak Bejövő (Költség / Beszerzés)')}</option>
+                <option value="OUTBOUND">{t('invoices:item_rules.form_dir_outbound', 'Csak Kimenő (Árbevétel / Értékesítés)')}</option>
               </select>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Illesztési típus</Label>
+              <Label className="text-xs font-medium">{t('invoices:item_rules.form_match_label', 'Illesztési típus')}</Label>
               <select
                 value={formPatternType}
                 onChange={(e: any) => setFormPatternType(e.target.value)}
                 className="w-full text-xs h-8 rounded-md border border-input bg-background px-2"
               >
-                <option value="contains">Tartalmazza (Részszó egyezés)</option>
-                <option value="exact">Pontos egyezés</option>
+                <option value="contains">{t('invoices:item_rules.form_match_contains', 'Tartalmazza (Részszó egyezés)')}</option>
+                <option value="exact">{t('invoices:item_rules.form_match_exact', 'Pontos egyezés')}</option>
               </select>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Partner szűrés (opcionális)</Label>
+            <Label className="text-xs font-medium">{t('invoices:item_rules.form_partner_label', 'Partner szűrés (opcionális)')}</Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Input
                 value={formPartnerName}
                 onChange={(e) => setFormPartnerName(e.target.value)}
-                placeholder="Partner neve..."
+                placeholder={t('invoices:item_rules.form_partner_name_placeholder', 'Partner neve...')}
                 className="text-xs h-8"
               />
               <Input
                 value={formPartnerTax}
                 onChange={(e) => setFormPartnerTax(e.target.value)}
-                placeholder="Partner adószáma..."
+                placeholder={t('invoices:item_rules.form_partner_tax_placeholder', 'Partner adószáma...')}
                 className="text-xs font-mono h-8"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Hatókör</Label>
+            <Label className="text-xs font-medium">{t('invoices:item_rules.form_scope_label', 'Hatókör')}</Label>
             <RadioGroup
               value={formScope}
               onValueChange={(val: any) => setFormScope(val)}
@@ -594,7 +594,7 @@ export function InvoiceItemRulesManager({
               >
                 <RadioGroupItem value="company" id="f-scope-company" className="mt-0.5" />
                 <label htmlFor="f-scope-company" className="cursor-pointer">
-                  Csak ez a cég ({selectedCompany?.name || 'aktív cég'})
+                  {t('invoices:item_rules.form_scope_company', { name: selectedCompany?.name || t('invoices:item_rules.active_company_fallback', 'aktív cég'), defaultValue: `Csak ez a cég (${selectedCompany?.name || 'aktív cég'})` })}
                 </label>
               </div>
               <div
@@ -605,7 +605,7 @@ export function InvoiceItemRulesManager({
               >
                 <RadioGroupItem value="tenant" id="f-scope-tenant" className="mt-0.5" />
                 <label htmlFor="f-scope-tenant" className="cursor-pointer">
-                  Könyvelőirodai (Minden cég)
+                  {t('invoices:item_rules.form_scope_tenant', 'Könyvelőirodai (Minden cég)')}
                 </label>
               </div>
             </RadioGroup>
@@ -619,7 +619,7 @@ export function InvoiceItemRulesManager({
               disabled={saving}
               className="text-xs"
             >
-              Mégse
+              {t('invoices:item_rules.btn_cancel', 'Mégse')}
             </Button>
             <Button
               size="sm"
@@ -628,7 +628,7 @@ export function InvoiceItemRulesManager({
               className="text-xs bg-primary hover:bg-primary/90 min-w-[140px] tabular-nums"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
-              {editingRule ? 'Módosítás mentése' : 'Szabály létrehozása'}
+              {editingRule ? t('invoices:item_rules.btn_save_edit', 'Módosítás mentése') : t('invoices:item_rules.btn_save_create', 'Szabály létrehozása')}
             </Button>
           </div>
         </div>

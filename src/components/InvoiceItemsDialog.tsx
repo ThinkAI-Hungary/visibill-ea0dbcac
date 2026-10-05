@@ -731,17 +731,17 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['vat_steel_items'] });
       queryClient.invalidateQueries({ queryKey: ['nav_invoice_items_drill'] });
       toast({
-        title: 'VTSZ és súly mentve',
-        description: 'A tétel VTSZ száma és nettó tömege sikeresen mentésre került.',
+        title: t('invoices:dialogs.items.toast_vtsz_saved', 'VTSZ és súly mentve'),
+        description: t('invoices:dialogs.items.toast_vtsz_saved_desc', 'A tétel VTSZ száma és nettó tömege sikeresen mentésre került.'),
       });
     } catch (err: any) {
       toast({
-        title: 'Mentési hiba',
+        title: t('invoices:dialogs.items.toast_save_error', 'Mentési hiba'),
         description: err.message,
         variant: 'destructive',
       });
     }
-  }, [source, invoiceId, findTwinItems, queryClient, toast]);
+  }, [source, invoiceId, findTwinItems, queryClient, toast, t]);
 
   // Apply 70/30 telephone rule to 27% items
   const handleApply7030TelephoneRule = useCallback(async () => {
@@ -1169,7 +1169,7 @@ export function InvoiceItemsDialog({
 
     if (error) {
       toast({
-        title: 'Áfakód módosítási hiba',
+        title: t('invoices:dialogs.items.toast_vat_error', 'Áfakód módosítási hiba'),
         description: error.message,
         variant: 'destructive',
       });
@@ -1184,10 +1184,10 @@ export function InvoiceItemsDialog({
 
       if (!willOpenRulePrompt) {
         toast({
-          title: 'Áfakód sikeresen elmentve',
+          title: t('invoices:dialogs.items.toast_vat_saved', 'Áfakód sikeresen elmentve'),
           description: targetItems.length > 1
-            ? `${targetItems.length} tétel áfakódja frissítve (${codeName}). A rendszer megjegyezte a szabályt a jövőbeli tételekhez.`
-            : `Tétel áfakódja frissítve (${codeName}). A rendszer megtanulta a hozzárendelést.`,
+            ? t('invoices:dialogs.items.toast_vat_saved_multi_desc', { count: targetItems.length, code: codeName, defaultValue: `${targetItems.length} tétel áfakódja frissítve (${codeName}). A rendszer megjegyezte a szabályt a jövőbeli tételekhez.` })
+            : t('invoices:dialogs.items.toast_vat_saved_single_desc', { code: codeName, defaultValue: `Tétel áfakódja frissítve (${codeName}). A rendszer megtanulta a hozzárendelést.` }),
         });
       }
 
@@ -2459,7 +2459,7 @@ export function InvoiceItemsDialog({
                     <span>
                       {isBulkGlEdit 
                         ? t('invoices:dialogs.items.gl_dialog_title_bulk', { count: selectedIds.size }) 
-                        : 'Főkönyvi kontírozás szerkesztése (Tartozik és Követel)'
+                        : t('invoices:dialogs.items.gl_edit_title_single', 'Főkönyvi kontírozás szerkesztése (Tartozik és Követel)')
                       }
                     </span>
                   </DialogTitle>
@@ -2478,9 +2478,9 @@ export function InvoiceItemsDialog({
                       </div>
                       {isNegative && (
                         <div className="p-2 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-2">
-                          <span className="font-bold shrink-0 px-1.5 py-0.5 rounded bg-amber-500/20 text-[10px]">MÍNUSZOS TÉTEL</span>
+                          <span className="font-bold shrink-0 px-1.5 py-0.5 rounded bg-amber-500/20 text-[10px]">{t('invoices:dialogs.items.gl_edit_negative_badge', 'MÍNUSZOS TÉTEL')}</span>
                           <span>
-                            A magyar számviteli szabályok szerint jóváíró/mínuszos tételnél a partner (454/311) automatikusan a Tartozik oldalra, és a költség/bevétel csökkenés a Követel oldalra kerül.
+                            {t('invoices:dialogs.items.gl_edit_negative_info', 'A számviteli szabályok szerint jóváíró/mínuszos tételnél a partner automatikusan a Tartozik oldalra, és a költség/bevétel csökkenés a Követel oldalra kerül.')}
                           </span>
                         </div>
                       )}
@@ -2504,11 +2504,11 @@ export function InvoiceItemsDialog({
                       <div className="flex items-center justify-between gap-1 min-w-0">
                         <span className="text-xs font-bold text-primary flex items-center gap-1.5 min-w-0">
                           <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-black shrink-0">T</span>
-                          <span className="truncate">Tartozik oldal</span>
+                          <span className="truncate">{t('invoices:dialogs.items.gl_edit_debit_side', 'Tartozik oldal')}</span>
                         </span>
                         {activeEditSide === 'T' ? (
                           <Badge variant="outline" className="text-[10px] bg-primary/20 border-primary/30 text-primary py-0 px-1.5 shrink-0">
-                            Kijelölve
+                            {t('invoices:dialogs.items.gl_edit_selected', 'Kijelölve')}
                           </Badge>
                         ) : null}
                       </div>
@@ -2534,7 +2534,7 @@ export function InvoiceItemsDialog({
                         variant="outline"
                         size="icon"
                         onClick={() => setEditIsSwapped(prev => !prev)}
-                        title="Tartozik és Követel oldal megcserélése (T ↔ K)"
+                        title={t('invoices:dialogs.items.gl_edit_swap_tooltip', 'Tartozik és Követel oldal megcserélése (T ↔ K)')}
                         className={cn(
                           "h-10 w-10 rounded-full border shadow-sm transition-all",
                           editIsSwapped
@@ -2562,11 +2562,11 @@ export function InvoiceItemsDialog({
                       <div className="flex items-center justify-between gap-1 min-w-0">
                         <span className="text-xs font-bold text-primary flex items-center gap-1.5 min-w-0">
                           <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-black shrink-0">K</span>
-                          <span className="truncate">Követel oldal</span>
+                          <span className="truncate">{t('invoices:dialogs.items.gl_edit_credit_side', 'Követel oldal')}</span>
                         </span>
                         {activeEditSide === 'K' ? (
                           <Badge variant="outline" className="text-[10px] bg-primary/20 border-primary/30 text-primary py-0 px-1.5 shrink-0">
-                            Kijelölve
+                            {t('invoices:dialogs.items.gl_edit_selected', 'Kijelölve')}
                           </Badge>
                         ) : null}
                       </div>
@@ -2594,13 +2594,13 @@ export function InvoiceItemsDialog({
                       </span>
                       <span className="truncate">
                         {activeSideIsItem 
-                          ? `Tétel főkönyvi számlájának választása (${activeEditSide === 'T' ? 'Tartozik' : 'Követel'} oldal):` 
-                          : `Partner főkönyvi számlájának megadása (${activeEditSide === 'T' ? 'Tartozik' : 'Követel'} oldal):`
+                          ? t('invoices:dialogs.items.gl_edit_choose_item', { side: activeEditSide === 'T' ? t('invoices:dialogs.items.gl_edit_debit_side', 'Tartozik') : t('invoices:dialogs.items.gl_edit_credit_side', 'Követel'), defaultValue: `Tétel főkönyvi számlájának választása (${activeEditSide === 'T' ? 'Tartozik' : 'Követel'} oldal):` }) 
+                          : t('invoices:dialogs.items.gl_edit_choose_partner', { side: activeEditSide === 'T' ? t('invoices:dialogs.items.gl_edit_debit_side', 'Tartozik') : t('invoices:dialogs.items.gl_edit_credit_side', 'Követel'), defaultValue: `Partner főkönyvi számlájának megadása (${activeEditSide === 'T' ? 'Tartozik' : 'Követel'} oldal):` })
                         }
                       </span>
                     </span>
                     <span className="text-xs text-muted-foreground italic truncate">
-                      {activeSideIsItem ? 'Költség / ráfordítás / árbevétel' : 'Partner számla (szállító / vevő)'}
+                      {activeSideIsItem ? t('invoices:dialogs.items.gl_edit_item_role_hint', 'Költség / ráfordítás / árbevétel') : t('invoices:dialogs.items.gl_edit_partner_role_hint', 'Partner számla (szállító / vevő)')}
                     </span>
                   </div>
 
@@ -2723,7 +2723,7 @@ export function InvoiceItemsDialog({
                       </div>
 
                       <div className="space-y-1.5 pt-1">
-                        <Label className="text-xs text-muted-foreground">Egyedi partner főkönyvi szám:</Label>
+                        <Label className="text-xs text-muted-foreground">{t('invoices:dialogs.items.custom_partner_gl_label', 'Egyedi partner főkönyvi szám:')}</Label>
                         <div className="flex flex-wrap items-center gap-2">
                           <Input
                             placeholder={isOutbound ? '311...' : '454...'}
@@ -2736,7 +2736,7 @@ export function InvoiceItemsDialog({
                             className="h-8 font-mono text-xs max-w-[200px]"
                           />
                           <span className="text-xs text-muted-foreground self-center">
-                            Aktív partner főkönyv: <strong className="font-mono text-foreground">{selectedPartnerGl || '-'}</strong>
+                            {t('invoices:dialogs.items.active_partner_gl_label', 'Aktív partner főkönyv:')} <strong className="font-mono text-foreground">{selectedPartnerGl || '-'}</strong>
                           </span>
                         </div>
                       </div>
@@ -2854,17 +2854,17 @@ export function InvoiceItemsDialog({
       <Dialog open={bulkVatDialogOpen} onOpenChange={setBulkVatDialogOpen}>
         <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md p-6">
           <DialogHeader>
-            <DialogTitle>Tömeges Áfakód Módosítás</DialogTitle>
+            <DialogTitle>{t('invoices:dialogs.items.bulk_vat_dialog_title', 'Tömeges Áfakód Módosítás')}</DialogTitle>
             <DialogDescription>
-              Válassz új áfakódot a kijelölt {selectedIds.size} tételhez. A rendszer automatikusan megjegyzi a választást a gépi tanulási szabályok közé.
+              {t('invoices:dialogs.items.bulk_vat_dialog_desc', { count: selectedIds.size, defaultValue: `Válassz új áfakódot a kijelölt ${selectedIds.size} tételhez. A rendszer automatikusan megjegyzi a választást a gépi tanulási szabályok közé.` })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Áfakód</Label>
+              <Label className="text-xs font-medium">{t('invoices:dialogs.items.bulk_vat_select_label', 'Áfakód')}</Label>
               <Select value={bulkVatCodeId} onValueChange={setBulkVatCodeId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Válassz áfakódot..." />
+                  <SelectValue placeholder={t('invoices:dialogs.items.bulk_vat_placeholder', 'Válassz áfakódot...')} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 z-[130]">
                   {vatCodes
@@ -2883,7 +2883,7 @@ export function InvoiceItemsDialog({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkVatDialogOpen(false)}>Mégse</Button>
+            <Button variant="outline" onClick={() => setBulkVatDialogOpen(false)}>{t('invoices:dialogs.items.bulk_vat_btn_cancel', 'Mégse')}</Button>
             <Button
               disabled={!bulkVatCodeId || isSubmittingVatCode}
               onClick={() => {
@@ -2893,7 +2893,7 @@ export function InvoiceItemsDialog({
               }}
             >
               {isSubmittingVatCode ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2 text-amber-400" />}
-              Alkalmazás ({selectedIds.size} tétel)
+              {t('invoices:dialogs.items.bulk_vat_btn_apply', { count: selectedIds.size, defaultValue: `Alkalmazás (${selectedIds.size} tétel)` })}
             </Button>
           </DialogFooter>
         </DialogContent>

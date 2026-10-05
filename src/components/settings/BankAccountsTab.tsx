@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Landmark, Plus, Trash2, Shield, CreditCard, Globe, CheckCircle2, Sparkles, ArrowRight, BookOpen, Settings2, AlertTriangle } from 'lucide-react';
 import { reportError } from '@/lib/errorReporter';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { useAggreg8 } from '@/hooks/useAggreg8';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -407,7 +407,7 @@ export function BankAccountsTab({ companyId }: Props) {
 
       if (error) throw error;
 
-      toast({ title: 'Siker', description: 'Bankszámla könyvelési beállításai frissítve.' });
+      toast({ title: t('common:status.success', 'Siker'), description: t('bank_accounts.toast_update_success', 'Bankszámla könyvelési beállításai frissítve.') });
       setEditingAccount(null);
       queryClient.invalidateQueries({ queryKey: ['company-bank-accounts', companyId] });
     } catch (err: any) {
@@ -418,7 +418,7 @@ export function BankAccountsTab({ companyId }: Props) {
         message: err?.message || 'Nem sikerült frissíteni a bankszámlát.',
         error: err,
       });
-      toast({ title: 'Hiba', description: 'Nem sikerült frissíteni a beállításokat.', variant: 'destructive' });
+      toast({ title: t('common:status.error', 'Hiba'), description: t('bank_accounts.toast_update_error', 'Nem sikerült frissíteni a beállításokat.'), variant: 'destructive' });
     } finally {
       setEditSaving(false);
     }
@@ -439,7 +439,7 @@ export function BankAccountsTab({ companyId }: Props) {
 
     const finalBankName = bankName === 'other' ? customBankName.trim() : bankName;
     if (!finalBankName) {
-      toast({ title: 'Hiba', description: 'Kérjük, add meg a bank nevét.', variant: 'destructive' });
+      toast({ title: t('common:status.error', 'Hiba'), description: t('bank_accounts.toast_bank_name_required', 'Kérjük, add meg a bank nevét.'), variant: 'destructive' });
       return;
     }
 
@@ -458,7 +458,7 @@ export function BankAccountsTab({ companyId }: Props) {
 
       if (error) throw error;
 
-      toast({ title: 'Siker', description: 'Bankszámla sikeresen hozzáadva.' });
+      toast({ title: t('common:status.success', 'Siker'), description: t('bank_accounts.toast_add_success', 'Bankszámla sikeresen hozzáadva.') });
       setAccountNumber('');
       setCustomBankName('');
       setSelectedJournalId('none');
@@ -473,7 +473,7 @@ export function BankAccountsTab({ companyId }: Props) {
         message: err?.message || 'Nem sikerült hozzáadni a bankszámlát.',
         error: err,
       });
-      toast({ title: 'Hiba', description: 'Nem sikerült hozzáadni a bankszámlát.', variant: 'destructive' });
+      toast({ title: t('common:status.error', 'Hiba'), description: t('bank_accounts.toast_add_error', 'Nem sikerült hozzáadni a bankszámlát.'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -490,7 +490,7 @@ export function BankAccountsTab({ companyId }: Props) {
 
       if (error) throw error;
 
-      toast({ title: 'Siker', description: 'Bankszámla törölve.' });
+      toast({ title: t('common:status.success', 'Siker'), description: t('bank_accounts.toast_delete_success', 'Bankszámla törölve.') });
       queryClient.invalidateQueries({ queryKey: ['company-bank-accounts', companyId] });
     } catch (err: any) {
       reportError({
@@ -500,7 +500,7 @@ export function BankAccountsTab({ companyId }: Props) {
         message: err?.message || 'Nem sikerült törölni a bankszámlát.',
         error: err,
       });
-      toast({ title: 'Hiba', description: 'Nem sikerült törölni a bankszámlát.', variant: 'destructive' });
+      toast({ title: t('common:status.error', 'Hiba'), description: t('bank_accounts.toast_delete_error', 'Nem sikerült törölni a bankszámlát.'), variant: 'destructive' });
     }
   };
 
@@ -522,28 +522,28 @@ export function BankAccountsTab({ companyId }: Props) {
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-semibold text-base">Automatikus banki szinkronizáció</h3>
+                <h3 className="font-semibold text-base">{t('bank_accounts.aggreg8_title', 'Automatikus banki szinkronizáció')}</h3>
                 <Badge variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
                   Aggreg8
                 </Badge>
                 <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-                  Valós idejű
+                  {t('bank_accounts.realtime_badge', 'Valós idejű')}
                 </Badge>
                 {consents.length > 0 ? (
                   <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 text-xs flex items-center gap-1">
                     <CheckCircle2 className="h-3 w-3" />
-                    {consents.length} csatlakoztatott bank
+                    {t('bank_accounts.connected_banks_badge', '{{count}} csatlakoztatott bank', { count: consents.length })}
                   </Badge>
                 ) : (
                   <Badge variant="secondary" className="text-xs text-muted-foreground">
-                    Nincs aktív kapcsolat
+                    {t('bank_accounts.no_connection_badge', 'Nincs aktív kapcsolat')}
                   </Badge>
                 )}
               </div>
               <p className="text-sm text-muted-foreground max-w-xl">
                 {consents.length > 0
-                  ? `A rendszer automatikusan szinkronizálja az élő banki tranzakciókat (${consents.map(c => c.bank_name || 'Bank').join(', ')}). A banki kapcsolatokat és PSD2 hozzájárulásokat az Integrációk menüpontban kezelheted.`
-                  : 'Kapcsold össze vállalkozásod bankszámláit a bankoddal az automatikus, valós idejű tranzakció-szinkronizációhoz és számlapárosításhoz az Integrációk menüpontban.'}
+                  ? t('bank_accounts.aggreg8_desc_connected', 'A rendszer automatikusan szinkronizálja az élő banki tranzakciókat ({{banks}}). A banki kapcsolatokat és PSD2 hozzájárulásokat az Integrációk menüpontban kezelheted.', { banks: consents.map(c => c.bank_name || 'Bank').join(', ') })
+                  : t('bank_accounts.aggreg8_desc_disconnected', 'Kapcsold össze vállalkozásod bankszámláit a bankoddal az automatikus, valós idejű tranzakció-szinkronizációhoz és számlapárosításhoz az Integrációk menüpontban.')}
               </p>
             </div>
           </div>
@@ -553,7 +553,7 @@ export function BankAccountsTab({ companyId }: Props) {
             className="shrink-0 gap-2 font-medium"
             variant={consents.length > 0 ? 'outline' : 'default'}
           >
-            {consents.length > 0 ? 'Bankkapcsolatok kezelése' : 'Bankcsatlakozás beállítása'}
+            {consents.length > 0 ? t('bank_accounts.btn_manage_connections', 'Bankkapcsolatok kezelése') : t('bank_accounts.btn_setup_connection', 'Bankcsatlakozás beállítása')}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </CardContent>
@@ -625,7 +625,7 @@ export function BankAccountsTab({ companyId }: Props) {
                     className="font-mono bg-background text-sm"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Támogatott: 16 vagy 24 jegyű magyar GIRO számla, magyar IBAN (HU...) vagy nemzetközi IBAN (pl. Revolut, Wise, N26).
+                    {t('bank_accounts.account_number_hint', 'Támogatott: 16 vagy 24 jegyű magyar GIRO számla, magyar IBAN (HU...) vagy nemzetközi IBAN (pl. Revolut, Wise, N26).')}
                   </p>
                 </div>
 
@@ -639,7 +639,7 @@ export function BankAccountsTab({ companyId }: Props) {
                       {STANDARD_BANKS.map(b => (
                         <SelectItem key={b} value={b}>{b}</SelectItem>
                       ))}
-                      <SelectItem value="other">Egyéb bank / Egyedi név</SelectItem>
+                      <SelectItem value="other">{t('bank_accounts.other_bank', 'Egyéb bank / Egyedi név')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -678,13 +678,13 @@ export function BankAccountsTab({ companyId }: Props) {
                 <div className="col-span-1 md:col-span-3 pt-3 border-t border-border/40 space-y-3">
                   <div className="flex items-center gap-1.5">
                     <BookOpen className="h-4 w-4 text-primary" />
-                    <span className="text-xs font-semibold text-foreground">Könyvelési összerendelés (eaisyBooks)</span>
-                    <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground ml-1">Opcionális</Badge>
+                    <span className="text-xs font-semibold text-foreground">{t('bank_accounts.accounting_mapping_title', 'Könyvelési összerendelés (eaisyBooks)')}</span>
+                    <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground ml-1">{t('bank_accounts.optional_badge', 'Opcionális')}</Badge>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="acc_journal" className="text-xs">Kapcsolódó Bank Napló</Label>
+                        <Label htmlFor="acc_journal" className="text-xs">{t('bank_accounts.journal_label', 'Kapcsolódó Bank Napló')}</Label>
                         <Button
                           type="button"
                           variant="ghost"
@@ -692,50 +692,50 @@ export function BankAccountsTab({ companyId }: Props) {
                           className="h-5 px-1.5 text-[11px] text-primary hover:text-primary hover:bg-primary/10 gap-1 font-medium"
                           onClick={openCreateJournalForAdd}
                         >
-                          <Plus className="h-3 w-3" /> Új banknapló
+                          <Plus className="h-3 w-3" /> {t('bank_accounts.new_journal_btn', 'Új banknapló')}
                         </Button>
                       </div>
                       <Select value={selectedJournalId} onValueChange={handleJournalChange}>
                         <SelectTrigger id="acc_journal" className="bg-background text-xs">
-                          <SelectValue placeholder="— Nincs hozzárendelve —" />
+                          <SelectValue placeholder={t('bank_accounts.no_mapping_placeholder', '— Nincs hozzárendelve —')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
+                          <SelectItem value="none">{t('bank_accounts.no_mapping_placeholder', '— Nincs hozzárendelve —')}</SelectItem>
                           {sortedBankJournals.map(j => {
                             const jMatch = checkJournalCurrencyMatch(j.currency, currency);
                             return (
                               <SelectItem key={j.id} value={j.id}>
-                                [{j.code}] {j.name} ({j.currency || 'HUF'}) {!jMatch.isMatch ? '⚠️ (Eltérő deviza)' : ''}
+                                [{j.code}] {j.name} ({j.currency || 'HUF'}) {!jMatch.isMatch ? ` ${t('bank_accounts.diff_currency_warning', '⚠️ (Eltérő deviza)')}` : ''}
                               </SelectItem>
                             );
                           })}
                         </SelectContent>
                       </Select>
                       <p className="text-[11px] text-muted-foreground">
-                        Ebbe a naplóba generálódnak automatikusan a banki tételek.
+                        {t('bank_accounts.journal_hint', 'Ebbe a naplóba generálódnak automatikusan a banki tételek.')}
                       </p>
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="acc_gl" className="text-xs">Kapcsolódó Főkönyvi Számla</Label>
+                      <Label htmlFor="acc_gl" className="text-xs">{t('bank_accounts.gl_label', 'Kapcsolódó Főkönyvi Számla')}</Label>
                       <Select value={selectedGlAccountId} onValueChange={setSelectedGlAccountId}>
                         <SelectTrigger id="acc_gl" className="bg-background text-xs">
-                          <SelectValue placeholder="— Nincs hozzárendelve —" />
+                          <SelectValue placeholder={t('bank_accounts.no_mapping_placeholder', '— Nincs hozzárendelve —')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
+                          <SelectItem value="none">{t('bank_accounts.no_mapping_placeholder', '— Nincs hozzárendelve —')}</SelectItem>
                           {sortedBankGlAccounts.map(g => {
                             const gMatch = checkGlAccountCurrencyMatch(g.gl_number, currency, g.currency, g.is_multicurrency);
                             return (
                               <SelectItem key={g.id} value={g.id}>
-                                {g.gl_number} - {g.short_name} {!gMatch.isMatch ? '⚠️ (Eltérő deviza)' : ''}
+                                {g.gl_number} - {g.short_name} {!gMatch.isMatch ? ` ${t('bank_accounts.diff_currency_warning', '⚠️ (Eltérő deviza)')}` : ''}
                               </SelectItem>
                             );
                           })}
                         </SelectContent>
                       </Select>
                       <p className="text-[11px] text-muted-foreground">
-                        Erre az analitikus számlára (pl. 3841, 3842, 3861) könyvelődik az egyenleg.
+                        {t('bank_accounts.gl_hint', 'Erre az analitikus számlára (pl. 3841, 3842, 3861) könyvelődik az egyenleg.')}
                       </p>
                     </div>
                   </div>
@@ -754,7 +754,7 @@ export function BankAccountsTab({ companyId }: Props) {
 
               <div className="flex gap-2 pt-2">
                 <Button type="submit" size="sm" disabled={saving}>
-                  {saving ? 'Mentés...' : t('bank_accounts.save_button', 'Bankszámla mentése')}
+                  {saving ? t('bank_accounts.saving_btn', 'Mentés...') : t('bank_accounts.save_button', 'Bankszámla mentése')}
                 </Button>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>
                   {t('bank_accounts.cancel', 'Mégse')}
@@ -794,7 +794,7 @@ export function BankAccountsTab({ companyId }: Props) {
                           </Badge>
                           {isInactive && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-300/80 text-amber-200 bg-amber-950/60 font-semibold">
-                              Érvénytelen / Megszűnt
+                              {t('bank_accounts.inactive_badge', 'Érvénytelen / Megszűnt')}
                             </Badge>
                           )}
                         </div>
@@ -810,7 +810,7 @@ export function BankAccountsTab({ companyId }: Props) {
                           size="icon"
                           className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/15 rounded-full shrink-0 z-20"
                           onClick={() => startEditAccount(acc)}
-                          title="Könyvelési beállítások"
+                          title={t('bank_accounts.btn_accounting_settings', 'Könyvelési beállítások')}
                         >
                           <Settings2 className="h-4 w-4" />
                         </Button>
@@ -819,7 +819,7 @@ export function BankAccountsTab({ companyId }: Props) {
                           size="icon"
                           className="h-8 w-8 text-white/80 hover:text-red-400 hover:bg-white/15 rounded-full shrink-0 z-20"
                           onClick={() => handleDeleteAccount(acc.id)}
-                          title="Törlés"
+                          title={t('bank_accounts.btn_delete', 'Törlés')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -844,7 +844,7 @@ export function BankAccountsTab({ companyId }: Props) {
                           const jMatch = j ? checkJournalCurrencyMatch(j.currency, acc.currency) : { isMatch: true };
                           const hasMismatch = !gMatch.isMatch || !jMatch.isMatch;
 
-                          let text = 'Nincs főkönyvhöz rendelve';
+                          let text = t('bank_accounts.no_gl_assigned', 'Nincs főkönyvhöz rendelve');
                           if (j && g) text = `[${j.code}] ${j.name} • ${g.gl_number}`;
                           else if (j) text = `[${j.code}] ${j.name}`;
                           else if (g) text = `${g.gl_number} - ${g.short_name}`;
@@ -857,7 +857,7 @@ export function BankAccountsTab({ companyId }: Props) {
                                   title={gMatch.warning || jMatch.warning}
                                   className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[10px] font-bold bg-amber-500/30 text-amber-200 border border-amber-400/40 shrink-0 ml-1"
                                 >
-                                  ⚠️ Eltérő deviza
+                                  {t('bank_accounts.diff_currency_badge', '⚠️ Eltérő deviza')}
                                 </span>
                               )}
                             </span>
@@ -870,7 +870,7 @@ export function BankAccountsTab({ companyId }: Props) {
                         className="h-6 px-2 text-[11px] text-white/90 hover:text-white hover:bg-white/15 rounded-md shrink-0"
                         onClick={() => startEditAccount(acc)}
                       >
-                        Beállítás
+                        {t('bank_accounts.btn_configure', 'Beállítás')}
                       </Button>
                     </div>
                   </div>
@@ -887,16 +887,21 @@ export function BankAccountsTab({ companyId }: Props) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
               <Landmark className="h-5 w-5 text-primary" />
-              Könyvelési beállítások
+              {t('bank_accounts.edit_modal_title', 'Könyvelési beállítások')}
             </DialogTitle>
             <DialogDescription>
-              Rendeld hozzá a(z) <span className="font-semibold text-foreground">{editingAccount?.bank_name}</span> ({editingAccount?.currency}) számlát a megfelelő könyvelési naplóhoz és főkönyvi számhoz.
+              <Trans
+                i18nKey="bank_accounts.edit_modal_desc"
+                values={{ bankName: editingAccount?.bank_name, currency: editingAccount?.currency }}
+              >
+                Rendeld hozzá a(z) <span className="font-semibold text-foreground">{editingAccount?.bank_name}</span> ({editingAccount?.currency}) számlát a megfelelő könyvelési naplóhoz és főkönyvi számhoz.
+              </Trans>
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-3">
             <div className="p-3 bg-muted/40 rounded-xl space-y-1 text-xs">
-              <div className="text-muted-foreground">Számlaszám:</div>
+              <div className="text-muted-foreground">{t('bank_accounts.edit_account_number', 'Számlaszám:')}</div>
               <div className="font-mono font-semibold text-sm select-all">
                 {editingAccount && formatAccountDisplay(editingAccount.account_number)}
               </div>
@@ -904,7 +909,7 @@ export function BankAccountsTab({ companyId }: Props) {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="edit_journal" className="text-xs">Kapcsolódó Bank Napló</Label>
+                <Label htmlFor="edit_journal" className="text-xs">{t('bank_accounts.journal_label', 'Kapcsolódó Bank Napló')}</Label>
                 <Button
                   type="button"
                   variant="ghost"
@@ -912,15 +917,15 @@ export function BankAccountsTab({ companyId }: Props) {
                   className="h-5 px-1.5 text-[11px] text-primary hover:text-primary hover:bg-primary/10 gap-1 font-medium"
                   onClick={openCreateJournalForEdit}
                 >
-                  <Plus className="h-3 w-3" /> Új banknapló
+                  <Plus className="h-3 w-3" /> {t('bank_accounts.new_journal_btn', 'Új banknapló')}
                 </Button>
               </div>
               <Select value={editJournalId} onValueChange={handleEditJournalChange}>
                 <SelectTrigger id="edit_journal">
-                  <SelectValue placeholder="— Nincs hozzárendelve —" />
+                  <SelectValue placeholder={t('bank_accounts.no_mapping_placeholder', '— Nincs hozzárendelve —')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
+                  <SelectItem value="none">{t('bank_accounts.no_mapping_placeholder', '— Nincs hozzárendelve —')}</SelectItem>
                   {sortedEditBankJournals.map(j => {
                     const jMatch = checkJournalCurrencyMatch(j.currency, editAccCurrency);
                     const isInactive = j.is_active === false;
@@ -931,46 +936,46 @@ export function BankAccountsTab({ companyId }: Props) {
                         className={isInactive ? 'text-muted-foreground opacity-80' : ''}
                       >
                         [{j.code}] {j.name} ({j.currency || 'HUF'})
-                        {isInactive ? ' — (Inaktív)' : ''}
-                        {!jMatch.isMatch ? ' ⚠️ (Eltérő deviza)' : ''}
+                        {isInactive ? t('bank_accounts.edit_inactive_option', ' — (Inaktív)') : ''}
+                        {!jMatch.isMatch ? ` ${t('bank_accounts.diff_currency_warning', '⚠️ (Eltérő deviza)')}` : ''}
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
               <p className="text-[11px] text-muted-foreground">
-                A banki tranzakciókból ide készülnek majd az automatikus könyvelési tervezetek.
+                {t('bank_accounts.edit_journal_hint', 'A banki tranzakciókból ide készülnek majd az automatikus könyvelési tervezetek.')}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit_gl" className="text-xs">Kapcsolódó Főkönyvi Számla</Label>
+              <Label htmlFor="edit_gl" className="text-xs">{t('bank_accounts.gl_label', 'Kapcsolódó Főkönyvi Számla')}</Label>
               <Select value={editGlAccountId} onValueChange={setEditGlAccountId}>
                 <SelectTrigger id="edit_gl">
-                  <SelectValue placeholder="— Nincs hozzárendelve —" />
+                  <SelectValue placeholder={t('bank_accounts.no_mapping_placeholder', '— Nincs hozzárendelve —')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">— Nincs hozzárendelve —</SelectItem>
+                  <SelectItem value="none">{t('bank_accounts.no_mapping_placeholder', '— Nincs hozzárendelve —')}</SelectItem>
                   {sortedEditBankGlAccounts.map(g => {
                     const gMatch = checkGlAccountCurrencyMatch(g.gl_number, editAccCurrency, g.currency, g.is_multicurrency);
                     return (
                       <SelectItem key={g.id} value={g.id}>
-                        {g.gl_number} - {g.short_name} {!gMatch.isMatch ? '⚠️ (Eltérő deviza)' : ''}
+                        {g.gl_number} - {g.short_name} {!gMatch.isMatch ? ` ${t('bank_accounts.diff_currency_warning', '⚠️ (Eltérő deviza)')}` : ''}
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
               <p className="text-[11px] text-muted-foreground">
-                Az analitikus számla, amelyre a bank mozgásai könyvelődnek (pl. 3841, 3842, 3861).
+                {t('bank_accounts.edit_gl_hint', 'Az analitikus számla, amelyre a bank mozgásai könyvelődnek (pl. 3841, 3842, 3861).')}
               </p>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-muted/20">
               <div className="space-y-0.5 pr-2">
-                <Label htmlFor="edit_is_active" className="text-xs font-semibold">Aktív bankszámla</Label>
+                <Label htmlFor="edit_is_active" className="text-xs font-semibold">{t('bank_accounts.edit_is_active_label', 'Aktív bankszámla')}</Label>
                 <p className="text-[11px] text-muted-foreground">
-                  Megszűnt vagy érvénytelen számla esetén kapcsold ki. Az előzmények és analitika megmaradnak, de a számla „Érvénytelen” jelölést kap.
+                  {t('bank_accounts.edit_is_active_desc', 'Megszűnt vagy érvénytelen számla esetén kapcsold ki. Az előzmények és analitika megmaradnak, de a számla „Érvénytelen” jelölést kap.')}
                 </p>
               </div>
               <Switch
@@ -993,10 +998,10 @@ export function BankAccountsTab({ companyId }: Props) {
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setEditingAccount(null)}>
-              Mégse
+              {t('bank_accounts.cancel', 'Mégse')}
             </Button>
             <Button onClick={handleSaveEdit} disabled={editSaving}>
-              {editSaving ? 'Mentés...' : 'Beállítások mentése'}
+              {editSaving ? t('bank_accounts.saving_btn', 'Mentés...') : t('bank_accounts.btn_save_settings', 'Beállítások mentése')}
             </Button>
           </DialogFooter>
         </DialogContent>

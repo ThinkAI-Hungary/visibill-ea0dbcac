@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -92,6 +93,7 @@ function getMonthName(month: number): string {
 }
 
 export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarting, initialDirection }: PdfExportDialogProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const { selectedCompany } = useCompany();
   const [selectedPreset, setSelectedPreset] = useState<PeriodPreset>('current_month');
   const [customFrom, setCustomFrom] = useState('');
@@ -152,11 +154,11 @@ export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarti
   };
 
   const presets: { key: PeriodPreset; icon: typeof Calendar; label: string; sublabel: string; fullWidth?: boolean }[] = [
-    { key: 'current_month', icon: Calendar, label: 'Aktuális hónap', sublabel: getPresetDates('current_month').label },
-    { key: 'previous_month', icon: Calendar, label: 'Előző hónap', sublabel: getPresetDates('previous_month').label },
-    { key: 'current_quarter', icon: BarChart3, label: 'Aktuális negyedév', sublabel: getPresetDates('current_quarter').label },
-    { key: 'previous_quarter', icon: BarChart3, label: 'Előző negyedév', sublabel: getPresetDates('previous_quarter').label },
-    { key: 'custom', icon: Settings, label: 'Egyéni időszak', sublabel: 'Saját dátumtartomány megadása', fullWidth: true },
+    { key: 'current_month', icon: Calendar, label: t('invoices:pdf_export_dialog.preset_current_month', { label: '', defaultValue: 'Aktuális hónap' }).replace(' ()', ''), sublabel: getPresetDates('current_month').label },
+    { key: 'previous_month', icon: Calendar, label: t('invoices:pdf_export_dialog.preset_previous_month', { label: '', defaultValue: 'Előző hónap' }).replace(' ()', ''), sublabel: getPresetDates('previous_month').label },
+    { key: 'current_quarter', icon: BarChart3, label: t('invoices:pdf_export_dialog.preset_current_quarter', { label: '', defaultValue: 'Aktuális negyedév' }).replace(' ()', ''), sublabel: getPresetDates('current_quarter').label },
+    { key: 'previous_quarter', icon: BarChart3, label: t('invoices:pdf_export_dialog.preset_previous_quarter', { label: '', defaultValue: 'Előző negyedév' }).replace(' ()', ''), sublabel: getPresetDates('previous_quarter').label },
+    { key: 'custom', icon: Settings, label: t('invoices:pdf_export_dialog.preset_custom', { defaultValue: 'Egyéni időszak' }), sublabel: t('invoices:export_dialog.preset_custom', { defaultValue: 'Saját dátumtartomány megadása' }), fullWidth: true },
   ];
 
   return (
@@ -165,10 +167,10 @@ export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarti
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileDown className="h-5 w-5 text-primary" />
-            PDF Export — Időszak kiválasztás
+            {t('invoices:pdf_export_dialog.title', { defaultValue: 'PDF Export — Időszak kiválasztás' })}
           </DialogTitle>
           <DialogDescription>
-            Válaszd ki, milyen időszak számláit szeretnéd egyetlen PDF-be exportálni.
+            {t('invoices:pdf_export_dialog.subtitle', { defaultValue: 'Válaszd ki, milyen időszak számláit szeretnéd egyetlen PDF-be exportálni.' })}
           </DialogDescription>
         </DialogHeader>
 
@@ -178,11 +180,11 @@ export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarti
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="OUTBOUND" className="gap-1.5 text-xs">
                 <ArrowUpRight className="h-3.5 w-3.5" />
-                Számlakép (Kimenő)
+                {t('invoices:tabs.submitted_outgoing', { defaultValue: 'Számlakép (Kimenő)' })}
               </TabsTrigger>
               <TabsTrigger value="INBOUND" className="gap-1.5 text-xs">
                 <ArrowDownLeft className="h-3.5 w-3.5" />
-                Számlakép (Bejövő)
+                {t('invoices:tabs.submitted_incoming', { defaultValue: 'Számlakép (Bejövő)' })}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -190,7 +192,7 @@ export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarti
           {/* Period presets */}
           <div>
             <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
-              Időszak
+              {t('invoices:pdf_export_dialog.period_label', { defaultValue: 'Időszak' })}
             </Label>
             <div className="grid grid-cols-2 gap-2">
               {presets.map((preset) => {
@@ -259,16 +261,16 @@ export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarti
                 {countLoading ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Számlák számolása...
+                    {t('invoices:pdf_export_dialog.count_loading', { defaultValue: 'Számlák számolása...' })}
                   </div>
                 ) : (
                   <>
                     <div className="text-sm font-semibold">
-                      {invoiceCount ?? 0} beküldött {direction === 'OUTBOUND' ? 'kimenő' : 'bejövő'} számla
+                      {invoiceCount ?? 0} {t('invoices:tabs.submitted_incoming', { defaultValue: 'beküldött' })} {direction === 'OUTBOUND' ? t('invoices:pdf_export_dialog.dir_outbound', { defaultValue: 'kimenő' }) : t('invoices:pdf_export_dialog.dir_inbound', { defaultValue: 'bejövő' })}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {dateFrom} – {dateTo}
-                      {estimatedSizeMB !== null && ` • Becsült méret: ~${estimatedSizeMB} MB`}
+                      {estimatedSizeMB !== null && ` • ~${estimatedSizeMB} MB`}
                     </div>
                   </>
                 )}
@@ -281,14 +283,14 @@ export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarti
           {willSplit && (
             <div className="flex items-center gap-2 p-2.5 rounded-md bg-blue-500/5 border border-blue-500/15 text-xs text-blue-600 dark:text-blue-400">
               <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-              Nagy méretű export — a feldolgozás a háttérben történik, akár el is navigálhatsz az oldalról.
+              {t('invoices:pdf_export_dialog.subtitle', { defaultValue: 'Nagy méretű export — a feldolgozás a háttérben történik, akár el is navigálhatsz az oldalról.' })}
             </div>
           )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isExporting || isStarting}>
-            Mégse
+            {t('common:actions.cancel', { defaultValue: 'Mégse' })}
           </Button>
           <Button
             onClick={handleExport}
@@ -298,17 +300,17 @@ export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarti
             {isStarting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Export indítása...
+                {t('invoices:pdf_export_dialog.btn_starting', { defaultValue: 'Export indítása...' })}
               </>
             ) : isExporting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Feldolgozás...
+                {t('invoices:pdf_export_banner.processing_default', { defaultValue: 'Feldolgozás...' })}
               </>
             ) : (
               <>
                 <FileDown className="h-4 w-4" />
-                Export indítása{invoiceCount ? ` (${invoiceCount} számla)` : ''}
+                {t('invoices:pdf_export_dialog.btn_start_export', { defaultValue: 'Export indítása' })}{invoiceCount ? ` (${invoiceCount})` : ''}
               </>
             )}
           </Button>
@@ -318,8 +320,8 @@ export function PdfExportDialog({ open, onClose, onExport, isExporting, isStarti
         {isStarting && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-[2px] rounded-lg">
             <Loader2 className="h-8 w-8 text-primary animate-spin mb-3" />
-            <p className="text-sm font-semibold">Export indítása...</p>
-            <p className="text-xs text-muted-foreground mt-1">Várakozás a szerver válaszára</p>
+            <p className="text-sm font-semibold">{t('invoices:pdf_export_dialog.btn_starting', { defaultValue: 'Export indítása...' })}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('invoices:pdf_export_banner.processing_title', { defaultValue: 'Várakozás a szerver válaszára' })}</p>
           </div>
         )}
       </DialogContent>

@@ -133,14 +133,14 @@ export default function FixedAssetsPage() {
                 className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'assets' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 <Package2 className="h-3.5 w-3.5" />
-                Eszközök ({assets.length})
+                {t('hr:fixed_assets.tab_assets', { count: assets.length, defaultValue: `Eszközök (${assets.length})` })}
               </button>
               <button
                 onClick={() => handleTabChange('development_reserves')}
                 className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'development_reserves' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 <PiggyBank className="h-3.5 w-3.5 text-amber-500" />
-                Fejlesztési Tartalékok
+                {t('hr:fixed_assets.tab_dev_reserves', 'Fejlesztési Tartalékok')}
               </button>
             </div>
 

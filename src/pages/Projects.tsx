@@ -22,7 +22,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users, BarChart3, FileText, Settings, Search, Check, ChevronDown, GitBranch, Package2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
 import { cn, formatCurrency } from '@/lib/utils';
 import { PartnerCombobox } from '@/components/PartnerCombobox';
 import { SupplierInvoiceAssignment } from '@/components/SupplierInvoiceAssignment';

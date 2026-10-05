@@ -1,6 +1,7 @@
 {
   "title": "Partneri",
   "subtitle": "Evidencija kupaca i dobavljača",
+  "filter_aria": "Filtar tipa partnera",
   "columns": {
     "name": "Naziv partnera",
     "name_address": "Naziv / Adresa",
@@ -96,7 +97,31 @@
     "no_uploaded_invoices": "Nema učitanih računa",
     "nav_sync_info": "Sinkronizacija partnera i podataka o tvrtki iz sustava Porezne uprave odvija se automatski na temelju OIB-a.",
     "no_partner_selected": "Nijedan partner nije odabran",
-    "click_partner_hint": "Kliknite na partnera na popisu s lijeve strane za pregled podataka."
+    "click_partner_hint": "Kliknite na partnera na popisu s lijeve strane za pregled podataka.",
+    "skonto_setting": "Popust za brzo plaćanje (Skonto)",
+    "skonto_deadline": "Rok za popust",
+    "skonto_rate": "Stopa popusta",
+    "skonto_days_val": "{{count}} dana",
+    "skonto_excludes_shipping_active": "✅ Trošak dostave isključen iz osnovice za popust",
+    "skonto_includes_all": "⚠️ Vrijedi za puni bruto iznos",
+    "no_skonto_set": "Za ovog partnera nije postavljen skonto.",
+    "btn_configure": "Postavke",
+    "related_party_section_title": "Podaci o povezanom društvu",
+    "related_party_badge": "Povezani partner",
+    "independent_badge": "Neovisni",
+    "relation_type": "Vrsta povezanosti",
+    "relation_type_default": "Povezani odnos",
+    "ownership_share": "Udio u vlasništvu",
+    "not_specified": "Nije navedeno",
+    "validity_label": "Valjanost:",
+    "validity_from_start": "od početka",
+    "validity_until_revocation": "do opoziva",
+    "parent_partner": "Matični partner:",
+    "parent_partner_fallback": "Odabrani matični partner",
+    "turnover_report": "Izvješće o prometu",
+    "modify": "Izmjena",
+    "independent_partner_desc": "Ovaj partner je neovisni tržišni sudionik.",
+    "make_related": "Označi kao povezano"
   },
   "empty": {
     "no_search_results": "Nema rezultata za filtriranje",
@@ -121,7 +146,15 @@
     "bg_color": "Boja pozadine",
     "foreign_tax_number_placeholder": "Inozemni partner – unesite porezni broj ako je poznat",
     "reminder_email_note": "(za opomenu)",
-    "address_placeholder": "Adresa partnera"
+    "address_placeholder": "Adresa partnera",
+    "skonto_title": "Popust za brzo plaćanje (Skonto)",
+    "skonto_subtitle": "Dvostruki rok plaćanja i sniženi iznos.",
+    "skonto_days": "Dani za popust",
+    "skonto_days_hint": "Računajući od izdavanja računa",
+    "skonto_percent": "Stopa popusta",
+    "skonto_percent_hint": "Npr. 2% ili 3% popusta",
+    "skonto_excludes_shipping": "Isključi trošak dostave iz osnovice za popust",
+    "skonto_excludes_shipping_hint": "Skonto se ne može odbiti od naknade za prijevoz, samo od cijene proizvoda."
   },
   "toasts": {
     "missing_data": "Nedostaju podaci",
@@ -142,6 +175,13 @@
     "partner_excluded_title": "Partner isključen iz knjiženja",
     "partner_restored_title": "Partner vraćen u knjiženje",
     "partner_excluded_desc": "Svi računi partnera {{name}} neće se knjižiti.",
-    "partner_restored_desc": "Svi računi partnera {{name}} ponovno će se knjižiti."
+    "partner_restored_desc": "Svi računi partnera {{name}} ponovno će se knjižiti.",
+    "invalid_tax_title": "Nevažeći porezni broj",
+    "invalid_tax_desc": "Molimo unesite najmanje 8 znamenki za upit poreznoj upravi.",
+    "nav_lookup_failed": "Upit poreznoj upravi nije uspio",
+    "nav_not_found": "Porezni broj nije pronađen u evidenciji porezne uprave.",
+    "nav_success": "Podaci porezne uprave učitani",
+    "nav_enrich_failed": "Dopunjavanje nije uspjelo",
+    "nav_enriched_success": "Porezni broj uspješno dopunjen"
   }
 }

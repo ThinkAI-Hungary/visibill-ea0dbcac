@@ -23,6 +23,7 @@ import { numberToWordsHu } from '@/lib/documents/templates/cashReceiptTemplate';
 import { cn } from '@/lib/utils';
 import { useCashReportDetails } from '@/hooks/useCashReports';
 import { fmtBalance, fmtAmount } from './types';
+import { useTranslation } from 'react-i18next';
 
 interface CashReportDetailDialogProps {
   open: boolean;
@@ -97,6 +98,7 @@ export function CashReportDetailDialog({
       registerName,
     });
   };
+  const { t } = useTranslation(['pettyCash', 'common']);
   const currency = report?.currency || 'HUF';
 
   return (
@@ -107,25 +109,25 @@ export function CashReportDetailDialog({
             <div>
               <DialogTitle className="text-lg font-bold flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
-                <span>Pénztárjelentés Részletei: {report?.report_number || 'Piszkozat'}</span>
+                <span>{t('pettyCash:reports.table.col_register', 'Pénztárjelentés')} {report?.report_number || t('pettyCash:reports.table.draft_prefix', 'Piszkozat')}</span>
                 {report?.status === 'closed' && (
                   <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 bg-emerald-500/10 text-xs">
-                    <ShieldCheck className="w-3 h-3 mr-1" /> Lezárt (Hiteles)
+                    <ShieldCheck className="w-3 h-3 mr-1" /> {t('pettyCash:reports.badges.closed', 'Lezárt')}
                   </Badge>
                 )}
                 {report?.status === 'posted' && (
                   <Badge variant="outline" className="border-violet-500/40 text-violet-600 bg-violet-500/10 text-xs">
-                    Könyvelve (381)
+                    {t('pettyCash:reports.badges.posted', 'Könyvelve (381)')}
                   </Badge>
                 )}
                 {report?.status === 'reopened' && (
                   <Badge variant="outline" className="border-amber-500/40 text-amber-600 bg-amber-500/10 text-xs">
-                    Újranyitott (v{report.version})
+                    {t('pettyCash:reports.badges.reopened', { defaultValue: 'Újranyitott (v{{version}})', version: report.version })}
                   </Badge>
                 )}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                {registerName} • Időszak: {report?.period_start} – {report?.period_end}
+                {registerName} • {t('pettyCash:reports.table.col_period', 'Időszak')}: {report?.period_start} – {report?.period_end}
               </DialogDescription>
             </div>
 
@@ -141,7 +143,7 @@ export function CashReportDetailDialog({
         {isLoading ? (
           <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground text-xs">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span>Pénztárjelentés adatainak betöltése...</span>
+            <span>{t('pettyCash:reports.empty.loading', 'Pénztárjelentés adatainak betöltése...')}</span>
           </div>
         ) : (
           <div className="flex-1 overflow-hidden flex flex-col gap-3">
@@ -149,28 +151,28 @@ export function CashReportDetailDialog({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
               <Card className="shadow-none border-border/70 bg-card">
                 <CardContent className="p-2.5">
-                  <span className="text-[11px] text-muted-foreground block">Nyitó egyenleg:</span>
+                  <span className="text-[11px] text-muted-foreground block">{t('pettyCash:closing_dialog.opening_balance', 'Nyitó egyenleg')}:</span>
                   <span className="font-mono font-bold text-sm">{fmtBalance(report?.opening_balance || 0, currency)}</span>
                 </CardContent>
               </Card>
 
               <Card className="shadow-none border-border/70 bg-card">
                 <CardContent className="p-2.5">
-                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block font-medium">Összes bevétel (+):</span>
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block font-medium">{t('pettyCash:reports.table.col_income', 'Összes bevétel (+)')}:</span>
                   <span className="font-mono font-bold text-sm text-emerald-600 dark:text-emerald-400">+{fmtBalance(report?.total_in || 0, currency)}</span>
                 </CardContent>
               </Card>
 
               <Card className="shadow-none border-border/70 bg-card">
                 <CardContent className="p-2.5">
-                  <span className="text-[11px] text-destructive block font-medium">Összes kiadás (-):</span>
+                  <span className="text-[11px] text-destructive block font-medium">{t('pettyCash:reports.table.col_expense', 'Összes kiadás (-)')}:</span>
                   <span className="font-mono font-bold text-sm text-destructive">-{fmtBalance(report?.total_out || 0, currency)}</span>
                 </CardContent>
               </Card>
 
               <Card className="shadow-none border-primary/30 bg-primary/5">
                 <CardContent className="p-2.5">
-                  <span className="text-[11px] text-muted-foreground block font-medium">Záró készpénzállomány:</span>
+                  <span className="text-[11px] text-muted-foreground block font-medium">{t('pettyCash:reports.table.col_closing', 'Záró készpénzállomány')}:</span>
                   <span className="font-mono font-bold text-sm text-primary">
                     {fmtBalance(report?.closing_balance_actual ?? report?.closing_balance_book ?? 0, currency)}
                   </span>
@@ -182,13 +184,13 @@ export function CashReportDetailDialog({
             <Tabs defaultValue="entries" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="h-8 text-xs w-fit">
                 <TabsTrigger value="entries" className="text-xs gap-1.5 h-7">
-                  <FileText className="w-3.5 h-3.5" /> Tételek ({entries.length} db)
+                  <FileText className="w-3.5 h-3.5" /> {t('pettyCash:tabs.entries', 'Tételek')} ({entries.length} db)
                 </TabsTrigger>
                 <TabsTrigger value="denominations" className="text-xs gap-1.5 h-7">
-                  <Coins className="w-3.5 h-3.5" /> Címletjegyzék
+                  <Coins className="w-3.5 h-3.5" /> {t('pettyCash:closing_wizard.step2_title', 'Címletjegyzék')}
                 </TabsTrigger>
                 <TabsTrigger value="protocol" className="text-xs gap-1.5 h-7">
-                  <FileCheck2 className="w-3.5 h-3.5" /> Zárási jegyzőkönyv
+                  <FileCheck2 className="w-3.5 h-3.5" /> {t('pettyCash:closing_wizard.step3_title', 'Zárási jegyzőkönyv')}
                 </TabsTrigger>
               </TabsList>
 
@@ -197,21 +199,21 @@ export function CashReportDetailDialog({
                 <Table className="text-xs">
                   <TableHeader className="bg-muted/50 sticky top-0 z-10 border-b">
                     <TableRow>
-                      <TableHead className="w-14 text-center">Sor</TableHead>
-                      <TableHead className="w-24">Dátum</TableHead>
-                      <TableHead className="w-20">Irány</TableHead>
-                      <TableHead className="w-40">Jogcím</TableHead>
-                      <TableHead>Partner / Leírás</TableHead>
-                      <TableHead className="w-28 text-center">Ellenszámla</TableHead>
-                      <TableHead className="w-28 text-right">Összeg</TableHead>
-                      <TableHead className="w-16 text-center">Bizonylat</TableHead>
+                      <TableHead className="w-14 text-center">{t('pettyCash:print.col_row', 'Sor')}</TableHead>
+                      <TableHead className="w-24">{t('pettyCash:print.col_date', 'Dátum')}</TableHead>
+                      <TableHead className="w-20">{t('pettyCash:verification_dialog.direction_label', 'Irány')}</TableHead>
+                      <TableHead className="w-40">{t('pettyCash:print.col_category', 'Jogcím')}</TableHead>
+                      <TableHead>{t('pettyCash:print.col_partner_desc', 'Partner / Leírás')}</TableHead>
+                      <TableHead className="w-28 text-center">{t('accounting:chart.contra_account', 'Ellenszámla')}</TableHead>
+                      <TableHead className="w-28 text-right">{t('pettyCash:closing_dialog.table.amount', 'Összeg')}</TableHead>
+                      <TableHead className="w-16 text-center">{t('pettyCash:entries.badges.cash_receipt', 'Bizonylat')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {entries.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
-                          Nincsenek tételek ebben az időszakban.
+                          {t('pettyCash:closing_dialog.empty', 'Nincsenek tételek ebben az időszakban.')}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -229,10 +231,10 @@ export function CashReportDetailDialog({
                                 "text-[10px] px-1.5 py-0 h-4 font-semibold",
                                 isIncome ? "border-emerald-500/30 text-emerald-600 bg-emerald-500/10" : "border-destructive/30 text-destructive bg-destructive/10"
                               )}>
-                                {isIncome ? 'Bevétel' : 'Kiadás'}
+                                {isIncome ? t('pettyCash:manual_entry_dialog.type_income', 'Bevétel') : t('pettyCash:manual_entry_dialog.type_expense', 'Kiadás')}
                               </Badge>
                             </TableCell>
-                            <TableCell className="font-medium text-foreground">{entry.legal_title || 'Általános tétel'}</TableCell>
+                            <TableCell className="font-medium text-foreground">{entry.legal_title || t('pettyCash:manual_entry_dialog.title_manual', 'Általános tétel')}</TableCell>
                             <TableCell className="truncate max-w-[280px]" title={entry.description || ''}>
                               <div className="font-medium">{entry.partner?.name || '—'}</div>
                               {entry.description && <div className="text-[11px] text-muted-foreground truncate">{entry.description}</div>}
@@ -251,7 +253,7 @@ export function CashReportDetailDialog({
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                                title={isIncome ? 'Bevételi pénztárbizonylat (BPB) nyomtatása' : 'Kiadási pénztárbizonylat (KPB) nyomtatása'}
+                                title={isIncome ? t('pettyCash:actions.print_bpb', 'Bevételi pénztárbizonylat (BPB) nyomtatása') : t('pettyCash:actions.print_kpb', 'Kiadási pénztárbizonylat (KPB) nyomtatása')}
                                 onClick={() => handlePrintVoucher(entry)}
                               >
                                 <Printer className="w-3 h-3" />
@@ -270,14 +272,14 @@ export function CashReportDetailDialog({
                 {!sheet || !sheet.rows || sheet.rows.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-xs">
                     <Coins className="w-8 h-8 opacity-40 mb-2" />
-                    <span>Ehhez a jelentéshez még nincs rögzített címletjegyzék.</span>
+                    <span>{t('pettyCash:print.no_denominations', 'Ehhez a jelentéshez még nincs rögzített címletjegyzék.')}</span>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between border-b pb-2">
-                      <span className="font-semibold text-xs">Rögzített címletjegyzék (v{sheet.version})</span>
+                      <span className="font-semibold text-xs">{t('pettyCash:print.denomination_spec', 'Rögzített címletjegyzék')} (v{sheet.version})</span>
                       <span className="font-mono text-xs font-bold text-primary">
-                        Összesen: {fmtBalance(sheet.total_amount, currency)}
+                        {t('pettyCash:print.col_total', 'Összesen:')} {fmtBalance(sheet.total_amount, currency)}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -297,51 +299,51 @@ export function CashReportDetailDialog({
                 {!protocol ? (
                   <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-xs">
                     <FileCheck2 className="w-8 h-8 opacity-40 mb-2" />
-                    <span>Nincs lezárt jegyzőkönyv csatolva.</span>
+                    <span>{t('pettyCash:reports.detail_dialog.no_protocol', 'Nincs lezárt jegyzőkönyv csatolva.')}</span>
                   </div>
                 ) : (
                   <div className="space-y-3 text-xs">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 bg-muted/30 rounded-lg border">
                       <div>
-                        <span className="text-muted-foreground block text-[11px]">Pénztárkönyv szerinti záró:</span>
+                        <span className="text-muted-foreground block text-[11px]">{t('pettyCash:closing_wizard.step3.book_closing_label', 'Könyv szerinti záró:')}</span>
                         <span className="font-mono font-semibold">{fmtBalance(protocol.book_balance, currency)}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-[11px]">Tényleges záró:</span>
+                        <span className="text-muted-foreground block text-[11px]">{t('pettyCash:closing_wizard.step3.actual_closing_label', 'Tényleges záró:')}</span>
                         <span className="font-mono font-bold text-foreground">{fmtBalance(protocol.actual_balance, currency)}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-[11px]">Eltérés:</span>
+                        <span className="text-muted-foreground block text-[11px]">{t('pettyCash:reports.detail_dialog.discrepancy', 'Eltérés:')}</span>
                         <span className={cn(
                           "font-mono font-bold",
                           protocol.difference === 0 ? "text-emerald-600" : "text-destructive"
                         )}>
-                          {protocol.difference === 0 ? '0 Ft (Egyezik)' : `${protocol.difference > 0 ? '+' : ''}${fmtBalance(protocol.difference, currency)}`}
+                          {protocol.difference === 0 ? t('pettyCash:reports.detail_dialog.discrepancy_match', '0 Ft (Egyezik)') : `${protocol.difference > 0 ? '+' : ''}${fmtBalance(protocol.difference, currency)}`}
                         </span>
                       </div>
                     </div>
 
                     {protocol.difference_reason && (
                       <div className="p-3 rounded-lg border bg-muted/20 space-y-1">
-                        <span className="font-semibold text-foreground block">Eltérés indoklása:</span>
+                        <span className="font-semibold text-foreground block">{t('pettyCash:reports.detail_dialog.discrepancy_reason', 'Eltérés indoklása:')}</span>
                         <p className="text-muted-foreground">{protocol.difference_reason}</p>
                       </div>
                     )}
 
                     {protocol.action && (
                       <div className="p-3 rounded-lg border bg-muted/20 space-y-1">
-                        <span className="font-semibold text-foreground block">Elrendelt intézkedés:</span>
+                        <span className="font-semibold text-foreground block">{t('pettyCash:reports.detail_dialog.ordered_action', 'Elrendelt intézkedés:')}</span>
                         <p className="text-muted-foreground">
-                          {protocol.action === 'booked_as_shortage' ? 'Hiányként lekönyvelve (3681 ellenszámla)' :
-                           protocol.action === 'booked_as_surplus' ? 'Többletként lekönyvelve (4791 ellenszámla)' :
-                           protocol.action === 'cashier_repays' ? 'Pénztáros által megtérítve' : protocol.action}
+                          {protocol.action === 'booked_as_shortage' ? t('pettyCash:reports.detail_dialog.action_booked_shortage', 'Hiányként lekönyvelve (3681 ellenszámla)') :
+                           protocol.action === 'booked_as_surplus' ? t('pettyCash:reports.detail_dialog.action_booked_surplus', 'Többletként lekönyvelve (4791 ellenszámla)') :
+                           protocol.action === 'cashier_repays' ? t('pettyCash:reports.detail_dialog.action_cashier_repays', 'Pénztáros által megtérítve') : protocol.action}
                         </p>
                       </div>
                     )}
 
                     {report?.notes && (
                       <div className="p-3 rounded-lg border bg-muted/10 space-y-1">
-                        <span className="font-semibold text-foreground block">Jelentés megjegyzései:</span>
+                        <span className="font-semibold text-foreground block">{t('pettyCash:reports.detail_dialog.report_notes', 'Jelentés megjegyzései:')}</span>
                         <p className="text-muted-foreground whitespace-pre-line">{report.notes}</p>
                       </div>
                     )}
@@ -354,12 +356,12 @@ export function CashReportDetailDialog({
 
         <DialogFooter className="pt-2 border-t border-border/60 flex items-center justify-between">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="text-xs">
-            Bezárás
+            {t('common:close', 'Bezárás')}
           </Button>
 
           <Button size="sm" onClick={handlePrintReport} className="text-xs gap-1.5 bg-primary font-medium">
             <Printer className="w-3.5 h-3.5" />
-            Pénztárjelentés nyomtatása / PDF
+            {t('pettyCash:closing_dialog.print_pdf', 'Pénztárjelentés nyomtatása / PDF')}
           </Button>
         </DialogFooter>
       </DialogContent>

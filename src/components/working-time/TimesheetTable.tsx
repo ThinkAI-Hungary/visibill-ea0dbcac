@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ import {
   Palmtree,
 } from 'lucide-react';
 import { format, parseISO, isSameMonth } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import type { TimeEntry } from '@/lib/payrollUtils';
 import { cn } from '@/lib/utils';
 
@@ -72,6 +73,8 @@ export function TimesheetTable({
   userProfileNames = {},
   isAdmin = false,
 }: TimesheetTableProps) {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   // Filter to current month only
@@ -109,9 +112,9 @@ export function TimesheetTable({
           <div className="p-3 rounded-full bg-muted">
             <ClipboardList className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="font-semibold">Nincs bejegyzés</h3>
+          <h3 className="font-semibold">{t('working_time.timesheet_table.empty', 'Nincs bejegyzés')}</h3>
           <p className="text-sm text-muted-foreground max-w-xs">
-            Ebben a hónapban még nincs rögzített munkaidő.
+            {t('working_time.timesheet_table.no_entries_month', 'Ebben a hónapban még nincs rögzített munkaidő.')}
           </p>
         </CardContent>
       </Card>
@@ -131,7 +134,7 @@ export function TimesheetTable({
                   className="h-7 -ml-2 gap-1 text-xs font-semibold uppercase tracking-wider"
                   onClick={toggleSort}
                 >
-                  Dátum
+                  {t('working_time.timesheet_table.col_date', 'Dátum')}
                   {sortDir === 'asc' ? (
                     <ArrowUp className="h-3 w-3" />
                   ) : (
@@ -139,14 +142,14 @@ export function TimesheetTable({
                   )}
                 </Button>
               </TableHead>
-              {isAdmin && <TableHead className="min-w-[120px]">Dolgozó</TableHead>}
-              <TableHead className="w-[100px] text-center">Kezdete</TableHead>
-              <TableHead className="w-[100px] text-center">Vége</TableHead>
-              <TableHead className="w-[80px] text-right">Órák</TableHead>
-              <TableHead className="min-w-[120px]">Projekt</TableHead>
-              <TableHead className="min-w-[100px]">Megjegyzés</TableHead>
-              <TableHead className="w-[110px] text-center">Státusz</TableHead>
-              <TableHead className="w-[140px] text-center">Jóváhagyva</TableHead>
+              {isAdmin && <TableHead className="min-w-[120px]">{t('working_time.timesheet_table.col_employee', 'Dolgozó')}</TableHead>}
+              <TableHead className="w-[100px] text-center">{t('working_time.timesheet_table.col_start', 'Kezdete')}</TableHead>
+              <TableHead className="w-[100px] text-center">{t('working_time.timesheet_table.col_end', 'Vége')}</TableHead>
+              <TableHead className="w-[80px] text-right">{t('working_time.timesheet_table.col_hours', 'Órák')}</TableHead>
+              <TableHead className="min-w-[120px]">{t('working_time.timesheet_table.col_project', 'Projekt')}</TableHead>
+              <TableHead className="min-w-[100px]">{t('working_time.timesheet_table.col_notes', 'Megjegyzés')}</TableHead>
+              <TableHead className="w-[110px] text-center">{t('working_time.timesheet_table.col_status', 'Státusz')}</TableHead>
+              <TableHead className="w-[140px] text-center">{t('working_time.timesheet_table.col_approved', 'Jóváhagyva')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -163,7 +166,7 @@ export function TimesheetTable({
                   : null;
               const projName = entry.project_id ? projectNames[entry.project_id] || '—' : null;
               const employeeName = entry.user_id
-                ? (userProfileNames[entry.user_id] || userNameMap[entry.user_id] || 'Ismeretlen')
+                ? (userProfileNames[entry.user_id] || userNameMap[entry.user_id] || t('common:status.unknown', 'Ismeretlen'))
                 : '—';
 
               return (
@@ -178,7 +181,7 @@ export function TimesheetTable({
                   <TableCell className="font-medium whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       {isAbsence && <Palmtree className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
-                      {format(parseISO(entry.date), 'yyyy.MM.dd. (EEEE)', { locale: hu })}
+                      {format(parseISO(entry.date), 'yyyy.MM.dd. (EEEE)', { locale: getDateFnsLocale() })}
                     </div>
                   </TableCell>
 
@@ -201,13 +204,13 @@ export function TimesheetTable({
 
                   {/* Hours */}
                   <TableCell className="text-right font-mono font-semibold tabular-nums">
-                    {entry.hours} óra
+                    {entry.hours} {t('working_time.monthly_balance.hours_unit', 'óra')}
                   </TableCell>
 
                   {/* Project */}
                   <TableCell className="text-muted-foreground truncate max-w-[160px]">
                     {isAbsence ? (
-                      <span className="text-amber-500 text-xs font-medium">Szabadság</span>
+                      <span className="text-amber-500 text-xs font-medium">{t('working_time.form.vacation', 'Szabadság')}</span>
                     ) : (
                       projName || '—'
                     )}
@@ -221,7 +224,7 @@ export function TimesheetTable({
                   {/* Status */}
                   <TableCell className="text-center">
                     <Badge variant="outline" className={cn('text-[10px]', statusCfg.className)}>
-                      {statusCfg.label}
+                      {t(`working_time.legend.${entry.status}`, statusCfg.label)}
                     </Badge>
                   </TableCell>
 
@@ -235,17 +238,17 @@ export function TimesheetTable({
           </TableBody>
           <TableFooter>
             <TableRow className="font-semibold">
-              <TableCell>Összesen</TableCell>
+              <TableCell>{t('working_time.timesheet_table.total', 'Összesen')}</TableCell>
               {isAdmin && <TableCell />}
               <TableCell />
               <TableCell />
               <TableCell className="text-right font-mono tabular-nums text-primary">
-                {totalHours} óra
+                {totalHours} {t('working_time.monthly_balance.hours_unit', 'óra')}
               </TableCell>
               <TableCell colSpan={4}>
                 <span className="text-muted-foreground font-normal text-xs">
-                  {monthEntries.length} bejegyzés •{' '}
-                  {format(monthDate, 'yyyy. MMMM', { locale: hu })}
+                  {t('working_time.submitted_panel.entries_count', { count: monthEntries.length, defaultValue: `${monthEntries.length} bejegyzés` })} •{' '}
+                  {format(monthDate, 'yyyy. MMMM', { locale: getDateFnsLocale() })}
                 </span>
               </TableCell>
             </TableRow>

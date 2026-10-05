@@ -60,7 +60,7 @@ export function EmailPreferences() {
       }
     } catch (error) {
       reportError({ type: 'db_query', component: 'EmailPreferences', action: 'error', message: 'Error loading email preferences:', error: error });
-      toast({ title: 'Nem sikerült betölteni az email beállításokat', variant: 'destructive' });
+      toast({ title: t('notifications.load_error', 'Nem sikerült betölteni az email beállításokat'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -84,10 +84,10 @@ export function EmailPreferences() {
       if (error) throw error;
 
       setPreferences(prev => ({ ...prev, [key]: value }));
-      toast({ title: 'Beállítás frissítve' });
+      toast({ title: t('notifications.update_success', 'Beállítás frissítve') });
     } catch (error) {
       reportError({ type: 'db_query', component: 'EmailPreferences', action: 'error', message: 'Error updating preference:', error: error });
-      toast({ title: 'Nem sikerült frissíteni a beállítást', variant: 'destructive' });
+      toast({ title: t('notifications.update_error', 'Nem sikerült frissíteni a beállítást'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }

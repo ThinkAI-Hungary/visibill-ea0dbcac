@@ -79,8 +79,8 @@ const EmailAliasManager = () => {
       if (data?.alias) {
         setAlias(data.alias);
         toast({
-          title: 'Email alias létrehozva',
-          description: 'Az email alias sikeresen generálva',
+          title: t('settings:integrations.email.alias_created_title', 'Email alias létrehozva'),
+          description: t('settings:integrations.email.alias_created_desc', 'Az email alias sikeresen generálva'),
         });
       } else {
         // Refetch to get the newly created alias
@@ -94,15 +94,15 @@ const EmailAliasManager = () => {
         if (newAlias) {
           setAlias(newAlias);
           toast({
-            title: 'Email alias létrehozva',
-            description: 'Az email alias sikeresen generálva',
+            title: t('settings:integrations.email.alias_created_title', 'Email alias létrehozva'),
+            description: t('settings:integrations.email.alias_created_desc', 'Az email alias sikeresen generálva'),
           });
         }
       }
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'EmailAliasManager', action: 'error', message: 'Error generating alias:', error: error });
       
-      let errorMessage = 'Nem sikerült létrehozni az email aliast';
+      let errorMessage = t('settings:integrations.email.generate_error', 'Nem sikerült létrehozni az email aliast');
       if (error?.message) {
         errorMessage = error.message;
       } else if (error?.context?.body) {
@@ -116,7 +116,7 @@ const EmailAliasManager = () => {
       
       toast({
         variant: 'destructive',
-        title: 'Hiba',
+        title: t('common:error', 'Hiba'),
         description: errorMessage,
       });
     } finally {
@@ -131,15 +131,15 @@ const EmailAliasManager = () => {
       await navigator.clipboard.writeText(alias.alias_email);
       setCopied(true);
       toast({
-        title: 'Másolva',
-        description: 'Az email cím a vágólapra került',
+        title: t('settings:integrations.email.copied_title', 'Másolva'),
+        description: t('settings:integrations.email.copied_desc', 'Az email cím a vágólapra került'),
       });
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Másolási hiba',
-        description: 'Nem sikerült másolni az email címet',
+        title: t('settings:integrations.email.copy_error_title', 'Másolási hiba'),
+        description: t('settings:integrations.email.copy_error_desc', 'Nem sikerült másolni az email címet'),
       });
     }
   };

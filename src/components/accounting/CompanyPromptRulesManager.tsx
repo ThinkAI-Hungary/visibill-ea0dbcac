@@ -108,7 +108,7 @@ export function CompanyPromptRulesManager({
   companyId: propCompanyId,
   asDialog = false,
 }: CompanyPromptRulesManagerProps) {
-  const { t, i18n } = useTranslation('accounty');
+  const { t, i18n } = useTranslation(['accounty', 'common']);
   const { pathname } = useLocation();
   const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const isHr = prefix === '/hr' || i18n.language === 'hr';
@@ -158,13 +158,20 @@ export function CompanyPromptRulesManager({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company-prompt-rules', effectiveCompanyId] });
-      toast({ title: 'Szabály létrehozva', description: 'Az egyedi szabály sikeresen hozzáadva a szabálytárhoz.' });
+      toast({
+        title: t('prompts_page.toast_created', { defaultValue: 'Szabály létrehozva' }),
+        description: t('prompts_page.toast_created_desc', { defaultValue: 'Az egyedi szabály sikeresen hozzáadva a szabálytárhoz.' }),
+      });
       setNewRuleName('');
       setNewRulePrompt('');
       setIsOpen(false);
     },
     onError: (err: any) => {
-      toast({ variant: 'destructive', title: 'Hiba történt', description: err.message || 'Nem sikerült menteni a szabályt.' });
+      toast({
+        variant: 'destructive',
+        title: t('common:status.error', { defaultValue: 'Hiba történt' }),
+        description: err.message || t('prompts_page.toast_save_error', { defaultValue: 'Nem sikerült menteni a szabályt.' }),
+      });
     }
   });
 
@@ -181,7 +188,11 @@ export function CompanyPromptRulesManager({
       queryClient.invalidateQueries({ queryKey: ['company-prompt-rules', effectiveCompanyId] });
     },
     onError: (err: any) => {
-      toast({ variant: 'destructive', title: 'Módosítás sikertelen', description: err.message });
+      toast({
+        variant: 'destructive',
+        title: t('prompts_page.toast_update_error', { defaultValue: 'Módosítás sikertelen' }),
+        description: err.message,
+      });
     }
   });
 
@@ -196,10 +207,17 @@ export function CompanyPromptRulesManager({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company-prompt-rules', effectiveCompanyId] });
-      toast({ title: 'Szabály törölve', description: 'A szabály eltávolítva a könyvtárból.' });
+      toast({
+        title: t('prompts_page.toast_deleted', { defaultValue: 'Szabály törölve' }),
+        description: t('prompts_page.toast_deleted_desc', { defaultValue: 'A szabály eltávolítva a könyvtárból.' }),
+      });
     },
     onError: (err: any) => {
-      toast({ variant: 'destructive', title: 'Törlés sikertelen', description: err.message });
+      toast({
+        variant: 'destructive',
+        title: t('prompts_page.toast_delete_error', { defaultValue: 'Törlés sikertelen' }),
+        description: err.message,
+      });
     }
   });
 
@@ -345,7 +363,7 @@ export function CompanyPromptRulesManager({
                         <Switch
                           checked={rule.is_active}
                           onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: rule.id, is_active: checked })}
-                          aria-label="Szabály állapota"
+                          aria-label={t('prompts_page.aria_rule_status', { defaultValue: 'Szabály állapota' })}
                           className="data-[state=checked]:bg-primary"
                         />
                         <Button
@@ -357,7 +375,7 @@ export function CompanyPromptRulesManager({
                               deleteRuleMutation.mutate(rule.id);
                             }
                           }}
-                          title="Törlés"
+                          title={t('common:actions.delete', { defaultValue: 'Törlés' })}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
   companyId,
   companyName,
 }) => {
+  const { t } = useTranslation(['invoices', 'common']);
   const { data: status, isLoading: statusLoading, refetch: refetchStatus } = useSzamlazzStatus(companyId);
   const syncMutation = useSyncSzamlazzOutbound(companyId);
 
@@ -131,10 +133,10 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
             </div>
             <div>
               <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-                Számlázz.hu Kimenő Számlakép Szinkron
+                {t('invoices:szamlazz_modal.title', { defaultValue: 'Számlázz.hu Kimenő Számlakép Szinkron' })}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground mt-0.5">
-                {companyName || 'Kiválasztott cég'} saját kiállítású kimenő számláinak hivatalos PDF számlaképe
+                {companyName ? `${companyName} - ` : ''}{t('invoices:szamlazz_modal.subtitle', { defaultValue: 'Automatikus PDF számlakép letöltés és csatolás a NAV kimenő számlákhoz.' })}
               </DialogDescription>
             </div>
           </div>
@@ -144,19 +146,25 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
           {/* Status Metric Cards */}
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3.5 rounded-lg border bg-card/50 flex flex-col items-center justify-center text-center">
-              <span className="text-xs font-medium text-muted-foreground">Kimenő számlák</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {t('invoices:szamlazz_modal.stat_total_outbound', { defaultValue: 'Kimenő számlák' })}
+              </span>
               <span className="text-2xl font-bold text-foreground mt-1">
                 {statusLoading ? '...' : status?.totalOutbound ?? 0}
               </span>
             </div>
             <div className="p-3.5 rounded-lg border bg-card/50 flex flex-col items-center justify-center text-center">
-              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Számlaképpel</span>
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                {t('invoices:szamlazz_modal.stat_with_image', { defaultValue: 'Számlaképpel' })}
+              </span>
               <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                 {statusLoading ? '...' : status?.withImageCount ?? 0}
               </span>
             </div>
             <div className="p-3.5 rounded-lg border bg-card/50 flex flex-col items-center justify-center text-center">
-              <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Hiányzó kép</span>
+              <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                {t('invoices:szamlazz_modal.stat_missing_image', { defaultValue: 'Hiányzó kép' })}
+              </span>
               <span className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
                 {statusLoading ? '...' : status?.pendingCount ?? 0}
               </span>
@@ -169,10 +177,10 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
               <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="space-y-1 text-sm">
                 <p className="font-semibold text-amber-900 dark:text-amber-200">
-                  Nincs beállított Számlázz.hu Agent kulcs
+                  {t('invoices:szamlazz_modal.no_agent_key_title', { defaultValue: 'Nincs beállított Számlázz.hu Agent kulcs' })}
                 </p>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  A számlák automatikus letöltéséhez szükség van a Számlázz.hu Számla Agent kulcsra. Ezt az Integrációk menüpontban tudod megadni.
+                  {t('invoices:szamlazz_modal.no_agent_key_desc', { defaultValue: 'A számlák automatikus letöltéséhez szükség van a Számlázz.hu Számla Agent kulcsra. Ezt az Integrációk menüpontban tudod megadni.' })}
                 </p>
                 <div className="pt-2">
                   <Link
@@ -180,7 +188,7 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
                     onClick={() => onOpenChange(false)}
                   >
-                    Megnyitás az Integrációkban
+                    {t('invoices:szamlazz_modal.open_in_integrations', { defaultValue: 'Megnyitás az Integrációkban' })}
                     <ExternalLink className="h-3 w-3" />
                   </Link>
                 </div>
@@ -194,10 +202,10 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
               <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div className="text-sm">
                 <p className="font-medium text-emerald-900 dark:text-emerald-200">
-                  Minden kimenő számla rendelkezik számlaképpel!
+                  {t('invoices:szamlazz_modal.all_with_image_title', { defaultValue: 'Minden kimenő számla rendelkezik számlaképpel!' })}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Nincs letöltésre váró hiányzó bizonylat.
+                  {t('invoices:szamlazz_modal.all_with_image_desc', { defaultValue: 'Nincs letöltésre váró hiányzó bizonylat.' })}
                 </p>
               </div>
             </div>
@@ -211,7 +219,11 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
                   {phase === 'running' && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
                   {phase === 'paused' && <AlertTriangle className="h-4 w-4 text-amber-500" />}
                   {phase === 'done' && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
-                  {phase === 'running' ? 'Számlaképek letöltése folyamatban...' : phase === 'paused' ? 'Szinkron szüneteltetve' : 'Szinkronizáció befejeződött!'}
+                  {phase === 'running'
+                    ? t('invoices:szamlazz_modal.downloading', { defaultValue: 'Számlaképek letöltése folyamatban...' })
+                    : phase === 'paused'
+                    ? t('invoices:szamlazz_modal.paused', { defaultValue: 'Szinkron szüneteltetve' })
+                    : t('invoices:szamlazz_modal.finished', { defaultValue: 'Szinkronizáció befejeződött!' })}
                 </span>
                 <span className="font-semibold text-xs text-muted-foreground">
                   {downloadedTotal} / {initialPending} ({progressPercent}%)
@@ -224,7 +236,7 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
               {processedLog.length > 0 && (
                 <div className="pt-2">
                   <span className="text-xs font-medium text-muted-foreground block mb-1.5">
-                    Legutóbb letöltött számlák:
+                    {t('invoices:szamlazz_modal.recent_downloads', { defaultValue: 'Legutóbb letöltött számlák:' })}
                   </span>
                   <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
                     {processedLog.slice(0, 10).map((item, idx) => (
@@ -235,11 +247,11 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
                         <span className="font-mono font-medium">{item.invoiceNumber}</span>
                         {item.success ? (
                           <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200">
-                            Letöltve
+                            {t('invoices:szamlazz_modal.downloaded', { defaultValue: 'Letöltve' })}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200">
-                            {item.error || 'Nincs kép'}
+                            {item.error || t('invoices:szamlazz_modal.no_image', { defaultValue: 'Nincs kép' })}
                           </Badge>
                         )}
                       </div>
@@ -253,7 +265,7 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
           {/* Error Banner */}
           {phase === 'error' && errorMessage && (
             <div className="p-3.5 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-500/10 text-sm text-red-600 dark:text-red-400">
-              <p className="font-semibold text-xs">Hiba történt:</p>
+              <p className="font-semibold text-xs">{t('common:status.error', { defaultValue: 'Hiba történt:' })}</p>
               <p className="text-xs mt-0.5">{errorMessage}</p>
             </div>
           )}
@@ -261,21 +273,21 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
 
         <DialogFooter className="p-4 border-t bg-muted/10 gap-2 sm:gap-0 flex-row justify-between items-center">
           <Button variant="ghost" size="sm" onClick={handleClose}>
-            {phase === 'done' ? 'Bezárás' : 'Mégse'}
+            {phase === 'done' ? t('invoices:szamlazz_modal.btn_close', { defaultValue: 'Bezárás' }) : t('common:actions.cancel', { defaultValue: 'Mégse' })}
           </Button>
 
           <div className="flex items-center gap-2">
             {phase === 'running' && (
               <Button variant="outline" size="sm" onClick={handleStop} className="gap-1.5">
                 <StopCircle className="h-4 w-4 text-amber-500" />
-                Megállítás
+                {t('invoices:szamlazz_modal.btn_pause', { defaultValue: 'Szüneteltetés' })}
               </Button>
             )}
 
             {phase === 'paused' && (
               <Button size="sm" onClick={handleStartSync} className="gap-1.5">
                 <RefreshCw className="h-4 w-4" />
-                Folytatás
+                {t('invoices:szamlazz_modal.btn_continue', { defaultValue: 'Folytatás' })}
               </Button>
             )}
 
@@ -286,13 +298,13 @@ export const SzamlazzSyncModal: React.FC<SzamlazzSyncModalProps> = ({
                 className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <RefreshCw className="h-4 w-4" />
-                Szinkronizálás indítása ({status?.pendingCount} db)
+                {t('invoices:szamlazz_modal.btn_start_sync', { count: status?.pendingCount, defaultValue: `Szinkronizáció indítása (${status?.pendingCount} db)` })}
               </Button>
             )}
 
             {phase === 'done' && (
               <Button size="sm" onClick={handleClose} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                Kész
+                {t('invoices:szamlazz_modal.btn_close', { defaultValue: 'Bezárás' })}
               </Button>
             )}
           </div>

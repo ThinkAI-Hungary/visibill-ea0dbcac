@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -139,6 +140,7 @@ export function InvoiceDataExportDialog({
   companyName,
   onExport,
 }: InvoiceDataExportDialogProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const [format, setFormat] = useState<'csv' | 'xlsx' | 'pdf'>(initialFormat);
   const [exportLevel, setExportLevel] = useState<ExportLevel>(initialLevel);
   const [sheetLayout, setSheetLayout] = useState<ExportSheetLayout>(initialSheetLayout || 'single');
@@ -257,7 +259,7 @@ export function InvoiceDataExportDialog({
           <div className="flex items-center gap-3 flex-wrap">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
               <Download className="h-5 w-5 text-primary" />
-              Számlák Exportálása
+              {t('invoices:export_dialog.title', { defaultValue: 'Számlák Exportálása' })}
             </DialogTitle>
 
             {/* Pre-selection badge */}
@@ -269,7 +271,7 @@ export function InvoiceDataExportDialog({
             )}
           </div>
           <DialogDescription className="mt-1 text-xs">
-            Válaszd ki az exportálandó számlákat, az időszakot, az adatszintet és a kívánt fájlformátumot.
+            {t('invoices:export_dialog.subtitle', { defaultValue: 'Válaszd ki az exportálandó számlákat, az időszakot, az adatszintet és a kívánt fájlformátumot.' })}
           </DialogDescription>
         </DialogHeader>
 
@@ -277,7 +279,7 @@ export function InvoiceDataExportDialog({
           {/* Export Level Selector (Fejléc vs Tételes Kontírozott) */}
           <div>
             <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
-              Exportálási Adatszint
+              {t('invoices:export_dialog.level_label', { defaultValue: 'Exportálási Adatszint' })}
             </Label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -292,10 +294,10 @@ export function InvoiceDataExportDialog({
               >
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-primary" />
-                  <span className="text-xs font-bold">Fejléces Összesítő</span>
+                  <span className="text-xs font-bold">{t('invoices:export_dialog.level_summary', { defaultValue: 'Fejléces Összesítő' })}</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground/80 font-normal">
-                  Számlánként 1 sor (Fejléc adatok, bruttó/nettó/ÁFA összegek)
+                  {t('invoices:export_dialog.level_summary_desc', { defaultValue: 'Számlánként 1 sor (Fejléc adatok, bruttó/nettó/ÁFA összegek)' })}
                 </span>
               </button>
 
@@ -311,10 +313,12 @@ export function InvoiceDataExportDialog({
               >
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-emerald-500" />
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Tételes Kontírozott (NAV Audit)</span>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    {t('invoices:export_dialog.level_itemized', { defaultValue: 'Tételes Kontírozott (NAV Audit)' })}
+                  </span>
                 </div>
                 <span className="text-[10px] text-muted-foreground/80 font-normal">
-                  Tételenkénti kontírozás + Tartozik (T) & Követel (K) főkönyvi számok
+                  {t('invoices:export_dialog.level_itemized_desc', { defaultValue: 'Tételenkénti kontírozás + Tartozik (T) & Követel (K) főkönyvi számok' })}
                 </span>
               </button>
             </div>
@@ -325,7 +329,7 @@ export function InvoiceDataExportDialog({
             {/* Export format picker */}
             <div>
               <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
-                Fájlformátum
+                {t('invoices:export_dialog.format_label', { defaultValue: 'Fájlformátum' })}
               </Label>
               <div className="grid grid-cols-3 gap-2">
                 <button
@@ -373,19 +377,19 @@ export function InvoiceDataExportDialog({
             {/* Quick preset selector */}
             <div>
               <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
-                Időszak szűrő
+                {t('invoices:export_dialog.period_label', { defaultValue: 'Időszak szűrő' })}
               </Label>
               <select
                 value={selectedPreset}
                 onChange={(e) => setSelectedPreset(e.target.value as PeriodPreset)}
                 className="w-full h-10 px-3 rounded-lg border border-border bg-background text-xs font-medium focus:ring-1 focus:ring-primary"
               >
-                <option value="all_filtered">Összes szűrt számla ({invoices.length} db)</option>
-                <option value="current_month">Aktuális hónap ({getPresetDates('current_month').label})</option>
-                <option value="previous_month">Előző hónap ({getPresetDates('previous_month').label})</option>
-                <option value="current_quarter">Aktuális negyedév ({getPresetDates('current_quarter').label})</option>
-                <option value="previous_quarter">Előző negyedév ({getPresetDates('previous_quarter').label})</option>
-                <option value="custom">Egyéni dátumtartomány...</option>
+                <option value="all_filtered">{t('invoices:export_dialog.preset_all_filtered', { count: invoices.length, defaultValue: `Összes szűrt számla (${invoices.length} db)` })}</option>
+                <option value="current_month">{t('invoices:export_dialog.preset_current_month', { label: getPresetDates('current_month').label, defaultValue: `Aktuális hónap (${getPresetDates('current_month').label})` })}</option>
+                <option value="previous_month">{t('invoices:export_dialog.preset_previous_month', { label: getPresetDates('previous_month').label, defaultValue: `Előző hónap (${getPresetDates('previous_month').label})` })}</option>
+                <option value="current_quarter">{t('invoices:export_dialog.preset_current_quarter', { label: getPresetDates('current_quarter').label, defaultValue: `Aktuális negyedév (${getPresetDates('current_quarter').label})` })}</option>
+                <option value="previous_quarter">{t('invoices:export_dialog.preset_previous_quarter', { label: getPresetDates('previous_quarter').label, defaultValue: `Előző negyedév (${getPresetDates('previous_quarter').label})` })}</option>
+                <option value="custom">{t('invoices:export_dialog.preset_custom', { defaultValue: 'Egyéni dátumtartomány...' })}</option>
               </select>
             </div>
           </div>
@@ -394,7 +398,7 @@ export function InvoiceDataExportDialog({
           {selectedPreset === 'custom' && (
             <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-muted/20 border border-border">
               <div>
-                <Label htmlFor="export-date-from" className="text-xs text-muted-foreground">Dátum -tól</Label>
+                <Label htmlFor="export-date-from" className="text-xs text-muted-foreground">{t('invoices:export_dialog.custom_from', { defaultValue: 'Dátum -tól' })}</Label>
                 <Input
                   id="export-date-from"
                   type="date"
@@ -404,7 +408,7 @@ export function InvoiceDataExportDialog({
                 />
               </div>
               <div>
-                <Label htmlFor="export-date-to" className="text-xs text-muted-foreground">Dátum -ig</Label>
+                <Label htmlFor="export-date-to" className="text-xs text-muted-foreground">{t('invoices:export_dialog.custom_to', { defaultValue: 'Dátum -ig' })}</Label>
                 <Input
                   id="export-date-to"
                   type="date"
@@ -420,7 +424,7 @@ export function InvoiceDataExportDialog({
           {format === 'xlsx' && (
             <div>
               <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
-                Excel Munkalapok Elrendezése
+                {t('invoices:export_dialog.excel_layout_label', { defaultValue: 'Excel Munkalapok Elrendezése' })}
               </Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
@@ -435,8 +439,8 @@ export function InvoiceDataExportDialog({
                 >
                   <FileSpreadsheet className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-semibold text-xs">Egyetlen munkalap</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">Minden számla egyetlen közös táblázatban</div>
+                    <div className="font-semibold text-xs">{t('invoices:export_dialog.layout_single', { defaultValue: 'Egyetlen munkalap' })}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{t('invoices:export_dialog.layout_single_desc', { defaultValue: 'Minden számla egyetlen közös táblázatban' })}</div>
                   </div>
                 </button>
 
@@ -452,8 +456,8 @@ export function InvoiceDataExportDialog({
                 >
                   <FileSpreadsheet className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-semibold text-xs text-emerald-600 dark:text-emerald-400">Fizetési mód szerint bontva (3 fül)</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">Utalás és kártya, Készpénz és házipénztár, Egyéb</div>
+                    <div className="font-semibold text-xs text-emerald-600 dark:text-emerald-400">{t('invoices:export_dialog.layout_by_payment', { defaultValue: 'Fizetési mód szerint bontva (3 fül)' })}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{t('invoices:export_dialog.layout_by_payment_desc', { defaultValue: 'Utalás és kártya, Készpénz és házipénztár, Egyéb' })}</div>
                   </div>
                 </button>
               </div>
@@ -466,7 +470,7 @@ export function InvoiceDataExportDialog({
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  placeholder="Keresés bizonylatszám, partner vagy összeg alapján..."
+                  placeholder={t('invoices:export_dialog.table_search_placeholder', { defaultValue: 'Keresés bizonylatszám, partner vagy összeg alapján...' })}
                   value={searchQuery}
                   onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                   className="pl-8 h-8 text-xs bg-background/50"
@@ -481,7 +485,7 @@ export function InvoiceDataExportDialog({
                   onClick={() => handleToggleSelectAll(true)}
                   className="h-8 text-[11px] px-2.5"
                 >
-                  Mindet kijelöl
+                  {t('invoices:export_dialog.btn_select_all', { defaultValue: 'Mindet kijelöl' })}
                 </Button>
                 <Button
                   type="button"
@@ -490,7 +494,7 @@ export function InvoiceDataExportDialog({
                   onClick={() => handleToggleSelectAll(false)}
                   className="h-8 text-[11px] px-2.5 text-muted-foreground hover:text-foreground"
                 >
-                  Kijelölés törlése
+                  {t('invoices:export_dialog.btn_deselect_all', { defaultValue: 'Kijelölés törlése' })}
                 </Button>
               </div>
             </div>
@@ -506,10 +510,10 @@ export function InvoiceDataExportDialog({
                         onCheckedChange={(checked) => handleToggleSelectAll(!!checked)}
                       />
                     </TableHead>
-                    <TableHead className="w-28">Biz.szám</TableHead>
-                    <TableHead className="w-24">Dátum</TableHead>
-                    <TableHead>Partner</TableHead>
-                    <TableHead className="text-right w-28">Bruttó összeg</TableHead>
+                    <TableHead className="w-28">{t('invoices:columns.invoice_number', { defaultValue: 'Biz.szám' })}</TableHead>
+                    <TableHead className="w-24">{t('invoices:columns.issue_date', { defaultValue: 'Dátum' })}</TableHead>
+                    <TableHead>{t('invoices:columns.partner', { defaultValue: 'Partner' })}</TableHead>
+                    <TableHead className="text-right w-28">{t('invoices:columns.gross_amount', { defaultValue: 'Bruttó összeg' })}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -558,7 +562,7 @@ export function InvoiceDataExportDialog({
                   ) : (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        Nincs a keresési feltételeknek megfelelő számla.
+                        {t('common:status.empty', { defaultValue: 'Nincs a keresési feltételeknek megfelelő számla.' })}
                       </TableCell>
                     </TableRow>
                   )}
@@ -569,7 +573,7 @@ export function InvoiceDataExportDialog({
             {/* Table pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-2 py-1.5 text-xs text-muted-foreground">
-                <span>{filteredInvoices.length} találat • {validCurrentPage}. / {totalPages} oldal</span>
+                <span>{filteredInvoices.length} {t('common:labels.results', { defaultValue: 'találat' })} • {validCurrentPage}. / {totalPages} {t('common:labels.page', { defaultValue: 'oldal' })}</span>
                 <div className="flex items-center gap-1">
                   <Button
                     type="button"
@@ -601,16 +605,16 @@ export function InvoiceDataExportDialog({
         <DialogFooter className="border-t border-border pt-4 mt-auto flex-row items-center justify-between sm:justify-between">
           <div className="flex flex-col text-left min-w-[220px]">
             <span className="text-xs font-semibold text-foreground tabular-nums">
-              {invoicesToExport.length} db számla kijelölve
+              {t('invoices:export_dialog.table_selected_count', { selected: invoicesToExport.length, total: invoices.length, defaultValue: `${invoicesToExport.length} db számla kijelölve` })}
             </span>
             <span className="text-[11px] text-muted-foreground tabular-nums">
-              Bruttó összérték: {formatCurrency(totalGrossAmount, 'HUF')}
+              {t('invoices:export_dialog.table_total_gross', { defaultValue: 'Bruttó összérték:' })} {formatCurrency(totalGrossAmount, 'HUF')}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" onClick={onClose} disabled={isExporting}>
-              Mégse
+              {t('common:actions.cancel', { defaultValue: 'Mégse' })}
             </Button>
             <Button
               type="button"
@@ -621,12 +625,12 @@ export function InvoiceDataExportDialog({
               {isExporting ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  Exportálás...
+                  {t('invoices:export_dialog.btn_exporting', { defaultValue: 'Exportálás...' })}
                 </>
               ) : (
                 <>
                   <Download className="h-4 w-4" />
-                  Exportálás
+                  {t('common:actions.export', { defaultValue: 'Exportálás' })}
                 </>
               )}
             </Button>

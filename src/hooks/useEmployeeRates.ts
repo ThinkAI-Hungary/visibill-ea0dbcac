@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +18,8 @@ function normalizeName(name: string): string {
 }
 
 export function useEmployeeRates() {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
@@ -112,17 +115,17 @@ export function useEmployeeRates() {
 
     onSuccess: (result) => {
       if (result === 'created') {
-        toast({ title: 'Siker', description: 'Dolgozó sikeresen hozzáadva.' });
+        toast({ title: t('common:status.success', 'Siker'), description: t('working_time.employee_panel.toast_employee_added', 'Dolgozó sikeresen hozzáadva.') });
       } else {
-        toast({ title: 'Siker', description: 'Dolgozó óradíja frissítve.' });
+        toast({ title: t('common:status.success', 'Siker'), description: t('working_time.employee_panel.toast_rate_updated', 'Dolgozó óradíja frissítve.') });
       }
       invalidate();
     },
     onError: (err: Error) => {
       toast({
         variant: 'destructive',
-        title: 'Hiba',
-        description: err.message || 'Nem sikerült a műveletet végrehajtani.',
+        title: t('common:status.error', 'Hiba'),
+        description: err.message || t('common:errors.operation_failed', 'Nem sikerült a műveletet végrehajtani.'),
       });
     },
   });
@@ -137,14 +140,14 @@ export function useEmployeeRates() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: 'Törölve', description: 'Dolgozó óradíja törölve.' });
+      toast({ title: t('common:status.deleted', 'Törölve'), description: t('working_time.employee_panel.toast_rate_deleted', 'Dolgozó óradíja törölve.') });
       invalidate();
     },
     onError: () => {
       toast({
         variant: 'destructive',
-        title: 'Hiba',
-        description: 'Nem sikerült törölni.',
+        title: t('common:status.error', 'Hiba'),
+        description: t('common:errors.delete_failed', 'Nem sikerült törölni.'),
       });
     },
   });

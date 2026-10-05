@@ -638,13 +638,21 @@ export default function OpeningJournalWizardModal({
     if (result) {
       handleUpdateLine(index, 'exchange_rate', result.rate);
       toast({
-        title: 'MNB árfolyam betöltve',
-        description: `${curr}: ${result.rate} Ft (${result.date}${result.isExact ? '' : ' - legközelebbi korábbi MNB nap'})`,
+        title: t('dialogs.opening_wizard.toasts.mnb_rate_loaded_title', 'MNB árfolyam betöltve'),
+        description: t('dialogs.opening_wizard.toasts.mnb_rate_loaded_desc', '{{curr}}: {{rate}} Ft ({{date}}{{closest}})', {
+          curr,
+          rate: result.rate,
+          date: result.date,
+          closest: result.isExact ? '' : t('dialogs.opening_wizard.toasts.mnb_closest_day', ' - legközelebbi korábbi MNB nap'),
+        }),
       });
     } else {
       toast({
-        title: 'Árfolyam nem található',
-        description: `Nincs elérhető MNB árfolyam a(z) ${curr} devizához a megadott időszakra (${postingDate}).`,
+        title: t('dialogs.opening_wizard.toasts.mnb_rate_not_found_title', 'Árfolyam nem található'),
+        description: t('dialogs.opening_wizard.toasts.mnb_rate_not_found_desc', 'Nincs elérhető MNB árfolyam a(z) {{curr}} devizához a megadott időszakra ({{postingDate}}).', {
+          curr,
+          postingDate,
+        }),
         variant: 'destructive',
       });
     }
@@ -670,13 +678,15 @@ export default function OpeningJournalWizardModal({
     );
     if (updatedCount > 0) {
       toast({
-        title: 'MNB árfolyamok frissítve',
-        description: `${updatedCount} devizás tételhez betöltöttük a hivatalos MNB árfolyamot.`,
+        title: t('dialogs.opening_wizard.toasts.mnb_rates_updated_title', 'MNB árfolyamok frissítve'),
+        description: t('dialogs.opening_wizard.toasts.mnb_rates_updated_desc', '{{count}} devizás tételhez betöltöttük a hivatalos MNB árfolyamot.', {
+          count: updatedCount,
+        }),
       });
     } else {
       toast({
-        title: 'Nem található devizás tétel vagy árfolyam',
-        description: 'Nincs elérhető árfolyam az aktuális devizanemekhez.',
+        title: t('dialogs.opening_wizard.toasts.mnb_rates_none_title', 'Nem található devizás tétel vagy árfolyam'),
+        description: t('dialogs.opening_wizard.toasts.mnb_rates_none_desc', 'Nincs elérhető árfolyam az aktuális devizanemekhez.'),
         variant: 'destructive',
       });
     }
@@ -1279,7 +1289,7 @@ export default function OpeningJournalWizardModal({
 
                                   {/* Árfolyam és MNB lekérő gomb */}
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] text-muted-foreground font-medium w-14 shrink-0">Árfolyam:</span>
+                                    <span className="text-[10px] text-muted-foreground font-medium w-14 shrink-0">{t('common:labels.exchange_rate', 'Árfolyam:')}</span>
                                     <div className="relative flex-1">
                                       <NumberInput
                                         id={`exchange-rate-input-${idx}`}

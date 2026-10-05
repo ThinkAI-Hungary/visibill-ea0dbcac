@@ -1543,20 +1543,20 @@ export default function PartnersPage() {
                   {selectedPartner.has_skonto ? (
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <span className="text-[10px] text-muted-foreground font-semibold block">Kedvezményes határidő</span>
-                        <span className="font-semibold text-foreground">{selectedPartner.skonto_days ?? 8} nap</span>
+                        <span className="text-[10px] text-muted-foreground font-semibold block">{t('partners:details.skonto_deadline', 'Kedvezményes határidő')}</span>
+                        <span className="font-semibold text-foreground">{t('partners:details.skonto_days_val', '{{count}} nap', { count: selectedPartner.skonto_days ?? 8 })}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-muted-foreground font-semibold block">Kedvezmény mértéke</span>
+                        <span className="text-[10px] text-muted-foreground font-semibold block">{t('partners:details.skonto_rate', 'Kedvezmény mértéke')}</span>
                         <span className="font-semibold text-emerald-600 dark:text-emerald-400">{selectedPartner.skonto_percent ?? 2}%</span>
                       </div>
                       <div className="col-span-2 pt-1 border-t border-border/20 text-[11px] text-muted-foreground">
-                        {selectedPartner.skonto_excludes_shipping ? '✅ Szállítási költség kizárva a kedvezményalapból' : '⚠️ Teljes bruttó összegre érvényes'}
+                        {selectedPartner.skonto_excludes_shipping ? t('partners:details.skonto_excludes_shipping_active', '✅ Szállítási költség kizárva a kedvezményalapból') : t('partners:details.skonto_includes_all', '⚠️ Teljes bruttó összegre érvényes')}
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Nincs beállítva skontó ennél a partnernél.</span>
+                      <span className="text-xs text-muted-foreground">{t('partners:details.no_skonto_set', 'Nincs beállítva skontó ennél a partnernél.')}</span>
                       <Button
                         variant="outline"
                         size="sm"
@@ -1564,7 +1564,7 @@ export default function PartnersPage() {
                         className="h-7 text-xs gap-1 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                         disabled={!writable}
                       >
-                        <Plus className="h-3 w-3" /> Beállítás
+                        <Plus className="h-3 w-3" /> {t('partners:details.btn_configure', 'Beállítás')}
                       </Button>
                     </div>
                   )}
@@ -1576,14 +1576,14 @@ export default function PartnersPage() {
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                     <Building2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                    Kapcsolt vállalkozási adatok
+                    {t('partners:details.related_party_section_title', 'Kapcsolt vállalkozási adatok')}
                   </h4>
                   {selectedPartner.related_party ? (
                     <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/20 font-semibold">
-                      Kapcsolt partner
+                      {t('partners:details.related_party_badge', 'Kapcsolt partner')}
                     </Badge>
                   ) : (
-                    <span className="text-[10px] text-muted-foreground">Független</span>
+                    <span className="text-[10px] text-muted-foreground">{t('partners:details.independent_badge', 'Független')}</span>
                   )}
                 </div>
                 <div className="border border-border/30 rounded-xl p-4 bg-muted/10 space-y-2.5">
@@ -1591,30 +1591,30 @@ export default function PartnersPage() {
                     <div className="space-y-2 text-xs">
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <span className="text-[10px] text-muted-foreground font-semibold block">Kapcsolati típus</span>
+                          <span className="text-[10px] text-muted-foreground font-semibold block">{t('partners:details.relation_type', 'Kapcsolati típus')}</span>
                           <span className="font-semibold text-foreground">
-                            {selectedPartner.relation_type ? (RELATION_TYPE_LABELS[selectedPartner.relation_type] || selectedPartner.relation_type) : 'Kapcsolt viszony'}
+                            {selectedPartner.relation_type ? (RELATION_TYPE_LABELS[selectedPartner.relation_type] || selectedPartner.relation_type) : t('partners:details.relation_type_default', 'Kapcsolt viszony')}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-muted-foreground font-semibold block">Tulajdoni hányad</span>
+                          <span className="text-[10px] text-muted-foreground font-semibold block">{t('partners:details.ownership_share', 'Tulajdoni hányad')}</span>
                           <span className="font-semibold text-foreground">
-                            {selectedPartner.ownership_percent != null ? `${selectedPartner.ownership_percent}%` : 'Nem megadott'}
+                            {selectedPartner.ownership_percent != null ? `${selectedPartner.ownership_percent}%` : t('partners:details.not_specified', 'Nem megadott')}
                           </span>
                         </div>
                       </div>
 
                       {(selectedPartner.valid_from || selectedPartner.valid_to) && (
                         <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/20">
-                          Érvényesség: {selectedPartner.valid_from ? formatDateLocale(selectedPartner.valid_from, 'yyyy. MM. dd.') : 'kezdetektől'} – {selectedPartner.valid_to ? formatDateLocale(selectedPartner.valid_to, 'yyyy. MM. dd.') : 'visszavonásig'}
+                          {t('partners:details.validity_label', 'Érvényesség:')} {selectedPartner.valid_from ? formatDateLocale(selectedPartner.valid_from, 'yyyy. MM. dd.') : t('partners:details.validity_from_start', 'kezdetektől')} – {selectedPartner.valid_to ? formatDateLocale(selectedPartner.valid_to, 'yyyy. MM. dd.') : t('partners:details.validity_until_revocation', 'visszavonásig')}
                         </div>
                       )}
 
                       {selectedPartner.parent_partner_id && (
                         <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/20">
-                          Szülő partner:{' '}
+                          {t('partners:details.parent_partner', 'Szülő partner:')}{' '}
                           <span className="font-semibold text-foreground">
-                            {(partners as Partner[] | undefined)?.find(p => p.id === selectedPartner.parent_partner_id)?.name || 'Kijelölt szülő'}
+                            {(partners as Partner[] | undefined)?.find(p => p.id === selectedPartner.parent_partner_id)?.name || t('partners:details.parent_partner_fallback', 'Kijelölt szülő')}
                           </span>
                         </div>
                       )}
@@ -1635,7 +1635,7 @@ export default function PartnersPage() {
                           className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 gap-1 p-0 px-2"
                         >
                           <BarChart3 className="h-3 w-3" />
-                          Forgalom kimutatás
+                          {t('partners:details.turnover_report', 'Forgalom kimutatás')}
                         </Button>
                         <Button
                           variant="outline"
@@ -1644,13 +1644,13 @@ export default function PartnersPage() {
                           className="h-7 text-xs gap-1"
                           disabled={!writable}
                         >
-                          <Pencil className="h-3 w-3" /> Módosítás
+                          <Pencil className="h-3 w-3" /> {t('partners:details.modify', 'Módosítás')}
                         </Button>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Ez a partner független piaci szereplő.</span>
+                      <span className="text-xs text-muted-foreground">{t('partners:details.independent_partner_desc', 'Ez a partner független piaci szereplő.')}</span>
                       <Button
                         variant="outline"
                         size="sm"
@@ -1661,7 +1661,7 @@ export default function PartnersPage() {
                         className="h-7 text-xs gap-1 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/30"
                         disabled={!writable}
                       >
-                        <Plus className="h-3 w-3" /> Kapcsolttá tétel
+                        <Plus className="h-3 w-3" /> {t('partners:details.make_related', 'Kapcsolttá tétel')}
                       </Button>
                     </div>
                   )}
@@ -2117,7 +2117,7 @@ export default function PartnersPage() {
                         placeholder="8 vagy 14"
                         className="h-8 text-xs bg-background"
                       />
-                      <p className="text-[10px] text-muted-foreground">Számla kibocsátásától számítva</p>
+                      <p className="text-[10px] text-muted-foreground">{t('partners:modal.skonto_days_hint', 'Számla kibocsátásától számítva')}</p>
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="skonto_percent" className="text-xs flex items-center gap-1 text-emerald-900 dark:text-emerald-200">
@@ -2138,7 +2138,7 @@ export default function PartnersPage() {
                         />
                         <span className="absolute right-2 top-2 text-xs text-muted-foreground pointer-events-none">%</span>
                       </div>
-                      <p className="text-[10px] text-muted-foreground">Pl. 2% vagy 3% engedmény</p>
+                      <p className="text-[10px] text-muted-foreground">{t('partners:modal.skonto_percent_hint', 'Pl. 2% vagy 3% engedmény')}</p>
                     </div>
                   </div>
 

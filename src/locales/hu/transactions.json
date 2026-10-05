@@ -111,7 +111,12 @@
     "select_all": "Összes kijelölése",
     "details_tooltip": "Tranzakció és számla részletei",
     "empty_title": "Nincs tranzakció",
-    "empty_desc": "Tölts fel bankkivonatot a Feltöltés oldalon, vagy módosítsd a szűrőket."
+    "empty_desc": "Tölts fel bankkivonatot a Feltöltés oldalon, vagy módosítsd a szűrőket.",
+    "swipe_approved_title": "Sikeres jóváhagyás",
+    "swipe_approved_desc": "A tranzakció párosítása jóváhagyva.",
+    "swipe_failed_desc": "Nem sikerült a jóváhagyás.",
+    "swipe_approval_title": "Jóváhagyás",
+    "swipe_only_suggested_desc": "Csak javasolt párosítások hagyhatóak jóvá így."
   },
   "bulk": {
     "selected_count": "Kijelölt tranzakciók:",
@@ -698,5 +703,35 @@
     "toast_success_company_desc": "A szabály a jövőbeli bankkivonatoknál automatikusan kontírozni fogja az azonos tételeket.",
     "toast_error_title": "Hiba a szabály mentésekor",
     "toast_error_desc": "Ismeretlen hiba történt."
+  },
+  "matching": {
+    "toast_match_success_single": "Tranzakció sikeresen párosítva!",
+    "toast_match_success_multi": "{{count}} db számla sikeresen párosítva a tranzakcióhoz!",
+    "toast_match_error": "Hiba a párosítás mentésekor",
+    "toast_unmatch_success": "Párosítás megszüntetve!",
+    "toast_unmatch_error": "Hiba a párosítás megszüntetésekor",
+    "toast_verify_success": "Tranzakció jóváhagyva!",
+    "toast_verify_error": "Hiba a jóváhagyás során",
+    "toast_mark_no_invoice_success": "Tranzakció megjelölve: Nincs hozzá számla",
+    "toast_mark_invoice_missing_success": "Tranzakció megjelölve: Számla nincs feltöltve",
+    "toast_mark_error": "Hiba a jelölés mentésekor",
+    "toast_revert_success": "Státusz visszavonva",
+    "toast_revert_error": "Hiba a visszavonás során",
+    "toast_already_assigned": "Ez a számla már hozzá van rendelve ehhez a tranzakcióhoz",
+    "toast_add_invoice_error": "Hiba a számla hozzáadásakor",
+    "toast_extra_removed_success": "További számla eltávolítva",
+    "toast_extra_removed_error": "Hiba az eltávolításkor",
+    "toast_direct_book_success": "Tranzakció közvetlenül kontírozva!",
+    "toast_direct_book_error": "Hiba a kontírozás mentésekor",
+    "toast_direct_unbook_success": "Közvetlen kontírozás törölve!",
+    "toast_direct_unbook_error": "Hiba a törlés során",
+    "toast_courier_linked_success": "Futár tételek sikeresen összerendelve a tranzakcióval!",
+    "toast_courier_linked_error": "Hiba a futár tételek összerendelésekor",
+    "toast_refresh_success": "Tranzakciók frissítve!",
+    "toast_refresh_error": "Frissítés sikertelen",
+    "toast_rematch_started_title": "Újrapárosítás elindítva",
+    "toast_rematch_started_desc": "A háttérfolyamat elindult. Pár másodperc múlva automatikusan frissül a felület.",
+    "toast_rematch_error": "Újrapárosítás sikertelen",
+    "toast_fetch_error": "Hiba a tranzakciók betöltésekor"
   }
 }

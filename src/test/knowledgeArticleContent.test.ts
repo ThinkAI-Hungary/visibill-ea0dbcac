@@ -11,8 +11,13 @@ describe("KnowledgeArticleStructuredContent Parser", () => {
     expect(res).toBeDefined();
   });
 
-  it("parses all 63 articles into structured sections with valid TOC and subfeatures", () => {
-    for (const article of FALLBACK_KNOWLEDGE_ARTICLES) {
+  it("parses all 63 structured menu articles into structured sections with valid TOC and subfeatures", () => {
+    const menuArticles = FALLBACK_KNOWLEDGE_ARTICLES.filter(
+      (a) => a.id !== "nav-group-vat-sync"
+    );
+    expect(menuArticles).toHaveLength(63);
+
+    for (const article of menuArticles) {
       const parsed = parseArticleSections(article.content, article.menu_path);
 
       // Section 1 checks

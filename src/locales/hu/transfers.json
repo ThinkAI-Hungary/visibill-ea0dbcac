@@ -87,7 +87,8 @@
     "giro_length": "GIRO számlaszámnak 16 vagy 24 számjegyűnek kell lennie!",
     "invalid_cdv_block1": "Hibás 1. blokk CDV!",
     "invalid_cdv_block2": "Hibás 2. blokk CDV!",
-    "invalid_cdv_block3": "Hibás 3. blokk CDV!"
+    "invalid_cdv_block3": "Hibás 3. blokk CDV!",
+    "invalid_cdv": "Érvénytelen bankszámlaszám (hibás CDV ellenőrzőösszeg)"
   },
   "toasts": {
     "account_saved_title": "Bankszámlaszám mentve",
@@ -102,7 +103,13 @@
     "delete_batch_error": "Nem sikerült a tételek törlése.",
     "missing_accounts_title": "Hiányzó bankszámlaszám",
     "missing_accounts_desc": "Minden kijelölt tételhez meg kell adni a partner bankszámlaszámát a fájl generálásához.",
-    "select_sender_account": "Kérjük, válaszd ki a céges indító bankszámlát!"
+    "select_sender_account": "Kérjük, válaszd ki a céges indító bankszámlát!",
+    "export_success_desc": "Átutalási állomány generálva és letöltve! Az utalások elmentve párosításra.",
+    "sample_downloaded_title": "Minta letöltve",
+    "sample_downloaded_desc": "A minta átutalási állomány sikeresen generálva és letöltve!",
+    "save_transfers_error": "Nem sikerült az utalások mentése a rendszerben.",
+    "items_selected_title": "Tételek kijelölve!",
+    "items_selected_desc": "{{count}} tétel hozzáadva az utalandókhoz."
   },
   "settle_dialog": {
     "title": "Számla rendezése (Készpénz / Magánszámla)",

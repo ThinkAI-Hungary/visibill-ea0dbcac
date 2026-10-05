@@ -129,12 +129,18 @@ export function useInvoiceMutations({
 
   const handleSync = async (syncDateFrom?: string, syncDateTo?: string, onProgress?: (progress: SyncProgress) => void) => {
     if (!selectedCompany) {
-      toast({ title: 'Nincs kiválasztott cég', variant: 'destructive' });
+      toast({ title: t('invoices:mutations.no_company', 'Nincs kiválasztott cég'), variant: 'destructive' });
       return;
     }
 
     if (!canSync) {
-      toast({ title: `Kérlek várj még ${formatCooldown(cooldownSeconds)} a következő szinkronizálásig`, variant: 'destructive' });
+      toast({
+        title: t('invoices:mutations.wait_cooldown', {
+          cooldown: formatCooldown(cooldownSeconds),
+          defaultValue: `Kérlek várj még ${formatCooldown(cooldownSeconds)} a következő szinkronizálásig`,
+        }),
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -142,7 +148,7 @@ export function useInvoiceMutations({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        toast({ title: 'Nincs érvényes munkamenet', variant: 'destructive' });
+        toast({ title: t('invoices:mutations.no_session', 'Nincs érvényes munkamenet'), variant: 'destructive' });
         return;
       }
 
@@ -224,26 +230,26 @@ export function useInvoiceMutations({
           const { data, error } = outboundResult.value;
           if (error || data?.error) {
             const errText = await extractNavSyncError(error, data);
-            errors.push(`Kimenő (${chunk.from}): ${errText}`);
+            errors.push(`${t('invoices:mutations.direction_outbound', 'Kimenő')} (${chunk.from}): ${errText}`);
           } else if (data?.success) {
             totalOutbound += data.totalInvoices || 0;
           }
         } else if (outboundResult.status === 'rejected') {
           const errText = await extractNavSyncError(outboundResult.reason);
-          errors.push(`Kimenő (${chunk.from}): ${errText}`);
+          errors.push(`${t('invoices:mutations.direction_outbound', 'Kimenő')} (${chunk.from}): ${errText}`);
         }
 
         if (inboundResult.status === 'fulfilled') {
           const { data, error } = inboundResult.value;
           if (error || data?.error) {
             const errText = await extractNavSyncError(error, data);
-            errors.push(`Bejövő (${chunk.from}): ${errText}`);
+            errors.push(`${t('invoices:mutations.direction_inbound', 'Bejövő')} (${chunk.from}): ${errText}`);
           } else if (data?.success) {
             totalInbound += data.totalInvoices || 0;
           }
         } else if (inboundResult.status === 'rejected') {
           const errText = await extractNavSyncError(inboundResult.reason);
-          errors.push(`Bejövő (${chunk.from}): ${errText}`);
+          errors.push(`${t('invoices:mutations.direction_inbound', 'Bejövő')} (${chunk.from}): ${errText}`);
         }
 
         // Report chunk progress
@@ -258,14 +264,25 @@ export function useInvoiceMutations({
           throw new Error(errors.join('; '));
         } else {
           toast({
-            title: `Szinkronizálás részben sikeres`,
-            description: `${totalInvoices} számla letöltve (${totalOutbound} kimenő, ${totalInbound} bejövő). Hibák: ${errors.join('; ')}`
+            title: t('invoices:mutations.sync_partial_title', 'Szinkronizálás részben sikeres'),
+            description: t('invoices:mutations.sync_partial_desc', {
+              count: totalInvoices,
+              outbound: totalOutbound,
+              inbound: totalInbound,
+              errors: errors.join('; '),
+              defaultValue: `${totalInvoices} számla letöltve (${totalOutbound} kimenő, ${totalInbound} bejövő). Hibák: ${errors.join('; ')}`,
+            }),
           });
         }
       } else {
         toast({
-          title: `Sikeres szinkronizálás!`,
-          description: `Összesen ${totalInvoices} számla: ${totalOutbound} kimenő, ${totalInbound} bejövő`
+          title: t('invoices:mutations.sync_success_title', 'Sikeres szinkronizálás!'),
+          description: t('invoices:mutations.sync_success_desc', {
+            count: totalInvoices,
+            outbound: totalOutbound,
+            inbound: totalInbound,
+            defaultValue: `Összesen ${totalInvoices} számla: ${totalOutbound} kimenő, ${totalInbound} bejövő`,
+          }),
         });
       }
 
@@ -294,7 +311,7 @@ export function useInvoiceMutations({
         message: 'NAV Sync error:',
         error: error
       });
-      toast({ title: error.message || 'Nem sikerült szinkronizálni a számlákat', variant: 'destructive' });
+      toast({ title: error.message || t('invoices:mutations.sync_error', 'Nem sikerült szinkronizálni a számlákat'), variant: 'destructive' });
     } finally {
       setSyncing(false);
     }
@@ -313,10 +330,10 @@ export function useInvoiceMutations({
       if (navRes.error) throw navRes.error;
       if (subRes.error) throw subRes.error;
       invalidateInvoiceData();
-      toast({ title: 'Projekt hozzárendelve' });
+      toast({ title: t('invoices:mutations.project_assigned', 'Projekt hozzárendelve') });
     } catch (error) {
       reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating project:', error });
-      toast({ title: 'Hiba a projekt hozzárendelésekor', variant: 'destructive' });
+      toast({ title: t('invoices:mutations.project_error', 'Hiba a projekt hozzárendelésekor'), variant: 'destructive' });
     }
   };
 
@@ -331,10 +348,10 @@ export function useInvoiceMutations({
       if (navRes.error) throw navRes.error;
       if (subRes.error) throw subRes.error;
       invalidateInvoiceData();
-      toast({ title: 'Kategória hozzárendelve' });
+      toast({ title: t('invoices:mutations.category_assigned', 'Kategória hozzárendelve') });
     } catch (error) {
       reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating category:', error });
-      toast({ title: 'Hiba a kategória hozzárendelésekor', variant: 'destructive' });
+      toast({ title: t('invoices:mutations.category_error', 'Hiba a kategória hozzárendelésekor'), variant: 'destructive' });
     }
   };
 
@@ -347,10 +364,14 @@ export function useInvoiceMutations({
         .eq('id', invoice.id);
       if (error) throw error;
       invalidateInvoiceData();
-      toast({ title: newValue ? 'Beküldve megjelölve' : 'Beküldve visszavonva' });
+      toast({
+        title: newValue
+          ? t('invoices:mutations.submitted_marked', 'Beküldve megjelölve')
+          : t('invoices:mutations.submitted_unmarked', 'Beküldve visszavonva'),
+      });
     } catch (error) {
       reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating submitted status:', error: error });
-      toast({ title: 'Hiba a státusz frissítésekor', variant: 'destructive' });
+      toast({ title: t('invoices:mutations.status_error', 'Hiba a státusz frissítésekor'), variant: 'destructive' });
     }
   };
 
@@ -370,19 +391,30 @@ export function useInvoiceMutations({
         invoice.invoice_net_amount?.toString() || '0',
         invoice.invoice_vat_amount?.toString() || '0',
         invoice.invoice_gross_amount?.toString() || '0',
-        invoice.match_status === 'partially_paid' ? 'Részben fizetve' : (invoice.paid || invoice.transaction_id ? 'Igen' : 'Nem'),
-        invoice.submitted ? 'Igen' : 'Nem'
+        invoice.match_status === 'partially_paid'
+          ? t('invoices:status.partial', 'Részben fizetve')
+          : (invoice.paid || invoice.transaction_id ? t('invoices:export.yes', 'Igen') : t('invoices:export.no', 'Nem')),
+        invoice.submitted ? t('invoices:export.yes', 'Igen') : t('invoices:export.no', 'Nem'),
       ];
     };
 
     const headers = [
-      'Irány', 'Bizonylatsorszám', 'Kibocsátás dátuma', 'Teljesítés dátuma',
-      'Partner név', 'Partner adószám', 'Pénznem', 'Nettó összeg (deviza)',
-      'ÁFA összeg (deviza)', 'Bruttó összeg (deviza)', 'Fizetve', 'Beküldve'
+      t('invoices:export.direction', 'Irány'),
+      t('invoices:export.invoice_number', 'Bizonylatsorszám'),
+      t('invoices:export.issue_date', 'Kibocsátás dátuma'),
+      t('invoices:export.fulfillment_date', 'Teljesítés dátuma'),
+      t('invoices:export.partner_name', 'Partner név'),
+      t('invoices:export.partner_tax', 'Partner adószám'),
+      t('invoices:export.currency', 'Pénznem'),
+      t('invoices:export.net_amount', 'Nettó összeg (deviza)'),
+      t('invoices:export.vat_amount', 'ÁFA összeg (deviza)'),
+      t('invoices:export.gross_amount', 'Bruttó összeg (deviza)'),
+      t('invoices:export.paid', 'Fizetve'),
+      t('invoices:export.submitted', 'Beküldve'),
     ];
 
     const exportData = filteredAndSortedNavInvoices.map(invoice => getExportData(invoice));
-    await exportToFile(headers, exportData, exportFormat, 'nav_szamlak');
+    await exportToFile(headers, exportData, exportFormat, t('invoices:export.nav_filename', 'nav_szamlak'));
   };
 
   const handleExportSubmitted = async (exportFormat: 'csv' | 'xlsx') => {
@@ -403,13 +435,21 @@ export function useInvoiceMutations({
     };
 
     const headers = [
-      'Bizonylatszám', 'Kibocsátás dátuma', 'Teljesítés dátuma', 'Eladó', 'Vevő',
-      'Pénznem', 'Nettó összeg (deviza)', 'ÁFA összeg (deviza)', 'Bruttó összeg (deviza)',
-      'Kategória', 'Projekt'
+      t('invoices:export.invoice_number', 'Bizonylatszám'),
+      t('invoices:export.issue_date', 'Kibocsátás dátuma'),
+      t('invoices:export.fulfillment_date', 'Teljesítés dátuma'),
+      t('invoices:export.seller', 'Eladó'),
+      t('invoices:export.buyer', 'Vevő'),
+      t('invoices:export.currency', 'Pénznem'),
+      t('invoices:export.net_amount', 'Nettó összeg (deviza)'),
+      t('invoices:export.vat_amount', 'ÁFA összeg (deviza)'),
+      t('invoices:export.gross_amount', 'Bruttó összeg (deviza)'),
+      t('invoices:export.category', 'Kategória'),
+      t('invoices:export.project', 'Projekt'),
     ];
 
     const exportData = filteredAndSortedSubmittedInvoices.map(invoice => getExportData(invoice));
-    await exportToFile(headers, exportData, exportFormat, 'bekuldott_szamlak');
+    await exportToFile(headers, exportData, exportFormat, t('invoices:export.submitted_filename', 'bekuldott_szamlak'));
   };
 
   const handleExport = (exportFormat: 'csv' | 'xlsx') => {
@@ -422,7 +462,7 @@ export function useInvoiceMutations({
 
   const handleBulkCategoryChange = async (categoryId: string | null) => {
     if (selectedInvoiceIds.size === 0) {
-      toast({ title: 'Nincs kijelölt számla', variant: 'destructive' });
+      toast({ title: t('invoices:mutations.no_selection', 'Nincs kijelölt számla'), variant: 'destructive' });
       return;
     }
     const ids = Array.from(selectedInvoiceIds);
@@ -453,16 +493,21 @@ export function useInvoiceMutations({
       }
       setSelectedInvoiceIds(new Set());
       invalidateInvoiceData();
-      toast({ title: `${ids.length} db számla kategóriája frissítve` });
+      toast({
+        title: t('invoices:mutations.bulk_category_success', {
+          count: ids.length,
+          defaultValue: `${ids.length} db számla kategóriája frissítve`,
+        }),
+      });
     } catch (error) {
       reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error bulk updating category:', error });
-      toast({ title: 'Hiba a csoportos kategória hozzárendelésnél', variant: 'destructive' });
+      toast({ title: t('invoices:mutations.bulk_category_error', 'Hiba a csoportos kategória hozzárendelésnél'), variant: 'destructive' });
     }
   };
 
   const handleBulkProjectChange = async (projectId: string | null) => {
     if (selectedInvoiceIds.size === 0) {
-      toast({ title: 'Nincs kijelölt számla', variant: 'destructive' });
+      toast({ title: t('invoices:mutations.no_selection', 'Nincs kijelölt számla'), variant: 'destructive' });
       return;
     }
     const ids = Array.from(selectedInvoiceIds);
@@ -493,16 +538,21 @@ export function useInvoiceMutations({
       }
       setSelectedInvoiceIds(new Set());
       invalidateInvoiceData();
-      toast({ title: `${ids.length} db számla projektje frissítve` });
+      toast({
+        title: t('invoices:mutations.bulk_project_success', {
+          count: ids.length,
+          defaultValue: `${ids.length} db számla projektje frissítve`,
+        }),
+      });
     } catch (error) {
       reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error bulk updating project:', error });
-      toast({ title: 'Hiba a csoportos projekt hozzárendelésnél', variant: 'destructive' });
+      toast({ title: t('invoices:mutations.bulk_project_error', 'Hiba a csoportos projekt hozzárendelésnél'), variant: 'destructive' });
     }
   };
 
   const handleBulkDeleteSubmitted = async (mode: 'row_only' | 'row_and_file' = 'row_only') => {
     if (selectedInvoiceIds.size === 0) {
-      toast({ title: 'Nincs kijelölt számla', variant: 'destructive' });
+      toast({ title: t('invoices:mutations.no_selection', 'Nincs kijelölt számla'), variant: 'destructive' });
       return;
     }
     const ids = Array.from(selectedInvoiceIds);
@@ -586,8 +636,11 @@ export function useInvoiceMutations({
         queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
 
         toast({
-          title: 'Sikeres törlés',
-          description: `${ids.length} db számla és a hozzájuk tartozó feltöltött fájlok véglegesen törölve lettek.`,
+          title: t('invoices:mutations.delete_success_title', 'Sikeres törlés'),
+          description: t('invoices:mutations.delete_success_files', {
+            count: ids.length,
+            defaultValue: `${ids.length} db számla és a hozzájuk tartozó feltöltött fájlok véglegesen törölve lettek.`,
+          }),
         });
       } else {
         // mode === 'row_only': Only delete the invoice rows
@@ -600,13 +653,20 @@ export function useInvoiceMutations({
         setSelectedInvoiceIds(new Set());
         invalidateInvoiceData();
         toast({
-          title: 'Sikeres törlés',
-          description: `${ids.length} db számlasor sikeresen törölve (az eredeti dokumentumok megmaradtak).`,
+          title: t('invoices:mutations.delete_success_title', 'Sikeres törlés'),
+          description: t('invoices:mutations.delete_success_rows', {
+            count: ids.length,
+            defaultValue: `${ids.length} db számlasor sikeresen törölve (az eredeti dokumentumok megmaradtak).`,
+          }),
         });
       }
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error bulk deleting invoices:', error });
-      toast({ title: 'Hiba a csoportos törléskor', description: error?.message, variant: 'destructive' });
+      toast({
+        title: t('invoices:mutations.delete_error', 'Hiba a csoportos törléskor'),
+        description: error?.message,
+        variant: 'destructive',
+      });
     }
   };
 

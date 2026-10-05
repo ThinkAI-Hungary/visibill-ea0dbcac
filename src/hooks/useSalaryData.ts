@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +12,8 @@ import { isSalaryItemPaid } from '@/lib/salary-helpers';
 import type { SalaryItem } from '@/lib/salary-helpers';
 
 export function useSalaryData() {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo } = useDateRange();
@@ -144,27 +147,28 @@ export function useSalaryData() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: 'Siker', description: 'KP kifizetés rögzítve.' });
+      toast({ title: t('common:status.success', 'Siker'), description: t('salaries.dialogs.toast_cash_success', 'KP kifizetés rögzítve.') });
       invalidateSalaries();
     },
     onError: () => {
-      toast({ variant: 'destructive', title: 'Hiba', description: 'Nem sikerült rögzíteni a kifizetést.' });
+      toast({ variant: 'destructive', title: t('common:status.error', 'Hiba'), description: t('salaries.dialogs.toast_cash_error', 'Nem sikerült rögzíteni a kifizetést.') });
     },
   });
 
   const editMutation = useMutation({
     mutationFn: async ({ id, form }: { id: string; form: { megnevezes: string; megjegyzes: string } }) => {
-      const { error } = await supabase.from('salary')
+      const { error } = await supabase
+        .from('salary')
         .update({ név: form.megnevezes, megjegyzes: form.megjegyzes || null })
         .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: 'Siker', description: 'Bejegyzés frissítve.' });
+      toast({ title: t('common:status.success', 'Siker'), description: t('salaries.dialogs.toast_edit_success', 'Bejegyzés frissítve.') });
       invalidateSalaries();
     },
     onError: () => {
-      toast({ variant: 'destructive', title: 'Hiba', description: 'Nem sikerült frissíteni a bejegyzést.' });
+      toast({ variant: 'destructive', title: t('common:status.error', 'Hiba'), description: t('salaries.dialogs.toast_edit_error', 'Nem sikerült frissíteni a bejegyzést.') });
     },
   });
 

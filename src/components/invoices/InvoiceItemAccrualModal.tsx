@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   CalendarClock,
   Sparkles,
@@ -33,7 +34,6 @@ import {
   createAccrualJournalEntry,
   getExistingAccrualForInvoice,
   deleteAccrualEntry,
-  ExistingAccrualInfo
 } from '@/features/journals/services/accrualPostingService';
 
 interface InvoiceLineItemLike {
@@ -74,6 +74,7 @@ export function InvoiceItemAccrualModal({
   presetId,
   onSuccess,
 }: InvoiceItemAccrualModalProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -86,7 +87,7 @@ export function InvoiceItemAccrualModal({
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // 1. Fetch GL accounts for preset
-  const { data: glAccounts = [], isLoading: loadingGlAccounts } = useQuery({
+  const { data: glAccounts = [] } = useQuery({
     queryKey: ['glAccounts', presetId],
     queryFn: async () => {
       if (!presetId) return [];
@@ -96,7 +97,7 @@ export function InvoiceItemAccrualModal({
   });
 
   // 2. Fetch existing accrual for this invoice if any
-  const { data: existingAccrual, refetch: refetchExistingAccrual, isLoading: loadingExisting } = useQuery({
+  const { data: existingAccrual, refetch: refetchExistingAccrual } = useQuery({
     queryKey: ['existingAccrual', invoiceId],
     queryFn: async () => {
       if (!invoiceId) return null;
@@ -184,8 +185,8 @@ export function InvoiceItemAccrualModal({
     if (!item || !splitResult || splitResult.accrualAmount <= 0) return;
     if (!selectedAccrualGlAccount) {
       toast({
-        title: 'Hiányzó elhatárolási főkönyvi szám',
-        description: 'Kérlek válassz ki egy elhatárolási számlát (pl. 392).',
+        title: t('invoices:accrual_modal.toast_missing_gl', 'Hiányzó elhatárolási főkönyvi szám'),
+        description: t('invoices:accrual_modal.toast_missing_gl_desc', 'Kérlek válassz ki egy elhatárolási számlát (pl. 392).'),
         variant: 'destructive',
       });
       return;
@@ -193,8 +194,8 @@ export function InvoiceItemAccrualModal({
 
     if (!itemGlAccountId) {
       toast({
-        title: 'Hiányzó tétel kontírozás',
-        description: 'A számlatételt először le kell kontírozni (főkönyvi számlaszám hozzárendelése szükséges).',
+        title: t('invoices:accrual_modal.toast_missing_item_gl', 'Hiányzó tétel kontírozás'),
+        description: t('invoices:accrual_modal.toast_missing_item_gl_desc', 'A számlatételt először le kell kontírozni (főkönyvi számlaszám hozzárendelése szükséges).'),
         variant: 'destructive',
       });
       return;
@@ -229,8 +230,12 @@ export function InvoiceItemAccrualModal({
       });
 
       toast({
-        title: 'Időbeli elhatárolás sikeresen lekönyvelve',
-        description: `${formatCurrency(splitResult.accrualAmount, currency)} összeg bejegyezve a Vegyes naplóba (${splitResult.accrualDate} fordulónappal).`,
+        title: t('invoices:accrual_modal.toast_success', 'Időbeli elhatárolás sikeresen lekönyvelve'),
+        description: t('invoices:accrual_modal.toast_success_desc', {
+          amount: formatCurrency(splitResult.accrualAmount, currency),
+          date: splitResult.accrualDate,
+          defaultValue: `${formatCurrency(splitResult.accrualAmount, currency)} összeg bejegyezve a Vegyes naplóba (${splitResult.accrualDate} fordulónappal).`,
+        }),
       });
 
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
@@ -244,7 +249,7 @@ export function InvoiceItemAccrualModal({
       onOpenChange(false);
     } catch (err: any) {
       toast({
-        title: 'Hiba az elhatárolás mentésekor',
+        title: t('invoices:accrual_modal.toast_error', 'Hiba az elhatárolás mentésekor'),
         description: err.message,
         variant: 'destructive',
       });
@@ -260,8 +265,8 @@ export function InvoiceItemAccrualModal({
     try {
       await deleteAccrualEntry(existingAccrual.id, existingAccrual.booked_journal_entry_id);
       toast({
-        title: 'Időbeli elhatárolás törölve',
-        description: 'A kapcsolódó vegyes napló tétel és nyilvántartási bejegyzés sikeresen törlődött.',
+        title: t('invoices:accrual_modal.toast_deleted', 'Időbeli elhatárolás törölve'),
+        description: t('invoices:accrual_modal.toast_deleted_desc', 'A kapcsolódó vegyes napló tétel és nyilvántartási bejegyzés sikeresen törlődött.'),
       });
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
       queryClient.invalidateQueries({ queryKey: ['accrual_entries'] });
@@ -271,7 +276,7 @@ export function InvoiceItemAccrualModal({
       onSuccess?.();
     } catch (err: any) {
       toast({
-        title: 'Hiba a törlés során',
+        title: t('invoices:accrual_modal.toast_delete_error', 'Hiba a törlés során'),
         description: err.message,
         variant: 'destructive',
       });
@@ -293,7 +298,7 @@ export function InvoiceItemAccrualModal({
             </div>
             <div>
               <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                Időbeli elhatárolás rögzítése
+                {t('invoices:accrual_modal.title', 'Időbeli elhatárolás rögzítése')}
                 {direction === 'INBOUND' ? (
                   <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-600 border-purple-300">AIE</Badge>
                 ) : (
@@ -301,7 +306,7 @@ export function InvoiceItemAccrualModal({
                 )}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Bizonylatszám: <span className="font-mono font-semibold text-foreground">{invoiceNumber}</span>
+                {t('invoices:accrual_modal.invoice_number_prefix', 'Bizonylatszám:')} <span className="font-mono font-semibold text-foreground">{invoiceNumber}</span>
                 {partnerName && <span> • {partnerName}</span>}
               </DialogDescription>
             </div>
@@ -317,10 +322,14 @@ export function InvoiceItemAccrualModal({
                 <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-amber-800 dark:text-amber-200">
-                    Ezen a bizonylaton már van lekönyvelt elhatárolás!
+                    {t('invoices:accrual_modal.existing_accrual_title', 'Ezen a bizonylaton már van lekönyvelt elhatárolás!')}
                   </p>
                   <p className="text-amber-700 dark:text-amber-300 mt-0.5">
-                    Összeg: <strong className="font-mono">{formatCurrency(existingAccrual.amount, currency)}</strong> (Fordulónap: {existingAccrual.accrual_date})
+                    {t('invoices:accrual_modal.existing_accrual_desc', {
+                      amount: formatCurrency(existingAccrual.amount, currency),
+                      date: existingAccrual.accrual_date,
+                      defaultValue: `Összeg: ${formatCurrency(existingAccrual.amount, currency)} (Fordulónap: ${existingAccrual.accrual_date})`,
+                    })}
                   </p>
                 </div>
               </div>
@@ -332,7 +341,7 @@ export function InvoiceItemAccrualModal({
                 className="h-7 text-xs gap-1.5 shrink-0"
               >
                 {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                Törlés
+                {t('invoices:accrual_modal.btn_delete', 'Törlés')}
               </Button>
             </div>
           )}
@@ -341,13 +350,13 @@ export function InvoiceItemAccrualModal({
           <div className="rounded-lg border border-border/50 bg-muted/20 p-3 space-y-2 min-w-0 overflow-hidden">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Érintett számlatétel</span>
+                <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">{t('invoices:accrual_modal.affected_item', 'Érintett számlatétel')}</span>
                 <p className="font-medium text-xs leading-snug line-clamp-2 mt-0.5" title={item.line_description || ''}>
-                  {item.line_description || 'Ismeretlen tétel'}
+                  {item.line_description || t('invoices:accrual_modal.unknown_item', 'Ismeretlen tétel')}
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Tétel nettó</span>
+                <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">{t('invoices:accrual_modal.item_net', 'Tétel nettó')}</span>
                 <p className="font-mono text-sm font-bold text-foreground">
                   {formatCurrency(item.net_amount || 0, currency)}
                 </p>
@@ -357,10 +366,10 @@ export function InvoiceItemAccrualModal({
             <div className="pt-2 border-t border-border/40 flex items-center justify-between text-xs">
               <span className="text-muted-foreground flex items-center gap-1.5">
                 <Landmark className="w-3.5 h-3.5 text-primary" />
-                Tétel főkönyve:
+                {t('invoices:accrual_modal.item_gl', 'Tétel főkönyve:')}
               </span>
               <span className="font-mono font-semibold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                {itemGlNumber || 'Nincs kontírozva'}
+                {itemGlNumber || t('invoices:accrual_modal.not_classified', 'Nincs kontírozva')}
               </span>
             </div>
           </div>
@@ -369,18 +378,18 @@ export function InvoiceItemAccrualModal({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-xs font-semibold">
-                Szolgáltatás időszaka (Kezdet – Vég)
+                {t('invoices:accrual_modal.service_period', 'Szolgáltatás időszaka (Kezdet – Vég)')}
               </Label>
               {isAutoExtracted && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-400/30">
-                  <Sparkles className="w-3 h-3" /> Szövegből felismerve
+                  <Sparkles className="w-3 h-3" /> {t('invoices:accrual_modal.auto_extracted', 'Szövegből felismerve')}
                 </span>
               )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <span className="text-[11px] text-muted-foreground">Időszak kezdete:</span>
+                <span className="text-[11px] text-muted-foreground">{t('invoices:accrual_modal.period_start', 'Időszak kezdete:')}</span>
                 <DatePicker
                   value={startDate}
                   allowInput={true}
@@ -389,7 +398,7 @@ export function InvoiceItemAccrualModal({
                 />
               </div>
               <div className="space-y-1">
-                <span className="text-[11px] text-muted-foreground">Időszak vége:</span>
+                <span className="text-[11px] text-muted-foreground">{t('invoices:accrual_modal.period_end', 'Időszak vége:')}</span>
                 <DatePicker
                   value={endDate}
                   allowInput={true}
@@ -402,7 +411,7 @@ export function InvoiceItemAccrualModal({
 
           {/* Method toggle */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Kalkulációs módszer</Label>
+            <Label className="text-xs font-semibold">{t('invoices:accrual_modal.calc_method', 'Kalkulációs módszer')}</Label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -414,7 +423,7 @@ export function InvoiceItemAccrualModal({
                 }`}
               >
                 <Clock className="w-3.5 h-3.5" />
-                Hónaparányos (hó)
+                {t('invoices:accrual_modal.method_monthly', 'Hónaparányos (hó)')}
               </button>
               <button
                 type="button"
@@ -426,7 +435,7 @@ export function InvoiceItemAccrualModal({
                 }`}
               >
                 <Calendar className="w-3.5 h-3.5" />
-                Exakt naparányos (nap)
+                {t('invoices:accrual_modal.method_daily', 'Exakt naparányos (nap)')}
               </button>
             </div>
           </div>
@@ -437,12 +446,12 @@ export function InvoiceItemAccrualModal({
               <div className="flex items-center justify-between text-xs pb-2 border-b border-purple-500/20">
                 <span className="font-semibold text-purple-900 dark:text-purple-200 flex items-center gap-1.5">
                   <CalendarClock className="w-4 h-4 text-purple-600" />
-                  Kalkuláció eredménye
+                  {t('invoices:accrual_modal.calc_result', 'Kalkuláció eredménye')}
                 </span>
                 <span className="font-mono text-muted-foreground text-[11px]">
                   {method === 'daily'
-                    ? `${splitResult.totalDays} nap összesen`
-                    : `${splitResult.totalMonths} hónap összesen`}
+                    ? t('invoices:accrual_modal.days_total', { days: splitResult.totalDays, defaultValue: `${splitResult.totalDays} nap összesen` })
+                    : t('invoices:accrual_modal.months_total', { months: splitResult.totalMonths, defaultValue: `${splitResult.totalMonths} hónap összesen` })}
                 </span>
               </div>
 
@@ -450,30 +459,32 @@ export function InvoiceItemAccrualModal({
                 {/* Current year */}
                 <div className="bg-background/80 p-2.5 rounded-lg border border-border/50 min-w-0">
                   <span className="text-[11px] text-muted-foreground block truncate">
-                    {startYear}. évi költség:
+                    {direction === 'INBOUND'
+                      ? t('invoices:accrual_modal.current_year_cost', { year: startYear, defaultValue: `${startYear}. évi költség:` })
+                      : t('invoices:accrual_modal.current_year_revenue', { year: startYear, defaultValue: `${startYear}. évi bevétel:` })}
                   </span>
                   <span className="font-mono text-base font-bold text-foreground block truncate">
                     {formatCurrency(splitResult.currentPeriodAmount, currency)}
                   </span>
                   <span className="text-[10px] text-muted-foreground block mt-0.5 truncate">
                     {method === 'daily'
-                      ? `${splitResult.currentPeriodDays} nap (${startYear}. dec. 31-ig)`
-                      : `${splitResult.currentPeriodMonths} hónap`}
+                      ? t('invoices:accrual_modal.current_year_days', { days: splitResult.currentPeriodDays, year: startYear, defaultValue: `${splitResult.currentPeriodDays} nap (${startYear}. dec. 31-ig)` })
+                      : t('invoices:accrual_modal.current_year_months', { months: splitResult.currentPeriodMonths, defaultValue: `${splitResult.currentPeriodMonths} hónap` })}
                   </span>
                 </div>
 
                 {/* Accrued / Next year */}
                 <div className="bg-purple-500/10 p-2.5 rounded-lg border border-purple-500/30 min-w-0">
                   <span className="text-[11px] text-purple-700 dark:text-purple-300 font-semibold block truncate">
-                    {endYear}. évi elhatárolás:
+                    {t('invoices:accrual_modal.accrued_year_label', { year: endYear, defaultValue: `${endYear}. évi elhatárolás:` })}
                   </span>
                   <span className="font-mono text-base font-bold text-purple-700 dark:text-purple-300 block truncate">
                     {formatCurrency(splitResult.accrualAmount, currency)}
                   </span>
                   <span className="text-[10px] text-purple-600/80 dark:text-purple-400 block mt-0.5 truncate">
                     {method === 'daily'
-                      ? `${splitResult.nextPeriodDays} nap (${endYear}. évre)`
-                      : `${splitResult.nextPeriodMonths} hónap`}
+                      ? t('invoices:accrual_modal.accrued_year_days', { days: splitResult.nextPeriodDays, year: endYear, defaultValue: `${splitResult.nextPeriodDays} nap (${endYear}. évre)` })
+                      : t('invoices:accrual_modal.accrued_year_months', { months: splitResult.nextPeriodMonths, defaultValue: `${splitResult.nextPeriodMonths} hónap` })}
                   </span>
                 </div>
               </div>
@@ -481,20 +492,20 @@ export function InvoiceItemAccrualModal({
               {/* Accounting details & suggested accounts */}
               <div className="pt-2 border-t border-purple-500/20 space-y-2 text-xs min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Elhatárolási fordulónap:</span>
+                  <span className="text-muted-foreground">{t('invoices:accrual_modal.turnover_date', 'Elhatárolási fordulónap:')}</span>
                   <span className="font-mono font-semibold">{splitResult.accrualDate}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Feloldási dátum:</span>
+                  <span className="text-muted-foreground">{t('invoices:accrual_modal.reversal_date', 'Feloldási dátum:')}</span>
                   <span className="font-mono font-semibold">{splitResult.reversalDate}</span>
                 </div>
 
                 {/* GL Selector for Accrual Account */}
                 <div className="space-y-1.5 pt-1 min-w-0">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground font-medium">Elhatárolási főkönyvi számla:</span>
+                    <span className="text-muted-foreground font-medium">{t('invoices:accrual_modal.accrual_gl_account', 'Elhatárolási főkönyvi számla:')}</span>
                     <span className="text-[10px] text-muted-foreground">
-                      {direction === 'INBOUND' ? 'AIE (39-es számlacsoport)' : 'PIE (48-as számlacsoport)'}
+                      {direction === 'INBOUND' ? t('invoices:accrual_modal.aie_group', 'AIE (39-es számlacsoport)') : t('invoices:accrual_modal.pie_group', 'PIE (48-as számlacsoport)')}
                     </span>
                   </div>
                   <div className="relative min-w-0">
@@ -532,9 +543,9 @@ export function InvoiceItemAccrualModal({
           ) : splitResult && !splitResult.hasCrossYearOverlap ? (
             <div className="p-4 rounded-lg border border-border/60 bg-muted/10 text-center space-y-1">
               <Info className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-              <p className="text-xs font-medium">A megadott időszak teljes egészében a tárgyévre esik.</p>
+              <p className="text-xs font-medium">{t('invoices:accrual_modal.no_overlap_title', 'A megadott időszak teljes egészében a tárgyévre esik.')}</p>
               <p className="text-[11px] text-muted-foreground">
-                Nem szükséges év végi időbeli elhatárolást képezni, mert nincs évváltó átnyúlás.
+                {t('invoices:accrual_modal.no_overlap_desc', 'Nem szükséges év végi időbeli elhatárolást képezni, mert nincs évváltó átnyúlás.')}
               </p>
             </div>
           ) : null}
@@ -543,11 +554,11 @@ export function InvoiceItemAccrualModal({
         {/* Footer */}
         <DialogFooter className="px-6 py-3 border-t border-border/50 shrink-0 flex-row items-center justify-between bg-muted/10">
           <div className="flex flex-col text-left">
-            <span className="text-[11px] text-muted-foreground">Elhatárolandó összeg:</span>
+            <span className="text-[11px] text-muted-foreground">{t('invoices:accrual_modal.accrual_amount_label', 'Elhatárolandó összeg:')}</span>
             <span className="font-mono text-sm font-bold text-purple-700 dark:text-purple-300 tabular-nums">
               {splitResult && splitResult.hasCrossYearOverlap
                 ? formatCurrency(splitResult.accrualAmount, currency)
-                : '0 Ft'}
+                : formatCurrency(0, currency)}
             </span>
           </div>
 
@@ -558,7 +569,7 @@ export function InvoiceItemAccrualModal({
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Mégse
+              {t('invoices:accrual_modal.btn_cancel', 'Mégse')}
             </Button>
             <Button
               type="button"
@@ -569,12 +580,12 @@ export function InvoiceItemAccrualModal({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Könyvelés...
+                  {t('invoices:accrual_modal.btn_submitting', 'Könyvelés...')}
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  Elhatárolás könyvelése
+                  {t('invoices:accrual_modal.btn_book', 'Elhatárolás könyvelése')}
                 </>
               )}
             </Button>

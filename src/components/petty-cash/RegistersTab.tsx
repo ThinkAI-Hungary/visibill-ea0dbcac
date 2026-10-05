@@ -96,9 +96,9 @@ export default function RegistersTab() {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
       setShowDialog(false);
       setEditing(null);
-      toast({ title: 'Pénztár mentve' });
+      toast({ title: t('pettyCash:registers_tab.toast_saved', 'Pénztár mentve') });
     },
-    onError: (e: any) => toast({ title: 'Hiba', description: e.message, variant: 'destructive' }),
+    onError: (e: any) => toast({ title: t('common:error', 'Hiba'), description: e.message, variant: 'destructive' }),
   });
 
   const setDefault = useMutation({
@@ -118,7 +118,7 @@ export default function RegistersTab() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashRegisters(companyId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
-      toast({ title: 'Alapértelmezett pénztár módosítva' });
+      toast({ title: t('pettyCash:registers_tab.toast_default_updated', 'Alapértelmezett pénztár módosítva') });
     },
   });
 
@@ -130,9 +130,9 @@ export default function RegistersTab() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashRegisters(companyId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
-      toast({ title: 'Pénztár törölve' });
+      toast({ title: t('pettyCash:registers_tab.toast_deleted', 'Pénztár törölve') });
     },
-    onError: (e: any) => toast({ title: 'Hiba', description: e.message, variant: 'destructive' }),
+    onError: (e: any) => toast({ title: t('common:error', 'Hiba'), description: e.message, variant: 'destructive' }),
   });
 
   // U3: Check which registers have opening balances set
@@ -281,6 +281,7 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
   onSave: (r: Partial<PettyCashRegister>) => void;
   saving: boolean;
 }) {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [currencies, setCurrencies] = useState<string[]>(['HUF']);
@@ -348,10 +349,10 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings2 className="w-5 h-5 text-primary" />
-            {register ? 'Pénztár és szabályzat szerkesztése' : 'Új pénztár létrehozása'}
+            {register ? t('pettyCash:registers_tab.dialog_title_edit', 'Pénztár és szabályzat szerkesztése') : t('pettyCash:registers_tab.dialog_title_new', 'Új pénztár létrehozása')}
           </DialogTitle>
           <DialogDescription>
-            Törzsadatok, zárási gyakoriság és pénzkezelési szabályzati paraméterek (Sztv. 14. § (8)).
+            {t('pettyCash:registers_tab.dialog_desc', 'Törzsadatok, zárási gyakoriság és pénzkezelési szabályzati paraméterek (Sztv. 14. § (8)).')}
           </DialogDescription>
         </DialogHeader>
 
@@ -360,21 +361,21 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
           <div className="space-y-3 p-3.5 bg-muted/30 rounded-xl border border-border/60">
             <h4 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
               <Banknote className="w-4 h-4 text-primary" />
-              Alapadatok
+              {t('pettyCash:registers_tab.section_basic', 'Alapadatok')}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Pénztár megnevezése *</Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Központi forint pénztár" className="h-9 mt-1 text-xs" />
+                <Label className="text-xs">{t('pettyCash:registers_tab.name_label', 'Pénztár megnevezése *')}</Label>
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder={t('pettyCash:registers_tab.name_placeholder', 'Központi forint pénztár')} className="h-9 mt-1 text-xs" />
               </div>
               <div>
-                <Label className="text-xs">Helyszín / Telephely (opcionális)</Label>
-                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Budapest, Fő u. 1." className="h-9 mt-1 text-xs" />
+                <Label className="text-xs">{t('pettyCash:registers_tab.location_label', 'Helyszín / Telephely (opcionális)')}</Label>
+                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder={t('pettyCash:registers_tab.location_placeholder', 'Budapest, Fő u. 1.')} className="h-9 mt-1 text-xs" />
               </div>
             </div>
 
             <div>
-              <Label className="mb-1.5 block text-xs">Kezelt valuták</Label>
+              <Label className="mb-1.5 block text-xs">{t('pettyCash:registers_tab.currencies_label', 'Kezelt valuták')}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {COMMON_CURRENCIES.map(cur => (
                   <button
@@ -399,28 +400,28 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
           <div className="space-y-3 p-3.5 bg-muted/30 rounded-xl border border-border/60">
             <h4 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
               <CalendarClock className="w-4 h-4 text-primary" />
-              Pénztárjelentés és Zárási Szabályzat
+              {t('pettyCash:registers_tab.section_closing', 'Pénztárjelentés és Zárási Szabályzat')}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Zárási gyakoriság</Label>
+                <Label className="text-xs">{t('pettyCash:registers_tab.closing_mode_label', 'Zárási gyakoriság')}</Label>
                 <Select value={closingMode} onValueChange={(v) => setClosingMode(v as any)}>
                   <SelectTrigger className="h-9 mt-1 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="daily">Napi zárás (minden forgalmas nap)</SelectItem>
-                    <SelectItem value="weekly">Heti zárás (hétfő - vasárnap)</SelectItem>
-                    <SelectItem value="decade">Dekád zárás (10 napos)</SelectItem>
-                    <SelectItem value="monthly">Havi zárás (hónap utolsó napja)</SelectItem>
-                    <SelectItem value="custom">Egyedi ciklus</SelectItem>
+                    <SelectItem value="daily">{t('pettyCash:registers_tab.closing_mode_daily', 'Napi zárás (minden forgalmas nap)')}</SelectItem>
+                    <SelectItem value="weekly">{t('pettyCash:registers_tab.closing_mode_weekly', 'Heti zárás (hétfő - vasárnap)')}</SelectItem>
+                    <SelectItem value="decade">{t('pettyCash:registers_tab.closing_mode_decade', 'Dekád zárás (10 napos)')}</SelectItem>
+                    <SelectItem value="monthly">{t('pettyCash:registers_tab.closing_mode_monthly', 'Havi zárás (hónap utolsó napja)')}</SelectItem>
+                    <SelectItem value="custom">{t('pettyCash:registers_tab.closing_mode_custom', 'Egyedi ciklus')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {closingMode === 'custom' && (
                 <div>
-                  <Label className="text-xs">Egyedi ciklus hossza (nap)</Label>
+                  <Label className="text-xs">{t('pettyCash:registers_tab.custom_days_label', 'Egyedi ciklus hossza (nap)')}</Label>
                   <Input 
                     type="number" 
                     value={customDays} 
@@ -431,7 +432,7 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
               )}
 
               <div>
-                <Label className="text-xs">Készpénz keretösszeg (Ft)</Label>
+                <Label className="text-xs">{t('pettyCash:registers_tab.cash_limit_label', 'Készpénz keretösszeg (Ft)')}</Label>
                 <Input 
                   type="number" 
                   value={cashLimit} 
@@ -441,14 +442,14 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
               </div>
 
               <div>
-                <Label className="text-xs">Kerettúllépési intézkedés</Label>
+                <Label className="text-xs">{t('pettyCash:registers_tab.limit_action_label', 'Kerettúllépési intézkedés')}</Label>
                 <Select value={limitAction} onValueChange={(v) => setLimitAction(v as any)}>
                   <SelectTrigger className="h-9 mt-1 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="warn">Figyelmeztetés a jegyzőkönyvben</SelectItem>
-                    <SelectItem value="block">Zárás tiltása (befizetés szükséges)</SelectItem>
+                    <SelectItem value="warn">{t('pettyCash:registers_tab.limit_action_warn', 'Figyelmeztetés a jegyzőkönyvben')}</SelectItem>
+                    <SelectItem value="block">{t('pettyCash:registers_tab.limit_action_block', 'Zárás tiltása (befizetés szükséges)')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -459,35 +460,35 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
           <div className="space-y-3 p-3.5 bg-muted/30 rounded-xl border border-border/60">
             <h4 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-primary" />
-              Bizonylati és Könyvelési Beállítások
+              {t('pettyCash:registers_tab.section_accounting', 'Bizonylati és Könyvelési Beállítások')}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Pénztárbizonylat (BPB/KPB) szabályzat</Label>
+                <Label className="text-xs">{t('pettyCash:registers_tab.receipt_policy_label', 'Pénztárbizonylat (BPB/KPB) szabályzat')}</Label>
                 <Select value={receiptPolicy} onValueChange={(v) => setReceiptPolicy(v as any)}>
                   <SelectTrigger className="h-9 mt-1 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="when_no_document">Csak ha nincs alapbizonylat</SelectItem>
-                    <SelectItem value="always">Minden tételhez kötelező BPB/KPB</SelectItem>
+                    <SelectItem value="when_no_document">{t('pettyCash:registers_tab.receipt_policy_when_no_doc', 'Csak ha nincs alapbizonylat')}</SelectItem>
+                    <SelectItem value="always">{t('pettyCash:registers_tab.receipt_policy_always', 'Minden tételhez kötelező BPB/KPB')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label className="text-xs">Utalványozási összeghatár (Ft)</Label>
+                <Label className="text-xs">{t('pettyCash:registers_tab.approval_threshold_label', 'Utalványozási összeghatár (Ft)')}</Label>
                 <Input 
                   type="number" 
                   value={approvalThreshold} 
                   onChange={e => setApprovalThreshold(Number(e.target.value) || 0)} 
                   className="h-9 mt-1 text-xs font-mono" 
                 />
-                <p className="text-[10px] text-muted-foreground mt-0.5">Efölötti kiadáshoz külön jóváhagyás kell.</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{t('pettyCash:registers_tab.approval_threshold_hint', 'Efölötti kiadáshoz külön jóváhagyás kell.')}</p>
               </div>
 
               <div>
-                <Label className="text-xs">Főkönyvi számlaszám</Label>
+                <Label className="text-xs">{t('pettyCash:registers_tab.gl_account_label', 'Főkönyvi számlaszám')}</Label>
                 <Input 
                   value={glAccount} 
                   onChange={e => setGlAccount(e.target.value)} 
@@ -499,9 +500,9 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
               <div className="flex items-center justify-between p-2.5 bg-background rounded-lg border border-border/50">
                 <div className="space-y-0.5 pr-2">
                   <Label className="text-xs font-medium cursor-pointer" htmlFor="single-person-mode">
-                    Egyszemélyes mód
+                    {t('pettyCash:registers_tab.single_person_mode_label', 'Egyszemélyes mód')}
                   </Label>
-                  <p className="text-[10px] text-muted-foreground">Pénztáros és ellenőr azonos személy lehet.</p>
+                  <p className="text-[10px] text-muted-foreground">{t('pettyCash:registers_tab.single_person_mode_hint', 'Pénztáros és ellenőr azonos személy lehet.')}</p>
                 </div>
                 <Switch 
                   id="single-person-mode"
@@ -514,7 +515,7 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
         </div>
 
         <DialogFooter className="pt-2 border-t border-border/50">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Mégse</Button>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>{t('common:cancel', 'Mégse')}</Button>
           <Button 
             size="sm"
             onClick={handleSave}
@@ -522,7 +523,7 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
             className="gap-1.5"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Beállítások mentése
+            {t('pettyCash:registers_tab.save', 'Beállítások mentése')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -532,6 +533,7 @@ function RegisterDialog({ open, onOpenChange, register, onSave, saving }: {
 
 // U3: Opening balances editor with visual feedback
 function OpeningBalancesEditor({ registerId, currencies, companyId }: { registerId: string; currencies: string[]; companyId: string }) {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const qc = useQueryClient();
   const [saved, setSaved] = useState(false);
 
@@ -584,12 +586,12 @@ function OpeningBalancesEditor({ registerId, currencies, companyId }: { register
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
       qc.invalidateQueries({ queryKey: ['petty-cash-entries-opening-balances', companyId] });
       qc.invalidateQueries({ queryKey: ['petty-cash-all-opening-balances', companyId] });
-      toast({ title: 'Nyitó egyenlegek mentve' });
+      toast({ title: t('pettyCash:registers_tab.opening_balances_saved', 'Nyitó egyenlegek mentve') });
       // U3: Show saved feedback briefly
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     },
-    onError: (e: any) => toast({ title: 'Hiba', description: e.message, variant: 'destructive' }),
+    onError: (e: any) => toast({ title: t('common:error', 'Hiba'), description: e.message, variant: 'destructive' }),
   });
 
   return (
@@ -601,7 +603,7 @@ function OpeningBalancesEditor({ registerId, currencies, companyId }: { register
           <div key={cur} className="grid grid-cols-3 gap-2 items-end">
             <div>
               <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                {cur} nyitó
+                {cur} {t('pettyCash:registers_tab.opening_label', 'nyitó')}
                 {/* U3: Status indicator */}
                 {hasValue && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
               </Label>
@@ -613,7 +615,7 @@ function OpeningBalancesEditor({ registerId, currencies, companyId }: { register
               />
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Kezdő dátum</Label>
+              <Label className="text-xs text-muted-foreground">{t('pettyCash:registers_tab.start_date_label', 'Kezdő dátum')}</Label>
               <Input
                 type="date"
                 className="h-8 text-sm"
@@ -628,12 +630,12 @@ function OpeningBalancesEditor({ registerId, currencies, companyId }: { register
       <div className="flex items-center gap-2">
         <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
           {save.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Save className="w-3 h-3 mr-1" />}
-          Mentés
+          {t('pettyCash:registers_tab.save', 'Mentés')}
         </Button>
         {/* U3: Brief "Saved" feedback */}
         {saved && (
           <span className="text-xs text-emerald-500 font-medium flex items-center gap-1 animate-in fade-in duration-200">
-            <CheckCircle2 className="w-3 h-3" /> Mentve
+            <CheckCircle2 className="w-3 h-3" /> {t('common:saved', 'Mentve')}
           </span>
         )}
       </div>

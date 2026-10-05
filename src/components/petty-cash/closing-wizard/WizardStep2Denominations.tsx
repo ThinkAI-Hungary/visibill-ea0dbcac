@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,12 +31,14 @@ export function WizardStep2Denominations({
   actualBalance,
   difference,
 }: WizardStep2DenominationsProps) {
+  const { t } = useTranslation(['pettyCash', 'common']);
   // Update count for a specific denomination
   const handleCountChange = (index: number, countStr: string) => {
     const count = Math.max(0, parseInt(countStr, 10) || 0);
     const updated = [...rows];
     updated[index] = {
       ...updated[index],
+      denomination: updated[index].denomination,
       count,
       subtotal: count * updated[index].denomination,
     };
@@ -62,7 +65,7 @@ export function WizardStep2Denominations({
               className="text-[11px] text-muted-foreground mb-1 cursor-help"
               title="A kiválasztott időszak alatti pénztárbizonylatok alapján számított pénztárkönyvi egyenleg (nem a főkönyv!)"
             >
-              Pénztárkönyv szerinti záró
+              {t('pettyCash:closing_wizard.step2.book_closing', 'Könyv szerinti záró')}
             </div>
             <div className="text-base font-bold tabular-nums font-mono">
               {fmtBalance(bookClosingBalance, currency)}
@@ -73,7 +76,7 @@ export function WizardStep2Denominations({
         <Card className="bg-card shadow-none border-border/70">
           <CardContent className="p-3">
             <div className="text-[11px] text-muted-foreground mb-1 flex items-center justify-between">
-              <span>Ténylegesen megszámolt</span>
+              <span>{t('pettyCash:closing_wizard.step2.counted_closing', 'Ténylegesen megszámolt')}</span>
               <Coins className="w-3.5 h-3.5 text-primary" />
             </div>
             <div className="text-base font-bold tabular-nums font-mono text-foreground">
@@ -91,16 +94,16 @@ export function WizardStep2Denominations({
         )}>
           <CardContent className="p-3">
             <div className="text-[11px] font-semibold mb-1 flex items-center justify-between">
-              <span>Eltérés (megszámolt − pénztárkönyv)</span>
+              <span>{t('pettyCash:closing_wizard.step2.diff_formula', 'Eltérés (tényleges − könyv)')}</span>
               {isInitialEmpty && <Info className="w-3.5 h-3.5 text-muted-foreground" />}
               {!isInitialEmpty && isMatch && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
               {!isInitialEmpty && !isMatch && <AlertTriangle className="w-3.5 h-3.5 text-destructive" />}
             </div>
             <div className="text-base font-bold tabular-nums font-mono">
               {isInitialEmpty 
-                ? 'Megszámolásra vár' 
+                ? t('pettyCash:closing_wizard.step2.awaiting_count', 'Megszámolásra vár')
                 : isMatch 
-                  ? '0 Ft (Nincs eltérés)' 
+                  ? t('pettyCash:closing_wizard.step2.no_diff', { currency, defaultValue: `0 ${currency} (Nincs eltérés)` }) 
                   : `${difference > 0 ? '+' : ''}${fmtBalance(difference, currency)}`}
             </div>
           </CardContent>
@@ -112,11 +115,11 @@ export function WizardStep2Denominations({
         <div className="flex items-center justify-between p-2.5 bg-muted/40 border-b border-border/60">
           <div className="flex items-center gap-2">
             <Calculator className="w-4 h-4 text-primary" />
-            <span className="font-semibold text-foreground">Címletjegyzék ({currency})</span>
+            <span className="font-semibold text-foreground">{t('pettyCash:closing_wizard.step2.table_title', { currency, defaultValue: `Címletjegyzék (${currency})` })}</span>
           </div>
           <Button variant="ghost" size="sm" onClick={handleReset} className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground">
             <RotateCcw className="w-3 h-3" />
-            Nullázás
+            {t('pettyCash:closing_wizard.step2.reset_btn', 'Nullázás')}
           </Button>
         </div>
 
@@ -124,9 +127,9 @@ export function WizardStep2Denominations({
           <Table className="text-xs">
             <TableHeader className="bg-muted/30 sticky top-0 z-10 border-b border-border/60">
               <TableRow>
-                <TableHead className="w-32">Címlet</TableHead>
-                <TableHead className="w-36 text-center">Megszámolt darab</TableHead>
-                <TableHead className="text-right">Részösszeg</TableHead>
+                <TableHead className="w-32">{t('pettyCash:closing_wizard.step2.col_denomination', 'Címlet')}</TableHead>
+                <TableHead className="w-36 text-center">{t('pettyCash:closing_wizard.step2.col_count', 'Megszámolt darab')}</TableHead>
+                <TableHead className="text-right">{t('pettyCash:closing_wizard.step2.col_subtotal', 'Részösszeg')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -153,7 +156,7 @@ export function WizardStep2Denominations({
             </TableBody>
             <TableFooter className="bg-muted/50 font-bold border-t border-border">
               <TableRow>
-                <TableCell colSpan={2}>Összesen megszámolt készpénzállomány:</TableCell>
+                <TableCell colSpan={2}>{t('pettyCash:closing_wizard.step2.total_counted', 'Összesen megszámolt készpénzállomány:')}</TableCell>
                 <TableCell className="text-right font-mono text-sm text-foreground">
                   {fmtBalance(actualBalance, currency)}
                 </TableCell>
@@ -185,13 +188,20 @@ export function WizardStep2Denominations({
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <div className="space-y-0.5">
             <p className="font-semibold">
-              {isSurplus ? 'Pénztári többlet észlelve!' : 'Pénztári hiány észlelve!'}
+              {isSurplus ? t('pettyCash:closing_wizard.step2.surplus_title', 'Pénztári többlet észlelve!') : t('pettyCash:closing_wizard.step2.shortage_title', 'Pénztári hiány észlelve!')}
             </p>
             <p className="text-[11px] opacity-90">
               {isSurplus 
-                ? `A záráskor a rendszer automatikusan +${fmtBalance(difference, currency)} összegű többlet-kiegyenlítő tételt hoz létre (jogcím: Pénztári többlet, ellenszámla: 4791).`
-                : `A záráskor a rendszer automatikusan -${fmtBalance(Math.abs(difference), currency)} összegű hiány-kiegyenlítő tételt hoz létre (jogcím: Pénztári hiány, ellenszámla: 3681).`}
-              A következő lépésben indoklás és zárási jegyzőkönyv rögzítése kötelező!
+                ? t('pettyCash:closing_wizard.step2.surplus_desc', {
+                    amount: fmtBalance(difference, currency),
+                    defaultValue: `A záráskor a rendszer automatikusan +${fmtBalance(difference, currency)} összegű többlet-kiegyenlítő tételt hoz létre (jogcím: Pénztári többlet, ellenszámla: 4791).`,
+                  })
+                : t('pettyCash:closing_wizard.step2.shortage_desc', {
+                    amount: fmtBalance(Math.abs(difference), currency),
+                    defaultValue: `A záráskor a rendszer automatikusan -${fmtBalance(Math.abs(difference), currency)} összegű hiány-kiegyenlítő tételt hoz létre (jogcím: Pénztári hiány, ellenszámla: 3681).`,
+                  })}
+              {' '}
+              {t('pettyCash:closing_wizard.step2.diff_mandatory_note', 'A következő lépésben indoklás és zárási jegyzőkönyv rögzítése kötelező!')}
             </p>
           </div>
         </div>

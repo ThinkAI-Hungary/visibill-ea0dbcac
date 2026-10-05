@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import type {
   SubledgerItem,
@@ -163,6 +164,7 @@ export function useSubledgerItemMatches(companyId?: string, lineId?: string) {
 export function useSettleOpenItems() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation(['accounting', 'common']);
 
   return useMutation({
     mutationFn: async (params: SettleParams) => {
@@ -181,15 +183,15 @@ export function useSettleOpenItems() {
     },
     onSuccess: () => {
       toast({
-        title: 'Sikeres rendezés',
-        description: 'A kiválasztott tételek sikeresen össze lettek párosítva.',
+        title: t('accounting:subledger.toasts.settle_success_title', 'Sikeres rendezés'),
+        description: t('accounting:subledger.toasts.settle_success_desc', 'A kiválasztott tételek sikeresen össze lettek párosítva.'),
       });
       queryClient.invalidateQueries({ queryKey: subledgerQueryKeys.all });
     },
     onError: (err: any) => {
       toast({
-        title: 'Hiba a rendezés során',
-        description: err.message || 'Nem sikerült a tételek párosítása.',
+        title: t('accounting:subledger.toasts.settle_error_title', 'Hiba a rendezés során'),
+        description: err.message || t('common:unknown_error', 'Nem sikerült a tételek párosítása.'),
         variant: 'destructive',
       });
     },
@@ -202,6 +204,7 @@ export function useSettleOpenItems() {
 export function useAutoSettleSubledgerItems() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation(['accounting', 'common']);
 
   return useMutation({
     mutationFn: async ({ companyId, glAccountId }: { companyId: string; glAccountId?: string }) => {
@@ -218,21 +221,21 @@ export function useAutoSettleSubledgerItems() {
       const total = data?.total_amount || 0;
       if (count > 0) {
         toast({
-          title: 'Automatikus párosítás befejeződött',
-          description: `${count} tételpár sikeresen összerendezve ${Math.round(total).toLocaleString('hu-HU')} Ft értékben.`,
+          title: t('accounting:subledger.toasts.auto_settle_success_title', 'Automatikus párosítás befejeződött'),
+          description: t('accounting:subledger.toasts.auto_settle_success_desc', { count, amount: Math.round(total).toLocaleString('hu-HU'), defaultValue: `${count} tételpár sikeresen összerendezve ${Math.round(total).toLocaleString('hu-HU')} Ft értékben.` }),
         });
       } else {
         toast({
-          title: 'Nincs új párosítható tétel',
-          description: 'Nem található azonos hivatkozású vagy összegű rendezetlen tétel a folyószámlán.',
+          title: t('accounting:subledger.toasts.auto_settle_empty_title', 'Nincs új párosítható tétel'),
+          description: t('accounting:subledger.toasts.auto_settle_empty_desc', 'Nem található azonos hivatkozású vagy összegű rendezetlen tétel a folyószámlán.'),
         });
       }
       queryClient.invalidateQueries({ queryKey: subledgerQueryKeys.all });
     },
     onError: (err: any) => {
       toast({
-        title: 'Hiba az automatikus párosítás során',
-        description: err.message || 'A művelet megszakadt.',
+        title: t('accounting:subledger.toasts.auto_settle_error_title', 'Hiba az automatikus párosítás során'),
+        description: err.message || t('common:unknown_error', 'A művelet megszakadt.'),
         variant: 'destructive',
       });
     },
@@ -245,6 +248,7 @@ export function useAutoSettleSubledgerItems() {
 export function useBatchPostSubledgerItems() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation(['accounting', 'common']);
 
   return useMutation({
     mutationFn: async ({ companyId, headerIds }: { companyId: string; headerIds: string[] }) => {
@@ -258,15 +262,15 @@ export function useBatchPostSubledgerItems() {
     },
     onSuccess: (count: number) => {
       toast({
-        title: 'Tételek sikeresen lekönyvelve',
-        description: `${count} bizonylat státusza végleges könyveltre (KÖNYVELT) módosult.`,
+        title: t('accounting:subledger.toasts.batch_post_success_title', 'Tételek sikeresen lekönyvelve'),
+        description: t('accounting:subledger.toasts.batch_post_success_desc', { count, defaultValue: `${count} bizonylat státusza végleges könyveltre (KÖNYVELT) módosult.` }),
       });
       queryClient.invalidateQueries({ queryKey: subledgerQueryKeys.all });
     },
     onError: (err: any) => {
       toast({
-        title: 'Hiba a könyvelés során',
-        description: err.message || 'Nem sikerült a tételek lekönyvelése.',
+        title: t('accounting:subledger.toasts.batch_post_error_title', 'Hiba a könyvelés során'),
+        description: err.message || t('common:unknown_error', 'Nem sikerült a tételek lekönyvelése.'),
         variant: 'destructive',
       });
     },
@@ -279,6 +283,7 @@ export function useBatchPostSubledgerItems() {
 export function useUnsettleOpenItems() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation(['accounting', 'common']);
 
   return useMutation({
     mutationFn: async ({ companyId, matchId }: { companyId: string; matchId: string }) => {
@@ -292,15 +297,15 @@ export function useUnsettleOpenItems() {
     },
     onSuccess: () => {
       toast({
-        title: 'Rendezés felbontva',
-        description: 'A tétel párosítása sikeresen meg lett szüntetve, visszakerült a nyitott tételek közé.',
+        title: t('accounting:subledger.toasts.unsettle_success_title', 'Rendezés felbontva'),
+        description: t('accounting:subledger.toasts.unsettle_success_desc', 'A tétel párosítása sikeresen meg lett szüntetve, visszakerült a nyitott tételek közé.'),
       });
       queryClient.invalidateQueries({ queryKey: subledgerQueryKeys.all });
     },
     onError: (err: any) => {
       toast({
-        title: 'Hiba a felbontás során',
-        description: err.message || 'Nem sikerült a kapcsolat megszüntetése.',
+        title: t('accounting:subledger.toasts.unsettle_error_title', 'Hiba a felbontás során'),
+        description: err.message || t('common:unknown_error', 'Nem sikerült a kapcsolat megszüntetése.'),
         variant: 'destructive',
       });
     },
@@ -313,6 +318,7 @@ export function useUnsettleOpenItems() {
 export function useWriteOffSubledgerDifference() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation(['accounting', 'common']);
 
   return useMutation({
     mutationFn: async (params: WriteOffParams) => {
@@ -331,15 +337,17 @@ export function useWriteOffSubledgerDifference() {
     onSuccess: (_data, variables) => {
       const isRounding = variables.type === 'ROUNDING';
       toast({
-        title: isRounding ? 'Kerekítés sikeresen leírva' : 'Árfolyamkülönbözet sikeresen leírva',
-        description: 'A vegyes bizonylat automatikusan le lett könyvelve és a tétel le lett zárva.',
+        title: isRounding
+          ? t('accounting:subledger.toasts.write_off_rounding_title', 'Kerekítés sikeresen leírva')
+          : t('accounting:subledger.toasts.write_off_fx_title', 'Árfolyamkülönbözet sikeresen leírva'),
+        description: t('accounting:subledger.toasts.write_off_desc', 'A vegyes bizonylat automatikusan le lett könyvelve és a tétel le lett zárva.'),
       });
       queryClient.invalidateQueries({ queryKey: subledgerQueryKeys.all });
     },
     onError: (err: any) => {
       toast({
-        title: 'Hiba a leírás során',
-        description: err.message || 'Nem sikerült a különbözet automatikus leírása.',
+        title: t('accounting:subledger.toasts.write_off_error_title', 'Hiba a leírás során'),
+        description: err.message || t('common:unknown_error', 'Nem sikerült a különbözet automatikus leírása.'),
         variant: 'destructive',
       });
     },
@@ -352,13 +360,14 @@ export function useWriteOffSubledgerDifference() {
 export function useUnpostSubledgerEntry() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation(['accounting', 'common']);
 
   return useMutation({
     mutationFn: async ({ headerId, reason }: { headerId: string; reason?: string }) => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error('Bejelentkezés szükséges a módosításhoz.');
+      if (!user) throw new Error(t('common:errors.login_required', 'Bejelentkezés szükséges a módosításhoz.'));
 
       const { error } = await supabase.rpc('acc_unpost_journal_entry', {
         p_header_id: headerId,
@@ -368,17 +377,17 @@ export function useUnpostSubledgerEntry() {
       if (error) throw error;
       return headerId;
     },
-    onSuccess: (headerId) => {
+    onSuccess: () => {
       toast({
-        title: 'Bizonylat visszanyitva piszkozattá',
-        description: 'A tétel sikeresen visszanyitva szerkesztésre.',
+        title: t('accounting:subledger.toasts.unpost_success_title', 'Bizonylat visszanyitva piszkozattá'),
+        description: t('accounting:subledger.toasts.unpost_success_desc', 'A tétel sikeresen visszanyitva szerkesztésre.'),
       });
       queryClient.invalidateQueries({ queryKey: subledgerQueryKeys.all });
     },
     onError: (err: any) => {
       toast({
-        title: 'Hiba a bizonylat visszanyitásakor',
-        description: err.message || 'Nem sikerült a tétel visszanyitása.',
+        title: t('accounting:subledger.toasts.unpost_error_title', 'Hiba a bizonylat visszanyitásakor'),
+        description: err.message || t('common:unknown_error', 'Nem sikerült a tétel visszanyitása.'),
         variant: 'destructive',
       });
     },

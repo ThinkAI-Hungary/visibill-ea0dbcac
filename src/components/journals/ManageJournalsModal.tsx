@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { BookOpen, Plus, Edit2, Check, X, Loader2 } from 'lucide-react';
 import { CreateJournalModal, JOURNAL_TYPES } from './CreateJournalModal';
+import { useTranslation } from 'react-i18next';
 
 export interface JournalItem {
   id: string;
@@ -40,6 +41,7 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
   journals,
   glAccounts = [],
 }) => {
+  const { t } = useTranslation(['accounting', 'common']);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -65,7 +67,7 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
 
   const handleSaveEdit = async (journalId: string) => {
     if (!editName.trim()) {
-      toast({ title: 'A megnevezés kötelező', variant: 'destructive' });
+      toast({ title: t('accounting:journals.manage_modal.toast_name_required', 'A megnevezés kötelező'), variant: 'destructive' });
       return;
     }
 
@@ -83,14 +85,14 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
 
       if (error) throw error;
 
-      toast({ title: 'Napló sikeresen frissítve' });
+      toast({ title: t('accounting:journals.manage_modal.toast_success', 'Napló sikeresen frissítve') });
       queryClient.invalidateQueries({ queryKey: ['acc-journals', companyId] });
       queryClient.invalidateQueries({ queryKey: ['acc-bank-journals', companyId] });
       cancelEdit();
     } catch (err: any) {
       toast({
-        title: 'Hiba a mentés során',
-        description: err.message || 'Nem sikerült frissíteni a naplót.',
+        title: t('accounting:journals.manage_modal.toast_error_title', 'Hiba a mentés során'),
+        description: err.message || t('accounting:journals.manage_modal.toast_error_desc', 'Nem sikerült frissíteni a naplót.'),
         variant: 'destructive',
       });
     } finally {
@@ -99,8 +101,12 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
   };
 
   const getTypeLabel = (type: string) => {
-    const match = JOURNAL_TYPES.find(t => t.value === type);
-    return match ? match.label.split(' ')[0] : type;
+    return t(`accounting:journals.create_modal.types.${type}`, {
+      defaultValue: (() => {
+        const match = JOURNAL_TYPES.find(t => t.value === type);
+        return match ? match.label.split(' ')[0] : type;
+      })(),
+    });
   };
 
   return (
@@ -111,10 +117,10 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
             <div>
               <DialogTitle className="flex items-center gap-2 text-lg">
                 <BookOpen className="w-5 h-5 text-primary" />
-                <span>Könyvelési Naplótörzs Kezelése</span>
+                <span>{t('accounting:journals.manage_modal.title', 'Könyvelési Naplótörzs Kezelése')}</span>
               </DialogTitle>
               <DialogDescription className="text-xs mt-1">
-                Tekintse át, nevezze át és szabja testre a cég könyvelési naplóit (bankok, pénztárak, vegyes és forgalmi naplók).
+                {t('accounting:journals.manage_modal.description', 'Tekintse át, nevezze át és szabja testre a cég könyvelési naplóit (bankok, pénztárak, vegyes és forgalmi naplók).')}
               </DialogDescription>
             </div>
             <Button
@@ -123,7 +129,7 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
               className="gap-1.5 shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>Új Napló</span>
+              <span>{t('accounting:journals.manage_modal.btn_new', 'Új Napló')}</span>
             </Button>
           </DialogHeader>
 
@@ -131,13 +137,13 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
             <Table>
               <TableHeader>
                 <TableRow className="text-xs">
-                  <TableHead className="w-[80px]">Kód</TableHead>
-                  <TableHead className="min-w-[180px]">Megnevezés</TableHead>
-                  <TableHead className="w-[110px]">Típus</TableHead>
-                  <TableHead className="w-[70px]">Deviza</TableHead>
-                  <TableHead className="min-w-[140px]">Kapcsolt Főkönyv</TableHead>
-                  <TableHead className="w-[90px] text-center">Státusz</TableHead>
-                  <TableHead className="w-[90px] text-right">Művelet</TableHead>
+                  <TableHead className="w-[80px]">{t('accounting:journals.manage_modal.col_code', 'Kód')}</TableHead>
+                  <TableHead className="min-w-[180px]">{t('accounting:journals.manage_modal.col_name', 'Megnevezés')}</TableHead>
+                  <TableHead className="w-[110px]">{t('accounting:journals.manage_modal.col_type', 'Típus')}</TableHead>
+                  <TableHead className="w-[70px]">{t('accounting:journals.manage_modal.col_currency', 'Deviza')}</TableHead>
+                  <TableHead className="min-w-[140px]">{t('accounting:journals.manage_modal.col_gl', 'Kapcsolt Főkönyv')}</TableHead>
+                  <TableHead className="w-[90px] text-center">{t('accounting:journals.manage_modal.col_status', 'Státusz')}</TableHead>
+                  <TableHead className="w-[90px] text-right">{t('accounting:journals.manage_modal.col_actions', 'Művelet')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="text-xs">
@@ -156,7 +162,7 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
                             value={editName}
                             onChange={e => setEditName(e.target.value)}
                             className="h-8 text-xs font-medium"
-                            placeholder="Napló neve"
+                            placeholder={t('accounting:journals.manage_modal.placeholder_name', 'Napló neve')}
                             autoFocus
                           />
                         ) : (
@@ -182,7 +188,7 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
                             value={editGlAccount}
                             onChange={e => setEditGlAccount(e.target.value)}
                             className="h-8 text-xs font-mono"
-                            placeholder="pl. 3842"
+                            placeholder={t('accounting:journals.manage_modal.placeholder_gl', 'pl. 3842')}
                           />
                         ) : (
                           <span className="font-mono text-muted-foreground">
@@ -204,16 +210,16 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
                             <Switch
                               checked={editActive}
                               onCheckedChange={setEditActive}
-                              aria-label="Aktív napló"
+                              aria-label={t('accounting:journals.manage_modal.aria_active', 'Aktív napló')}
                             />
                           </div>
                         ) : j.is_active ? (
                           <Badge variant="default" className="text-[10px] bg-emerald-600 hover:bg-emerald-600">
-                            Aktív
+                            {t('accounting:journals.manage_modal.badge_active', 'Aktív')}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                            Inaktív
+                            {t('accounting:journals.manage_modal.badge_inactive', 'Inaktív')}
                           </Badge>
                         )}
                       </TableCell>
@@ -227,7 +233,7 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
                               className="h-7 w-7 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                               onClick={() => handleSaveEdit(j.id)}
                               disabled={savingId === j.id}
-                              title="Mentés"
+                              title={t('common:actions.save', 'Mentés')}
                             >
                               {savingId === j.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                             </Button>
@@ -237,7 +243,7 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
                               className="h-7 w-7 text-muted-foreground hover:bg-muted"
                               onClick={cancelEdit}
                               disabled={savingId === j.id}
-                              title="Mégse"
+                              title={t('common:actions.cancel', 'Mégse')}
                             >
                               <X className="w-3.5 h-3.5" />
                             </Button>
@@ -248,7 +254,7 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
                             variant="ghost"
                             className="h-7 w-7 text-muted-foreground hover:text-foreground"
                             onClick={() => startEdit(j)}
-                            title="Szerkesztés"
+                            title={t('common:actions.edit', 'Szerkesztés')}
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </Button>
@@ -263,10 +269,13 @@ export const ManageJournalsModal: React.FC<ManageJournalsModalProps> = ({
 
           <DialogFooter className="pt-2 border-t flex justify-between items-center sm:justify-between">
             <span className="text-[11px] text-muted-foreground">
-              Összesen {journals.length} db napló rögzítve ennél a cégnél.
+              {t('accounting:journals.manage_modal.total_count', {
+                count: journals.length,
+                defaultValue: `Összesen ${journals.length} db napló rögzítve ennél a cégnél.`,
+              })}
             </span>
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-              Bezárás
+              {t('accounting:journals.manage_modal.btn_close', 'Bezárás')}
             </Button>
           </DialogFooter>
         </DialogContent>

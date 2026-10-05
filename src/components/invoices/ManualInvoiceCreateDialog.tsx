@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format, parseISO } from 'date-fns';
-import { getDateFnsLocale, formatCurrency } from '@/lib/locale/formatters';
+import { getDateFnsLocale, getActiveLocale, formatCurrency } from '@/lib/locale/formatters';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Trash2, FileText, ListOrdered, Loader2, Calculator, CalendarIcon, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
@@ -49,6 +49,7 @@ interface ManualInvoiceCreateDialogProps {
   open: boolean;
   onClose: () => void;
   companyId: string;
+  companyName?: string;
   categories: Category[];
   projects: Project[];
   initialDirection?: 'INBOUND' | 'OUTBOUND';
@@ -59,6 +60,7 @@ export function ManualInvoiceCreateDialog({
   open,
   onClose,
   companyId,
+  companyName = '',
   categories = [],
   projects = [],
   initialDirection = 'INBOUND',
@@ -68,30 +70,32 @@ export function ManualInvoiceCreateDialog({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const dateLocale = getDateFnsLocale();
+  const isHr = getActiveLocale() === 'hr';
 
   const [activeTab, setActiveTab] = useState('details');
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
 
   // Direction & Type
   const [direction, setDirection] = useState<'INBOUND' | 'OUTBOUND'>(initialDirection);
   const [invoiceType, setInvoiceType] = useState<string>('sima_szla');
 
   // Form fields
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     bizonylatsorszam: '',
     kibocsatas_datuma: new Date(),
     teljesites_datuma: new Date(),
     fizetesi_hatarido: undefined as Date | undefined,
-    elado_nev: '',
-    vevo_nev: '',
+    elado_nev: initialDirection === 'OUTBOUND' ? (companyName || '') : '',
+    vevo_nev: initialDirection === 'INBOUND' ? (companyName || '') : '',
     adoalap_osszesen: '' as string | number,
     afa_osszeg_osszesen: '' as string | number,
     brutto_vegosszeg: '' as string | number,
-    penznem: 'HUF',
+    penznem: isHr ? 'EUR' : 'HUF',
     fizetesi_mod: 'Átutalás',
     category_id: 'none',
     project_id: 'none',
-  });
+  }));
 
   // Attachments & Pairings
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -111,12 +115,12 @@ export function ManualInvoiceCreateDialog({
         kibocsatas_datuma: new Date(),
         teljesites_datuma: new Date(),
         fizetesi_hatarido: undefined,
-        elado_nev: '',
-        vevo_nev: '',
+        elado_nev: initialDirection === 'OUTBOUND' ? (companyName || '') : '',
+        vevo_nev: initialDirection === 'INBOUND' ? (companyName || '') : '',
         adoalap_osszesen: '',
         afa_osszeg_osszesen: '',
         brutto_vegosszeg: '',
-        penznem: 'HUF',
+        penznem: isHr ? 'EUR' : 'HUF',
         fizetesi_mod: 'Átutalás',
         category_id: 'none',
         project_id: 'none',
@@ -127,7 +131,27 @@ export function ManualInvoiceCreateDialog({
       setLineItems([]);
       setActiveTab('details');
     }
-  }, [open, initialDirection]);
+  }, [open, initialDirection, companyName, isHr]);
+
+  // Handle direction switch with partner prefilling
+  const handleDirectionChange = (newDir: 'INBOUND' | 'OUTBOUND') => {
+    setDirection(newDir);
+    setFormData(prev => {
+      if (newDir === 'INBOUND') {
+        return {
+          ...prev,
+          vevo_nev: prev.vevo_nev || companyName || '',
+          elado_nev: prev.elado_nev === companyName ? '' : prev.elado_nev,
+        };
+      } else {
+        return {
+          ...prev,
+          elado_nev: prev.elado_nev || companyName || '',
+          vevo_nev: prev.vevo_nev === companyName ? '' : prev.vevo_nev,
+        };
+      }
+    });
+  };
 
   // Handle NAV Invoice Selection with intelligent autofill
   const handleSelectNavInvoice = (nav: NavInvoice | null) => {
@@ -149,8 +173,8 @@ export function ManualInvoiceCreateDialog({
       kibocsatas_datuma: parseDateSafe(nav.invoice_issue_date) || prev.kibocsatas_datuma,
       teljesites_datuma: parseDateSafe(nav.invoice_delivery_date) || prev.teljesites_datuma,
       fizetesi_hatarido: parseDateSafe(nav.payment_date) || prev.fizetesi_hatarido,
-      elado_nev: nav.supplier_name || prev.elado_nev,
-      vevo_nev: nav.customer_name || prev.vevo_nev,
+      elado_nev: nav.supplier_name || prev.elado_nev || (direction === 'OUTBOUND' ? (companyName || '') : ''),
+      vevo_nev: nav.customer_name || prev.vevo_nev || (direction === 'INBOUND' ? (companyName || '') : ''),
       adoalap_osszesen: nav.invoice_net_amount ?? prev.adoalap_osszesen,
       afa_osszeg_osszesen: nav.invoice_vat_amount ?? prev.afa_osszeg_osszesen,
       brutto_vegosszeg: nav.invoice_gross_amount ?? prev.brutto_vegosszeg,
@@ -159,8 +183,8 @@ export function ManualInvoiceCreateDialog({
     }));
 
     toast({
-      title: 'NAV számla adatai betöltve',
-      description: `A(z) ${nav.invoice_number} számla adatai automatikusan előtöltésre kerültek.`,
+      title: t('invoices:manual_create.toast_nav_loaded_title'),
+      description: t('invoices:manual_create.toast_nav_loaded_desc', { number: nav.invoice_number }),
     });
   };
 
@@ -188,10 +212,10 @@ export function ManualInvoiceCreateDialog({
       line_number: nextLineNumber,
       line_description: '',
       quantity: 1,
-      unit_of_measure: 'db',
+      unit_of_measure: isHr ? 'kom' : 'db',
       unit_price: '',
       net_amount: 0,
-      vat_rate: '27%',
+      vat_rate: isHr ? '25%' : '27%',
       vat_amount: 0,
       gross_amount: 0,
     };
@@ -218,10 +242,13 @@ export function ManualInvoiceCreateDialog({
         const rateStr = String(field === 'vat_rate' ? value : item.vat_rate);
 
         const net = Math.round(qty * price * 100) / 100;
-        let ratePercent = 0.27;
-        if (rateStr === '18%') ratePercent = 0.18;
+        let ratePercent = isHr ? 0.25 : 0.27;
+        if (rateStr === '27%') ratePercent = 0.27;
+        else if (rateStr === '25%') ratePercent = 0.25;
+        else if (rateStr === '18%') ratePercent = 0.18;
+        else if (rateStr === '13%') ratePercent = 0.13;
         else if (rateStr === '5%') ratePercent = 0.05;
-        else if (['0%', 'AAM', 'TAM', 'FAD', 'EU', 'EUK'].includes(rateStr)) ratePercent = 0;
+        else if (['0%', 'AAM', 'TAM', 'FAD', 'EU', 'EUK', 'PDV'].includes(rateStr)) ratePercent = 0;
 
         const vat = Math.round(net * ratePercent * 100) / 100;
         const gross = Math.round((net + vat) * 100) / 100;
@@ -252,34 +279,37 @@ export function ManualInvoiceCreateDialog({
     }));
 
     toast({
-      title: 'Összegek újraszámolva',
-      description: 'A fejléc összegek frissültek a számlatételek alapján.',
+      title: t('invoices:manual_create.toast_recalc_title'),
+      description: t('invoices:manual_create.toast_recalc_desc'),
     });
   };
 
   // Main Submit Handler
   const handleSaveInvoice = async () => {
+    if (isSaving || savingRef.current) return;
+
     if (!companyId || !user?.id) {
-      toast({ title: 'Hiba', description: 'Nincs aktív cég azonosító.', variant: 'destructive' });
+      toast({ title: t('common:status.error'), description: t('invoices:manual_create.toast_missing_company'), variant: 'destructive' });
       return;
     }
 
     const invoiceNumber = formData.bizonylatsorszam.trim();
     if (!invoiceNumber) {
-      toast({ title: 'Hiányzó adat', description: 'A bizonylatsorszám megadása kötelező.', variant: 'destructive' });
+      toast({ title: t('invoices:manual_create.toast_missing_data_title', 'Hiányzó adat'), description: t('invoices:manual_create.toast_missing_number'), variant: 'destructive' });
       return;
     }
 
     const partnerName = direction === 'INBOUND' ? formData.elado_nev.trim() : formData.vevo_nev.trim();
     if (!partnerName) {
       toast({
-        title: 'Hiányzó partnernév',
-        description: direction === 'INBOUND' ? 'Az eladó nevének megadása kötelező.' : 'A vevő nevének megadása kötelező.',
+        title: t('invoices:manual_create.toast_missing_partner_title'),
+        description: direction === 'INBOUND' ? t('invoices:manual_create.toast_missing_seller') : t('invoices:manual_create.toast_missing_buyer'),
         variant: 'destructive',
       });
       return;
     }
 
+    savingRef.current = true;
     setIsSaving(true);
     try {
       let uploadedFileUrl: string | null = null;
@@ -314,13 +344,36 @@ export function ManualInvoiceCreateDialog({
         }];
       }
 
+      // Recompute header amounts from line items if present (enforces consistency)
+      let invoiceNet = parseNumericValue(formData.adoalap_osszesen);
+      let invoiceVat = parseNumericValue(formData.afa_osszeg_osszesen);
+      let invoiceGross = parseNumericValue(formData.brutto_vegosszeg);
+
+      if (lineItems.length > 0) {
+        const lineTotals = lineItems.reduce((acc, it) => ({
+          net: acc.net + (Number(it.net_amount) || 0),
+          vat: acc.vat + (Number(it.vat_amount) || 0),
+          gross: acc.gross + (Number(it.gross_amount) || 0),
+        }), { net: 0, vat: 0, gross: 0 });
+
+        invoiceNet = Math.round(lineTotals.net * 100) / 100;
+        invoiceVat = Math.round(lineTotals.vat * 100) / 100;
+        invoiceGross = Math.round(lineTotals.gross * 100) / 100;
+      }
+
       // Calculate payment status from selected transactions
       const totalTxAmount = selectedTransactions.reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-      const invoiceGross = parseNumericValue(formData.brutto_vegosszeg);
-      const invoiceNet = parseNumericValue(formData.adoalap_osszesen);
-      const invoiceVat = parseNumericValue(formData.afa_osszeg_osszesen);
       const isFullyPaid = totalTxAmount > 0 && totalTxAmount >= (invoiceGross - 0.5);
       const isPartiallyPaid = totalTxAmount > 0 && !isFullyPaid;
+
+      // Ensure non-primary partner is NEVER null or empty (satisfies PostgreSQL NOT NULL constraint)
+      const eladoName = direction === 'INBOUND'
+        ? formData.elado_nev.trim()
+        : (formData.elado_nev.trim() || companyName || 'Saját cég');
+
+      const vevoName = direction === 'OUTBOUND'
+        ? formData.vevo_nev.trim()
+        : (formData.vevo_nev.trim() || companyName || 'Saját cég');
 
       // 2. Insert into invoices table
       const invoicePayload: Record<string, any> = {
@@ -330,13 +383,13 @@ export function ManualInvoiceCreateDialog({
         kibocsatas_datuma: format(formData.kibocsatas_datuma, 'yyyy-MM-dd'),
         teljesites_datuma: formData.teljesites_datuma ? format(formData.teljesites_datuma, 'yyyy-MM-dd') : null,
         fizetesi_hatarido: formData.fizetesi_hatarido ? format(formData.fizetesi_hatarido, 'yyyy-MM-dd') : null,
-        elado_nev: formData.elado_nev.trim() || null,
-        vevo_nev: formData.vevo_nev.trim() || null,
+        elado_nev: eladoName,
+        vevo_nev: vevoName,
         adoalap_osszesen: invoiceNet,
         afa_osszeg_osszesen: invoiceVat,
         brutto_vegosszeg: invoiceGross,
         fizetendo_osszeg: invoiceGross,
-        penznem: formData.penznem || 'HUF',
+        penznem: formData.penznem || (isHr ? 'EUR' : 'HUF'),
         fizetesi_mod: formData.fizetesi_mod || null,
         invoice_direction: direction,
         invoice_type: invoiceType || 'sima_szla',
@@ -364,8 +417,8 @@ export function ManualInvoiceCreateDialog({
       if (insertError) {
         if (insertError.code === '23505') {
           toast({
-            title: 'Már létező bizonylatsorszám',
-            description: 'Ezzel a bizonylatsorszámmal már létezik számla a cégnél.',
+            title: t('invoices:manual_create.toast_duplicate_number_title'),
+            description: t('invoices:manual_create.toast_duplicate_number_desc'),
             variant: 'destructive',
           });
           return;
@@ -447,8 +500,8 @@ export function ManualInvoiceCreateDialog({
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
 
       toast({
-        title: 'Számla sikeresen rögzítve',
-        description: `A(z) ${invoiceNumber} számla bekerült a nyilvántartásba.`,
+        title: t('invoices:manual_create.toast_save_success'),
+        description: `${invoiceNumber}`,
       });
 
       onSuccess?.();
@@ -462,11 +515,12 @@ export function ManualInvoiceCreateDialog({
         error: err,
       });
       toast({
-        title: 'Mentési hiba',
-        description: err.message || 'Nem sikerült rögzíteni a számlát.',
+        title: t('common:status.error'),
+        description: err.message || t('invoices:manual_create.toast_save_error'),
         variant: 'destructive',
       });
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };
@@ -482,10 +536,10 @@ export function ManualInvoiceCreateDialog({
             <div>
               <DialogTitle className="text-xl font-bold flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                Új számla rögzítése
+                {t('invoices:manual_create.dialog_title')}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Rögzíts új számlát kézzel, opcionális számlaképpel, NAV párral és banki tranzakciókkal.
+                {t('invoices:manual_create.dialog_desc')}
               </DialogDescription>
             </div>
             <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/40">
@@ -493,21 +547,21 @@ export function ManualInvoiceCreateDialog({
                 type="button"
                 size="sm"
                 variant={direction === 'INBOUND' ? 'default' : 'ghost'}
-                onClick={() => setDirection('INBOUND')}
+                onClick={() => handleDirectionChange('INBOUND')}
                 className="h-7 text-xs px-2.5 gap-1.5"
               >
                 <ArrowDownLeft className="h-3.5 w-3.5 text-blue-400" />
-                Költség (Bejövő)
+                {t('invoices:manual_create.dir_inbound')}
               </Button>
               <Button
                 type="button"
                 size="sm"
                 variant={direction === 'OUTBOUND' ? 'default' : 'ghost'}
-                onClick={() => setDirection('OUTBOUND')}
+                onClick={() => handleDirectionChange('OUTBOUND')}
                 className="h-7 text-xs px-2.5 gap-1.5"
               >
                 <ArrowUpRight className="h-3.5 w-3.5 text-emerald-400" />
-                Árbevétel (Kimenő)
+                {t('invoices:manual_create.dir_outbound')}
               </Button>
             </div>
           </div>
@@ -517,11 +571,11 @@ export function ManualInvoiceCreateDialog({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="details" className="gap-2 text-xs">
               <FileText className="h-4 w-4" />
-              Számla adatok
+              {t('invoices:manual_create.tab_details')}
             </TabsTrigger>
             <TabsTrigger value="items" className="gap-2 text-xs">
               <ListOrdered className="h-4 w-4" />
-              Számlatételek
+              {t('invoices:manual_create.tab_items')}
               {lineItems.length > 0 && (
                 <span className="ml-1 text-xs bg-primary/20 text-primary font-semibold rounded-full px-1.5 py-0.2 min-w-[18px] text-center">
                   {lineItems.length}
@@ -549,24 +603,24 @@ export function ManualInvoiceCreateDialog({
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label htmlFor="create-bizonylatsorszam" className="text-xs font-semibold text-foreground">
-                    Bizonylatsorszám <span className="text-destructive">*</span>
+                    {t('invoices:manual_create.invoice_number')} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="create-bizonylatsorszam"
                     value={formData.bizonylatsorszam}
                     onChange={(e) => setFormData(prev => ({ ...prev, bizonylatsorszam: e.target.value }))}
-                    placeholder="pl. SZLA-2026-001"
+                    placeholder={t('invoices:manual_create.invoice_number_placeholder')}
                     className="font-mono text-xs h-8"
                     disabled={isSaving}
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    A pontos sorszám megadása összeköti a számlát a NAV tételével.
+                    {t('invoices:manual_create.invoice_number_hint')}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-xs text-foreground">Kelt (Kibocsátás) <span className="text-destructive">*</span></Label>
+                    <Label className="text-xs text-foreground">{t('invoices:manual_create.issue_date')} <span className="text-destructive">*</span></Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -576,7 +630,7 @@ export function ManualInvoiceCreateDialog({
                           className="w-full justify-start text-left font-normal text-xs h-8"
                         >
                           <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-                          {formData.kibocsatas_datuma ? format(formData.kibocsatas_datuma, 'yyyy. MM. dd.', { locale: dateLocale }) : 'Válassz dátumot'}
+                          {formData.kibocsatas_datuma ? format(formData.kibocsatas_datuma, 'yyyy. MM. dd.', { locale: dateLocale }) : t('invoices:manual_create.select_date')}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -591,7 +645,7 @@ export function ManualInvoiceCreateDialog({
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs text-foreground">Teljesítés dátuma</Label>
+                    <Label className="text-xs text-foreground">{t('invoices:manual_create.delivery_date')}</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -601,7 +655,7 @@ export function ManualInvoiceCreateDialog({
                           className="w-full justify-start text-left font-normal text-xs h-8"
                         >
                           <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-                          {formData.teljesites_datuma ? format(formData.teljesites_datuma, 'yyyy. MM. dd.', { locale: dateLocale }) : 'Válassz dátumot'}
+                          {formData.teljesites_datuma ? format(formData.teljesites_datuma, 'yyyy. MM. dd.', { locale: dateLocale }) : t('invoices:manual_create.select_date')}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -618,13 +672,13 @@ export function ManualInvoiceCreateDialog({
 
                 <div className="space-y-1">
                   <Label htmlFor="create-elado" className="text-xs font-semibold text-foreground">
-                    Eladó neve {direction === 'INBOUND' && <span className="text-destructive">*</span>}
+                    {t('invoices:manual_create.seller_name')} {direction === 'INBOUND' && <span className="text-destructive">*</span>}
                   </Label>
                   <Input
                     id="create-elado"
                     value={formData.elado_nev}
                     onChange={(e) => setFormData(prev => ({ ...prev, elado_nev: e.target.value }))}
-                    placeholder="pl. Partner Kft."
+                    placeholder={direction === 'OUTBOUND' && companyName ? companyName : t('invoices:manual_create.placeholder_partner_seller')}
                     className="text-xs h-8"
                     disabled={isSaving}
                   />
@@ -632,29 +686,29 @@ export function ManualInvoiceCreateDialog({
 
                 <div className="space-y-1">
                   <Label htmlFor="create-vevo" className="text-xs font-semibold text-foreground">
-                    Vevő neve {direction === 'OUTBOUND' && <span className="text-destructive">*</span>}
+                    {t('invoices:manual_create.buyer_name')} {direction === 'OUTBOUND' && <span className="text-destructive">*</span>}
                   </Label>
                   <Input
                     id="create-vevo"
                     value={formData.vevo_nev}
                     onChange={(e) => setFormData(prev => ({ ...prev, vevo_nev: e.target.value }))}
-                    placeholder="pl. Ügyfél Kft."
+                    placeholder={direction === 'INBOUND' && companyName ? companyName : t('invoices:manual_create.placeholder_partner_buyer')}
                     className="text-xs h-8"
                     disabled={isSaving}
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs text-foreground">Bizonylat típusa</Label>
+                  <Label className="text-xs text-foreground">{t('invoices:manual_create.invoice_type')}</Label>
                   <Select value={invoiceType} onValueChange={setInvoiceType} disabled={isSaving}>
                     <SelectTrigger className="text-xs h-8">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sima_szla">Normál számla</SelectItem>
-                      <SelectItem value="dijbekero_proforma">Díjbekérő (Proforma)</SelectItem>
-                      <SelectItem value="elolegszamla">Előlegszámla</SelectItem>
-                      <SelectItem value="vegszamla">Végszámla</SelectItem>
+                      <SelectItem value="sima_szla">{t('invoices:manual_create.types.sima_szla')}</SelectItem>
+                      <SelectItem value="dijbekero_proforma">{t('invoices:manual_create.types.dijbekero_proforma')}</SelectItem>
+                      <SelectItem value="elolegszamla">{t('invoices:manual_create.types.elolegszamla')}</SelectItem>
+                      <SelectItem value="vegszamla">{t('invoices:manual_create.types.vegszamla')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -664,7 +718,7 @@ export function ManualInvoiceCreateDialog({
               <div className="space-y-3">
                 <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">Összegek</span>
+                    <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">{t('invoices:manual_create.amounts_title')}</span>
                     {lineItems.length > 0 && (
                       <Button
                         type="button"
@@ -674,14 +728,14 @@ export function ManualInvoiceCreateDialog({
                         className="h-6 px-1.5 text-[11px] text-primary hover:text-primary gap-1"
                       >
                         <Calculator className="h-3 w-3" />
-                        Újraszámolás a tételekből
+                        {t('invoices:manual_create.recalculate_from_items')}
                       </Button>
                     )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-[11px] text-muted-foreground">Nettó összeg</Label>
+                      <Label className="text-[11px] text-muted-foreground">{t('invoices:manual_create.net_amount')}</Label>
                       <Input
                         type="text"
                         inputMode="decimal"
@@ -694,7 +748,7 @@ export function ManualInvoiceCreateDialog({
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-[11px] text-muted-foreground">ÁFA összeg</Label>
+                      <Label className="text-[11px] text-muted-foreground">{t('invoices:manual_create.vat_amount')}</Label>
                       <Input
                         type="text"
                         inputMode="decimal"
@@ -708,7 +762,7 @@ export function ManualInvoiceCreateDialog({
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-foreground">Bruttó végösszeg</Label>
+                    <Label className="text-xs font-semibold text-foreground">{t('invoices:manual_create.gross_amount')}</Label>
                     <Input
                       type="text"
                       inputMode="decimal"
@@ -723,7 +777,7 @@ export function ManualInvoiceCreateDialog({
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-xs text-foreground">Pénznem</Label>
+                    <Label className="text-xs text-foreground">{t('invoices:manual_create.currency')}</Label>
                     <Select
                       value={formData.penznem}
                       onValueChange={(val) => setFormData(prev => ({ ...prev, penznem: val }))}
@@ -733,17 +787,29 @@ export function ManualInvoiceCreateDialog({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="HUF">HUF</SelectItem>
-                        <SelectItem value="EUR">EUR</SelectItem>
-                        <SelectItem value="USD">USD</SelectItem>
-                        <SelectItem value="GBP">GBP</SelectItem>
-                        <SelectItem value="CHF">CHF</SelectItem>
+                        {isHr ? (
+                          <>
+                            <SelectItem value="EUR">EUR</SelectItem>
+                            <SelectItem value="HUF">HUF</SelectItem>
+                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="GBP">GBP</SelectItem>
+                            <SelectItem value="CHF">CHF</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="HUF">HUF</SelectItem>
+                            <SelectItem value="EUR">EUR</SelectItem>
+                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="GBP">GBP</SelectItem>
+                            <SelectItem value="CHF">CHF</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs text-foreground">Fizetés módja</Label>
+                    <Label className="text-xs text-foreground">{t('invoices:manual_create.payment_method')}</Label>
                     <Select
                       value={formData.fizetesi_mod}
                       onValueChange={(val) => setFormData(prev => ({ ...prev, fizetesi_mod: val }))}
@@ -753,12 +819,12 @@ export function ManualInvoiceCreateDialog({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Átutalás">Átutalás</SelectItem>
-                        <SelectItem value="Bankkártya">Bankkártya</SelectItem>
-                        <SelectItem value="Készpénz">Készpénz</SelectItem>
-                        <SelectItem value="Utánvét">Utánvét</SelectItem>
-                        <SelectItem value="Kompenzáció">Kompenzáció</SelectItem>
-                        <SelectItem value="Egyéb">Egyéb</SelectItem>
+                        <SelectItem value="Átutalás">{t('invoices:payment_methods.transfer')}</SelectItem>
+                        <SelectItem value="Bankkártya">{t('invoices:payment_methods.card')}</SelectItem>
+                        <SelectItem value="Készpénz">{t('invoices:payment_methods.cash')}</SelectItem>
+                        <SelectItem value="Utánvét">{t('invoices:payment_methods.cod')}</SelectItem>
+                        <SelectItem value="Kompenzáció">{t('invoices:expanded.compensation_candidate')}</SelectItem>
+                        <SelectItem value="Egyéb">{t('invoices:payment_methods.other')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -766,17 +832,17 @@ export function ManualInvoiceCreateDialog({
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-xs text-foreground">Kategória</Label>
+                    <Label className="text-xs text-foreground">{t('invoices:manual_create.category')}</Label>
                     <Select
                       value={formData.category_id}
                       onValueChange={(val) => setFormData(prev => ({ ...prev, category_id: val }))}
                       disabled={isSaving}
                     >
                       <SelectTrigger className="text-xs h-8">
-                        <SelectValue placeholder="Nincs kategória" />
+                        <SelectValue placeholder={t('invoices:manual_create.no_category')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">Nincs kategória</SelectItem>
+                        <SelectItem value="none">{t('invoices:manual_create.no_category')}</SelectItem>
                         {categories.map((c) => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                         ))}
@@ -785,17 +851,17 @@ export function ManualInvoiceCreateDialog({
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs text-foreground">Projekt</Label>
+                    <Label className="text-xs text-foreground">{t('invoices:manual_create.project')}</Label>
                     <Select
                       value={formData.project_id}
                       onValueChange={(val) => setFormData(prev => ({ ...prev, project_id: val }))}
                       disabled={isSaving}
                     >
                       <SelectTrigger className="text-xs h-8">
-                        <SelectValue placeholder="Nincs projekt" />
+                        <SelectValue placeholder={t('invoices:manual_create.no_project')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">Nincs projekt</SelectItem>
+                        <SelectItem value="none">{t('invoices:manual_create.no_project')}</SelectItem>
                         {projects.map((p) => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                         ))}
@@ -833,7 +899,7 @@ export function ManualInvoiceCreateDialog({
           <TabsContent value="items" className="flex-1 overflow-y-auto overflow-x-hidden mt-3 pr-1 space-y-3">
             <div className="flex items-center justify-between">
               <div className="text-xs text-muted-foreground">
-                Rögzíts tételsorokat a pontos analitikához és ÁFA bontáshoz.
+                {t('invoices:manual_create.line_items_hint')}
               </div>
               <Button
                 type="button"
@@ -844,16 +910,16 @@ export function ManualInvoiceCreateDialog({
                 className="h-7 text-xs gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5 text-primary" />
-                Új tétel hozzáadása
+                {t('invoices:manual_create.btn_add_line_item')}
               </Button>
             </div>
 
             {lineItems.length === 0 ? (
               <div className="py-12 border border-dashed rounded-lg text-center space-y-2">
                 <ListOrdered className="h-8 w-8 text-muted-foreground mx-auto opacity-50" />
-                <div className="text-xs font-medium text-foreground">Nincsenek rögzített számlatételek</div>
+                <div className="text-xs font-medium text-foreground">{t('invoices:manual_create.no_items_title')}</div>
                 <div className="text-[11px] text-muted-foreground max-w-sm mx-auto">
-                  A számlát tételek nélkül is elmentheted a fejléc összegek alapján, vagy adj hozzá tételsorokat.
+                  {t('invoices:manual_create.no_items_desc')}
                 </div>
                 <Button
                   type="button"
@@ -863,7 +929,7 @@ export function ManualInvoiceCreateDialog({
                   className="mt-2 text-xs h-7"
                 >
                   <Plus className="h-3.5 w-3.5 mr-1" />
-                  Első tétel rögzítése
+                  {t('invoices:manual_create.btn_first_item')}
                 </Button>
               </div>
             ) : (
@@ -871,14 +937,14 @@ export function ManualInvoiceCreateDialog({
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40 text-[11px]">
-                      <TableHead className="w-10 text-center">#</TableHead>
-                      <TableHead className="min-w-[160px]">Megnevezés</TableHead>
-                      <TableHead className="w-20 text-right">Menny.</TableHead>
-                      <TableHead className="w-16">Egység</TableHead>
-                      <TableHead className="w-24 text-right">Egységár</TableHead>
-                      <TableHead className="w-24 text-right">Nettó</TableHead>
-                      <TableHead className="w-20 text-center">ÁFA %</TableHead>
-                      <TableHead className="w-24 text-right">Bruttó</TableHead>
+                      <TableHead className="w-10 text-center">{t('invoices:manual_create.table_line_num')}</TableHead>
+                      <TableHead className="min-w-[160px]">{t('invoices:manual_create.table_description')}</TableHead>
+                      <TableHead className="w-20 text-right">{t('invoices:manual_create.table_quantity')}</TableHead>
+                      <TableHead className="w-16">{t('invoices:manual_create.table_unit')}</TableHead>
+                      <TableHead className="w-24 text-right">{t('invoices:manual_create.table_unit_price')}</TableHead>
+                      <TableHead className="w-24 text-right">{t('invoices:manual_create.table_net')}</TableHead>
+                      <TableHead className="w-20 text-center">{t('invoices:manual_create.table_vat_rate')}</TableHead>
+                      <TableHead className="w-24 text-right">{t('invoices:manual_create.table_gross')}</TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -892,7 +958,7 @@ export function ManualInvoiceCreateDialog({
                           <Input
                             value={item.line_description}
                             onChange={(e) => handleUpdateLineItem(item.id, 'line_description', e.target.value)}
-                            placeholder="Tétel megnevezése"
+                            placeholder={t('invoices:manual_create.placeholder_item_desc')}
                             className="h-7 text-xs"
                             disabled={isSaving}
                           />
@@ -939,13 +1005,26 @@ export function ManualInvoiceCreateDialog({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="27%">27%</SelectItem>
-                              <SelectItem value="18%">18%</SelectItem>
-                              <SelectItem value="5%">5%</SelectItem>
-                              <SelectItem value="0%">0%</SelectItem>
-                              <SelectItem value="AAM">AAM</SelectItem>
-                              <SelectItem value="TAM">TAM</SelectItem>
-                              <SelectItem value="FAD">FAD</SelectItem>
+                              {isHr ? (
+                                <>
+                                  <SelectItem value="25%">25%</SelectItem>
+                                  <SelectItem value="13%">13%</SelectItem>
+                                  <SelectItem value="5%">5%</SelectItem>
+                                  <SelectItem value="0%">0%</SelectItem>
+                                  <SelectItem value="PDV">PDV</SelectItem>
+                                  <SelectItem value="EU">EU</SelectItem>
+                                </>
+                              ) : (
+                                <>
+                                  <SelectItem value="27%">27%</SelectItem>
+                                  <SelectItem value="18%">18%</SelectItem>
+                                  <SelectItem value="5%">5%</SelectItem>
+                                  <SelectItem value="0%">0%</SelectItem>
+                                  <SelectItem value="AAM">AAM</SelectItem>
+                                  <SelectItem value="TAM">TAM</SelectItem>
+                                  <SelectItem value="FAD">FAD</SelectItem>
+                                </>
+                              )}
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -976,15 +1055,15 @@ export function ManualInvoiceCreateDialog({
         <DialogFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-border/40">
           <div className="flex items-center gap-3 text-xs tabular-nums">
             <span className="text-muted-foreground">
-              Nettó: <strong className="text-foreground">{formatCurrency(parseNumericValue(formData.adoalap_osszesen), formData.penznem)}</strong>
+              {t('invoices:manual_create.footer_net')} <strong className="text-foreground">{formatCurrency(parseNumericValue(formData.adoalap_osszesen), formData.penznem)}</strong>
             </span>
             <span className="text-muted-foreground">•</span>
             <span className="text-muted-foreground">
-              ÁFA: <strong className="text-foreground">{formatCurrency(parseNumericValue(formData.afa_osszeg_osszesen), formData.penznem)}</strong>
+              {t('invoices:manual_create.footer_vat')} <strong className="text-foreground">{formatCurrency(parseNumericValue(formData.afa_osszeg_osszesen), formData.penznem)}</strong>
             </span>
             <span className="text-muted-foreground">•</span>
             <span className="text-emerald-500 font-bold">
-              Bruttó: {formatCurrency(parseNumericValue(formData.brutto_vegosszeg), formData.penznem)}
+              {t('invoices:manual_create.footer_gross')} {formatCurrency(parseNumericValue(formData.brutto_vegosszeg), formData.penznem)}
             </span>
           </div>
 
@@ -997,7 +1076,7 @@ export function ManualInvoiceCreateDialog({
               disabled={isSaving}
               className="text-xs h-8"
             >
-              Mégse
+              {t('common:actions.cancel')}
             </Button>
             <Button
               type="button"
@@ -1009,10 +1088,10 @@ export function ManualInvoiceCreateDialog({
               {isSaving ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Mentés...
+                  {t('invoices:manual_create.btn_saving')}
                 </>
               ) : (
-                'Számla rögzítése'
+                t('invoices:manual_create.btn_create_invoice')
               )}
             </Button>
           </div>

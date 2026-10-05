@@ -235,9 +235,11 @@ export function InvoiceVatCodeSelector({
       qc.invalidateQueries({ queryKey: ['vat_return'] });
       qc.invalidateQueries({ queryKey: ['vat_return_lines'] });
 
-      const label = invoiceNumber ? `Bizonylat: ${invoiceNumber}` : 'ÁFA beállítás mentve';
+      const label = invoiceNumber ? `${t('invoices:vat_selector.doc_prefix', 'Bizonylat')}: ${invoiceNumber}` : t('invoices:vat_selector.saved_desc', 'ÁFA beállítás mentve');
       toast({
-        title: data?.targetRow ? `ÁFA besorolás beállítva: ${data.targetRow}. sor` : 'ÁFA besorolás visszaállítva automatikusra',
+        title: data?.targetRow
+          ? t('invoices:vat_selector.toast_set', { row: data.targetRow, defaultValue: `ÁFA besorolás beállítva: ${data.targetRow}. sor` })
+          : t('invoices:vat_selector.toast_reset', 'ÁFA besorolás visszaállítva automatikusra'),
         description: label,
       });
       onChanged?.(data?.codeId ?? null, data?.targetRow ?? null);
@@ -246,7 +248,7 @@ export function InvoiceVatCodeSelector({
     },
     onError: (err: any) => {
       toast({
-        title: 'Hiba a mentés során',
+        title: t('invoices:vat_selector.toast_error_title', 'Hiba a mentés során'),
         description: err.message,
         variant: 'destructive',
       });

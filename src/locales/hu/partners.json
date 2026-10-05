@@ -1,6 +1,7 @@
 {
   "title": "Partnertörzs",
   "subtitle": "Vevők és szállítók nyilvántartása",
+  "filter_aria": "Partner típus szűrő",
   "columns": {
     "name": "Partner neve",
     "name_address": "Név / Cím",
@@ -96,7 +97,31 @@
     "no_uploaded_invoices": "Nincsenek beküldött számlák",
     "nav_sync_info": "A partnerek és cégadatok szinkronizálása a NAV Online Számla rendszeréből automatikusan történik az adószám alapján.",
     "no_partner_selected": "Nincs kijelölt partner",
-    "click_partner_hint": "Kattints a bal oldali listában egy partnerre az adatok megtekintéséhez."
+    "click_partner_hint": "Kattints a bal oldali listában egy partnerre az adatok megtekintéséhez.",
+    "skonto_setting": "Gyorsfizetési kedvezmény (Skontó)",
+    "skonto_deadline": "Kedvezményes határidő",
+    "skonto_rate": "Kedvezmény mértéke",
+    "skonto_days_val": "{{count}} nap",
+    "skonto_excludes_shipping_active": "✅ Szállítási költség kizárva a kedvezményalapból",
+    "skonto_includes_all": "⚠️ Teljes bruttó összegre érvényes",
+    "no_skonto_set": "Nincs beállítva skontó ennél a partnernél.",
+    "btn_configure": "Beállítás",
+    "related_party_section_title": "Kapcsolt vállalkozási adatok",
+    "related_party_badge": "Kapcsolt partner",
+    "independent_badge": "Független",
+    "relation_type": "Kapcsolati típus",
+    "relation_type_default": "Kapcsolt viszony",
+    "ownership_share": "Tulajdoni hányad",
+    "not_specified": "Nem megadott",
+    "validity_label": "Érvényesség:",
+    "validity_from_start": "kezdetektől",
+    "validity_until_revocation": "visszavonásig",
+    "parent_partner": "Szülő partner:",
+    "parent_partner_fallback": "Kijelölt szülő",
+    "turnover_report": "Forgalom kimutatás",
+    "modify": "Módosítás",
+    "independent_partner_desc": "Ez a partner független piaci szereplő.",
+    "make_related": "Kapcsolttá tétel"
   },
   "empty": {
     "no_search_results": "Nincs találat a szűrésre",
@@ -121,7 +146,15 @@
     "bg_color": "Háttérszín",
     "foreign_tax_number_placeholder": "Külföldi partner – írd be az adószámot ha ismert",
     "reminder_email_note": "(felszólítólevélhez)",
-    "address_placeholder": "Partner címe"
+    "address_placeholder": "Partner címe",
+    "skonto_title": "Gyorsfizetési kedvezmény (Skontó)",
+    "skonto_subtitle": "Kettős fizetési határidő és kedvezményes összeg.",
+    "skonto_days": "Kedvezményes napok",
+    "skonto_days_hint": "Számla kibocsátásától számítva",
+    "skonto_percent": "Kedvezmény mértéke",
+    "skonto_percent_hint": "Pl. 2% vagy 3% engedmény",
+    "skonto_excludes_shipping": "Szállítási költség kizárva a kedvezményalapból",
+    "skonto_excludes_shipping_hint": "A fuvardíjból nem vonható le a skontó, csak a termékek árából."
   },
   "toasts": {
     "missing_data": "Hiányzó adatok",
@@ -142,6 +175,13 @@
     "partner_excluded_title": "Partner kizárva a könyvelésből",
     "partner_restored_title": "Partner visszaállítva a könyvelésbe",
     "partner_excluded_desc": "{{name}} összes számlája nem kerül könyvelésre.",
-    "partner_restored_desc": "{{name}} összes számlája újra bekerül a könyvelésre."
+    "partner_restored_desc": "{{name}} összes számlája újra bekerül a könyvelésre.",
+    "invalid_tax_title": "Érvénytelen adószám",
+    "invalid_tax_desc": "Kérjük, adj meg legalább 8 számjegyet a NAV lekérdezéshez.",
+    "nav_lookup_failed": "NAV lekérdezés sikertelen",
+    "nav_not_found": "Az adószám nem található a NAV nyilvántartásában.",
+    "nav_success": "NAV adatok betöltve",
+    "nav_enrich_failed": "Kiegészítés sikertelen",
+    "nav_enriched_success": "Adószám sikeresen kiegészítve"
   }
 }

@@ -23,7 +23,10 @@
     "saving": "Spremanje...",
     "show_more": "Više",
     "show_less": "Manje",
-    "new_note": "Nova bilješka"
+    "new_note": "Nova bilješka",
+    "print": "Ispis",
+    "regenerate": "Automatski generiraj",
+    "manage": "Upravljanje"
   },
   "status": {
     "loading": "Učitavanje...",
@@ -35,7 +38,20 @@
     "inactive": "Neaktivno",
     "pending": "Na čekanju",
     "completed": "Završeno",
-    "failed": "Neuspjelo"
+    "failed": "Neuspjelo",
+    "ready": "Spremno!",
+    "starting": "Pokretanje...",
+    "active_success": "Aktivno / Uspješno",
+    "no_data": "Nema podataka"
+  },
+  "buttons": {
+    "save": "Spremi",
+    "cancel": "Odustani",
+    "edit": "Uredi",
+    "delete": "Obriši",
+    "close": "Zatvori",
+    "confirm": "Potvrdi",
+    "continue": "Nastavi"
   },
   "labels": {
     "total": "Ukupno",
@@ -52,7 +68,9 @@
     "details": "Pojedinosti",
     "general": "Općenito",
     "inbound": "Ulazni",
-    "outbound": "Izlazni"
+    "outbound": "Izlazni",
+    "partner": "Partner",
+    "exchange_rate": "Tečaj"
   },
   "date_picker": {
     "period": "Razdoblje:",
@@ -98,7 +116,39 @@
     "joining": "Pridruživanje...",
     "edit_desc": "Uredite podatke o tvrtki",
     "save_changes": "Spremi promjene",
-    "delete_confirm": "Jeste li sigurni da želite obrisati tvrtku {{name}}? Ova radnja je nepovratna i svi povezani podaci tvrtke bit će obrisani."
+    "delete_confirm": "Jeste li sigurni da želite obrisati tvrtku {{name}}? Ova radnja je nepovratna i svi povezani podaci tvrtke bit će obrisani.",
+    "country_label": "Država / Nadležnost",
+    "country_hu": "🇭🇺 Mađarska (NAV Online Számla)",
+    "country_hr": "🇭🇷 Hrvatska (OIB, PDV)",
+    "oib_label": "OIB (11 znamenki)",
+    "oib_placeholder": "Npr. 95114485977",
+    "tax_placeholder": "Npr. 12345678-2-42 ili 12345678",
+    "nav_lookup_button": "NAV dohvat",
+    "nav_lookup_title": "Automatsko popunjavanje podataka iz NAV-a",
+    "oib_hint": "Za hrvatske tvrtke unesite službeni 11-znamenkasti OIB.",
+    "nav_hint": "Unesite porezni broj i kliknite na dohvat za automatsko učitavanje podataka!",
+    "name_placeholder": "Npr. Primjer d.o.o.",
+    "address_placeholder": "Npr. 10000 Zagreb, Ilica 1.",
+    "toast_invalid_tax_title": "Nevažeći porezni broj",
+    "toast_invalid_tax_desc": "Molimo unesite najmanje 8 znamenki poreznog broja za dohvat!",
+    "toast_nav_lookup_failed_title": "Dohvat podataka o tvrtki nije uspio",
+    "toast_nav_lookup_no_data": "NAV nije vratio podatke za navedeni porezni broj.",
+    "toast_nav_lookup_success_title": "Podaci o tvrtki uspješno učitani iz NAV-a!",
+    "toast_nav_lookup_error_title": "Pogreška prilikom dohvata iz NAV-a",
+    "toast_company_name_required": "Naziv tvrtke je obavezan!",
+    "toast_tax_number_required": "Porezni broj / OIB je obavezan!",
+    "toast_create_success": "Tvrtka uspješno kreirana!",
+    "toast_create_error": "Došlo je do pogreške prilikom kreiranja tvrtke",
+    "toast_join_code_required": "Pristupni kôd je obavezan!",
+    "toast_already_member": "Već ste član ove tvrtke!",
+    "toast_invalid_join_code": "Nevažeći pristupni kôd!",
+    "toast_join_code_expired": "Pristupni kôd je istekao! Zatražite novi kôd od vlasnika tvrtke.",
+    "toast_join_success": "Uspješno ste se pridružili tvrtki!",
+    "toast_join_error": "Došlo je do pogreške prilikom pridruživanja",
+    "toast_update_success": "Tvrtka uspješno ažurirana!",
+    "toast_update_error": "Došlo je do pogreške prilikom ažuriranja tvrtke",
+    "toast_delete_success": "Tvrtka uspješno obrisana!",
+    "toast_delete_error": "Došlo je do pogreške prilikom brisanja tvrtke"
   },
   "access_denied": {
     "title": "Pristup odbijen",
@@ -265,6 +315,71 @@
     "doc_retroactive_matched_desc": "{{fileName}} je uparen s prijevozom.",
     "pdf_export_done_title": "PDF izvoz završen!",
     "pdf_export_done_desc": "{{count}} računa izvezeno. Idite na stranicu Računi za preuzimanje."
+  },
+  "errors": {
+    "unknown": "Došlo je do nepoznate greške",
+    "no_company_selected": "Nije odabrana tvrtka."
+  },
+  "unknown_error": "Došlo je do nepoznate greške",
+  "error": "Došlo je do greške",
+  "success": "Uspješna operacija",
+  "cancel": "Odustani",
+  "edit": "Uredi",
+  "saving": "Spremanje...",
+  "export": "Izvoz",
+  "no_permission": "Nemate dopuštenje za uređivanje",
+  "no_data": "Nema podataka",
+  "all": "Sve",
+  "loading": "Učitavanje...",
+  "error_occurred": "Došlo je do greške",
+  "export_error": "Pogreška prilikom izvoza",
+  "no_results": "Nema rezultata za pretragu.",
+  "try_different_search": "Pokušajte s drugim pojmom ili poništite pretragu.",
+  "select_company": "Odaberite tvrtku za nastavak",
+  "select_company_continue": "Odaberite tvrtku za nastavak",
+  "back": "Natrag",
+  "next": "Dalje",
+  "close": "Zatvori",
+  "icon_picker": {
+    "search_placeholder": "Pretraži ikone...",
+    "color_title": "Odabir boje",
+    "no_results": "Nema rezultata",
+    "categories": {
+      "finance": "Financije",
+      "business": "Poslovanje",
+      "marketing": "Marketing",
+      "it": "IT i tehnologija",
+      "transport": "Prijevoz i logistika",
+      "office": "Ured",
+      "utilities": "Komunalije i nekretnine",
+      "education": "Obrazovanje",
+      "healthcare": "Zdravstvo",
+      "maintenance": "Održavanje",
+      "analytics": "Analitika",
+      "other": "Ostalo"
+    },
+    "colors": {
+      "green": "Zelena",
+      "blue": "Plava",
+      "yellow": "Žuta",
+      "cyan": "Cijan",
+      "orange": "Narančasta",
+      "purple": "Ljubičasta",
+      "pink": "Ružičasta",
+      "indigo": "Indigo",
+      "turquoise": "Tirkizna",
+      "red": "Crvena",
+      "light_green": "Svijetlo zelena",
+      "steel_blue": "Čelično plava",
+      "amber": "Jantarna",
+      "light_cyan": "Svijetlo cijan",
+      "amethyst": "Ametist",
+      "bordeaux": "Bordo",
+      "emerald": "Smaragdna",
+      "ocean": "Oceanska",
+      "terracotta": "Terakota",
+      "gray": "Siva"
+    }
   }
 }
 

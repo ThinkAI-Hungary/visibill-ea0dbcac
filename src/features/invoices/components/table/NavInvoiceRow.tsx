@@ -267,7 +267,7 @@ function NavInvoiceRowComponent({
                 toggleRowExpanded(invoice.id);
               }}
               className="p-0.5 -m-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              aria-label={isExpanded ? 'Sor összecsukása' : 'Sor kibontása'}
+              aria-label={isExpanded ? t('invoices:expanded.collapse_row', 'Sor összecsukása') : t('invoices:expanded.expand_row', 'Sor kibontása')}
             >
               <ChevronDown
                 className={cn(
@@ -305,7 +305,7 @@ function NavInvoiceRowComponent({
               {getInitials(partnerName)}
             </div>
             {partnerName === 'Ismeretlen partner' ? (
-              <span className="text-xs text-muted-foreground italic">Ismeretlen partner</span>
+              <span className="text-xs text-muted-foreground italic">{t('invoices:expanded.unknown_partner', 'Ismeretlen partner')}</span>
             ) : (
               <div className="flex items-center gap-1 min-w-0">
                 <CopyableCell
@@ -319,10 +319,10 @@ function NavInvoiceRowComponent({
                 {isCustomerFromSubmitted && (
                   <span
                     className="shrink-0 inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/20 cursor-help"
-                    title="A vevő neve a beküldött saját számláról származik"
+                    title={t('invoices:expanded.customer_from_submitted_title', 'A vevő neve a beküldött saját számláról származik')}
                   >
                     <FileText className="w-2.5 h-2.5" />
-                    Számláról
+                    {t('invoices:expanded.customer_from_submitted_badge', 'Számláról')}
                   </span>
                 )}
               </div>
@@ -385,27 +385,27 @@ function NavInvoiceRowComponent({
                     <TooltipTrigger asChild>
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40 cursor-help transition-colors hover:bg-amber-500/25">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                        {nonDeductibleInfo.minPercentage === 0 ? '0% lev.' : `${nonDeductibleInfo.minPercentage}/${100 - nonDeductibleInfo.minPercentage}`}
+                        {nonDeductibleInfo.minPercentage === 0 ? `0% ${t('invoices:expanded.deductible_badge', 'lev.')}` : `${nonDeductibleInfo.minPercentage}/${100 - nonDeductibleInfo.minPercentage}`}
                         <span className="text-muted-foreground/80 font-normal">(-{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.currency || defaultCurrency)})</span>
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="text-xs space-y-1.5 max-w-[240px] text-left">
                       <p className="font-semibold text-amber-500 flex items-center gap-1">
                         <Sparkles className="h-3 w-3" />
-                        ÁFA Levonási Korlátozás
+                        {t('invoices:expanded.vat_deductibility_restriction', 'ÁFA Levonási Korlátozás')}
                       </p>
                       <div className="space-y-0.5 font-sans">
                         <div className="flex justify-between gap-3 text-emerald-600 dark:text-emerald-400">
-                          <span>Levonható:</span>
+                          <span>{t('invoices:expanded.deductible_short', 'Levonható:')}</span>
                           <span className="font-mono font-medium">{formatCurrency((invoice.invoice_vat_amount || 0) - nonDeductibleInfo.nonDeductibleVat, invoice.currency || defaultCurrency)}</span>
                         </div>
                         <div className="flex justify-between gap-3 text-amber-600 dark:text-amber-400">
-                          <span>Nem levonható:</span>
+                          <span>{t('invoices:expanded.non_deductible_short', 'Nem levonható:')}</span>
                           <span className="font-mono font-medium">{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.currency || defaultCurrency)}</span>
                         </div>
                       </div>
                       <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/30">
-                        Áfa tv. szerinti levonási hányad (pl. telefon 70/30, szgk.)
+                        {t('invoices:expanded.vat_ratio_notice', 'Áfa tv. szerinti levonási hányad (pl. telefon 70/30, szgk.)')}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -607,7 +607,7 @@ function NavInvoiceRowComponent({
                       }
                     }}
                     className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 cursor-pointer"
-                    aria-label="Kikontírozva statusz valtoztatasa"
+                    aria-label={t('invoices:expanded.change_booked_status', 'Kikontírozva státusz változtatása')}
                   />
                 </div>
               </TooltipTrigger>
@@ -703,12 +703,12 @@ function NavInvoiceRowComponent({
                       <TooltipContent side="left" className="max-w-[280px]">
                         <div className="text-xs space-y-1">
                           <p className="font-semibold text-amber-600 dark:text-amber-400">
-                            Javasolt számlakép ({suggestedSub.suggestedScore}%)
+                            {t('invoices:expanded.suggested_image_title', { score: suggestedSub.suggestedScore, defaultValue: `Javasolt számlakép (${suggestedSub.suggestedScore}%)` })}
                           </p>
                           <p className="text-muted-foreground">
-                            Kinyert sorszám: <span className="font-mono font-medium text-foreground">{suggestedSub.bizonylatsorszam || '-'}</span>
+                            {t('invoices:expanded.extracted_number', 'Kinyert sorszám:')} <span className="font-mono font-medium text-foreground">{suggestedSub.bizonylatsorszam || '-'}</span>
                           </p>
-                          <p className="text-[11px] text-muted-foreground">Kattintson az összerendeléshez és jóváhagyáshoz!</p>
+                          <p className="text-[11px] text-muted-foreground">{t('invoices:expanded.click_to_pair_approve', 'Kattintson az összerendeléshez és jóváhagyáshoz!')}</p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -739,7 +739,7 @@ function NavInvoiceRowComponent({
                             }
                           }}
                           disabled={!hasSzamlazzKey || isDownloadingSingle}
-                          aria-label={hasSzamlazzKey ? "Számlakép letöltése Számlázz.hu-ból" : "A Számlázz.hu integráció nincs beállítva"}
+                          aria-label={hasSzamlazzKey ? t('invoices:expanded.download_szamlazz', 'Számlakép letöltése Számlázz.hu-ból') : t('invoices:expanded.no_szamlazz_integration', 'A Számlázz.hu integráció nincs beállítva')}
                         >
                           {isDownloadingSingle ? (
                             <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
@@ -752,8 +752,8 @@ function NavInvoiceRowComponent({
                     <TooltipContent side="left">
                       <p className="text-xs">
                         {hasSzamlazzKey
-                          ? "Számlakép letöltése (Számlázz.hu)"
-                          : "A Számlázz.hu integráció nincs beállítva ennél a cégnél"}
+                          ? t('invoices:expanded.download_szamlazz', 'Számlakép letöltése (Számlázz.hu)')
+                          : t('invoices:expanded.no_szamlazz_integration', 'A Számlázz.hu integráció nincs beállítva ennél a cégnél')}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -784,7 +784,7 @@ function NavInvoiceRowComponent({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Számlatételek megtekintése</p>
+                <p>{t('invoices:expanded.view_items', 'Számlatételek megtekintése')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

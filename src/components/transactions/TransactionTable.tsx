@@ -852,16 +852,26 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
               .update({ is_verified: true })
               .eq('id', transaction.id);
             if (error) throw error;
-            toast({ title: 'Sikeres jóváhagyás', description: 'A tranzakció párosítása jóváhagyva.' });
+            toast({
+              title: t('transactions:table.swipe_approved_title', 'Sikeres jóváhagyás'),
+              description: t('transactions:table.swipe_approved_desc', 'A tranzakció párosítása jóváhagyva.'),
+            });
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['tx-kpis'] });
           } catch (err) {
             console.error('Failed to verify match via swipe:', err);
-            toast({ title: 'Hiba', description: 'Nem sikerült a jóváhagyás.', variant: 'destructive' });
+            toast({
+              title: t('common:error', 'Hiba'),
+              description: t('transactions:table.swipe_failed_desc', 'Nem sikerült a jóváhagyás.'),
+              variant: 'destructive',
+            });
           }
         })();
       } else {
-        toast({ title: 'Jóváhagyás', description: 'Csak javasolt párosítások hagyhatóak jóvá így.' });
+        toast({
+          title: t('transactions:table.swipe_approval_title', 'Jóváhagyás'),
+          description: t('transactions:table.swipe_only_suggested_desc', 'Csak javasolt párosítások hagyhatóak jóvá így.'),
+        });
       }
     } else if (swipeOffset < -50) {
       onOpenDetails(transaction);

@@ -1493,7 +1493,7 @@ export default function JournalsPage() {
                                   {(() => {
                                     if (e.status === 'SZTORNOZOTT') {
                                       return (
-                                        <CustomTooltip content={t('accounting:journals.table.lock_stornoed')}>
+                                        <CustomTooltip content={t('accounting:journals.table.lock_stornoed', 'Sztornózott tétel (lezárt, nem jelölhető ki tömeges műveletre)')}>
                                           <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors">
                                             <Lock className="w-3.5 h-3.5" />
                                           </span>
@@ -1503,7 +1503,7 @@ export default function JournalsPage() {
                                     const lock = checkEntryLock(e);
                                     if (lock.locked) {
                                       return (
-                                        <CustomTooltip content={t('accounting:journals.table.lock_closed', { reason: lock.reason })}>
+                                        <CustomTooltip content={t('accounting:journals.table.lock_closed', { reason: lock.reason, defaultValue: `Lekönyvelt zárt tétel (${lock.reason})` })}>
                                           <span className="inline-flex items-center justify-center cursor-help text-amber-500/80 hover:text-amber-600 transition-colors">
                                             <Lock className="w-3.5 h-3.5" />
                                           </span>
@@ -1511,7 +1511,7 @@ export default function JournalsPage() {
                                       );
                                     }
                                     return (
-                                      <CustomTooltip content={t('accounting:journals.table.lock_open')}>
+                                      <CustomTooltip content={t('accounting:journals.table.lock_open', 'Nyitott tétel')}>
                                         <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors">
                                           <Lock className="w-3.5 h-3.5" />
                                         </span>
@@ -1904,7 +1904,7 @@ export default function JournalsPage() {
                       </div>
                       <div className="min-w-0">
                         <span className="text-[11px] font-medium text-muted-foreground block">
-                          {sourceDocument.type === 'bank' ? t('accounting:journals.drawer.source_bank') : t('accounting:journals.drawer.source_invoice')}
+                          {sourceDocument.type === 'bank' ? t('accounting:journals.drawer.source_bank', 'Csatolt eredeti bankkivonat') : t('accounting:journals.drawer.source_invoice', 'Csatolt bizonylat / számla')}
                         </span>
                         <span className="text-xs font-semibold text-foreground truncate block" title={sourceDocument.title}>
                           {sourceDocument.title}
@@ -1920,7 +1920,7 @@ export default function JournalsPage() {
                           onClick={() => setPreviewInvoiceId(sourceDocument.invoiceId!)}
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          {t('accounting:journals.drawer.details_btn')}
+                          {t('accounting:journals.drawer.details_btn', 'Részletek')}
                         </Button>
                       )}
                       {sourceDocument.fileUrl && (
@@ -1932,7 +1932,7 @@ export default function JournalsPage() {
                             onClick={() => window.open(sourceDocument.fileUrl, '_blank')}
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
-                            {t('accounting:journals.drawer.open_btn')}
+                            {t('accounting:journals.drawer.open_btn', 'Megnyitás')}
                           </Button>
                           <Button
                             size="sm"
@@ -1946,7 +1946,7 @@ export default function JournalsPage() {
                             ) : (
                               <Download className="w-3.5 h-3.5" />
                             )}
-                            {t('accounting:journals.drawer.download_btn')}
+                            {t('accounting:journals.drawer.download_btn', 'Letöltés')}
                           </Button>
                         </>
                       )}
@@ -2537,7 +2537,7 @@ export default function JournalsPage() {
                   className={cn("text-xs gap-1.5", bulkGlSide === 'T' ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "")}
                   onClick={() => setBulkGlSide('T')}
                 >
-                  <span className="font-bold">T</span> (Tartozik / Költség)
+                  {t('accounting:journals.bulk_gl.side_debit', 'T (Tartozik / Költség)')}
                 </Button>
                 <Button
                   type="button"
@@ -2546,7 +2546,7 @@ export default function JournalsPage() {
                   className={cn("text-xs gap-1.5", bulkGlSide === 'K' ? "bg-rose-600 hover:bg-rose-700 text-white" : "")}
                   onClick={() => setBulkGlSide('K')}
                 >
-                  <span className="font-bold">K</span> (Követel / Pénzforgalom)
+                  {t('accounting:journals.bulk_gl.side_credit', 'K (Követel / Pénzforgalom)')}
                 </Button>
               </div>
             </div>
@@ -2556,7 +2556,7 @@ export default function JournalsPage() {
               <div className="relative">
                 <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
                 <Input
-                  placeholder="Keresés számlaszámra vagy névre (pl. 526, 4541)..."
+                  placeholder={t('accounting:journals.bulk_gl.search_placeholder', 'Keresés számlaszámra vagy névre (pl. 526, 4541)...')}
                   value={bulkGlSearch}
                   onChange={(e) => setBulkGlSearch(e.target.value)}
                   className="pl-8 h-8 text-xs"
@@ -2597,7 +2597,11 @@ export default function JournalsPage() {
             </div>
 
             <div className="p-3 bg-muted/40 rounded-lg border border-border/40 text-xs text-muted-foreground leading-relaxed">
-              Kijelölt tételek: <strong className="text-foreground">{selectedEntryIds.size} db</strong>. A jóváhagyás után az összes kijelölt tétel <strong>{bulkGlSide === 'T' ? 'Tartozik (T)' : 'Követel (K)'}</strong> oldali sora frissül a kiválasztott számlaszámra.
+              {t('accounting:journals.bulk_gl.summary_info', {
+                count: selectedEntryIds.size,
+                side: bulkGlSide === 'T' ? 'T' : 'K',
+                defaultValue: `Kijelölt tételek: ${selectedEntryIds.size} db. A jóváhagyás után az összes kijelölt tétel ${bulkGlSide === 'T' ? 'Tartozik (T)' : 'Követel (K)'} oldali sora frissül a kiválasztott számlaszámra.`
+              })}
             </div>
           </div>
 
@@ -2609,7 +2613,7 @@ export default function JournalsPage() {
               onClick={() => setBulkGlDialogOpen(false)}
               disabled={bulkReassignGlMutation.isPending}
             >
-              Mégse
+              {t('accounting:journals.bulk_delete.cancel', 'Mégse')}
             </Button>
             <Button
               type="button"
@@ -2631,7 +2635,7 @@ export default function JournalsPage() {
               ) : (
                 <CheckCircle2 className="w-3.5 h-3.5" />
               )}
-              Kontírozás módosítása
+              {t('accounting:journals.bulk_gl.btn_submit', 'Kontírozás módosítása')}
             </Button>
           </DialogFooter>
         </DialogContent>

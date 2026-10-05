@@ -450,7 +450,7 @@ export function InvoiceFilterBar() {
           <span className="truncate">
             {filters.vatRate === 'all' || !filters.vatRate
               ? t('invoices:filters.vat_rate', { defaultValue: 'ÁFA-kulcs' })
-              : `ÁFA: ${filters.vatRate}`}
+              : `${t('invoices:filters.vat_prefix', { defaultValue: 'ÁFA' })}: ${filters.vatRate}`}
           </span>
         </SelectTrigger>
         <SelectContent>
@@ -459,9 +459,9 @@ export function InvoiceFilterBar() {
           <SelectItem value="18%">18%</SelectItem>
           <SelectItem value="5%">5%</SelectItem>
           <SelectItem value="0%">0%</SelectItem>
-          <SelectItem value="AAM">AAM (alanyi mentes)</SelectItem>
-          <SelectItem value="TAM">TAM (tárgyi mentes)</SelectItem>
-          <SelectItem value="FAD">FAD (fordított adózás)</SelectItem>
+          <SelectItem value="AAM">{t('invoices:filters.vat_aam', { defaultValue: 'AAM (alanyi mentes)' })}</SelectItem>
+          <SelectItem value="TAM">{t('invoices:filters.vat_tam', { defaultValue: 'TAM (tárgyi mentes)' })}</SelectItem>
+          <SelectItem value="FAD">{t('invoices:filters.vat_fad', { defaultValue: 'FAD (fordított adózás)' })}</SelectItem>
         </SelectContent>
       </Select>
 

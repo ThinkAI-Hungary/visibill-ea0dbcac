@@ -127,7 +127,7 @@ describe('ManualInvoiceCreateDialog', () => {
   });
 
   it('successfully creates an invoice when valid data is entered', async () => {
-    render(<ManualInvoiceCreateDialog {...defaultProps} />);
+    render(<ManualInvoiceCreateDialog {...defaultProps} companyName="ThinkAI Hungary Kft." />);
 
     // Fill bizonylatsorszam
     const numInput = screen.getByLabelText(/Bizonylatsorszám/i);
@@ -147,10 +147,75 @@ describe('ManualInvoiceCreateDialog', () => {
           title: 'Számla sikeresen rögzítve',
         })
       );
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bizonylatsorszam: 'TEST-INV-2026-001',
+          elado_nev: 'Acme Test Kft.',
+          vevo_nev: 'ThinkAI Hungary Kft.',
+          company_id: 'company-uuid-1',
+        })
+      );
       expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['invoices'] });
       expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['submittedInvoices'] });
       expect(defaultProps.onSuccess).toHaveBeenCalled();
       expect(defaultProps.onClose).toHaveBeenCalled();
+    });
+  });
+
+  it('guarantees neither elado_nev nor vevo_nev is null on insert even when companyName is empty', async () => {
+    render(<ManualInvoiceCreateDialog {...defaultProps} companyName="" />);
+
+    const numInput = screen.getByLabelText(/Bizonylatsorszám/i);
+    fireEvent.change(numInput, { target: { value: 'TEST-INV-FALLBACK' } });
+
+    const eladoInput = screen.getByLabelText(/Eladó neve/i);
+    fireEvent.change(eladoInput, { target: { value: 'Supplier Partner' } });
+
+    const submitBtn = screen.getByRole('button', { name: 'Számla rögzítése' });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          elado_nev: 'Supplier Partner',
+          vevo_nev: 'Saját cég',
+        })
+      );
+    });
+  });
+
+  it('automatically calculates header totals from line items when saving', async () => {
+    render(<ManualInvoiceCreateDialog {...defaultProps} companyName="ThinkAI Hungary Kft." />);
+
+    const numInput = screen.getByLabelText(/Bizonylatsorszám/i);
+    fireEvent.change(numInput, { target: { value: 'INV-WITH-ITEMS' } });
+
+    const eladoInput = screen.getByLabelText(/Eladó neve/i);
+    fireEvent.change(eladoInput, { target: { value: 'Vendor Corp' } });
+
+    // Switch to items tab and add an item
+    const itemsTab = screen.getByRole('tab', { name: /Számlatételek/i });
+    fireEvent.keyDown(itemsTab, { key: 'Enter', code: 'Enter' });
+
+    const addBtn = screen.getByRole('button', { name: /Új tétel hozzáadása/i });
+    fireEvent.click(addBtn);
+
+    // Set unit price = 1000, quantity = 2 -> net 2000, 27% vat = 540, gross = 2540
+    const priceInput = screen.getByPlaceholderText('0.00');
+    fireEvent.change(priceInput, { target: { value: '1000' } });
+
+    const submitBtn = screen.getByRole('button', { name: 'Számla rögzítése' });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          adoalap_osszesen: 1000,
+          afa_osszeg_osszesen: 270,
+          brutto_vegosszeg: 1270,
+          fizetendo_osszeg: 1270,
+        })
+      );
     });
   });
 });

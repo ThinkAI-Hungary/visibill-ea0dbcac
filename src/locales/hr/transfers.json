@@ -87,7 +87,8 @@
     "giro_length": "Broj žiro računa mora imati 16 ili 24 znamenke!",
     "invalid_cdv_block1": "Neispravan CDV 1. bloka!",
     "invalid_cdv_block2": "Neispravan CDV 2. bloka!",
-    "invalid_cdv_block3": "Neispravan CDV 3. bloka!"
+    "invalid_cdv_block3": "Neispravan CDV 3. bloka!",
+    "invalid_cdv": "Nevažeći broj bankovnog računa (neispravan CDV kontrolni zbroj)"
   },
   "toasts": {
     "account_saved_title": "Broj računa spremljen",
@@ -102,7 +103,13 @@
     "delete_batch_error": "Brisanje stavki nije uspjelo.",
     "missing_accounts_title": "Nedostaje broj bankovnog računa",
     "missing_accounts_desc": "Za generiranje datoteke potrebno je unijeti broj bankovnog računa partnera za sve odabrane stavke.",
-    "select_sender_account": "Molimo odaberite polazni bankovni račun tvrtke!"
+    "select_sender_account": "Molimo odaberite polazni bankovni račun tvrtke!",
+    "export_success_desc": "Datoteka za prijenos je generirana i preuzeta! Prijenosi su spremljeni za uparivanje.",
+    "sample_downloaded_title": "Uzorak preuzet",
+    "sample_downloaded_desc": "Uzorak datoteke za prijenos je uspješno generiran i preuzet!",
+    "save_transfers_error": "Spremanje naloga za prijenos u sustavu nije uspjelo.",
+    "items_selected_title": "Stavke su označene!",
+    "items_selected_desc": "{{count}} stavki označeno za prijenos."
   },
   "settle_dialog": {
     "title": "Podmirenje računa (Gotovina / Privatni račun)",

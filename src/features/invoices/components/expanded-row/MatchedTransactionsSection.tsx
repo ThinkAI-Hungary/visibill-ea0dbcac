@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowRightLeft,
   AlertTriangle,
@@ -20,7 +21,7 @@ import {
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import type { MatchedTransaction } from './types';
 import type { useTransactionMatcher } from '@/hooks/useTransactionMatcher';
 
@@ -39,6 +40,8 @@ export function MatchedTransactionsSection({
   invoiceAmount,
   invoiceCurrency,
 }: MatchedTransactionsSectionProps) {
+  const { t } = useTranslation(['invoices', 'common']);
+  const dateLocale = getDateFnsLocale();
   return (
     <>
       {transactions.map((tx) => {
@@ -57,18 +60,18 @@ export function MatchedTransactionsSection({
               <CardTitle className="text-xs font-medium flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                  {isSuggested ? 'Javasolt tranzakció' : 'Párosított tranzakció'}
+                  {isSuggested ? t('invoices:expanded.suggested_tx', 'Javasolt tranzakció') : t('invoices:expanded.matched_tx', 'Párosított tranzakció')}
                 </span>
                 <div className="flex items-center gap-2">
                   {isSuggested ? (
                     <Badge className="gap-1 text-[10px] h-5 bg-yellow-500/15 text-yellow-600 border-yellow-500/30 hover:bg-yellow-500/20">
                       <AlertTriangle className="h-2.5 w-2.5" />
-                      Javasolt
+                      {t('invoices:expanded.badge_suggested', 'Javasolt')}
                     </Badge>
                   ) : (
                     <Badge variant="success" className="gap-1 text-[10px] h-5">
                       <CheckCircle2 className="h-2.5 w-2.5" />
-                      Párosított
+                      {t('invoices:expanded.badge_matched', 'Párosított')}
                     </Badge>
                   )}
                   {tx.type && (
@@ -82,13 +85,13 @@ export function MatchedTransactionsSection({
             <CardContent className="p-3 pt-0">
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-muted-foreground">Dátum:</span>
+                  <span className="text-muted-foreground">{t('common:labels.date', 'Dátum')}:</span>
                   <span className="ml-1 font-medium">
-                    {format(new Date(tx.transaction_date), 'yyyy.MM.dd', { locale: hu })}
+                    {format(new Date(tx.transaction_date), 'yyyy.MM.dd', { locale: dateLocale })}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Összeg:</span>
+                  <span className="text-muted-foreground">{t('common:labels.amount', 'Összeg')}:</span>
                   <span
                     className={cn(
                       "ml-1 font-mono font-medium",
@@ -99,12 +102,12 @@ export function MatchedTransactionsSection({
                   </span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-muted-foreground">Leírás:</span>
+                  <span className="text-muted-foreground">{t('common:labels.notes', 'Leírás')}:</span>
                   <span className="ml-1">{tx.description || '-'}</span>
                 </div>
                 {tx.reason && (
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">AI indoklás:</span>
+                    <span className="text-muted-foreground">{t('invoices:expanded.ai_reasoning', 'AI indoklás:')}</span>
                     <p className="mt-1 text-[10px] bg-background/50 p-1.5 rounded border border-border/30 max-h-[80px] overflow-y-auto">
                       {tx.reason}
                     </p>
@@ -126,7 +129,7 @@ export function MatchedTransactionsSection({
                       className="h-6 text-[10px] gap-1 bg-emerald-500/10 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/20"
                     >
                       <Check className="h-2.5 w-2.5" />
-                      Jóváhagyás
+                      {t('invoices:expanded.btn_approve', 'Jóváhagyás')}
                     </Button>
                   )}
                   <Button
@@ -140,7 +143,7 @@ export function MatchedTransactionsSection({
                     className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-destructive"
                   >
                     <Unlink className="h-2.5 w-2.5" />
-                    Leválasztás
+                    {t('invoices:expanded.btn_unlink', 'Leválasztás')}
                   </Button>
                 </div>
               )}
@@ -164,12 +167,12 @@ export function MatchedTransactionsSection({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-sm">
                 <ArrowRightLeft className="h-4 w-4 text-primary" />
-                Tranzakció hozzárendelése
+                {t('invoices:expanded.assign_transaction', 'Tranzakció hozzárendelése')}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-3 w-full overflow-hidden">
               <p className="text-xs text-muted-foreground">
-                Összeg alapján rendezve · keresett:{' '}
+                {t('invoices:expanded.sorted_by_amount', 'Összeg alapján rendezve · keresett:')}{' '}
                 <span className="font-mono font-medium">
                   {formatCurrency(invoiceAmount || 0, invoiceCurrency || 'HUF')}
                 </span>
@@ -179,7 +182,7 @@ export function MatchedTransactionsSection({
               <div className="relative w-full">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  placeholder="Keresés leírás, összeg vagy típus alapján..."
+                  placeholder={t('invoices:expanded.search_placeholder', 'Keresés leírás, összeg vagy típus alapján...')}
                   value={matcher.search}
                   onChange={(e) => matcher.setSearch(e.target.value)}
                   className="pl-8 h-8 text-xs w-full"
@@ -190,7 +193,7 @@ export function MatchedTransactionsSection({
               {/* Results count */}
               {!matcher.loading && matcher.filteredTransactions.length > 0 && (
                 <div className="text-[10px] text-muted-foreground px-0.5">
-                  {matcher.filteredTransactions.length} tranzakció az időszakban (±180 nap)
+                  {t('invoices:expanded.tx_count_in_period', { count: matcher.filteredTransactions.length, defaultValue: `${matcher.filteredTransactions.length} tranzakció az időszakban (±180 nap)` })}
                 </div>
               )}
 
@@ -205,8 +208,8 @@ export function MatchedTransactionsSection({
                     <ArrowRightLeft className="h-5 w-5 mb-1" />
                     <p className="text-xs">
                       {matcher.search
-                        ? 'Nincs találat a keresésre'
-                        : 'Nincs elérhető tranzakció az időszakban'}
+                        ? t('invoices:expanded.no_search_results', 'Nincs találat a keresésre')
+                        : t('invoices:expanded.no_tx_in_period', 'Nincs elérhető tranzakció az időszakban')}
                     </p>
                   </div>
                 ) : (
@@ -244,7 +247,7 @@ export function MatchedTransactionsSection({
                                 )}
                                 <p className="font-medium text-xs whitespace-nowrap">
                                   {format(new Date(tx.transaction_date), 'yyyy.MM.dd', {
-                                    locale: hu,
+                                    locale: dateLocale,
                                   })}
                                 </p>
                                 {tx.type && (
@@ -268,11 +271,11 @@ export function MatchedTransactionsSection({
                               </p>
                               {isExact ? (
                                 <Badge variant="success" className="text-[9px] h-4 mt-0.5">
-                                  ✓ Egyező
+                                  {t('invoices:expanded.exact_match', '✓ Egyező')}
                                 </Badge>
                               ) : isNear ? (
                                 <Badge className="text-[9px] h-4 mt-0.5 bg-amber-500/20 text-amber-600 border-amber-500/30 hover:bg-amber-500/20">
-                                  ~{pctDiff.toFixed(0)}% elt.
+                                  ~{pctDiff.toFixed(0)}% {t('invoices:expanded.diff_short', 'elt.')}
                                 </Badge>
                               ) : (
                                 <span className="text-[10px] text-muted-foreground/60 mt-0.5 block">
@@ -301,7 +304,7 @@ export function MatchedTransactionsSection({
                   className="text-xs h-8"
                 >
                   <Check className="h-3 w-3 mr-1" />
-                  {matcher.saving ? 'Mentés...' : 'Párosítás mentése'}
+                  {matcher.saving ? t('common:actions.saving', 'Mentés...') : t('invoices:expanded.save_match', 'Párosítás mentése')}
                 </Button>
               </div>
             </div>

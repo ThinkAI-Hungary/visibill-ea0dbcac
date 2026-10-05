@@ -153,7 +153,7 @@ export function ExpandedInvoiceRow({
     setUnmatching(true);
     try {
       await unmatchTransaction(transactionId);
-      toast({ title: 'Párosítás megszüntetve!' });
+      toast({ title: t('invoices:expanded.unmatch_success', 'Párosítás megszüntetve!') });
 
       if (companyId) {
         await invalidateMatchingQueries(queryClient, companyId);
@@ -164,7 +164,7 @@ export function ExpandedInvoiceRow({
     } catch (error: any) {
       console.error('Error unmatching invoice:', error);
       toast({
-        title: 'Hiba a párosítás megszüntetésekor',
+        title: t('invoices:expanded.unmatch_error', 'Hiba a párosítás megszüntetésekor'),
         description: error.message || 'Ismeretlen hiba',
         variant: 'destructive',
       });
@@ -368,7 +368,7 @@ export function ExpandedInvoiceRow({
                   <div className="mb-4 expand-animate bg-card border border-border/40 p-3 rounded-lg flex flex-col gap-2 min-w-[240px]">
                     <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       <Tag className="h-3.5 w-3.5 text-primary" />
-                      <span>ÁFA kód & 2665 bevallási sor</span>
+                      <span>{t('invoices:expanded.vat_code_declaration_row', 'ÁFA kód & 2665 bevallási sor')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <InvoiceVatCodeSelector
@@ -388,7 +388,7 @@ export function ExpandedInvoiceRow({
                   <div className="mb-4 expand-animate bg-card border border-border/40 p-3 rounded-lg flex flex-col gap-2 min-w-[260px]">
                     <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       <Landmark className="h-3.5 w-3.5 text-primary" />
-                      <span>{invoiceType?.toUpperCase() === 'OUTBOUND' ? 'Vevői & ÁFA kontír' : 'Szállítói & ÁFA kontír'}</span>
+                      <span>{invoiceType?.toUpperCase() === 'OUTBOUND' ? t('invoices:expanded.customer_vat_kontir_title', 'Vevői & ÁFA kontír') : t('invoices:expanded.supplier_vat_kontir_title', 'Szállítói & ÁFA kontír')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <InvoiceGlAccountSelector
@@ -409,17 +409,17 @@ export function ExpandedInvoiceRow({
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                           <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                          <span>ÁFA levonhatóság</span>
+                          <span>{t('invoices:expanded.vat_deductibility', 'ÁFA levonhatóság')}</span>
                         </div>
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                          {effectiveDeductibility.minPercentage === 0 ? '0% levonható' : `${effectiveDeductibility.minPercentage}% hányad`}
+                          {effectiveDeductibility.minPercentage === 0 ? t('invoices:expanded.deductible_zero', '0% nem levonható') : t('invoices:expanded.deductible_ratio', { percent: effectiveDeductibility.minPercentage, defaultValue: `${effectiveDeductibility.minPercentage}% hányad` })}
                         </span>
                       </div>
                       <div className="space-y-1 text-xs">
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                            Levonható ÁFA:
+                            {t('invoices:expanded.deductible_vat_label', 'Levonható ÁFA:')}
                           </span>
                           <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
                             {formatCurrency(effectiveDeductibility.deductibleVat, invoiceCurrency || defaultCurrency)}
@@ -428,7 +428,7 @@ export function ExpandedInvoiceRow({
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                            Nem levonható ÁFA:
+                            {t('invoices:expanded.non_deductible_vat_label', 'Nem levonható ÁFA:')}
                           </span>
                           <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
                             {formatCurrency(effectiveDeductibility.nonDeductibleVat, invoiceCurrency || defaultCurrency)}
@@ -459,7 +459,7 @@ export function ExpandedInvoiceRow({
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
                         <span>
-                          <strong>Könyvelői jóváhagyással engedélyezve:</strong> {approvalNote || 'Könyvelői jóváhagyás (NAV adatszolgáltatás nélkül)'}
+                          <strong>{t('invoices:expanded.accountant_approved_prefix', 'Könyvelői jóváhagyással engedélyezve:')}</strong> {approvalNote || t('invoices:warnings.accountant_approved_default_note', 'Könyvelői jóváhagyás (NAV adatszolgáltatás nélkül)')}
                         </span>
                       </div>
                     </div>
@@ -469,10 +469,10 @@ export function ExpandedInvoiceRow({
                         <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                         <div>
                           <span className="font-semibold text-amber-800 dark:text-amber-300">
-                            NAV Számlakép hiányzik!
+                            {t('invoices:warnings.missing_nav_title', 'NAV Számlakép hiányzik!')}
                           </span>
                           <p className="text-muted-foreground mt-0.5">
-                            A számlaképhez nem sikerült NAV számlát párosítani. A rendszer zárolta az automatikus könyvelést.
+                            {t('invoices:expanded.missing_nav_locked_desc', 'A számlaképhez nem sikerült NAV számlát párosítani. A rendszer zárolta az automatikus könyvelést.')}
                           </p>
                         </div>
                       </div>
@@ -487,7 +487,7 @@ export function ExpandedInvoiceRow({
                           }}
                         >
                           <ShieldCheck className="h-3.5 w-3.5" />
-                          Jóváhagyás könyvelésre
+                          {t('invoices:expanded.btn_approve_accounting', 'Jóváhagyás könyvelésre')}
                         </Button>
                       )}
                     </div>

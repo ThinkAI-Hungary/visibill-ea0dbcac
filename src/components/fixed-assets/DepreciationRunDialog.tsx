@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -45,10 +46,13 @@ const MONTH_NAMES = [
 ];
 
 export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDialogProps) {
+  const { t } = useTranslation(['hr', 'common']);
   const { toast } = useToast();
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
+
+  const monthNames = (t('hr:calendar.months', { returnObjects: true }) as string[]) || MONTH_NAMES;
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -174,8 +178,8 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
 
       if (!result.success) {
         toast({
-          title: 'Könyvelési figyelmeztetés',
-          description: result.message || 'Nem sikerült az ÉCS lekönyvelése.',
+          title: t('hr:fixed_assets.depreciation_run_dialog.toast_warning_title', 'Könyvelési figyelmeztetés'),
+          description: result.message || t('hr:fixed_assets.depreciation_run_dialog.toast_warning_fallback', 'Nem sikerült az ÉCS lekönyvelése.'),
           variant: 'destructive',
         });
         setSubmitting(false);
@@ -183,7 +187,7 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
       }
 
       toast({
-        title: 'Értékcsökkenés sikeresen lekönyvelve! 🎉',
+        title: t('hr:fixed_assets.depreciation_run_dialog.toast_success_title', 'Értékcsökkenés sikeresen lekönyvelve! 🎉'),
         description: result.message,
       });
 
@@ -199,8 +203,8 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
     } catch (err: any) {
       console.error('handlePostDepreciation error:', err);
       toast({
-        title: 'Hiba a feladás során',
-        description: err?.message || 'Váratlan hiba történt az ÉCS könyvelésekor.',
+        title: t('hr:fixed_assets.depreciation_run_dialog.toast_error_title', 'Hiba a feladás során'),
+        description: err?.message || t('hr:fixed_assets.depreciation_run_dialog.toast_error_fallback', 'Váratlan hiba történt az ÉCS könyvelésekor.'),
         variant: 'destructive',
       });
     } finally {
@@ -227,10 +231,10 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
             </div>
             <div>
               <DialogTitle className="text-xl font-bold">
-                Terv szerinti ÉCS elszámolás és feladás (Vegyes napló)
+                {t('hr:fixed_assets.depreciation_run_dialog.title', 'Terv szerinti ÉCS elszámolás és feladás (Vegyes napló)')}
               </DialogTitle>
               <DialogDescription>
-                Időszaki értékcsökkenési leírás kalkulációja az analitika alapján és kettős könyvviteli feladása.
+                {t('hr:fixed_assets.depreciation_run_dialog.description', 'Időszaki értékcsökkenési leírás kalkulációja az analitika alapján és kettős könyvviteli feladása.')}
               </DialogDescription>
             </div>
           </div>
@@ -242,7 +246,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 rounded-lg bg-muted/40 border border-border/60">
             {/* Period Type */}
             <div>
-              <Label className="text-xs font-medium text-muted-foreground">Időszak gyakorisága</Label>
+              <Label className="text-xs font-medium text-muted-foreground">
+                {t('hr:fixed_assets.depreciation_run_dialog.frequency_label', 'Időszak gyakorisága')}
+              </Label>
               <Select
                 value={periodType}
                 onValueChange={(val: DepreciationPeriodType) => setPeriodType(val)}
@@ -251,10 +257,10 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="monthly">Havi (Ajánlott)</SelectItem>
-                  <SelectItem value="quarterly">Negyedéves</SelectItem>
-                  <SelectItem value="annual">Éves (Zárás)</SelectItem>
-                  <SelectItem value="custom">Egyedi dátumtartomány</SelectItem>
+                  <SelectItem value="monthly">{t('hr:fixed_assets.depreciation_run_dialog.monthly_opt', 'Havi (Ajánlott)')}</SelectItem>
+                  <SelectItem value="quarterly">{t('hr:fixed_assets.depreciation_run_dialog.quarterly_opt', 'Negyedéves')}</SelectItem>
+                  <SelectItem value="annual">{t('hr:fixed_assets.depreciation_run_dialog.annual_opt', 'Éves (Zárás)')}</SelectItem>
+                  <SelectItem value="custom">{t('hr:fixed_assets.depreciation_run_dialog.custom_opt', 'Egyedi dátumtartomány')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -263,7 +269,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
             {periodType === 'monthly' && (
               <>
                 <div>
-                  <Label className="text-xs font-medium text-muted-foreground">Év</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {t('hr:fixed_assets.depreciation_run_dialog.year_label', 'Év')}
+                  </Label>
                   <Select
                     value={String(selectedYear)}
                     onValueChange={val => setSelectedYear(parseInt(val, 10))}
@@ -281,7 +289,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-muted-foreground">Hónap</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {t('hr:fixed_assets.depreciation_run_dialog.month_label', 'Hónap')}
+                  </Label>
                   <Select
                     value={String(selectedMonth)}
                     onValueChange={val => setSelectedMonth(parseInt(val, 10))}
@@ -290,7 +300,7 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {MONTH_NAMES.map((name, idx) => (
+                      {monthNames.map((name, idx) => (
                         <SelectItem key={idx + 1} value={String(idx + 1)}>
                           {String(idx + 1).padStart(2, '0')} — {name}
                         </SelectItem>
@@ -304,7 +314,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
             {periodType === 'quarterly' && (
               <>
                 <div>
-                  <Label className="text-xs font-medium text-muted-foreground">Év</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {t('hr:fixed_assets.depreciation_run_dialog.year_label', 'Év')}
+                  </Label>
                   <Select
                     value={String(selectedYear)}
                     onValueChange={val => setSelectedYear(parseInt(val, 10))}
@@ -322,7 +334,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-muted-foreground">Negyedév</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {t('hr:fixed_assets.depreciation_run_dialog.quarter_label', 'Negyedév')}
+                  </Label>
                   <Select
                     value={String(selectedQuarter)}
                     onValueChange={val => setSelectedQuarter(parseInt(val, 10))}
@@ -331,10 +345,10 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">I. negyedév (Jan - Mác)</SelectItem>
-                      <SelectItem value="2">II. negyedév (Ápr - Jún)</SelectItem>
-                      <SelectItem value="3">III. negyedév (Júl - Szep)</SelectItem>
-                      <SelectItem value="4">IV. negyedév (Okt - Dec)</SelectItem>
+                      <SelectItem value="1">{t('hr:fixed_assets.depreciation_run_dialog.q1', 'I. negyedév (Jan - Mác)')}</SelectItem>
+                      <SelectItem value="2">{t('hr:fixed_assets.depreciation_run_dialog.q2', 'II. negyedév (Ápr - Jún)')}</SelectItem>
+                      <SelectItem value="3">{t('hr:fixed_assets.depreciation_run_dialog.q3', 'III. negyedév (Júl - Szep)')}</SelectItem>
+                      <SelectItem value="4">{t('hr:fixed_assets.depreciation_run_dialog.q4', 'IV. negyedév (Okt - Dec)')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -343,7 +357,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
 
             {periodType === 'annual' && (
               <div>
-                <Label className="text-xs font-medium text-muted-foreground">Üzleti Év</Label>
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t('hr:fixed_assets.depreciation_run_dialog.business_year_label', 'Üzleti Év')}
+                </Label>
                 <Select
                   value={String(selectedYear)}
                   onValueChange={val => setSelectedYear(parseInt(val, 10))}
@@ -365,7 +381,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
             {periodType === 'custom' && (
               <>
                 <div>
-                  <Label className="text-xs font-medium text-muted-foreground">Kezdő dátum</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {t('hr:fixed_assets.depreciation_run_dialog.date_from_label', 'Kezdő dátum')}
+                  </Label>
                   <Input
                     type="date"
                     className="mt-1"
@@ -374,7 +392,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-muted-foreground">Záró dátum</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {t('hr:fixed_assets.depreciation_run_dialog.date_to_label', 'Záró dátum')}
+                  </Label>
                   <Input
                     type="date"
                     className="mt-1"
@@ -387,7 +407,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
 
             {/* Document ID */}
             <div>
-              <Label className="text-xs font-medium text-muted-foreground">Bizonylatszám</Label>
+              <Label className="text-xs font-medium text-muted-foreground">
+                {t('hr:fixed_assets.depreciation_run_dialog.document_number_label', 'Bizonylatszám')}
+              </Label>
               <Input
                 className="mt-1 font-mono text-xs"
                 placeholder={defaultDocId}
@@ -402,11 +424,13 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
             <div className="flex items-start gap-3 p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
               <div className="text-sm">
-                <span className="font-semibold">Már lekönyvelt időszak!</span>
+                <span className="font-semibold">{t('hr:fixed_assets.depreciation_run_dialog.duplicate_warning_title', 'Már lekönyvelt időszak!')}</span>
                 <p className="mt-0.5 text-xs opacity-90">
-                  Ezzel a bizonylatszámmal (<strong>{preview?.documentId}</strong>) már található könyvelési tétel a Vegyes naplóban
-                  {preview?.existingPosting?.journalNumber ? ` (${preview.existingPosting.journalNumber}. sorszám alatt)` : ''}.
-                  A duplikált elszámolás megakadályozása érdekében az újrakönyvelés zárolva van.
+                  {t('hr:fixed_assets.depreciation_run_dialog.duplicate_warning_desc', {
+                    defaultValue: `Ezzel a bizonylatszámmal (${preview?.documentId}) már található könyvelési tétel a Vegyes naplóban${preview?.existingPosting?.journalNumber ? ` (${preview.existingPosting.journalNumber}. sorszám alatt)` : ''}. A duplikált elszámolás megakadályozása érdekében az újrakönyvelés zárolva van.`,
+                    docId: preview?.documentId,
+                    journalNo: preview?.existingPosting?.journalNumber ? ` (${preview.existingPosting.journalNumber}. sorszám alatt)` : ''
+                  })}
                 </p>
               </div>
             </div>
@@ -415,7 +439,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="p-4 rounded-lg bg-card border shadow-xs">
-              <div className="text-xs font-medium text-muted-foreground">Összes elszámolandó ÉCS</div>
+              <div className="text-xs font-medium text-muted-foreground">
+                {t('hr:fixed_assets.depreciation_run_dialog.kpi_total_depr', 'Összes elszámolandó ÉCS')}
+              </div>
               <div className="text-2xl font-bold text-primary mt-1">
                 {(preview?.totalAmount || 0).toLocaleString('hu-HU')} Ft
               </div>
@@ -425,7 +451,9 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
             </div>
 
             <div className="p-4 rounded-lg bg-card border shadow-xs">
-              <div className="text-xs font-medium text-muted-foreground">Érintett aktív eszközök</div>
+              <div className="text-xs font-medium text-muted-foreground">
+                {t('hr:fixed_assets.depreciation_run_dialog.kpi_active_assets', 'Érintett aktív eszközök')}
+              </div>
               <div className="text-2xl font-bold mt-1">
                 {preview?.eligibleCount || 0} / {preview?.items?.length || 0} db
               </div>
@@ -435,13 +463,18 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
             </div>
 
             <div className="p-4 rounded-lg bg-card border shadow-xs">
-              <div className="text-xs font-medium text-muted-foreground">Könyvelési cél-napló</div>
+              <div className="text-xs font-medium text-muted-foreground">
+                {t('hr:fixed_assets.depreciation_run_dialog.kpi_target_journal', 'Könyvelési cél-napló')}
+              </div>
               <div className="text-lg font-semibold mt-1 flex items-center gap-1.5">
                 <BookOpen className="h-4 w-4 text-primary" />
-                Vegyes napló (VE)
+                {t('hr:fixed_assets.depreciation_run_dialog.kpi_general_journal', 'Vegyes napló (VE)')}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
-                Dátum: {activePostingDate}
+                {t('hr:fixed_assets.depreciation_run_dialog.kpi_posting_date', {
+                  defaultValue: `Dátum: ${activePostingDate}`,
+                  date: activePostingDate
+                })}
               </div>
             </div>
           </div>
@@ -451,14 +484,17 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
             <div className="relative flex-1 max-w-sm">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Szűrés eszközre vagy leltári számra..."
+                placeholder={t('hr:fixed_assets.depreciation_run_dialog.search_placeholder', 'Szűrés eszközre vagy leltári számra...')}
                 className="pl-9 text-xs"
                 value={searchFilter}
                 onChange={e => setSearchFilter(e.target.value)}
               />
             </div>
             <div className="text-xs text-muted-foreground">
-              {filteredItems.length} eszköz megjelenítve
+              {t('hr:fixed_assets.depreciation_run_dialog.assets_displayed', {
+                defaultValue: `${filteredItems.length} eszköz megjelenítve`,
+                count: filteredItems.length
+              })}
             </div>
           </div>
 
@@ -467,24 +503,26 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
             {loading ? (
               <div className="flex items-center justify-center p-12">
                 <LoadingSpinner size="md" fullPage={false} />
-                <span className="ml-3 text-sm text-muted-foreground">ÉCS kalkuláció betöltése...</span>
+                <span className="ml-3 text-sm text-muted-foreground">
+                  {t('hr:fixed_assets.depreciation_run_dialog.loading_calc', 'ÉCS kalkuláció betöltése...')}
+                </span>
               </div>
             ) : filteredItems.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground text-sm">
-                Nincs megjeleníthető eszköz ebben az időszakban.
+                {t('hr:fixed_assets.depreciation_run_dialog.no_assets_period', 'Nincs megjeleníthető eszköz ebben az időszakban.')}
               </div>
             ) : (
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow>
-                    <TableHead className="w-[140px]">Leltári szám</TableHead>
-                    <TableHead>Eszköz megnevezése</TableHead>
-                    <TableHead className="text-right">Bekerülési érték</TableHead>
-                    <TableHead className="text-center">Időszak</TableHead>
-                    <TableHead className="text-right font-semibold">Időszaki ÉCS</TableHead>
-                    <TableHead className="text-right">Maradványérték</TableHead>
-                    <TableHead className="text-center">Főkönyv (T / K)</TableHead>
-                    <TableHead className="text-center">Státusz</TableHead>
+                    <TableHead className="w-[140px]">{t('hr:fixed_assets.depreciation_run_dialog.col_inv_number', 'Leltári szám')}</TableHead>
+                    <TableHead>{t('hr:fixed_assets.depreciation_run_dialog.col_name', 'Eszköz megnevezése')}</TableHead>
+                    <TableHead className="text-right">{t('hr:fixed_assets.depreciation_run_dialog.col_acq_value', 'Bekerülési érték')}</TableHead>
+                    <TableHead className="text-center">{t('hr:fixed_assets.depreciation_run_dialog.col_period', 'Időszak')}</TableHead>
+                    <TableHead className="text-right font-semibold">{t('hr:fixed_assets.depreciation_run_dialog.col_period_depr', 'Időszaki ÉCS')}</TableHead>
+                    <TableHead className="text-right">{t('hr:fixed_assets.depreciation_run_dialog.col_residual', 'Maradványérték')}</TableHead>
+                    <TableHead className="text-center">{t('hr:fixed_assets.depreciation_run_dialog.col_gl', 'Főkönyv (T / K)')}</TableHead>
+                    <TableHead className="text-center">{t('hr:fixed_assets.depreciation_run_dialog.col_status', 'Státusz')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -521,15 +559,15 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
                         {item.status === 'ready' && item.periodAmount > 0 ? (
                           <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 text-[10px]">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Könyvelhető
+                            {t('hr:fixed_assets.depreciation_run_dialog.status_ready', 'Könyvelhető')}
                           </Badge>
                         ) : item.status === 'fully_depreciated' ? (
                           <Badge variant="outline" className="bg-muted text-muted-foreground text-[10px]">
-                            Teljesen leírt
+                            {t('hr:fixed_assets.depreciation_run_dialog.status_fully_depreciated', 'Teljesen leírt')}
                           </Badge>
                         ) : item.status === 'missing_gl' ? (
                           <Badge variant="destructive" className="text-[10px]">
-                            Hiányzó számla
+                            {t('hr:fixed_assets.depreciation_run_dialog.status_missing_gl', 'Hiányzó számla')}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-[10px] text-muted-foreground">
@@ -549,7 +587,7 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
         <DialogFooter className="flex-shrink-0 border-t pt-4 flex items-center justify-between">
           <div className="text-xs text-muted-foreground flex items-center gap-1.5">
             <FileText className="h-4 w-4" />
-            <span>Kettős könyvviteli Vegyes napló tétel</span>
+            <span>{t('hr:fixed_assets.depreciation_run_dialog.footer_journal_entry', 'Kettős könyvviteli Vegyes napló tétel')}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -558,7 +596,7 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
               onClick={() => onOpenChange(false)}
               disabled={submitting}
             >
-              Mégse
+              {t('common:actions.cancel', 'Mégse')}
             </Button>
             <Button
               onClick={handlePostDepreciation}
@@ -568,12 +606,15 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
               {submitting ? (
                 <>
                   <LoadingSpinner size="sm" fullPage={false} />
-                  Könyvelés folyamatban...
+                  {t('hr:fixed_assets.depreciation_run_dialog.posting_in_progress', 'Könyvelés folyamatban...')}
                 </>
               ) : (
                 <>
                   <Calculator className="h-4 w-4" />
-                  Könyvelés a Vegyes naplóba ({preview?.totalAmount?.toLocaleString('hu-HU') || 0} Ft)
+                  {t('hr:fixed_assets.depreciation_run_dialog.btn_post', {
+                    defaultValue: `Könyvelés a Vegyes naplóba (${preview?.totalAmount?.toLocaleString('hu-HU') || 0} Ft)`,
+                    amount: preview?.totalAmount?.toLocaleString('hu-HU') || 0
+                  })}
                 </>
               )}
             </Button>

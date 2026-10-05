@@ -1629,13 +1629,13 @@ export default function TransfersPage() {
         if (logErr) throw logErr;
 
         toast({
-          title: 'Siker',
-          description: 'Átutalási állomány generálva és letöltve! Az utalások elmentve párosításra.',
+          title: t('common:status.success', 'Siker'),
+          description: t('transfers:toasts.export_success_desc', 'Átutalási állomány generálva és letöltve! Az utalások elmentve párosításra.'),
         });
       } else {
         toast({
-          title: 'Minta letöltve',
-          description: 'A minta átutalási állomány sikeresen generálva és letöltve!',
+          title: t('transfers:toasts.sample_downloaded_title', 'Minta letöltve'),
+          description: t('transfers:toasts.sample_downloaded_desc', 'A minta átutalási állomány sikeresen generálva és letöltve!'),
         });
       }
 
@@ -1645,7 +1645,7 @@ export default function TransfersPage() {
       refetchTransferHistory();
     } catch (err: any) {
       reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleGenerateFile', message: 'Failed to generate transfer file', error: err });
-      toast({ title: 'Hiba', description: 'Nem sikerült az utalások mentése a rendszerben.', variant: 'destructive' });
+      toast({ title: t('common:status.error', 'Hiba'), description: t('transfers:toasts.save_transfers_error', 'Nem sikerült az utalások mentése a rendszerben.'), variant: 'destructive' });
     } finally {
       setExporting(false);
     }
@@ -2303,7 +2303,7 @@ export default function TransfersPage() {
                           setFilterTab('future');
                         }
                         setActiveTab('list');
-                        toast({ title: 'Tételek kijelölve!', description: `${keys.length} tétel hozzáadva az utalandókhoz.` });
+                        toast({ title: t('transfers:toasts.items_selected_title', 'Tételek kijelölve!'), description: t('transfers:toasts.items_selected_desc', '{{count}} tétel hozzáadva az utalandókhoz.', { count: keys.length }) });
                       }}
                       className="h-8 text-xs font-semibold"
                     >

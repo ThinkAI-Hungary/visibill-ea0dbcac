@@ -13,7 +13,8 @@
     "cash_balance": "Stanje na računima",
     "vs_previous_month": "u odnosu na prethodni mjesec",
     "vat_diff_desc": "Ukupno - Odbitno",
-    "unpaid_inbound_desc": "Neplaćeni ulazni računi"
+    "unpaid_inbound_desc": "Neplaćeni ulazni računi",
+    "currencies_count": "{{count}} valute"
   },
   "sections": {
     "cashflow": "Novčani tok (Cash-flow)",
@@ -191,7 +192,7 @@
     "payment_method": "Način pl.",
     "date": "Datum",
     "amount": "Iznos",
-    "description": "Opis",
+    "col_description": "Opis",
     "type": "Vrsta",
     "more_tx": "+ još {{count}} transakcija",
     "more_invoices": "+ još {{count}} računa",
@@ -200,7 +201,10 @@
     "open_balance": "Otvoreni saldo:",
     "unmatched_amount": "Nepovezani iznos:",
     "match": "Poveži",
-    "open_all": "Otvori sve"
+    "open_all": "Otvori sve",
+    "items": "{{count}} stavaka",
+    "invoices_count": "{{count}} računa",
+    "transactions_count": "{{count}} transakcija"
   },
   "fx_differences": {
     "title": "Tečajne razlike",
@@ -230,7 +234,9 @@
       "items": "Stavke",
       "total": "Ukupno",
       "edit_gl_tooltip": "Uređivanje broja konta ({{glNum}})"
-    }
+    },
+    "search_placeholder": "Pretraži...",
+    "no_matching_items": "Nema stavki tečajnih razlika prema odabranim kriterijima."
   },
   "cockpit": {
     "title": "Financijsko kontrolno središte",

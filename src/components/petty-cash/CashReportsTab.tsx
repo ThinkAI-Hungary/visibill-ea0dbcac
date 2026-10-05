@@ -32,8 +32,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { PettyCashRegister, CashReport } from './types';
 import { fmtBalance } from './types';
-import { 
-  useCashReports, 
+import { useCashReports, 
   useReopenCashReport,
   useValidateCashReportForPosting,
   usePostCashReportToGl,
@@ -41,6 +40,7 @@ import {
 } from '@/hooks/useCashReports';
 import { CashClosingWizardDialog } from './closing-wizard/CashClosingWizardDialog';
 import { CashReportDetailDialog } from './CashReportDetailDialog';
+import { useTranslation } from 'react-i18next';
 
 interface CashReportsTabProps {
   registers: PettyCashRegister[];
@@ -48,6 +48,7 @@ interface CashReportsTabProps {
 }
 
 export default function CashReportsTab({ registers, companyId }: CashReportsTabProps) {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const { user } = useAuth();
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -125,14 +126,14 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
         reason: reopenReason,
       });
       toast({
-        title: 'Pénztárjelentés újranyitva',
-        description: `${reopenTargetReport.report_number || 'Jelentés'} sikeresen újranyitva helyesbítés céljából.`,
+        title: t('pettyCash:reports.toasts.reopened_title', 'Pénztárjelentés újranyitva'),
+        description: t('pettyCash:reports.toasts.reopened_desc', { defaultValue: '{{report}} sikeresen újranyitva helyesbítés céljából.', report: reopenTargetReport.report_number || t('pettyCash:reports.table.col_register', 'Jelentés') }),
       });
       setReopenModalOpen(false);
       refetch();
     } catch (err: any) {
       toast({
-        title: 'Hiba az újranyitás során',
+        title: t('pettyCash:reports.toasts.reopen_error', 'Hiba az újranyitás során'),
         description: err.message,
         variant: 'destructive',
       });
@@ -153,7 +154,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
       setGlValidation(res);
     } catch (err: any) {
       toast({
-        title: 'Hiba az ellenőrzés során',
+        title: t('pettyCash:reports.toasts.validate_error', 'Hiba az ellenőrzés során'),
         description: err.message,
         variant: 'destructive',
       });
@@ -171,14 +172,14 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
         cashReportId: glTargetReport.id,
       });
       toast({
-        title: 'Pénztárjelentés feladva a főkönyvbe',
-        description: `${glTargetReport.report_number || 'Jelentés'} sikeresen lekönyvelve a 381-es számlára.`,
+        title: t('pettyCash:reports.toasts.posted_title', 'Pénztárjelentés feladva a főkönyvbe'),
+        description: t('pettyCash:reports.toasts.posted_desc', { defaultValue: '{{report}} sikeresen lekönyvelve a 381-es számlára.', report: glTargetReport.report_number || t('pettyCash:reports.table.col_register', 'Jelentés') }),
       });
       setGlPostModalOpen(false);
       refetch();
     } catch (err: any) {
       toast({
-        title: 'Hiba a főkönyvi feladás során',
+        title: t('pettyCash:reports.toasts.post_error', 'Hiba a főkönyvi feladás során'),
         description: err.message,
         variant: 'destructive',
       });
@@ -200,14 +201,14 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
         cashReportId: unpostTargetReport.id,
       });
       toast({
-        title: 'Főkönyvi feladás visszavonva',
-        description: `${unpostTargetReport.report_number || 'Jelentés'} könyvelése sikeresen visszavonva.`,
+        title: t('pettyCash:reports.toasts.unposted_title', 'Főkönyvi feladás visszavonva'),
+        description: t('pettyCash:reports.toasts.unposted_desc', { defaultValue: '{{report}} könyvelése sikeresen visszavonva.', report: unpostTargetReport.report_number || t('pettyCash:reports.table.col_register', 'Jelentés') }),
       });
       setUnpostModalOpen(false);
       refetch();
     } catch (err: any) {
       toast({
-        title: 'Hiba a visszavonás során',
+        title: t('pettyCash:reports.toasts.unpost_error', 'Hiba a visszavonás során'),
         description: err.message,
         variant: 'destructive',
       });
@@ -216,7 +217,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
 
   // Find register name by ID
   const getRegisterName = (regId: string) => {
-    return registers.find(r => r.id === regId)?.name || 'Központi pénztár';
+    return registers.find(r => r.id === regId)?.name || t('pettyCash:registers.default_name', 'Központi pénztár');
   };
 
   return (
@@ -227,10 +228,10 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
           {/* Pénztár választó */}
           <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
             <SelectTrigger className="w-48 h-9 text-xs">
-              <SelectValue placeholder="Minden pénztár" />
+              <SelectValue placeholder={t('pettyCash:reports.filters.all_registers', 'Minden pénztár')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Minden pénztár</SelectItem>
+              <SelectItem value="all">{t('pettyCash:reports.filters.all_registers', 'Minden pénztár')}</SelectItem>
               {registers.map(r => (
                 <SelectItem key={r.id} value={r.id}>
                   {r.name}
@@ -245,11 +246,11 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Minden státusz</SelectItem>
-              <SelectItem value="open">Nyitott</SelectItem>
-              <SelectItem value="closed">Lezárt</SelectItem>
-              <SelectItem value="posted">Feladva (381)</SelectItem>
-              <SelectItem value="reopened">Újranyitott</SelectItem>
+              <SelectItem value="ALL">{t('pettyCash:reports.filters.all_status', 'Minden státusz')}</SelectItem>
+              <SelectItem value="open">{t('pettyCash:reports.filters.status_open', 'Nyitott')}</SelectItem>
+              <SelectItem value="closed">{t('pettyCash:reports.filters.status_closed', 'Lezárt')}</SelectItem>
+              <SelectItem value="posted">{t('pettyCash:reports.filters.status_posted', 'Feladva (381)')}</SelectItem>
+              <SelectItem value="reopened">{t('pettyCash:reports.filters.status_reopened', 'Újranyitott')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -257,7 +258,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
           <div className="relative flex-1 min-w-[180px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Keresés bizonylatszám, dátum..."
+              placeholder={t('pettyCash:reports.filters.search_placeholder', 'Keresés bizonylatszám, dátum...')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8 h-9 text-xs"
@@ -271,7 +272,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
           className="h-9 text-xs gap-1.5 bg-primary font-medium"
         >
           <CalendarClock className="w-4 h-4" />
-          Új időszaki zárás indítása
+          {t('pettyCash:reports.actions.new_closing', 'Új időszaki zárás indítása')}
         </Button>
       </div>
 
@@ -280,29 +281,29 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
         {isLoading ? (
           <div className="flex items-center justify-center h-48 gap-2 text-muted-foreground text-xs">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span>Pénztárjelentések betöltése...</span>
+            <span>{t('pettyCash:reports.empty.loading', 'Pénztárjelentések betöltése...')}</span>
           </div>
         ) : filteredReports.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-xs gap-2">
             <FileText className="w-8 h-8 opacity-40" />
-            <span>Nem található időszaki pénztárjelentés a megadott szűrésre.</span>
+            <span>{t('pettyCash:reports.empty.no_reports', 'Nem található időszaki pénztárjelentés a megadott szűrésre.')}</span>
             <Button variant="outline" size="sm" onClick={() => setClosingWizardOpen(true)} className="text-xs mt-1">
-              Első zárás indítása most
+              {t('pettyCash:reports.empty.first_closing_btn', 'Első zárás indítása most')}
             </Button>
           </div>
         ) : (
           <Table className="text-xs">
             <TableHeader className="bg-muted/40 border-b">
               <TableRow>
-                <TableHead className="w-36">Sorszám</TableHead>
-                <TableHead>Pénztár</TableHead>
-                <TableHead className="w-44 text-center">Időszak</TableHead>
-                <TableHead className="w-28 text-right">Nyitó</TableHead>
-                <TableHead className="w-28 text-right">Bevétel (+)</TableHead>
-                <TableHead className="w-28 text-right">Kiadás (-)</TableHead>
-                <TableHead className="w-32 text-right">Záró készlet</TableHead>
-                <TableHead className="w-28 text-center">Státusz</TableHead>
-                <TableHead className="w-28 text-right">Műveletek</TableHead>
+                <TableHead className="w-36">{t('pettyCash:reports.table.col_number', 'Sorszám')}</TableHead>
+                <TableHead>{t('pettyCash:reports.table.col_register', 'Pénztár')}</TableHead>
+                <TableHead className="w-44 text-center">{t('pettyCash:reports.table.col_period', 'Időszak')}</TableHead>
+                <TableHead className="w-28 text-right">{t('pettyCash:reports.table.col_opening', 'Nyitó')}</TableHead>
+                <TableHead className="w-28 text-right">{t('pettyCash:reports.table.col_income', 'Bevétel (+)')}</TableHead>
+                <TableHead className="w-28 text-right">{t('pettyCash:reports.table.col_expense', 'Kiadás (-)')}</TableHead>
+                <TableHead className="w-32 text-right">{t('pettyCash:reports.table.col_closing', 'Záró készlet')}</TableHead>
+                <TableHead className="w-28 text-center">{t('pettyCash:reports.table.col_status', 'Státusz')}</TableHead>
+                <TableHead className="w-28 text-right">{t('pettyCash:reports.table.col_actions', 'Műveletek')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -318,7 +319,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
                   <TableRow key={report.id} className="hover:bg-muted/30">
                     {/* Sorszám */}
                     <TableCell className="font-mono font-semibold text-foreground">
-                      {report.report_number || `Piszkozat #${report.version}`}
+                      {report.report_number || `${t('pettyCash:reports.table.draft_prefix', 'Piszkozat #')}${report.version}`}
                     </TableCell>
 
                     {/* Pénztár */}
@@ -351,7 +352,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
                       {fmtBalance(report.closing_balance_actual ?? report.closing_balance_book, cur)}
                       {report.difference && report.difference !== 0 && (
                         <div className="text-[10px] font-normal text-destructive">
-                          Eltérés: {fmtBalance(report.difference, cur)}
+                          {t('pettyCash:reports.table.diff_prefix', 'Eltérés:')} {fmtBalance(report.difference, cur)}
                         </div>
                       )}
                     </TableCell>
@@ -360,22 +361,22 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
                     <TableCell className="text-center">
                       {isOpen && (
                         <Badge variant="outline" className="border-blue-500/40 text-blue-600 bg-blue-500/10 text-[10px]">
-                          Nyitott
+                          {t('pettyCash:reports.badges.open', 'Nyitott')}
                         </Badge>
                       )}
                       {isClosed && (
                         <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 bg-emerald-500/10 text-[10px]">
-                          <ShieldCheck className="w-3 h-3 mr-0.5" /> Lezárt
+                          <ShieldCheck className="w-3 h-3 mr-0.5" /> {t('pettyCash:reports.badges.closed', 'Lezárt')}
                         </Badge>
                       )}
                       {isPosted && (
                         <Badge variant="outline" className="border-violet-500/40 text-violet-600 bg-violet-500/10 text-[10px]">
-                          Könyvelve
+                          {t('pettyCash:reports.badges.posted', 'Könyvelve')}
                         </Badge>
                       )}
                       {isReopened && (
                         <Badge variant="outline" className="border-amber-500/40 text-amber-600 bg-amber-500/10 text-[10px]">
-                          Újranyitott (v{report.version})
+                          {t('pettyCash:reports.badges.reopened', { defaultValue: 'Újranyitott (v{{version}})', version: report.version })}
                         </Badge>
                       )}
                     </TableCell>
@@ -387,7 +388,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                          title="Megtekintés és nyomtatás"
+                          title={t('pettyCash:reports.actions.view_print', 'Megtekintés és nyomtatás')}
                           onClick={() => handleOpenDetail(report.id)}
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -399,7 +400,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-950/20"
-                              title="Főkönyvi feladás (381)"
+                              title={t('pettyCash:reports.actions.post_gl', 'Főkönyvi feladás (381)')}
                               onClick={() => handleOpenGlPost(report)}
                             >
                               <BookOpen className="w-3.5 h-3.5" />
@@ -409,7 +410,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20"
-                              title="Újranyitás jegyzőkönyvvel"
+                              title={t('pettyCash:reports.actions.reopen', 'Újranyitás jegyzőkönyvvel')}
                               onClick={() => handleOpenReopenModal(report)}
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
@@ -422,7 +423,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            title="Főkönyvi feladás visszavonása"
+                            title={t('pettyCash:reports.actions.unpost_gl', 'Főkönyvi feladás visszavonása')}
                             onClick={() => handleOpenUnpost(report)}
                           >
                             <Undo2 className="w-3.5 h-3.5" />
@@ -464,25 +465,25 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <RotateCcw className="w-5 h-5" />
-              Pénztárjelentés újranyitása
+              {t('pettyCash:reports.reopen_modal.title', 'Pénztárjelentés újranyitása')}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Sztv. 167. § szerinti eljárás: a lezárt bizonylat újranyitása új verziót (v{((reopenTargetReport?.version || 1) + 1)}) nyit, az előző verzió megmarad.
+              {t('pettyCash:reports.reopen_modal.desc', 'Sztv. 167. § szerinti eljárás: a lezárt bizonylat újranyitása új verziót nyit, az előző verzió megmarad.')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <div className="p-2.5 bg-muted/40 rounded-lg font-mono">
-              <div>Sorszám: <strong>{reopenTargetReport?.report_number}</strong></div>
-              <div>Időszak: {reopenTargetReport?.period_start} – {reopenTargetReport?.period_end}</div>
+              <div>{t('pettyCash:reports.reopen_modal.number', 'Sorszám:')} <strong>{reopenTargetReport?.report_number}</strong></div>
+              <div>{t('pettyCash:reports.reopen_modal.period', 'Időszak:')} {reopenTargetReport?.period_start} – {reopenTargetReport?.period_end}</div>
             </div>
 
             <div>
-              <Label className="text-xs font-medium">Újranyitás indoklása (kötelező) *</Label>
+              <Label className="text-xs font-medium">{t('pettyCash:reports.reopen_modal.reason_label', 'Újranyitás indoklása (kötelező) *')}</Label>
               <Textarea
                 value={reopenReason}
                 onChange={(e) => setReopenReason(e.target.value)}
-                placeholder="Miért szükséges a lezárt jelentés feloldása? pl. Késve átadott készpénzes számla utólagos felvitele..."
+                placeholder={t('pettyCash:reports.reopen_modal.reason_placeholder', 'Miért szükséges a lezárt jelentés feloldása? pl. Késve átadott készpénzes számla utólagos felvitele...')}
                 className="mt-1 text-xs min-h-[70px]"
               />
             </div>
@@ -490,7 +491,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
 
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setReopenModalOpen(false)}>
-              Mégse
+              {t('common:cancel', 'Mégse')}
             </Button>
             <Button
               size="sm"
@@ -500,7 +501,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
               className="gap-1.5"
             >
               {reopenMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-              Újranyitás jóváhagyása
+              {t('pettyCash:reports.reopen_modal.confirm', 'Újranyitás jóváhagyása')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -512,24 +513,24 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-violet-600">
               <BookOpen className="w-5 h-5" />
-              Főkönyvi feladás (381-es számla)
+              {t('pettyCash:reports.gl_modal.title', 'Főkönyvi feladás (381-es számla)')}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Időszaki pénztárjelentés tételeinek automatikus kontírozása és feladása a főkönyvbe.
+              {t('pettyCash:reports.gl_modal.desc', 'Időszaki pénztárjelentés tételeinek automatikus kontírozása és feladása a főkönyvbe.')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <div className="p-2.5 bg-muted/40 rounded-lg font-mono">
-              <div>Bizonylatszám: <strong>{glTargetReport?.report_number}</strong></div>
-              <div>Időszak: {glTargetReport?.period_start} – {glTargetReport?.period_end}</div>
-              <div>Záró egyenleg: {fmtBalance(glTargetReport?.closing_balance_actual ?? glTargetReport?.closing_balance_book ?? 0, glTargetReport?.currency || 'HUF')}</div>
+              <div>{t('pettyCash:reports.gl_modal.number', 'Bizonylatszám:')} <strong>{glTargetReport?.report_number}</strong></div>
+              <div>{t('pettyCash:reports.gl_modal.period', 'Időszak:')} {glTargetReport?.period_start} – {glTargetReport?.period_end}</div>
+              <div>{t('pettyCash:reports.gl_modal.closing_balance', 'Záró egyenleg:')} {fmtBalance(glTargetReport?.closing_balance_actual ?? glTargetReport?.closing_balance_book ?? 0, glTargetReport?.currency || 'HUF')}</div>
             </div>
 
             {isValidatingGl ? (
               <div className="flex items-center justify-center p-6 gap-2 text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                <span>Sztv. és kontírozási szabályok ellenőrzése...</span>
+                <span>{t('pettyCash:reports.gl_modal.validating', 'Sztv. és kontírozási szabályok ellenőrzése...')}</span>
               </div>
             ) : glValidation ? (
               <div className="space-y-2">
@@ -537,15 +538,15 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
                   <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-500/30 rounded-lg flex items-start gap-2.5 text-emerald-700 dark:text-emerald-400">
                     <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                     <div className="text-xs">
-                      <div className="font-semibold">Feladásra kész!</div>
-                      <div>A jelentés {glValidation.items_count} db tétele maradéktalanul érvényes ellenszámlával rendelkezik.</div>
+                      <div className="font-semibold">{t('pettyCash:reports.gl_modal.ready_title', 'Feladásra kész!')}</div>
+                      <div>{t('pettyCash:reports.gl_modal.ready_desc', { defaultValue: 'A jelentés {{count}} db tétele maradéktalanul érvényes ellenszámlával rendelkezik.', count: glValidation.items_count })}</div>
                     </div>
                   </div>
                 ) : (
                   <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg space-y-1.5 text-destructive">
                     <div className="flex items-center gap-2 font-semibold">
                       <AlertTriangle className="w-4 h-4 shrink-0" />
-                      <span>A feladás nem hajtható végre a következő okok miatt:</span>
+                      <span>{t('pettyCash:reports.gl_modal.error_header', 'A feladás nem hajtható végre a következő okok miatt:')}</span>
                     </div>
                     <ul className="list-disc pl-5 space-y-1 text-[11px]">
                       {glValidation.errors.map((err, i) => (
@@ -560,7 +561,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
 
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setGlPostModalOpen(false)}>
-              Mégse
+              {t('common:cancel', 'Mégse')}
             </Button>
             <Button
               size="sm"
@@ -569,7 +570,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
               className="gap-1.5 bg-violet-600 hover:bg-violet-700 text-white font-medium"
             >
               {postGlMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              Könyvelés végrehajtása (381)
+              {t('pettyCash:reports.gl_modal.confirm', 'Könyvelés végrehajtása (381)')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -581,21 +582,21 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <Undo2 className="w-5 h-5" />
-              Főkönyvi feladás visszavonása
+              {t('pettyCash:reports.unpost_modal.title', 'Főkönyvi feladás visszavonása')}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Biztosan visszavonod a pénztárjelentés főkönyvi feladását? A kapcsolódó 381-es vegyes naplóbejegyzés törlésre kerül, és a jelentés státusza visszakerül 'lezárt' állapotba.
+              {t('pettyCash:reports.unpost_modal.desc', 'Biztosan visszavonod a pénztárjelentés főkönyvi feladását? A kapcsolódó 381-es vegyes naplóbejegyzés törlésre kerül, és a jelentés státusza visszakerül \'lezárt\' állapotba.')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="p-2.5 bg-muted/40 rounded-lg font-mono text-xs">
-            <div>Bizonylatszám: <strong>{unpostTargetReport?.report_number}</strong></div>
-            <div>Időszak: {unpostTargetReport?.period_start} – {unpostTargetReport?.period_end}</div>
+            <div>{t('pettyCash:reports.gl_modal.number', 'Bizonylatszám:')} <strong>{unpostTargetReport?.report_number}</strong></div>
+            <div>{t('pettyCash:reports.gl_modal.period', 'Időszak:')} {unpostTargetReport?.period_start} – {unpostTargetReport?.period_end}</div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setUnpostModalOpen(false)}>
-              Mégse
+              {t('common:cancel', 'Mégse')}
             </Button>
             <Button
               size="sm"
@@ -605,7 +606,7 @@ export default function CashReportsTab({ registers, companyId }: CashReportsTabP
               className="gap-1.5"
             >
               {unpostGlMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Undo2 className="w-3.5 h-3.5" />}
-              Feladás visszavonása
+              {t('pettyCash:reports.unpost_modal.confirm', 'Feladás visszavonása')}
             </Button>
           </DialogFooter>
         </DialogContent>

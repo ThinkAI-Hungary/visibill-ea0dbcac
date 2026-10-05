@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -142,20 +143,24 @@ export function resolveIcon(name: string | null | undefined): LucideIcon {
   return iconMap.get(name) || FolderOpen;
 }
 
-// Category labels in Hungarian
-const CATEGORY_LABELS: Record<string, string> = {
-  'Pénzügyek': 'Pénzügyek',
-  'Üzlet': 'Üzlet',
-  'Marketing': 'Marketing',
-  'IT': 'IT & Technológia',
-  'Szállítás': 'Szállítás',
-  'Iroda': 'Iroda',
-  'Közüzemi': 'Közüzemi',
-  'Oktatás': 'Oktatás',
-  'Egészségügy': 'Egészségügy',
-  'Karbantartás': 'Karbantartás',
-  'Analitika': 'Analitika',
-  'Egyéb': 'Egyéb',
+function SelectedIconView({ name, className }: { name?: string | null; className?: string }) {
+  return React.createElement(resolveIcon(name), { className });
+}
+
+// Category labels mapping to common:icon_picker.categories.*
+const CATEGORY_I18N_KEYS: Record<string, string> = {
+  'Pénzügyek': 'finance',
+  'Üzlet': 'business',
+  'Marketing': 'marketing',
+  'IT': 'it',
+  'Szállítás': 'transport',
+  'Iroda': 'office',
+  'Közüzemi': 'utilities',
+  'Oktatás': 'education',
+  'Egészségügy': 'healthcare',
+  'Karbantartás': 'maintenance',
+  'Analitika': 'analytics',
+  'Egyéb': 'other',
 };
 
 interface IconPickerProps {
@@ -165,10 +170,9 @@ interface IconPickerProps {
 }
 
 export function IconPicker({ value, onChange, color = 'hsl(var(--primary))' }: IconPickerProps) {
+  const { t } = useTranslation('common');
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  
-  const SelectedIcon = resolveIcon(value);
 
   const filteredIcons = useMemo(() => {
     if (!search.trim()) return ICON_LIBRARY;
@@ -200,7 +204,7 @@ export function IconPicker({ value, onChange, color = 'hsl(var(--primary))' }: I
             className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: color + '20', color }}
           >
-            <SelectedIcon className="h-5 w-5" />
+            <SelectedIconView name={value} className="h-5 w-5" />
           </span>
         </button>
       </PopoverTrigger>
@@ -216,7 +220,7 @@ export function IconPicker({ value, onChange, color = 'hsl(var(--primary))' }: I
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Ikon keresése..."
+              placeholder={t('icon_picker.search_placeholder', { defaultValue: 'Ikon keresése...' })}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8 h-8 text-xs"
@@ -227,41 +231,44 @@ export function IconPicker({ value, onChange, color = 'hsl(var(--primary))' }: I
 
         {/* Icon grid */}
         <div className="max-h-72 overflow-y-auto p-2">
-          {Object.entries(grouped).map(([category, icons]) => (
-            <div key={category} className="mb-2">
-              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-1.5">
-                {CATEGORY_LABELS[category] || category}
+          {Object.entries(grouped).map(([category, icons]) => {
+            const catKey = CATEGORY_I18N_KEYS[category] || 'other';
+            return (
+              <div key={category} className="mb-2">
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-1.5">
+                  {t(`icon_picker.categories.${catKey}`, { defaultValue: category })}
+                </div>
+                <div className="grid grid-cols-8 gap-0.5">
+                  {icons.map((item) => {
+                    const Icon = item.icon;
+                    const isSelected = value === item.name;
+                    return (
+                      <button
+                        key={item.name}
+                        type="button"
+                        className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${
+                          isSelected
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1'
+                            : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                        }`}
+                        onClick={() => {
+                          onChange(item.name);
+                          setOpen(false);
+                          setSearch('');
+                        }}
+                        title={item.name}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="grid grid-cols-8 gap-0.5">
-                {icons.map((item) => {
-                  const Icon = item.icon;
-                  const isSelected = value === item.name;
-                  return (
-                    <button
-                      key={item.name}
-                      type="button"
-                      className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${
-                        isSelected
-                          ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1'
-                          : 'text-foreground/70 hover:bg-muted hover:text-foreground'
-                      }`}
-                      onClick={() => {
-                        onChange(item.name);
-                        setOpen(false);
-                        setSearch('');
-                      }}
-                      title={item.name}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {filteredIcons.length === 0 && (
             <div className="text-center py-6 text-sm text-muted-foreground">
-              Nincs találat
+              {t('icon_picker.no_results', { defaultValue: 'Nincs találat' })}
             </div>
           )}
         </div>
@@ -274,27 +281,27 @@ export function IconPicker({ value, onChange, color = 'hsl(var(--primary))' }: I
 
 export const COLOR_PALETTE = [
   // Row 1 — vivid
-  { value: 'hsl(142, 76%, 36%)', label: 'Zöld' },
-  { value: 'hsl(217, 91%, 60%)', label: 'Kék' },
-  { value: 'hsl(43, 96%, 56%)',  label: 'Sárga' },
-  { value: 'hsl(189, 94%, 43%)', label: 'Cián' },
-  { value: 'hsl(21, 90%, 48%)',  label: 'Narancs' },
-  { value: 'hsl(263, 70%, 50%)', label: 'Lila' },
-  { value: 'hsl(340, 82%, 52%)', label: 'Rózsaszín' },
-  { value: 'hsl(239, 84%, 67%)', label: 'Indigó' },
-  { value: 'hsl(174, 83%, 32%)', label: 'Türkiz' },
-  { value: 'hsl(0, 84%, 60%)',   label: 'Piros' },
+  { value: 'hsl(142, 76%, 36%)', key: 'green', label: 'Zöld' },
+  { value: 'hsl(217, 91%, 60%)', key: 'blue', label: 'Kék' },
+  { value: 'hsl(43, 96%, 56%)',  key: 'yellow', label: 'Sárga' },
+  { value: 'hsl(189, 94%, 43%)', key: 'cyan', label: 'Cián' },
+  { value: 'hsl(21, 90%, 48%)',  key: 'orange', label: 'Narancs' },
+  { value: 'hsl(263, 70%, 50%)', key: 'purple', label: 'Lila' },
+  { value: 'hsl(340, 82%, 52%)', key: 'pink', label: 'Rózsaszín' },
+  { value: 'hsl(239, 84%, 67%)', key: 'indigo', label: 'Indigó' },
+  { value: 'hsl(174, 83%, 32%)', key: 'turquoise', label: 'Türkiz' },
+  { value: 'hsl(0, 84%, 60%)',   key: 'red', label: 'Piros' },
   // Row 2 — muted / pastel
-  { value: 'hsl(142, 50%, 50%)', label: 'Halvány zöld' },
-  { value: 'hsl(217, 60%, 50%)', label: 'Acélkék' },
-  { value: 'hsl(32, 95%, 44%)',  label: 'Borostyán' },
-  { value: 'hsl(189, 50%, 55%)', label: 'Halvány cián' },
-  { value: 'hsl(280, 60%, 55%)', label: 'Ametiszt' },
-  { value: 'hsl(350, 60%, 50%)', label: 'Bordó' },
-  { value: 'hsl(160, 60%, 40%)', label: 'Smaragd' },
-  { value: 'hsl(200, 70%, 45%)', label: 'Óceán' },
-  { value: 'hsl(15, 80%, 55%)',  label: 'Terrakotta' },
-  { value: 'hsl(220, 9%, 46%)',  label: 'Szürke' },
+  { value: 'hsl(142, 50%, 50%)', key: 'light_green', label: 'Halvány zöld' },
+  { value: 'hsl(217, 60%, 50%)', key: 'steel_blue', label: 'Acélkék' },
+  { value: 'hsl(32, 95%, 44%)',  key: 'amber', label: 'Borostyán' },
+  { value: 'hsl(189, 50%, 55%)', key: 'light_cyan', label: 'Halvány cián' },
+  { value: 'hsl(280, 60%, 55%)', key: 'amethyst', label: 'Ametiszt' },
+  { value: 'hsl(350, 60%, 50%)', key: 'bordeaux', label: 'Bordó' },
+  { value: 'hsl(160, 60%, 40%)', key: 'emerald', label: 'Smaragd' },
+  { value: 'hsl(200, 70%, 45%)', key: 'ocean', label: 'Óceán' },
+  { value: 'hsl(15, 80%, 55%)',  key: 'terracotta', label: 'Terrakotta' },
+  { value: 'hsl(220, 9%, 46%)',  key: 'gray', label: 'Szürke' },
 ];
 
 export const DEFAULT_CATEGORY_COLOR = 'hsl(174, 83%, 32%)';
@@ -306,6 +313,7 @@ interface ColorPickerProps {
 }
 
 export function ColorPicker({ value, onChange }: ColorPickerProps) {
+  const { t } = useTranslation('common');
   const [open, setOpen] = useState(false);
 
   return (
@@ -332,7 +340,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-          Szín választás
+          {t('icon_picker.color_title', { defaultValue: 'Szín választás' })}
         </div>
         <div className="grid grid-cols-10 gap-1.5">
           {COLOR_PALETTE.map((c) => (
@@ -352,7 +360,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
                 onChange(c.value);
                 setOpen(false);
               }}
-              title={c.label}
+              title={t(`icon_picker.colors.${c.key}`, { defaultValue: c.label })}
             />
           ))}
         </div>

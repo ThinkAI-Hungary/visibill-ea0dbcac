@@ -236,6 +236,7 @@ export function InvoiceDialogManager() {
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         companyId={selectedCompany?.id || ''}
+        companyName={selectedCompany?.name || ''}
         categories={categories}
         projects={projects}
         initialDirection={activeTab === 'SUBMITTED_OUTBOUND' || activeTab === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND'}

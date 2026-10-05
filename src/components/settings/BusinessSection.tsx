@@ -76,7 +76,7 @@ export function BusinessSection({
   savingCompany, onSave, companies, setSelectedCompany,
   onNavigateToBankAccounts, children,
 }: Props) {
-  const { t } = useTranslation(['settings']);
+  const { t } = useTranslation(['settings', 'common']);
   const activeCountry = companyCountryCode || (selectedCompany?.country_code as 'HU' | 'HR') || 'HU';
   const jurisdiction = getJurisdictionRules(activeCountry);
   const isOwner = selectedCompany?.owner_id === userId;
@@ -155,12 +155,19 @@ export function BusinessSection({
         address,
         location_type: 'branch',
       });
-      toast({ title: 'Siker', description: 'Telephely sikeresen hozzáadva.' });
+      toast({
+        title: t('common:status.success', 'Sikeres művelet'),
+        description: t('business.location_added', 'Telephely sikeresen hozzáadva.'),
+      });
       setNewLocationName('');
       setNewLocationAddress('');
       setShowNewLocation(false);
     } catch {
-      toast({ title: 'Hiba', description: 'Nem sikerült a telephely hozzáadása.', variant: 'destructive' });
+      toast({
+        title: t('common:error', 'Hiba'),
+        description: t('business.location_add_error', 'Nem sikerült a telephely hozzáadása.'),
+        variant: 'destructive',
+      });
     } finally {
       setAddingLocation(false);
     }
@@ -169,9 +176,16 @@ export function BusinessSection({
   const handleDeleteLocation = async (locationId: string) => {
     try {
       await deleteLocation.mutateAsync(locationId);
-      toast({ title: 'Siker', description: 'Telephely eltávolítva.' });
+      toast({
+        title: t('common:status.success', 'Sikeres művelet'),
+        description: t('business.location_removed', 'Telephely eltávolítva.'),
+      });
     } catch {
-      toast({ title: 'Hiba', description: 'Nem sikerült a telephely törlése.', variant: 'destructive' });
+      toast({
+        title: t('common:error', 'Hiba'),
+        description: t('business.location_remove_error', 'Nem sikerült a telephely törlése.'),
+        variant: 'destructive',
+      });
     }
   };
 
@@ -231,7 +245,7 @@ export function BusinessSection({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="company_name">{t('business.company_name', 'Cég neve')} *</Label>
-                  <Input id="company_name" value={companyName || ''} onChange={e => setCompanyName(e.target.value)} placeholder="Pl. Példa Kft." disabled={!canEdit} />
+                  <Input id="company_name" value={companyName || ''} onChange={e => setCompanyName(e.target.value)} placeholder={t('business.company_name_placeholder', 'Pl. Példa Kft.')} disabled={!canEdit} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="tax_number">{jurisdiction.taxNumberLabel}</Label>
@@ -246,12 +260,12 @@ export function BusinessSection({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company_address">{t('business.address', 'Székhely')}</Label>
-                <Textarea id="company_address" value={companyAddress || ''} onChange={e => setCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." rows={3} disabled={!canEdit} />
+                <Textarea id="company_address" value={companyAddress || ''} onChange={e => setCompanyAddress(e.target.value)} placeholder={t('business.address_placeholder', 'Pl. 1234 Budapest, Példa utca 1.')} rows={3} disabled={!canEdit} />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="company_teaor">{t('business.primary_teaor', 'Elsődleges TEÁOR kód')}</Label>
-                  <Input id="company_teaor" value={companyPrimaryTeaor} onChange={e => setCompanyPrimaryTeaor(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Pl. 6201" maxLength={4} disabled={!canEdit} />
+                  <Input id="company_teaor" value={companyPrimaryTeaor} onChange={e => setCompanyPrimaryTeaor(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder={t('business.teaor_placeholder', 'Pl. 6201')} maxLength={4} disabled={!canEdit} />
                 </div>
               </div>
 
@@ -313,7 +327,7 @@ export function BusinessSection({
                       disabled={isGeneratingDescription || !companyPrimaryTeaor.trim()}
                     >
                       <Sparkles className={`h-3.5 w-3.5 ${isGeneratingDescription ? 'animate-spin' : ''}`} />
-                      {isGeneratingDescription ? 'Generálás...' : t('business.generate_ai', 'Generálás AI-al')}
+                      {isGeneratingDescription ? t('common:actions.generating', 'Generálás...') : t('business.generate_ai', 'Generálás AI-al')}
                     </Button>
                   )}
                 </div>
@@ -329,11 +343,11 @@ export function BusinessSection({
               <div className="flex items-center gap-4 pt-2">
                 {canEdit && (
                   <Button onClick={onSave} disabled={!companyName?.trim() || savingCompany}>
-                    {savingCompany ? 'Mentés...' : t('business.save_button', 'Cég adatainak mentése')}
+                    {savingCompany ? t('common:actions.saving', 'Mentés...') : t('business.save_button', 'Cég adatainak mentése')}
                   </Button>
                 )}
                 <p className="text-sm text-muted-foreground">
-                  Létrehozva: {new Date(selectedCompany.created_at).toLocaleDateString('hu-HU')}
+                  {t('business.created_at', 'Létrehozva')}: {new Date(selectedCompany.created_at).toLocaleDateString()}
                 </p>
               </div>
             </>
@@ -463,25 +477,25 @@ export function BusinessSection({
             {/* New location form */}
             {showNewLocation && isOwner && (
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                <p className="text-sm font-semibold">Új telephely hozzáadása</p>
+                <p className="text-sm font-semibold">{t('business.add_location_title', 'Új telephely hozzáadása')}</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="new_location_name" className="text-sm">Telephely neve *</Label>
+                    <Label htmlFor="new_location_name" className="text-sm">{t('business.location_name_label', 'Telephely neve *')}</Label>
                     <Input
                       id="new_location_name"
                       value={newLocationName}
                       onChange={e => setNewLocationName(e.target.value)}
-                      placeholder="Pl. Debreceni Raktár"
+                      placeholder={t('business.location_name_placeholder', 'Pl. Debreceni Raktár')}
                       className="h-9"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="new_location_address" className="text-sm">Cím *</Label>
+                    <Label htmlFor="new_location_address" className="text-sm">{t('business.location_address_label', 'Cím *')}</Label>
                     <Input
                       id="new_location_address"
                       value={newLocationAddress}
                       onChange={e => setNewLocationAddress(e.target.value)}
-                      placeholder="Pl. 4032 Debrecen, Ipari utca 5."
+                      placeholder={t('business.location_address_placeholder', 'Pl. 4032 Debrecen, Ipari utca 5.')}
                       className="h-9"
                     />
                   </div>
@@ -492,10 +506,10 @@ export function BusinessSection({
                     disabled={!newLocationName?.trim() || !newLocationAddress?.trim() || addingLocation}
                     onClick={handleAddLocation}
                   >
-                    {addingLocation ? 'Hozzáadás...' : 'Hozzáadás'}
+                    {addingLocation ? t('common:actions.adding', 'Hozzáadás...') : t('common:actions.add', 'Hozzáadás')}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => { setShowNewLocation(false); setNewLocationName(''); setNewLocationAddress(''); }}>
-                    Mégse
+                    {t('common:actions.cancel', 'Mégse')}
                   </Button>
                 </div>
               </div>
@@ -503,9 +517,9 @@ export function BusinessSection({
 
             {/* Existing locations list */}
             {locationsLoading ? (
-              <p className="text-sm text-muted-foreground">Betöltés...</p>
+              <p className="text-sm text-muted-foreground">{t('common:status.loading', 'Betöltés...')}</p>
             ) : locations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nincsenek telephelyek hozzáadva.</p>
+              <p className="text-sm text-muted-foreground">{t('business.no_locations', 'Nincsenek telephelyek hozzáadva.')}</p>
             ) : (
               <div className="space-y-2">
                 {locations.map(location => (
@@ -526,7 +540,7 @@ export function BusinessSection({
                           {location.name}
                           {location.location_type === 'headquarters' && (
                             <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                              Székhely
+                              {t('business.headquarters_badge', 'Székhely')}
                             </span>
                           )}
                         </p>
@@ -539,7 +553,7 @@ export function BusinessSection({
                         size="icon"
                         className="h-8 w-8 text-destructive opacity-50 hover:opacity-100"
                         onClick={() => handleDeleteLocation(location.id)}
-                        title="Telephely törlése"
+                        title={t('business.delete_location_title', 'Telephely törlése')}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -561,14 +575,14 @@ export function BusinessSection({
               {t('business.accounting_settings_title', 'Főkönyvi és Könyvelési beállítások')}
             </CardTitle>
             <CardDescription>
-              A cég főkönyvi kimutatásaiban és egyenlegkivonataiban alkalmazott alapértelmezett beállítások
+              {t('business.accounting_settings_desc', 'A cég főkönyvi kimutatásaiban és egyenlegkivonataiban alkalmazott alapértelmezett beállítások')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">Adatgyűjtés alapértelmezett dátum alapja</Label>
+              <Label className="text-sm font-semibold">{t('business.gl_basis_label', 'Adatgyűjtés alapértelmezett dátum alapja')}</Label>
               <p className="text-xs text-muted-foreground">
-                Válaszd ki, hogy a főkönyv megnyitásakor a bizonylatok kiállítási kelte vagy a gazdasági teljesítés dátuma alapján gyűjtse az adatokat.
+                {t('business.gl_basis_hint', 'Válaszd ki, hogy a főkönyv megnyitásakor a bizonylatok kiállítási kelte vagy a gazdasági teljesítés dátuma alapján gyűjtse az adatokat.')}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <label
@@ -592,10 +606,10 @@ export function BusinessSection({
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
                       <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                      Kibocsátás kelte (Alapértelmezett)
+                      {t('business.gl_basis_issue_title', 'Kibocsátás kelte (Alapértelmezett)')}
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      A számlák és bizonylatok hivatalos kiállítási dátuma alapján veszi figyelembe a tételeket.
+                      {t('business.gl_basis_issue_desc', 'A számlák és bizonylatok hivatalos kiállítási dátuma alapján veszi figyelembe a tételeket.')}
                     </p>
                   </div>
                 </label>
@@ -621,10 +635,10 @@ export function BusinessSection({
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
                       <CalendarCheck className="w-3.5 h-3.5 text-primary" />
-                      Teljesítés dátuma
+                      {t('business.gl_basis_fulfillment_title', 'Teljesítés dátuma')}
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      A gazdasági esemény vagy szolgáltatás tényleges teljesítésének napja alapján gyűjti az adatokat.
+                      {t('business.gl_basis_fulfillment_desc', 'A gazdasági esemény vagy szolgáltatás tényleges teljesítésének napja alapján gyűjti az adatokat.')}
                     </p>
                   </div>
                 </label>
@@ -638,14 +652,14 @@ export function BusinessSection({
                   <div className="flex items-center gap-2">
                     <Wheat className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <Label htmlFor="toggle-purchase-vouchers" className="text-sm font-semibold cursor-pointer">
-                      Mezőgazdasági felvásárlási jegyek modul
+                      {t('business.agrar_module_title', 'Mezőgazdasági felvásárlási jegyek modul')}
                     </Label>
                     <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600 bg-emerald-500/10">
-                      Agrár
+                      {t('business.agrar_badge', 'Agrár')}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
-                    Őstermelői felvásárlások rögzítése, 12% és 7%-os kompenzációs felár számítása, és bérügyi NAV 08 adatszolgáltatás előkészítése a Bérek / járulékok menüpont alatt.
+                    {t('business.agrar_module_desc', 'Őstermelői felvásárlások rögzítése, 12% és 7%-os kompenzációs felár számítása, és bérügyi NAV 08 adatszolgáltatás előkészítése a Bérek / járulékok menüpont alatt.')}
                   </p>
                 </div>
                 <Switch
@@ -666,7 +680,7 @@ export function BusinessSection({
         <Card>
           <CardHeader>
             <CardTitle>{t('business.all_companies_title', 'Összes cég áttekintése')}</CardTitle>
-            <CardDescription>A fiókodhoz tartozó összes cég</CardDescription>
+            <CardDescription>{t('business.all_companies_desc', 'A fiókodhoz tartozó összes cég')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -679,12 +693,12 @@ export function BusinessSection({
                 >
                   <div>
                     <p className="font-medium">{company.name}</p>
-                    <p className="text-sm text-muted-foreground">{company.tax_number || 'Nincs adószám megadva'}</p>
+                    <p className="text-sm text-muted-foreground">{company.tax_number || t('business.no_tax_number', 'Nincs adószám megadva')}</p>
                   </div>
                   {selectedCompany?.id !== company.id ? (
-                    <Button variant="outline" size="sm" onClick={() => setSelectedCompany(company)}>Kiválasztás</Button>
+                    <Button variant="outline" size="sm" onClick={() => setSelectedCompany(company)}>{t('common:actions.select', 'Kiválasztás')}</Button>
                   ) : (
-                    <span className="text-sm text-primary font-medium">Aktív</span>
+                    <span className="text-sm text-primary font-medium">{t('common:status.active', 'Aktív')}</span>
                   )}
                 </div>
               ))}

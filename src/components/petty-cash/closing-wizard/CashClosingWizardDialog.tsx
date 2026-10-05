@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +44,7 @@ export function CashClosingWizardDialog({
   registers,
   defaultRegisterId,
 }: CashClosingWizardDialogProps) {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const { user } = useAuth();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -245,15 +247,18 @@ export function CashClosingWizardDialog({
       });
 
       toast({
-        title: 'Pénztár sikeresen lezárva!',
-        description: `A(z) ${activeRegister?.name} időszaki zárása és jegyzőkönyve archiválásra került.`,
+        title: t('pettyCash:closing_wizard.toast_closed_title', 'Pénztár sikeresen lezárva!'),
+        description: t('pettyCash:closing_wizard.toast_closed_desc', {
+          name: activeRegister?.name,
+          defaultValue: `A(z) ${activeRegister?.name} időszaki zárása és jegyzőkönyve archiválásra került.`,
+        }),
       });
 
       onOpenChange(false);
     } catch (err: any) {
       toast({
-        title: 'Hiba a zárás során',
-        description: err.message || 'Nem sikerült lezárni a pénztárjelentést.',
+        title: t('pettyCash:closing_wizard.toast_error_title', 'Hiba a zárás során'),
+        description: err.message || t('pettyCash:closing_wizard.toast_error_desc', 'Nem sikerült lezárni a pénztárjelentést.'),
         variant: 'destructive',
       });
     }
@@ -268,13 +273,13 @@ export function CashClosingWizardDialog({
             <div>
               <DialogTitle className="text-lg font-bold flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-primary" />
-                Időszaki Pénztárzárás Varázsló
+                {t('pettyCash:closing_wizard.dialog_title', 'Időszaki Pénztárzárás Varázsló')}
                 <Badge variant="outline" className="text-xs bg-muted ml-1">
-                  Sztv. 165–168. §
+                  {t('pettyCash:closing_wizard.sztv_badge', 'Sztv. 165–168. §')}
                 </Badge>
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Készpénzállomány egyeztetése, címletjegyzék rögzítése és zárási jegyzőkönyv készítése.
+                {t('pettyCash:closing_wizard.dialog_desc', 'Készpénzállomány egyeztetése, címletjegyzék rögzítése és zárási jegyzőkönyv készítése.')}
               </DialogDescription>
             </div>
 
@@ -284,21 +289,21 @@ export function CashClosingWizardDialog({
                 "px-2.5 py-1 rounded-md transition-colors",
                 step === 1 ? "bg-primary text-primary-foreground font-semibold" : "bg-muted text-muted-foreground"
               )}>
-                1. Ellenőrzés
+                {t('pettyCash:closing_wizard.step1_title', '1. Ellenőrzés')}
               </span>
               <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
               <span className={cn(
                 "px-2.5 py-1 rounded-md transition-colors",
                 step === 2 ? "bg-primary text-primary-foreground font-semibold" : "bg-muted text-muted-foreground"
               )}>
-                2. Címletjegyzék
+                {t('pettyCash:closing_wizard.step2_title', '2. Címletjegyzék')}
               </span>
               <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
               <span className={cn(
                 "px-2.5 py-1 rounded-md transition-colors",
                 step === 3 ? "bg-primary text-primary-foreground font-semibold" : "bg-muted text-muted-foreground"
               )}>
-                3. Jegyzőkönyv
+                {t('pettyCash:closing_wizard.step3_title', '3. Jegyzőkönyv')}
               </span>
             </div>
           </div>
@@ -340,7 +345,7 @@ export function CashClosingWizardDialog({
 
           {step === 3 && (
             <WizardStep3Protocol
-              registerName={activeRegister?.name || 'Pénztár'}
+              registerName={activeRegister?.name || t('pettyCash:closing_dialog.all_registers', 'Pénztár')}
               periodStart={dateFromFormatted || '2026-01-01'}
               periodEnd={dateToFormatted || '2026-01-31'}
               currency={currency}
@@ -356,7 +361,7 @@ export function CashClosingWizardDialog({
               onChangeDifferenceAction={setDifferenceAction}
               notes={notes}
               onChangeNotes={setNotes}
-              cashierName={user?.user_metadata?.full_name || user?.email || 'Pénztáros'}
+              cashierName={user?.user_metadata?.full_name || user?.email || t('pettyCash:closing_wizard.step3.cashier_label', 'Pénztáros')}
               isSinglePersonMode={activeRegister?.is_single_person_mode || false}
             />
           )}
@@ -373,14 +378,14 @@ export function CashClosingWizardDialog({
                 className="text-xs gap-1.5"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
-                Vissza
+                {t('pettyCash:closing_wizard.btn_back', 'Vissza')}
               </Button>
             )}
           </div>
 
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} className="text-xs">
-              Mégse
+              {t('pettyCash:closing_wizard.btn_cancel', 'Mégse')}
             </Button>
 
             {step < 3 ? (
@@ -390,7 +395,7 @@ export function CashClosingWizardDialog({
                 disabled={step === 1 && !canGoToStep2}
                 className="text-xs gap-1.5"
               >
-                Tovább
+                {t('pettyCash:closing_wizard.btn_next', 'Tovább')}
                 <ChevronRight className="w-3.5 h-3.5" />
               </Button>
             ) : (
@@ -405,7 +410,7 @@ export function CashClosingWizardDialog({
                 ) : (
                   <CheckCircle2 className="w-4 h-4" />
                 )}
-                Zárás véglegesítése és jegyzőkönyv generálása
+                {t('pettyCash:closing_wizard.finalize_btn', 'Zárás véglegesítése és jegyzőkönyv generálása')}
               </Button>
             )}
           </div>

@@ -14,7 +14,7 @@ import { getInitials, getAvatarColor } from '@/lib/helpers';
 import { normalizeInvoiceNumber, checkBuyerTaxMismatch, isForeignSubmittedInvoice } from '@/lib/invoiceMatchingUtils';
 import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
 import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import { resolveLinkedInvoices } from '../../utils/invoiceRelations';
 import type { SubmittedInvoice, NavInvoice, TransactionRecord } from '../../types';
@@ -172,7 +172,7 @@ export function SubmittedInvoiceRow({
                 toggleRowExpanded(invoice.id);
               }}
               className="p-0.5 -m-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              aria-label={isExpanded ? 'Sor összecsukása' : 'Sor kibontása'}
+              aria-label={isExpanded ? t('invoices:expanded.collapse_row', 'Sor összecsukása') : t('invoices:expanded.expand_row', 'Sor kibontása')}
             >
               <ChevronDown
                 className={cn(
@@ -210,7 +210,7 @@ export function SubmittedInvoiceRow({
               {getInitials(partnerName)}
             </div>
             {partnerName === '-' || partnerName === 'Ismeretlen partner' ? (
-              <span className="text-xs text-muted-foreground italic">Ismeretlen partner</span>
+              <span className="text-xs text-muted-foreground italic">{t('invoices:expanded.unknown_partner', 'Ismeretlen partner')}</span>
             ) : (
               <CopyableCell
                 value={partnerName}
@@ -225,11 +225,11 @@ export function SubmittedInvoiceRow({
         </TableCell>
 
         <TableCell className="text-center text-muted-foreground tabular-nums whitespace-nowrap">
-          {invoice.kibocsatas_datuma ? format(new Date(invoice.kibocsatas_datuma), 'yyyy.MM.dd.', { locale: hu }) : '-'}
+          {invoice.kibocsatas_datuma ? format(new Date(invoice.kibocsatas_datuma), 'yyyy.MM.dd.', { locale: getDateFnsLocale() }) : '-'}
         </TableCell>
 
         <TableCell className="text-center text-muted-foreground tabular-nums whitespace-nowrap">
-          {invoice.teljesites_datuma ? format(new Date(invoice.teljesites_datuma), 'yyyy.MM.dd.', { locale: hu }) : '-'}
+          {invoice.teljesites_datuma ? format(new Date(invoice.teljesites_datuma), 'yyyy.MM.dd.', { locale: getDateFnsLocale() }) : '-'}
         </TableCell>
 
         <TableCell className="font-medium font-mono">
@@ -353,27 +353,27 @@ export function SubmittedInvoiceRow({
                     <TooltipTrigger asChild>
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40 cursor-help transition-colors hover:bg-amber-500/25">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                        {nonDeductibleInfo.minPercentage === 0 ? '0% lev.' : `${nonDeductibleInfo.minPercentage}/${100 - nonDeductibleInfo.minPercentage}`}
+                        {nonDeductibleInfo.minPercentage === 0 ? `0% ${t('invoices:expanded.deductible_badge', 'lev.')}` : `${nonDeductibleInfo.minPercentage}/${100 - nonDeductibleInfo.minPercentage}`}
                         <span className="text-muted-foreground/80 font-normal">(-{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.penznem || defaultCurrency)})</span>
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="text-xs space-y-1.5 max-w-[240px] text-left">
                       <p className="font-semibold text-amber-500 flex items-center gap-1">
                         <Sparkles className="h-3 w-3" />
-                        ÁFA Levonási Korlátozás
+                        {t('invoices:expanded.vat_deductibility_restriction', 'ÁFA Levonási Korlátozás')}
                       </p>
                       <div className="space-y-0.5 font-sans">
                         <div className="flex justify-between gap-3 text-emerald-600 dark:text-emerald-400">
-                          <span>Levonható:</span>
+                          <span>{t('invoices:expanded.deductible_short', 'Levonható:')}</span>
                           <span className="font-mono font-medium">{formatCurrency((invoice.afa_osszeg_osszesen || 0) - nonDeductibleInfo.nonDeductibleVat, invoice.penznem || defaultCurrency)}</span>
                         </div>
                         <div className="flex justify-between gap-3 text-amber-600 dark:text-amber-400">
-                          <span>Nem levonható:</span>
+                          <span>{t('invoices:expanded.non_deductible_short', 'Nem levonható:')}</span>
                           <span className="font-mono font-medium">{formatCurrency(nonDeductibleInfo.nonDeductibleVat, invoice.penznem || defaultCurrency)}</span>
                         </div>
                       </div>
                       <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/30">
-                        Áfa tv. szerinti levonási hányad (pl. telefon 70/30, szgk.)
+                        {t('invoices:expanded.vat_ratio_notice', 'Áfa tv. szerinti levonási hányad (pl. telefon 70/30, szgk.)')}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -421,12 +421,12 @@ export function SubmittedInvoiceRow({
                       }
                     }}
                     className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 cursor-pointer"
-                    aria-label="Kikontírozva statusz valtoztatasa"
+                    aria-label={t('invoices:expanded.change_booked_status', 'Kikontírozva státusz változtatása')}
                   />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top">
-                <p className="text-xs font-medium">Kikontírozott / Könyvelve jelölés</p>
+                <p className="text-xs font-medium">{t('invoices:expanded.accountant_reviewed_tooltip', 'Kikontírozott / Könyvelve jelölés')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -486,7 +486,7 @@ export function SubmittedInvoiceRow({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Számlatételek megtekintése</p>
+                <p>{t('invoices:expanded.view_items', 'Számlatételek megtekintése')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -544,7 +544,7 @@ export function SubmittedInvoiceRow({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Számla szerkesztése</p>
+                <p>{t('invoices:expanded.edit_invoice', 'Számla szerkesztése')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

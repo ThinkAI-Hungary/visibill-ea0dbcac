@@ -46,6 +46,25 @@ A dialógus maximális ergonómiát nyújtva szétválasztja az alapadatokat és
 * A popoverek és űrlapok egységesen a `SearchInput` komponenst használják `variant="borderless"` kivitelben, beépített „X" törlés gombbal és Escape billentyű támogatással.
 * Az űrlapok beviteli mezőiben a specifikus cégnevek helyett szakmailag semleges minták szerepelnek (`pl. Partner Kft.`, `pl. Ügyfél Kft.`, `pl. SZLA-2026-001`).
 
+### 2.5. Kontextuális Partner Előtöltés és Sémabiztonság (Direction-Aware Pre-fill & NOT NULL Fallback)
+* **Intelligens alapadat-előtöltés az aktív cégből:**
+  * **Bejövő (szállítói) számla rögzítésekor:** A vevő (`vevo_nev`) mező automatikusan és azonnal a kontextusban kiválasztott saját cég nevével töltődik fel (`selectedCompany.name`), míg a partner választó a külső szállítóra fókuszál.
+  * **Kimenő számla rögzítésekor:** Az eladó (`elado_nev`) mező töltődik fel a saját cég nevével, és a partner választó a vevő adatait kéri.
+* **Garantált NOT NULL adatbázis-integritás:**
+  * Mivel a PostgreSQL `invoices` táblájában mind az `elado_nev`, mind a `vevo_nev` oszlop szigorúan `NOT NULL` megkötésű, a felület garantált nem-üres értékkel (`companyName || 'Saját cég'`) látja el az ellentétes oldali partnernevet, kizárva az üres mentési hibákat.
+
+### 2.6. Tranzakció Elrablás Megelőzése (Transaction Stealing Guard & Visual State)
+* **Kettős párosítás elleni védelem:** A `TransactionMultiPicker` komponensben a már korábban egy másik számlához párosított tranzakciók (`matched_invoice_id`) inaktívvá és védetté válnak:
+  * **Letiltott interakció:** A jelölőnégyzet és a sor letiltott állapotba kerül (`disabled`, `opacity-60 pointer-events-none`).
+  * **Vizuális figyelmeztetés:** Sárga/borostyán jelvény (`badge`) mutatja: „Másik számlához kötve".
+  * **Részletes tooltip:** Rámutatáskor tooltip tájékoztatja a könyvelőt, hogy a tranzakció már egy másik számlát egyenlít ki, megelőzve az akaratlan elcsatolást és pénzügyi anomáliákat.
+
+### 2.7. Toast Visszajelzések és Nemzetközi (HR) Lokalizáció
+* **Standardizált Toast értesítések:** Az elavult böngészős `alert(...)` felugrók helyett a felület a modern, egységes `toast(...)` rendszert használja (pl. `InvoiceDocumentDropzone` érvénytelen fájlformátum vagy méretkorlát esetén destructiv toasttal figyelmeztet).
+* **Horvát lokalizáció (`/hr/...`):**
+  * Dinamikus pénznem és adókulcs alapértelmezések: horvát route esetén az alapértelmezett pénznem `EUR`, az elérhető áfakulcsok pedig a horvát jogszabályokhoz igazodnak (`25%`, `13%`, `5%`, `PDV`).
+  * Teljes kétnyelvű fedettség: a dialógus összes szövege, címkéje, placeholderje és gombja az `invoices:manual_create.*` névtérből fordul mind magyar, mind horvát nyelven.
+
 ---
 
 ## 3. Racionálé és Előnyök

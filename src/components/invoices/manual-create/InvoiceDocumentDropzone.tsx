@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, FileText, Image as ImageIcon, Trash2, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { toast } from '@/hooks/use-toast';
 
 interface InvoiceDocumentDropzoneProps {
   file: File | null;
@@ -14,6 +16,7 @@ export function InvoiceDocumentDropzone({
   onFileChange,
   disabled = false,
 }: InvoiceDocumentDropzoneProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -48,11 +51,19 @@ export function InvoiceDocumentDropzone({
   const validateAndSetFile = (f: File) => {
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(f.type) && !f.name.toLowerCase().endsWith('.pdf')) {
-      alert('Kérjük, PDF vagy képfájlt (JPG, PNG, WebP) válassz ki!');
+      toast({
+        title: t('common:status.error'),
+        description: t('invoices:manual_create.dropzone.alert_invalid_type'),
+        variant: 'destructive',
+      });
       return;
     }
     if (f.size > 25 * 1024 * 1024) {
-      alert('A fájl mérete nem haladhatja meg a 25 MB-ot!');
+      toast({
+        title: t('common:status.error'),
+        description: t('invoices:manual_create.dropzone.alert_file_too_large'),
+        variant: 'destructive',
+      });
       return;
     }
     onFileChange(f);
@@ -70,7 +81,7 @@ export function InvoiceDocumentDropzone({
     <div className="space-y-1.5">
       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
         <UploadCloud className="h-3.5 w-3.5 text-primary" />
-        Számlakép / PDF melléklet (Opcionális)
+        {t('invoices:manual_create.dropzone.label')}
       </label>
 
       <input
@@ -99,7 +110,7 @@ export function InvoiceDocumentDropzone({
                 <span>{formatFileSize(file.size)}</span>
                 <span>•</span>
                 <span className="text-emerald-500 font-medium flex items-center gap-0.5">
-                  <CheckCircle2 className="h-3 w-3" /> Csatolva feltöltéshez
+                  <CheckCircle2 className="h-3 w-3" /> {t('invoices:manual_create.dropzone.attached_badge')}
                 </span>
               </div>
             </div>
@@ -133,10 +144,10 @@ export function InvoiceDocumentDropzone({
         >
           <UploadCloud className="h-5 w-5 text-muted-foreground" />
           <div className="text-xs font-medium text-foreground">
-            Húzd ide a számla PDF-et vagy képet, vagy <span className="text-primary underline">tallózz</span>
+            {t('invoices:manual_create.dropzone.prompt')} <span className="text-primary underline">{t('invoices:manual_create.dropzone.browse')}</span>
           </div>
           <div className="text-[10px] text-muted-foreground">
-            Támogatott formátumok: PDF, JPG, PNG, WebP (max. 25 MB)
+            {t('invoices:manual_create.dropzone.supported_formats')}
           </div>
         </div>
       )}

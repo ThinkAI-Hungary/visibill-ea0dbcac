@@ -75,8 +75,8 @@ export const SzamlazzAgentForm: React.FC = () => {
     const trimmed = agentKey.trim();
     if (!trimmed) {
       toast({
-        title: 'Hiányos adat',
-        description: 'Kérlek add meg a Számlázz.hu Agent API kulcsot!',
+        title: t('settings:integrations.szamlazz.incomplete_title', 'Hiányos adat'),
+        description: t('settings:integrations.szamlazz.missing_key_desc', 'Kérlek add meg a Számlázz.hu Agent API kulcsot!'),
         variant: 'destructive',
       });
       return;
@@ -84,8 +84,8 @@ export const SzamlazzAgentForm: React.FC = () => {
 
     if (trimmed.length < 30) {
       toast({
-        title: 'Érvénytelen kulcs formátum',
-        description: 'A Számlázz.hu Agent kulcs jellemzően 42 karakter hosszú.',
+        title: t('settings:integrations.szamlazz.invalid_key_title', 'Érvénytelen kulcs formátum'),
+        description: t('settings:integrations.szamlazz.invalid_key_desc', 'A Számlázz.hu Agent kulcs jellemzően 42 karakter hosszú.'),
         variant: 'destructive',
       });
       return;
@@ -118,7 +118,7 @@ export const SzamlazzAgentForm: React.FC = () => {
     } catch (err: any) {
       toast({
         title: t('common:status.error', 'Mentési hiba'),
-        description: err.message || 'Nem sikerült elmenteni az API kulcsot.',
+        description: err.message || t('settings:integrations.szamlazz.toast_save_error_desc', 'Nem sikerült elmenteni az API kulcsot.'),
         variant: 'destructive',
       });
     } finally {
@@ -148,12 +148,12 @@ export const SzamlazzAgentForm: React.FC = () => {
       setAgentKey('');
       toast({
         title: t('common:status.success', 'Sikeres művelet'),
-        description: t('settings:integrations.szamlazz.disconnect', 'Leválasztás'),
+        description: t('settings:integrations.szamlazz.toast_disconnect_success_desc', 'A Számlázz.hu Agent kapcsolat sikeresen leválasztva.'),
       });
     } catch (err: any) {
       toast({
         title: t('common:status.error', 'Hiba'),
-        description: err.message || 'Nem sikerült törölni a kulcsot.',
+        description: err.message || t('settings:integrations.szamlazz.toast_disconnect_error_desc', 'Nem sikerült törölni a kulcsot.'),
         variant: 'destructive',
       });
     } finally {

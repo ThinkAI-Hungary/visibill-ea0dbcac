@@ -111,7 +111,12 @@
     "select_all": "Označi sve",
     "details_tooltip": "Pojedinosti transakcije i računa",
     "empty_title": "Nema transakcija",
-    "empty_desc": "Učitajte bankovni izvod na stranici za učitavanje ili prilagodite filtre."
+    "empty_desc": "Učitajte bankovni izvod na stranici za učitavanje ili prilagodite filtre.",
+    "swipe_approved_title": "Uspješno odobreno",
+    "swipe_approved_desc": "Povezivanje transakcije je odobreno.",
+    "swipe_failed_desc": "Odobravanje nije uspjelo.",
+    "swipe_approval_title": "Odobravanje",
+    "swipe_only_suggested_desc": "Ovako se mogu odobriti samo predložena povezivanja."
   },
   "bulk": {
     "selected_count": "Označene transakcije:",
@@ -698,5 +703,35 @@
     "toast_success_company_desc": "Pravilo će automatski knjižiti iste stavke u budućim bankovnim izvodima.",
     "toast_error_title": "Pogreška pri spremanju pravila",
     "toast_error_desc": "Došlo je do nepoznate pogreške."
+  },
+  "matching": {
+    "toast_match_success_single": "Transakcija uspješno povezana!",
+    "toast_match_success_multi": "{{count}} računa uspješno povezano s transakcijom!",
+    "toast_match_error": "Pogreška pri spremanju povezivanja",
+    "toast_unmatch_success": "Povezivanje poništeno!",
+    "toast_unmatch_error": "Pogreška pri poništavanju povezivanja",
+    "toast_verify_success": "Transakcija odobrena!",
+    "toast_verify_error": "Pogreška pri odobravanju",
+    "toast_mark_no_invoice_success": "Transakcija označena: Nema računa",
+    "toast_mark_invoice_missing_success": "Transakcija označena: Račun nije učitan",
+    "toast_mark_error": "Pogreška pri spremanju oznake",
+    "toast_revert_success": "Status vraćen",
+    "toast_revert_error": "Pogreška pri vraćanju statusa",
+    "toast_already_assigned": "Ovaj račun je već dodijeljen ovoj transakciji",
+    "toast_add_invoice_error": "Pogreška pri dodavanju računa",
+    "toast_extra_removed_success": "Dodatni račun uklonjen",
+    "toast_extra_removed_error": "Pogreška pri uklanjanju",
+    "toast_direct_book_success": "Transakcija izravno proknjižena!",
+    "toast_direct_book_error": "Pogreška pri spremanju kontiranja",
+    "toast_direct_unbook_success": "Izravno kontiranje obrisano!",
+    "toast_direct_unbook_error": "Pogreška pri brisanju",
+    "toast_courier_linked_success": "Dostavne stavke uspješno povezane s transakcijom!",
+    "toast_courier_linked_error": "Pogreška pri povezivanju dostavnih stavki",
+    "toast_refresh_success": "Transakcije ažurirane!",
+    "toast_refresh_error": "Ažuriranje neuspješno",
+    "toast_rematch_started_title": "Ponovno povezivanje pokrenuto",
+    "toast_rematch_started_desc": "Pozadinski proces je pokrenut. Sučelje će se automatski osvježiti za nekoliko sekundi.",
+    "toast_rematch_error": "Ponovno povezivanje neuspješno",
+    "toast_fetch_error": "Pogreška pri učitavanju transakcija"
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
@@ -79,6 +80,7 @@ export function SubledgerPostingModal({
   isEditMode = false,
   onOpenFullManualEditor,
 }: SubledgerPostingModalProps) {
+  const { t } = useTranslation(['accounting', 'common']);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { activePresetId } = useActivePreset(companyId);
@@ -249,8 +251,8 @@ export function SubledgerPostingModal({
   const handleDeleteLine = (index: number) => {
     if (lines.length <= 1) {
       toast({
-        title: 'Nem törölhető',
-        description: 'A bizonylatnak legalább egy tétellel rendelkeznie kell.',
+        title: t('accounting:subledger.toasts.delete_line_min_one_title', 'Nem törölhető'),
+        description: t('accounting:subledger.toasts.delete_line_min_one_desc', 'A bizonylatnak legalább egy tétellel rendelkeznie kell.'),
         variant: 'destructive',
       });
       return;
@@ -290,7 +292,7 @@ export function SubledgerPostingModal({
     },
     onError: (err: any) => {
       toast({
-        title: 'Mentési hiba',
+        title: t('accounting:subledger.toasts.save_lines_error_title', 'Mentési hiba'),
         description: err.message || 'Nem sikerült elmenteni a kontírozott sorokat.',
         variant: 'destructive',
       });
@@ -330,8 +332,12 @@ export function SubledgerPostingModal({
     },
     onSuccess: () => {
       toast({
-        title: 'Számla sikeresen lekönyvelve',
-        description: `A(z) ${currentInvoice?.document_id} számla (${currentInvoice?.items.length || 1} tétel) véglegesen rögzítve lett.`,
+        title: t('accounting:subledger.toasts.post_entry_success_title', 'Számla sikeresen lekönyvelve'),
+        description: t('accounting:subledger.toasts.post_entry_success_desc', {
+          docId: currentInvoice?.document_id,
+          itemsCount: currentInvoice?.items.length || 1,
+          defaultValue: `A(z) ${currentInvoice?.document_id} számla (${currentInvoice?.items.length || 1} tétel) véglegesen rögzítve lett.`
+        }),
       });
       queryClient.invalidateQueries({ queryKey: subledgerQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: ['acc-journal-entries'] });
@@ -345,7 +351,7 @@ export function SubledgerPostingModal({
     },
     onError: (err: any) => {
       toast({
-        title: 'Könyvelési hiba',
+        title: t('accounting:subledger.toasts.post_entry_error_title', 'Könyvelési hiba'),
         description: err.message || 'A tétel könyvelése sikertelen volt.',
         variant: 'destructive',
       });
@@ -366,8 +372,11 @@ export function SubledgerPostingModal({
         }
       }
       toast({
-        title: 'Változtatások elmentve',
-        description: `A(z) ${currentInvoice.document_id} számla kontírozása piszkozatként sikeresen frissítve lett.`,
+        title: t('accounting:subledger.toasts.save_draft_success_title', 'Változtatások elmentve'),
+        description: t('accounting:subledger.toasts.save_draft_success_desc', {
+          docId: currentInvoice.document_id,
+          defaultValue: `A(z) ${currentInvoice.document_id} számla kontírozása piszkozatként sikeresen frissítve lett.`
+        }),
       });
       queryClient.invalidateQueries({ queryKey: subledgerQueryKeys.all });
       if (currentIndex < invoices.length - 1) {
@@ -385,8 +394,8 @@ export function SubledgerPostingModal({
     if (!currentInvoice) return;
     if (!isBalanced) {
       toast({
-        title: 'Nincs egyensúlyban',
-        description: 'A könyveléshez a Tartozik és Követel összegeknek egyezniük kell (∑T = ∑K)!',
+        title: t('accounting:subledger.toasts.imbalance_title', 'Nincs egyensúlyban'),
+        description: t('accounting:subledger.toasts.imbalance_desc', 'A könyveléshez a Tartozik és Követel összegeknek egyezniük kell (∑T = ∑K)!'),
         variant: 'destructive',
       });
       return;
@@ -409,12 +418,12 @@ export function SubledgerPostingModal({
                 {isEditMode ? (
                   <>
                     <ArrowRightLeft className="w-5 h-5 text-indigo-600" />
-                    <span>Számla módosítása és kontírozása</span>
+                    <span>{t('accounting:subledger.posting_modal.title_edit', 'Számla módosítása és kontírozása')}</span>
                   </>
                 ) : (
                   <>
                     <FileCheck className="w-5 h-5 text-indigo-600" />
-                    <span>Számla könyvelése (Kontírozás ellenőrzése)</span>
+                    <span>{t('accounting:subledger.posting_modal.title', 'Számla könyvelése (Kontírozás ellenőrzése)')}</span>
                   </>
                 )}
               </DialogTitle>
@@ -507,7 +516,7 @@ export function SubledgerPostingModal({
             {/* Financial Amounts Breakdown: Nettó, ÁFA, Bruttó */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t">
               <div className="p-2.5 rounded-lg bg-card border">
-                <div className="text-[11px] text-muted-foreground uppercase font-medium">Nettó összeg</div>
+                <div className="text-[11px] text-muted-foreground uppercase font-medium">{t('accounting:subledger.posting_modal.net_amount', 'Nettó összeg')}</div>
                 <div className="text-lg font-bold text-foreground font-mono">
                   {currentInvoice.currency !== 'HUF' ? (
                     <div>
@@ -523,7 +532,7 @@ export function SubledgerPostingModal({
               </div>
 
               <div className="p-2.5 rounded-lg bg-card border">
-                <div className="text-[11px] text-muted-foreground uppercase font-medium">ÁFA összeg</div>
+                <div className="text-[11px] text-muted-foreground uppercase font-medium">{t('accounting:subledger.posting_modal.vat_amount', 'ÁFA összeg')}</div>
                 <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400 font-mono">
                   {currentInvoice.currency !== 'HUF' ? (
                     <div>
@@ -541,7 +550,7 @@ export function SubledgerPostingModal({
               </div>
 
               <div className="p-2.5 rounded-lg bg-card border">
-                <div className="text-[11px] text-muted-foreground uppercase font-medium">Bruttó összeg</div>
+                <div className="text-[11px] text-muted-foreground uppercase font-medium">{t('accounting:subledger.posting_modal.gross_amount', 'Bruttó összeg')}</div>
                 <div className="text-lg font-bold text-foreground font-mono">
                   {currentInvoice.currency !== 'HUF' ? (
                     <div>
@@ -620,11 +629,11 @@ export function SubledgerPostingModal({
                   <thead>
                     <tr className="bg-muted/70 border-b text-muted-foreground font-semibold">
                       <th className="p-2.5 w-12 text-center">#</th>
-                      <th className="p-2.5 w-24 text-center">Oldal (T/K)</th>
-                      <th className="p-2.5 min-w-[260px]">Főkönyvi számla (Kontír)</th>
-                      <th className="p-2.5 w-40 text-right">Összeg (Ft)</th>
-                      <th className="p-2.5 w-28">Szerepkör</th>
-                      <th className="p-2.5 min-w-[180px]">Megjegyzés / Sor leírás</th>
+                      <th className="p-2.5 w-24 text-center">{t('accounting:subledger.posting_modal.col_side', 'Oldal (T/K)')}</th>
+                      <th className="p-2.5 min-w-[260px]">{t('accounting:subledger.posting_modal.col_gl', 'Főkönyvi számla (Kontír)')}</th>
+                      <th className="p-2.5 w-40 text-right">{t('accounting:subledger.posting_modal.col_amount', 'Összeg (Ft)')}</th>
+                      <th className="p-2.5 w-28">{t('accounting:subledger.posting_modal.col_role', 'Szerepkör')}</th>
+                      <th className="p-2.5 min-w-[180px]">{t('accounting:subledger.posting_modal.col_desc', 'Megjegyzés / Sor leírás')}</th>
                       <th className="p-2.5 w-12 text-center"></th>
                     </tr>
                   </thead>
@@ -808,12 +817,12 @@ export function SubledgerPostingModal({
                 {isBalanced ? (
                   <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 py-1 px-2.5 font-sans">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Mérlegben (∑T = ∑K)</span>
+                    <span>{t('accounting:subledger.posting_modal.balanced_badge', 'Mérlegben (∑T = ∑K)')}</span>
                   </Badge>
                 ) : (
                   <Badge className="bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1.5 py-1 px-2.5 font-sans">
                     <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                    <span>Nincs egyensúlyban</span>
+                    <span>{t('accounting:subledger.posting_modal.imbalance_badge', 'Nincs egyensúlyban')}</span>
                   </Badge>
                 )}
               </div>
@@ -835,7 +844,7 @@ export function SubledgerPostingModal({
                 }}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
-                Teljes kézi szerkesztő megnyitása →
+                {t('accounting:subledger.posting_modal.open_full_editor', 'Teljes kézi szerkesztő megnyitása →')}
               </Button>
             )}
           </div>
@@ -848,7 +857,7 @@ export function SubledgerPostingModal({
               disabled={isSaving}
               className="text-xs"
             >
-              Mégse
+              {t('accounting:subledger.posting_modal.btn_cancel', 'Mégse')}
             </Button>
 
             <Button
@@ -863,7 +872,7 @@ export function SubledgerPostingModal({
               ) : (
                 <Save className="w-3.5 h-3.5" />
               )}
-              <span>Mentés piszkozatként</span>
+              <span>{t('accounting:subledger.posting_modal.btn_save_draft', 'Mentés piszkozatként')}</span>
             </Button>
 
             <Button
@@ -877,7 +886,7 @@ export function SubledgerPostingModal({
               ) : (
                 <CheckCircle2 className="w-3.5 h-3.5" />
               )}
-              <span>Végleges Könyvelés</span>
+              <span>{t('accounting:subledger.posting_modal.btn_post', 'Végleges Könyvelés')}</span>
             </Button>
           </div>
         </DialogFooter>

@@ -160,7 +160,7 @@ export function InvoiceApprovalDialog({
             </div>
             {(invoice.vevo_nev || invoice.vevo_vat_id) && (
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Vevő a számlán:</span>
+                <span className="text-muted-foreground">{t('invoices:dialogs.approval.buyer_on_invoice')}</span>
                 <span className={cn("font-medium truncate max-w-[240px]", buyerMismatch.isMismatch && "text-rose-600 dark:text-rose-400 font-bold")}>
                   {invoice.vevo_nev || '-'} {invoice.vevo_vat_id ? `(${invoice.vevo_vat_id})` : ''}
                 </span>
@@ -184,16 +184,16 @@ export function InvoiceApprovalDialog({
               <AlertOctagon className="h-5 w-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
               <div className="space-y-1.5 flex-1">
                 <p className="font-bold text-sm text-rose-700 dark:text-rose-300">
-                  Figyelem: A számla vevője nem az aktív cég!
+                  {t('invoices:dialogs.approval.buyer_mismatch_alert', 'A számla vevője nem az aktív cég!')}
                 </p>
                 <div className="text-xs space-y-1 bg-white/80 dark:bg-rose-900/30 p-2 rounded border border-rose-200 dark:border-rose-800/60 font-mono">
                   <div>
-                    <span className="text-muted-foreground font-sans">Számlán lévő vevő:</span>{' '}
-                    <strong className="text-rose-800 dark:text-rose-200">{buyerMismatch.buyerName || 'Ismeretlen'}</strong>
+                    <span className="text-muted-foreground font-sans">{t('invoices:dialogs.approval.buyer_on_invoice')}</span>{' '}
+                    <strong className="text-rose-800 dark:text-rose-200">{buyerMismatch.buyerName || t('invoices:warnings.unknown_buyer')}</strong>
                     {buyerMismatch.buyerTax && <span className="ml-1 text-rose-600 dark:text-rose-300">({buyerMismatch.buyerTax})</span>}
                   </div>
                   <div>
-                    <span className="text-muted-foreground font-sans">Aktuális cég:</span>{' '}
+                    <span className="text-muted-foreground font-sans">{t('invoices:dialogs.approval.active_company')}</span>{' '}
                     <span>{buyerMismatch.companyName || selectedCompany?.name || '-'}</span>
                     {(buyerMismatch.companyTax || selectedCompany?.tax_number) && (
                       <span className="ml-1 text-muted-foreground">({buyerMismatch.companyTax || selectedCompany?.tax_number})</span>
@@ -201,7 +201,7 @@ export function InvoiceApprovalDialog({
                   </div>
                 </div>
                 <p className="text-[11px] text-rose-800 dark:text-rose-300 leading-normal">
-                  Ez a bizonylat vélhetően tévesen lett feltöltve ebbe a cégbe. Kérjük, ellenőrizd a bizonylatot a jóváhagyás előtt!
+                  {t('invoices:dialogs.approval.buyer_mismatch_desc')}
                 </p>
               </div>
             </div>
@@ -271,7 +271,7 @@ export function InvoiceApprovalDialog({
                 className="mt-0.5 data-[state=checked]:bg-rose-600 data-[state=checked]:border-rose-600"
               />
               <span className="text-xs font-semibold text-rose-900 dark:text-rose-200 leading-snug">
-                Tudomásul veszem, hogy a számla vevője eltér az aktív cégtől, és így is engedélyezem a könyvelést.
+                {t('invoices:dialogs.approval.acknowledge_mismatch')}
               </span>
             </label>
           )}

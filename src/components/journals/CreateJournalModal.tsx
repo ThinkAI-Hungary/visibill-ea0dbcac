@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { BookOpen, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface CreatedJournalPayload {
   id: string;
@@ -105,6 +106,7 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
   glAccounts = [],
   onJournalCreated,
 }) => {
+  const { t } = useTranslation(['accounting', 'common']);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -161,12 +163,20 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
     const trimmedCurrency = currency.trim().toUpperCase() || 'HUF';
 
     if (!trimmedCode) {
-      toast({ title: 'Hiányzó naplókód', description: 'Kérjük adjon meg egy naplókódot (pl. B3).', variant: 'destructive' });
+      toast({
+        title: t('accounting:journals.create_modal.toast_missing_code_title', 'Hiányzó naplókód'),
+        description: t('accounting:journals.create_modal.toast_missing_code_desc', 'Kérjük adjon meg egy naplókódot (pl. B3).'),
+        variant: 'destructive',
+      });
       return;
     }
 
     if (!trimmedName) {
-      toast({ title: 'Hiányzó megnevezés', description: 'Kérjük adja meg a napló megnevezését (pl. OTP Bank HUF).', variant: 'destructive' });
+      toast({
+        title: t('accounting:journals.create_modal.toast_missing_name_title', 'Hiányzó megnevezés'),
+        description: t('accounting:journals.create_modal.toast_missing_name_desc', 'Kérjük adja meg a napló megnevezését (pl. OTP Bank HUF).'),
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -176,8 +186,11 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
     );
     if (isDuplicate) {
       toast({
-        title: 'Már létező naplókód',
-        description: `A(z) "${trimmedCode}" kódú napló már létezik ennél a cégnél. Kérjük válasszon másikat!`,
+        title: t('accounting:journals.create_modal.toast_duplicate_title', 'Már létező naplókód'),
+        description: t('accounting:journals.create_modal.toast_duplicate_desc', {
+          code: trimmedCode,
+          defaultValue: `A(z) "${trimmedCode}" kódú napló már létezik ennél a cégnél. Kérjük válasszon másikat!`,
+        }),
         variant: 'destructive',
       });
       return;
@@ -204,8 +217,13 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
       if (error) throw error;
 
       toast({
-        title: 'Napló sikeresen létrehozva',
-        description: `${data.code} - ${data.name} (${data.currency}) rögzítve.`,
+        title: t('accounting:journals.create_modal.toast_success_title', 'Napló sikeresen létrehozva'),
+        description: t('accounting:journals.create_modal.toast_success_desc', {
+          code: data.code,
+          name: data.name,
+          currency: data.currency,
+          defaultValue: `${data.code} - ${data.name} (${data.currency}) rögzítve.`,
+        }),
       });
 
       // Invalidate relevant React Query caches
@@ -219,8 +237,8 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
       onOpenChange(false);
     } catch (err: any) {
       toast({
-        title: 'Hiba a napló mentésekor',
-        description: err.message || 'Nem sikerült menteni az új könyvelési naplót.',
+        title: t('accounting:journals.create_modal.toast_error_title', 'Hiba a napló mentésekor'),
+        description: err.message || t('accounting:journals.create_modal.toast_error_desc', 'Nem sikerült menteni az új könyvelési naplót.'),
         variant: 'destructive',
       });
     } finally {
@@ -235,25 +253,25 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-primary" />
-              <span>Új Könyvelési Napló Létrehozása</span>
+              <span>{t('accounting:journals.create_modal.title', 'Új Könyvelési Napló Létrehozása')}</span>
             </DialogTitle>
             <DialogDescription>
-              Hozzon létre új analitikus könyvelési naplót a banki, pénztári vagy vegyes tételek önálló sorszámozásához.
+              {t('accounting:journals.create_modal.description', 'Hozzon létre új analitikus könyvelési naplót a banki, pénztári vagy vegyes tételek önálló sorszámozásához.')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="journal-type">Naplótípus *</Label>
+                <Label htmlFor="journal-type">{t('accounting:journals.create_modal.field_type', 'Naplótípus *')}</Label>
                 <Select value={type} onValueChange={handleTypeChange}>
                   <SelectTrigger id="journal-type">
-                    <SelectValue placeholder="Válassz típust..." />
+                    <SelectValue placeholder={t('accounting:journals.create_modal.type_placeholder', 'Válassz típust...')} />
                   </SelectTrigger>
                   <SelectContent>
                     {JOURNAL_TYPES.map(jt => (
                       <SelectItem key={jt.value} value={jt.value}>
-                        {jt.label}
+                        {t(`accounting:journals.create_modal.types.${jt.value}`, jt.label)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -261,7 +279,7 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="journal-code">Naplókód *</Label>
+                <Label htmlFor="journal-code">{t('accounting:journals.create_modal.field_code', 'Naplókód *')}</Label>
                 <Input
                   id="journal-code"
                   placeholder="pl. B3"
@@ -274,10 +292,10 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="journal-name">Napló megnevezése *</Label>
+              <Label htmlFor="journal-name">{t('accounting:journals.create_modal.field_name', 'Napló megnevezése *')}</Label>
               <Input
                 id="journal-name"
-                placeholder="pl. OTP Bank HUF vagy VÚB Banka EUR"
+                placeholder={t('accounting:journals.create_modal.name_placeholder', 'pl. OTP Bank HUF vagy VÚB Banka EUR')}
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
@@ -286,10 +304,10 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="journal-currency">Pénznem *</Label>
+                <Label htmlFor="journal-currency">{t('accounting:journals.create_modal.field_currency', 'Pénznem *')}</Label>
                 <Select value={currency} onValueChange={setCurrency}>
                   <SelectTrigger id="journal-currency">
-                    <SelectValue placeholder="Pénznem" />
+                    <SelectValue placeholder={t('accounting:journals.create_modal.currency_placeholder', 'Pénznem')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="HUF">HUF - Magyar forint</SelectItem>
@@ -302,17 +320,17 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="journal-gl-account">Kapcsolt főkönyvi szám</Label>
+                <Label htmlFor="journal-gl-account">{t('accounting:journals.create_modal.field_gl_account', 'Kapcsolt főkönyvi szám')}</Label>
                 {filteredGlAccounts.length > 0 ? (
                   <Select
                     value={connectedGlAccount || 'none'}
                     onValueChange={v => setConnectedGlAccount(v === 'none' ? '' : v)}
                   >
                     <SelectTrigger id="journal-gl-account">
-                      <SelectValue placeholder="Válassz számlát..." />
+                      <SelectValue placeholder={t('accounting:journals.create_modal.gl_placeholder', 'Válassz számlát...')} />
                     </SelectTrigger>
                     <SelectContent className="max-h-[220px]">
-                      <SelectItem value="none">Nincs hozzárendelve</SelectItem>
+                      <SelectItem value="none">{t('accounting:journals.create_modal.gl_none', 'Nincs hozzárendelve')}</SelectItem>
                       {filteredGlAccounts.map(ga => (
                         <SelectItem key={ga.id} value={ga.gl_number}>
                           {ga.gl_number} - {ga.short_name}
@@ -339,7 +357,7 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Mégse
+              {t('common:actions.cancel', 'Mégse')}
             </Button>
             <Button
               type="submit"
@@ -349,10 +367,10 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Mentés...
+                  {t('accounting:journals.create_modal.btn_submitting', 'Mentés...')}
                 </>
               ) : (
-                'Napló Létrehozása'
+                t('accounting:journals.create_modal.btn_submit', 'Napló Létrehozása')
               )}
             </Button>
           </DialogFooter>

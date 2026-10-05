@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import fs from 'fs';
+import path from 'path';
 import i18n, { resources } from '@/lib/i18n';
 import { getActiveLocale, formatCurrencyLocale } from '@/lib/locale/formatters';
 import { generateScopedPath, extractPageSegment, resolveAuthTarget } from '@/lib/navigation';
@@ -224,7 +226,7 @@ describe('i18n and Localization Suite', () => {
       expect(i18n.t('accounting:journals.period_closing')).toBe('Időszakzárás');
       expect(i18n.t('accounting:journals.new_manual_entry')).toBe('Új vegyes bizonylat');
       expect(i18n.t('accounting:journals.worklist')).toBe('Munkalista');
-      expect(i18n.t('accounting:journals.opening.banner_title')).toBe('Nyitó Napló (NY) — Számviteli Nyitás Szükséges');
+      expect(i18n.t('accounting:journals.opening.banner_title')).toBe('Nyitó Napló (NY) — Sztv. 491. Nyitó mérleg számla');
       expect(i18n.t('accounting:journals.table.col_journal_num')).toBe('Naplószám');
       expect(i18n.t('accounting:journals.status.kezi_piszkozat')).toBe('Kézi piszkozat');
       expect(i18n.t('accounting:journals.batch_bar.post_selected')).toBe('Kijelöltek könyvelése');
@@ -530,6 +532,134 @@ describe('i18n and Localization Suite', () => {
         expect(missingInHr, `Missing keys in hr for namespace "${ns}"`).toEqual([]);
         expect(missingInHu, `Missing keys in hu for namespace "${ns}"`).toEqual([]);
       }
+    });
+
+    it('guarantees zero duplicate keys in any JSON locale file across all namespaces (AST duplicate key check)', () => {
+      function findDuplicateKeysInJson(text: string): Array<{ key: string; line: number; prevLine: number }> {
+        const duplicates: Array<{ key: string; line: number; prevLine: number }> = [];
+        let pos = 0;
+        let line = 1;
+
+        function advance() {
+          if (text[pos] === '\n') {
+            line++;
+          }
+          pos++;
+        }
+
+        function skipWhitespace() {
+          while (pos < text.length && /\s/.test(text[pos])) {
+            advance();
+          }
+        }
+
+        function parseString(): string {
+          advance(); // skip "
+          let str = '';
+          while (pos < text.length) {
+            if (text[pos] === '\\') {
+              advance();
+              str += text[pos];
+              advance();
+            } else if (text[pos] === '"') {
+              advance();
+              break;
+            } else {
+              str += text[pos];
+              advance();
+            }
+          }
+          return str;
+        }
+
+        function parseValue() {
+          skipWhitespace();
+          if (pos >= text.length) return;
+          if (text[pos] === '{') {
+            parseObject();
+          } else if (text[pos] === '[') {
+            parseArray();
+          } else if (text[pos] === '"') {
+            parseString();
+          } else {
+            while (pos < text.length && !/[,\]\}\s]/.test(text[pos])) {
+              advance();
+            }
+          }
+        }
+
+        function parseArray() {
+          advance();
+          while (pos < text.length) {
+            skipWhitespace();
+            if (text[pos] === ']') {
+              advance();
+              break;
+            }
+            parseValue();
+            skipWhitespace();
+            if (text[pos] === ',') {
+              advance();
+            }
+          }
+        }
+
+        function parseObject() {
+          advance();
+          const seenKeys = new Map<string, number>();
+          while (pos < text.length) {
+            skipWhitespace();
+            if (text[pos] === '}') {
+              advance();
+              break;
+            }
+            if (text[pos] === '"') {
+              const keyLine = line;
+              const key = parseString();
+              if (seenKeys.has(key)) {
+                duplicates.push({
+                  key,
+                  line: keyLine,
+                  prevLine: seenKeys.get(key)!,
+                });
+              } else {
+                seenKeys.set(key, keyLine);
+              }
+              skipWhitespace();
+              if (text[pos] === ':') {
+                advance();
+              }
+              parseValue();
+              skipWhitespace();
+              if (text[pos] === ',') {
+                advance();
+              }
+            } else {
+              advance();
+            }
+          }
+        }
+
+        parseValue();
+        return duplicates;
+      }
+
+      const localesDir = path.resolve(__dirname, '../locales');
+      const allDuplicates: Array<{ file: string; key: string; line: number; prevLine: number }> = [];
+
+      for (const lang of ['hu', 'hr']) {
+        const dir = path.join(localesDir, lang);
+        const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
+        for (const file of files) {
+          const content = fs.readFileSync(path.join(dir, file), 'utf8');
+          const dups = findDuplicateKeysInJson(content);
+          for (const d of dups) {
+            allDuplicates.push({ file: `${lang}/${file}`, ...d });
+          }
+        }
+      }
+
+      expect(allDuplicates, `Duplicate JSON keys detected in locale files:\n${JSON.stringify(allDuplicates, null, 2)}`).toEqual([]);
     });
   });
 });

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users } from 'lucide-react';
 import { SalaryLinkCard } from './SalaryLinkCard';
@@ -38,6 +39,8 @@ export function EmployeeRatesPanel({
   autoEditRateId,
   onRateEditOpenChange,
 }: EmployeeRatesPanelProps) {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   // Merge: salary employees + employee_rates entries that don't have salary data
   const salaryEmployeeNames = new Set(employeeGroups.map(g => g.employeeName));
   const ratesOnlyEmployees = employeeRates
@@ -55,9 +58,9 @@ export function EmployeeRatesPanel({
         <CardContent className="p-6">
           <div className="text-center py-12 text-muted-foreground">
             <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">Nincsenek dolgozók</p>
+            <p className="text-lg font-medium">{t('working_time.employee_tabs.no_employees', 'Nincsenek dolgozók')}</p>
             <p className="text-sm mt-1">
-              A bérlista feltöltésekor a rendszer automatikusan felismeri a dolgozókat.
+              {t('working_time.employee_tabs.no_employees_desc', 'A bérlista feltöltésekor a rendszer automatikusan felismeri a dolgozókat.')}
             </p>
           </div>
         </CardContent>
@@ -71,9 +74,9 @@ export function EmployeeRatesPanel({
         <div className="flex items-center gap-2 mb-4">
           <Users className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">
-            Dolgozók és óradíjak{' '}
+            {t('working_time.rates_panel.title', 'Dolgozók és óradíjak')}{' '}
             <span className="text-muted-foreground font-normal">
-              ({allEmployees.length} fő)
+              {t('working_time.rates_panel.count', { count: allEmployees.length, defaultValue: `(${allEmployees.length} fő)` })}
             </span>
           </h2>
         </div>
@@ -86,19 +89,19 @@ export function EmployeeRatesPanel({
           <div />
           {/* name */}
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Dolgozó
+            {t('working_time.employee_panel.col_employee', 'Dolgozó')}
           </span>
           {/* status */}
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
-            Státusz
+            {t('working_time.employee_panel.col_status', 'Státusz')}
           </span>
           {/* cost */}
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
-            Bérköltség
+            {t('working_time.employee_panel.col_cost', 'Bérköltség')}
           </span>
           {/* rate */}
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
-            Óradíj
+            {t('working_time.employee_panel.col_rate', 'Óradíj')}
           </span>
           {/* action */}
           <div />

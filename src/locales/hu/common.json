@@ -23,7 +23,10 @@
     "saving": "Mentés...",
     "show_more": "Továbbiak",
     "show_less": "Kevesebb",
-    "new_note": "Új jegyzet"
+    "new_note": "Új jegyzet",
+    "print": "Nyomtatás",
+    "regenerate": "Auto-generálás",
+    "manage": "Kezelés"
   },
   "status": {
     "loading": "Betöltés...",
@@ -35,7 +38,20 @@
     "inactive": "Inaktív",
     "pending": "Függőben",
     "completed": "Befejezve",
-    "failed": "Sikertelen"
+    "failed": "Sikertelen",
+    "ready": "Kész!",
+    "starting": "Indítás...",
+    "active_success": "Aktív / Sikeres",
+    "no_data": "Nincs adat"
+  },
+  "buttons": {
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "edit": "Szerkesztés",
+    "delete": "Törlés",
+    "close": "Bezárás",
+    "confirm": "Megerősítés",
+    "continue": "Folytatás"
   },
   "labels": {
     "total": "Összesen",
@@ -52,7 +68,9 @@
     "details": "Részletek",
     "general": "Általános",
     "inbound": "Bejövő",
-    "outbound": "Kimenő"
+    "outbound": "Kimenő",
+    "partner": "Partner",
+    "exchange_rate": "Árfolyam"
   },
   "date_picker": {
     "period": "Időszak:",
@@ -98,7 +116,39 @@
     "joining": "Csatlakozás...",
     "edit_desc": "Módosítsd a cég adatait",
     "save_changes": "Változások mentése",
-    "delete_confirm": "Biztosan törölni szeretnéd a(z) {{name}} céget? Ez a művelet nem visszavonható, és a céghez kapcsolódó összes adat is törlődik."
+    "delete_confirm": "Biztosan törölni szeretnéd a(z) {{name}} céget? Ez a művelet nem visszavonható, és a céghez kapcsolódó összes adat is törlődik.",
+    "country_label": "Ország / Joghatóság",
+    "country_hu": "🇭🇺 Magyarország (NAV Online Számla)",
+    "country_hr": "🇭🇷 Hrvatska / Horvátország (OIB, PDV)",
+    "oib_label": "OIB / Horvát adószám (11 számjegy)",
+    "oib_placeholder": "Pl. 95114485977",
+    "tax_placeholder": "Pl. 12345678-2-42 vagy 12345678",
+    "nav_lookup_button": "NAV lekérdezés",
+    "nav_lookup_title": "Cégadatok automatikus kitöltése a NAV-ból",
+    "oib_hint": "Horvát cég esetén add meg a 11 számjegyű hivatalos OIB azonosítót.",
+    "nav_hint": "Írd be az adószámot és kattints a lekérdezésre az adatok automatikus betöltéséhez!",
+    "name_placeholder": "Pl. Példa Kft.",
+    "address_placeholder": "Pl. 1234 Budapest, Példa utca 1.",
+    "toast_invalid_tax_title": "Érvénytelen adószám",
+    "toast_invalid_tax_desc": "Kérjük, adj meg legalább 8 számjegyet az adószámból a lekérdezéshez!",
+    "toast_nav_lookup_failed_title": "Nem sikerült lekérdezni a cégadatokat",
+    "toast_nav_lookup_no_data": "A NAV nem adott vissza adatot a megadott adószámra.",
+    "toast_nav_lookup_success_title": "Cégadatok sikeresen betöltve a NAV-ból!",
+    "toast_nav_lookup_error_title": "Hiba a NAV lekérdezés során",
+    "toast_company_name_required": "A cég neve kötelező!",
+    "toast_tax_number_required": "Az adószám kötelező!",
+    "toast_create_success": "Cég sikeresen létrehozva!",
+    "toast_create_error": "Hiba történt a cég létrehozása során",
+    "toast_join_code_required": "A csatlakozási kód kötelező!",
+    "toast_already_member": "Már tagja vagy ennek a cégnek!",
+    "toast_invalid_join_code": "Érvénytelen csatlakozási kód!",
+    "toast_join_code_expired": "A csatlakozási kód lejárt! Kérj új kódot a cég tulajdonosától.",
+    "toast_join_success": "Sikeresen csatlakoztál a céghez!",
+    "toast_join_error": "Hiba történt a csatlakozás során",
+    "toast_update_success": "Cég sikeresen frissítve!",
+    "toast_update_error": "Hiba történt a cég frissítése során",
+    "toast_delete_success": "Cég sikeresen törölve!",
+    "toast_delete_error": "Hiba történt a cég törlése során"
   },
   "access_denied": {
     "title": "Hozzáférés megtagadva",
@@ -265,6 +315,71 @@
     "doc_retroactive_matched_desc": "{{fileName}} párosítva lett egy fuvarhoz.",
     "pdf_export_done_title": "PDF export kész!",
     "pdf_export_done_desc": "{{count}} számla exportálva. Navigálj a Számlák oldalra a letöltéshez."
+  },
+  "errors": {
+    "unknown": "Ismeretlen hiba történt",
+    "no_company_selected": "Cég nincs kiválasztva."
+  },
+  "unknown_error": "Ismeretlen hiba történt",
+  "error": "Hiba történt",
+  "success": "Sikeres művelet",
+  "cancel": "Mégse",
+  "edit": "Szerkesztés",
+  "saving": "Mentés...",
+  "export": "Exportálás",
+  "no_permission": "Nincs írási jogosultságod",
+  "no_data": "Nincs adat",
+  "all": "Összes",
+  "loading": "Betöltés...",
+  "error_occurred": "Hiba történt",
+  "export_error": "Exportálási hiba",
+  "no_results": "Nincs találat a keresésre.",
+  "try_different_search": "Próbálkozz más kifejezéssel vagy töröld a keresést.",
+  "select_company": "Válassz egy céget a folytatáshoz",
+  "select_company_continue": "Válassz egy céget a folytatáshoz",
+  "back": "Vissza",
+  "next": "Tovább",
+  "close": "Bezárás",
+  "icon_picker": {
+    "search_placeholder": "Ikon keresése...",
+    "color_title": "Szín választás",
+    "no_results": "Nincs találat",
+    "categories": {
+      "finance": "Pénzügyek",
+      "business": "Üzlet",
+      "marketing": "Marketing",
+      "it": "IT & Technológia",
+      "transport": "Szállítás",
+      "office": "Iroda",
+      "utilities": "Közüzemi",
+      "education": "Oktatás",
+      "healthcare": "Egészségügy",
+      "maintenance": "Karbantartás",
+      "analytics": "Analitika",
+      "other": "Egyéb"
+    },
+    "colors": {
+      "green": "Zöld",
+      "blue": "Kék",
+      "yellow": "Sárga",
+      "cyan": "Cián",
+      "orange": "Narancs",
+      "purple": "Lila",
+      "pink": "Rózsaszín",
+      "indigo": "Indigó",
+      "turquoise": "Türkiz",
+      "red": "Piros",
+      "light_green": "Halvány zöld",
+      "steel_blue": "Acélkék",
+      "amber": "Borostyán",
+      "light_cyan": "Halvány cián",
+      "amethyst": "Ametiszt",
+      "bordeaux": "Bordó",
+      "emerald": "Smaragd",
+      "ocean": "Óceán",
+      "terracotta": "Terrakotta",
+      "gray": "Szürke"
+    }
   }
 }
 

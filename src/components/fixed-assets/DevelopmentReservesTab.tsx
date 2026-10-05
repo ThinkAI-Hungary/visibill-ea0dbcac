@@ -45,7 +45,11 @@ export function DevelopmentReservesTab() {
     if (!companyId) return;
     const amount = parseFloat(reserveAmount);
     if (!amount || amount <= 0) {
-      toast({ title: 'Hiba', description: 'Kérjük adjon meg egy érvényes összeget!', variant: 'destructive' });
+      toast({
+        title: t('common:status.error', 'Hiba'),
+        description: t('hr:fixed_assets.dev_reserves.invalid_amount', 'Kérjük adjon meg egy érvényes összeget!'),
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -59,12 +63,22 @@ export function DevelopmentReservesTab() {
         description: description.trim() || undefined,
       });
 
-      toast({ title: 'Sikeres rögzítés', description: `${creationYear}. évi fejlesztési tartalék elmentve.` });
+      toast({
+        title: t('hr:fixed_assets.dev_reserves.toast_create_success_title', 'Sikeres rögzítés'),
+        description: t('hr:fixed_assets.dev_reserves.toast_create_success_desc', {
+          defaultValue: `${creationYear}. évi fejlesztési tartalék elmentve.`,
+          year: creationYear,
+        }),
+      });
       setModalOpen(false);
       setReserveAmount('');
       setDescription('');
     } catch (err: any) {
-      toast({ title: 'Hiba a mentés során', description: err?.message || 'Nem sikerült elmenteni a tartalékot', variant: 'destructive' });
+      toast({
+        title: t('hr:fixed_assets.dev_reserves.toast_create_error_title', 'Hiba a mentés során'),
+        description: err?.message || t('common:status.error', 'Nem sikerült elmenteni a tartalékot'),
+        variant: 'destructive',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -72,13 +86,25 @@ export function DevelopmentReservesTab() {
 
   const handleDelete = async (reserve: DevelopmentReserve) => {
     if (!companyId) return;
-    if (!window.confirm(`Biztosan törölni szeretné a ${reserve.creation_year}. évi fejlesztési tartalékot?`)) return;
+    if (
+      !window.confirm(
+        t('hr:fixed_assets.dev_reserves.delete_confirm', {
+          defaultValue: `Biztosan törölni szeretné a ${reserve.creation_year}. évi fejlesztési tartalékot?`,
+          year: reserve.creation_year,
+        })
+      )
+    )
+      return;
 
     try {
       await deleteReserve.mutateAsync({ id: reserve.id, companyId });
-      toast({ title: 'Fejlesztési tartalék törölve' });
+      toast({ title: t('hr:fixed_assets.dev_reserves.toast_delete_success', 'Fejlesztési tartalék törölve') });
     } catch (err: any) {
-      toast({ title: 'Törlés sikertelen', description: err?.message || 'Nem sikerült törölni a tartalékot', variant: 'destructive' });
+      toast({
+        title: t('hr:fixed_assets.dev_reserves.toast_delete_error', 'Törlés sikertelen'),
+        description: err?.message || 'Nem sikerült törölni a tartalékot',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -133,7 +159,7 @@ export function DevelopmentReservesTab() {
         <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Képzett Tartalékok
+              {t('hr:fixed_assets.dev_reserves.kpi_total', 'Képzett Tartalékok')}
             </span>
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <PiggyBank className="h-4 w-4 text-primary" />
@@ -143,7 +169,7 @@ export function DevelopmentReservesTab() {
             {formatCurrency(metrics.total, 'HUF')}
           </p>
           <span className="text-xs text-muted-foreground mt-1 block">
-            Összes rögzített keret
+            {t('hr:fixed_assets.dev_reserves.kpi_total_sub', 'Összes rögzített keret')}
           </span>
         </div>
 
@@ -151,7 +177,7 @@ export function DevelopmentReservesTab() {
         <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Eszközökre Felhasznált
+              {t('hr:fixed_assets.dev_reserves.kpi_utilized', 'Eszközökre Felhasznált')}
             </span>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -161,7 +187,9 @@ export function DevelopmentReservesTab() {
             {formatCurrency(metrics.utilized, 'HUF')}
           </p>
           <span className="text-xs text-muted-foreground mt-1 block">
-            {metrics.total > 0 ? `${Math.round((metrics.utilized / metrics.total) * 100)}% felhasználva` : '0%'}
+            {metrics.total > 0
+              ? `${Math.round((metrics.utilized / metrics.total) * 100)}% ${t('hr:fixed_assets.dev_reserves.utilized_suffix', 'felhasználva')}`
+              : '0%'}
           </span>
         </div>
 
@@ -169,7 +197,7 @@ export function DevelopmentReservesTab() {
         <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Szabad Keret
+              {t('hr:fixed_assets.dev_reserves.kpi_remaining', 'Szabad Keret')}
             </span>
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
               <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -179,7 +207,7 @@ export function DevelopmentReservesTab() {
             {formatCurrency(metrics.remaining, 'HUF')}
           </p>
           <span className="text-xs text-muted-foreground mt-1 block">
-            Beruházásra fordítható még
+            {t('hr:fixed_assets.dev_reserves.kpi_remaining_sub', 'Beruházásra fordítható még')}
           </span>
         </div>
 
@@ -187,17 +215,17 @@ export function DevelopmentReservesTab() {
         <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Következő Határidő
+              {t('hr:fixed_assets.dev_reserves.kpi_next_expiry', 'Következő Határidő')}
             </span>
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
               <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
           <p className="text-xl font-bold mt-2 text-foreground">
-            {metrics.nearestExp ? metrics.nearestExp.replace(/-/g, '.') : 'Nincs lejáró keret'}
+            {metrics.nearestExp ? metrics.nearestExp.replace(/-/g, '.') : t('hr:fixed_assets.dev_reserves.kpi_no_expiry', 'Nincs lejáró keret')}
           </p>
           <span className="text-xs text-muted-foreground mt-1 block">
-            Tao. tv. 4 éves jogvesztő határidő
+            {t('hr:fixed_assets.dev_reserves.kpi_tax_law_sub', 'Tao. tv. 4 éves jogvesztő határidő')}
           </span>
         </div>
       </div>
@@ -209,7 +237,7 @@ export function DevelopmentReservesTab() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Keresés év vagy megjegyzés..."
+              placeholder={t('hr:fixed_assets.dev_reserves.search_placeholder', 'Keresés év vagy megjegyzés...')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="pl-8 text-sm h-9"
@@ -220,19 +248,22 @@ export function DevelopmentReservesTab() {
               onClick={() => setStatusFilter('all')}
               className={`px-2.5 py-1 text-xs rounded-sm transition-colors ${statusFilter === 'all' ? 'bg-background shadow-xs font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              Mind ({reserves.length})
+              {t('hr:fixed_assets.dev_reserves.filter_all', {
+                defaultValue: `Mind (${reserves.length})`,
+                count: reserves.length
+              })}
             </button>
             <button
               onClick={() => setStatusFilter('active')}
               className={`px-2.5 py-1 text-xs rounded-sm transition-colors ${statusFilter === 'active' ? 'bg-background shadow-xs font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              Aktív
+              {t('hr:fixed_assets.dev_reserves.filter_active', 'Aktív')}
             </button>
             <button
               onClick={() => setStatusFilter('exhausted')}
               className={`px-2.5 py-1 text-xs rounded-sm transition-colors ${statusFilter === 'exhausted' ? 'bg-background shadow-xs font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              Kimerült
+              {t('hr:fixed_assets.dev_reserves.filter_exhausted', 'Kimerült')}
             </button>
           </div>
         </div>
@@ -243,7 +274,7 @@ export function DevelopmentReservesTab() {
           size="sm"
         >
           <PlusCircle className="h-4 w-4" />
-          Új fejlesztési tartalék
+          {t('hr:fixed_assets.dev_reserves.btn_new', 'Új fejlesztési tartalék')}
         </Button>
       </div>
 
@@ -252,21 +283,21 @@ export function DevelopmentReservesTab() {
         {filtered.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <PiggyBank className="h-10 w-10 mx-auto opacity-30 mb-3" />
-            <p className="font-medium">Nincs megjeleníthető fejlesztési tartalék</p>
-            <p className="text-xs mt-1">Rögzítsen egy új tartalék keretet a fenti gombra kattintva.</p>
+            <p className="font-medium">{t('hr:fixed_assets.dev_reserves.empty_title', 'Nincs megjeleníthető fejlesztési tartalék')}</p>
+            <p className="text-xs mt-1">{t('hr:fixed_assets.dev_reserves.empty_desc', 'Rögzítsen egy új tartalék keretet a fenti gombra kattintva.')}</p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40">
-                <TableHead className="w-[120px]">Képzés Éve</TableHead>
-                <TableHead className="w-[180px]">Képzett Keret (Ft)</TableHead>
-                <TableHead className="w-[220px]">Felhasználtság</TableHead>
-                <TableHead className="w-[180px]">Szabad Keret (Ft)</TableHead>
-                <TableHead className="w-[140px]">Lejárat</TableHead>
-                <TableHead className="w-[110px] text-center">Státusz</TableHead>
-                <TableHead>Megjegyzés</TableHead>
-                <TableHead className="w-[60px] text-right">Művelet</TableHead>
+                <TableHead className="w-[120px]">{t('hr:fixed_assets.dev_reserves.col_creation_year', 'Képzés Éve')}</TableHead>
+                <TableHead className="w-[180px]">{t('hr:fixed_assets.dev_reserves.col_reserve_amount', 'Képzett Keret (Ft)')}</TableHead>
+                <TableHead className="w-[220px]">{t('hr:fixed_assets.dev_reserves.col_usage', 'Felhasználtság')}</TableHead>
+                <TableHead className="w-[180px]">{t('hr:fixed_assets.dev_reserves.col_remaining', 'Szabad Keret (Ft)')}</TableHead>
+                <TableHead className="w-[140px]">{t('hr:fixed_assets.dev_reserves.col_expiration', 'Lejárat')}</TableHead>
+                <TableHead className="w-[110px] text-center">{t('hr:fixed_assets.dev_reserves.col_status', 'Státusz')}</TableHead>
+                <TableHead>{t('hr:fixed_assets.dev_reserves.col_notes', 'Megjegyzés')}</TableHead>
+                <TableHead className="w-[60px] text-right">{t('hr:fixed_assets.dev_reserves.col_action', 'Művelet')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -292,17 +323,17 @@ export function DevelopmentReservesTab() {
                     <TableCell className="text-center">
                       {r.status === 'active' && (
                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs">
-                          Aktív
+                          {t('hr:fixed_assets.dev_reserves.status_active', 'Aktív')}
                         </Badge>
                       )}
                       {r.status === 'exhausted' && (
                         <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs">
-                          Kimerült
+                          {t('hr:fixed_assets.dev_reserves.status_exhausted', 'Kimerült')}
                         </Badge>
                       )}
                       {r.status === 'expired' && (
                         <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
-                          Lejárt
+                          {t('hr:fixed_assets.dev_reserves.status_expired', 'Lejárt')}
                         </Badge>
                       )}
                     </TableCell>
@@ -316,7 +347,7 @@ export function DevelopmentReservesTab() {
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(r)}
                         disabled={(r.utilized_amount || 0) > 0}
-                        title={(r.utilized_amount || 0) > 0 ? 'Nem törölhető, mert már használták fel belőle' : 'Törlés'}
+                        title={(r.utilized_amount || 0) > 0 ? t('hr:fixed_assets.dev_reserves.delete_disabled_tooltip', 'Nem törölhető, mert már használták fel belőle') : t('common:actions.delete', 'Törlés')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -333,16 +364,16 @@ export function DevelopmentReservesTab() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Új Fejlesztési Tartalék Rögzítése</DialogTitle>
+            <DialogTitle>{t('hr:fixed_assets.dev_reserves.modal_new_title', 'Új Fejlesztési Tartalék Rögzítése')}</DialogTitle>
             <DialogDescription>
-              Rögzítse az adóév végén lekötött fejlesztési tartalék összegét a Tao. tv. 7. § (1) f) alapján.
+              {t('hr:fixed_assets.dev_reserves.modal_new_desc', 'Rögzítse az adóév végén lekötött fejlesztési tartalék összegét a Tao. tv. 7. § (1) f) alapján.')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="creation-year">Képzés Éve</Label>
+                <Label htmlFor="creation-year">{t('hr:fixed_assets.dev_reserves.modal_creation_year', 'Képzés Éve')}</Label>
                 <Input
                   id="creation-year"
                   type="number"
@@ -354,7 +385,7 @@ export function DevelopmentReservesTab() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="expiration-date">Felhasználási Határidő</Label>
+                <Label htmlFor="expiration-date">{t('hr:fixed_assets.dev_reserves.modal_expiration_date', 'Felhasználási Határidő')}</Label>
                 <Input
                   id="expiration-date"
                   type="date"
@@ -365,24 +396,24 @@ export function DevelopmentReservesTab() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="reserve-amount">Képzett Összeg (Ft)</Label>
+              <Label htmlFor="reserve-amount">{t('hr:fixed_assets.dev_reserves.modal_amount', 'Képzett Összeg (Ft)')}</Label>
               <Input
                 id="reserve-amount"
                 type="number"
-                placeholder="pl. 10000000"
+                placeholder={t('hr:fixed_assets.dev_reserves.modal_amount_placeholder', 'pl. 10000000')}
                 value={reserveAmount}
                 onChange={e => setReserveAmount(e.target.value)}
               />
               <span className="text-[11px] text-muted-foreground">
-                A 414. Lekötött tartalék számlán rögzített összeg.
+                {t('hr:fixed_assets.dev_reserves.modal_amount_sub', 'A 414. Lekötött tartalék számlán rögzített összeg.')}
               </span>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="description">Megjegyzés / Határozat száma</Label>
+              <Label htmlFor="description">{t('hr:fixed_assets.dev_reserves.modal_notes', 'Megjegyzés / Határozat száma')}</Label>
               <Input
                 id="description"
-                placeholder="pl. 2023. évi taggyűlési határozat szerinti tartalék"
+                placeholder={t('hr:fixed_assets.dev_reserves.modal_notes_placeholder', 'pl. 2023. évi taggyűlési határozat szerinti tartalék')}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
               />
@@ -391,17 +422,17 @@ export function DevelopmentReservesTab() {
             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
               <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
               <span>
-                <strong>Fontos törvényi szabály:</strong> A fejlesztési tartalékból megvalósított tárgyi eszközök után a Tao. tv. 7. § (15) bek. szerint társasági adó szerinti értékcsökkenés (Tao ÉCS) nem számolható el!
+                {t('hr:fixed_assets.dev_reserves.modal_tax_rule', 'Fontos törvényi szabály: A fejlesztési tartalékból megvalósított tárgyi eszközök után a Tao. tv. 7. § (15) bek. szerint társasági adó szerinti értékcsökkenés (Tao ÉCS) nem számolható el!')}
               </span>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalOpen(false)}>
-              Mégse
+              {t('common:actions.cancel', 'Mégse')}
             </Button>
             <Button onClick={handleCreate} disabled={submitting}>
-              {submitting ? 'Mentés...' : 'Tartalék Mentése'}
+              {submitting ? t('common:actions.saving', 'Mentés...') : t('hr:fixed_assets.dev_reserves.btn_save_reserve', 'Tartalék Mentése')}
             </Button>
           </DialogFooter>
         </DialogContent>

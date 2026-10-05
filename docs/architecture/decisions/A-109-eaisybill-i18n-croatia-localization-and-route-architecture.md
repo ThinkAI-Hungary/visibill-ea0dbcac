@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2026-09-11  
-**Utoljára frissítve:** 2026-09-16  
+**Utoljára frissítve:** 2026-10-05  
 
 ---
 
@@ -98,6 +98,14 @@ Ennek feloldására egy többrétegű lokalizációs motort hoztunk létre:
 - A számlafeltöltési folyamat duplikáció-figyelmeztető dialógusait (`DbDuplicateDialog.tsx`, `ListDuplicateDialog.tsx`) leválasztottuk a hardkódolt magyar szövegekről, és bekötöttük az `upload:dialogs.db_duplicate.*` és `upload:dialogs.list_duplicate.*` névterekbe.
 - **Megjelenési Javítás:** A dialógus maximális szélességét (`max-w-xl`), a belső görgetést és a gombok elrendezését responzívvá tettük, megakadályozva a modál szétcsúszását kisebb vagy felbontás-váltott kijelzőkön.
 - **Light Mode Kontraszt:** A másodlagos műveleti gombokhoz explicit kontrasztos háttér- és betűszínt (`bg-muted/80 text-foreground hover:bg-muted font-medium border border-border/60`) rendeltünk, biztosítva az olvashatóságot világos felületi témában is.
+
+### 9. Automatikus Rekurzív JSON AST Duplikáció- és Szintaxis-ellenőrzés (CI / QA Gate)
+A JSON specifikáció (ECMA-404) szerint a duplikált kulcsok szintaktikailag megengedettek, de a JavaScript natív `JSON.parse()` metódusa csendben felülírja a korábbi kulcsot az utolsó előfordulással. Nagy kiterjedésű fordítási állományoknál (pl. `dashboard.json`, `invoices.json`, `settings.json`) ez alattomos regressziókat okozhat (eltűnő fordítások, hibás jelentések).
+
+Ennek megelőzésére a Vitest tesztcsomagba (`src/test/i18n.test.ts`) egy rekurzív AST-alapú JSON tokenizer és kulcs-duplikáció vizsgálót (`findDuplicateKeysInJson`) építettünk be:
+- **Teljes lefedettség:** Mind a 38 nyelvi fájlt (19 HU + 19 HR névtér) bejárja, és minden objektumszinten egyedi halmazban (`Set<string>`) regisztrálja a kulcsokat.
+- **Nulla tűrés duplikációkra:** Bármely duplikált kulcs azonnali tesztelési hibát (`Duplicate key found`) vált ki a pontos kulcsútvonallal és fájlnévvel a build/CI futás során.
+- **Regresszióvédelem:** Meggátolja, hogy fejlesztések során tévedésből azonos kulcsot hozzunk létre egy meglévő blokkban.
 
 ---
 

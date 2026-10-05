@@ -342,7 +342,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
         )}
         <div>
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Fejlesztési tartalék</span>
+            <span className="text-muted-foreground">{t('fixed_assets.detail.dev_reserve', 'Fejlesztési tartalék')}</span>
             {isActive && (
               <Button
                 variant="ghost"
@@ -350,7 +350,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
                 className="h-5 px-1.5 text-[11px] text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
                 onClick={() => setReserveAssignOpen(true)}
               >
-                Kezelés
+                {t('common:actions.manage', 'Kezelés')}
               </Button>
             )}
           </div>
@@ -360,12 +360,12 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
                 {formatCurrency(asset.development_reserve_amount, asset.currency)}
                 {asset.development_reserve?.creation_year && (
                   <span className="text-xs font-normal text-muted-foreground ml-1">
-                    ({asset.development_reserve.creation_year}. évi keret)
+                    {t('fixed_assets.detail.dev_reserve_year_frame', { year: asset.development_reserve.creation_year })}
                   </span>
                 )}
               </>
             ) : (
-              <span className="text-muted-foreground font-normal text-xs">Nincs hozzárendelve</span>
+              <span className="text-muted-foreground font-normal text-xs">{t('fixed_assets.detail.no_dev_reserve', 'Nincs hozzárendelve')}</span>
             )}
           </p>
         </div>
@@ -568,7 +568,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           onClick={() => setReserveAssignOpen(true)}
         >
           <Landmark className="h-4 w-4" />
-          Fejlesztési tartalék
+          {t('fixed_assets.detail.dev_reserve', 'Fejlesztési tartalék')}
         </Button>
       </div>
 
@@ -682,7 +682,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
               <div key={i} className="flex items-center gap-2 text-sm rounded-md px-2.5 py-1.5 group hover:bg-muted/50 transition-colors">
                 <FileText className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate text-primary hover:underline">{doc.name}</a>
-                <button onClick={() => handleDeleteDoc(i)} className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center hover:bg-destructive/10 text-destructive transition-opacity" title="Törlés"><Trash2 className="h-3 w-3" /></button>
+                <button onClick={() => handleDeleteDoc(i)} className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center hover:bg-destructive/10 text-destructive transition-opacity" title={t('common:actions.delete', 'Törlés')}><Trash2 className="h-3 w-3" /></button>
               </div>
             ))}
             {/* Empty state for invoices */}
@@ -700,7 +700,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
               <div key={i} className="flex items-center gap-2 text-sm rounded-md px-2.5 py-1.5 group hover:bg-muted/50 transition-colors">
                 <FileText className="h-4 w-4 flex-shrink-0 text-amber-500" />
                 <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate text-primary hover:underline">{doc.name}</a>
-                <button onClick={() => handleDeleteDoc(i)} className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center hover:bg-destructive/10 text-destructive transition-opacity" title="Törlés"><Trash2 className="h-3 w-3" /></button>
+                <button onClick={() => handleDeleteDoc(i)} className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center hover:bg-destructive/10 text-destructive transition-opacity" title={t('common:actions.delete', 'Törlés')}><Trash2 className="h-3 w-3" /></button>
               </div>
             ))}
             {!(asset.documents || []).some(d => d.type === 'warranty') && (
@@ -715,7 +715,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
               <div key={`legacy-${i}`} className="flex items-center gap-2 text-sm rounded-md px-2.5 py-1.5 group hover:bg-muted/50 transition-colors">
                 <FileText className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate text-primary hover:underline">{doc.name}</a>
-                <button onClick={() => handleDeleteDoc(originalIndex)} className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center hover:bg-destructive/10 text-destructive transition-opacity" title="Törlés"><Trash2 className="h-3 w-3" /></button>
+                <button onClick={() => handleDeleteDoc(originalIndex)} className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center hover:bg-destructive/10 text-destructive transition-opacity" title={t('common:actions.delete', 'Törlés')}><Trash2 className="h-3 w-3" /></button>
               </div>
             );
           })}

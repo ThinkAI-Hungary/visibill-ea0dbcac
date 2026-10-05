@@ -25,7 +25,8 @@ import {
   Banknote,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { cn, formatCurrency } from '@/lib/utils';
 
 interface SubmittedEntry {
@@ -42,6 +43,8 @@ interface SubmittedEntry {
 }
 
 export function SubmittedEntriesPanel() {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
@@ -108,7 +111,7 @@ export function SubmittedEntriesPanel() {
       return (data || []).map((entry) => ({
         ...entry,
         hours: Number(entry.hours),
-        employee_name: nameMap[entry.user_id] || 'Ismeretlen',
+        employee_name: nameMap[entry.user_id] || t('common:status.unknown', 'Ismeretlen'),
         project_name: entry.project_id ? projMap[entry.project_id] || '—' : '—',
         hourly_rate: rateMap[entry.user_id] || 0,
       })) as SubmittedEntry[];
@@ -133,12 +136,19 @@ export function SubmittedEntriesPanel() {
       if (error) throw error;
     },
     onSuccess: (_data, entryIds) => {
-      toast({ title: 'Jóváhagyva', description: `${entryIds.length} bejegyzés jóváhagyva.` });
+      toast({
+        title: t('working_time.submitted_panel.approved_title', 'Jóváhagyva'),
+        description: t('working_time.submitted_panel.approved_desc', { count: entryIds.length, defaultValue: `${entryIds.length} bejegyzés jóváhagyva.` })
+      });
       setSelectedIds(new Set());
       invalidateAll();
     },
     onError: () => {
-      toast({ variant: 'destructive', title: 'Hiba', description: 'Nem sikerült jóváhagyni.' });
+      toast({
+        variant: 'destructive',
+        title: t('common:status.error', 'Hiba'),
+        description: t('working_time.submitted_panel.error_approve', 'Nem sikerült jóváhagyni.')
+      });
     },
   });
 
@@ -152,12 +162,19 @@ export function SubmittedEntriesPanel() {
       if (error) throw error;
     },
     onSuccess: (_data, entryIds) => {
-      toast({ title: 'Törölve', description: `${entryIds.length} bejegyzés törölve.` });
+      toast({
+        title: t('working_time.submitted_panel.deleted_title', 'Törölve'),
+        description: t('working_time.submitted_panel.deleted_desc', { count: entryIds.length, defaultValue: `${entryIds.length} bejegyzés törölve.` })
+      });
       setSelectedIds(new Set());
       invalidateAll();
     },
     onError: () => {
-      toast({ variant: 'destructive', title: 'Hiba', description: 'Nem sikerült törölni.' });
+      toast({
+        variant: 'destructive',
+        title: t('common:status.error', 'Hiba'),
+        description: t('working_time.submitted_panel.error_delete', 'Nem sikerült törölni.')
+      });
     },
   });
 
@@ -248,9 +265,9 @@ export function SubmittedEntriesPanel() {
           <div className="p-3 rounded-full bg-emerald-500/10">
             <Inbox className="h-8 w-8 text-emerald-500" />
           </div>
-          <h3 className="font-semibold">Nincs leadott bejegyzés</h3>
+          <h3 className="font-semibold">{t('working_time.submitted_panel.empty_title', 'Nincs leadott bejegyzés')}</h3>
           <p className="text-sm text-muted-foreground max-w-xs">
-            Jelenleg nincs jóváhagyásra váró munkaidő-bejegyzés.
+            {t('working_time.submitted_panel.empty_desc', 'Jelenleg nincs jóváhagyásra váró munkaidő-bejegyzés.')}
           </p>
         </CardContent>
       </Card>
@@ -269,9 +286,9 @@ export function SubmittedEntriesPanel() {
           />
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">{entries.length}</span>{' '}
-            bejegyzés •{' '}
+            {t('working_time.submitted_panel.entries_count', { count: entries.length, defaultValue: `${entries.length} bejegyzés` }).replace(`${entries.length} `, '')} •{' '}
             <span className="font-medium text-foreground">{Object.keys(grouped).length}</span>{' '}
-            dolgozó •{' '}
+            {t('working_time.submitted_panel.employees_count', { count: Object.keys(grouped).length, defaultValue: `${Object.keys(grouped).length} dolgozó` }).replace(`${Object.keys(grouped).length} `, '')} •{' '}
             <span className="font-mono tabular-nums font-medium text-foreground">{totalHours}h</span>
             {totalCost > 0 && (
               <>
@@ -291,7 +308,7 @@ export function SubmittedEntriesPanel() {
           ) : (
             <CheckCheck className="h-4 w-4 mr-2" />
           )}
-          Mind jóváhagyása
+          {t('working_time.submitted_panel.btn_approve_all', 'Mind jóváhagyása')}
         </Button>
       </div>
 
@@ -345,7 +362,7 @@ export function SubmittedEntriesPanel() {
                   {empTotalHours}h
                 </Badge>
                 <Badge variant="secondary" className="text-xs tabular-nums">
-                  {entryCount} bejegyzés
+                  {t('working_time.submitted_panel.entries_count', { count: entryCount, defaultValue: `${entryCount} bejegyzés` })}
                 </Badge>
                 {empCost > 0 && (
                   <Badge variant="outline" className="text-xs tabular-nums bg-primary/5 text-primary border-primary/20">
@@ -367,7 +384,7 @@ export function SubmittedEntriesPanel() {
                   disabled={isBusy}
                 >
                   <CheckCheck className="h-4 w-4 mr-1" />
-                  Összes
+                  {t('common:actions.all', 'Összes')}
                 </Button>
 
                 {isExpanded ? (
@@ -409,7 +426,7 @@ export function SubmittedEntriesPanel() {
                         {/* Date */}
                         <div className="flex items-center gap-1.5 text-muted-foreground min-w-[110px]">
                           <Calendar className="h-3.5 w-3.5 shrink-0" />
-                          {format(parseISO(entry.date), 'MMM d. (EEE)', { locale: hu })}
+                          {format(parseISO(entry.date), 'MMM d. (EEE)', { locale: getDateFnsLocale() })}
                         </div>
 
                         {/* Hours */}
@@ -446,6 +463,7 @@ export function SubmittedEntriesPanel() {
                             className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             onClick={() => deleteBatchMutation.mutate([entry.id])}
                             disabled={isBusy}
+                            title={t('common:actions.delete', 'Törlés')}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -455,6 +473,7 @@ export function SubmittedEntriesPanel() {
                             className="h-7 w-7 p-0 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
                             onClick={() => approveBatchMutation.mutate([entry.id])}
                             disabled={isBusy}
+                            title={t('working_time.submitted_panel.btn_approve', 'Jóváhagyás')}
                           >
                             <Check className="h-4 w-4" />
                           </Button>
@@ -474,7 +493,7 @@ export function SubmittedEntriesPanel() {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
           <div className="flex items-center gap-4 px-5 py-3 rounded-xl shadow-2xl border border-border/50 bg-card/95 backdrop-blur-md">
             <span className="text-sm font-medium">
-              <span className="font-bold text-primary tabular-nums">{selectedIds.size}</span> kijelölve
+              <span className="font-bold text-primary tabular-nums">{selectedIds.size}</span> {t('common:status.selected', 'kijelölve')}
             </span>
 
             {selectedTotalCost > 0 && (
@@ -491,14 +510,14 @@ export function SubmittedEntriesPanel() {
               size="sm"
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => {
-                if (confirm(`Biztosan törölni szeretnéd a kijelölt ${selectedIds.size} tételt?`)) {
+                if (confirm(t('working_time.submitted_panel.confirm_delete_selected', { count: selectedIds.size, defaultValue: `Biztosan törölni szeretnéd a kijelölt ${selectedIds.size} tételt?` }))) {
                   deleteBatchMutation.mutate([...selectedIds]);
                 }
               }}
               disabled={isBusy}
             >
               <Trash2 className="h-4 w-4 mr-1.5" />
-              Törlés
+              {t('working_time.submitted_panel.btn_delete', 'Törlés')}
             </Button>
 
             <Button
@@ -512,7 +531,7 @@ export function SubmittedEntriesPanel() {
               ) : (
                 <CheckCircle2 className="h-4 w-4 mr-1.5" />
               )}
-              Jóváhagyás
+              {t('working_time.submitted_panel.btn_approve', 'Jóváhagyás')}
             </Button>
           </div>
         </div>

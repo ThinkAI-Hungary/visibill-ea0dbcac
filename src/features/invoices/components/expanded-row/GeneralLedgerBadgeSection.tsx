@@ -19,11 +19,11 @@ export function GeneralLedgerBadgeSection({
     <div className="mb-4 expand-animate bg-card border border-border/40 p-3 rounded-lg flex flex-col gap-2 max-w-lg">
       <div 
         className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
-        title="A számlatételek gazdasági tartalma szerinti árbevétel (9-es számlaosztály) vagy költség/ráfordítás ellenszámla"
+        title={t('invoices:expanded.gl_numbers_tooltip', 'A számlatételek gazdasági tartalma szerinti árbevétel (9-es számlaosztály) vagy költség/ráfordítás ellenszámla')}
       >
         <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
         <span>{t('invoices:expanded.gl_numbers_title', 'Hozzárendelt főkönyvi számok')}</span>
-        <span className="text-[10px] lowercase text-muted-foreground/80 font-normal tracking-normal">(árbevétel / költség)</span>
+        <span className="text-[10px] lowercase text-muted-foreground/80 font-normal tracking-normal">{t('invoices:expanded.gl_revenue_cost_label', '(árbevétel / költség)')}</span>
       </div>
       <div className="flex flex-wrap gap-1.5 font-mono">
         {glNumbers.split(', ').map((num) => (

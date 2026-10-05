@@ -70,7 +70,7 @@ export function InvoiceHeader() {
                       className="relative disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <DownloadCloud className={`h-4 w-4 mr-2 ${hasSzamlazzKey ? 'text-blue-500' : 'text-muted-foreground'}`} />
-                      Számlázz.hu szinkron
+                      {t('invoices:actions.szamlazz_sync', { defaultValue: 'Számlázz.hu szinkron' })}
                       {hasSzamlazzKey && szamlazzStatus && szamlazzStatus.pendingCount > 0 && (
                         <Badge
                           variant="secondary"
@@ -85,8 +85,8 @@ export function InvoiceHeader() {
                 <TooltipContent side="bottom">
                   <p className="text-xs">
                     {hasSzamlazzKey
-                      ? 'Kimenő számlák számlaképének letöltése és párosítása Számlázz.hu-ból'
-                      : 'A Számlázz.hu integráció nincs beállítva ennél a cégnél.'}
+                      ? t('invoices:actions.szamlazz_tooltip_active')
+                      : t('invoices:actions.szamlazz_tooltip_inactive')}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -114,19 +114,19 @@ export function InvoiceHeader() {
               <DropdownMenuContent className="w-48">
                 <DropdownMenuItem onClick={() => openDataExportDialog('xlsx')} className="gap-2 cursor-pointer">
                   <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
-                  <span>Export Excel (.xlsx)</span>
+                  <span>{t('invoices:actions.export_excel_format', { defaultValue: 'Export Excel (.xlsx)' })}</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem onClick={() => openDataExportDialog('csv')} className="gap-2 cursor-pointer">
                   <FileText className="h-4 w-4 text-blue-500" />
-                  <span>Export CSV (.csv)</span>
+                  <span>{t('invoices:actions.export_csv_format', { defaultValue: 'Export CSV (.csv)' })}</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem onClick={() => openDataExportDialog('pdf')} className="gap-2 cursor-pointer">
                   <FileDown className="h-4 w-4 text-rose-500" />
-                  <span>Export PDF (.pdf)</span>
+                  <span>{t('invoices:actions.export_pdf', { defaultValue: 'Export PDF (.pdf)' })}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

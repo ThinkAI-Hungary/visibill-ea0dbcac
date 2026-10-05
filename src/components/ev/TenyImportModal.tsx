@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Download, Search, Package, Check, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatHuf } from '@/lib/evCalculations';
@@ -40,6 +41,8 @@ interface TenyImportModalProps {
 }
 
 export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }: TenyImportModalProps) {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const { data: tenyAssets = [], isLoading } = useTenyAssetsForImport(companyId, taxYear);
   const importMutation = useImportTenyToEcs();
   const { session } = useAuth();
@@ -97,8 +100,8 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
     if (targetAssets.length === 0) {
       toast({
         variant: 'destructive',
-        title: 'Nincs kijelölt tétel',
-        description: 'Kérlek jelölj ki legalább egy eszközt az AI módszer javaslathoz!'
+        title: t('fixed_assets.teny_import.toast_no_selection_title', 'Nincs kijelölt tétel'),
+        description: t('fixed_assets.teny_import.toast_no_selection_desc', 'Kérlek jelölj ki legalább egy eszközt az AI módszer javaslathoz!')
       });
       return;
     }
@@ -230,16 +233,16 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
         setSelectedIds(nextSelected);
 
         toast({
-          title: 'AI javaslatok betöltve',
-          description: `Sikeresen elemeztünk ${data.suggestions.length} eszközt.`
+          title: t('fixed_assets.teny_import.toast_ai_success_title', 'AI javaslatok betöltve'),
+          description: t('fixed_assets.teny_import.toast_ai_success_desc', { count: data.suggestions.length, defaultValue: `Sikeresen elemeztünk ${data.suggestions.length} eszközt.` })
         });
       }
     } catch (err: any) {
       console.error(err);
       toast({
         variant: 'destructive',
-        title: 'AI javaslat sikertelen',
-        description: err.message || 'Hiba történt az AI hívás során.'
+        title: t('fixed_assets.teny_import.toast_ai_error_title', 'AI javaslat sikertelen'),
+        description: err.message || t('fixed_assets.teny_import.toast_ai_error_desc', 'Hiba történt az AI hívás során.')
       });
     } finally {
       setIsAiLoading(false);
@@ -339,9 +342,9 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                Importálás TÉNY-ből
+                {t('fixed_assets.teny_import.title', 'Importálás TÉNY-ből')}
               </h2>
-              <p className="text-xs text-slate-500">Tárgyi eszközök áthúzása az ÉCS nyilvántartásba — {taxYear}</p>
+              <p className="text-xs text-slate-500">{t('fixed_assets.teny_import.subtitle', { year: taxYear, defaultValue: `Tárgyi eszközök áthúzása az ÉCS nyilvántartásba — ${taxYear}` })}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -355,7 +358,7 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
               ) : (
                 <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
               )}
-              {isAiLoading ? 'AI elemzés...' : 'AI módszer javaslat'}
+              {isAiLoading ? t('fixed_assets.teny_import.ai_btn_loading', 'AI elemzés...') : t('fixed_assets.teny_import.ai_btn', 'AI módszer javaslat')}
             </button>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
               <X className="w-5 h-5 text-slate-400" />
@@ -371,7 +374,7 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Keresés eszköznév vagy leltári szám alapján..."
+              placeholder={t('fixed_assets.teny_import.search_placeholder', 'Keresés eszköznév vagy leltári szám alapján...')}
               className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/30"
             />
           </div>
@@ -388,8 +391,8 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
               <Package className="w-10 h-10 mx-auto mb-3 text-slate-300" />
               <p className="text-sm text-slate-500">
                 {tenyAssets.length === 0
-                  ? 'Nincs importálható eszköz a TÉNY nyilvántartásban, vagy már mind importálva van.'
-                  : 'Nincs a keresésnek megfelelő eszköz.'}
+                  ? t('fixed_assets.teny_import.no_assets', 'Nincs importálható eszköz a TÉNY nyilvántartásban, vagy már mind importálva van.')
+                  : t('fixed_assets.teny_import.empty_search', 'Nincs a keresésnek megfelelő eszköz.')}
               </p>
             </div>
           ) : (
@@ -403,7 +406,7 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
                   className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                 />
                 <span className="text-xs font-medium text-slate-500">
-                  Összes kiválasztása ({filtered.length} eszköz)
+                  {t('fixed_assets.teny_import.select_all', { count: filtered.length, defaultValue: `Összes kiválasztása (${filtered.length} eszköz)` })}
                 </span>
               </div>
 
@@ -467,14 +470,14 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
                         {isAnyOverridden && (
                           <div 
                             className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse shrink-0" 
-                            title="Manuálisan módosított érték" 
+                            title={t('fixed_assets.teny_import.modified_tooltip', 'Manuálisan módosított érték')} 
                           />
                         )}
 
                         {isInvalidImmediate && (
                           <div 
                             className="text-amber-500 dark:text-amber-400 shrink-0 flex items-center" 
-                            title="Figyelem: 200 000 Ft feletti értékű eszköz nem írható le azonnal 100%-ban!"
+                            title={t('fixed_assets.teny_import.warning_immediate_limit', 'Figyelem: 200 000 Ft feletti értékű eszköz nem írható le azonnal 100%-ban!')} 
                           >
                             <AlertTriangle className="w-3.5 h-3.5" />
                           </div>
@@ -489,14 +492,14 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
                             isAnyOverridden && "border-blue-400 dark:border-blue-700 focus:ring-blue-500/35"
                           )}
                         >
-                          <option value="linear">Lineáris</option>
-                          <option value="declining_balance">Degresszív (Nettó)</option>
-                          <option value="sum_of_years_digits">Degresszív (Évek)</option>
-                          <option value="progressive">Progresszív</option>
-                          <option value="performance">Teljesítmény</option>
-                          <option value="multiplier">Szorzószámos</option>
-                          <option value="absolute">Abszolút</option>
-                          <option value="immediate">Azonnali</option>
+                          <option value="linear">{t('fixed_assets.activation_dialog.depreciation_methods.linear', 'Lineáris')}</option>
+                          <option value="declining_balance">{t('fixed_assets.activation_dialog.depreciation_methods.degressive_declining', 'Degresszív (Nettó)')}</option>
+                          <option value="sum_of_years_digits">{t('fixed_assets.activation_dialog.depreciation_methods.degressive_syd', 'Degresszív (Évek)')}</option>
+                          <option value="progressive">{t('fixed_assets.activation_dialog.depreciation_methods.progressive', 'Progresszív')}</option>
+                          <option value="performance">{t('fixed_assets.activation_dialog.depreciation_methods.performance', 'Teljesítmény')}</option>
+                          <option value="multiplier">{t('fixed_assets.activation_dialog.depreciation_methods.multiplier', 'Szorzószámos')}</option>
+                          <option value="absolute">{t('fixed_assets.activation_dialog.depreciation_methods.absolute', 'Abszolút')}</option>
+                          <option value="immediate">{t('fixed_assets.activation_dialog.depreciation_methods.immediate', 'Azonnali')}</option>
                         </select>
 
                         {method === 'immediate' || isBelowThreshold ? (
@@ -509,7 +512,7 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
                               type="number"
                               value={rate}
                               onChange={e => setRate(asset.id, Number(e.target.value) || 0)}
-                              placeholder="Összeg"
+                              placeholder={t('fixed_assets.teny_import.amount_placeholder', 'Összeg')}
                               className={cn(
                                 "w-full text-xs border rounded px-2 py-1 bg-card text-right font-mono focus:ring-2 focus:ring-teal-500",
                                 hasAiSuggestion ? "border-indigo-300 dark:border-indigo-800" : "border-border",
@@ -564,10 +567,10 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
             ) : selectedIds.size > 0 ? (
               <span className="font-medium text-teal-600">
                 <Check className="w-3.5 h-3.5 inline mr-1" />
-                {selectedIds.size} eszköz kiválasztva
+                {t('fixed_assets.teny_import.selected_count', { count: selectedIds.size, defaultValue: `${selectedIds.size} eszköz kiválasztva` })}
               </span>
             ) : (
-              'Válasszon ki eszközöket az importáláshoz'
+              t('fixed_assets.teny_import.select_hint', 'Válasszon ki eszközöket az importáláshoz')
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -575,7 +578,7 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
               onClick={onClose}
               className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"
             >
-              Mégse
+              {t('common:actions.cancel', 'Mégse')}
             </button>
             <button
               onClick={handleImport}
@@ -592,7 +595,7 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
               ) : (
                 <Download className="w-3.5 h-3.5" />
               )}
-              Importálás ({selectedIds.size})
+              {t('fixed_assets.teny_import.btn_import', { count: selectedIds.size, defaultValue: `Importálás (${selectedIds.size})` })}
             </button>
           </div>
         </div>

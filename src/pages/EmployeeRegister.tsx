@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ interface TokenData {
 type PageState = 'loading' | 'valid' | 'invalid' | 'registering' | 'success';
 
 export default function EmployeeRegister() {
+  const { t } = useTranslation(['hr', 'common']);
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
@@ -69,7 +71,7 @@ export default function EmployeeRegister() {
           employee_name: emp.employee_name,
           company_id: emp.company_id,
           employee_type: emp.employee_type as TokenData['employee_type'],
-          company_name: emp.company_name || 'Ismeretlen cég',
+          company_name: emp.company_name || t('employee_register.unknown_company'),
         });
         setPageState('valid');
       } catch {
@@ -78,7 +80,7 @@ export default function EmployeeRegister() {
     };
 
     validateToken();
-  }, [token]);
+  }, [token, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,8 +88,8 @@ export default function EmployeeRegister() {
     if (password !== confirmPassword) {
       toast({
         variant: 'destructive',
-        title: 'A jelszavak nem egyeznek',
-        description: 'Kérlek ellenőrizd a megadott jelszavakat.',
+        title: t('employee_register.passwords_dont_match_title'),
+        description: t('employee_register.passwords_dont_match_desc'),
       });
       return;
     }
@@ -95,8 +97,8 @@ export default function EmployeeRegister() {
     if (password.length < 6) {
       toast({
         variant: 'destructive',
-        title: 'Túl rövid jelszó',
-        description: 'A jelszónak legalább 6 karakter hosszúnak kell lennie.',
+        title: t('employee_register.password_too_short_title'),
+        description: t('employee_register.password_too_short_desc'),
       });
       return;
     }
@@ -122,7 +124,7 @@ export default function EmployeeRegister() {
       if (authError) throw authError;
 
       const newUserId = authData.user?.id;
-      if (!newUserId) throw new Error('Nem sikerült létrehozni a fiókot.');
+      if (!newUserId) throw new Error(t('employee_register.account_create_failed'));
 
       // 2. Link user to employee_rates
       const { error: linkError } = await supabase
@@ -159,8 +161,8 @@ export default function EmployeeRegister() {
       reportError({ type: 'db_query', component: 'EmployeeRegister', action: 'error', message: 'Registration error:', error: err });
       toast({
         variant: 'destructive',
-        title: 'Regisztráció sikertelen',
-        description: err.message || 'Ismeretlen hiba történt.',
+        title: t('employee_register.register_failed_title'),
+        description: err.message || t('employee_register.unknown_error'),
       });
       setPageState('valid');
     }
@@ -197,7 +199,7 @@ export default function EmployeeRegister() {
           <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
             <CardContent className="p-8 flex flex-col items-center gap-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-muted-foreground">Link ellenőrzése...</p>
+              <p className="text-muted-foreground">{t('employee_register.verifying_link')}</p>
             </CardContent>
           </Card>
         )}
@@ -209,17 +211,16 @@ export default function EmployeeRegister() {
               <div className="p-3 rounded-full bg-destructive/10">
                 <AlertTriangle className="h-8 w-8 text-destructive" />
               </div>
-              <h2 className="text-xl font-bold">Érvénytelen link</h2>
+              <h2 className="text-xl font-bold">{t('employee_register.invalid_link_title')}</h2>
               <p className="text-muted-foreground max-w-xs">
-                Ez a regisztrációs link érvénytelen vagy már felhasználták.
-                Kérd az adminisztrátortól egy új linket.
+                {t('employee_register.invalid_link_desc')}
               </p>
               <Button
                 variant="outline"
                 className="mt-2"
                 onClick={() => navigate('/auth')}
               >
-                Vissza a bejelentkezéshez
+                {t('employee_register.back_to_login')}
               </Button>
             </CardContent>
           </Card>
@@ -233,10 +234,10 @@ export default function EmployeeRegister() {
                 {/* Welcome */}
                 <div className="mb-6 space-y-2">
                   <h2 className="text-2xl font-bold">
-                    Üdvözlünk, {tokenData.employee_name}!
+                    {t('employee_register.welcome', { name: tokenData.employee_name })}
                   </h2>
                   <p className="text-muted-foreground">
-                    Hozd létre a fiókodat a munkaidő-nyilvántartóhoz.
+                    {t('employee_register.welcome_desc')}
                   </p>
                 </div>
 
@@ -251,8 +252,8 @@ export default function EmployeeRegister() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {tokenData.employee_type === 'employee'
-                        ? 'Bejelentett dolgozó'
-                        : 'Alvállalkozó'}
+                        ? t('employee_register.type_employee')
+                        : t('employee_register.type_contractor')}
                     </p>
                   </div>
                 </div>
@@ -261,7 +262,7 @@ export default function EmployeeRegister() {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="reg-email" className="text-sm font-medium">
-                      Email cím
+                      {t('employee_register.email_label')}
                     </Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -283,14 +284,14 @@ export default function EmployeeRegister() {
                       htmlFor="reg-password"
                       className="text-sm font-medium"
                     >
-                      Jelszó
+                      {t('employee_register.password_label')}
                     </Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="reg-password"
                         type="password"
-                        placeholder="Legalább 6 karakter"
+                        placeholder={t('employee_register.password_min_placeholder')}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="pl-10"
@@ -306,14 +307,14 @@ export default function EmployeeRegister() {
                       htmlFor="reg-confirm"
                       className="text-sm font-medium"
                     >
-                      Jelszó megerősítése
+                      {t('employee_register.confirm_password_label')}
                     </Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="reg-confirm"
                         type="password"
-                        placeholder="Jelszó ismét"
+                        placeholder={t('employee_register.password_confirm_placeholder')}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className={cn(
@@ -328,7 +329,7 @@ export default function EmployeeRegister() {
                     </div>
                     {confirmPassword && password !== confirmPassword && (
                       <p className="text-xs text-destructive">
-                        A jelszavak nem egyeznek
+                        {t('employee_register.passwords_dont_match_inline')}
                       </p>
                     )}
                   </div>
@@ -346,12 +347,12 @@ export default function EmployeeRegister() {
                     {pageState === 'registering' ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Fiók létrehozása...
+                        {t('employee_register.creating_account')}
                       </>
                     ) : (
                       <>
                         <User className="h-4 w-4 mr-2" />
-                        Regisztráció
+                        {t('employee_register.register_button')}
                       </>
                     )}
                   </Button>
@@ -359,12 +360,12 @@ export default function EmployeeRegister() {
 
                 {/* Already have account */}
                 <p className="mt-4 text-center text-xs text-muted-foreground">
-                  Már van fiókod?{' '}
+                  {t('employee_register.already_have_account')}{' '}
                   <button
                     className="text-primary hover:underline"
                     onClick={() => navigate('/auth')}
                   >
-                    Bejelentkezés
+                    {t('employee_register.login_button')}
                   </button>
                 </p>
               </CardContent>
@@ -378,17 +379,16 @@ export default function EmployeeRegister() {
               <div className="p-3 rounded-full bg-emerald-500/10">
                 <CheckCircle2 className="h-8 w-8 text-emerald-500" />
               </div>
-              <h2 className="text-xl font-bold">Sikeres regisztráció!</h2>
+              <h2 className="text-xl font-bold">{t('employee_register.success_title')}</h2>
               <p className="text-muted-foreground max-w-xs">
-                A fiókodat sikeresen létrehoztuk. Ellenőrizd az email-ed a
-                megerősítő linkért, majd jelentkezz be.
+                {t('employee_register.success_desc')}
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
                 <Clock className="h-4 w-4" />
-                A bejelentkezés után azonnal rögzítheted a munkaidődet.
+                {t('employee_register.success_hint')}
               </div>
               <Button className="mt-2" onClick={() => navigate('/auth')}>
-                Bejelentkezés
+                {t('employee_register.login_button')}
               </Button>
             </CardContent>
           </Card>

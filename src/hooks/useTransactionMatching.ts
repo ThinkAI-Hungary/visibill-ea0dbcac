@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -45,6 +46,7 @@ export function useTransactionMatching({
   onUpdate,
   onClose,
 }: UseTransactionMatchingOptions) {
+  const { t } = useTranslation(['transactions', 'common']);
   const queryClient = useQueryClient();
 
   // ── UI Search & Selection State ──
@@ -218,15 +220,15 @@ export function useTransactionMatching({
     onSuccess: async (count) => {
       toast({
         title: count > 1
-          ? `${count} db számla sikeresen párosítva a tranzakcióhoz!`
-          : 'Tranzakció sikeresen párosítva!',
+          ? t('transactions:matching.toast_match_success_multi', '{{count}} db számla sikeresen párosítva a tranzakcióhoz!', { count })
+          : t('transactions:matching.toast_match_success_single', 'Tranzakció sikeresen párosítva!'),
       });
       await invalidateMatchingQueries(queryClient, companyId);
       onUpdate?.();
       onClose?.();
     },
     onError: () => {
-      toast({ title: 'Hiba a párosítás mentésekor', variant: 'destructive' });
+      toast({ title: t('transactions:matching.toast_match_error', 'Hiba a párosítás mentésekor'), variant: 'destructive' });
     },
   });
 
@@ -237,13 +239,13 @@ export function useTransactionMatching({
       await unmatchTransaction(transaction.id);
     },
     onSuccess: async () => {
-      toast({ title: 'Párosítás megszüntetve!' });
+      toast({ title: t('transactions:matching.toast_unmatch_success', 'Párosítás megszüntetve!') });
       await invalidateMatchingQueries(queryClient, companyId);
       onUpdate?.();
       onClose?.();
     },
     onError: () => {
-      toast({ title: 'Hiba a párosítás megszüntetésekor', variant: 'destructive' });
+      toast({ title: t('transactions:matching.toast_unmatch_error', 'Hiba a párosítás megszüntetésekor'), variant: 'destructive' });
     },
   });
 
@@ -254,13 +256,13 @@ export function useTransactionMatching({
       await verifyMatch(transaction.id);
     },
     onSuccess: async () => {
-      toast({ title: 'Tranzakció jóváhagyva!' });
+      toast({ title: t('transactions:matching.toast_verify_success', 'Tranzakció jóváhagyva!') });
       await invalidateMatchingQueries(queryClient, companyId);
       onUpdate?.();
       onClose?.();
     },
     onError: () => {
-      toast({ title: 'Hiba a jóváhagyás során', variant: 'destructive' });
+      toast({ title: t('transactions:matching.toast_verify_error', 'Hiba a jóváhagyás során'), variant: 'destructive' });
     },
   });
 
@@ -271,13 +273,13 @@ export function useTransactionMatching({
       await markNoInvoice(transaction.id);
     },
     onSuccess: async () => {
-      toast({ title: 'Tranzakció megjelölve: Nincs hozzá számla' });
+      toast({ title: t('transactions:matching.toast_mark_no_invoice_success', 'Tranzakció megjelölve: Nincs hozzá számla') });
       await invalidateMatchingQueries(queryClient, companyId);
       onUpdate?.();
       onClose?.();
     },
     onError: () => {
-      toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
+      toast({ title: t('transactions:matching.toast_mark_error', 'Hiba a jelölés mentésekor'), variant: 'destructive' });
     },
   });
 
@@ -288,13 +290,13 @@ export function useTransactionMatching({
       await markInvoiceMissing(transaction.id);
     },
     onSuccess: async () => {
-      toast({ title: 'Tranzakció megjelölve: Számla nincs feltöltve' });
+      toast({ title: t('transactions:matching.toast_mark_invoice_missing_success', 'Tranzakció megjelölve: Számla nincs feltöltve') });
       await invalidateMatchingQueries(queryClient, companyId);
       onUpdate?.();
       onClose?.();
     },
     onError: () => {
-      toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
+      toast({ title: t('transactions:matching.toast_mark_error', 'Hiba a jelölés mentésekor'), variant: 'destructive' });
     },
   });
 
@@ -305,13 +307,13 @@ export function useTransactionMatching({
       await revertStatus(transaction.id);
     },
     onSuccess: async () => {
-      toast({ title: 'Státusz visszavonva' });
+      toast({ title: t('transactions:matching.toast_revert_success', 'Státusz visszavonva') });
       await invalidateMatchingQueries(queryClient, companyId);
       onUpdate?.();
       onClose?.();
     },
     onError: () => {
-      toast({ title: 'Hiba a visszavonás során', variant: 'destructive' });
+      toast({ title: t('transactions:matching.toast_revert_error', 'Hiba a visszavonás során'), variant: 'destructive' });
     },
   });
 
@@ -337,8 +339,8 @@ export function useTransactionMatching({
     onSuccess: async (count) => {
       toast({
         title: count > 1
-          ? `${count} db további számla sikeresen hozzáadva!`
-          : 'További számla sikeresen hozzáadva!',
+          ? t('transactions:matching.toast_match_success_multi', '{{count}} db számla sikeresen párosítva a tranzakcióhoz!', { count })
+          : t('transactions:matching.toast_match_success_single', 'Tranzakció sikeresen párosítva!'),
       });
       await invalidateMatchingQueries(queryClient, companyId);
       setShowAddExtraMatch(false);
@@ -349,9 +351,9 @@ export function useTransactionMatching({
     },
     onError: (error: any) => {
       if (error?.code === '23505') {
-        toast({ title: 'Ez a számla már hozzá van rendelve ehhez a tranzakcióhoz', variant: 'destructive' });
+        toast({ title: t('transactions:matching.toast_already_assigned', 'Ez a számla már hozzá van rendelve ehhez a tranzakcióhoz'), variant: 'destructive' });
       } else {
-        toast({ title: 'Hiba a számla hozzáadásakor', variant: 'destructive' });
+        toast({ title: t('transactions:matching.toast_add_invoice_error', 'Hiba a számla hozzáadásakor'), variant: 'destructive' });
       }
     },
   });
@@ -362,13 +364,13 @@ export function useTransactionMatching({
       await removeExtraMatch(matchId);
     },
     onSuccess: async () => {
-      toast({ title: 'További számla eltávolítva' });
+      toast({ title: t('transactions:matching.toast_extra_removed_success', 'További számla eltávolítva') });
       await invalidateMatchingQueries(queryClient, companyId);
       queryClient.invalidateQueries({ queryKey: ['transaction-extra-matches', transactionId] });
       onUpdate?.();
     },
     onError: () => {
-      toast({ title: 'Hiba az eltávolításkor', variant: 'destructive' });
+      toast({ title: t('transactions:matching.toast_extra_removed_error', 'Hiba az eltávolításkor'), variant: 'destructive' });
     },
   });
 
@@ -378,14 +380,14 @@ export function useTransactionMatching({
       await bookTransactionDirect(payload);
     },
     onSuccess: async () => {
-      toast({ title: 'Tranzakció közvetlenül kontírozva!' });
+      toast({ title: t('transactions:matching.toast_direct_book_success', 'Tranzakció közvetlenül kontírozva!') });
       await invalidateMatchingQueries(queryClient, companyId);
       queryClient.invalidateQueries({ queryKey: ['glBalances'] });
       queryClient.invalidateQueries({ queryKey: ['glItems'] });
       onUpdate?.();
     },
     onError: () => {
-      toast({ title: 'Hiba a kontírozás mentésekor', variant: 'destructive' });
+      toast({ title: t('transactions:matching.toast_direct_book_error', 'Hiba a kontírozás mentésekor'), variant: 'destructive' });
     },
   });
 
@@ -401,7 +403,7 @@ export function useTransactionMatching({
       await unbookTransactionDirect(payload);
     },
     onSuccess: async () => {
-      toast({ title: 'Közvetlen kontírozás törölve!' });
+      toast({ title: t('transactions:matching.toast_direct_unbook_success', 'Közvetlen kontírozás törölve!') });
       await invalidateMatchingQueries(queryClient, companyId);
       queryClient.invalidateQueries({ queryKey: ['glBalances'] });
       queryClient.invalidateQueries({ queryKey: ['glItems'] });
@@ -409,7 +411,7 @@ export function useTransactionMatching({
       onClose?.();
     },
     onError: () => {
-      toast({ title: 'Hiba a törlés során', variant: 'destructive' });
+      toast({ title: t('transactions:matching.toast_direct_unbook_error', 'Hiba a törlés során'), variant: 'destructive' });
     },
   });
 
@@ -419,14 +421,14 @@ export function useTransactionMatching({
       await batchLinkCourierInvoices(transactionId!, invoiceIds);
     },
     onSuccess: async () => {
-      toast({ title: 'Futár tételek sikeresen összerendelve a tranzakcióval!' });
+      toast({ title: t('transactions:matching.toast_courier_linked_success', 'Futár tételek sikeresen összerendelve a tranzakcióval!') });
       await invalidateMatchingQueries(queryClient, companyId);
       queryClient.invalidateQueries({ queryKey: ['transaction-extra-matches', transactionId] });
       queryClient.invalidateQueries({ queryKey: ['matched-courier-reports', transactionId] });
       onUpdate?.();
     },
     onError: () => {
-      toast({ title: 'Hiba a futár tételek összerendelésekor', variant: 'destructive' });
+      toast({ title: t('transactions:matching.toast_courier_linked_error', 'Hiba a futár tételek összerendelésekor'), variant: 'destructive' });
     },
   });
 

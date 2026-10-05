@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sparkles, ChevronsUpDown, Check, X, FileText, Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import type { NavInvoice } from '@/features/invoices/types';
 
 interface NavInvoicePickerProps {
@@ -25,6 +26,7 @@ export function NavInvoicePicker({
   onSelect,
   disabled = false,
 }: NavInvoicePickerProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [showAllNav, setShowAllNav] = useState(false);
@@ -86,7 +88,7 @@ export function NavInvoicePicker({
       <div className="flex items-center justify-between">
         <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          Kapcsolódó NAV számlapár (Opcionális adatelőtöltés)
+          {t('invoices:manual_create.nav_picker.label')}
         </label>
         {selectedNavInvoice && (
           <Button
@@ -97,7 +99,7 @@ export function NavInvoicePicker({
             className="h-6 px-1.5 text-xs text-muted-foreground hover:text-destructive"
           >
             <X className="h-3.5 w-3.5 mr-1" />
-            Szétkapcsolás
+            {t('invoices:manual_create.nav_picker.unlink')}
           </Button>
         )}
       </div>
@@ -132,7 +134,7 @@ export function NavInvoicePicker({
               </div>
             ) : (
               <span className="flex items-center gap-2 text-xs">
-                <span>Válassz ki egy NAV számlát az adatok automatikus betöltéséhez...</span>
+                <span>{t('invoices:manual_create.nav_picker.placeholder')}</span>
               </span>
             )}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -148,7 +150,7 @@ export function NavInvoicePicker({
         >
           <SearchInput
             variant="borderless"
-            placeholder="Keresés sorszám, partner vagy összeg szerint..."
+            placeholder={t('invoices:manual_create.nav_picker.search_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch('')}
@@ -162,14 +164,14 @@ export function NavInvoicePicker({
 
           <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30 border-b border-border/40 text-[11px] text-muted-foreground shrink-0">
             <span>
-              {showAllNav ? 'Összes NAV számla listázva' : 'Csak nyitott (nem beküldött) számlák'}
+              {showAllNav ? t('invoices:manual_create.nav_picker.filter_all') : t('invoices:manual_create.nav_picker.filter_open_only')}
             </span>
             <button
               type="button"
               onClick={() => setShowAllNav(!showAllNav)}
               className="text-primary hover:underline font-medium hover:text-primary/80 transition-colors"
             >
-              {showAllNav ? 'Csak nyitottak' : 'Összes mutatása'}
+              {showAllNav ? t('invoices:manual_create.nav_picker.toggle_open') : t('invoices:manual_create.nav_picker.toggle_all')}
             </button>
           </div>
 
@@ -181,14 +183,14 @@ export function NavInvoicePicker({
             {isLoading ? (
               <div className="h-full flex items-center justify-center py-6 text-xs text-muted-foreground gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                <span>NAV számlák betöltése...</span>
+                <span>{t('invoices:manual_create.nav_picker.loading')}</span>
               </div>
             ) : displayedInvoices.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground">
                 <Search className="h-7 w-7 text-muted-foreground/30 mb-2" />
-                <span className="font-medium text-foreground/80">Nem található NAV számla</span>
+                <span className="font-medium text-foreground/80">{t('invoices:manual_create.nav_picker.empty_title')}</span>
                 <span className="text-[11px] text-muted-foreground mt-0.5">
-                  {search ? `Nincs találat a(z) "${search}" keresésre.` : 'Nincs megjeleníthető nyitott NAV számla.'}
+                  {search ? t('invoices:manual_create.nav_picker.empty_search', { search }) : t('invoices:manual_create.nav_picker.empty_desc')}
                 </span>
               </div>
             ) : (
@@ -217,20 +219,20 @@ export function NavInvoicePicker({
                         </span>
                         {nav.paid && (
                           <Badge variant="outline" className="text-[10px] px-1 py-0 border-emerald-500/30 text-emerald-500">
-                            Fizetve
+                            {t('invoices:manual_create.nav_picker.badge_paid')}
                           </Badge>
                         )}
                         {nav.submitted && (
                           <Badge variant="outline" className="text-[10px] px-1 py-0 border-blue-500/30 text-blue-500">
-                            Beküldve
+                            {t('invoices:manual_create.nav_picker.badge_submitted')}
                           </Badge>
                         )}
                       </div>
                       <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                        {partnerName || 'Névtelen partner'} {partnerTax ? `(${partnerTax})` : ''}
+                        {partnerName || t('invoices:manual_create.nav_picker.unnamed_partner')} {partnerTax ? `(${partnerTax})` : ''}
                       </div>
                       <div className="text-[10px] text-muted-foreground/80 mt-0.5">
-                        Kelt: {nav.invoice_issue_date || '-'} • Teljesítés: {nav.invoice_delivery_date || '-'}
+                        {t('invoices:manual_create.nav_picker.meta_issue')} {nav.invoice_issue_date || '-'} • {t('invoices:manual_create.nav_picker.meta_delivery')} {nav.invoice_delivery_date || '-'}
                       </div>
                     </div>
 
@@ -239,7 +241,7 @@ export function NavInvoicePicker({
                         {formatCurrency(nav.invoice_gross_amount || 0, nav.currency || 'HUF')}
                       </div>
                       <div className="text-[10px] text-muted-foreground">
-                        Nettó: {formatCurrency(nav.invoice_net_amount || 0, nav.currency || 'HUF')}
+                        {t('invoices:manual_create.nav_picker.net_label')} {formatCurrency(nav.invoice_net_amount || 0, nav.currency || 'HUF')}
                       </div>
                     </div>
 
@@ -254,7 +256,7 @@ export function NavInvoicePicker({
 
           {filteredInvoices.length > displayedInvoices.length && (
             <div className="p-2 border-t border-border/40 bg-muted/20 text-center text-[11px] text-muted-foreground shrink-0">
-              Még {filteredInvoices.length - displayedInvoices.length} számla • Pontosításhoz használja a fenti keresőt
+              {t('invoices:manual_create.nav_picker.more_invoices', { count: filteredInvoices.length - displayedInvoices.length })}
             </div>
           )}
         </PopoverContent>

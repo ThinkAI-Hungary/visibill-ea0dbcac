@@ -13,7 +13,8 @@
     "cash_balance": "Pénztár egyenleg",
     "vs_previous_month": "az előző hónaphoz képest",
     "vat_diff_desc": "Összes - Levonható",
-    "unpaid_inbound_desc": "Kifizetetlen bejövő számlák"
+    "unpaid_inbound_desc": "Kifizetetlen bejövő számlák",
+    "currencies_count": "{{count}} deviza"
   },
   "sections": {
     "cashflow": "Pénzforgalom (Cash-flow)",
@@ -191,7 +192,7 @@
     "payment_method": "Fiz. mód",
     "date": "Dátum",
     "amount": "Összeg",
-    "description": "Leírás",
+    "col_description": "Leírás",
     "type": "Típus",
     "more_tx": "+ {{count}} további tranzakció",
     "more_invoices": "+ {{count}} további számla",
@@ -200,7 +201,10 @@
     "open_balance": "Nyitott egyenleg:",
     "unmatched_amount": "Párosítatlan összeg:",
     "match": "Párosít",
-    "open_all": "Összes megnyitása"
+    "open_all": "Összes megnyitása",
+    "items": "{{count}} tétel",
+    "invoices_count": "{{count}} db számla",
+    "transactions_count": "{{count}} db tranzakció"
   },
   "fx_differences": {
     "title": "Árfolyam-különbözetek",
@@ -230,7 +234,9 @@
       "items": "Tételek",
       "total": "Összesen",
       "edit_gl_tooltip": "Főkönyvi szám szerkesztése ({{glNum}})"
-    }
+    },
+    "search_placeholder": "Keresés...",
+    "no_matching_items": "Nincs a feltételeknek megfelelő árfolyam-tétel."
   },
   "cockpit": {
     "title": "Pénzügyi Teendőközpont",

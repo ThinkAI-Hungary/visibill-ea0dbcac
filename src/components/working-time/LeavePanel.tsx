@@ -25,7 +25,8 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { format, parseISO, differenceInBusinessDays, addDays } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { getDateFnsLocale } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
   useLeaveRequests,
@@ -50,6 +51,8 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export function LeavePanel() {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const { isAdmin } = useUserRole();
   const {
     myRequests,
@@ -103,14 +106,14 @@ export function LeavePanel() {
           className="gap-2"
         >
           <Plus className="h-4 w-4" />
-          Új távolléti kérelem
+          {t('working_time.leave.new_request', 'Új távolléti kérelem')}
         </Button>
       ) : (
         <Card className="rounded-xl border-primary/30 bg-card/50 backdrop-blur-sm">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2 mb-1">
               <CalendarOff className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-semibold">Új távolléti kérelem</h3>
+              <h3 className="text-sm font-semibold">{t('working_time.leave.new_request', 'Új távolléti kérelem')}</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -158,7 +161,7 @@ export function LeavePanel() {
 
               {/* Note */}
               <Input
-                placeholder="Megjegyzés (opcionális)"
+                placeholder={t('working_time.leave.notes_placeholder', 'Megjegyzés (opcionális)')}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="h-9"
@@ -167,7 +170,7 @@ export function LeavePanel() {
 
             {startDate && endDate && (
               <p className="text-xs text-muted-foreground">
-                {getBusinessDays(startDate, endDate)} munkanap
+                {t('working_time.leave.workdays', { count: getBusinessDays(startDate, endDate), defaultValue: `${getBusinessDays(startDate, endDate)} munkanap` })}
               </p>
             )}
 
@@ -184,14 +187,14 @@ export function LeavePanel() {
                 ) : (
                   <CalendarOff className="h-4 w-4 mr-1" />
                 )}
-                Beküldés
+                {t('common:actions.submit', 'Beküldés')}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowForm(false)}
               >
-                Mégse
+                {t('common:actions.cancel', 'Mégse')}
               </Button>
             </div>
           </CardContent>
@@ -201,11 +204,11 @@ export function LeavePanel() {
       {/* My requests */}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">
-          Saját kérelmeim
+          {t('working_time.leave.my_requests', 'Saját kérelmeim')}
         </h3>
         {myRequests.length === 0 ? (
           <p className="text-xs text-muted-foreground/60 py-2">
-            Nincs beküldött kérelem.
+            {t('working_time.leave.no_requests', 'Nincs beküldött kérelem.')}
           </p>
         ) : (
           myRequests.map((req) => (
@@ -236,7 +239,7 @@ export function LeavePanel() {
             ) : (
               <ChevronRight className="h-4 w-4" />
             )}
-            Jóváhagyásra váró ({pendingRequests.length})
+            {t('working_time.leave.pending_approval', 'Jóváhagyásra váró')} ({pendingRequests.length})
           </button>
 
           {showPending &&
@@ -278,6 +281,8 @@ function LeaveRequestRow({
   isReviewing?: boolean;
   isDeleting?: boolean;
 }) {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const days = differenceInBusinessDays(
     addDays(parseISO(request.end_date), 1),
     parseISO(request.start_date)
@@ -303,16 +308,16 @@ function LeaveRequestRow({
           </span>
           <span className="text-xs text-muted-foreground/70">•</span>
           <span className="text-xs tabular-nums">
-            {format(parseISO(request.start_date), 'MMM d.', { locale: hu })}
+            {format(parseISO(request.start_date), 'MMM d.', { locale: getDateFnsLocale() })}
             {request.start_date !== request.end_date && (
               <>
                 {' – '}
-                {format(parseISO(request.end_date), 'MMM d.', { locale: hu })}
+                {format(parseISO(request.end_date), 'MMM d.', { locale: getDateFnsLocale() })}
               </>
             )}
           </span>
           <Badge variant="outline" className="text-[10px] h-4 px-1 tabular-nums">
-            {days} nap
+            {days} {t('working_time.leave.days_suffix', 'nap')}
           </Badge>
         </div>
         {request.note && (
@@ -338,7 +343,7 @@ function LeaveRequestRow({
             disabled={isReviewing}
           >
             <CheckCircle2 className="h-4 w-4 mr-1" />
-            Elfogad
+            {t('common:actions.approve', 'Elfogad')}
           </Button>
         )}
         {onReject && (
@@ -350,7 +355,7 @@ function LeaveRequestRow({
             disabled={isReviewing}
           >
             <XCircle className="h-4 w-4 mr-1" />
-            Elutasít
+            {t('common:actions.reject', 'Elutasít')}
           </Button>
         )}
         {onDelete && (
@@ -360,6 +365,7 @@ function LeaveRequestRow({
             className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
             onClick={onDelete}
             disabled={isDeleting}
+            title={t('common:actions.delete', 'Törlés')}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>

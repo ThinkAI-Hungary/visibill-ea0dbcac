@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { invalidateTransactionQueries } from '@/lib/cache';
@@ -87,6 +88,7 @@ export async function fetchMatchedInvoiceNumbers(invoiceIds: (string | null | un
 }
 
 export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Date) {
+  const { t } = useTranslation(['transactions', 'common']);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFrom: contextDateFrom, dateTo: contextDateTo } = useDateRange();
@@ -291,17 +293,18 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
       if (selectedCompany?.id) {
         await invalidateTransactionQueries(queryClient, selectedCompany.id);
       }
-      toast({ title: 'Tranzakciók frissítve!' });
+      toast({ title: t('transactions:matching.toast_refresh_success', 'Tranzakciók frissítve!') });
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'useTransactionData', action: 'error', message: 'Sync error:', error: error });
       toast({
-        title: 'Frissítés sikertelen', description: error.message || 'Hiba történt a frissítés során'
-        , variant: 'destructive'
+        title: t('transactions:matching.toast_refresh_error', 'Frissítés sikertelen'),
+        description: error.message || t('common:error', 'Hiba történt a frissítés során'),
+        variant: 'destructive',
       });
     } finally {
       setSyncing(false);
     }
-  }, [queryClient, selectedCompany?.id]);
+  }, [queryClient, selectedCompany?.id, t]);
 
   // Rematch
   const handleRematch = useCallback(async () => {
@@ -313,8 +316,8 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
       });
       if (error) throw error;
       toast({
-        title: 'Újrapárosítás elindítva',
-        description: 'A háttérfolyamat elindult. Pár másodperc múlva automatikusan frissül a felület.',
+        title: t('transactions:matching.toast_rematch_started_title', 'Újrapárosítás elindítva'),
+        description: t('transactions:matching.toast_rematch_started_desc', 'A háttérfolyamat elindult. Pár másodperc múlva automatikusan frissül a felület.'),
       });
       setTimeout(async () => {
         if (selectedCompany?.id) {
@@ -324,14 +327,14 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'useTransactionData', action: 'rematch_error', message: 'Rematch error:', error: error });
       toast({
-        title: 'Újrapárosítás sikertelen',
-        description: error.message || 'Nem sikerült elindítani az újrapárosítást',
+        title: t('transactions:matching.toast_rematch_error', 'Újrapárosítás sikertelen'),
+        description: error.message || t('transactions:matching.toast_rematch_error', 'Nem sikerült elindítani az újrapárosítást'),
         variant: 'destructive',
       });
     } finally {
       setRematching(false);
     }
-  }, [queryClient, selectedCompany?.id]);
+  }, [queryClient, selectedCompany?.id, t]);
 
   // Export with arbitrary transaction list (used by TransactionDataExportDialog)
   const handleCustomExport = useCallback(async (

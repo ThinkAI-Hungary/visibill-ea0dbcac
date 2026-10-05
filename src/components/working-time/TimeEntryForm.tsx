@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,8 @@ export function TimeEntryForm({
   isSaving,
   hasDraftEntries,
 }: TimeEntryFormProps) {
+  const { t: rawT } = useTranslation(['hr', 'common']);
+  const t = (key: string, opts?: any): any => rawT((key.includes(':') ? key : `hr:${key}`) as any, opts);
   const { projects } = useProjectList();
   const [mode, setMode] = useState<EntryMode>('work');
   const [form, setForm] = useState({
@@ -59,7 +62,7 @@ export function TimeEntryForm({
       hours,
       description:
         mode === 'absence'
-          ? `Szabadság`
+          ? t('working_time.form.vacation', 'Szabadság')
           : form.description.trim(),
       absence_type: mode === 'absence' ? form.absence_type : null,
     });
@@ -73,7 +76,7 @@ export function TimeEntryForm({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <Plus className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold">Új bejegyzés</span>
+            <span className="text-sm font-semibold">{t('working_time.form.new_entry', 'Új bejegyzés')}</span>
 
             {/* Mode toggle */}
             <div className="ml-auto flex rounded-lg border border-border/50 overflow-hidden text-xs">
@@ -88,7 +91,7 @@ export function TimeEntryForm({
                 onClick={() => setMode('work')}
               >
                 <Clock className="h-3 w-3" />
-                Munka
+                {t('working_time.form.mode_work', 'Munka')}
               </button>
               <button
                 type="button"
@@ -104,7 +107,7 @@ export function TimeEntryForm({
                 }}
               >
                 <Palmtree className="h-3 w-3" />
-                Távollét
+                {t('working_time.form.mode_absence', 'Távollét')}
               </button>
             </div>
           </div>
@@ -120,7 +123,7 @@ export function TimeEntryForm({
                     className="text-xs text-muted-foreground flex items-center gap-1"
                   >
                     <FolderOpen className="h-3 w-3" />
-                    Projekt
+                    {t('working_time.timesheet_table.col_project', 'Projekt')}
                   </Label>
                   <Select
                     value={form.project_id}
@@ -132,12 +135,12 @@ export function TimeEntryForm({
                     }
                   >
                     <SelectTrigger id="te-project">
-                      <SelectValue placeholder="Válassz projektet..." />
+                      <SelectValue placeholder={t('working_time.form.select_project', 'Válassz projektet...')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">
                         <span className="text-muted-foreground">
-                          Nincs projekthez rendelve
+                          {t('working_time.employee_panel.edit_no_project', 'Nincs projekthez rendelve')}
                         </span>
                       </SelectItem>
                       {projects.map((p) => (
@@ -156,7 +159,7 @@ export function TimeEntryForm({
                     className="text-xs text-muted-foreground flex items-center gap-1"
                   >
                     <Clock className="h-3 w-3" />
-                    Órák *
+                    {t('working_time.timesheet_table.col_hours', 'Órák')} *
                   </Label>
                   <Input
                     id="te-hours"
@@ -180,11 +183,11 @@ export function TimeEntryForm({
                     htmlFor="te-desc"
                     className="text-xs text-muted-foreground"
                   >
-                    Leírás (opcionális)
+                    {t('working_time.timesheet_table.col_notes', 'Megjegyzés')}
                   </Label>
                   <Input
                     id="te-desc"
-                    placeholder="Mit csináltál..."
+                    placeholder={t('working_time.form.description_placeholder', 'Mit csináltál...')}
                     value={form.description}
                     onChange={(e) =>
                       setForm({ ...form, description: e.target.value })
@@ -199,11 +202,11 @@ export function TimeEntryForm({
                   htmlFor="te-desc-mobile"
                   className="text-xs text-muted-foreground"
                 >
-                  Leírás (opcionális)
+                  {t('working_time.timesheet_table.col_notes', 'Megjegyzés')}
                 </Label>
                 <Input
                   id="te-desc-mobile"
-                  placeholder="Mit csináltál..."
+                  placeholder={t('working_time.form.description_placeholder', 'Mit csináltál...')}
                   value={form.description}
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
@@ -218,7 +221,7 @@ export function TimeEntryForm({
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground flex items-center gap-1">
                   <Palmtree className="h-3 w-3" />
-                  Távollét típusa
+                  {t('working_time.form.mode_absence', 'Távollét')}
                 </Label>
                 <Select
                   value={form.absence_type}
@@ -232,7 +235,7 @@ export function TimeEntryForm({
                   <SelectContent>
                     <SelectItem value="vacation">
                       <span className="flex items-center gap-2">
-                        🏖️ Szabadság
+                        🏖️ {t('working_time.form.vacation', 'Szabadság')}
                       </span>
                     </SelectItem>
                   </SelectContent>
@@ -243,7 +246,7 @@ export function TimeEntryForm({
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  Órák
+                  {t('working_time.timesheet_table.col_hours', 'Órák')}
                 </Label>
                 <Input
                   type="number"
@@ -274,10 +277,10 @@ export function TimeEntryForm({
             >
               <Plus className="h-4 w-4 mr-2" />
               {isSubmitting
-                ? 'Mentés...'
+                ? t('working_time.form.btn_submitting', 'Mentés...')
                 : mode === 'absence'
-                ? 'Távollét rögzítése'
-                : 'Rögzítés'}
+                ? t('working_time.form.btn_save_absence', 'Távollét rögzítése')
+                : t('working_time.form.btn_save_work', 'Rögzítés')}
             </Button>
             <Button
               type="button"
@@ -287,7 +290,7 @@ export function TimeEntryForm({
               onClick={onSubmitDrafts}
             >
               <Send className="h-4 w-4 mr-2" />
-              {isSaving ? 'Leadás...' : 'Mentés'}
+              {isSaving ? t('working_time.calendar.submitting', 'Leadás...') : t('working_time.form.btn_submit_month', 'Mentés')}
             </Button>
           </div>
         </form>

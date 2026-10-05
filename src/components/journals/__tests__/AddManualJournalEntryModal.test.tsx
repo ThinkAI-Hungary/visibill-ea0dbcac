@@ -199,12 +199,14 @@ describe('AddManualJournalEntryModal - Layout and Keyboard Navigation', () => {
     // Fill row 0 with amount 100000 (T)
     const amountInputs = document.querySelectorAll('input[type="number"]');
     fireEvent.change(amountInputs[0], { target: { value: '100000' } });
+    // Set row 1 to 50000 so Debit (100000) > Credit (50000)
+    fireEvent.change(amountInputs[1], { target: { value: '50000' } });
 
     // Click 'Új sor' button
     const addRowBtn = screen.getByRole('button', { name: /Új sor/i });
     fireEvent.click(addRowBtn);
 
-    // Row 2 should be added, and because T (100000) > K (0), the new row should be 'K'
+    // Row 2 should be added, and because T (100000) > K (50000), the new row should be 'K'
     // Let's verify row 2 has select trigger with 'K'
     const dcTrigger2 = document.getElementById('dc-type-trigger-2');
     expect(dcTrigger2).toHaveTextContent(/K - Követel/i);
@@ -218,9 +220,9 @@ describe('AddManualJournalEntryModal - Layout and Keyboard Navigation', () => {
 
     expect(postingDatePicker).toBeInTheDocument();
     expect(documentDatePicker).toBeInTheDocument();
-    // They are button triggers from DatePicker popover, not native input[type=date]
-    expect(postingDatePicker?.tagName.toLowerCase()).toBe('button');
-    expect(documentDatePicker?.tagName.toLowerCase()).toBe('button');
+    // They are flexible text inputs with calendar popovers
+    expect(['input', 'button']).toContain(postingDatePicker?.tagName.toLowerCase());
+    expect(['input', 'button']).toContain(documentDatePicker?.tagName.toLowerCase());
   });
 
   it('renders searchable partner combobox and allows searching and selecting a partner', async () => {

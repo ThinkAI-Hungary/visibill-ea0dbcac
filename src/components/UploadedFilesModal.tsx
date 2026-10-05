@@ -66,7 +66,7 @@ const TAB_CONFIG = {
     table: 'invoice_uploads',
     bucket: 'invoice-uploads',
     uploadType: 'invoice',
-    labelKey: 'invoices:title',
+    labelKey: 'invoices:uploaded_files_modal.tab_invoices',
     label: 'Számlák',
     icon: FileText,
     filter: (q: any) => q.not('document_category', 'in', '("payroll","penztarbizonylat")'),
@@ -75,7 +75,7 @@ const TAB_CONFIG = {
     table: 'invoice_uploads',
     bucket: 'invoice-uploads',
     uploadType: 'invoice',
-    labelKey: 'vouchers',
+    labelKey: 'invoices:uploaded_files_modal.tab_vouchers',
     label: 'Pénztárbizonylatok',
     icon: Coins,
     filter: (q: any) => q.eq('document_category', 'penztarbizonylat'),
@@ -84,7 +84,7 @@ const TAB_CONFIG = {
     table: 'bank_statement_uploads',
     bucket: 'bank-statements',
     uploadType: 'bank',
-    labelKey: 'bank',
+    labelKey: 'invoices:uploaded_files_modal.tab_bank',
     label: 'Bankkivonatok',
     icon: Landmark,
     filter: null,
@@ -93,7 +93,7 @@ const TAB_CONFIG = {
     table: 'transaction_uploads',
     bucket: 'transactions',
     uploadType: 'transaction',
-    labelKey: 'transactions',
+    labelKey: 'invoices:uploaded_files_modal.tab_transactions',
     label: 'Tranzakciók',
     icon: Landmark,
     filter: null,
@@ -102,7 +102,7 @@ const TAB_CONFIG = {
     table: 'invoice_uploads',
     bucket: 'invoice-uploads',
     uploadType: 'invoice',
-    labelKey: 'salaries',
+    labelKey: 'hr:salaries.title',
     label: 'Bérek/Járulékok',
     icon: Wallet,
     filter: (q: any) => q.eq('document_category', 'payroll'),
@@ -111,7 +111,7 @@ const TAB_CONFIG = {
     table: 'report_uploads',
     bucket: 'report-uploads',
     uploadType: 'report',
-    labelKey: 'reports',
+    labelKey: 'navigation:items.reports',
     label: 'Riportok',
     icon: Package,
     filter: null,
@@ -398,7 +398,7 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
           <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold">
               <Icon className="h-5 w-5 text-primary" />
-              {t('invoices:dialogs.files.trigger_button')} — {config.label}
+              {t('invoices:dialogs.files.trigger_button', { defaultValue: 'Feltöltött fájlok' })} — {t(config.labelKey, { defaultValue: config.label })}
             </DialogTitle>
             <DialogDescription>
               {uploads.length} · {t('invoices:dialogs.files.delete_choose_mode')}

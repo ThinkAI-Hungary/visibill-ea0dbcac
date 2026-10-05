@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -78,12 +79,33 @@ export function InvoiceGlAccountSelector({
   className,
   compact = false,
 }: InvoiceGlAccountSelectorProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { selectedCompany } = useCompany();
 
   const effectiveCompanyId = companyId || selectedCompany?.id;
   const isOutbound = direction.toUpperCase() === 'OUTBOUND';
+
+  // Dynamic localized options
+  const localizedCustomerOptions = useMemo(() => [
+    { code: '311', label: `311 - ${t('invoices:gl_selector.opt_311', 'Belföldi vevők')}` },
+    { code: '312', label: `312 - ${t('invoices:gl_selector.opt_312', 'Külföldi vevők')}` },
+    { code: '315', label: `315 - ${t('invoices:gl_selector.opt_315', 'Kapcsolt vállalkozások')}` },
+    { code: '316', label: `316 - ${t('invoices:gl_selector.opt_316', 'Jelentős tulajdoni részesedés')}` },
+    { code: '317', label: `317 - ${t('invoices:gl_selector.opt_317', 'Egyéb részesedési viszony')}` },
+  ], [t]);
+
+  const localizedSupplierOptions = useMemo(() => [
+    { code: '4541', label: `4541 - ${t('invoices:gl_selector.opt_4541', 'Belföldi szállítók')}` },
+    { code: '4542', label: `4542 - ${t('invoices:gl_selector.opt_4542', 'Külföldi szállítók')}` },
+    { code: '4543', label: `4543 - ${t('invoices:gl_selector.opt_4543', 'Belföldi szolgáltatók')}` },
+  ], [t]);
+
+  const localizedInboundVatOptions = useMemo(() => [
+    { code: '466', label: `466 - ${t('invoices:gl_selector.opt_466', 'Levonható ÁFA')}` },
+    { code: '4668', label: `4668 - ${t('invoices:gl_selector.opt_4668', 'Levonható ÁFA (4668)')}` },
+  ], [t]);
 
   // Fetch from DB if not passed in props
   const queryResult = useQuery({
@@ -115,7 +137,6 @@ export function InvoiceGlAccountSelector({
   const activePartnerGl = useMemo(() => {
     if (resolvedPartnerGl) return resolvedPartnerGl;
     if (isOutbound) {
-      // Default to 312 for non-HUF foreign, otherwise 311
       return (currency && currency.toUpperCase() !== 'HUF') ? '312' : '311';
     }
     return (currency && currency.toUpperCase() !== 'HUF') ? '4542' : '4541';
@@ -162,8 +183,8 @@ export function InvoiceGlAccountSelector({
     },
     onSuccess: () => {
       toast({
-        title: 'Kontírszám frissítve',
-        description: 'A kontírozási beállítás sikeresen elmentve.',
+        title: t('invoices:gl_selector.toast_title_updated', 'Kontírszám frissítve'),
+        description: t('invoices:gl_selector.toast_desc_updated', 'A kontírozási beállítás sikeresen elmentve.'),
       });
       queryClient.invalidateQueries({ queryKey: ['invoice-gl-account'] });
       queryClient.invalidateQueries({ queryKey: ['company-invoices'] });
@@ -176,8 +197,8 @@ export function InvoiceGlAccountSelector({
     },
     onError: (err: any) => {
       toast({
-        title: 'Hiba a kontírszám mentésekor',
-        description: err.message || 'Nem sikerült menteni a kontírszámot.',
+        title: t('invoices:gl_selector.toast_title_error', 'Hiba a kontírszám mentésekor'),
+        description: err.message || t('invoices:gl_selector.toast_desc_error', 'Nem sikerült menteni a kontírszámot.'),
         variant: 'destructive',
       });
     },
@@ -186,18 +207,18 @@ export function InvoiceGlAccountSelector({
   // Selected partner label for clean display
   const selectedPartnerLabel = useMemo(() => {
     if (isOutbound) {
-      return ALLOWED_CUSTOMER_GL_OPTIONS.find((o) => o.code === activePartnerGl)?.label || activePartnerGl;
+      return localizedCustomerOptions.find((o) => o.code === activePartnerGl)?.label || activePartnerGl;
     }
-    return ALLOWED_SUPPLIER_GL_OPTIONS.find((o) => o.code === activePartnerGl)?.label || activePartnerGl;
-  }, [isOutbound, activePartnerGl]);
+    return localizedSupplierOptions.find((o) => o.code === activePartnerGl)?.label || activePartnerGl;
+  }, [isOutbound, activePartnerGl, localizedCustomerOptions, localizedSupplierOptions]);
 
   // Selected VAT label for clean display
   const selectedVatLabel = useMemo(() => {
     if (isOutbound) {
-      return ALLOWED_OUTBOUND_VAT_GL_OPTIONS.find((o) => o.code === activeVatGl)?.label || `${activeVatGl} - Fizetendő ÁFA`;
+      return `${activeVatGl} - ${t('invoices:gl_selector.opt_467', 'Fizetendő ÁFA')}`;
     }
-    return ALLOWED_INBOUND_VAT_GL_OPTIONS.find((o) => o.code === activeVatGl)?.label || `${activeVatGl} - Levonható ÁFA`;
-  }, [isOutbound, activeVatGl]);
+    return localizedInboundVatOptions.find((o) => o.code === activeVatGl)?.label || `${activeVatGl} - ${t('invoices:gl_selector.opt_466', 'Levonható ÁFA')}`;
+  }, [isOutbound, activeVatGl, localizedInboundVatOptions, t]);
 
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
@@ -205,9 +226,9 @@ export function InvoiceGlAccountSelector({
       <div className="flex items-center gap-1.5">
         <span 
           className="text-xs text-muted-foreground font-medium shrink-0" 
-          title={isOutbound ? 'Tartozik (T) vevőkövetelés számla' : 'Követel (K) szállítói kötelezettség számla'}
+          title={isOutbound ? t('invoices:gl_selector.customer_account_tooltip', 'Tartozik (T) vevőkövetelés számla') : t('invoices:gl_selector.supplier_account_tooltip', 'Követel (K) szállítói kötelezettség számla')}
         >
-          {isOutbound ? 'Vevői számla:' : 'Szállítói számla:'}
+          {isOutbound ? t('invoices:gl_selector.customer_account_label', 'Vevői számla:') : t('invoices:gl_selector.supplier_account_label', 'Szállítói számla:')}
         </span>
         <Select
           value={activePartnerGl}
@@ -218,24 +239,24 @@ export function InvoiceGlAccountSelector({
             {updateMutation.isPending ? (
               <span className="flex items-center gap-1 text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Mentés...</span>
+                <span>{t('invoices:gl_selector.saving', 'Mentés...')}</span>
               </span>
             ) : (
-              <SelectValue placeholder="Válassz...">
+              <SelectValue placeholder={t('invoices:gl_selector.select_placeholder', 'Válassz...')}>
                 <span className="truncate">{selectedPartnerLabel}</span>
               </SelectValue>
             )}
           </SelectTrigger>
           <SelectContent className="text-xs z-50">
             {isOutbound ? (
-              ALLOWED_CUSTOMER_GL_OPTIONS.map((opt) => (
-                <SelectItem key={opt.code} value={opt.code} title={opt.description} className="text-xs py-1.5 cursor-pointer font-mono">
+              localizedCustomerOptions.map((opt) => (
+                <SelectItem key={opt.code} value={opt.code} className="text-xs py-1.5 cursor-pointer font-mono">
                   {opt.label}
                 </SelectItem>
               ))
             ) : (
-              ALLOWED_SUPPLIER_GL_OPTIONS.map((opt) => (
-                <SelectItem key={opt.code} value={opt.code} title={opt.description} className="text-xs py-1.5 cursor-pointer font-mono">
+              localizedSupplierOptions.map((opt) => (
+                <SelectItem key={opt.code} value={opt.code} className="text-xs py-1.5 cursor-pointer font-mono">
                   {opt.label}
                 </SelectItem>
               ))
@@ -247,16 +268,16 @@ export function InvoiceGlAccountSelector({
       {/* ÁFA Kontírszám Selector (466 / 4668 for Inbound, 467 for Outbound) */}
       <div 
         className="flex items-center gap-1.5 shrink-0" 
-        title={isOutbound ? 'Követel (K) fizetendő ÁFA számla' : 'Tartozik (T) levonható ÁFA számla'}
+        title={isOutbound ? t('invoices:gl_selector.vat_account_payable_tooltip', 'Követel (K) fizetendő ÁFA számla') : t('invoices:gl_selector.vat_account_deductible_tooltip', 'Tartozik (T) levonható ÁFA számla')}
       >
-        <span className="text-xs text-muted-foreground font-medium">ÁFA kontír:</span>
+        <span className="text-xs text-muted-foreground font-medium">{t('invoices:gl_selector.vat_account_label', 'ÁFA kontír:')}</span>
         {isOutbound ? (
           <Badge
             variant="outline"
             className="h-8 px-2 text-xs font-mono font-semibold gap-1.5 bg-muted/40 text-foreground border-border/40 select-none cursor-default"
           >
             <Lock className="h-3 w-3 text-muted-foreground" />
-            <span>467 - Fizetendő ÁFA</span>
+            <span>{t('invoices:gl_selector.payable_vat_badge', '467 - Fizetendő ÁFA')}</span>
           </Badge>
         ) : (
           <Select
@@ -268,17 +289,17 @@ export function InvoiceGlAccountSelector({
               {updateMutation.isPending ? (
                 <span className="flex items-center gap-1 text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Mentés...</span>
+                  <span>{t('invoices:gl_selector.saving', 'Mentés...')}</span>
                 </span>
               ) : (
-                <SelectValue placeholder="Válassz...">
+                <SelectValue placeholder={t('invoices:gl_selector.select_placeholder', 'Válassz...')}>
                   <span className="truncate">{selectedVatLabel}</span>
                 </SelectValue>
               )}
             </SelectTrigger>
             <SelectContent className="text-xs z-50">
-              {ALLOWED_INBOUND_VAT_GL_OPTIONS.map((opt) => (
-                <SelectItem key={opt.code} value={opt.code} title={opt.description} className="text-xs py-1.5 cursor-pointer font-mono">
+              {localizedInboundVatOptions.map((opt) => (
+                <SelectItem key={opt.code} value={opt.code} className="text-xs py-1.5 cursor-pointer font-mono">
                   {opt.label}
                 </SelectItem>
               ))}

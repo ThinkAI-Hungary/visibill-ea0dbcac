@@ -301,7 +301,7 @@ export function CreateFixedAssetDialog({
                     id="asset-name"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    placeholder="pl. Dell Latitude 5540, Raktári emelőgép..."
+                    placeholder={t('hr:fixed_assets.create_dialog.name_placeholder', 'pl. Dell Latitude 5540, Raktári emelőgép...')}
                     required
                   />
                 </div>
@@ -319,7 +319,7 @@ export function CreateFixedAssetDialog({
                       onClick={handleGenerateInventoryNumber}
                       disabled={generatingInvNumber}
                       className="h-6 text-xs gap-1 text-primary hover:text-primary px-2"
-                      title="Következő leltári szám automatikus generálása"
+                      title={t('common:actions.regenerate', 'Következő leltári szám automatikus generálása')}
                     >
                       <RefreshCw className={`h-3 w-3 ${generatingInvNumber ? 'animate-spin' : ''}`} />
                       <span>{t('common:actions.regenerate', 'Auto-generálás')}</span>
@@ -329,7 +329,7 @@ export function CreateFixedAssetDialog({
                     id="asset-inv-number"
                     value={inventoryNumber}
                     onChange={e => setInventoryNumber(e.target.value)}
-                    placeholder="pl. TE-2610-0001"
+                    placeholder={t('hr:fixed_assets.create_dialog.inventory_number_placeholder', 'pl. TE-2610-0001')}
                     className="font-mono text-sm"
                     required
                   />
@@ -345,7 +345,7 @@ export function CreateFixedAssetDialog({
                     id="asset-vtsz"
                     value={vtszTeszor}
                     onChange={e => setVtszTeszor(e.target.value)}
-                    placeholder="pl. 8471 30 00 (Laptopok)"
+                    placeholder={t('hr:fixed_assets.create_dialog.vtsz_placeholder', 'pl. 8471 30 00 (Laptopok)')}
                   />
                 </div>
 
@@ -357,7 +357,7 @@ export function CreateFixedAssetDialog({
                     id="asset-desc"
                     value={description}
                     onChange={e => setDescription(e.target.value)}
-                    placeholder="pl. SN: ABC1234567, 32GB RAM, 1TB SSD"
+                    placeholder={t('hr:fixed_assets.create_dialog.specs_placeholder', 'pl. SN: ABC1234567, 32GB RAM, 1TB SSD')}
                   />
                 </div>
               </div>
@@ -464,7 +464,7 @@ export function CreateFixedAssetDialog({
                     id="asset-supplier"
                     value={supplierName}
                     onChange={e => setSupplierName(e.target.value)}
-                    placeholder="pl. Alza.hu Kft., Használt gép eladó..."
+                    placeholder={t('hr:fixed_assets.create_dialog.supplier_placeholder', 'pl. Alza.hu Kft., Használt gép eladó...')}
                   />
                 </div>
 
@@ -476,7 +476,7 @@ export function CreateFixedAssetDialog({
                     id="asset-invoice-num"
                     value={sourceInvoiceNumber}
                     onChange={e => setSourceInvoiceNumber(e.target.value)}
-                    placeholder="pl. 2023/SZL-00892"
+                    placeholder={t('hr:fixed_assets.create_dialog.invoice_number_placeholder', 'pl. 2023/SZL-00892')}
                   />
                 </div>
               </div>
@@ -534,14 +534,14 @@ export function CreateFixedAssetDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="linear">Lineáris (Egyenletes)</SelectItem>
-                      <SelectItem value="degressive_syd">Degresszív (Évek száma összege)</SelectItem>
-                      <SelectItem value="degressive_declining">Degresszív (Nettó érték alapú)</SelectItem>
-                      <SelectItem value="progressive">Progresszív (Növekvő)</SelectItem>
-                      <SelectItem value="performance">Teljesítményarányos</SelectItem>
-                      <SelectItem value="absolute">Abszolút összegű</SelectItem>
-                      <SelectItem value="multiplier">Szorzószámos</SelectItem>
-                      <SelectItem value="immediate">Azonnali (Kisértékű eszköz)</SelectItem>
+                      <SelectItem value="linear">{t('hr:fixed_assets.activation_dialog.depreciation_methods.linear', 'Lineáris (Egyenletes)')}</SelectItem>
+                      <SelectItem value="degressive_syd">{t('hr:fixed_assets.activation_dialog.depreciation_methods.degressive_syd', 'Degresszív (Évek száma összege)')}</SelectItem>
+                      <SelectItem value="degressive_declining">{t('hr:fixed_assets.activation_dialog.depreciation_methods.degressive_declining', 'Degresszív (Nettó érték alapú)')}</SelectItem>
+                      <SelectItem value="progressive">{t('hr:fixed_assets.activation_dialog.depreciation_methods.progressive', 'Progresszív (Növekvő)')}</SelectItem>
+                      <SelectItem value="performance">{t('hr:fixed_assets.activation_dialog.depreciation_methods.performance', 'Teljesítményarányos')}</SelectItem>
+                      <SelectItem value="absolute">{t('hr:fixed_assets.activation_dialog.depreciation_methods.absolute', 'Abszolút összegű')}</SelectItem>
+                      <SelectItem value="multiplier">{t('hr:fixed_assets.activation_dialog.depreciation_methods.multiplier', 'Szorzószámos')}</SelectItem>
+                      <SelectItem value="immediate">{t('hr:fixed_assets.activation_dialog.depreciation_methods.immediate', 'Azonnali (Kisértékű eszköz)')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -558,7 +558,7 @@ export function CreateFixedAssetDialog({
                         disabled={depreciationMethod === 'immediate'}
                         className="w-full font-mono text-sm"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">év</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">{t('hr:fixed_assets.create_dialog.years', 'év')}</span>
                     </div>
                     <div className="flex items-center gap-1.5 flex-1">
                       <Input
@@ -570,7 +570,7 @@ export function CreateFixedAssetDialog({
                         disabled={depreciationMethod === 'immediate'}
                         className="w-full font-mono text-sm"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">hónap</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">{t('hr:fixed_assets.create_dialog.months', 'hónap')}</span>
                     </div>
                   </div>
                 </div>
@@ -580,7 +580,10 @@ export function CreateFixedAssetDialog({
                 <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2.5 rounded-md border border-emerald-500/20">
                   <Sparkles className="h-3.5 w-3.5 shrink-0" />
                   <span>
-                    Számviteli politika figyelmeztetés: {lowValueLimit.toLocaleString('hu-HU')} Ft értékhatár alatti kisértékű eszköz, azonnali 100%-os egyösszegű leírásra jogosult.
+                    {t('hr:fixed_assets.create_dialog.low_value_alert', {
+                      defaultValue: `Számviteli politika figyelmeztetés: ${lowValueLimit.toLocaleString('hu-HU')} Ft értékhatár alatti kisértékű eszköz, azonnali 100%-os egyösszegű leírásra jogosult.`,
+                      limit: lowValueLimit.toLocaleString('hu-HU'),
+                    })}
                   </span>
                 </div>
               )}
@@ -589,22 +592,22 @@ export function CreateFixedAssetDialog({
               {depreciationMethod === 'performance' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-top-1 duration-200">
                   <div className="space-y-1.5">
-                    <Label htmlFor="asset-perf-unit">Mértékegység (pl. km, üzemóra, db)</Label>
+                    <Label htmlFor="asset-perf-unit">{t('hr:fixed_assets.create_dialog.perf_unit', 'Mértékegység (pl. km, üzemóra, db)')}</Label>
                     <Input
                       id="asset-perf-unit"
                       value={performanceUnit}
                       onChange={e => setPerformanceUnit(e.target.value)}
-                      placeholder="pl. km"
+                      placeholder={t('hr:fixed_assets.create_dialog.perf_unit_placeholder', 'pl. km')}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="asset-perf-total">Tervezett összteljesítmény</Label>
+                    <Label htmlFor="asset-perf-total">{t('hr:fixed_assets.create_dialog.perf_total', 'Tervezett összteljesítmény')}</Label>
                     <Input
                       id="asset-perf-total"
                       type="number"
                       value={totalPlannedPerformance}
                       onChange={e => setTotalPlannedPerformance(e.target.value)}
-                      placeholder="pl. 300000"
+                      placeholder={t('hr:fixed_assets.create_dialog.perf_total_placeholder', 'pl. 300000')}
                     />
                   </div>
                 </div>
@@ -615,8 +618,8 @@ export function CreateFixedAssetDialog({
                 <div className="space-y-1.5 animate-in slide-in-from-top-1 duration-200">
                   <Label htmlFor="asset-schedule">
                     {depreciationMethod === 'absolute'
-                      ? 'Éves leírási összegek (vesszővel elválasztva, Ft)'
-                      : 'Éves szorzók / kulcsok (vesszővel elválasztva)'}
+                      ? t('hr:fixed_assets.create_dialog.schedule_label_abs', 'Éves leírási összegek (vesszővel elválasztva, Ft)')
+                      : t('hr:fixed_assets.create_dialog.schedule_label_mult', 'Éves szorzók / kulcsok (vesszővel elválasztva)')}
                   </Label>
                   <Input
                     id="asset-schedule"
@@ -632,10 +635,10 @@ export function CreateFixedAssetDialog({
                   <Label>{t('hr:fixed_assets.create_dialog.tao_template', 'Társasági Adó (TAO) kulcs sablon')}</Label>
                   <Select value={taoTemplateId || '_none'} onValueChange={v => setTaoTemplateId(v === '_none' ? '' : v)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Válassz TAO kulcsot..." />
+                      <SelectValue placeholder={t('hr:fixed_assets.create_dialog.tao_template_placeholder', 'Válassz TAO kulcsot...')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="_none">Nincs TAO sablon hozzárendelve</SelectItem>
+                      <SelectItem value="_none">{t('hr:fixed_assets.create_dialog.no_tao_template', 'Nincs TAO sablon hozzárendelve')}</SelectItem>
                       {taoTemplates.map(t => (
                         <SelectItem key={t.id} value={t.id}>
                           {t.name} ({t.tao_rate_percent}%)
@@ -649,10 +652,10 @@ export function CreateFixedAssetDialog({
                   <Label>{t('hr:fixed_assets.create_dialog.gl_account', 'Főkönyvi Számlaszám (1xx Befektetett)')}</Label>
                   <Select value={glAccountId || '_none'} onValueChange={v => setGlAccountId(v === '_none' ? '' : v)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Válassz főkönyvi számlát..." />
+                      <SelectValue placeholder={t('hr:fixed_assets.create_dialog.gl_account_placeholder', 'Válassz főkönyvi számlát...')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="_none">Nincs főkönyvi számla kiválasztva</SelectItem>
+                      <SelectItem value="_none">{t('hr:fixed_assets.create_dialog.no_gl_account', 'Nincs főkönyvi számla kiválasztva')}</SelectItem>
                       {glAccounts.map((a: any) => (
                         <SelectItem key={a.id} value={a.id}>
                           {a.gl_number} — {a.short_name}
@@ -675,10 +678,10 @@ export function CreateFixedAssetDialog({
                   <Label>{t('hr:fixed_assets.create_dialog.location', 'Telephely / Helyszín')}</Label>
                   <Select value={locationId || '_none'} onValueChange={v => setLocationId(v === '_none' ? '' : v)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Válassz telephelyet..." />
+                      <SelectValue placeholder={t('hr:fixed_assets.create_dialog.location_placeholder', 'Válassz telephelyet...')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="_none">Nincs megadva telephely</SelectItem>
+                      <SelectItem value="_none">{t('hr:fixed_assets.create_dialog.no_location', 'Nincs megadva telephely')}</SelectItem>
                       {locations.map(l => (
                         <SelectItem key={l.id} value={l.id}>
                           {l.name} {l.address ? `(${l.address})` : ''}
@@ -692,10 +695,10 @@ export function CreateFixedAssetDialog({
                   <Label>{t('hr:fixed_assets.create_dialog.project', 'Projekt')}</Label>
                   <Select value={projectId || '_none'} onValueChange={v => setProjectId(v === '_none' ? '' : v)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Válassz projektet..." />
+                      <SelectValue placeholder={t('hr:fixed_assets.create_dialog.project_placeholder', 'Válassz projektet...')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="_none">Nincs projekthez rendelve</SelectItem>
+                      <SelectItem value="_none">{t('hr:fixed_assets.create_dialog.no_project', 'Nincs projekthez rendelve')}</SelectItem>
                       {projects.map(p => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.name} {p.project_code ? `(${p.project_code})` : ''}
@@ -728,7 +731,7 @@ export function CreateFixedAssetDialog({
                     className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
                   />
                   <Label htmlFor="asset-dev-reserve-toggle" className="text-sm font-semibold cursor-pointer">
-                    Fejlesztési tartalék terhére aktiválva (Tao. tv. 7. § (15))
+                    {t('hr:fixed_assets.create_dialog.dev_reserve_toggle', 'Fejlesztési tartalék terhére aktiválva (Tao. tv. 7. § (15))')}
                   </Label>
                 </div>
 
@@ -736,7 +739,7 @@ export function CreateFixedAssetDialog({
                   <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-lg space-y-3 animate-in slide-in-from-top-1 duration-200">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs">Fejlesztési Tartalék Keret</Label>
+                        <Label className="text-xs">{t('hr:fixed_assets.create_dialog.dev_reserve_frame', 'Fejlesztési Tartalék Keret')}</Label>
                         <Select value={devReserveId} onValueChange={setDevReserveId}>
                           <SelectTrigger className="h-8 text-xs bg-background">
                             <SelectValue />
@@ -744,14 +747,18 @@ export function CreateFixedAssetDialog({
                           <SelectContent>
                             {activeReserves.map(r => (
                               <SelectItem key={r.id} value={r.id} className="text-xs">
-                                {r.creation_year}. évi keret (Szabad: {(r.remaining_amount || 0).toLocaleString('hu-HU')} Ft)
+                                {t('hr:fixed_assets.create_dialog.dev_reserve_frame_option', {
+                                  defaultValue: `${r.creation_year}. évi keret (Szabad: ${(r.remaining_amount || 0).toLocaleString('hu-HU')} Ft)`,
+                                  year: r.creation_year,
+                                  amount: (r.remaining_amount || 0).toLocaleString('hu-HU')
+                                })}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Felhasznált összeg (Ft)</Label>
+                        <Label className="text-xs">{t('hr:fixed_assets.create_dialog.dev_reserve_used_amount', 'Felhasznált összeg (Ft)')}</Label>
                         <Input
                           type="number"
                           value={devReserveAmount}
@@ -789,7 +796,7 @@ export function CreateFixedAssetDialog({
               ) : (
                 <>
                   <Package2 className="h-4 w-4" />
-                  <span>{isOpeningAsset ? 'Nyitó eszköz rögzítése' : 'Eszköz mentése'}</span>
+                  <span>{isOpeningAsset ? t('hr:fixed_assets.create_dialog.save_opening', 'Nyitó eszköz rögzítése') : t('hr:fixed_assets.create_dialog.save_new', 'Eszköz mentése')}</span>
                 </>
               )}
             </Button>

@@ -20,7 +20,7 @@ interface NavCredentialsFormProps {
 }
 
 const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOwner = true, onCredentialsSaved }) => {
-  const { t } = useTranslation(['settings', 'common']);
+  const { t } = useTranslation(['settings', 'common', 'invoices']);
   const { toast } = useToast();
   const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -173,14 +173,14 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
   const validateForm = () => {
     const errors: string[] = [];
     
-    if (!formData.nav_username) errors.push('NAV felhasználónév kötelező');
+    if (!formData.nav_username) errors.push(t('settings:integrations.nav.validation_username_required', 'NAV felhasználónév kötelező'));
     if (formData.nav_username && !/^[a-zA-Z0-9]+$/.test(formData.nav_username)) {
-      errors.push('Felhasználónév csak betűket és számokat tartalmazhat');
+      errors.push(t('settings:integrations.nav.validation_username_alphanumeric', 'Felhasználónév csak betűket és számokat tartalmazhat'));
     }
-    if (!formData.nav_password) errors.push('NAV jelszó kötelező');
-    if (!formData.nav_tax_number.match(/^\d{8}$/)) errors.push('Adószám pontosan 8 számjegy kell legyen');
-    if (!formData.nav_sign_key) errors.push('Aláíró kulcs kötelező');
-    if (!formData.nav_exchange_key) errors.push('Csere kulcs kötelező');
+    if (!formData.nav_password) errors.push(t('settings:integrations.nav.validation_password_required', 'NAV jelszó kötelező'));
+    if (!formData.nav_tax_number.match(/^\d{8}$/)) errors.push(t('settings:integrations.nav.validation_tax_number_format', 'Adószám pontosan 8 számjegy kell legyen'));
+    if (!formData.nav_sign_key) errors.push(t('settings:integrations.nav.validation_sign_key_required', 'Aláíró kulcs kötelező'));
+    if (!formData.nav_exchange_key) errors.push(t('settings:integrations.nav.validation_exchange_key_required', 'Csere kulcs kötelező'));
     
     return errors;
   };
@@ -189,7 +189,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     const errors = validateForm();
     if (errors.length > 0) {
       toast({
-        title: 'Hiányos adatok',
+        title: t('settings:integrations.nav.toast_incomplete_title', 'Hiányos adatok'),
         description: errors.join(', '),
         variant: 'destructive'
       });
@@ -218,8 +218,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
 
       // Step 1: Validate credentials INLINE first (without saving to DB)
       toast({
-        title: 'Kapcsolat tesztelése...',
-        description: 'NAV API kapcsolat ellenőrzése a mentés előtt...',
+        title: t('settings:integrations.nav.toast_testing_connection', 'Kapcsolat tesztelése...'),
+        description: t('settings:integrations.nav.toast_testing_connection_desc', 'NAV API kapcsolat ellenőrzése a mentés előtt...'),
       });
 
       const { data: validationData, error: validationError } = await supabase.functions.invoke('nav-token', {
@@ -261,8 +261,10 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           validationData?.error?.includes('Jogosultság szükséges');
 
         toast({
-          title: isPermissionIssue ? 'Hiányzó NAV jogosultság' : 'Sikertelen NAV kapcsolat',
-          description: validationData?.message || 'A megadott hitelesítő adatok érvénytelenek. A kapcsolat nem kerül mentésre.',
+          title: isPermissionIssue
+            ? t('settings:integrations.nav.toast_permission_issue_title', 'Hiányzó NAV jogosultság')
+            : t('settings:integrations.nav.toast_failed_connection_title', 'Sikertelen NAV kapcsolat'),
+          description: validationData?.message || t('settings:integrations.nav.toast_invalid_credentials_desc', 'A megadott hitelesítő adatok érvénytelenek. A kapcsolat nem kerül mentésre.'),
           variant: 'destructive',
           duration: 8000
         });
@@ -317,8 +319,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       }
       
       toast({
-        title: 'Sikeres mentés',
-        description: 'NAV hitelesítő adatok sikeresen mentve és validálva.',
+        title: t('settings:integrations.nav.toast_save_success_title', 'Sikeres mentés'),
+        description: t('settings:integrations.nav.toast_save_success_desc', 'NAV hitelesítő adatok sikeresen mentve és validálva.'),
       });
 
       onCredentialsSaved?.();
@@ -326,8 +328,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     } catch (error: any) {
       reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: 'Error saving credentials:', error: error });
       toast({
-        title: 'Mentési hiba',
-        description: error.message || 'Nem sikerült menteni az adatokat',
+        title: t('settings:integrations.nav.toast_save_error_title', 'Mentési hiba'),
+        description: error.message || t('common:status.error', 'Nem sikerült menteni az adatokat'),
         variant: 'destructive'
       });
     } finally {
@@ -361,7 +363,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         await loadCredentialInfo(); // Reload credential info
         if (result.status === 'valid') {
           toast({
-            title: 'Sikeres validálás',
+            title: t('settings:integrations.nav.toast_validation_success_title', 'Sikeres validálás'),
             description: result.message,
           });
         }
@@ -374,8 +376,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: 'Validation error:', error: error });
       setValidationStatus('error');
       toast({
-        title: 'Validálási hiba',
-        description: error.message || 'Nem sikerült validálni a hitelesítő adatokat',
+        title: t('settings:integrations.nav.toast_validation_error_title', 'Validálási hiba'),
+        description: error.message || t('common:status.error', 'Nem sikerült validálni a hitelesítő adatokat'),
         variant: 'destructive'
       });
     } finally {
@@ -413,8 +415,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       const dateFromStr = dateFrom.toISOString().split('T')[0];
       
       toast({
-        title: 'Adatok szinkronizálása',
-        description: `NAV számlák letöltése (30 napos catch-up: ${dateFromStr} – ${dateToStr})...`,
+        title: t('settings:integrations.nav.toast_syncing_data', 'Adatok szinkronizálása'),
+        description: t('settings:integrations.nav.toast_syncing_data_desc', 'NAV számlák letöltése (30 napos catch-up: {{from}} – {{to}})...', { from: dateFromStr, to: dateToStr }),
       });
 
       let totalOutbound = 0;
@@ -485,39 +487,39 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       // Show appropriate toast based on actual results
       if (outboundErrorMsg && inboundErrorMsg) {
         toast({
-          title: 'Szinkronizálási hiba',
-          description: `Mindkét irány hibára futott. Bejövő: ${inboundErrorMsg}`,
+          title: t('settings:integrations.nav.toast_sync_error_title', 'Szinkronizálási hiba'),
+          description: t('settings:integrations.nav.toast_sync_error_both', 'Mindkét irány hibára futott. Bejövő: {{error}}', { error: inboundErrorMsg }),
           variant: 'destructive'
         });
       } else if (inboundErrorMsg) {
         toast({
-          title: 'Részleges szinkronizáció',
-          description: `Kimenő számlák rendben (${totalOutbound} db), de a bejövő számlák sikertelenek: ${inboundErrorMsg}`,
+          title: t('settings:integrations.nav.toast_partial_sync_title', 'Részleges szinkronizáció'),
+          description: t('settings:integrations.nav.toast_partial_sync_inbound_failed', 'Kimenő számlák rendben ({{count}} db), de a bejövő számlák sikertelenek: {{error}}', { count: totalOutbound, error: inboundErrorMsg }),
           variant: 'destructive'
         });
       } else if (outboundErrorMsg) {
         toast({
-          title: 'Részleges szinkronizáció',
-          description: `Bejövő számlák rendben (${totalInbound} db), de a kimenő számlák sikertelenek: ${outboundErrorMsg}`,
+          title: t('settings:integrations.nav.toast_partial_sync_title', 'Részleges szinkronizáció'),
+          description: t('settings:integrations.nav.toast_partial_sync_outbound_failed', 'Bejövő számlák rendben ({{count}} db), de a kimenő számlák sikertelenek: {{error}}', { count: totalInbound, error: outboundErrorMsg }),
           variant: 'destructive'
         });
       } else if (totalOutbound === 0 && totalInbound === 0) {
         toast({
-          title: 'Nincs új adat',
-          description: `A megadott időszakban (${dateFromStr} – ${dateToStr}) nem találhatók új NAV számlák.`,
+          title: t('settings:integrations.nav.toast_no_new_data_title', 'Nincs új adat'),
+          description: t('settings:integrations.nav.toast_no_new_data_desc', 'A megadott időszakban ({{from}} – {{to}}) nem találhatók új NAV számlák.', { from: dateFromStr, to: dateToStr }),
         });
       } else {
         toast({
-          title: 'Szinkronizálás kész',
-          description: `NAV számlák sikeresen letöltve: ${totalOutbound} kimenő, ${totalInbound} bejövő számla.`,
+          title: t('settings:integrations.nav.toast_sync_done_title', 'Szinkronizálás kész'),
+          description: t('settings:integrations.nav.toast_sync_done_desc', 'NAV számlák sikeresen letöltve: {{outbound}} kimenő, {{inbound}} bejövő számla.', { outbound: totalOutbound, inbound: totalInbound }),
         });
       }
       
     } catch (error: any) {
       reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] Initial sync error:', error: error });
       toast({
-        title: 'Szinkronizálási hiba',
-        description: error.message || 'Az adatok letöltése sikertelen. Próbálja újra később.',
+        title: t('settings:integrations.nav.toast_sync_error_title', 'Szinkronizálási hiba'),
+        description: error.message || t('settings:integrations.nav.toast_sync_error_default', 'Az adatok letöltése sikertelen. Próbálja újra később.'),
         variant: 'destructive'
       });
     }
@@ -540,7 +542,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
 
 
   const handleDisconnect = async () => {
-    if (!confirm('Biztosan le szeretné választani a NAV API kapcsolatot? Ez törli az összes mentett hitelesítő adatot.')) {
+    if (!confirm(t('settings:integrations.nav.disconnect_confirm', 'Biztosan le szeretné választani a NAV API kapcsolatot? Ez törli az összes mentett hitelesítő adatot.'))) {
       return;
     }
 
@@ -560,8 +562,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       if (data?.error) throw new Error(data.error);
 
       toast({
-        title: "Sikeres leválasztás",
-        description: "A NAV API kapcsolat sikeresen leválasztva.",
+        title: t('settings:integrations.nav.toast_disconnect_success_title', 'Sikeres leválasztás'),
+        description: t('settings:integrations.nav.toast_disconnect_success_desc', 'A NAV API kapcsolat sikeresen leválasztva.'),
       });
 
       // Reset local state
@@ -584,8 +586,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     } catch (error: any) {
       reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: 'Error disconnecting NAV credentials:', error: error });
       toast({
-        title: "Hiba",
-        description: error.message || "Nem sikerült leválasztani a NAV kapcsolatot.",
+        title: t('common:status.error', 'Hiba'),
+        description: error.message || t('settings:integrations.nav.toast_disconnect_error_desc', 'Nem sikerült leválasztani a NAV kapcsolatot.'),
         variant: "destructive",
       });
     } finally {
@@ -628,15 +630,17 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
               <div className="flex-1 space-y-3">
                 <div>
                   <h3 className="font-semibold text-lg">
-                    {isValid && !hasDirectionalFailure && 'Élő NAV Kapcsolat'}
-                    {isValid && hasDirectionalFailure && !bothFailed && 'NAV Kapcsolat: Részleges működés'}
-                    {isValid && bothFailed && 'NAV Kapcsolat: Szinkronizáció sikertelen'}
-                    {isPending && 'Kapcsolat Ellenőrzése Szükséges'}
-                    {isInvalid && 'Nincs NAV Kapcsolat'}
+                    {isValid && !hasDirectionalFailure && t('settings:integrations.nav.status_live', 'Élő NAV Kapcsolat')}
+                    {isValid && hasDirectionalFailure && !bothFailed && t('settings:integrations.nav.status_partial', 'NAV Kapcsolat: Részleges működés')}
+                    {isValid && bothFailed && t('settings:integrations.nav.status_failed', 'NAV Kapcsolat: Szinkronizáció sikertelen')}
+                    {isPending && t('settings:integrations.nav.status_pending', 'Kapcsolat Ellenőrzése Szükséges')}
+                    {isInvalid && t('settings:integrations.nav.status_invalid', 'Nincs NAV Kapcsolat')}
                   </h3>
                   {credentialInfo.last_validated_at && (
                     <p className="text-sm text-muted-foreground">
-                      Utolsó token-ellenőrzés: {new Date(credentialInfo.last_validated_at).toLocaleString('hu-HU')}
+                      {t('settings:integrations.nav.last_token_check', 'Utolsó token-ellenőrzés: {{date}}', {
+                        date: new Date(credentialInfo.last_validated_at).toLocaleString()
+                      })}
                     </p>
                   )}
                 </div>
@@ -649,7 +653,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
                   )}
                   {credentialInfo.nav_tax_number && (
                     <div>
-                      <span className="font-medium">Adószám:</span> {credentialInfo.nav_tax_number}
+                      <span className="font-medium">{t('settings:integrations.nav.tax_number_label', 'Adószám')}:</span> {credentialInfo.nav_tax_number}
                     </div>
                   )}
                 </div>
@@ -667,20 +671,22 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 font-medium">
                         <ArrowUpRight className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                        <span>Kimenő számlák (OUTBOUND)</span>
+                        <span>{t('settings:integrations.nav.outbound_invoices', 'Kimenő számlák (OUTBOUND)')}</span>
                       </div>
                       {outboundFailed ? (
-                        <Badge variant="destructive" className="text-[11px] px-2 py-0.5">Sikertelen</Badge>
+                        <Badge variant="destructive" className="text-[11px] px-2 py-0.5">{t('common:status.failed', 'Sikertelen')}</Badge>
                       ) : outboundStatus === 'completed' ? (
-                        <Badge className="bg-green-600 hover:bg-green-700 text-white text-[11px] px-2 py-0.5">Aktív / Sikeres</Badge>
+                        <Badge className="bg-green-600 hover:bg-green-700 text-white text-[11px] px-2 py-0.5">{t('common:status.active_success', 'Aktív / Sikeres')}</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-[11px] px-2 py-0.5">Nincs adat</Badge>
+                        <Badge variant="outline" className="text-[11px] px-2 py-0.5">{t('common:status.no_data', 'Nincs adat')}</Badge>
                       )}
                     </div>
                     {directionalStatus.outbound?.completed_at && (
                       <div className="text-[11px] text-muted-foreground">
-                        Utolsó szinkron: {new Date(directionalStatus.outbound.completed_at).toLocaleString('hu-HU')}
-                        {typeof directionalStatus.outbound.invoices_fetched === 'number' && ` (${directionalStatus.outbound.invoices_fetched} számla)`}
+                        {t('settings:integrations.nav.last_sync', 'Utolsó szinkron: {{date}}', {
+                          date: new Date(directionalStatus.outbound.completed_at).toLocaleString()
+                        })}
+                        {typeof directionalStatus.outbound.invoices_fetched === 'number' && ` (${t('settings:integrations.nav.invoices_count', { count: directionalStatus.outbound.invoices_fetched })})`}
                       </div>
                     )}
                     {directionalStatus.outbound?.error_message && (
@@ -701,20 +707,22 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 font-medium">
                         <ArrowDownLeft className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                        <span>Bejövő számlák (INBOUND)</span>
+                        <span>{t('settings:integrations.nav.inbound_invoices', 'Bejövő számlák (INBOUND)')}</span>
                       </div>
                       {inboundFailed ? (
-                        <Badge variant="destructive" className="text-[11px] px-2 py-0.5">Sikertelen</Badge>
+                        <Badge variant="destructive" className="text-[11px] px-2 py-0.5">{t('common:status.failed', 'Sikertelen')}</Badge>
                       ) : inboundStatus === 'completed' ? (
-                        <Badge className="bg-green-600 hover:bg-green-700 text-white text-[11px] px-2 py-0.5">Aktív / Sikeres</Badge>
+                        <Badge className="bg-green-600 hover:bg-green-700 text-white text-[11px] px-2 py-0.5">{t('common:status.active_success', 'Aktív / Sikeres')}</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-[11px] px-2 py-0.5">Nincs adat</Badge>
+                        <Badge variant="outline" className="text-[11px] px-2 py-0.5">{t('common:status.no_data', 'Nincs adat')}</Badge>
                       )}
                     </div>
                     {directionalStatus.inbound?.completed_at && (
                       <div className="text-[11px] text-muted-foreground">
-                        Utolsó szinkron: {new Date(directionalStatus.inbound.completed_at).toLocaleString('hu-HU')}
-                        {typeof directionalStatus.inbound.invoices_fetched === 'number' && ` (${directionalStatus.inbound.invoices_fetched} számla)`}
+                        {t('settings:integrations.nav.last_sync', 'Utolsó szinkron: {{date}}', {
+                          date: new Date(directionalStatus.inbound.completed_at).toLocaleString()
+                        })}
+                        {typeof directionalStatus.inbound.invoices_fetched === 'number' && ` (${t('settings:integrations.nav.invoices_count', { count: directionalStatus.inbound.invoices_fetched })})`}
                       </div>
                     )}
                     {directionalStatus.inbound?.error_message && (
@@ -731,20 +739,20 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
                     <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                     <div>
                       <AlertTitle className="font-semibold text-sm">
-                        Bejövő számlák szinkronizálása sikertelen
+                        {t('settings:integrations.nav.inbound_sync_failed_title', 'Bejövő számlák szinkronizálása sikertelen')}
                       </AlertTitle>
                       <AlertDescription className="text-xs space-y-1 mt-1 leading-relaxed">
                         <p>
                           {directionalStatus.inbound?.error_message?.toLowerCase().includes('forbidden') ||
                            directionalStatus.inbound?.error_message?.toLowerCase().includes('403') ||
                            directionalStatus.inbound?.error_message?.toLowerCase().includes('jogosult') ? (
-                            <span>A NAV Online Számla felületén a technikai felhasználó számára <strong>nincs engedélyezve a „Számlák lekérdezése” jogosultság</strong> (HTTP 403 Forbidden).</span>
+                            <span>{t('settings:integrations.nav.inbound_sync_forbidden_desc', 'A NAV Online Számla felületén a technikai felhasználó számára nincs engedélyezve a „Számlák lekérdezése” jogosultság (HTTP 403 Forbidden).')}</span>
                           ) : (
-                            <span>Hiba: {directionalStatus.inbound?.error_message}</span>
+                            <span>{t('common:status.error', 'Hiba')}: {directionalStatus.inbound?.error_message}</span>
                           )}
                         </p>
                         <p className="font-medium text-amber-800 dark:text-amber-200">
-                          Megoldás: Lépj be a nav.gov.hu Online Számla felületre az Elsődleges felhasználóval, nyisd meg a Technikai felhasználók listáját, kattints a felhasználóra, és engedélyezd a „Számlák lekérdezése” opciót!
+                          {t('settings:integrations.nav.inbound_sync_solution', 'Megoldás: Lépj be a nav.gov.hu Online Számla felületre az Elsődleges felhasználóval, nyisd meg a Technikai felhasználók listáját, kattints a felhasználóra, és engedélyezd a „Számlák lekérdezése” opciót!')}
                         </p>
                       </AlertDescription>
                     </div>
@@ -780,7 +788,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
                 {isInvalid && credentialInfo.validation_error && (
                   <Alert variant="destructive" className="mt-3">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Kapcsolati hiba</AlertTitle>
+                    <AlertTitle>{t('settings:integrations.nav.connection_error', 'Kapcsolati hiba')}</AlertTitle>
                     <AlertDescription className="text-sm">
                       {credentialInfo.validation_error}
                     </AlertDescription>
@@ -795,7 +803,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
               onClick={handleValidate}
               disabled={validating}
               className="ml-2"
-              title="Hitelesítő adatok újratesztelése"
+              title={t('settings:integrations.nav.retest_credentials', 'Hitelesítő adatok újratesztelése')}
             >
               <RefreshCw className={`w-4 h-4 ${validating ? 'animate-spin' : ''}`} />
             </Button>
@@ -833,12 +841,12 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
                 {manualSyncing ? (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Szinkronizálás folyamatban...
+                    {t('settings:integrations.nav.syncing', 'Szinkronizálás folyamatban...')}
                   </>
                 ) : (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    NAV számlák szinkronizálása most
+                    {t('settings:integrations.nav.sync_now', 'NAV számlák szinkronizálása most')}
                   </>
                 )}
               </Button>
@@ -1029,7 +1037,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           </div>
           
           <div>
-            <Label htmlFor="devContact">Fejlesztő Elérhetőség (opcionális)</Label>
+            <Label htmlFor="devContact">{t('settings:integrations.nav.dev_contact_label', 'Fejlesztő Elérhetőség (opcionális)')}</Label>
             <Input
               id="devContact"
               type="email"
@@ -1047,7 +1055,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
             disabled={loading || validating}
             className="flex-1"
           >
-            {loading && !validating ? 'Mentés...' : validating ? 'Kapcsolat tesztelése...' : 'Tesztelés és Mentés'}
+            {loading && !validating ? t('common:status.loading', 'Mentés...') : validating ? t('settings:integrations.nav.testing_connection', 'Kapcsolat tesztelése...') : t('settings:integrations.nav.test_and_save', 'Tesztelés és Mentés')}
           </Button>
         </div>
 
@@ -1060,7 +1068,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
               onClick={() => setShowDebug(!showDebug)}
               className="w-full justify-between"
             >
-              <span className="text-sm">🔍 Debug részletek</span>
+              <span className="text-sm">🔍 {t('settings:integrations.nav.debug_details', 'Debug részletek')}</span>
               <Badge variant="outline" className="ml-2">
                 {debugInfo.response.status === 'success' ? '✓' : '✗'}
               </Badge>

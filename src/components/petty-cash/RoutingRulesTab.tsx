@@ -17,12 +17,14 @@ import { Save, Plus, Trash2, Edit2, Zap, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import type { PettyCashRegister, RoutingRule } from './types';
 import { COMMON_CURRENCIES, SOURCE_LABELS } from './types';
+import { useTranslation } from 'react-i18next';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  ROUTING RULES TAB
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export default function RoutingRulesTab() {
+  const { t } = useTranslation(['pettyCash', 'common']);
   const { selectedCompany } = useCompany();
   const qc = useQueryClient();
   const companyId = selectedCompany?.id || '';
@@ -115,11 +117,11 @@ export default function RoutingRulesTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Routing szabályok</h2>
-          <p className="text-sm text-muted-foreground">Automatikus hozzárendelés szabályok — a magasabb prioritású fut előbb</p>
+          <h2 className="text-lg font-semibold">{t('pettyCash:routing_rules.title', 'Routing szabályok')}</h2>
+          <p className="text-sm text-muted-foreground">{t('pettyCash:routing_rules.subtitle', 'Automatikus hozzárendelés szabályok — a magasabb prioritású fut előbb')}</p>
         </div>
         <Button onClick={() => { setEditing(null); setShowDialog(true); }} disabled={registers.length < 2}>
-          <Plus className="w-4 h-4 mr-2" /> Új szabály
+          <Plus className="w-4 h-4 mr-2" /> {t('pettyCash:routing_rules.new_rule', 'Új szabály')}
         </Button>
       </div>
 
@@ -127,14 +129,14 @@ export default function RoutingRulesTab() {
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-8 gap-2">
             <Zap className="w-8 h-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">Legalább 2 pénztár szükséges a routing szabályokhoz</p>
+            <p className="text-sm text-muted-foreground">{t('pettyCash:routing_rules.min_registers_warning', 'Legalább 2 pénztár szükséges a routing szabályokhoz')}</p>
           </CardContent>
         </Card>
       ) : rules.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-8 gap-2">
             <Zap className="w-8 h-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">Nincs routing szabály — minden tétel a default pénztárba kerül</p>
+            <p className="text-sm text-muted-foreground">{t('pettyCash:routing_rules.no_rules_desc', 'Nincs routing szabály — minden tétel a default pénztárba kerül')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -143,10 +145,10 @@ export default function RoutingRulesTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-20">Prioritás</TableHead>
-                  <TableHead>Feltétel</TableHead>
-                  <TableHead>Cél pénztár</TableHead>
-                  <TableHead className="w-20">Aktív</TableHead>
+                  <TableHead className="w-20">{t('pettyCash:routing_rules.col_priority', 'Prioritás')}</TableHead>
+                  <TableHead>{t('pettyCash:routing_rules.col_condition', 'Feltétel')}</TableHead>
+                  <TableHead>{t('pettyCash:routing_rules.col_target_register', 'Cél pénztár')}</TableHead>
+                  <TableHead className="w-20">{t('pettyCash:routing_rules.col_active', 'Aktív')}</TableHead>
                   <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
@@ -158,12 +160,12 @@ export default function RoutingRulesTab() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {rule.match_currency && <Badge variant="secondary" className="text-[10px]">Valuta: {rule.match_currency}</Badge>}
-                        {rule.match_source_type && <Badge variant="secondary" className="text-[10px]">Típus: {SOURCE_LABELS[rule.match_source_type] || rule.match_source_type}</Badge>}
-                        {rule.match_description_pattern && <Badge variant="secondary" className="text-[10px]">Leírás: {rule.match_description_pattern}</Badge>}
-                        {rule.match_partner_pattern && <Badge variant="secondary" className="text-[10px]">Partner: {rule.match_partner_pattern}</Badge>}
+                        {rule.match_currency && <Badge variant="secondary" className="text-[10px]">{t('pettyCash:routing_rules.badge_currency', { defaultValue: 'Valuta: {{currency}}', currency: rule.match_currency })}</Badge>}
+                        {rule.match_source_type && <Badge variant="secondary" className="text-[10px]">{t('pettyCash:routing_rules.badge_type', { defaultValue: 'Típus: {{type}}', type: SOURCE_LABELS[rule.match_source_type] || rule.match_source_type })}</Badge>}
+                        {rule.match_description_pattern && <Badge variant="secondary" className="text-[10px]">{t('pettyCash:routing_rules.badge_desc', { defaultValue: 'Leírás: {{desc}}', desc: rule.match_description_pattern })}</Badge>}
+                        {rule.match_partner_pattern && <Badge variant="secondary" className="text-[10px]">{t('pettyCash:routing_rules.badge_partner', { defaultValue: 'Partner: {{partner}}', partner: rule.match_partner_pattern })}</Badge>}
                         {!rule.match_currency && !rule.match_source_type && !rule.match_description_pattern && !rule.match_partner_pattern && (
-                          <span className="text-xs text-muted-foreground italic">Nincs feltétel (mindent elkapó)</span>
+                          <span className="text-xs text-muted-foreground italic">{t('pettyCash:routing_rules.catch_all', 'Nincs feltétel (mindent elkapó)')}</span>
                         )}
                       </div>
                     </TableCell>
@@ -246,17 +248,18 @@ function RoutingRuleDialog({ open, onOpenChange, rule, registers, onSave, saving
     }
   }, [rule, open, defaultTargetId]);
 
+  const { t } = useTranslation(['pettyCash', 'common']);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{rule ? 'Szabály szerkesztése' : 'Új routing szabály'}</DialogTitle>
-          <DialogDescription>Ha egy tétel megfelel a feltételeknek, automatikusan a cél pénztárba kerül.</DialogDescription>
+          <DialogTitle>{rule ? t('pettyCash:routing_rules.dialog_title_edit', 'Szabály szerkesztése') : t('pettyCash:routing_rules.dialog_title_new', 'Új routing szabály')}</DialogTitle>
+          <DialogDescription>{t('pettyCash:routing_rules.dialog_help', 'Ha egy tétel megfelel a feltételeknek, automatikusan a cél pénztárba kerül.')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Cél pénztár</Label>
+              <Label>{t('pettyCash:routing_rules.target_register_label', 'Cél pénztár *')}</Label>
               <Select value={form.target_register_id} onValueChange={v => setForm(f => ({ ...f, target_register_id: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -265,46 +268,46 @@ function RoutingRuleDialog({ open, onOpenChange, rule, registers, onSave, saving
               </Select>
             </div>
             <div>
-              <Label>Prioritás</Label>
+              <Label>{t('pettyCash:routing_rules.priority_label', 'Prioritás')}</Label>
               <Input type="number" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: +e.target.value }))} />
             </div>
           </div>
           <div className="border-t border-border/40 pt-3">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider mb-2 block">Feltételek (üres = nem szűr)</Label>
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider mb-2 block">{t('pettyCash:routing_rules.conditions_header', 'Feltételek (üres = nem szűr)')}</Label>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Valuta</Label>
+                <Label className="text-xs">{t('pettyCash:entries.filter_currency', 'Valuta')}</Label>
                 <Select value={form.match_currency || '_none'} onValueChange={v => setForm(f => ({ ...f, match_currency: v === '_none' ? '' : v }))}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="_none">Bármelyik</SelectItem>
+                    <SelectItem value="_none">{t('pettyCash:routing_rules.match_any', 'Bármelyik')}</SelectItem>
                     {COMMON_CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">Forrás típus</Label>
+                <Label className="text-xs">{t('pettyCash:routing_rules.source_type', 'Forrás típus')}</Label>
                 <Select value={form.match_source_type || '_none'} onValueChange={v => setForm(f => ({ ...f, match_source_type: v === '_none' ? '' : v }))}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="_none">Bármelyik</SelectItem>
+                    <SelectItem value="_none">{t('pettyCash:routing_rules.match_any', 'Bármelyik')}</SelectItem>
                     {Object.entries(SOURCE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">Leírás minta</Label>
+                <Label className="text-xs">{t('pettyCash:routing_rules.desc_pattern', 'Leírás minta')}</Label>
                 <Input className="h-8 text-xs" value={form.match_description_pattern} onChange={e => setForm(f => ({ ...f, match_description_pattern: e.target.value }))} placeholder="%euró%" />
               </div>
               <div>
-                <Label className="text-xs">Partner minta</Label>
+                <Label className="text-xs">{t('pettyCash:routing_rules.partner_pattern', 'Partner minta')}</Label>
                 <Input className="h-8 text-xs" value={form.match_partner_pattern} onChange={e => setForm(f => ({ ...f, match_partner_pattern: e.target.value }))} placeholder="%GmbH%" />
               </div>
             </div>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Mégse</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common:cancel', 'Mégse')}</Button>
           <Button onClick={() => onSave({
             ...(rule ? { id: rule.id } : {}),
             target_register_id: form.target_register_id,
@@ -316,7 +319,7 @@ function RoutingRuleDialog({ open, onOpenChange, rule, registers, onSave, saving
             is_active: form.is_active,
           })} disabled={saving || !form.target_register_id}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-            Mentés
+            {t('common:save', 'Mentés')}
           </Button>
         </DialogFooter>
       </DialogContent>

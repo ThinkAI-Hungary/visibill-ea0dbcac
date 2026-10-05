@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { CreditCard, ChevronsUpDown, Check, X, Loader2, Plus, ArrowDownRight, ArrowUpRight, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/locale/formatters';
+import { useTranslation } from 'react-i18next';
 
 export interface SelectedTransactionItem {
   id: string;
@@ -38,6 +39,7 @@ export function TransactionMultiPicker({
   invoiceCurrency = 'HUF',
   disabled = false,
 }: TransactionMultiPickerProps) {
+  const { t } = useTranslation(['invoices', 'common']);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [showAllTransactions, setShowAllTransactions] = useState(false);
@@ -115,11 +117,12 @@ export function TransactionMultiPicker({
       <div className="flex items-center justify-between">
         <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
           <CreditCard className="h-3.5 w-3.5 text-primary" />
-          Kiegyenlítő banki tranzakció(k) csatolása
+          {t('invoices:manual_create.tx_picker.label')}
         </label>
         {selectedTransactions.length > 0 && (
           <span className="text-[11px] text-muted-foreground">
-            {selectedTransactions.length} tétel kijelölve • Össz: <strong className="text-foreground">{formatCurrency(totalSelectedAmount, invoiceCurrency)}</strong>
+            {t('invoices:manual_create.tx_picker.items_selected', { count: selectedTransactions.length })}{' '}
+            <strong className="text-foreground">{formatCurrency(totalSelectedAmount, invoiceCurrency)}</strong>
           </span>
         )}
       </div>
@@ -136,7 +139,7 @@ export function TransactionMultiPicker({
           >
             <span className="flex items-center gap-2 text-xs text-muted-foreground">
               <Plus className="h-3.5 w-3.5 text-primary" />
-              <span>Tranzakció kiválasztása vagy hozzáadása...</span>
+              <span>{t('invoices:manual_create.tx_picker.trigger_button')}</span>
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -151,7 +154,7 @@ export function TransactionMultiPicker({
         >
           <SearchInput
             variant="borderless"
-            placeholder="Keresés közlemény vagy összeg szerint..."
+            placeholder={t('invoices:manual_create.tx_picker.search_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch('')}
@@ -165,14 +168,14 @@ export function TransactionMultiPicker({
 
           <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30 border-b border-border/40 text-[11px] text-muted-foreground shrink-0">
             <span>
-              {showAllTransactions ? 'Összes tranzakció listázva' : 'Csak párosítatlan tranzakciók'}
+              {showAllTransactions ? t('invoices:manual_create.tx_picker.filter_all') : t('invoices:manual_create.tx_picker.filter_unmatched_only')}
             </span>
             <button
               type="button"
               onClick={() => setShowAllTransactions(!showAllTransactions)}
               className="text-primary hover:underline font-medium hover:text-primary/80 transition-colors"
             >
-              {showAllTransactions ? 'Csak párosítatlanok' : 'Összes mutatása'}
+              {showAllTransactions ? t('invoices:manual_create.tx_picker.toggle_unmatched') : t('invoices:manual_create.tx_picker.toggle_all')}
             </button>
           </div>
 
@@ -184,29 +187,35 @@ export function TransactionMultiPicker({
             {isLoading ? (
               <div className="h-full flex items-center justify-center py-6 text-xs text-muted-foreground gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                <span>Tranzakciók betöltése...</span>
+                <span>{t('invoices:manual_create.tx_picker.loading')}</span>
               </div>
             ) : displayedTransactions.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground">
                 <Search className="h-7 w-7 text-muted-foreground/30 mb-2" />
-                <span className="font-medium text-foreground/80">Nem található tranzakció</span>
+                <span className="font-medium text-foreground/80">{t('invoices:manual_create.tx_picker.empty_title')}</span>
                 <span className="text-[11px] text-muted-foreground mt-0.5">
-                  {search ? `Nincs találat a(z) "${search}" keresésre.` : 'Nincs megjeleníthető párosítatlan tranzakció.'}
+                  {search ? t('invoices:manual_create.tx_picker.empty_search', { search }) : t('invoices:manual_create.tx_picker.empty_desc')}
                 </span>
               </div>
             ) : (
               displayedTransactions.map((tx) => {
                 const isSelected = selectedIds.has(tx.id);
                 const isExpense = tx.amount < 0 || tx.type === 'expense';
+                const isAlreadyMatched = Boolean(tx.matched_invoice_id && !isSelected);
 
                 return (
                   <button
                     key={tx.id}
                     type="button"
-                    onClick={() => onToggleTransaction(tx)}
+                    disabled={isAlreadyMatched}
+                    onClick={() => !isAlreadyMatched && onToggleTransaction(tx)}
+                    title={isAlreadyMatched ? t('invoices:manual_create.tx_picker.already_matched_hint') : undefined}
                     className={cn(
-                      "w-full text-left p-2.5 rounded-md hover:bg-accent/50 transition-colors flex items-center justify-between gap-3 text-xs",
-                      isSelected && "bg-primary/10 text-primary font-medium"
+                      "w-full text-left p-2.5 rounded-md transition-colors flex items-center justify-between gap-3 text-xs",
+                      isSelected && "bg-primary/10 text-primary font-medium",
+                      isAlreadyMatched
+                        ? "opacity-60 cursor-not-allowed bg-muted/20"
+                        : "hover:bg-accent/50"
                     )}
                   >
                     <div className="flex-1 min-w-0">
@@ -217,16 +226,31 @@ export function TransactionMultiPicker({
                           <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                         )}
                         <span className="font-medium text-foreground truncate text-xs">
-                          {tx.description || 'Közlemény nélküli tétel'}
+                          {tx.description || t('invoices:manual_create.tx_picker.untitled_tx')}
                         </span>
                         {tx.matched_invoice_id && (
-                          <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/30 text-amber-500 shrink-0">
-                            Párosítva
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[9px] px-1 py-0 shrink-0",
+                              isAlreadyMatched
+                                ? "border-destructive/40 text-destructive/80 bg-destructive/5"
+                                : "border-amber-500/30 text-amber-500"
+                            )}
+                          >
+                            {isAlreadyMatched
+                              ? t('invoices:manual_create.tx_picker.badge_already_matched')
+                              : t('invoices:manual_create.tx_picker.badge_matched')}
                           </Badge>
                         )}
                       </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5 ml-5">
-                        Dátum: {tx.transaction_date || '-'}
+                      <div className="text-[10px] text-muted-foreground mt-0.5 ml-5 flex items-center gap-2">
+                        <span>{t('invoices:manual_create.tx_picker.meta_date')} {tx.transaction_date || '-'}</span>
+                        {isAlreadyMatched && (
+                          <span className="text-destructive/80 font-medium">
+                            • {t('invoices:manual_create.tx_picker.already_matched_hint')}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -239,7 +263,8 @@ export function TransactionMultiPicker({
                       </div>
                       <div className={cn(
                         "w-4 h-4 rounded border flex items-center justify-center",
-                        isSelected ? "bg-primary border-primary text-primary-foreground" : "border-border/60"
+                        isSelected ? "bg-primary border-primary text-primary-foreground" : "border-border/60",
+                        isAlreadyMatched && "opacity-40"
                       )}>
                         {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
                       </div>
@@ -252,7 +277,7 @@ export function TransactionMultiPicker({
 
           {filteredTransactions.length > displayedTransactions.length && (
             <div className="p-2 border-t border-border/40 bg-muted/20 text-center text-[11px] text-muted-foreground shrink-0">
-              Még {filteredTransactions.length - displayedTransactions.length} tranzakció • Pontosításhoz használja a fenti keresőt
+              {t('invoices:manual_create.tx_picker.more_transactions', { count: filteredTransactions.length - displayedTransactions.length })}
             </div>
           )}
         </PopoverContent>
@@ -269,7 +294,7 @@ export function TransactionMultiPicker({
             >
               <CreditCard className="h-3 w-3 text-primary shrink-0" />
               <span className="truncate max-w-[180px] font-medium text-foreground">
-                {tx.description || 'Tranzakció'}
+                {tx.description || t('invoices:manual_create.tx_picker.default_tx_title')}
               </span>
               <span className="font-semibold text-foreground tabular-nums">
                 {formatCurrency(tx.amount, tx.currency || 'HUF')}
@@ -289,18 +314,18 @@ export function TransactionMultiPicker({
       {/* Settlement helper note */}
       {selectedTransactions.length > 0 && invoiceGrossAmount > 0 && (
         <div className="text-[11px] p-2 rounded-md bg-muted/30 border border-border/30 flex items-center justify-between">
-          <span className="text-muted-foreground">Kiegyenlítés fedezete:</span>
+          <span className="text-muted-foreground">{t('invoices:manual_create.tx_picker.settlement_cover')}</span>
           {Math.abs(balanceDifference) < 1 ? (
             <span className="text-emerald-500 font-semibold flex items-center gap-1">
-              <Check className="h-3 w-3" /> Teljesen kiegyenlítve
+              <Check className="h-3 w-3" /> {t('invoices:manual_create.tx_picker.fully_settled')}
             </span>
           ) : balanceDifference > 0 ? (
             <span className="text-blue-500 font-medium">
-              Részfizetés (Hátralévő: {formatCurrency(balanceDifference, invoiceCurrency)})
+              {t('invoices:manual_create.tx_picker.partial_payment', { amount: formatCurrency(balanceDifference, invoiceCurrency) })}
             </span>
           ) : (
             <span className="text-amber-500 font-medium">
-              Túlfizetés ({formatCurrency(Math.abs(balanceDifference), invoiceCurrency)})
+              {t('invoices:manual_create.tx_picker.overpayment', { amount: formatCurrency(Math.abs(balanceDifference), invoiceCurrency) })}
             </span>
           )}
         </div>
