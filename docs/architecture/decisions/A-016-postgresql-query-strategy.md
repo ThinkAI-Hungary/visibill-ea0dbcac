@@ -165,6 +165,15 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `get_default_company_smtp(p_company_id)` | DEFINER | send-dunning-email EF | Alapértelmezett kimenő SMTP fiók feloldása |
 | `get_active_imap_accounts()` | DEFINER | Python Worker | Összes aktív IMAP fiók lekérdezése párhuzamos polloláshoz |
 
+#### 🏛️ 2.9 NAV ÜPO M2M & Hitelesítés RPC-k
+
+| RPC Function | Security | Hívó | Cél |
+|---|---|---|---|
+| `get_upo_credentials_status(p_company_id, p_env)` | DEFINER | NavUpoM2mCard.tsx | Cég NAV M2M kapcsolat státusz és maszkolt azonosítók lekérdezése |
+| `revoke_upo_credentials(p_company_id, p_env)` | DEFINER | NavUpoM2mCard.tsx | Cég NAV M2M kapcsolat és titkok azonnali törlése audit naplózással |
+| `get_user_accountant_upo_status(p_env)` | DEFINER | NavUpoM2mCard.tsx | Bejelentkezett könyvelő aktív M2M kapcsolatának és lefedettségének lekérdezése |
+| `adopt_upo_credentials(p_target_company_id, p_env, p_apply_to_all)` | DEFINER | NavUpoM2mCard.tsx | Könyvelői kulcs egykattintásos átvétele célcéghez vagy kötegelt kiterjesztése 200+ cégre |
+
 ---
 
 ### 3. DB Trigger Function-ök (25 db)

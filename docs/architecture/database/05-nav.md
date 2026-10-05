@@ -249,3 +249,7 @@
   `SECURITY DEFINER` eljárás. Ellenőrzi a hívó cégtagságát / adminisztrátori szerepkörét, és biztonságosan maszkolt formában (`abc••••xy`) adja vissza a regisztrált felhasználónevet és a kapcsolat állapotát (`is_connected`, `status`, `last_sync_at`, `auto_efo_sync_enabled`, `auto_employee_sync_enabled`), kizárva a nyers jelszót és aláírókulcsot.
 - **`revoke_upo_credentials(p_company_id UUID, p_env TEXT DEFAULT 'production') RETURNS BOOLEAN`**:
   `SECURITY DEFINER` eljárás. Véglegesen törli a céges hitelesítő adatokat az `accounty_upo_credentials` táblából, és azonnal kötelező audit naplóbejegyzést generál a `nav_m2m_audit_logs` táblába.
+- **`get_user_accountant_upo_status(p_env TEXT DEFAULT 'production') RETURNS JSONB`**:
+  `SECURITY DEFINER` eljárás. Ellenőrzi, hogy a bejelentkezett könyvelőnek/felhasználónak van-e bármelyik kezelt cégénél már aktív, hitelesített NAV ÜPO M2M kapcsolata. Visszaadja a forráscég nevét, a maszkolt felhasználónevet, valamint a felhasználó által kezelt cégek teljes és még nem csatlakoztatott darabszámát.
+- **`adopt_upo_credentials(p_target_company_id UUID, p_env TEXT DEFAULT 'production', p_apply_to_all BOOLEAN DEFAULT false) RETURNS JSONB`**:
+  `SECURITY DEFINER` eljárás. Átveszi a könyvelő meglévő aktív hitelesítését a célcéghez, vagy ha a `p_apply_to_all` igaz, akkor egyetlen tranzakcióban kiterjeszti a könyvelő összes kezelt cégére (akár 200+ cég esetén is), mindegyikhez elkészítve a kötelező audit naplóbejegyzést.

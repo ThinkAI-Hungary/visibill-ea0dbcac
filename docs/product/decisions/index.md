@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-05  
-> **Összesen:** 171 döntés (154 egyedi döntési fájl) | ✅ Decided: 167 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 175 döntés (158 egyedi döntési fájl) | ✅ Decided: 171 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -203,6 +203,7 @@
 | P-091 | Téves Vevőre Szóló Számlák Figyelmeztető Jelzése és Jóváhagyási Dialógus UX | ✅ Decided | [P-091](./P-091-buyer-tax-mismatch-warning-ux.md) |
 | P-100 | Nem Levonható ÁFA Megjelenítése és Felületi Átláthatósága (1. + 2. + 3. Opció) UX | ✅ Decided | [P-100](./P-100-non-deductible-vat-indicators-ux.md) |
 | P-101 | Számlatételek Áfakód Szerkesztése, Kettős Áfakód Megjelenítés és Tömeges Módosítás UX | ✅ Decided | [P-101](./P-101-invoice-vat-code-overrides-and-dual-display-ux.md) |
+| P-157 | Manuális Beküldött Számlarögzítés, Dokumentum Csatolás és Többes Párosítás UX | ✅ Decided | [P-157](./P-157-manual-submitted-invoice-creation-dialog-and-pairings-ux.md) |
 
 ## 🔗 NAV Integráció
 
@@ -215,6 +216,9 @@
 | P-114 | NAV ÜPO M2M Integráció, Felhasználói Hitelesítés és Napi Szinkronizáció UX | ✅ Decided | [P-114](./P-114-nav-upo-m2m-integration-ui-ux.md) |
 | P-131 | Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX | ✅ Decided | [P-131](./P-131-croatian-minimax-api-invoice-intermediary-sync-ux.md) |
 | P-140 | Számlázz.hu Saját Kimenő Számlaképek Lehívása és NAV Párosítás | ✅ Decided | [P-140](./P-140-szamlazz-hu-outbound-invoice-image-sync-and-pairing.md) |
+| P-158 | NAV 65M-02-K Korrekciós és Sztornó Számlák Feldolgozása és Felületi UX | ✅ Decided | [P-158](./P-158-nav-65m-02-k-correction-and-storno-invoices-ux.md) |
+| P-160 | NAV 2665 ÁFA Bevallás: 43. és 45. Sorok Adóösszeg Megjelenítése és Analitika UX | ✅ Decided | [P-160](./P-160-nav-2665-vat-return-row43-and-row45-tax-amount-ux.md) |
+| P-162 | NAV 2665 ÁFA Bevallás: 77. Sor (Közösségi Értékesítés) Adóalap és 01-03 Lap UX | ✅ Decided | [P-162](./P-162-nav-2665-vat-return-row77-base-amount-ux.md) |
 
 ## 💼 Projektek & Tárgyi Eszközök
 
@@ -276,5 +280,6 @@
 | P-155 | NAV 26A60 Hivatalos Nyomtatvány Digitális Replika UX | ✅ Decided | [P-155](./P-155-nav-26a60-official-tax-form-digital-replica-ux.md) |
 | P-156 | Könyvelési Szabályok Elérése az ÁFA Bevallás és Napló Alól, Valamint Egységes Szabálykezelő Dialógus UX | ✅ Decided | [P-156](./P-156-accounting-rules-integration-in-vat-and-journals.md) |
 | P-159 | Tárgyi Eszközök és Nyitó Állomány Tömeges Import (Excel/CSV) Felhasználói Élmény (UX) | ✅ Decided | [P-159](./P-159-fixed-assets-bulk-excel-csv-import-and-opening-balances-ux.md) |
+| P-161 | Bérszámfejtés Haladó Riportok és Adóelőleg-Nyilatkozatok Munkafolyamat és Export UX | ✅ Decided | [P-161](./P-161-payroll-advanced-reports-and-declarations-workflow-ux.md) |
 
 

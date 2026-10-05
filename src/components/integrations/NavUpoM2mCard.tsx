@@ -46,6 +46,7 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  Link2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -68,6 +69,19 @@ interface CredentialStatus {
   auto_efo_sync_enabled: boolean;
   auto_employee_sync_enabled: boolean;
   error_message?: string | null;
+}
+
+interface AccountantCredStatus {
+  has_active_accountant_cred: boolean;
+  source_company_id?: string;
+  source_company_name?: string;
+  username_masked?: string;
+  environment?: 'production' | 'development';
+  client_id?: string;
+  last_validated_at?: string | null;
+  total_companies_count: number;
+  already_connected_count: number;
+  unconnected_count: number;
 }
 
 interface AuditLogEntry {
@@ -137,6 +151,54 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
     },
     enabled: !!companyId,
     staleTime: 30000,
+  });
+
+  // 1b. Felhasználó aktív könyvelői hitelesítésének ellenőrzése más cégekből
+  const {
+    data: accountantCred,
+    refetch: refetchAccountantCred,
+  } = useQuery<AccountantCredStatus>({
+    queryKey: ['nav-upo-accountant-cred', environment],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_user_accountant_upo_status', {
+        p_env: environment,
+      });
+      if (error) throw error;
+      return data as AccountantCredStatus;
+    },
+    staleTime: 10000,
+  });
+
+  // Könyvelői kulcs átvétele / kiterjesztése mutáció (akár 200+ cégre)
+  const adoptMutation = useMutation({
+    mutationFn: async ({ applyToAll }: { applyToAll: boolean }) => {
+      if (!companyId && !applyToAll) throw new Error('Nincs kiválasztott cég!');
+      const { data, error } = await supabase.rpc('adopt_upo_credentials', {
+        p_target_company_id: companyId,
+        p_env: environment,
+        p_apply_to_all: applyToAll,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: 'Sikeres kapcsolat beállítás!',
+        description: data?.message || 'A könyvelői NAV kapcsolat sikeresen hozzárendelve.',
+      });
+      refetchStatus();
+      refetchAccountantCred();
+      queryClient.invalidateQueries({ queryKey: ['nav-upo-status'] });
+      queryClient.invalidateQueries({ queryKey: ['nav-upo-audit-logs', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['nav-upo-accountant-cred'] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Hiba a kapcsolat átvételekor',
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
   });
 
   // 2. Audit napló lekérdezése
@@ -226,6 +288,30 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
     });
   };
 
+  // Biztonságos proxy hívó, amely kinyeri az Edge Function és a NAV részletes hibaüzenetét
+  const invokeNavM2mProxy = async (body: Record<string, any>) => {
+    const { data, error } = await supabase.functions.invoke('nav-m2m-proxy', { body });
+    if (error) {
+      let errorMsg = error.message;
+      try {
+        if ('context' in error && error.context && typeof (error.context as any).json === 'function') {
+          const bodyJson = await (error.context as Response).clone().json();
+          if (bodyJson?.error) {
+            errorMsg = bodyJson.error;
+            if (bodyJson.resultMessage && bodyJson.resultMessage !== bodyJson.error) {
+              errorMsg += ` (NAV válasz: ${bodyJson.resultMessage})`;
+            }
+          }
+        }
+      } catch (_) {}
+      throw new Error(errorMsg);
+    }
+    if (data?.error) {
+      throw new Error(data.error + (data.resultMessage ? ` (NAV válasz: ${data.resultMessage})` : ''));
+    }
+    return data;
+  };
+
   // Aktiválási mutáció
   const activateMutation = useMutation({
     mutationFn: async () => {
@@ -248,13 +334,7 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
         throw new Error('Kérjük, add meg a 40 karakteres API kulcsot, vagy töltsd ki mind a 4 mezőt!');
       }
 
-      const { data, error } = await supabase.functions.invoke('nav-m2m-proxy', {
-        body: payload,
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
+      return await invokeNavM2mProxy(payload);
     },
     onSuccess: (data) => {
       toast({
@@ -268,6 +348,8 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
       setCustomNonce('');
       queryClient.invalidateQueries({ queryKey: ['nav-upo-status', companyId] });
       queryClient.invalidateQueries({ queryKey: ['nav-upo-audit-logs', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['nav-upo-accountant-cred'] });
+      refetchAccountantCred();
     },
     onError: (err: any) => {
       toast({
@@ -281,17 +363,12 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
   // Dolgozói szinkronizáció mutáció
   const syncEmployeesMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('nav-m2m-proxy', {
-        body: {
-          action: 'sync_employees',
-          company_id: companyId,
-          environment,
-          jogviszony_tipus: 'NYITOTT',
-        },
+      return await invokeNavM2mProxy({
+        action: 'sync_employees',
+        company_id: companyId,
+        environment,
+        jogviszony_tipus: 'NYITOTT',
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
     },
     onSuccess: (data) => {
       const count = data.synced_count ?? data.foglalkoztatottak?.length ?? 0;
@@ -323,17 +400,12 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
   // EFO szinkronizáció mutáció
   const syncEfoMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('nav-m2m-proxy', {
-        body: {
-          action: 'sync_efo',
-          company_id: companyId,
-          environment,
-          target_year: new Date().getFullYear(),
-        },
+      return await invokeNavM2mProxy({
+        action: 'sync_efo',
+        company_id: companyId,
+        environment,
+        target_year: new Date().getFullYear(),
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
     },
     onSuccess: (data) => {
       toast({
@@ -359,16 +431,11 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
   // Health Check / KOMA mutáció
   const testHealthMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('nav-m2m-proxy', {
-        body: {
-          action: 'test_health',
-          company_id: companyId,
-          environment,
-        },
+      return await invokeNavM2mProxy({
+        action: 'test_health',
+        company_id: companyId,
+        environment,
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
     },
     onSuccess: (data) => {
       toast({
@@ -389,17 +456,13 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
   // Automatikus szinkron kapcsolók
   const toggleAutoSyncMutation = useMutation({
     mutationFn: async ({ autoEfo, autoEmployee }: { autoEfo?: boolean; autoEmployee?: boolean }) => {
-      const { data, error } = await supabase.functions.invoke('nav-m2m-proxy', {
-        body: {
-          action: 'toggle_auto_sync',
-          company_id: companyId,
-          environment,
-          auto_efo: autoEfo,
-          auto_employee: autoEmployee,
-        },
+      return await invokeNavM2mProxy({
+        action: 'toggle_auto_sync',
+        company_id: companyId,
+        environment,
+        auto_efo: autoEfo,
+        auto_employee: autoEmployee,
       });
-      if (error) throw error;
-      return data;
     },
     onSuccess: () => {
       toast({
@@ -435,6 +498,8 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
       });
       queryClient.invalidateQueries({ queryKey: ['nav-upo-status', companyId] });
       queryClient.invalidateQueries({ queryKey: ['nav-upo-audit-logs', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['nav-upo-accountant-cred'] });
+      refetchAccountantCred();
     },
     onError: (err: any) => {
       toast({
@@ -552,6 +617,80 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
           {/* HA NEM KAPCSOLÓDIK: BEÁLLÍTÁSI ÉS AKTIVÁLÁSI WIZARD */}
           {!isConnected ? (
             <div className="space-y-6">
+              {/* KÖNYVELŐI KULCS GYORS ÁTVÉTELE (200 CÉGES TÁMOGATÁS) */}
+              {accountantCred?.has_active_accountant_cred && (
+                <div className="p-4 rounded-xl border border-blue-500/30 bg-blue-50/40 dark:bg-blue-950/20 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
+                      <Zap className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-foreground">
+                          Elérhető aktív könyvelői NAV M2M kapcsolat
+                        </span>
+                        <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-300 font-mono text-[11px]">
+                          {accountantCred.username_masked}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        A fiókodhoz már tartozik egy működő, NAV-nál hitelesített technikai felhasználó (Forrás: <strong className="text-foreground">{accountantCred.source_company_name}</strong>). Mivel a NAV-nál a képviseleti jogosultság a könyvelő személyéhez kötődik, nem szükséges új kulcsot igényelned!
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 self-start md:self-center shrink-0">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => adoptMutation.mutate({ applyToAll: false })}
+                      disabled={adoptMutation.isPending}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs shadow-xs"
+                    >
+                      {adoptMutation.isPending ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                      ) : (
+                        <Link2 className="w-3.5 h-3.5 mr-1.5" />
+                      )}
+                      Kulcs átvétele ehhez a céghez
+                    </Button>
+                    {accountantCred.total_companies_count > 1 && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={adoptMutation.isPending}
+                            className="text-xs border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                          >
+                            Kiterjesztés mind a(z) {accountantCred.total_companies_count} cégemre
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Könyvelői NAV kapcsolat kiterjesztése</AlertDialogTitle>
+                            <AlertDialogDescription className="text-xs space-y-2">
+                              Biztosan szeretnéd a(z) <strong className="text-foreground">{accountantCred.username_masked}</strong> könyvelői NAV kapcsolatot egyszerre beállítani mind a(z) <strong className="text-foreground">{accountantCred.total_companies_count}</strong> általad kezelt cégnél?
+                              <br /><br />
+                              A NAV a lekérdezéseknél a képviseleti meghatalmazásod (EGYKE) alapján fogja engedélyezni az adatok elérését az összes cégednél.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="text-xs">Mégse</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => adoptMutation.mutate({ applyToAll: true })}
+                              className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              Igen, kiterjesztés az összes cégemre
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <Alert className="bg-blue-50/60 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/40">
                 <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 <AlertTitle className="text-sm font-semibold text-blue-900 dark:text-blue-200">
@@ -648,6 +787,9 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
                     onChange={(e) => setApiKeyInput(e.target.value.replace(/\s+/g, ''))}
                     className="font-mono text-sm tracking-wide bg-background"
                   />
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    💡 <strong>Fontos:</strong> Ha a kapcsolatot újra be kell állítani, a NAV ÜPO-ban ne egy korábbi felhasználó jelszavát módosítsd, hanem hozz létre egy <strong>„Új gép-gép kapcsolatot”</strong>! A NAV csak új kapcsolat generálásakor ad érvényes, egyszer használatos (Nonce) aktiváló kódot.
+                  </p>
                 </div>
 
                 {/* Haladó külön mezők lenyitása */}
@@ -776,6 +918,56 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
                   </div>
                 </div>
               </div>
+
+              {/* KÖNYVELŐI KITERJESZTÉS TÖBBI CÉGRE */}
+              {accountantCred && accountantCred.total_companies_count > 1 && (
+                <div className="p-3 bg-muted/40 border border-border/60 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span className="text-xs text-foreground font-medium">
+                      {accountantCred.unconnected_count > 0 ? (
+                        <>Még <strong>{accountantCred.unconnected_count}</strong> általad kezelt cégnél nincs aktiválva a NAV kapcsolat.</>
+                      ) : (
+                        <>Ez a könyvelői kapcsolat mind a <strong>{accountantCred.total_companies_count}</strong> cégedhez hozzá van rendelve.</>
+                      )}
+                    </span>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={adoptMutation.isPending}
+                        className="text-xs h-7 px-3 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 font-medium"
+                      >
+                        {adoptMutation.isPending ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                        ) : (
+                          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                        )}
+                        {accountantCred.unconnected_count > 0 ? 'Kiterjesztés a többi cégemre' : 'Kulcs újraszinkronizálása a cégeimre'}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Könyvelői NAV kapcsolat kiterjesztése</AlertDialogTitle>
+                        <AlertDialogDescription className="text-xs space-y-2">
+                          Szeretnéd a jelenlegi <strong className="text-foreground">{statusData?.username_masked}</strong> technikai felhasználót egyszerre beállítani/frissíteni mind a(z) <strong className="text-foreground">{accountantCred.total_companies_count}</strong> általad kezelt cégre?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="text-xs">Mégse</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => adoptMutation.mutate({ applyToAll: true })}
+                          className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          Igen, kiterjesztés az összes cégemre
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
 
               {/* Gyorsműveletek */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

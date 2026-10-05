@@ -41,6 +41,15 @@ A beállítási dialógusban a könyvelő választhat:
 - A kapcsolat bontása kétlépcsős megerősítő párbeszédablakkal történik ("Biztosan bontani szeretnéd a NAV M2M kapcsolatot?").
 - Jóváhagyáskor a rendszer véglegesen törli a titkokat az adatbázisból és hivatalos audit bejegyzést hoz létre a műveletről.
 
+### 6. Könyvelői Kulcs Gyors Átvétel és Portfólió-szintű Kiterjesztés (200 Céges Támogatás)
+- **Kontextus:** Ha egy könyvelő több tíz vagy akár 200 céget kezel, nem reális sem a NAV felületén 200 technikai felhasználót regisztrálni, sem kézzel 200-szor konfigurálni a felületet.
+- **Megoldás:**
+  - Amikor a könyvelő egy olyan céghez lép be, ahol még nincs aktív NAV kapcsolat, de a felhasználói fiókjához tartozó másik cégnél már létezik működő M2M kulcs, a felület kiemelt sávban jelzi: *"Elérhető aktív könyvelői NAV M2M kapcsolat (pl. dyc••••xr)"*.
+  - **Gyorsműveletek:**
+    1. *„Kulcs átvétele ehhez a céghez”:* Egyetlen kattintással összekapcsolja az adott céget az aktív könyvelői kulccsal.
+    2. *„Kiterjesztés az összes cégemre”:* Megerősítő párbeszédablak után egyetlen művelettel a könyvelő összes meglévő cégére aktiválja a kapcsolatot.
+  - Ha a cég már kapcsolódva van, a kártyán látható a portfólió lefedettségi állapota, és lehetőség van a kulcs azonnali újraszinkronizálására a többi cégre is.
+
 ---
 
 ## 3. Kapcsolódó

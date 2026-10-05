@@ -50,6 +50,13 @@ Központi, szerveroldali **Supabase Edge Function (`nav-m2m-proxy`)** és Postgr
 ### 5. Egészségügyi Ellenőrzés (`test_health`)
 - KOMA (Köztartozásmentesség) lekérdezés (`/KoztartozasMentesseg`), amely ellenőrzi az adózó tartozásmentes státuszát és a kapcsolat érvényességét valós idejű NAV hívással.
 
+### 6. Könyvelői Kulcs Öröklődés és Multi-Cég Kiterjesztés (`adopt_upo_credentials`, `get_user_accountant_upo_status`)
+- **Probléma:** Egy könyvelőhöz akár 200+ cég is tartozhat. A NAV-nál a gép-gép regisztráció egyszer használatos Nonce kódot használ, így ugyanazt a kulcsot nem lehet cégenként újból regisztrálni. Ezen felül a NAV ÜPO képviseleti modelljében a technikai felhasználó a könyvelő (természetes személy) KAÜ profiljához kötődik, nem a megbízó cégekhez.
+- **Megoldás:** 
+  - `get_user_accountant_upo_status(p_env)`: Lekérdezi, hogy a bejelentkezett felhasználónak van-e már aktív hitelesített kapcsolata bármelyik általa kezelt cégnél.
+  - `adopt_upo_credentials(p_target_company_id, p_env, p_apply_to_all)`: Zero-credential-exposure mellett szerveroldalon összekapcsolja az aktív könyvelői kapcsolatot az adott céggel vagy egyetlen kattintással kiterjeszti a könyvelő összes cégére.
+  - Automatikus 90 napos audit naplózás minden örököltetésről.
+
 ---
 
 ## 3. Consequences
