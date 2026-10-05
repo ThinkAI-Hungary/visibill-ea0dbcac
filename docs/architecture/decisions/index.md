@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-05  
-> **Összesen:** 217 döntés (197 egyedi döntési fájl) | ✅ Decided: 215 | ⛔ Superseded: 2
+> **Összesen:** 219 döntés (201 egyedi döntési fájl) | ✅ Decided: 217 | ⛔ Superseded: 2
 
 
 ---
@@ -249,6 +249,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-195 | NAV 26A60 v3.0 Közösségi Összesítő Nyilatkozat ÁNYK XML Export & Rekonciliáció | ✅ Decided | [A-195](./A-195-nav-26a60-community-summary-anyk-xml-export-and-reconciliation.md) |
 | A-196 | Könyvelési Szabályok Modális és Keresztmodul Integrációja (ÁFA, Napló és Főkönyvi Szabálykezelő) | ✅ Decided | [A-196](./A-196-accounting-rules-dialog-and-cross-module-integration.md) |
 | A-197 | NAV 26A60 Hivatalos Nyomtatvány Digitális Replika Architektúra | ✅ Decided | [A-197](./A-197-nav-26a60-official-tax-form-digital-replica.md) |
+| A-198 | Manuális Beküldött Számlarögzítés, Dokumentum Csatolás és Többes Párosítás | ✅ Decided | [A-198](./A-198-manual-submitted-invoice-creation-and-multi-pairing.md) |
 
 
 ## 💳 Fizetés
@@ -286,6 +287,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-126 | Műveleti Napló E-mail Metaadatok Megőrzése és Retrospektív Számla-Összekapcsolás | ✅ Decided | [A-126](./A-126-audit-trail-email-ingestion-and-invoice-linking.md) |
 | A-149 | In-App Fejlesztői Napló (Patchnotes) Rendszer és Publikációs Pipeline | ✅ Decided | [A-149](./A-149-in-app-changelog-and-patchnotes-system.md) |
 | A-171 | Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció | ✅ Decided | [A-171](./A-171-croatian-minimax-api-invoice-intermediary-sync.md) |
+| A-190 | Menedzsment Dashboard Összesítő Gyorsítótárazás és Python Worker Vault Tehermentesítés (P2 Skálázhatósági Fejlesztés) | ✅ Decided | [A-190](./A-190-management-dashboard-counts-caching-and-worker-vault-offloading.md) |
 
 
 

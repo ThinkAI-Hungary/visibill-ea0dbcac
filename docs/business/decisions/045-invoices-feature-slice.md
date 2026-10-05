@@ -7,7 +7,8 @@
 1. **Adatforrás Elkülönítés és Szinkron:**
    - A NAV Online Számla rendszerből érkező számlák a `nav_invoices` táblában élnek.
    - A manuálisan beküldött vagy emailen keresztül feltöltött számlák az `invoices` táblában élnek.
-   - A két forrás közötti összerendelés automatikusan a normalizált bizonylatsorszám és a partner adószám / név egyezősége alapján történik.
+   - A beküldött számlák közvetlenül manuálisan is létrehozhatók az új [ ➕ Új beküldött számla ] dialógus segítségével (P-157, A-198), amely közvetlen és opcionális összerendelést tesz lehetővé meglévő NAV számlával (`submitted_invoice_id`) és egy vagy több tranzakcióval (`transactions.invoice_id`).
+   - A két forrás közötti összerendelés automatikusan a normalizált bizonylatsorszám és a partner adószám / név egyezősége alapján történik, vagy manuálisan a párbeszédablakból.
 2. **Kizárás a Könyvelésből (`exclude_from_accounting`):**
    - Mind a NAV, mind a beküldött számlák szintjén lehetővé kell tenni a számla kizárását a könyvelési és ÁFA bevallási számításokból. A kizárási állapot azonnal szinkronizálódik a Supabase adatbázisban.
 3. **Kompenzálási Figyelmeztetés (Netting Detection):**
@@ -19,6 +20,9 @@
 
 ## Kapcsolódó
 - ADR: [A-062: Invoices Feature Slice Modularization](../../architecture/decisions/A-062-invoices-feature-slice-modularization.md)
+- ADR: [A-198: Manuális Beküldött Számlarögzítés, Dokumentum Csatolás és Többes Párosítás](../../architecture/decisions/A-198-manual-submitted-invoice-creation-and-multi-pairing.md)
 - PRD: [P-057: Invoices Feature Slice UX](../../product/decisions/P-057-invoices-feature-slice-ux.md)
+- PRD: [P-157: Manuális Számlarögzítés, Dokumentum-Feltöltés és Többes Párosítás UX](../../product/decisions/P-157-manual-submitted-invoice-creation-dialog-and-pairings-ux.md)
 - Business Decision: [012: Invoice Types](./012-invoice-types.md)
+- Business Decision: [013: Számla Beviteli Csatornák](./013-invoice-channels.md)
 - Business Decision: [040: Invoice Relations & Matching](./040-invoice-relations-matching.md)

@@ -605,8 +605,8 @@
     "semantic_hash": "7217a7c6bceca8030298e2252204ae40"
   },
   "src/components/ui/input.tsx": {
-    "mtime": 1788548080.359224,
-    "ast_hash": "42291a37c66d52a88b7d15548b8b3f33",
+    "mtime": 1791179618.4460516,
+    "ast_hash": "64efd614093d120cfa394ffddd058bf7",
     "semantic_hash": ""
   },
   "src/components/ui/ios-toggle.tsx": {
@@ -2985,8 +2985,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791178082.3496077,
-    "ast_hash": "ca9da6f1ff431874aacb62123ea58902",
+    "mtime": 1791183669.011204,
+    "ast_hash": "fbf47eb385c89c0518ca7e252124f0fa",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3080,8 +3080,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/013-invoice-channels.md": {
-    "mtime": 1780305936.24339,
-    "ast_hash": "ae1c44d96dbd07bc79ac65bc1f7de1b8",
+    "mtime": 1791183695.40949,
+    "ast_hash": "317837358e57e7ffe1ad135874d59876",
     "semantic_hash": ""
   },
   "docs/business/decisions/014-invoice-creation.md": {
@@ -3245,8 +3245,8 @@
     "semantic_hash": ""
   },
   "docs/design/04-component-library.md": {
-    "mtime": 1789350244.4900866,
-    "ast_hash": "6caeec851c10fdc4b4e71088c8d16cf6",
+    "mtime": 1791183101.5717607,
+    "ast_hash": "5420a67954e57d3b06500cae0358a0d4",
     "semantic_hash": ""
   },
   "docs/design/05-layout-navigation.md": {
@@ -3280,8 +3280,8 @@
     "semantic_hash": ""
   },
   "docs/design/12-dialogs-modals.md": {
-    "mtime": 1790462263.517161,
-    "ast_hash": "f9a668f2f2db71cb4cd554665539580f",
+    "mtime": 1791183112.872175,
+    "ast_hash": "294387f39b7301722b0105283302e60d",
     "semantic_hash": ""
   },
   "docs/design/design_opcio/DESIGN.md": {
@@ -3460,13 +3460,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1791178090.503064,
-    "ast_hash": "fc96cbd59e0ab3947de6117b377c3ea9",
+    "mtime": 1791183262.3439267,
+    "ast_hash": "427c4e4afc0a53d4f69dc82512eeb713",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1791176018.1852448,
-    "ast_hash": "f5554e4a8a4346a28003a42e651cddc8",
+    "mtime": 1791183681.1770918,
+    "ast_hash": "b42f490b42767876933dc21d454982ab",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -7030,8 +7030,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/dialogs/InvoiceDialogManager.tsx": {
-    "mtime": 1790647211.902721,
-    "ast_hash": "0fbda2c28823e5c5887e6961d0dcaaa7",
+    "mtime": 1791178979.3122056,
+    "ast_hash": "1cb35b35ff2dc818973eaa85f0815d03",
     "semantic_hash": ""
   },
   "src/features/invoices/components/filters/InvoiceFilterBar.tsx": {
@@ -7045,8 +7045,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/header/InvoiceHeader.tsx": {
-    "mtime": 1790854006.895497,
-    "ast_hash": "9aa5cc90f405c3a683a86cf06fe8ff7d",
+    "mtime": 1791179030.6576338,
+    "ast_hash": "57b4cc99821e0bdb098a9c97673c726d",
     "semantic_hash": ""
   },
   "src/features/invoices/components/header/InvoiceKpiCards.tsx": {
@@ -7085,8 +7085,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceContext.tsx": {
-    "mtime": 1790653312.9313693,
-    "ast_hash": "8f9f9cae22c97eeed2e66aff9c055bbd",
+    "mtime": 1791178959.2727177,
+    "ast_hash": "08aa8d57d2e75b9cb108f458825099ac",
     "semantic_hash": ""
   },
   "src/features/invoices/context/useInvoiceContext.ts": {
@@ -7225,8 +7225,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/045-invoices-feature-slice.md": {
-    "mtime": 1788137223.6371233,
-    "ast_hash": "e57d800084990a956e8f71eaebdba5cc",
+    "mtime": 1791183710.6304505,
+    "ast_hash": "4c047f80a555868464d3a45cb65ad47c",
     "semantic_hash": ""
   },
   "docs/business/decisions/046-unified-document-engine.md": {
@@ -13905,6 +13905,56 @@
   "session-summary/\u00c1ron/2026-10-04/summary-174900-accounting-rules-and-nav-a60-replica.md": {
     "mtime": 1791176018.1852448,
     "ast_hash": "9df5b1645f81a2357c366738895a96df",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/ManualInvoiceCreateDialog.tsx": {
+    "mtime": 1791182618.547742,
+    "ast_hash": "435a82cb3e2d1d53d190cb43095de3c6",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/__tests__/ManualInvoiceCreateDialog.test.tsx": {
+    "mtime": 1791179164.3516555,
+    "ast_hash": "d7797c29b85c75619e6a8854798b0a04",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/manual-create/InvoiceDocumentDropzone.tsx": {
+    "mtime": 1791178910.277043,
+    "ast_hash": "159375881cee7cfb659fb7bb9d77015c",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/manual-create/NavInvoicePicker.tsx": {
+    "mtime": 1791182043.672215,
+    "ast_hash": "47e466e6b9d9f96122a152afe1dac5c2",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/manual-create/TransactionMultiPicker.tsx": {
+    "mtime": 1791182020.980561,
+    "ast_hash": "c6a29520cf7faeef018a920a6c614422",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-198-manual-submitted-invoice-creation-and-multi-pairing.md": {
+    "mtime": 1791179217.175505,
+    "ast_hash": "735ad31c4db65bcfb14045ef95889468",
+    "semantic_hash": ""
+  },
+  "src/components/ui/__tests__/search-input.test.tsx": {
+    "mtime": 1791180723.958951,
+    "ast_hash": "2521c4928565b57485cb9e67fb3268fa",
+    "semantic_hash": ""
+  },
+  "src/components/ui/search-input.tsx": {
+    "mtime": 1791180717.2299132,
+    "ast_hash": "83a3323ccb1913285262b13148708c13",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-157-manual-submitted-invoice-creation-dialog-and-pairings-ux.md": {
+    "mtime": 1791183239.7916012,
+    "ast_hash": "09686e48c42dd46f3a9378af36d5cacf",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-05/summary-085500-manual-invoice-create-dialog-search-input-and-zero-jitter.md": {
+    "mtime": 1791183306.1916654,
+    "ast_hash": "c19a713287bfbe53824147be7faa19d2",
     "semantic_hash": ""
   }
 }

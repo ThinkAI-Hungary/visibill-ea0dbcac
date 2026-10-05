@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-05  
-> **Összesen:** 168 döntés (151 egyedi döntési fájl) | ✅ Decided: 164 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 169 döntés (152 egyedi döntési fájl) | ✅ Decided: 165 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -52,6 +52,7 @@
 | P-115 | Házipénztár Szállítói Számlák Kiegyenlítése, Élő Számlakereső és Időszaki Zárás UX | ✅ Decided | [P-115](./P-115-petty-cash-inbound-settlement-and-period-closing-ux.md) |
 | P-127 | Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX | ✅ Decided | [P-127](./P-127-invoices-multitab-export-payment-dates-and-routing-ux.md) |
 | P-132 | Időszaki Pénztárjelentés, Címletjegyzék, 3-lépéses Zárási Varázsló és Főkönyvi Feladás UX | ✅ Decided | [P-132](./P-132-periodic-cash-reports-and-closing-wizard-ux.md) |
+| P-157 | Manuális Számlarögzítés, Dokumentum-Feltöltés és Többes Párosítás UX | ✅ Decided | [P-157](./P-157-manual-submitted-invoice-creation-dialog-and-pairings-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 

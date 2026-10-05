@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Info, FileText, Download, ChevronDown, FileSpreadsheet, FileDown, Sliders, DownloadCloud } from 'lucide-react';
+import { Info, FileText, Download, ChevronDown, FileSpreadsheet, FileDown, Sliders, DownloadCloud, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { NavSyncButton } from './NavSyncButton';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
@@ -20,7 +20,7 @@ import { useSzamlazzStatus } from '@/hooks/useSzamlazzSync';
 import { SzamlazzSyncModal } from '@/components/invoices/SzamlazzSyncModal';
 
 export function InvoiceHeader() {
-  const { companyId, selectedCompany, setFilesDialogOpen, setInvoiceParam, openDataExportDialog } = useInvoiceContext();
+  const { companyId, selectedCompany, setFilesDialogOpen, setInvoiceParam, openDataExportDialog, setCreateDialogOpen } = useInvoiceContext();
   const { t } = useTranslation(['invoices', 'common']);
   const { hasNavIntegration } = useCompanyJurisdiction();
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
@@ -130,6 +130,16 @@ export function InvoiceHeader() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setCreateDialogOpen(true)}
+              className="gap-1.5 shadow-sm font-medium"
+            >
+              <Plus className="h-4 w-4" />
+              <span>{t('invoices:actions.new_invoice', { defaultValue: 'Új számla rögzítése' })}</span>
+            </Button>
           </div>
         </div>
       </div>
