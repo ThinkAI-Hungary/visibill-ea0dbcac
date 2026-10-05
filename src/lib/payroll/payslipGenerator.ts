@@ -127,15 +127,14 @@ export function generatePayslipBlockHtml(data: PayslipData, isMultiPage = false)
   return `
 <div class="payslip"${isMultiPage ? ' style="page-break-after: always; break-after: page;"' : ''}>
   <div class="header">
-    <div>
-      <div class="brand-logo-container">
-        <div class="brand-logo">
-          e<span class="highlight">ai</span>sy<span class="highlight">Books</span>
-        </div>
-        <div class="brand-logo-sub">Bérszámfejtés</div>
+    <div class="company-header-block">
+      <div class="company-name-hero">${escHtml(data.companyName)}</div>
+      <div class="company-meta">Adószám: ${escHtml(data.companyTaxNumber)} · Székhely: ${escHtml(data.companyAddress)}</div>
+      <div class="brand-system-tag">
+        <span class="system-label">Bérszámfejtő rendszer:</span>
+        <span class="brand-logo-small">e<span class="highlight">ai</span>sy<span class="highlight">Books</span></span>
+        <span class="brand-logo-sub">Bérszámfejtés</span>
       </div>
-      <div style="font-size:11px; color:#1e293b; font-weight: 600; margin-top:10px;">${escHtml(data.companyName)}</div>
-      <div style="font-size:10px; color:#64748b; margin-top:2px;">Adószám: ${escHtml(data.companyTaxNumber)} · Székhely: ${escHtml(data.companyAddress)}</div>
     </div>
     <div class="period">
       <h1>Bérjegyzék</h1>
@@ -308,24 +307,61 @@ const PAYSLIP_BASE_CSS = `
     padding-bottom: 14px;
     margin-bottom: 16px;
   }
-  .brand-logo-container {
-    display: inline-flex;
+  .company-header-block {
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
   }
-  .brand-logo {
+  .company-name-hero {
     font-family: 'Outfit', sans-serif;
-    font-size: 22px;
-    font-weight: 500;
-    color: #1e293b;
-    letter-spacing: -0.5px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.2px;
+    text-transform: uppercase;
+    line-height: 1.2;
+    margin-bottom: 2px;
+  }
+  .company-meta {
+    font-size: 10.5px;
+    color: #64748b;
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+  .brand-system-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 9px;
+    color: #64748b;
     line-height: 1.2;
   }
-  .brand-logo .highlight {
+  .brand-system-tag .system-label {
+    color: #94a3b8;
+    font-weight: 500;
+  }
+  .brand-logo-small {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: #1e293b;
+    letter-spacing: -0.3px;
+  }
+  .brand-logo-small .highlight {
     color: #0f7467;
     font-weight: 800;
   }
-  .brand-logo-sub { font-size: 9px; font-weight: 600; color: #64748b; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .brand-logo-sub {
+    font-size: 8.5px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
 
   .header h1 {
     font-family: 'Outfit', sans-serif;

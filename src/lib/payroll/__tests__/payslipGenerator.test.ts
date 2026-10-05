@@ -244,4 +244,16 @@ describe('generatePayslipHtml', () => {
     expect(html).not.toContain('+373');
     expect(html).not.toContain('25 év alattiak kedvezménye');
   });
+
+  it('should render company name in hero header and eaisyBooks as compact system badge (EB-0230)', () => {
+    const html = generatePayslipHtml(basePayslip);
+    expect(html).toContain('class="company-name-hero"');
+    expect(html).toContain('>Teszt Kft.</div>');
+    expect(html).toContain('class="brand-system-tag"');
+    expect(html).toContain('Bérszámfejtő rendszer:');
+    expect(html).toContain('eaisyBooks');
+    expect(html).toContain('brand-logo-small');
+    expect(html).not.toContain('class="brand-logo"');
+  });
 });
+
