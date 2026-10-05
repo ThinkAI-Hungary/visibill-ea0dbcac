@@ -84,7 +84,7 @@ export function Nav2665Sheet0103({ getVal }: Nav2665Sheet0103Props) {
             <Nav2665TableRow
               rowNum="77"
               title="Tárgyi eszköz beszerzése után levonható adó összege a 76. sor összegéből (apport nélkül)"
-              hasBase={false}
+              baseVal={getVal('77', 'base')}
               taxVal={getVal('77', 'tax')}
             />
             <Nav2665TableRow

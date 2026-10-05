@@ -160,7 +160,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
       }
       if (override === '77') {
         rows.push({ row: '66', base: effNet, vat: effVat, gross: gross });
-        rows.push({ row: '77', base: 0, vat: effVat, gross: effVat });
+        rows.push({ row: '77', base: effNet, vat: effVat, gross: gross });
         return rows;
       }
       if (override === '29') {
@@ -231,7 +231,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
       } else if (code === '27' || code === '25') {
         rows.push({ row: '66', base: effNet, vat: effVat, gross: gross });
         if (isTangibleAsset) {
-          rows.push({ row: '77', base: 0, vat: effVat, gross: effVat });
+          rows.push({ row: '77', base: effNet, vat: effVat, gross: gross });
         }
       } else if (code === '18') {
         rows.push({ row: '65', base: effNet, vat: effVat, gross: gross });
@@ -251,7 +251,7 @@ export function VatCollectorAnalyticsView({ year, periodMonth, vatScope }: VatCo
         rows.push({ row: 'NON_DECLARABLE', base: effNet, vat: 0, gross: effNet });
       } else {
         rows.push({ row: '66', base: effNet, vat: effVat, gross: gross });
-        if (isTangibleAsset) rows.push({ row: '77', base: 0, vat: effVat, gross: effVat });
+        if (isTangibleAsset) rows.push({ row: '77', base: effNet, vat: effVat, gross: gross });
       }
     }
 
