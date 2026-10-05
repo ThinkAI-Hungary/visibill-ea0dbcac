@@ -41,6 +41,7 @@ import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 import { convertToIban } from '@/lib/payroll/validators';
 import { postPayrollCycleToLedger } from '@/lib/payroll/payrollAutoPoster';
 import { getStatutoryWorkDays } from '@/lib/payroll/workdayCalculator';
+import { resolveEmployeeLeaveInput, calculateLeaveBalance } from '@/lib/payroll/leaveCalculator';
 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -636,7 +637,14 @@ export default function PayrollCyclePage() {
     const rawAccount = emp?.bank_account || '';
     const iban = convertToIban(rawAccount) || (rawAccount.startsWith('HU') ? rawAccount : undefined);
 
-    const annualLeaveTotal = (employment as any)?.annual_leave_days || 20;
+    // Calculate statutory leave entitlement (Mt. 116-122. § or Szkt. 84. § (6) vocational student 45 days)
+    const leaveInput = resolveEmployeeLeaveInput({
+      employee: emp || null,
+      primaryEmployment: employment || null,
+      targetYear: cycle?.year || new Date().getFullYear(),
+    });
+    const leaveBalance = leaveInput ? calculateLeaveBalance(leaveInput) : null;
+    const annualLeaveTotal = leaveBalance?.totalAnnual || (employment as any)?.annual_leave_days || 20;
     const leaveTakenCurrent = att.leaveDays || 0;
     const leaveTakenPrev = (employment as any)?.leave_taken_ytd || 0;
     const leaveRemaining = Math.max(0, annualLeaveTotal - leaveTakenPrev - leaveTakenCurrent);

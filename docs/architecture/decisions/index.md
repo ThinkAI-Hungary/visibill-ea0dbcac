@@ -1,6 +1,6 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-04  
+> **Utoljára frissítve:** 2026-10-05  
 > **Összesen:** 217 döntés (197 egyedi döntési fájl) | ✅ Decided: 215 | ⛔ Superseded: 2
 
 
@@ -239,7 +239,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-183 | Supabase Query Teljesítmény és Pénzügyi RPC Optimalizáció (Statement Timeout Megszüntetés) | ✅ Decided | [A-183](./A-183-supabase-query-performance-and-financial-rpc-optimization.md) |
 | A-184 | Real-time AI Tételbesorolási Telemetria, Query Invalidáció és Idempotens Párosítás | ✅ Decided | [A-184](./A-184-realtime-ai-progress-streaming-and-matching-idempotency.md) |
 | A-185 | Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra | ✅ Decided | [A-185](./A-185-payslip-redesign-feor-dictionary-and-cost-center.md) |
-| A-186 | Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) | ✅ Decided | [A-186](./A-186-payroll-leave-entitlements-resolution-engine.md) |
+| A-186 | Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) és Szakképzési Tanulói Keret (Szkt. 84. §) | ✅ Decided | [A-186](./A-186-payroll-leave-entitlements-resolution-engine.md) |
 | A-187 | Számlatétel-szintű Kontextuális Időbeli Elhatárolások és Vegyes Napló Feladás | ✅ Decided | [A-187](./A-187-contextual-invoice-item-accruals-and-ve-journal-posting.md) |
 | A-188 | Dinamikus Könyvelési Naplók Létrehozása, Kezelése és Bankszámla-összerendelés | ✅ Decided | [A-188](./A-188-dynamic-accounting-journals-management-and-bank-linking.md) |
 | A-189 | Főkönyvi Kivonat és Naplófőkönyv RPC Teljesítmény-Optimalizálás (Statement Timeout 57014 Megszüntetése, CTE Materializáció és Hash Join) | ✅ Decided | [A-189](./A-189-gl-rpc-performance-optimization-and-timeout-elimination.md) |

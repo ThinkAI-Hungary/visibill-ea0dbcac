@@ -10,8 +10,8 @@
     "semantic_hash": "bc484741cdf3591af5da7d9f3da3a647"
   },
   "package.json": {
-    "mtime": 1791062784.2996898,
-    "ast_hash": "06c90372529b59ec6442e2cdd85a7360",
+    "mtime": 1791128975.7940876,
+    "ast_hash": "2f0d506c703025860b1ee64ac22cb48b",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "src/components/AppSidebar.tsx": {
-    "mtime": 1790635570.4305968,
-    "ast_hash": "02c2f5a95f8027f386e7ae2bcb386d82",
+    "mtime": 1791176018.1862454,
+    "ast_hash": "32cdca41bd7041227f14369b7a3fb0cd",
     "semantic_hash": ""
   },
   "src/components/AssetActivationDialog.tsx": {
@@ -1135,8 +1135,8 @@
     "semantic_hash": "aff12473ab48bdbfa0df1670a35622f1"
   },
   "src/lib/payroll/__tests__/leaveCalculator.test.ts": {
-    "mtime": 1790890539.8649476,
-    "ast_hash": "4e8a48f34b869b5415697499faed49a3",
+    "mtime": 1791176661.2541459,
+    "ast_hash": "58dd6a057676a4fa834a8164cd27faae",
     "semantic_hash": ""
   },
   "src/lib/payroll/__tests__/payslipGenerator.test.ts": {
@@ -1180,8 +1180,8 @@
     "semantic_hash": ""
   },
   "src/lib/payroll/leaveCalculator.ts": {
-    "mtime": 1790890529.1003416,
-    "ast_hash": "f4d111b049ea8d039886edfa70f40857",
+    "mtime": 1791177325.976461,
+    "ast_hash": "e5ef515a89939f920aa0b269e3628ef4",
     "semantic_hash": ""
   },
   "src/lib/payroll/payslipGenerator.ts": {
@@ -1365,8 +1365,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollCyclePage.tsx": {
-    "mtime": 1790958395.8177168,
-    "ast_hash": "118fcf7bbeb3af84011439bea603e2f3",
+    "mtime": 1791177692.6008754,
+    "ast_hash": "58ecdffe7aaa06585680af4170d1bf8b",
     "semantic_hash": ""
   },
   "src/pages/Accounty/PayrollDashboardPage.tsx": {
@@ -2985,8 +2985,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791122129.1389315,
-    "ast_hash": "5200d33c7a89c1f3d111ef266d90e37c",
+    "mtime": 1791178082.3496077,
+    "ast_hash": "ca9da6f1ff431874aacb62123ea58902",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3460,13 +3460,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1790963874.796584,
-    "ast_hash": "8bb850bfb1620e5dbaca74c4667fa5f8",
+    "mtime": 1791178090.503064,
+    "ast_hash": "fc96cbd59e0ab3947de6117b377c3ea9",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1790775646.178521,
-    "ast_hash": "323a7a13a64ac741aa624c11e13a84b9",
+    "mtime": 1791176018.1852448,
+    "ast_hash": "f5554e4a8a4346a28003a42e651cddc8",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -3690,8 +3690,8 @@
     "semantic_hash": ""
   },
   "src/components/vat/VatRowDrillDown.tsx": {
-    "mtime": 1791122129.1394525,
-    "ast_hash": "df39f71a6b1567a9a7fc6685c2fa47b0",
+    "mtime": 1791176018.187245,
+    "ast_hash": "258a3d75ee30844ceec329c0acd32862",
     "semantic_hash": ""
   },
   "src/components/vat/VatTrendChart.tsx": {
@@ -3725,8 +3725,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useEaisybillPermissions.ts": {
-    "mtime": 1790635570.4325974,
-    "ast_hash": "2e96351ce90d4770e92a4d6f53801b09",
+    "mtime": 1791176018.1922443,
+    "ast_hash": "03dca67eab75c2b126facf2056bff41c",
     "semantic_hash": ""
   },
   "src/hooks/useHasEaisybillAccess.ts": {
@@ -6510,8 +6510,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1790820812.1829216,
-    "ast_hash": "e3be47fb6bf04b0eb2d54ebd98a15172",
+    "mtime": 1791176018.1952436,
+    "ast_hash": "ee780530a21b82c7a67c3540e88c7509",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -6985,8 +6985,8 @@
     "semantic_hash": ""
   },
   "src/routes/eaisybillRoutes.tsx": {
-    "mtime": 1790635570.4351082,
-    "ast_hash": "68da7d7f54a1d2c4a008359e5233b25b",
+    "mtime": 1791176018.196243,
+    "ast_hash": "fce86de46b8c17c3cae60b045b2eaf85",
     "semantic_hash": ""
   },
   "src/routes/redirects.tsx": {
@@ -7675,8 +7675,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/__tests__/vatEngine.test.ts": {
-    "mtime": 1790775646.1898491,
-    "ast_hash": "d58cbe066d43459ecebed5a24e9c13e5",
+    "mtime": 1791176018.187245,
+    "ast_hash": "b4a5327adff72ad4f35a185ca4893264",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatA60Table.tsx": {
@@ -7685,8 +7685,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatCalculatorView.tsx": {
-    "mtime": 1791126771.610155,
-    "ast_hash": "165feee31d644434d22785faf0e118be",
+    "mtime": 1791176018.188244,
+    "ast_hash": "3c343e4fd00fb72b3ad1fb8d9c17b56e",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatNav65Replica.tsx": {
@@ -7695,13 +7695,13 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnContainer.tsx": {
-    "mtime": 1791126817.2113435,
-    "ast_hash": "724e94170e9622aa1c6e3e8aaf48ff83",
+    "mtime": 1791176018.1902444,
+    "ast_hash": "30543d8969d5d1416c195a4ef8e2a223",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnViewTab.tsx": {
-    "mtime": 1791126911.011469,
-    "ast_hash": "91faceb6c412fb258c419984749aaa02",
+    "mtime": 1791176018.1902444,
+    "ast_hash": "3ef763be290687e5683000883a629182",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatXmlValidationDialog.tsx": {
@@ -7715,13 +7715,13 @@
     "semantic_hash": ""
   },
   "src/features/vat/hooks/useVatReturnData.ts": {
-    "mtime": 1791126481.0747232,
-    "ast_hash": "4f0ed795d20532d8325b03b4e3e9a416",
+    "mtime": 1791176018.1922443,
+    "ast_hash": "aab64733ed8cc13fcc92006bd659db37",
     "semantic_hash": ""
   },
   "src/features/vat/index.ts": {
-    "mtime": 1790590616.2581947,
-    "ast_hash": "5e4ec972cadb9f556eddcb4a03f0b03c",
+    "mtime": 1791176018.1922443,
+    "ast_hash": "e4da1d8209db3a045d5bc2bc1f0da109",
     "semantic_hash": ""
   },
   "src/features/vat/types.ts": {
@@ -9235,13 +9235,13 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/EmployeeWorksheetView.tsx": {
-    "mtime": 1790958395.809785,
-    "ast_hash": "01103068e30678f15a75e3fff85e3e16",
+    "mtime": 1791177743.8744717,
+    "ast_hash": "f357564df9dc83d25992fab0f2d5486c",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetEmployeeForm.tsx": {
-    "mtime": 1790958395.8113415,
-    "ast_hash": "55aa8be68e74a922764d740cee521e3b",
+    "mtime": 1791176803.213001,
+    "ast_hash": "1a02237e2da64a14b1c0e20bfb139efe",
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetLivePayslip.tsx": {
@@ -9250,8 +9250,8 @@
     "semantic_hash": ""
   },
   "src/components/accounty/payroll/worksheet/WorksheetSidebar.tsx": {
-    "mtime": 1790168426.8027322,
-    "ast_hash": "83beb87bb750033bff09f2bb1d315a9d",
+    "mtime": 1791176833.1696966,
+    "ast_hash": "093076bae39ac31c56913a1be27db507",
     "semantic_hash": ""
   },
   "src/features/journals/__tests__/fakovRoutingAndVat.test.ts": {
@@ -9260,8 +9260,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatCollectorAnalyticsView.tsx": {
-    "mtime": 1791122129.1399615,
-    "ast_hash": "4ab94443c92ec9dc808e8089b85781b6",
+    "mtime": 1791176018.189244,
+    "ast_hash": "830fed04d8035d23ddb8a881d5be73bf",
     "semantic_hash": ""
   },
   "src/test/accounty/sportsbaseVatAlignment.test.ts": {
@@ -9285,13 +9285,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-108-payroll-commute-reimbursement-and-employee-worksheet.md": {
-    "mtime": 1788964430.56021,
-    "ast_hash": "36757e45ea964d907a82180a4a181690",
+    "mtime": 1791178023.4834745,
+    "ast_hash": "6ef0b757c5975994bfbd68b2cd1ca1da",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-080-employee-worksheet-and-commute-reimbursement-ux.md": {
-    "mtime": 1788964430.5627162,
-    "ast_hash": "63eb5b4f9629b3831b8c314568950526",
+    "mtime": 1791178044.237726,
+    "ast_hash": "1dbb11ef00851967b81c285949e391a0",
     "semantic_hash": ""
   },
   "src/test/accounty/categoriesCache.test.ts": {
@@ -9470,8 +9470,8 @@
     "semantic_hash": ""
   },
   "src/locales/hr/accounting.json": {
-    "mtime": 1791122129.1429045,
-    "ast_hash": "7c865432438b59bf13fc2ee026f84a50",
+    "mtime": 1791176018.1932452,
+    "ast_hash": "25ee1020d04291c9ab8ec31fca51faad",
     "semantic_hash": ""
   },
   "src/locales/hr/categories.json": {
@@ -9510,8 +9510,8 @@
     "semantic_hash": ""
   },
   "src/locales/hu/accounting.json": {
-    "mtime": 1791122129.1439083,
-    "ast_hash": "fd2045b6e2bdebaf19b75e0d7db0b236",
+    "mtime": 1791176018.1942446,
+    "ast_hash": "360bf34803e544e01ea6232a31924d49",
     "semantic_hash": ""
   },
   "src/locales/hu/categories.json": {
@@ -10815,8 +10815,8 @@
     "semantic_hash": ""
   },
   "src/test/navigation/dashboardLegacyRedirect.test.tsx": {
-    "mtime": 1790032017.1366577,
-    "ast_hash": "c4318001bf58789759a5f8e03446034a",
+    "mtime": 1791176018.196243,
+    "ast_hash": "a6b582e8d75a94b36cc2d528ce7c22ea",
     "semantic_hash": ""
   },
   "src/test/tickets/ticketSlaIntegration.test.tsx": {
@@ -11435,8 +11435,8 @@
     "semantic_hash": ""
   },
   "src/config/version.ts": {
-    "mtime": 1790893209.6926148,
-    "ast_hash": "a64cd89ead26b1f603a20ca160592c4a",
+    "mtime": 1791128963.1494853,
+    "ast_hash": "867e05e8c843cf506f1494a20e41abf4",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-patchnote/SKILL.md": {
@@ -12066,8 +12066,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/replica/Nav2665PageFrame.tsx": {
-    "mtime": 1790534876.6720307,
-    "ast_hash": "25c31fc44f08e9822ecc5ae6ff56c97f",
+    "mtime": 1791176018.1902444,
+    "ast_hash": "c880896e720e19dfdf34bb91257aba57",
     "semantic_hash": ""
   },
   "src/features/vat/components/replica/Nav2665ReplicaContainer.tsx": {
@@ -12116,8 +12116,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/replica/index.ts": {
-    "mtime": 1790534876.6751926,
-    "ast_hash": "6930cdafe5cab02cebf19f0d9d0ecf83",
+    "mtime": 1791176018.1912441,
+    "ast_hash": "8bb69d1cc62d2a29bd464bea47f62e8d",
     "semantic_hash": ""
   },
   "src/hooks/useDevelopmentReserves.ts": {
@@ -13253,13 +13253,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-186-payroll-leave-entitlements-resolution-engine.md": {
-    "mtime": 1790806510.5444279,
-    "ast_hash": "819fd9105797d79975455c0bbf7aa9bf",
+    "mtime": 1791178000.6185732,
+    "ast_hash": "ef6f77b656169826260190ac40ecc062",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-149-payroll-leave-entitlements-and-guidance-card-ux.md": {
-    "mtime": 1790806462.1242661,
-    "ast_hash": "47075f5afe966424adcb499a384be107",
+    "mtime": 1791178069.816099,
+    "ast_hash": "dec08918faed348be2f916a7a0dd359a",
     "semantic_hash": ""
   },
   "session-summary/Jani/2026-10-01/summary-001211-eb-0223-payroll-extra-leave-entitlements-and-tests.md": {
@@ -13693,8 +13693,8 @@
     "semantic_hash": ""
   },
   "src/test/serviceOnlyRpcGrants.test.ts": {
-    "mtime": 1791068733.378507,
-    "ast_hash": "f5337bc86deaaba5a97409f2b1f3de43",
+    "mtime": 1791176018.196243,
+    "ast_hash": "0b07985bcd9e4c3f92b8dc85dca487f6",
     "semantic_hash": ""
   },
   "supabase/migrations/20261003225350_restrict_service_only_queue_and_nav_rpcs.sql": {
@@ -13733,8 +13733,8 @@
     "semantic_hash": ""
   },
   "src/lib/__tests__/vatA60Xml.test.ts": {
-    "mtime": 1791126247.0322783,
-    "ast_hash": "19f43a5ab8a72ccb3b02aaa02a58d5b6",
+    "mtime": 1791176018.1932452,
+    "ast_hash": "b1411523be22a10313d1f8c2b75d4205",
     "semantic_hash": ""
   },
   "src/lib/vatA60Xml.ts": {
@@ -13780,6 +13780,131 @@
   "docs/architecture/decisions/A-194-vat-analytics-pdf-export-rlb60-standard.md": {
     "mtime": 1791122129.1377378,
     "ast_hash": "e740191b44cc94da0f612bc1d041238c",
+    "semantic_hash": ""
+  },
+  "src/components/accounting/AccountingRulesDialog.tsx": {
+    "mtime": 1791176018.1862454,
+    "ast_hash": "db433424dac7dfe6220dbc4d782d2076",
+    "semantic_hash": ""
+  },
+  "src/components/accounting/CompanyPromptRulesManager.tsx": {
+    "mtime": 1791176018.187245,
+    "ast_hash": "e2a626b38f1344cf9b269736aae40ba6",
+    "semantic_hash": ""
+  },
+  "src/components/accounty/payroll/worksheet/WorksheetLeaveModal.tsx": {
+    "mtime": 1791177713.2576952,
+    "ast_hash": "71f54562ce0e297577a3a6b6a7a04ba2",
+    "semantic_hash": ""
+  },
+  "src/components/accounty/payroll/worksheet/__tests__/WorksheetLeaveModal.test.ts": {
+    "mtime": 1791177726.9412107,
+    "ast_hash": "3e3d24411cb6b564305cd5e37d32d79c",
+    "semantic_hash": ""
+  },
+  "src/features/vat/__tests__/vatNonDeclarableItems.test.ts": {
+    "mtime": 1791176018.188244,
+    "ast_hash": "017c153caaa4dec5757604029b252ca9",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatNavA60Replica.tsx": {
+    "mtime": 1791176018.189244,
+    "ast_hash": "d36238d1846935d5f17d0b7ac7860904",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/VatNonDeclarableItemsSection.tsx": {
+    "mtime": 1791176018.189244,
+    "ast_hash": "d613b12faa67fd6f4a2cffcce683067e",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/replica/Nav26A60ReplicaContainer.tsx": {
+    "mtime": 1791176018.1912441,
+    "ast_hash": "6d4e1271c67e826d9115ddfdb8bde685",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/replica/Nav26A60SheetFolap.tsx": {
+    "mtime": 1791176018.1912441,
+    "ast_hash": "18ef6849d7223a82567e1517a0d716ca",
+    "semantic_hash": ""
+  },
+  "src/features/vat/components/replica/Nav26A60SheetTable.tsx": {
+    "mtime": 1791176018.1912441,
+    "ast_hash": "dff83c8fb7c9e2e7c6603e082ac5cba6",
+    "semantic_hash": ""
+  },
+  "src/pages/AccountingRulesPage.tsx": {
+    "mtime": 1791176018.1952436,
+    "ast_hash": "d9ef4f3690b30a3a88ff797c89481a23",
+    "semantic_hash": ""
+  },
+  "src/test/accountingRulesIntegration.test.tsx": {
+    "mtime": 1791176018.196243,
+    "ast_hash": "444da9aeda5bad4a98ddc4f0dc166043",
+    "semantic_hash": ""
+  },
+  "src/test/vat/nav26A60Replica.test.tsx": {
+    "mtime": 1791176018.1972437,
+    "ast_hash": "890816cc613262300938aad446d295d2",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261004160000_fix_sba_discount_vat_and_exclude_aam_from_row63.sql": {
+    "mtime": 1791176018.1972437,
+    "ast_hash": "600b7f07d4746ce03339a83956c469c8",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261004180000_optimize_query_performance_invoices_and_nav_indexes.sql": {
+    "mtime": 1791145218.8310525,
+    "ast_hash": "0d5163e85e3f4c108c3ce4427007d1bb",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261004190000_optimize_calculate_hungarian_vat_return_cursor_bounds.sql": {
+    "mtime": 1791146577.7552595,
+    "ast_hash": "b85a5e9a27a0d7321673687387ee2534",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-195-nav-26a60-community-summary-anyk-xml-export-and-reconciliation.md": {
+    "mtime": 1791128638.7836149,
+    "ast_hash": "ddcccf7ef70d8c19259bcbdfe9007dd5",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-196-accounting-rules-dialog-and-cross-module-integration.md": {
+    "mtime": 1791176018.1832447,
+    "ast_hash": "ffb75286f2e8a3034a1a91e7a4058905",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-197-nav-26a60-official-tax-form-digital-replica.md": {
+    "mtime": 1791176018.1832447,
+    "ast_hash": "8aa382c6e66a0b55f9c4c286bcd930c4",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-155-nav-26a60-official-tax-form-digital-replica-ux.md": {
+    "mtime": 1791176018.1842449,
+    "ast_hash": "596433fc8b24579b2de037deac49faa3",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-156-accounting-rules-integration-in-vat-and-journals.md": {
+    "mtime": 1791176018.1842449,
+    "ast_hash": "8f35d20a6a9aa798f9714c57c457999c",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-04/summary-174500-nav-a60-community-summary-anyk-xml-export-and-reconciliation.md": {
+    "mtime": 1791128595.096567,
+    "ast_hash": "9abadfa3d71b7ce0e947932efd9d3e68",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-04/summary-224600-supabase-query-performance-indexes-and-vat-return-268x-speedup.md": {
+    "mtime": 1791146799.2143621,
+    "ast_hash": "1e01015f224eafde795246a73aa58b45",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-05/summary-072500-eb-0245-payroll-worksheet-bonus-race-condition-vocational-leave-and-overlap-guard.md": {
+    "mtime": 1791177914.781766,
+    "ast_hash": "158fc14bdad6f297ea80f0be9f91aaae",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-10-04/summary-174900-accounting-rules-and-nav-a60-replica.md": {
+    "mtime": 1791176018.1852448,
+    "ast_hash": "9df5b1645f81a2357c366738895a96df",
     "semantic_hash": ""
   }
 }

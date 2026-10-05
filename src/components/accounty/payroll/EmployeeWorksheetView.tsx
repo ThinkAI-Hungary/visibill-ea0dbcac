@@ -357,20 +357,28 @@ export default function EmployeeWorksheetView({
     const safeAmount = Math.max(0, amount);
 
     try {
-      const { data: existing } = await supabase
+      const { data: existingList } = await supabase
         .from('accounty_payroll_items')
         .select('id')
         .eq('cycle_id', cycle.id)
         .eq('employment_id', currentEmployment.id)
-        .eq('item_type', itemType)
-        .maybeSingle();
+        .eq('item_type', itemType);
 
       if (safeAmount > 0) {
-        if (existing) {
+        if (existingList && existingList.length > 0) {
           await supabase
             .from('accounty_payroll_items')
             .update({ amount: safeAmount })
-            .eq('id', existing.id);
+            .eq('id', existingList[0].id);
+
+          // Clean up any extraneous duplicate rows if present
+          if (existingList.length > 1) {
+            const extraIds = existingList.slice(1).map(r => r.id);
+            await supabase
+              .from('accounty_payroll_items')
+              .delete()
+              .in('id', extraIds);
+          }
         } else {
           await supabase
             .from('accounty_payroll_items')
@@ -383,16 +391,22 @@ export default function EmployeeWorksheetView({
               is_deduction: isDeduction,
             });
         }
-      } else if (existing) {
+      } else if (existingList && existingList.length > 0) {
+        const ids = existingList.map(r => r.id);
         await supabase
           .from('accounty_payroll_items')
           .delete()
-          .eq('id', existing.id);
+          .in('id', ids);
       }
 
       queryClient.invalidateQueries({ queryKey: payrollQueryKeys.items(cycle.id) });
     } catch (err: any) {
       console.error('Error saving item:', err);
+      toast({
+        title: 'Hiba a bérkomponens mentésekor',
+        description: err?.message || 'Nem sikerült elmenteni a tételt az adatbázisba.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -627,6 +641,7 @@ export default function EmployeeWorksheetView({
           <WorksheetEmployeeForm
             employee={currentEmployee}
             employment={currentEmployment}
+            cycle={cycle}
             attendance={currentAttendance}
             defaultWorkDays={defaultWorkDays}
             onAttendanceChange={(field, val) => {

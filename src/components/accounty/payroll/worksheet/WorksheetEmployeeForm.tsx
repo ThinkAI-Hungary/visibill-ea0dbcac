@@ -16,6 +16,7 @@ import {
   Save,
   AlertTriangle,
   Info,
+  GraduationCap,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,10 +25,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
+import WorksheetLeaveModal from './WorksheetLeaveModal';
 
 export interface WorksheetEmployeeFormProps {
   employee: any;
   employment: any;
+  cycle?: any;
   attendance: {
     workDays: number;
     workedHours?: number;
@@ -99,7 +102,68 @@ export default function WorksheetEmployeeForm({
   onSaveCostCenter,
   isSavingCostCenter = false,
   defaultWorkDays = 21,
+  cycle,
 }: WorksheetEmployeeFormProps) {
+  const isVocational = Boolean(
+    employment?.job_code === '1131' ||
+    employment?.job_code === '120' ||
+    employment?.employment_type === 'szakkep' ||
+    employment?.employment_type === 'szakkepzes' ||
+    (employment?.job_title && employment.job_title.toLowerCase().includes('szakképz'))
+  );
+
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = React.useState(false);
+
+  // Local draft states for free-form currency input editing with onBlur / debounced commit
+  const [bonusDraft, setBonusDraft] = React.useState<string>(bonus ? String(bonus) : '');
+  const [serviceChargeDraft, setServiceChargeDraft] = React.useState<string>(serviceCharge ? String(serviceCharge) : '');
+  const [homeOfficeDraft, setHomeOfficeDraft] = React.useState<string>(homeOffice ? String(homeOffice) : '');
+  const [deductionsDraft, setDeductionsDraft] = React.useState<string>(itemDeductions ? String(itemDeductions) : '');
+
+  React.useEffect(() => {
+    setBonusDraft(bonus ? String(bonus) : '');
+  }, [bonus, employee?.id]);
+
+  React.useEffect(() => {
+    setServiceChargeDraft(serviceCharge ? String(serviceCharge) : '');
+  }, [serviceCharge, employee?.id]);
+
+  React.useEffect(() => {
+    setHomeOfficeDraft(homeOffice ? String(homeOffice) : '');
+  }, [homeOffice, employee?.id]);
+
+  React.useEffect(() => {
+    setDeductionsDraft(itemDeductions ? String(itemDeductions) : '');
+  }, [itemDeductions, employee?.id]);
+
+  const commitBonus = (valStr: string) => {
+    const parsed = Math.max(0, parseFloat(valStr) || 0);
+    if (parsed !== bonus) {
+      onBonusChange(parsed);
+    }
+  };
+
+  const commitServiceCharge = (valStr: string) => {
+    const parsed = Math.max(0, parseFloat(valStr) || 0);
+    if (parsed !== serviceCharge) {
+      onServiceChargeChange(parsed);
+    }
+  };
+
+  const commitHomeOffice = (valStr: string) => {
+    const parsed = Math.max(0, parseFloat(valStr) || 0);
+    if (parsed !== homeOffice) {
+      onHomeOfficeChange(parsed);
+    }
+  };
+
+  const commitDeductions = (valStr: string) => {
+    const parsed = Math.max(0, parseFloat(valStr) || 0);
+    if (parsed !== itemDeductions) {
+      onItemDeductionsChange(parsed);
+    }
+  };
+
   if (!employee || !employment) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
@@ -155,11 +219,20 @@ export default function WorksheetEmployeeForm({
                   Saját jogú nyugdíjas (TB/SZOCHO: 0 Ft)
                 </Badge>
               )}
+              {isVocational && (
+                <Badge variant="outline" className="h-5 px-2 text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 font-semibold gap-1">
+                  <GraduationCap className="w-3 h-3" />
+                  Szakképzési munkaszerződés (45 nap szabi)
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
               <span className="flex items-center gap-1 font-medium text-foreground">
                 <Briefcase className="w-3 h-3 text-primary" />
-                {formatJobTitleWithFeor(employment.job_title, employment.feor_code || employment.job_code)}
+                {formatJobTitleWithFeor(
+                  employment.job_title || (isVocational ? 'Szakképzési tanuló' : null),
+                  employment.feor_code || employment.job_code
+                )}
               </span>
               <span>•</span>
               <span>Heti {employment.weekly_hours || 40} óra</span>
@@ -308,16 +381,31 @@ export default function WorksheetEmployeeForm({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Fizetett szabadság (nap)</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Fizetett szabadság (nap)</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-5 px-1.5 text-[10px] text-primary hover:text-primary/80 gap-1 font-medium"
+                onClick={() => setIsLeaveModalOpen(true)}
+                title="Konkrét időtartam és dátumok rögzítése a bérszámfejtéshez"
+              >
+                <Calendar className="w-3 h-3" />
+                Dátumok (tól-ig)
+              </Button>
+            </div>
             <Input
               type="number"
               min={0}
-              max={30}
+              max={isVocational ? 45 : 35}
               value={attendance.leaveDays ?? 0}
               onChange={(e) => onAttendanceChange('leaveDays', parseInt(e.target.value) || 0)}
               className="h-8 text-xs font-mono"
             />
-            <p className="text-[10px] text-muted-foreground">Alapbérbe építve</p>
+            <p className="text-[10px] text-muted-foreground">
+              {isVocational ? 'Szkt. alapján évi 45 napos tanulói keretből' : 'Alapbérbe építve (Mt.)'}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -510,11 +598,17 @@ export default function WorksheetEmployeeForm({
               </Badge>
             </div>
             <Input
-              type="number"
-              min={0}
-              step={1000}
-              value={serviceCharge || ''}
-              onChange={(e) => onServiceChargeChange(parseFloat(e.target.value) || 0)}
+              type="text"
+              inputMode="numeric"
+              value={serviceChargeDraft}
+              onChange={(e) => setServiceChargeDraft(e.target.value.replace(/[^0-9]/g, ''))}
+              onBlur={() => commitServiceCharge(serviceChargeDraft)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  commitServiceCharge(serviceChargeDraft);
+                  e.currentTarget.blur();
+                }
+              }}
               placeholder="0 Ft"
               className="h-8 text-xs font-mono font-bold"
             />
@@ -526,11 +620,17 @@ export default function WorksheetEmployeeForm({
           <div className="space-y-1.5 p-3 rounded-lg bg-muted/40 border border-border/60">
             <Label className="text-xs font-medium">Prémium / Jutalom (Ft)</Label>
             <Input
-              type="number"
-              min={0}
-              step={1000}
-              value={bonus || ''}
-              onChange={(e) => onBonusChange(parseFloat(e.target.value) || 0)}
+              type="text"
+              inputMode="numeric"
+              value={bonusDraft}
+              onChange={(e) => setBonusDraft(e.target.value.replace(/[^0-9]/g, ''))}
+              onBlur={() => commitBonus(bonusDraft)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  commitBonus(bonusDraft);
+                  e.currentTarget.blur();
+                }
+              }}
               placeholder="0 Ft"
               className="h-8 text-xs font-mono font-bold"
             />
@@ -553,12 +653,17 @@ export default function WorksheetEmployeeForm({
           <div className="space-y-1.5">
             <Label className="text-xs font-medium">Home Office költségtérítés (Ft)</Label>
             <Input
-              type="number"
-              min={0}
-              max={32280}
-              step={1000}
-              value={homeOffice || ''}
-              onChange={(e) => onHomeOfficeChange(parseFloat(e.target.value) || 0)}
+              type="text"
+              inputMode="numeric"
+              value={homeOfficeDraft}
+              onChange={(e) => setHomeOfficeDraft(e.target.value.replace(/[^0-9]/g, ''))}
+              onBlur={() => commitHomeOffice(homeOfficeDraft)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  commitHomeOffice(homeOfficeDraft);
+                  e.currentTarget.blur();
+                }
+              }}
               placeholder="0 Ft"
               className="h-8 text-xs font-mono"
             />
@@ -582,11 +687,17 @@ export default function WorksheetEmployeeForm({
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">Egyéb bérlevonás / Hóközi előleg (Ft)</Label>
               <Input
-                type="number"
-                min={0}
-                step={1000}
-                value={itemDeductions || ''}
-                onChange={(e) => onItemDeductionsChange(parseFloat(e.target.value) || 0)}
+                type="text"
+                inputMode="numeric"
+                value={deductionsDraft}
+                onChange={(e) => setDeductionsDraft(e.target.value.replace(/[^0-9]/g, ''))}
+                onBlur={() => commitDeductions(deductionsDraft)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    commitDeductions(deductionsDraft);
+                    e.currentTarget.blur();
+                  }
+                }}
                 placeholder="0 Ft"
                 className="h-8 text-xs font-mono text-red-600 font-bold"
               />
@@ -656,6 +767,17 @@ export default function WorksheetEmployeeForm({
           </Button>
         </div>
       </div>
+
+      {/* Leave Date Range Modal */}
+      <WorksheetLeaveModal
+        isOpen={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
+        employee={employee}
+        employment={employment}
+        cycle={cycle}
+        currentLeaveDays={attendance.leaveDays ?? 0}
+        onSyncLeaveDays={(newDays) => onAttendanceChange('leaveDays', newDays)}
+      />
     </div>
   );
 }
