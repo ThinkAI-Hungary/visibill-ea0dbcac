@@ -62,11 +62,18 @@ export interface EmployeeLeaveInput {
   
   // Napi munkaóra az óra alapú számításhoz (alapértelmezetten 8)
   dailyHours?: number;
+
+  // Szakképzési munkaszerződés / tanulói jogviszony (Szkt. 84. § (6): évi 45 munkanap szabadság)
+  isVocationalStudent?: boolean;
+
+  // Opcionális egyedi alapszabadság keret
+  customBaseLeave?: number;
 }
 
-// ── Szabadság konstansok (Mt.) ──
+// ── Szabadság konstansok (Mt. & Szkt.) ──
 
 const BASE_LEAVE_DAYS = 20;
+const VOCATIONAL_LEAVE_DAYS = 45; // Szkt. 84. § (6) szerinti szakképzési tanulói szabadság
 const MAX_CARRY_OVER = 60;
 
 const AGE_SUPPLEMENT_TABLE: Array<[number, number]> = [
@@ -130,12 +137,14 @@ function calculateProRata(
 // ── Fő szabadság-mérleg számítás ──
 
 export function calculateLeaveBalance(input: EmployeeLeaveInput): LeaveBalance {
-  const ageSupplement = calculateAgeSupplement(input.ageAtYearStart);
-  const childSupplement = calculateChildSupplement(input.childrenUnder16);
-  const disabledChildSupplement = calculateDisabledChildSupplement(input.disabledChildren);
+  const isVocational = Boolean(input.isVocationalStudent);
+  const effectiveBaseLeave = input.customBaseLeave ?? (isVocational ? VOCATIONAL_LEAVE_DAYS : BASE_LEAVE_DAYS);
+  const ageSupplement = isVocational ? 0 : calculateAgeSupplement(input.ageAtYearStart);
+  const childSupplement = isVocational ? 0 : calculateChildSupplement(input.childrenUnder16);
+  const disabledChildSupplement = isVocational ? 0 : calculateDisabledChildSupplement(input.disabledChildren);
   const dailyHours = input.dailyHours || 8;
 
-  let totalAnnual = BASE_LEAVE_DAYS + ageSupplement + childSupplement + disabledChildSupplement + input.extraLeaveDays;
+  let totalAnnual = effectiveBaseLeave + ageSupplement + childSupplement + disabledChildSupplement + input.extraLeaveDays;
 
   // Időarányosítás
   if (input.employmentStartDate || input.employmentEndDate) {
@@ -157,7 +166,7 @@ export function calculateLeaveBalance(input: EmployeeLeaveInput): LeaveBalance {
   const extraordinaryLeave = input.extraordinaryDays || 0;
 
   return {
-    baseLeave: BASE_LEAVE_DAYS,
+    baseLeave: effectiveBaseLeave,
     ageSupplement,
     childSupplement,
     disabledChildSupplement,
@@ -175,7 +184,7 @@ export function calculateLeaveBalance(input: EmployeeLeaveInput): LeaveBalance {
     extraordinaryLeave,
 
     // Óraalapú átszámítások
-    baseLeaveHours: BASE_LEAVE_DAYS * dailyHours,
+    baseLeaveHours: effectiveBaseLeave * dailyHours,
     ageSupplementHours: ageSupplement * dailyHours,
     childSupplementHours: childSupplement * dailyHours,
     disabledChildSupplementHours: disabledChildSupplement * dailyHours,
@@ -246,7 +255,14 @@ export interface ResolveLeaveInputParams {
   dependents?: Array<{ birth_date?: string | null; is_fetus?: boolean | null; is_disabled?: boolean | null; disabled?: boolean | null }>;
   declarations?: Array<{ declaration_type: string; status: string; valid_from?: string | null; created_at?: string | null; parameters?: any }>;
   leaves?: Array<{ leave_type: string; status: string; days: number | string }>;
-  primaryEmployment?: { start_date?: string | null; end_date?: string | null; weekly_hours?: number | string | null } | null;
+  primaryEmployment?: {
+    start_date?: string | null;
+    end_date?: string | null;
+    weekly_hours?: number | string | null;
+    job_code?: string | null;
+    employment_type?: string | null;
+    job_title?: string | null;
+  } | null;
   targetYear?: number;
 }
 
@@ -345,6 +361,14 @@ export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): Empl
     .filter(l => (l.leave_type === 'annual' || l.leave_type?.startsWith('additional_')) && l.status === 'approved')
     .reduce((s, l) => s + (Number(l.days) || 0), 0);
 
+  const isVocational = Boolean(
+    primaryEmployment?.job_code === '1131' ||
+    primaryEmployment?.job_code === '120' ||
+    primaryEmployment?.employment_type === 'szakkep' ||
+    primaryEmployment?.employment_type === 'szakkepzes' ||
+    (primaryEmployment?.job_title && primaryEmployment.job_title.toLowerCase().includes('szakképz'))
+  );
+
   return {
     ageAtYearStart: age,
     childrenUnder16,
@@ -356,6 +380,7 @@ export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): Empl
     dailyHours,
     year: targetYear,
     usedDays,
+    isVocationalStudent: isVocational,
   };
 }
 

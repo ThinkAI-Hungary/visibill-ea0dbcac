@@ -10,6 +10,7 @@ import { InvoiceDataExportDialog } from '@/components/invoices/InvoiceDataExport
 import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { InvoiceApprovalDialog } from './InvoiceApprovalDialog';
 import { SuggestedInvoiceLinkDialog } from './SuggestedInvoiceLinkDialog';
+import { ManualInvoiceCreateDialog } from '@/components/invoices/ManualInvoiceCreateDialog';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 
 export function InvoiceDialogManager() {
@@ -22,6 +23,8 @@ export function InvoiceDialogManager() {
     setImageDialogOpen,
     editDialogOpen,
     setEditDialogOpen,
+    createDialogOpen,
+    setCreateDialogOpen,
     itemsDialogOpen,
     setItemsDialogOpen,
     submittedItemsDialogOpen,
@@ -226,6 +229,19 @@ export function InvoiceDialogManager() {
         }}
         navInvoice={selectedSuggestedLinkPair?.navInvoice || null}
         suggestedInvoice={selectedSuggestedLinkPair?.suggestedInvoice || null}
+      />
+
+      {/* Manual Invoice Create Dialog */}
+      <ManualInvoiceCreateDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        companyId={selectedCompany?.id || ''}
+        categories={categories}
+        projects={projects}
+        initialDirection={activeTab === 'SUBMITTED_OUTBOUND' || activeTab === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND'}
+        onSuccess={() => {
+          invalidateInvoiceData();
+        }}
       />
     </>
   );

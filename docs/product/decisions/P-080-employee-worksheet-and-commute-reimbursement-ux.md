@@ -35,6 +35,7 @@ Vendéglátóipari egységek, műszakos munkarendek és külső telephelyes cég
 - **Haladási sáv (Progress Bar):** Vizuális folyamatjelző (pl. `2 / 3 kész`, százalékos csík).
 - **Dolgozói kártyák:**
   - Név, munkakör, havi nettó bér előnézet.
+  - Szakképzési tanulói jelölés: ha a dolgozó szakképzési munkaszerződéssel rendelkezik, lila "Tanuló" jelvény jelenik meg mellette, hiányzó megnevezésnél "Szakképzési tanuló" felirattal (EB-0245).
   - Státusz jelvények:
     - 🟢 *Kész* (a felhasználó késznek jelölte a dolgozót).
     - 🟡 *Adattal* (alapértelmezettől eltérő értékeket tartalmaz).
@@ -43,6 +44,9 @@ Vendéglátóipari egységek, műszakos munkarendek és külső telephelyes cég
 #### B) Középső Oszlop: All-in-One Havi Adatlap (`WorksheetEmployeeForm.tsx`)
 Egyetlen gördíthető űrlapon csoportosítva:
 1. **Munkaidő & Jelenlét:** Munkanapok száma (a hónap munkanapjaihoz igazodva), ledolgozott napok, szabadság, betegszabadság, táppénz, igazolatlan hiányzás napjai.
+   - **Távollét Dátumok Modál ("Dátumok (tól-ig)"):** A szabadság mező mellett elérhető gyorsgombbal megnyitható a `WorksheetLeaveModal.tsx`. A könyvelő konkrét kezdő és záró naptári napokat adhat meg jogcímenként (alapbér, betegszabadság, fizetés nélküli, tanulmányi, szülői).
+   - **Automatikus hétvége-szűrés & Átfedésvédelem:** A modál automatikusan kihagyja a szombat-vasárnapokat, és figyelmeztető hibaüzenettel azonnal blokkolja a mentést, ha a kiválasztott időszak átfedi egy korábbi szabadság dátumait (`hasLeaveOverlap`). A mentett napok szinkronizálódnak a munkalapi szabadság számlálóval.
+   - **Tanulói 45 napos keret kitűző:** Szakképzési diákoknál a fejlécben kiemelt "Szakképzési munkaszerződés (45 nap szabi)" kitűző tájékoztat a törvényes keretről.
 2. **Munkába járás és utazási költségtérítés (39/2010. Korm. rend.):**
    - Típus választó: *Nincs költségtérítés* / *Saját gépkocsi (km alapon)* / *Helyközi tömegközlekedés (bérlet / jegy)*.
    - Gépkocsi esetén: oda-vissza távolság (km), adómentes km díj (alapértelmezett: 30 Ft/km), ledolgozott napok száma.
@@ -51,6 +55,7 @@ Egyetlen gördíthető űrlapon csoportosítva:
    - *Törzsadat szinkronizáció:* **„Mentés törzsadatba”** gombbal az itt megadott értékek közvetlenül átmenthetők a dolgozó állandó jogviszony rekordjába (`accounty_employments`).
 3. **Órák & Túlórák:** Teljesítmény- és órabéres dolgozóknál ledolgozott órák, 50%-os és 100%-os túlórák, éjszakai és műszakpótlék órák.
 4. **Pótlékok, Bónusz & Felszolgálási díj:** Készpénzes/bankkártyás borravaló és felszolgálási díj rögzítése, célprémiumok.
+   - *Gépelési versenyhelyzet védelem:* Az összegmezők lokális controlled draft állapotokat használnak numerikus szűréssel, és kizárólag `onBlur` vagy `Enter` leütésre mentenek, megelőzve az aszinkron duplikációkat és mezőberagadást (EB-0245).
 5. **Cafeteria, Home Office & Levonások:** SZÉP kártya, átalány-költségtérítés, valamint bírósági és egyéb letiltások.
 - **Alsó navigációs sáv:** `Előző dolgozó`, `Megjelölés készként / folyamatban`, `Következő dolgozó` gyorsgombok.
 

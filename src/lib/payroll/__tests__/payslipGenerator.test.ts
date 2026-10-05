@@ -273,4 +273,15 @@ describe('generatePayslipHtml', () => {
     expect(html).toContain('10');
     expect(html).toContain('OTP - 20080004-99910000-35181659');
   });
+  it('should render company name in hero header and eaisyBooks as compact system badge (EB-0230)', () => {
+    const html = generatePayslipHtml(basePayslip);
+    expect(html).toContain('class="company-name-hero"');
+    expect(html).toContain('>Teszt Kft.</div>');
+    expect(html).toContain('class="brand-system-tag"');
+    expect(html).toContain('Bérszámfejtő rendszer:');
+    expect(html).toContain('eaisyBooks');
+    expect(html).toContain('brand-logo-small');
+    expect(html).not.toContain('class="brand-logo"');
+  });
 });
+

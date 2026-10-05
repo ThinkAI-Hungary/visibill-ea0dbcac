@@ -99,6 +99,8 @@ export interface InvoiceContextValue
   setImageDialogOpen: (open: boolean) => void;
   editDialogOpen: boolean;
   setEditDialogOpen: (open: boolean) => void;
+  createDialogOpen: boolean;
+  setCreateDialogOpen: (open: boolean) => void;
   itemsDialogOpen: boolean;
   setItemsDialogOpen: (open: boolean) => void;
   submittedItemsDialogOpen: boolean;
@@ -256,6 +258,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [lastViewedInvoiceId, setLastViewedInvoiceId] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [itemsDialogOpen, setItemsDialogOpen] = useState(false);
   const [submittedItemsDialogOpen, setSubmittedItemsDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<SubmittedInvoice | null>(null);
@@ -1437,6 +1440,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       setImageDialogOpen,
       editDialogOpen,
       setEditDialogOpen,
+      createDialogOpen,
+      setCreateDialogOpen,
       itemsDialogOpen,
       setItemsDialogOpen,
       submittedItemsDialogOpen,
@@ -1526,6 +1531,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       setImageDialogOpen,
       editDialogOpen,
       setEditDialogOpen,
+      createDialogOpen,
+      setCreateDialogOpen,
       itemsDialogOpen,
       setItemsDialogOpen,
       submittedItemsDialogOpen,

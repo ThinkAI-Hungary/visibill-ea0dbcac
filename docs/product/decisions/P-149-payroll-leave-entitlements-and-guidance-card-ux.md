@@ -2,8 +2,9 @@
 
 **Status:** Decided  
 **Date:** 2026-10-01  
+**Utoljára frissítve:** 2026-10-05  
 **Category:** eaisyBooks / Bérszámfejtés  
-**Ticket Reference:** EB-0223  
+**Ticket Reference:** EB-0223, EB-0245  
 
 ---
 
@@ -27,6 +28,10 @@ Hogyan oldható fel és jeleníthető meg átláthatóan a munkavállalókat meg
      - Az életkori pótszabadság a születési dátumból származik.
      - A gyermekek utáni pótszabadság az Eltartottak és a Nyilatkozatok fül adataiból képződik.
      - A havi bérszámfejtési ciklus 3. lépésében (*Jelenléti ív*) csak a tárgyhónapban ténylegesen kivett napokat kell rögzíteni, amit a rendszer automatikusan levon az éves egyenlegből.
+
+3. **Szakképzési Tanulói 45 Napos Alapszabadság és Bérlap Eltérés Feloldása (Szkt. 84. § (6), EB-0245):**
+   - A szakképzési munkaszerződéssel rendelkező diákoknál (1131, 120 kódok) a rendszer az Mt. szerinti 20 nap helyett automatikusan évi 45 munkanap szabadságkeretet biztosít.
+   - A bérlap generátor (`buildPayslipData`) szinkronizálva lett a dinamikus szabadságmotorral, így a nyomtatott és PDF bérlapokon is a valós 45 napos tanulói keret (illetve Mt. esetén az életkorral növelt keret) jelenik meg a korábbi merev 20 nap helyett.
 
 ---
 

@@ -555,3 +555,52 @@ Kétség esetén az await-elt refetch a biztonságos választás.
 
 - `ManagementDashboard.tsx` — Bulk Retry UX (`retryPhase` állapotgép, 2026-07-20)
 
+---
+
+## ⭐ Beágyazott Popover & Kereshető Dropdown / Combobox Pattern (2026-10-05)
+
+> **Ez a pattern kötelező minden olyan felületre, ahol egy `<Dialog>` belsejében `<Popover>` alapú kereső vagy többválasztós lista (combobox) található.**
+
+### 1. Radix Dialog + Popover Görgetés-blokkolás Védelem (`modal={true}`)
+
+* **A probléma (`react-remove-scroll` trap):**
+  * A Radix Dialog belső rétege (`DialogPrimitive.Content`) egy globális scroll-lockot (`react-remove-scroll`) aktivál a `document`-en, amely megakadályozza a háttér görgetését.
+  * Mivel a `<PopoverContent>` a Radix Portálon keresztül közvetlenül a `document.body`-ba mountolódik (a dialógus DOM fája mellé), alapértelmezett beállítás (`modal={false}`) mellett a dialógus scroll lockja **minden egérgörgő (`wheel`) és érintő (`touch`) eseményt elkap és blokkol (`preventDefault()`)**, megbénítva a popover listájának görgetését.
+* **A kötelező megoldás:**
+  * Be kell állítani a `<Popover modal={true} open={open} onOpenChange={setOpen}>` tulajdonságot.
+  * A `modal={true}` hatására a Radix Popover létrehozza a saját aktív scroll-lock rétegét, amely szabad utat biztosít a lebegő panelen belüli görgetésnek.
+  * A belső görgethető listán kötelező megadni:
+    * `overscroll-contain`: megakadályozza a görgetési láncolódást a háttérben lévő modálra.
+    * `onWheel={(e) => e.stopPropagation()}` és `onTouchMove={(e) => e.stopPropagation()}`: elvágja a szintetikus események felbuborékolását.
+
+### 2. Kereshető Popover Fix Magassága (Zero-Jitter Ugrásvédelem)
+
+* **A probléma (dinamikus magasság-összeesés):**
+  * Ha a popover doboza dinamikus magasságot (`max-h-[...]`) kap, akkor gépelés közben – amikor a találatok száma lecsökken (pl. 20 elemről 1-re vagy 0-ra) – a doboz magassága hirtelen összezsugorodik.
+  * Emiatt a Radix Popper újrapozícionálja a réteget (pl. alsó és felső pozíció között átugrik), ami vibráló, idegesítő ugrásokat és layout shiftet okoz gépelés közben.
+* **A kötelező megoldás:**
+  * Keresővel ellátott Popover esetén a konténernek **fix magasságot kell adni** (pl. `h-[350px]`).
+  * A belső görgetősáv kapja meg a `flex-1 min-h-0 overflow-y-auto overscroll-contain` osztályokat.
+  * Az üres (`0 db`) és betöltési (`isLoading`) állapotot a `flex-1` térben **függőlegesen és vízszintesen középre kell zárni** (`h-full flex flex-col items-center justify-center`), kereső ikonnal és a megadott keresési kifejezést tartalmazó visszajelzéssel.
+
+### 3. DOM Szeletelés & Kezdeti Render Limit (Top 20 tétel)
+
+* **A probléma:** Nagy mennyiségű (50–100+) tétel egyszerre történő DOM-ba renderelése feleslegesen növeli a memóriahasználatot és lassítja a görgetést.
+* **A kötelező megoldás:**
+  * A lekérdezett állományt rendezés (pl. dátum és prioritás) után memóriában szűrjük, de a DOM-ban legfeljebb 15–20 elemet jelenítünk meg (`displayedItems = filteredItems.slice(0, 20)`).
+  * A felső kereső jobb szélén diszkrét badge mutatja a valós össztalálatot (`filteredItems.length db`).
+  * Ha több elem van mint a megjelenített limit, a lista alján egy letisztult információs lábléc vezeti a felhasználót:
+    * *„Még X tétel • Pontosításhoz használja a fenti keresőt”*
+
+### 4. Keresőmező Kötelező Komponens Standard (`SearchInput`)
+
+* **Globális keresőmező használata:**
+  * Minden új popoverben, comboboxban vagy dialógusban a fejléc-keresőhöz **szigorúan a `SearchInput` (`@/components/ui/search-input`) komponenst kötelező használni** `variant="borderless"` beállítással ad-hoc inputok helyett.
+  * Ez garantálja az egységes Option B (CommandInput) stílust, az automatikus `clearable` (X) törlőgombot és `Escape` billentyű kezelést, a letisztult `rightElement` találatszámláló badge slotot és az egységes aszinkron `Loader2` állapotot.
+
+### 5. Referencia Implementációk
+
+* `src/components/invoices/manual-create/NavInvoicePicker.tsx`
+* `src/components/invoices/manual-create/TransactionMultiPicker.tsx`
+
+

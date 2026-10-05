@@ -3,13 +3,13 @@
 ```text
 feat(fixed-assets, vat, petty-cash, support): Tárgyi eszközök nyitó állomány & Excel/CSV tömeges import, NAV 2665M-02-K sztornó/helyesbítő számla kezelés ÁNYK XML-ben, és Házipénztár zárási folyamat tisztázása (EB-0247)
 
-- Tárgyi Eszközök Nyitó Állomány Rögzítése és Tömeges Excel/CSV Import (P-157, A-198)
+- Tárgyi Eszközök Nyitó Állomány Rögzítése és Tömeges Excel/CSV Import (P-159, A-200)
   - Ügyféligény (Ruzsa Teréz): Előzmény és nyitó adatok felvitelének támogatása korábbi könyvelési szoftverekből való átálláskor
   - Közvetlen nyitó rögzítés: `CreateFixedAssetDialog.tsx` bővítése nyitó állomány jelölővel és automatikus naplókönyvelési ugrás opcióval
   - Intelligens import parser (`src/lib/fixed-assets/assetImportParser.ts`): rugalmas fejlécfelismerés (Megnevezés, Leltári szám, Bekerülési érték, Nyitó/Halmozott écs, Nettó érték, Aktiválás dátuma, Écs kulcs %, TEÁOR/KSH), numerikus és dátumtisztítás
   - Feltöltő & Előnézeti komponens (`src/components/fixed-assets/AssetImportModal.tsx`): drag & drop Excel/CSV feltöltés, soronkénti validáció és hibajelzés, élő statisztika és tranzakciós mentés
   - Felületi integráció: "Eszközök importálása" gomb elhelyezése a `FixedAssetsPage.tsx` és `AssetListTable.tsx` felületen
-  - Döntési dokumentáció: `docs/product/decisions/P-157-fixed-assets-bulk-excel-csv-import-and-opening-balances-ux.md` és `docs/architecture/decisions/A-198-fixed-assets-bulk-excel-csv-import-and-opening-balances.md`
+  - Döntési dokumentáció: `docs/product/decisions/P-159-fixed-assets-bulk-excel-csv-import-and-opening-balances-ux.md` és `docs/architecture/decisions/A-200-fixed-assets-bulk-excel-csv-import-and-opening-balances.md`
 
 - HR & Bérszámfejtés Minőségbiztosítási Finomhangolások (Morfi Implementation Review)
   - Bérlap és élő bérszámfejtés kalkulációk ellenőrzése (`WorksheetLivePayslip.tsx`, `payslipGenerator.ts`, `PayrollStep5.tsx`): kerekítési és cafeteria levonási prioritások pontosítása

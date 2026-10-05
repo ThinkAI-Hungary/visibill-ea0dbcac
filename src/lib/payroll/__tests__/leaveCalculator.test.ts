@@ -382,5 +382,50 @@ describe('resolveEmployeeLeaveInput (Mt. 116-122. § entitlements)', () => {
     expect(balance.used).toBe(7);
     expect(balance.remaining).toBe(26 - 7); // 20 + 6 = 26; 26 - 7 = 19
   });
+
+  it('should calculate 45 days leave for vocational students (Szkt. 84. § (6))', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: {
+        id: 'emp-vocational',
+        birth_date: '2006-05-10', // 20 years old
+      },
+      primaryEmployment: {
+        id: 'employment-vocational',
+        job_code: '1131', // Szakképzési munkaszerződés
+        weekly_hours: 40,
+      },
+      targetYear: 2026,
+    });
+
+    expect(input?.isVocationalStudent).toBe(true);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.baseLeave).toBe(45);
+    expect(balance.totalAnnual).toBe(45);
+    expect(balance.remaining).toBe(45);
+    expect(balance.baseLeaveHours).toBe(45 * 8);
+  });
+
+  it('should recognize code 120 as vocational student from NAV 08 import', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: {
+        id: 'emp-voc-120',
+        birth_date: '2007-02-15',
+      },
+      primaryEmployment: {
+        id: 'employment-voc-120',
+        job_code: '120',
+        weekly_hours: 40,
+      },
+      targetYear: 2026,
+    });
+
+    expect(input?.isVocationalStudent).toBe(true);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.baseLeave).toBe(45);
+    expect(balance.totalAnnual).toBe(45);
+  });
 });
+
 

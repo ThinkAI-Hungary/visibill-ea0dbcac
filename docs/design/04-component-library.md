@@ -13,6 +13,7 @@
 | **Button** | `button.tsx` | `@radix-ui/react-slot` | CVA variánsok |
 | **Badge** | `badge.tsx` | – | Státusz jelzők |
 | **Input** | `input.tsx` | – | Form input |
+| **SearchInput** | `search-input.tsx` | – | Globális keresőmező 3 variánssal (borderless, boxed, ghost), clearable gombbal (2026-10-05) |
 | **NumberInput** | `number-input.tsx` | – | Szám és összeg beviteli mező egyedi léptető nyilakkal, tabular-nums (2026-09-04) |
 | **DatePicker** | `date-picker.tsx` | Popover + Calendar | Tervezési token kompatibilis dátumválasztó |
 | **Textarea** | `textarea.tsx` | – | Többsoros input |
@@ -79,6 +80,17 @@
 | **Toggle** | `toggle.tsx` |
 | **Toggle Group** | `toggle-group.tsx` |
 | **Alert** | `alert.tsx` |
+
+#### Űrlap Placeholder és Példa Érték Konvenciók (2026-10-05)
+
+* **Tilos a specifikus cég- és márkanevek használata:**
+  * Az űrlapok beviteli mezőiben tilos valós vagy specifikus cégneveket (pl. *„Hetzner Online GmbH”*, *„Think AI Kft.”*, stb.) használni placeholderként. Ez félreértést okoz és belső környezeti adatokat szivárogtat.
+* **Egységes semleges minták:**
+  * **Eladó / Szállító neve:** `pl. Partner Kft.` vagy `pl. Minta Kft.`
+  * **Vevő / Megrendelő neve:** `pl. Ügyfél Kft.` vagy `pl. Partner Kft.`
+  * **Bizonylatszám:** `pl. SZLA-2026-001`
+  * **Adószám:** `pl. 12345678-2-41`
+  * **Összegek:** `0.00` vagy `0 Ft`
 
 ---
 
@@ -239,6 +251,42 @@ iOS stílusú toggle kapcsoló szöveges label-lel:
 
 ### Partner Type Filter
 **Fájl:** `ui/partner-type-filter.tsx` — Háromállású szegmentált toggle csoport (Összes / Belföldi / Külföldi).
+
+### SearchInput (Globális Keresőmező)
+**Fájl:** `ui/search-input.tsx` (2026-10-05)
+
+> **⭐ Kötelező Globális Standard a Jövőbeli Keresőmezőkhöz (2026-10-05):**  
+> A jövőben minden új felületen, dialógusban, popoverben, comboboxban, modálban vagy táblázatos szűrősávban előforduló keresőmezőnél **kizárólag ezt a komponenst (`SearchInput`, `@/components/ui/search-input`) kötelező használni** egyedi ad-hoc `<input>` vagy lokális keresősávok újraalkotása helyett.
+> - **Popover / Combobox / Dropdown fejlécekben:** `variant="borderless"` (Option B stílus, tiszta CommandInput megjelenés lekerekített felső sarokkal és alsó választóvonallal).
+> - **Önálló űrlapokban, szűrősávokban és oldalsó paneleken:** `variant="boxed"` (szegélyezett, fókusz-gyűrűs konténer).
+> - **Kompakt, beágyazott eszközsávokban:** `variant="ghost"` (minimális, háttér és szegély nélküli).
+> - **Konzisztencia előnyei:** Mindenhol egységes törlés gomb (`clearable`), `Escape` billentyű támogatás, egységes `Loader2` töltésindikátor és opcionális számláló slot (`rightElement`).
+
+Egységes, prémium keresőmező komponens beépített törlés gombbal (`clearable`), aszinkron spinnerrel (`isLoading`), egyedi ikonokkal és rugalmas stílusvariánsokkal:
+
+```tsx
+<SearchInput
+  variant="borderless"        // 'borderless' (Command/cmdk) | 'boxed' (form input) | 'ghost'
+  inputSize="md"              // 'sm' | 'md' | 'lg'
+  placeholder="Keresés partner vagy összeg szerint..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  onClear={() => setSearch('')}
+  clearable={true}
+  autoFocus
+  rightElement={<Badge variant="secondary">12 db</Badge>}
+/>
+```
+
+**Főbb jellemzők:**
+- **Variánsok:**
+  - `borderless`: Fejléc-kereső popoverekbe és comboboxokba (aláhúzásos alsó szegély, lekerekített felső sarkok).
+  - `boxed`: Szegélyezett, önálló űrlap és panel kereső.
+  - `ghost`: Minimalista, háttér és szegély nélküli kereső.
+- **Interakciók:**
+  - `clearable`: Megjelenik a törlő „X" gomb ha van szöveg, kattintásra vagy `Escape` billentyű lenyomására azonnal törli a mezőt és megtartja a fókuszt.
+  - `rightElement`: Jobb oldali tetszőleges slot számlálóknak, badge-eknek vagy gyorsbillentyűknek.
+  - `leftIcon` / `isLoading`: Kereső ikon helyén automatikus `Loader2` animáció aszinkron szűrés közben.
 
 ### AppModeSwitcher
 **Fájl:** `components/AppModeSwitcher.tsx`

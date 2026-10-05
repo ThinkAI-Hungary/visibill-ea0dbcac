@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-04  
-> **Összesen:** 217 döntés (197 egyedi döntési fájl) | ✅ Decided: 215 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-05  
+> **Összesen:** 219 döntés (201 egyedi döntési fájl) | ✅ Decided: 217 | ⛔ Superseded: 2
 
 
 ---
@@ -239,7 +239,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-183 | Supabase Query Teljesítmény és Pénzügyi RPC Optimalizáció (Statement Timeout Megszüntetés) | ✅ Decided | [A-183](./A-183-supabase-query-performance-and-financial-rpc-optimization.md) |
 | A-184 | Real-time AI Tételbesorolási Telemetria, Query Invalidáció és Idempotens Párosítás | ✅ Decided | [A-184](./A-184-realtime-ai-progress-streaming-and-matching-idempotency.md) |
 | A-185 | Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra | ✅ Decided | [A-185](./A-185-payslip-redesign-feor-dictionary-and-cost-center.md) |
-| A-186 | Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) | ✅ Decided | [A-186](./A-186-payroll-leave-entitlements-resolution-engine.md) |
+| A-186 | Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) és Szakképzési Tanulói Keret (Szkt. 84. §) | ✅ Decided | [A-186](./A-186-payroll-leave-entitlements-resolution-engine.md) |
 | A-187 | Számlatétel-szintű Kontextuális Időbeli Elhatárolások és Vegyes Napló Feladás | ✅ Decided | [A-187](./A-187-contextual-invoice-item-accruals-and-ve-journal-posting.md) |
 | A-188 | Dinamikus Könyvelési Naplók Létrehozása, Kezelése és Bankszámla-összerendelés | ✅ Decided | [A-188](./A-188-dynamic-accounting-journals-management-and-bank-linking.md) |
 | A-189 | Főkönyvi Kivonat és Naplófőkönyv RPC Teljesítmény-Optimalizálás (Statement Timeout 57014 Megszüntetése, CTE Materializáció és Hash Join) | ✅ Decided | [A-189](./A-189-gl-rpc-performance-optimization-and-timeout-elimination.md) |
@@ -249,8 +249,9 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-195 | NAV 26A60 v3.0 Közösségi Összesítő Nyilatkozat ÁNYK XML Export & Rekonciliáció | ✅ Decided | [A-195](./A-195-nav-26a60-community-summary-anyk-xml-export-and-reconciliation.md) |
 | A-196 | Könyvelési Szabályok Modális és Keresztmodul Integrációja (ÁFA, Napló és Főkönyvi Szabálykezelő) | ✅ Decided | [A-196](./A-196-accounting-rules-dialog-and-cross-module-integration.md) |
 | A-197 | NAV 26A60 Hivatalos Nyomtatvány Digitális Replika Architektúra | ✅ Decided | [A-197](./A-197-nav-26a60-official-tax-form-digital-replica.md) |
-| A-198 | Tárgyi Eszközök és Nyitó Állomány Tömeges Excel/CSV Import Architektúra | ✅ Decided | [A-198](./A-198-fixed-assets-bulk-excel-csv-import-and-opening-balances.md) |
+| A-198 | Manuális Beküldött Számlarögzítés, Dokumentum Csatolás és Többes Párosítás | ✅ Decided | [A-198](./A-198-manual-submitted-invoice-creation-and-multi-pairing.md) |
 | A-199 | NAV 65M-02-K Korrekciós és Sztornó Számlák Feldolgozási és ÁNYK XML Export Architektúrája | ✅ Decided | [A-199](./A-199-nav-65m-02-k-correction-and-storno-invoices-architecture.md) |
+| A-200 | Tárgyi Eszközök és Nyitó Állomány Tömeges Excel/CSV Import Architektúra | ✅ Decided | [A-200](./A-200-fixed-assets-bulk-excel-csv-import-and-opening-balances.md) |
 
 
 ## 💳 Fizetés
@@ -288,6 +289,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-126 | Műveleti Napló E-mail Metaadatok Megőrzése és Retrospektív Számla-Összekapcsolás | ✅ Decided | [A-126](./A-126-audit-trail-email-ingestion-and-invoice-linking.md) |
 | A-149 | In-App Fejlesztői Napló (Patchnotes) Rendszer és Publikációs Pipeline | ✅ Decided | [A-149](./A-149-in-app-changelog-and-patchnotes-system.md) |
 | A-171 | Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció | ✅ Decided | [A-171](./A-171-croatian-minimax-api-invoice-intermediary-sync.md) |
+| A-190 | Menedzsment Dashboard Összesítő Gyorsítótárazás és Python Worker Vault Tehermentesítés (P2 Skálázhatósági Fejlesztés) | ✅ Decided | [A-190](./A-190-management-dashboard-counts-caching-and-worker-vault-offloading.md) |
 
 
 

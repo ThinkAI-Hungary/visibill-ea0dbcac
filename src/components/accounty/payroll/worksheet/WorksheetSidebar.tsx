@@ -144,6 +144,14 @@ export default function WorksheetSidebar({
               return meta?.employee_id === emp.id || c.employment_id === employment?.id;
             });
 
+            const isVocational = Boolean(
+              employment?.job_code === '1131' ||
+              employment?.job_code === '120' ||
+              employment?.employment_type === 'szakkep' ||
+              employment?.employment_type === 'szakkepzes' ||
+              (employment?.job_title && employment.job_title.toLowerCase().includes('szakképz'))
+            );
+
             return (
               <button
                 key={emp.id}
@@ -178,8 +186,13 @@ export default function WorksheetSidebar({
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground gap-1">
-                  <span className="truncate max-w-[140px]">
-                    {employment?.job_title || 'Munkakör nincs megadva'}
+                  <span className="truncate max-w-[140px] flex items-center gap-1">
+                    {employment?.job_title || (isVocational ? 'Szakképzési tanuló' : 'Munkakör nincs megadva')}
+                    {isVocational && (
+                      <span className="text-[9px] px-1 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold shrink-0">
+                        Tanuló
+                      </span>
+                    )}
                   </span>
                   <span className="font-mono font-medium text-foreground shrink-0">
                     {employment?.salary_type === 'hourly'

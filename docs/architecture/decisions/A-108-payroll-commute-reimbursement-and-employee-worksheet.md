@@ -53,13 +53,23 @@ Az EB-0082 számú támogatási jegyben a Carman-Food Kft. könyvelője (Várheg
   - Szűrők: `Mind`, `Függő`, `Kész`.
   - Haladási indikátor (`X / Y kész`).
   - Dolgozói kártyák státusz badge-ekkel (`🟢 Kész`, `🟡 Adattal`, `⚪ Alapért.`) és élő nettó összeggel.
+  - Szakképzési tanulói státusz indikátor: lila "Tanuló" jelvény és fallback "Szakképzési tanuló" munkakör megnevezés (EB-0245).
 - **Középső Űrlap (`WorksheetEmployeeForm.tsx`)**:
   - 1. Munkaidő & Jelenlét (napok, ledolgozott órák órabéres dolgozóknál, túlóra, táppénz, szabadság).
+  - Szabadság dátumintervallum gomb ("Dátumok (tól-ig)"), amely a `WorksheetLeaveModal`-t hívja meg (EB-0245).
   - 2. Munkába járás (gépkocsi / bérlet, visszamentési lehetőséggel a törzsadatokba).
   - 3. Bérpótlékok, Bónusz & Felszolgálási díj (Szja tv. szerinti 15% SZJA mentes és 18.5% TB kezeléssel).
   - 4. Cafeteria & Home Office átalány.
   - 5. Letiltások & Levonások.
   - Gyorsbillentyűk és navigáció (Előző / Kész toggle / Következő).
+- **D-5.1: Munkalapi Input Gépelési Versenyhelyzet és PGRST116 Védelem (EB-0245)**:
+  - *Gyökérok:* A korábbi megvalósítás minden leütött karakterre azonnali aszinkron mentést indított, ami gyors gépelésnél párhuzamos lekérdezéseket és duplikált rekordokat idézett elő az `accounty_payroll_items` táblában, `PGRST116` hibát dobva a Supabase `maybeSingle()` híváskor.
+  - *Architektúrális javítás:* Bevezettük a lokális controlled string draft állapotokat (`bonusDraft`, `serviceChargeDraft`, `homeOfficeDraft`, `deductionsDraft`) numerikus szanitizációval (`inputMode="numeric"`, `replace(/[^0-9]/g, '')`). Az adatbázisba történő írás kizárólag `onBlur` vagy `Enter` leütésre fut le.
+  - *Idempotens takarítás (`handleItemChange`):* A függvény `maybeSingle()` helyett a teljes listát kérdezi le. Frissíti az első sort, az esetleges extra duplikátumokat automatikusan törli, 0 Ft összegnél pedig az összes rekordot eltávolítja.
+- **D-5.2: Távollét Dátumintervallum Modál és Átfedésvédelem (`WorksheetLeaveModal.tsx`)**:
+  - A munkalapról megnyitható modál lehetővé teszi tól-ig dátumok rögzítését jogcímenként (fizetett szabadság, betegszabadság, fizetés nélküli, tanulmányi, szülői) az `accounty_leaves` táblába.
+  - A `calculateWorkingDays` algoritmus automatikusan kiszűri a hétvégéket.
+  - A `hasLeaveOverlap` függvény mentés előtt megvizsgálja az időszakot, és blokkolja az átfedő vagy duplikált időtartamok mentését.
 - **Jobb oldali Élő Bérszalvéta (`WorksheetLivePayslip.tsx`)**:
   - Minden űrlapváltoztatásra azonnal lefutó szinkron bérkalkuláció.
   - Bruttó, adók, levonások, térítések és a munkáltatói szuperbruttó részletezése.
@@ -70,5 +80,5 @@ Az EB-0082 számú támogatási jegyben a Carman-Food Kft. könyvelője (Várheg
 ## 3. Következmények és Migráció
 
 - Migráció: `20260909140000_add_commute_reimbursement_fields.sql` sikeresen lefutott a Supabase adatbázison.
-- Tesztek: 135 bérszámfejtési egységteszt és a teljes 1294 projekttesztes csomag hibátlanul lefutott.
-- A vendéglátóipari és műszakos dolgozókat foglalkoztató partnerek (Carman-Food Kft., éttermek, telephelyek) percek alatt képesek elvégezni a havi zárást.
+- Tesztek: 208 bérszámfejtési egységteszt (közte 14 WorksheetLeaveModal teszt) és a teljes projekttesztes csomag hibátlanul lefutott.
+- A vendéglátóipari és műszakos dolgozókat foglalkoztató partnerek (Carman-Food Kft., Mandala Fogadó Kft., éttermek, telephelyek) másodpercek alatt képesek elvégezni a havi zárást, beragadó mezők és duplikációk nélkül.
