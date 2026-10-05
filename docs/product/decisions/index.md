@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-05  
-> **Összesen:** 169 döntés (152 egyedi döntési fájl) | ✅ Decided: 165 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 171 döntés (154 egyedi döntési fájl) | ✅ Decided: 167 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -143,6 +143,8 @@
 | P-143 | eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX | ✅ Decided | [P-143](./P-143-payroll-3column-dashboard-and-efo-separation-ux.md) |
 | P-144 | ÁFA A60 Közösségi Összesítő és VIES Keresztellenőrzés UX | ✅ Decided | [P-144](./P-144-vat-a60-community-summary-and-vies-crosscheck-ux.md) |
 | P-158 | NAV 65M-02-K Korrekciós és Sztornó Számlák Felhasználói Élménye és Tételes Megjelenítése (UX) | ✅ Decided | [P-158](./P-158-nav-65m-02-k-correction-and-storno-invoices-ux.md) |
+| P-160 | NAV 2665 ÁFA Bevallás 43. és 45. Sorok Adóösszeg Felületi Megjelenítése és Magyarázó Sáv UX | ✅ Decided | [P-160](./P-160-nav-2665-vat-return-row43-and-row45-tax-amount-ux.md) |
+| P-161 | Bérszámfejtési Haladó Riportok és Nyilatkozatok Állapotmegőrző Navigációja Felületi Élmény (UX) | ✅ Decided | [P-161](./P-161-payroll-advanced-reports-and-declarations-workflow-ux.md) |
 
 
 ## 🔍 Keresés

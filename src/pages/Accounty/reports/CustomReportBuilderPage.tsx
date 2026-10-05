@@ -126,7 +126,7 @@ export default function CustomReportBuilderPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-          <div className="p-2.5 bg-gradient-to-br from-muted to-card rounded-lg shadow-lg"><Wrench className="w-5 h-5 text-white" /></div>
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg shadow-primary/20"><Wrench className="w-5 h-5 text-white" /></div>
           <div>
             <input type="text" value={reportName} onChange={e => setReportName(e.target.value)} className="text-2xl font-bold bg-transparent border-none outline-none focus:underline" />
             <p className="text-sm text-muted-foreground">Egyedi mezőválogatás és szűrők</p>

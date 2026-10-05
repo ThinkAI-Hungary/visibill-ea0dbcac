@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Users, Save, Calculator, Plus, Trash2, Info, CheckCircle, AlertTriangle, Loader2
 } from 'lucide-react';
@@ -24,8 +24,15 @@ const TAX_PARAMS_2026 = {
 };
 
 export default function FamilyDeclarationPage() {
-  const { companyId } = useParams<{ companyId: string }>();
-  const id = companyId;
+  const { companyId, dateRange, id: routeId } = useParams<{ companyId: string; dateRange: string; id?: string }>();
+  const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
+  const resolvedCompanyId = companyId || routeId || '';
+  const id = resolvedCompanyId;
+  const declarationsBase = dateRange
+    ? `${prefix}/eaisybooks/${resolvedCompanyId}/${dateRange}/payroll/declarations`
+    : `${prefix}/eaisybooks/payroll/${resolvedCompanyId}/declarations`;
+
   const [searchParams] = useSearchParams();
   const empId = searchParams.get('empId');
   const [children, setChildren] = useState<Child[]>([
@@ -80,7 +87,7 @@ export default function FamilyDeclarationPage() {
     <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/payroll/${id}/declarations`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={declarationsBase} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="p-2.5 bg-gradient-to-br from-blue-500 to-primary rounded-lg shadow-lg shadow-blue-500/25">
@@ -213,7 +220,7 @@ export default function FamilyDeclarationPage() {
 
       {/* Actions */}
       <div className="flex justify-end gap-3">
-        <Button variant="outline" asChild><Link to={`/eaisybooks/payroll/${id}/declarations`}>Mégse</Link></Button>
+        <Button variant="outline" asChild><Link to={declarationsBase}>Mégse</Link></Button>
         <Button onClick={handleSave} className="gap-1.5 bg-blue-600 hover:bg-blue-700" disabled={childCount === 0 || !empId || addDeclaration.isPending}>
           {addDeclaration.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saved ? 'Mentve ' : 'Nyilatkozat mentése'}
         </Button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import {
   ArrowLeft, Archive, Search, Download, Eye, Calendar, Filter,
@@ -33,8 +33,15 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
 };
 
 export default function DeclarationArchivePage() {
-  const { companyId } = useParams<{ companyId: string }>();
-  const id = companyId;
+  const { companyId, dateRange, id: routeId } = useParams<{ companyId: string; dateRange: string; id?: string }>();
+  const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
+  const resolvedCompanyId = companyId || routeId || '';
+  const id = resolvedCompanyId;
+  const declarationsBase = dateRange
+    ? `${prefix}/eaisybooks/${resolvedCompanyId}/${dateRange}/payroll/declarations`
+    : `${prefix}/eaisybooks/payroll/${resolvedCompanyId}/declarations`;
+
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -74,7 +81,7 @@ export default function DeclarationArchivePage() {
     <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+          <Link to={declarationsBase} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
           <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg shadow-lg shadow-amber-500/25"><Archive className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Nyilatkozat-archívum</h1>

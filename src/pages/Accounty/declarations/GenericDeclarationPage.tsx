@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Save, Calculator, Info, CheckCircle, AlertTriangle,
   Star, Baby, Cake, CircleDot, Heart, Loader2
@@ -109,7 +109,14 @@ const CONFIGS: Record<DeclType, {
 };
 
 export default function GenericDeclarationPage() {
-  const { id, type } = useParams<{ id: string; type: string }>();
+  const { companyId, dateRange, type, id: routeId } = useParams<{ companyId: string; dateRange: string; type: string; id?: string }>();
+  const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
+  const resolvedCompanyId = companyId || routeId || '';
+  const declarationsBase = dateRange
+    ? `${prefix}/eaisybooks/${resolvedCompanyId}/${dateRange}/payroll/declarations`
+    : `${prefix}/eaisybooks/payroll/${resolvedCompanyId}/declarations`;
+
   const [searchParams] = useSearchParams();
   const declType = type as DeclType;
   const config = CONFIGS[declType];
@@ -138,7 +145,7 @@ export default function GenericDeclarationPage() {
     return (
       <div className="text-center py-20">
         <p className="text-muted-foreground">Ismeretlen nyilatkozat típus: {type}</p>
-        <Button asChild className="mt-4"><Link to={`/eaisybooks/payroll/${id}/declarations`}>Vissza</Link></Button>
+        <Button asChild className="mt-4"><Link to={declarationsBase}>Vissza</Link></Button>
       </div>
     );
   }
@@ -171,7 +178,7 @@ export default function GenericDeclarationPage() {
     <div className="w-full max-w-4xl mx-auto space-y-6 page-animate">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to={`/eaisybooks/payroll/${id}/declarations`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <Link to={declarationsBase} className="p-2 rounded-lg hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className={cn('p-2.5 bg-gradient-to-br rounded-lg shadow-lg', config.color)}>
@@ -283,7 +290,7 @@ export default function GenericDeclarationPage() {
 
       {/* Actions */}
       <div className="flex justify-end gap-3">
-        <Button variant="outline" asChild><Link to={`/eaisybooks/payroll/${id}/declarations`}>Mégse</Link></Button>
+        <Button variant="outline" asChild><Link to={declarationsBase}>Mégse</Link></Button>
         <Button onClick={handleSave} className={cn('gap-1.5', `bg-gradient-to-r ${config.color} hover:opacity-90`)} disabled={!isComplete || !empId || addDeclaration.isPending}>
           {addDeclaration.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saved ? 'Mentve ' : 'Nyilatkozat mentése'}
         </Button>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Plus, CheckCircle, Clock, AlertTriangle, Users,
   Heart, Baby, Cake, CircleDot, Star, Eye, ChevronRight, Shield, Loader2, Database
@@ -27,10 +27,23 @@ const PRIORITY_ORDER = [
 ];
 
 export default function DeclarationsOverviewPage() {
-  const { companyId, empId } = useParams<{ companyId: string; empId: string }>();
-  const id = companyId;
+  const { companyId, dateRange, empId, id: routeId } = useParams<{ companyId: string; dateRange: string; empId: string; id?: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const prefix = location.pathname.startsWith('/hr') ? '/hr' : '';
+  const resolvedCompanyId = companyId || routeId || '';
+  const id = resolvedCompanyId;
+
+  const payrollUrl = dateRange
+    ? `${prefix}/eaisybooks/${resolvedCompanyId}/${dateRange}/payroll`
+    : `${prefix}/eaisybooks/payroll/${resolvedCompanyId}`;
+
+  const declarationsBase = dateRange
+    ? `${prefix}/eaisybooks/${resolvedCompanyId}/${dateRange}/payroll/declarations`
+    : `${prefix}/eaisybooks/payroll/${resolvedCompanyId}/declarations`;
+
   const [showPriority, setShowPriority] = useState(false);
-  const { data: declarations, isLoading } = useDeclarations(id || '');
+  const { data: declarations, isLoading } = useDeclarations(resolvedCompanyId);
 
   const declList = declarations || [];
   const activeDecls = declList.filter(d => d.status === 'active');
@@ -41,7 +54,13 @@ export default function DeclarationsOverviewPage() {
     <div className="w-full max-w-5xl mx-auto space-y-6 page-animate">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+          <button
+            onClick={() => navigate(payrollUrl)}
+            className="p-2 rounded-lg hover:bg-muted transition-colors"
+            title="Vissza a bérszámfejtéshez"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/25"><FileText className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Adóelőleg-nyilatkozatok</h1>
@@ -49,7 +68,7 @@ export default function DeclarationsOverviewPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link to={`/eaisybooks/payroll/${id}/declarations/archive`}>
+          <Link to={`${declarationsBase}/archive`}>
             <Button variant="outline" className="gap-1.5 text-sm"><Database className="w-4 h-4" /> Archívum</Button>
           </Link>
           <Button variant="outline" onClick={() => setShowPriority(!showPriority)} className="gap-1.5 text-sm"><Shield className="w-4 h-4" /> Érvényesítési sorrend</Button>
@@ -96,7 +115,7 @@ export default function DeclarationsOverviewPage() {
         <h3 className="text-sm font-bold text-foreground/90 mb-4">Új nyilatkozat hozzáadása</h3>
         <div className="grid grid-cols-3 gap-3">
           {DECLARATION_TYPES.map(dt => (
-            <Link key={dt.id} to={`/eaisybooks/payroll/${id}/declarations/${dt.route}${empId ? `?empId=${empId}` : ''}`} className="p-4 rounded-lg border border-border hover:border-blue-300 hover:-translate-y-0.5 transition-all group">
+            <Link key={dt.id} to={`${declarationsBase}/${dt.route}${empId ? `?empId=${empId}` : ''}`} className="p-4 rounded-lg border border-border hover:border-blue-300 hover:-translate-y-0.5 transition-all group">
               <div className={cn('w-8 h-8 rounded-lg bg-gradient-to-br text-white flex items-center justify-center mb-2 group-hover:scale-110 transition-transform', dt.color)}><dt.icon className="w-4 h-4" /></div>
               <p className="text-sm font-bold">{dt.label}</p>
               <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{dt.desc}</p>
@@ -137,7 +156,7 @@ export default function DeclarationsOverviewPage() {
                     <p className="text-[10px] text-muted-foreground">{(decl.data as any)?.startDate || ''} → {(decl.data as any)?.endDate || 'visszavonásig'}</p>
                   </div>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" asChild>
-                    <Link to={`/eaisybooks/payroll/${id}/declarations/${dt?.route || decl.type}${decl.employeeId ? `?empId=${decl.employeeId}` : ''}`}><Eye className="w-3.5 h-3.5" /></Link>
+                    <Link to={`${declarationsBase}/${dt?.route || decl.type}${decl.employeeId ? `?empId=${decl.employeeId}` : ''}`}><Eye className="w-3.5 h-3.5" /></Link>
                   </Button>
                 </div>
               );

@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-05  
-> **Összesen:** 219 döntés (201 egyedi döntési fájl) | ✅ Decided: 217 | ⛔ Superseded: 2
+> **Összesen:** 221 döntés (203 egyedi döntési fájl) | ✅ Decided: 219 | ⛔ Superseded: 2
 
 
 ---
@@ -252,6 +252,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-198 | Manuális Beküldött Számlarögzítés, Dokumentum Csatolás és Többes Párosítás | ✅ Decided | [A-198](./A-198-manual-submitted-invoice-creation-and-multi-pairing.md) |
 | A-199 | NAV 65M-02-K Korrekciós és Sztornó Számlák Feldolgozási és ÁNYK XML Export Architektúrája | ✅ Decided | [A-199](./A-199-nav-65m-02-k-correction-and-storno-invoices-architecture.md) |
 | A-200 | Tárgyi Eszközök és Nyitó Állomány Tömeges Excel/CSV Import Architektúra | ✅ Decided | [A-200](./A-200-fixed-assets-bulk-excel-csv-import-and-opening-balances.md) |
+| A-201 | NAV 2665 ÁFA Bevallás 43. és 45. Sorok Adóösszeg Kalkulációja és Hivatalos Nyomtatvány Megjelenítése | ✅ Decided | [A-201](./A-201-nav-2665-vat-return-row43-and-row45-tax-amount.md) |
+| A-202 | Bérszámfejtési Haladó Riportok, Nyilatkozatok Állapotmegőrző Navigációja és Ergonómiai Témakezelése | ✅ Decided | [A-202](./A-202-payroll-advanced-reports-and-declarations-navigation-architecture.md) |
 
 
 ## 💳 Fizetés

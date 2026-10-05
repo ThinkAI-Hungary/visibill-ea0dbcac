@@ -195,9 +195,11 @@ export default function WorksheetSidebar({
                     )}
                   </span>
                   <span className="font-mono font-medium text-foreground shrink-0">
-                    {employment?.salary_type === 'hourly'
-                      ? `${Number(employment.base_salary || 0).toLocaleString('hu-HU')} Ft/ó`
-                      : `${Number(employment.base_salary || 0).toLocaleString('hu-HU')} Ft`}
+                    {employment
+                      ? (employment.salary_type === 'hourly'
+                          ? `${Number(employment.base_salary || 0).toLocaleString('hu-HU')} Ft/ó`
+                          : `${Number(employment.base_salary || 0).toLocaleString('hu-HU')} Ft`)
+                      : '—'}
                   </span>
                 </div>
 
