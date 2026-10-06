@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,9 @@ import { toast } from '@/hooks/use-toast';
 import { Plus, Trash2, FileText, ListOrdered, Loader2, Calculator, CalendarIcon, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { reportError } from '@/lib/errorReporter';
 import { cn } from '@/lib/utils';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Checkbox } from '@/components/ui/checkbox';
+import { PartnerInputWithAutocomplete, type PartnerOption } from './manual-create/PartnerInputWithAutocomplete';
 import { NavInvoicePicker } from './manual-create/NavInvoicePicker';
 import { TransactionMultiPicker, type SelectedTransactionItem } from './manual-create/TransactionMultiPicker';
 import { InvoiceDocumentDropzone } from './manual-create/InvoiceDocumentDropzone';
@@ -76,6 +79,23 @@ export function ManualInvoiceCreateDialog({
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
 
+  // Fetch company partners for autocomplete
+  const { data: partners = [] } = useQuery<PartnerOption[]>({
+    queryKey: ['company-partners', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from('partners')
+        .select('id, name, tax_number, partner_type')
+        .eq('company_id', companyId)
+        .order('name');
+      if (error) return [];
+      return (data || []) as PartnerOption[];
+    },
+    enabled: !!companyId && open,
+    staleTime: 60000,
+  });
+
   // Direction & Type
   const [direction, setDirection] = useState<'INBOUND' | 'OUTBOUND'>(initialDirection);
   const [invoiceType, setInvoiceType] = useState<string>('sima_szla');
@@ -87,12 +107,15 @@ export function ManualInvoiceCreateDialog({
     teljesites_datuma: new Date(),
     fizetesi_hatarido: undefined as Date | undefined,
     elado_nev: initialDirection === 'OUTBOUND' ? (companyName || '') : '',
+    elado_adoszam: '',
     vevo_nev: initialDirection === 'INBOUND' ? (companyName || '') : '',
+    vevo_adoszam: '',
     adoalap_osszesen: '' as string | number,
     afa_osszeg_osszesen: '' as string | number,
     brutto_vegosszeg: '' as string | number,
     penznem: isHr ? 'EUR' : 'HUF',
     fizetesi_mod: 'Átutalás',
+    is_paid: false,
     category_id: 'none',
     project_id: 'none',
   }));
@@ -116,12 +139,15 @@ export function ManualInvoiceCreateDialog({
         teljesites_datuma: new Date(),
         fizetesi_hatarido: undefined,
         elado_nev: initialDirection === 'OUTBOUND' ? (companyName || '') : '',
+        elado_adoszam: '',
         vevo_nev: initialDirection === 'INBOUND' ? (companyName || '') : '',
+        vevo_adoszam: '',
         adoalap_osszesen: '',
         afa_osszeg_osszesen: '',
         brutto_vegosszeg: '',
         penznem: isHr ? 'EUR' : 'HUF',
         fizetesi_mod: 'Átutalás',
+        is_paid: false,
         category_id: 'none',
         project_id: 'none',
       });
@@ -311,6 +337,8 @@ export function ManualInvoiceCreateDialog({
 
     savingRef.current = true;
     setIsSaving(true);
+    let uploadedStoragePath: string | null = null;
+
     try {
       let uploadedFileUrl: string | null = null;
       let fileAttachmentJson: any[] | null = null;
@@ -328,6 +356,7 @@ export function ManualInvoiceCreateDialog({
           });
 
         if (uploadError) throw uploadError;
+        uploadedStoragePath = storagePath;
 
         const { data: urlData } = supabase.storage
           .from('invoice-uploads')
@@ -361,10 +390,11 @@ export function ManualInvoiceCreateDialog({
         invoiceGross = Math.round(lineTotals.gross * 100) / 100;
       }
 
-      // Calculate payment status from selected transactions
+      // Calculate payment status from selected transactions OR direct paid checkbox
       const totalTxAmount = selectedTransactions.reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-      const isFullyPaid = totalTxAmount > 0 && totalTxAmount >= (invoiceGross - 0.5);
-      const isPartiallyPaid = totalTxAmount > 0 && !isFullyPaid;
+      const isPaidViaTx = totalTxAmount > 0 && totalTxAmount >= (invoiceGross - 0.5);
+      const isPartiallyPaid = totalTxAmount > 0 && !isPaidViaTx;
+      const isFullyPaid = isPaidViaTx || formData.is_paid;
 
       // Ensure non-primary partner is NEVER null or empty (satisfies PostgreSQL NOT NULL constraint)
       const eladoName = direction === 'INBOUND'
@@ -384,7 +414,9 @@ export function ManualInvoiceCreateDialog({
         teljesites_datuma: formData.teljesites_datuma ? format(formData.teljesites_datuma, 'yyyy-MM-dd') : null,
         fizetesi_hatarido: formData.fizetesi_hatarido ? format(formData.fizetesi_hatarido, 'yyyy-MM-dd') : null,
         elado_nev: eladoName,
+        elado_vat_id: formData.elado_adoszam?.trim() || null,
         vevo_nev: vevoName,
+        vevo_vat_id: formData.vevo_adoszam?.trim() || null,
         adoalap_osszesen: invoiceNet,
         afa_osszeg_osszesen: invoiceVat,
         brutto_vegosszeg: invoiceGross,
@@ -401,9 +433,13 @@ export function ManualInvoiceCreateDialog({
         nav_invoice_id: selectedNavInvoice?.id || null,
         nav_status: selectedNavInvoice ? 'verified' : 'missing_nav',
         statusz: isFullyPaid ? 'feldolgozva' : (isPartiallyPaid ? 'partially_paid' : 'feldolgozva'),
-        paid: isFullyPaid,
-        paid_amount: totalTxAmount > 0 ? totalTxAmount : null,
-        remaining_amount: totalTxAmount > 0 ? Math.max(0, invoiceGross - totalTxAmount) : null,
+        fizetve: isFullyPaid,
+        transaction_id: selectedTransactions.length > 0 ? selectedTransactions[0].id : null,
+        is_manual_payment: formData.is_paid && selectedTransactions.length === 0 ? true : undefined,
+        manual_payment_date: formData.is_paid && selectedTransactions.length === 0
+          ? (formData.teljesites_datuma ? format(formData.teljesites_datuma, 'yyyy-MM-dd') : format(formData.kibocsatas_datuma, 'yyyy-MM-dd'))
+          : undefined,
+        manual_payment_type: formData.is_paid && selectedTransactions.length === 0 ? 'Készpénz / Egyéb' : undefined,
         letrehozva: new Date().toISOString(),
         frissitve: new Date().toISOString(),
       };
@@ -415,6 +451,13 @@ export function ManualInvoiceCreateDialog({
         .single();
 
       if (insertError) {
+        if (uploadedStoragePath) {
+          try {
+            await supabase.storage.from('invoice-uploads').remove([uploadedStoragePath]);
+          } catch (cleanupErr) {
+            console.warn('[ManualInvoiceCreateDialog] Storage cleanup error:', cleanupErr);
+          }
+        }
         if (insertError.code === '23505') {
           toast({
             title: t('invoices:manual_create.toast_duplicate_number_title'),
@@ -507,6 +550,13 @@ export function ManualInvoiceCreateDialog({
       onSuccess?.();
       onClose();
     } catch (err: any) {
+      if (uploadedStoragePath) {
+        try {
+          await supabase.storage.from('invoice-uploads').remove([uploadedStoragePath]);
+        } catch (cleanupErr) {
+          console.warn('[ManualInvoiceCreateDialog] Storage cleanup error:', cleanupErr);
+        }
+      }
       reportError({
         type: 'db_query',
         component: 'ManualInvoiceCreateDialog',
@@ -618,84 +668,127 @@ export function ManualInvoiceCreateDialog({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs text-foreground">{t('invoices:manual_create.issue_date')} <span className="text-destructive">*</span></Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={isSaving}
-                          className="w-full justify-start text-left font-normal text-xs h-8"
-                        >
-                          <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-                          {formData.kibocsatas_datuma ? format(formData.kibocsatas_datuma, 'yyyy. MM. dd.', { locale: dateLocale }) : t('invoices:manual_create.select_date')}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={formData.kibocsatas_datuma}
-                          onSelect={(d) => d && setFormData(prev => ({ ...prev, kibocsatas_datuma: d }))}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePicker
+                      value={formData.kibocsatas_datuma}
+                      onChange={(dStr) => {
+                        if (!dStr) return;
+                        const parsed = parseISO(dStr);
+                        if (!isNaN(parsed.getTime())) {
+                          setFormData(prev => ({ ...prev, kibocsatas_datuma: parsed }));
+                        }
+                      }}
+                      allowInput={true}
+                      inputClassName="h-8 text-xs font-mono"
+                      placeholder="éééé-hh-nn"
+                      disabled={isSaving}
+                    />
                   </div>
 
                   <div className="space-y-1">
                     <Label className="text-xs text-foreground">{t('invoices:manual_create.delivery_date')}</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={isSaving}
-                          className="w-full justify-start text-left font-normal text-xs h-8"
-                        >
-                          <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-                          {formData.teljesites_datuma ? format(formData.teljesites_datuma, 'yyyy. MM. dd.', { locale: dateLocale }) : t('invoices:manual_create.select_date')}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={formData.teljesites_datuma}
-                          onSelect={(d) => d && setFormData(prev => ({ ...prev, teljesites_datuma: d }))}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePicker
+                      value={formData.teljesites_datuma}
+                      onChange={(dStr) => {
+                        const parsed = dStr ? parseISO(dStr) : undefined;
+                        setFormData(prev => ({ ...prev, teljesites_datuma: parsed && !isNaN(parsed.getTime()) ? parsed : undefined }));
+                      }}
+                      allowInput={true}
+                      inputClassName="h-8 text-xs font-mono"
+                      placeholder="éééé-hh-nn"
+                      disabled={isSaving}
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="create-elado" className="text-xs font-semibold text-foreground">
-                    {t('invoices:manual_create.seller_name')} {direction === 'INBOUND' && <span className="text-destructive">*</span>}
-                  </Label>
-                  <Input
-                    id="create-elado"
-                    value={formData.elado_nev}
-                    onChange={(e) => setFormData(prev => ({ ...prev, elado_nev: e.target.value }))}
-                    placeholder={direction === 'OUTBOUND' && companyName ? companyName : t('invoices:manual_create.placeholder_partner_seller')}
-                    className="text-xs h-8"
-                    disabled={isSaving}
-                  />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="create-elado" className="text-xs font-semibold text-foreground">
+                      {t('invoices:manual_create.seller_name')} {direction === 'INBOUND' && <span className="text-destructive">*</span>}
+                    </Label>
+                    {direction === 'OUTBOUND' && (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                        (Aktív cég)
+                      </span>
+                    )}
+                  </div>
+                  {direction === 'OUTBOUND' ? (
+                    <Input
+                      id="create-elado"
+                      value={companyName || formData.elado_nev || 'Aktív cég'}
+                      disabled
+                      className="text-xs h-8 bg-muted/40 font-medium text-foreground cursor-not-allowed select-none"
+                    />
+                  ) : (
+                    <PartnerInputWithAutocomplete
+                      id="create-elado"
+                      value={formData.elado_nev}
+                      onChange={(val) => setFormData(prev => ({ ...prev, elado_nev: val }))}
+                      onSelectPartner={(partner) => {
+                        if (partner.tax_number) {
+                          setFormData(prev => ({ ...prev, elado_adoszam: partner.tax_number || '' }));
+                        }
+                      }}
+                      partners={partners}
+                      filterType="supplier"
+                      placeholder={t('invoices:manual_create.placeholder_partner_seller')}
+                      disabled={isSaving}
+                    />
+                  )}
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                    {direction === 'INBOUND' ? (
+                      <span>Válassz a partnertörzsből vagy gépeld be a szállító nevét.</span>
+                    ) : <span />}
+                    {formData.elado_adoszam && (
+                      <span className="font-mono text-primary/80">Adószám: {formData.elado_adoszam}</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="create-vevo" className="text-xs font-semibold text-foreground">
-                    {t('invoices:manual_create.buyer_name')} {direction === 'OUTBOUND' && <span className="text-destructive">*</span>}
-                  </Label>
-                  <Input
-                    id="create-vevo"
-                    value={formData.vevo_nev}
-                    onChange={(e) => setFormData(prev => ({ ...prev, vevo_nev: e.target.value }))}
-                    placeholder={direction === 'INBOUND' && companyName ? companyName : t('invoices:manual_create.placeholder_partner_buyer')}
-                    className="text-xs h-8"
-                    disabled={isSaving}
-                  />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="create-vevo" className="text-xs font-semibold text-foreground">
+                      {t('invoices:manual_create.buyer_name')} {direction === 'OUTBOUND' && <span className="text-destructive">*</span>}
+                    </Label>
+                    {direction === 'INBOUND' && (
+                      <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">
+                        (Aktív cég)
+                      </span>
+                    )}
+                  </div>
+                  {direction === 'INBOUND' ? (
+                    <Input
+                      id="create-vevo"
+                      value={companyName || formData.vevo_nev || 'Aktív cég'}
+                      disabled
+                      className="text-xs h-8 bg-muted/40 font-medium text-foreground cursor-not-allowed select-none"
+                    />
+                  ) : (
+                    <PartnerInputWithAutocomplete
+                      id="create-vevo"
+                      value={formData.vevo_nev}
+                      onChange={(val) => setFormData(prev => ({ ...prev, vevo_nev: val }))}
+                      onSelectPartner={(partner) => {
+                        if (partner.tax_number) {
+                          setFormData(prev => ({ ...prev, vevo_adoszam: partner.tax_number || '' }));
+                        }
+                      }}
+                      partners={partners}
+                      filterType="customer"
+                      placeholder={t('invoices:manual_create.placeholder_partner_buyer')}
+                      disabled={isSaving}
+                    />
+                  )}
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                    {direction === 'OUTBOUND' ? (
+                      <span>Kimenő számlánál a vevőt a partnertörzsből választhatod ki vagy újként beírhatod.</span>
+                    ) : <span />}
+                    {formData.vevo_adoszam && (
+                      <span className="font-mono text-primary/80">Adószám: {formData.vevo_adoszam}</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -828,6 +921,27 @@ export function ManualInvoiceCreateDialog({
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                {/* Kifizetettség közvetlen megjelölése */}
+                <div className="flex items-center space-x-2 p-2 rounded-md bg-muted/20 border border-border/40">
+                  <Checkbox
+                    id="create-is-paid"
+                    checked={formData.is_paid}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_paid: !!checked }))}
+                    disabled={isSaving}
+                  />
+                  <Label
+                    htmlFor="create-is-paid"
+                    className="text-xs font-semibold cursor-pointer text-foreground flex items-center gap-1.5 select-none"
+                  >
+                    Kifizetett számla (kiegyenlítve)
+                    {formData.is_paid && (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                        ✓ Rendezett
+                      </span>
+                    )}
+                  </Label>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">

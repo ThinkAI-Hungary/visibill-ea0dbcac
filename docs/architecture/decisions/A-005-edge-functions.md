@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-10-04
+**Utoljára frissítve:** 2026-10-06
 
 ## Context
 
@@ -10,11 +10,11 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — **69 function a repóban** (`supabase/functions/*/index.ts`) + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — **70 function a repóban** (`supabase/functions/*/index.ts`) + `_shared/` közös kód.
 
 > ℹ️ **Deploy-állapot (2026-10-04):** élesben 72 function van deployolva. Ebből 5 legacy, csak élesben létező function (`check-subscription`, `check-subscription-status`, `create-checkout`, `create-management-user`, `customer-portal`). 2 repóbeli function nincs deployolva (`accounty-ai-depreciation`, `process-accounting-policy`).
 
-> 📖 **Teljes, részletes katalógus:** Az Edge Function-ök részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza. Jelenleg 67-et dokumentál a 69-ből; hiányzik a `minimax-sync` és a `sync-szamlazz-outbound-invoices` (külön feladat).
+> 📖 **Teljes, részletes katalógus:** Az Edge Function-ök részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza. Jelenleg 68-at dokumentál a 70-ből; hiányzik a `minimax-sync` és a `sync-szamlazz-outbound-invoices` (külön feladat).
 
 **Közös kód:** `_shared/` mappa:
 - `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
@@ -23,7 +23,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ---
 
-### Teljes Edge Function Katalógus (67 db dokumentálva a 69-ből)
+### Teljes Edge Function Katalógus (68 db dokumentálva a 70-ből)
 
 #### 🏛️ NAV Integráció (10 db)
 
@@ -93,7 +93,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | Function | JWT | Leírás |
 |----------|-----|--------|
 | `accounty-seed` | ❌ | Accounty adatok inicializálása céghez |
-| `accounty-detect-missing` | ❌ | Hiányzó dokumentumok detektálása (cron). Talált hiányokról email értesítést küld (`send-accounty-notification`). |
+| `accounty-detect-missing` | ❌ | Hiányzó dokumentumok detektálása (cron). Talált hiányokról email értesítést küld (`send-accounty-notification`), hozzárendelt könyvelő meglétekor automatikusan generált ügyféli feltöltési tokennel. |
 | `accounty-detect-bank` | ❌ | Hiányzó bankkivonatok detektálása (cron) |
 | `accounty-generate-deadlines` | ❌ | Kötelezettségek határidő generálás (cron) |
 | `accounty-check-deadlines` | ❌ | Közeledő és lejárt adóügyi határidők ellenőrzése és riasztások küldése |
@@ -129,12 +129,13 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `sandbox-storage-cleanup` | ❌ | SANDBOX cég mock számlaképek törlése Storage-ból. |
 | `generate-company-description` | ✅ | Cég tevékenység és profil intelligens AI generálása TEÁOR kód alapján (DeepSeek / OpenAI). |
 
-#### 🔌 External API (2 db)
+#### 🔌 External API (3 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
 | `openclaw-api` | ❌ | Read-only REST API belső AI ügynök integrációhoz (OpenClaw). Saját API key auth (SHA-256 hash, `api_keys` tábla). |
 | `customer-api` | ❌ | Hivatalos ügyfél REST API cégadatok és beállítások M2M eléréséhez és módosításához. Saját API key auth (`vb_` kulcs, SHA-256 hash, `authenticate_customer_api_key` RPC, rate limit, audit log). |
+| `tickets-api` | ❌ | Dedikált VisiBill Ticket Management REST API support adminoknak és külső scripteknek (API kulcs és JWT auth, overview, list, get, comment, update, resolve, create, help). |
 
 #### 🗓️ MNB & Jogi Frissítések (2 db)
 
@@ -163,7 +164,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | JWT beállítás | Darabszám | Mikor |
 |---|---|---|
 | `verify_jwt: true` | 15 | Frontend-ből közvetlenül, bejelentkezett felhasználói JWT-vel hívott function-ök |
-| `verify_jwt: false` | 47 | Webhook-ok, cron jobok, belső hívások, service_role auth, API key auth, magic link tokenek |
+| `verify_jwt: false` | 48 | Webhook-ok, cron jobok, belső hívások, service_role auth, API key auth, magic link tokenek |
 
 ---
 

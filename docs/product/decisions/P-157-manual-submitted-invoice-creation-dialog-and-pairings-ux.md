@@ -29,29 +29,32 @@ Hogyan biztosítsunk a felhasználóknak és könyvelőknek közvetlen, kézi sz
 A dialógus maximális ergonómiát nyújtva szétválasztja az alapadatokat és a tételsorokat:
 * **1. Tab: „Számla adatok":**
   * **NAV számlapár választó szekció:** Kiemelt adatelőtöltési kártya (`NavInvoicePicker`), amellyel a partner, a bizonylatszám, a dátumok és a végösszegek 1 kattintással beemelhetők. Szétkapcsolás gombbal bármikor visszavonható.
-  * **2-hasábos űrlap:** Bal oldalon a sorszám, a kibocsátási és teljesítési dátumválasztók, a partnerek neve és a bizonylattípus; jobb oldalon az összegek (nettó, áfa, bruttó), a deviza és a fizetési mód.
-  * **Számlakép / PDF drag-and-drop feltöltő:** Kompakt zóna PDF, PNG, JPG vagy WebP számlakép közvetlen hozzáadásához és előnézetéhez (`InvoiceDocumentDropzone`).
+  * **2-hasábos űrlap:** Bal oldalon a sorszám, a kibocsátási és teljesítési dátumválasztók, a partnerek neve (`PartnerInputWithAutocomplete` az ellenoldalon, zárolt mező a saját oldalon) és a bizonylattípus; jobb oldalon az összegek (nettó, áfa, bruttó), a deviza és a fizetési mód.
+  * **Közvetlen kifizetettség jelölő („Kifizetett számla (kiegyenlítve)"):** Kompakt, magyarázó segédszöveg nélküli egysoros jelölőnégyzet az összegek alatt. Bejelölése esetén a számla közvetlenül kiegyenlítettként és feldolgozottként jön létre (`fizetve: true`, `is_manual_payment: true`, `manual_payment_date`, `statusz: 'feldolgozva'`), anélkül, hogy banki tranzakció párosítására lenne szükség (pl. nyitó számlák, készpénzes vagy historikus tételek esetén).
+  * **Számlakép / PDF drag-and-drop feltöltő:** Kompakt zóna PDF, PNG, JPG vagy WebP számlakép közvetlen hozzáadásához és előnézetéhez (`InvoiceDocumentDropzone`), mentési hiba esetén automatikus Storage visszagörgetéssel (árva fájlok törlése).
   * **Kiegyenlítő banki tranzakció(k) csatolása:** Többes választó (`TransactionMultiPicker`) zsetonos (chip) megjelenítéssel és valós idejű fedezetszámítással.
 * **2. Tab: „Számlatételek":**
   * Tételes rögzítési táblázat dinamikus tétel-hozzáadással (megnevezés, mennyiség, mennyiségi egység, nettó egységár, áfakulcs, nettó és bruttó érték).
   * **„Újraszámolás a tételekből" CTA gomb:** Szinkronizálja az 1. fül összesítő mezőit a rögzített tételek matematikai szummájával.
 
-### 2.3. Zero-Jitter Kereshető Popover & Combobox Standard
-* **Dialog scroll-lock védelem:** A dialóguson belüli popoverek kötelezően `<Popover modal={true}>` beállítást és `overscroll-contain` védelmet kapnak, így a háttér dialógus nem fagyasztja le az egérgörgős görgetést.
-* **Fix magasságú Popover konténer (`h-[350px]`):** A kereső mezőbe gépeléskor a popover nem zsugorodik össze (még 1 vagy 0 találatnál sem), elkerülve a lebegő menü pozíciójának átfordulását és vibrálását.
-* **Középre zárt üres állapot:** Nincs találat esetén a lista helyén függőlegesen középre igazított ikon és barátságos szöveg tájékoztatja a felhasználót.
-* **DOM szeletelés:** Egyszerre legfeljebb 20 elem jelenik meg a DOM-ban, számláló jelzi a teljes találati darabszámot, és diszkrét lábléc segít a kereső használatában.
+### 2.3. Zero-Jitter Kereshető Popover & Combobox Standard (`PartnerInputWithAutocomplete.tsx`)
+* **Radix Dialog scroll-lock és esemény-blokkolás kivédése:** A dialóguson belüli lebegő listák konténerén kötelező az `onWheel={(e) => e.stopPropagation()}` és `onTouchMove={(e) => e.stopPropagation()}` eseményleállítás, valamint az `overscroll-contain` CSS osztály alkalmazása. Ezzel megelőzhető, hogy a Radix Dialog mögöttes `react-remove-scroll` zárolása megfagyassza a partnerlista egérgörgős görgetését.
+* **Fix magasságú Popover konténer (`max-h-60 overflow-y-auto`):** A kereső mezőbe gépeléskor a popover stabil marad, elkerülve a lebegő menü pozíciójának átfordulását és vibrálását.
+* **Középre zárt üres állapot:** Nincs egyező partner esetén diszkrét üzenet jelenik meg, kiegészítve a szabad szöveges partnerképzéssel.
+* **DOM szeletelés és számláló badge:** A kereső fejlécben a `SearchInput` beépített számláló jelvénye (`badge`) jelzi a fellelt partnerek pontos darabszámát (`{count} db`).
 
-### 2.4. Globális `SearchInput` és Semleges Form Placeholderek
-* A popoverek és űrlapok egységesen a `SearchInput` komponenst használják `variant="borderless"` kivitelben, beépített „X" törlés gombbal és Escape billentyű támogatással.
-* Az űrlapok beviteli mezőiben a specifikus cégnevek helyett szakmailag semleges minták szerepelnek (`pl. Partner Kft.`, `pl. Ügyfél Kft.`, `pl. SZLA-2026-001`).
+### 2.4. Globális `SearchInput` és Gyors Új Partner Választás
+* A partnerkereső egységesen a projektstandard `@/components/ui/search-input` komponenst használja `variant="borderless"` kivitelben, automatikus fókusszal (`autoFocus`), beépített „X" törlés gombbal és Escape billentyű támogatással.
+* **Új partner használata egyetlen kattintással:** Ha a begépelt partnernév még nem szerepel a cég partnertörzsében, a popover lista legfelső elemeként megjelenik a `Új partner használata: "[név]"` gomb, így a felhasználó azonnal rögzíthet tetszőleges új partnert modálok közötti váltás nélkül.
 
-### 2.5. Kontextuális Partner Előtöltés és Sémabiztonság (Direction-Aware Pre-fill & NOT NULL Fallback)
-* **Intelligens alapadat-előtöltés az aktív cégből:**
-  * **Bejövő (szállítói) számla rögzítésekor:** A vevő (`vevo_nev`) mező automatikusan és azonnal a kontextusban kiválasztott saját cég nevével töltődik fel (`selectedCompany.name`), míg a partner választó a külső szállítóra fókuszál.
-  * **Kimenő számla rögzítésekor:** Az eladó (`elado_nev`) mező töltődik fel a saját cég nevével, és a partner választó a vevő adatait kéri.
+### 2.5. Kontextuális Partner Előtöltés, Irányfüggő Zárolás és Adószám Auto-Kitöltés
+* **Irányfüggő aktív cég zárolás (Direction-Aware Active Company Lock):**
+  * **Bejövő (szállítói) számla rögzítésekor (`INBOUND`):** A vevő mező automatikusan a kiválasztott saját cég nevére áll be, és egy inaktív, szürke háttérrel ellátott letiltott `<Input disabled>` mezőként jelenik meg `(Aktív cég)` felirattal. Nem jelenik meg felette kereső és nincs törlés (X) gomb sem. A külső szállító mezőjében pedig a `PartnerInputWithAutocomplete` válik aktívvá.
+  * **Kimenő számla rögzítésekor (`OUTBOUND`):** Az eladó mező záródik le az aktív cég nevével `(Aktív cég)` jelzéssel, míg a vevő mezőben választható ki vagy kereshető meg a külső partner.
+* **Automatikus partner adószám kitöltés:**
+  * Amikor a felhasználó kiválaszt egy partnert a `PartnerInputWithAutocomplete` listájából, a rendszer automatikusan kiolvassa és beírja a partnerhez korábban rögzített adószámot az űrlap megfelelő adószám mezőjébe (`elado_adoszam` vagy `vevo_adoszam`), megelőzve az ismételt kézi gépelést.
 * **Garantált NOT NULL adatbázis-integritás:**
-  * Mivel a PostgreSQL `invoices` táblájában mind az `elado_nev`, mind a `vevo_nev` oszlop szigorúan `NOT NULL` megkötésű, a felület garantált nem-üres értékkel (`companyName || 'Saját cég'`) látja el az ellentétes oldali partnernevet, kizárva az üres mentési hibákat.
+  * Mivel a PostgreSQL `invoices` táblájában mind az `elado_nev`, mind a `vevo_nev` oszlop szigorúan `NOT NULL` megkötésű, a felület garantált nem-üres értékkel (`companyName || 'Saját cég'`) látja el az ellenoldali partnernevet, kizárva az üres mentési hibákat.
 
 ### 2.6. Tranzakció Elrablás Megelőzése (Transaction Stealing Guard & Visual State)
 * **Kettős párosítás elleni védelem:** A `TransactionMultiPicker` komponensben a már korábban egy másik számlához párosított tranzakciók (`matched_invoice_id`) inaktívvá és védetté válnak:

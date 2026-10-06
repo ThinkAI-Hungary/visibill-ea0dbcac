@@ -8,6 +8,7 @@ const mockInvalidateQueries = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
 const mockSelect = vi.fn();
+const mockStorageRemove = vi.fn().mockResolvedValue({ data: null, error: null });
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
@@ -37,6 +38,7 @@ vi.mock('@/integrations/supabase/client', () => ({
       from: vi.fn(() => ({
         upload: vi.fn().mockResolvedValue({ data: { path: 'path/file.pdf' }, error: null }),
         getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://example.com/file.pdf' } })),
+        remove: vi.fn((...args: any[]) => mockStorageRemove(...args)),
       })),
     },
   },
@@ -218,4 +220,94 @@ describe('ManualInvoiceCreateDialog', () => {
       );
     });
   });
+
+  it('marks invoice as fizetve: true when Kifizetett számla checkbox is checked', async () => {
+    render(<ManualInvoiceCreateDialog {...defaultProps} companyName="ThinkAI Hungary Kft." />);
+
+    const numInput = screen.getByLabelText(/Bizonylatsorszám/i);
+    fireEvent.change(numInput, { target: { value: 'INV-ALREADY-PAID' } });
+
+    const eladoInput = screen.getByLabelText(/Eladó neve/i);
+    fireEvent.change(eladoInput, { target: { value: 'Paid Supplier' } });
+
+    // Check "Kifizetett számla"
+    const paidCheckbox = screen.getByRole('checkbox', { name: /Kifizetett számla/i });
+    fireEvent.click(paidCheckbox);
+
+    const submitBtn = screen.getByRole('button', { name: 'Számla rögzítése' });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bizonylatsorszam: 'INV-ALREADY-PAID',
+          fizetve: true,
+          is_manual_payment: true,
+        })
+      );
+    });
+  });
+
+  it('cleans up uploaded file from storage if invoice insertion fails', async () => {
+    // Make supabase insert fail
+    mockInsert.mockImplementationOnce(() => {
+      throw new Error('Database insert failed');
+    });
+
+    render(<ManualInvoiceCreateDialog {...defaultProps} companyName="ThinkAI Hungary Kft." />);
+
+    const numInput = screen.getByLabelText(/Bizonylatsorszám/i);
+    fireEvent.change(numInput, { target: { value: 'INV-STORAGE-CLEANUP' } });
+
+    const eladoInput = screen.getByLabelText(/Eladó neve/i);
+    fireEvent.change(eladoInput, { target: { value: 'Any Partner' } });
+
+    // Simulate file drop
+    const dropzone = screen.getByTestId('dropzone-input');
+    const file = new File(['dummy-content'], 'test-invoice.pdf', { type: 'application/pdf' });
+    fireEvent.change(dropzone, { target: { files: [file] } });
+
+    const submitBtn = screen.getByRole('button', { name: 'Számla rögzítése' });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(mockStorageRemove).toHaveBeenCalledWith([expect.stringContaining('test-invoice.pdf')]);
+    });
+  });
+
+  it('locks buyer input for INBOUND invoices and does not allow autocomplete/search on it', () => {
+    render(<ManualInvoiceCreateDialog {...defaultProps} initialDirection="INBOUND" companyName="ThinkAI Hungary Kft." />);
+
+    const buyerInput = document.getElementById('create-vevo') as HTMLInputElement;
+    expect(buyerInput).toBeInTheDocument();
+    expect(buyerInput).toBeDisabled();
+    expect(buyerInput.value).toBe('ThinkAI Hungary Kft.');
+
+    // Seller input should be enabled autocomplete
+    const sellerInput = document.getElementById('create-elado') as HTMLInputElement;
+    expect(sellerInput).toBeInTheDocument();
+    expect(sellerInput).not.toBeDisabled();
+  });
+
+  it('locks seller input for OUTBOUND invoices and does not allow autocomplete/search on it', () => {
+    render(<ManualInvoiceCreateDialog {...defaultProps} initialDirection="OUTBOUND" companyName="ThinkAI Hungary Kft." />);
+
+    const sellerInput = document.getElementById('create-elado') as HTMLInputElement;
+    expect(sellerInput).toBeInTheDocument();
+    expect(sellerInput).toBeDisabled();
+    expect(sellerInput.value).toBe('ThinkAI Hungary Kft.');
+
+    // Buyer input should be enabled autocomplete
+    const buyerInput = document.getElementById('create-vevo') as HTMLInputElement;
+    expect(buyerInput).toBeInTheDocument();
+    expect(buyerInput).not.toBeDisabled();
+  });
+
+  it('renders simplified Kifizetett számla checkbox without explanatory subtext', () => {
+    render(<ManualInvoiceCreateDialog {...defaultProps} companyName="ThinkAI Hungary Kft." />);
+
+    expect(screen.getByRole('checkbox', { name: /Kifizetett számla/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Jelöld be, ha a számla már ki lett fizetve/i)).not.toBeInTheDocument();
+  });
 });
+

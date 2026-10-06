@@ -87,6 +87,7 @@ export function InvoiceDocumentDropzone({
       <input
         ref={fileInputRef}
         type="file"
+        data-testid="dropzone-input"
         accept=".pdf,image/jpeg,image/png,image/webp"
         onChange={handleInputChange}
         className="hidden"

@@ -1,7 +1,7 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-10-04  
-> **Összesen:** 67 dokumentált Deno Edge Function a repó 69-éből (hiányzik: `minimax-sync`, `sync-szamlazz-outbound-invoices`; deploy-állapot: [A-005](./decisions/A-005-edge-functions.md)) + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
+> **Utoljára frissítve:** 2026-10-06  
+> **Összesen:** 68 dokumentált Deno Edge Function a repó 70-éből (hiányzik: `minimax-sync`, `sync-szamlazz-outbound-invoices`; deploy-állapot: [A-005](./decisions/A-005-edge-functions.md)) + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
 A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) könyvtárban található. A technikai architektúra döntést az [A-005: Edge Functions a Serverless Logikához](./decisions/A-005-edge-functions.md), az adatbázis sémát a [database-schema.md](./database-schema.md), az eljárásokat pedig az [rpc-catalog.md](./rpc-catalog.md) írja le.
@@ -228,7 +228,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | Típus | Darabszám | Szabályzat |
 |---|:---:|---|
 | `verify_jwt: true` | 15 | Közvetlenül a bejelentkezett felhasználó böngészőjéből, érvényes Bearer JWT token kíséretében hívható végpontok. |
-| `verify_jwt: false` | 47 | Időzített feladatok (`pg_cron`), külső webhookok (Mailgun, Nylas, Twilio, Aggreg8), admin műveletek (`service_role`), API kulcsos hívások, vagy bejelentkezés előtti publikus végpontok (pl. jelszó-visszaállítás, email ellenőrzés). |
+| `verify_jwt: false` | 48 | Időzített feladatok (`pg_cron`), külső webhookok (Mailgun, Nylas, Twilio, Aggreg8), admin műveletek (`service_role`), API kulcsos hívások, vagy bejelentkezés előtti publikus végpontok (pl. jelszó-visszaállítás, email ellenőrzés). |
 
 ---
 

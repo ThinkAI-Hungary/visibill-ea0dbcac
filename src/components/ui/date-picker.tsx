@@ -75,6 +75,7 @@ export interface DatePickerProps {
   min?: string | Date;
   max?: string | Date;
   allowInput?: boolean;
+  inputClassName?: string;
 }
 
 export function DatePicker({
@@ -94,6 +95,7 @@ export function DatePicker({
   min,
   max,
   allowInput = false,
+  inputClassName,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -202,7 +204,7 @@ export function DatePicker({
             }
           }}
           placeholder={placeholder || 'éééé-hh-nn'}
-          className="pr-9 font-mono text-xs h-10 w-full"
+          className={cn("pr-9 font-mono text-xs h-10 w-full", inputClassName)}
           autoComplete="off"
         />
         <Popover open={open} onOpenChange={setOpen}>
@@ -212,10 +214,13 @@ export function DatePicker({
               variant="ghost"
               size="icon"
               disabled={disabled}
-              className="absolute right-0.5 h-8 w-8 text-muted-foreground hover:text-foreground"
+              className={cn(
+                "absolute right-0.5 text-muted-foreground hover:text-foreground",
+                inputClassName?.includes("h-8") ? "h-7 w-7" : "h-8 w-8"
+              )}
               title="Naptár megnyitása"
             >
-              <CalendarIcon className="h-4 w-4 text-primary" />
+              <CalendarIcon className={cn("text-primary", inputClassName?.includes("h-8") ? "h-3.5 w-3.5" : "h-4 w-4")} />
             </Button>
           </PopoverTrigger>
           <PopoverContent className={cn("w-auto p-0 border border-border/60 shadow-xl rounded-xl z-[1200]", popoverClassName)} align="start">

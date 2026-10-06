@@ -76,4 +76,33 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
 * **Sentinel és Hiba-védelem:**
   * Ha a háttérben futó lapozás hálózati hibába ütközik, a betöltő gomb nem villoghat és nem ragadhat végtelen spinner állapotban. A lapozást azonnal le kell állítani (`hasMore = false`), és egyértelmű hibaüzenetet kell mutatni manuális *„Újrapróbálkozás”* lehetőséggel.
 
+---
+
+## 🔍 8. Dialog & Popover Kereső Architektúra (The Standard Picker Pattern)
+* **Standard `SearchInput` használata kötelező:**
+  * Modálablakokban (Dialog) működő keresőknél (pl. NAV számlapár, tranzakciópárosítás, partnertörzs) **tilos ad-hoc mezőket vagy saját keresőlogikát építeni**.
+  * Mindig a projekt standard komponensét használd: `import { SearchInput } from '@/components/ui/search-input';` a `PopoverContent` tetején `variant="borderless"` beállítással, automatikus darabszámlálóval (`rightElement={<span ...>{count} db</span>}`).
+* **Egérgörgő & Touch Zárolás Feloldása (`e.stopPropagation()`):**
+  * Mivel a Radix Dialog a háttérben `react-remove-scroll`-lal dokumentum-szinten tiltja a görgetést, a PopoverContent és a benne lévő görgethető lista **kötelezően meg kell kapja az `onWheel={(e) => e.stopPropagation()}` és `onTouchMove={(e) => e.stopPropagation()}` eseménykezelőt**, valamint az `overscroll-contain` osztályt!
+  * Enélkül az asztali böngészőkben a lenyíló lista nem reagál az egérgörgőre.
+* **Új / Egyedi elem azonnali felajánlása:**
+  * Ha a beírt keresőszó nem szerepel a törzsadatok között, a lista legtetején mindig jelenjen meg egy kattintható akciógomb: *„Új [elem] használata: '{search}'”*, amivel a felhasználó azonnal rögzítheti az egyedi értéket.
+
+---
+
+## 🏢 9. Irányfüggő Pénzügyi Űrlapok & Cégzárolási Szabályzat
+* **Aktív cég fix zárolása:**
+  * Kétoldalú pénzügyi bizonylatoknál (bejövő és kimenő számlák) a kiválasztott céget képviselő oldal (bejövőnél a Vevő, kimenőnél az Eladó) **mindig zárolt, letiltott (`disabled`) mezőként renderelendő**.
+  * Ezen a mezőn tilos az autocompletion, a kereső megnyitása és a törlő (`X`) gomb megjelenítése, megelőzve az elgépelést és a cégadatok felülírását.
+* **Kötelező terminológia: `(Aktív cég)`:**
+  * A zárolt mező felett a címke mellett kötelezően a diszkrét **`(Aktív cég)`** megnevezést használd (nem *(Saját vállalkozás)* vagy egyéb szinonimák).
+
+---
+
+## 📋 10. Letisztult Űrlap Checkbox Konvenció
+* **Kompakt státuszjelölők:**
+  * Egyszerű státuszjelölő mezőknél (pl. *Kifizetett számla (kiegyenlítve)*) törekedj a kompakt, egyvonalas megjelenésre (`flex items-center space-x-2`).
+  * Ne terheld a felületet hosszú, helyet foglaló magyarázó bekezdésekkel, kivéve ha az jogi vagy kritikus adatvesztési kockázatra hívja fel a figyelmet.
+
+
 

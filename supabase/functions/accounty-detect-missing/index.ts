@@ -290,8 +290,8 @@ Deno.serve(async (req: Request) => {
                 .limit(1)
 
               let cToken = cTokens?.[0]?.token
-              if (!cToken && assignedUsers?.length > 0) {
-                const creator = assignedUsers[0].accountant_user_id
+              const creator = clientAssignments?.[0]?.accountant_user_id
+              if (!cToken && creator) {
                 const newToken = crypto.randomUUID()
                 const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString()
                 const { data: created } = await supabase
