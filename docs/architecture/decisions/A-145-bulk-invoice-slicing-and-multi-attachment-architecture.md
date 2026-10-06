@@ -84,3 +84,8 @@ Az EB-0177 hibajegy kapcsán feltárt rendszerműködés szerint az irodai kéto
   - `test_nav_crosscheck_fallback_strategy_4`: PASSED
 - **Élő Adatbázis Tesztelés:** A Ván Iroda Kft. EB-0177 alá tartozó 6 számlája sikeresen javítva a NAV Online Számla adatai alapján (`statusz = 'feldolgozott'`, `nav_status = 'verified'`).
 - **Frontend Build:** Az `npm run build` sikeresen lefutott 0 hibával és 0 figyelmeztetéssel.
+
+---
+
+## 5. Kapcsolódó Továbbfejlesztések
+- [A-225: Duplex PDF Darabolás Robusztusítás, Táblázatfejléc Védelem és Számlaszám Fuzzy NAV Párosítás (EB-0250)](./A-225-duplex-pdf-splitting-header-blacklist-and-fuzzy-nav-matching.md): A duplex szkennelés lapszámozási arányának szigorítása, táblázatfejlécek feketelistázása és perjel/1 OCR elütéskezelés a NAV párosításban.
