@@ -34,6 +34,21 @@ const errorResponse = (code: string, message: string, status = 400, details?: un
   return res;
 };
 
+// ─── MIME Type Detector ──────────────────────────────
+function detectInvoiceMimeType(fileName: string, explicitType?: string): string {
+  if (explicitType && explicitType.includes("/")) return explicitType;
+  const ext = fileName.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "png": return "image/png";
+    case "jpg":
+    case "jpeg": return "image/jpeg";
+    case "webp": return "image/webp";
+    case "tiff":
+    case "tif": return "image/tiff";
+    default: return "application/pdf";
+  }
+}
+
 // ─── Query Param Validator ────────────────────────────
 function validateQueryParams(url: URL, allowedParams: string[]): Response | null {
   const allowed = new Set(["action", "company_id", ...allowedParams]);
@@ -709,10 +724,12 @@ serve(async (req: Request) => {
                   bytes[i] = binaryStr.charCodeAt(i);
                 }
 
-                const storagePath = `${auth.user_id}/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+                const effectiveUserId = await resolveEffectiveUserId(admin, auth.user_id, targetCompanyId, auth.key_id);
+                const detectedMimeType = detectInvoiceMimeType(fileName, requestBody.file_type);
+                const storagePath = `${effectiveUserId || "system"}/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
                 const { data: uploadData, error: uploadErr } = await admin.storage
                   .from("invoice-uploads")
-                  .upload(storagePath, bytes, { contentType: "application/pdf", upsert: true });
+                  .upload(storagePath, bytes, { contentType: detectedMimeType, upsert: true });
 
                 if (uploadErr) {
                   response = errorResponse("UPLOAD_FAILED", uploadErr.message, 500);
@@ -726,10 +743,10 @@ serve(async (req: Request) => {
                       .from("invoice_uploads")
                       .insert({
                         company_id: targetCompanyId,
-                        user_id: auth.user_id,
+                        user_id: effectiveUserId,
                         file_name: fileName,
                         file_size: bytes.length,
-                        file_type: "application/pdf",
+                        file_type: detectedMimeType,
                         file_url: publicUrl,
                         upload_status: "uploaded",
                         processing_status: "pending",
@@ -821,7 +838,7 @@ serve(async (req: Request) => {
                         .from("invoices")
                         .insert({
                           company_id: targetCompanyId,
-                          user_id: auth.user_id,
+                          user_id: effectiveUserId,
                           invoice_direction: direction,
                           statusz: "feldolgozas_alatt",
                           nav_status: "pending_match",
@@ -864,7 +881,7 @@ serve(async (req: Request) => {
                       .from("invoices")
                       .insert({
                         company_id: targetCompanyId,
-                        user_id: auth.user_id,
+                        user_id: effectiveUserId,
                         invoice_direction: direction,
                         statusz: "feldolgozas_alatt",
                         melleklet_url: publicUrl,
@@ -1105,10 +1122,11 @@ serve(async (req: Request) => {
                   bytes[i] = binaryStr.charCodeAt(i);
                 }
                 const fileName = requestBody.file_name || `patch_${Date.now()}.pdf`;
+                const patchMimeType = detectInvoiceMimeType(fileName, requestBody.file_type);
                 const storagePath = `${auth.user_id}/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
                 const { error: uploadErr } = await admin.storage
                   .from("invoice-uploads")
-                  .upload(storagePath, bytes, { contentType: "application/pdf", upsert: true });
+                  .upload(storagePath, bytes, { contentType: patchMimeType, upsert: true });
 
                 if (!uploadErr) {
                   updates.melleklet_url = `${supabaseUrl}/storage/v1/object/public/invoice-uploads/${storagePath}`;

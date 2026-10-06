@@ -177,6 +177,8 @@ Minden felderített logbejegyzést kötelező az alábbi három kategória egyik
   - `Cannot read properties of undefined (reading 'checked')`
   - `structure of query does not match function result type (42804)`
   - `column ga.target_gl_account_id does not exist (42703)`
+  - `ON CONFLICT DO UPDATE command cannot affect row a second time (21000)`: Kötegelt mentés duplikált rekordjai (pl. NAV tételsorok); parserszintű egyediség-garancia és SQL CTE sorszám-normalizálás szükséges.
+  - `canceling statement due to statement timeout (57014)` összetett aggregációs vagy főkönyvi RPC-knél (`get_gl_balances`, `get_gl_categorized_items`): Gyakran Nested Loop és tételszintű anti-join / szűrés okozza; header szintű pre-materializáció (`valid_invoices`, `valid_nav_invoices AS MATERIALIZED`) szükséges, ahol a kizárás és anti-join pontosan egyszer értékelődik ki.
   - `404 Error: User attempted to access non-existent route: /hr/eaisybooks/...`
 * **Teendő:** Azonnali javítási terv készítése.
 

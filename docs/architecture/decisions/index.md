@@ -101,6 +101,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-132 | NAV Online Számla v3.0 queryTaxpayer Integráció és Think AI Kft. Kulcs Fallback | ✅ Decided | [A-132](./A-132-nav-query-taxpayer-auto-fill.md) |
 | A-162 | Mailgun & IMAP Csatolmány Szűrési Szinkronizáció, Storage Fájlnév-Szanálás és Body-MIME Hardening | ✅ Decided | [A-162](./A-162-mailgun-and-imap-attachment-filtering-and-mime-hardening.md) |
 | A-190 | Non-Destructive IMAP UID Követés (Zero-\Seen), Elosztott Zárolás és Batch Capping | ✅ Decided | [A-190](./A-190-non-destructive-imap-tracking-and-distributed-locks.md) |
+| A-203 | Google Drive Automatikus Számlabegyűjtő Rendszer és Dinamikus MIME Kezelés | ✅ Decided | [A-203](./A-203-google-drive-invoices-ingestion.md) |
 
 ## 🗄️ Adatbázis & Pénzügy
 

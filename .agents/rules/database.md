@@ -84,6 +84,11 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
   * Élő adatbázison a katalógus attribútumokat (`pg_proc` provolatile és jogosultságok) is ellenőrizni kell.
 * **Strukturált visszatérési értékek:**
   * Mindig határozz meg pontos visszatérési típust (`RETURNS jsonb`, `RETURNS boolean`, vagy `RETURNS TABLE (id uuid, name text, ...)`). Kerüld a generikus, nem típusos `RETURNS record` használatát.
+* **⚠️ Batch Upsert & Kardinalitás Védelem (`ON CONFLICT DO UPDATE` - Hiba 21000):**
+  * PostgreSQL-ben az `INSERT ... ON CONFLICT (...) DO UPDATE` parancs azonnal elhasal `21000: ON CONFLICT DO UPDATE command cannot affect row a second time` hibával, ha a bemeneti relációban (pl. `jsonb_array_elements(...)` vagy kötegelt insert) egynél több olyan sor szerepel, amely azonos konfliktus-célpontra illeszkedik!
+  * **Kötelező védelem:** Minden olyan RPC-ben vagy kötegelt mentésben, amely `ON CONFLICT DO UPDATE`-et használ:
+    1. **Kliens- és parserszinten:** Kötelező deduplikálni a kulcsokat az adatbázis hívása előtt (pl. `seenLineNumbers` halmaz és monoton növekvő sorszámozás).
+    2. **Tárolt eljárás szinten:** Az eljárásnak belsőleg reziliensnek kell lennie. Ha a bemeneti JSON-ban duplikáció érkezik, az eljárás `WITH ORDINALITY` CTE és sorszám-normalizálás segítségével köteles belsőleg feloldani az ütközést ahelyett, hogy eldobná a tranzakciót.
 
 ---
 
@@ -171,4 +176,10 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
     1. **In-Memory Caching:** Használj modul-szintű memóriagyorsítótárat (pl. 2 perc TTL), hogy több egymást követő kérés ne terhelje feleslegesen a PostgreSQL-t.
     2. **Graceful Fallback:** DB timeout (57014) vagy hálózati hiba esetén a kód szolgáljon ki stale adatot vagy biztonságos üres állapotot ahelyett, hogy kivételt dobna és összeomlasztaná a képernyőt.
     3. **Slice-First Index-Only elv:** Az RPC-ken belül a lapozási szeletet (LIMIT/OFFSET) mindig a relációs JOIN-ok és komplex JSONB mezőextrakciók előtt kell képezni.
+    4. **⚠️ Számlafejléc Pre-Materializáció & Anti-Join Invariáns (Többágas Pénzügyi Összesítők - Hiba 57014):**
+       * Olyan összetett tárolt eljárásokban, amelyek több ágon (pl. `invoice_items`, `nav_invoice_items`, ÁFA sorok, partner követelések) kapcsolják össze a számlafejléceket a tételsorokkal, **szigorúan tilos az anti-joint (`NOT EXISTS (SELECT 1 FROM uploaded_invoice_nums ...)`) és a bérlői/dátumszűrést tételszinten értékelni**!
+       * **Miért bukott el 5 korábbi optimalizálás?** Mert a fejlesztők csak a külső `raw_items` vagy `je_map` CTE-t materializálták, de azon belül a tételekre illesztették a fejléceket egy Nested Loop-ban. Nagy forgalmú bérlőknél (ahol a NAV számlák ~45%-a duplikálja a feltöltött számlákat) a PostgreSQL 13 000+ tételre futtatott egyedi index-keresést, string manipulációt (`REPLACE(LOWER(...))`) és anti-joint, ami garantáltan túllépte az 8,0 másodperces `statement_timeout`-ot (PostgreSQL 57014 hiba).
+       * **Kötelező Minta (Header Pre-Materialization Invariant):**
+         1. A számlafejléceket (`valid_invoices`, `valid_nav_invoices`) dedikált `AS MATERIALIZED` CTE-kbe kell kiemelni, ahol a bérlő (`company_id`), dátumtartomány és az anti-join **pontosan egyszer, fejléc szinten** fut le.
+         2. A tételek, ÁFA sorok és partner sorok kizárólag ezekhez az előszűrt memóriatáblákhoz csatlakozhatnak, soha nem hivatkozhatnak közvetlenül a nyers `invoices` vagy `nav_invoices` alaptáblákra.
 

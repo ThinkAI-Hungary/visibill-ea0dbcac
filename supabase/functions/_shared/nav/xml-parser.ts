@@ -211,10 +211,22 @@ export function parseInvoiceDataXml(xmlResponse: string): InvoiceDetails {
   const lineItems: InvoiceLineItem[] = [];
   const lineRegex = /<(?:\w+:)?line>([\s\S]*?)<\/(?:\w+:)?line>/g;
   let lineMatch: RegExpExecArray | null;
+  const seenLineNumbers = new Set<number>();
+  let nextFallbackLineNum = 1;
 
   while ((lineMatch = lineRegex.exec(decodedXml)) !== null) {
     const lChunk = lineMatch[1];
-    const lineNum = parseInt(extractTag(lChunk, 'lineNumber'), 10) || lineItems.length + 1;
+    const rawLineNum = parseInt(extractTag(lChunk, 'lineNumber'), 10);
+    let lineNum: number;
+    if (!isNaN(rawLineNum) && rawLineNum > 0 && !seenLineNumbers.has(rawLineNum)) {
+      lineNum = rawLineNum;
+    } else {
+      while (seenLineNumbers.has(nextFallbackLineNum)) {
+        nextFallbackLineNum++;
+      }
+      lineNum = nextFallbackLineNum;
+    }
+    seenLineNumbers.add(lineNum);
     const lineDesc = extractTag(lChunk, 'lineDescription');
     const quantity = parseFloat(extractTag(lChunk, 'quantity')) || undefined;
     const unitOfMeasure = extractTag(lChunk, 'unitOfMeasure') || undefined;

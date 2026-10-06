@@ -134,3 +134,32 @@ Az A-189 (`20261001143000`) bevezetése után az átfogó RPC audit két kritiku
 - Mindkét parciális ÁFA CTE összekapcsolása a szülő számla táblákkal (`invoices` / `nav_invoices`) a `WHERE company_id = p_company_id` feltétellel.
 - Jogosultságok szigorítása (`REVOKE FROM PUBLIC, anon; GRANT TO authenticated, service_role;`).
 
+---
+
+## 6. Kiegészítő Határozat A-189.2: NAV Számlák és Kézi Számlák Pre-materializációja és Anti-Join Eliminálás (2026-10-06)
+
+### 6.1. Kontextus & Visszatérő Hiba Elemzése:
+2026-10-05 12:03:04 UTC-kor 4 alkalommal jelentkezett `canceling statement due to statement timeout` hiba a `get_gl_balances` tárolt eljárásnál, túllépve az `authenticated` szerepkör szigorú 8,0 másodperces PostgreSQL `statement_timeout` limitjét.
+
+A mélyreható `EXPLAIN (ANALYZE, BUFFERS)` vizsgálat kiderítette, hogy bár a korábbi migrációk a `raw_items` és `je_map` CTE-ket már sikeresen materializálták, a `raw_items`-en belül a ③. ág (`nav_invoice_items`) egy végzetes Nested Loop stratégiát kényszerített ki:
+1. **Per-tételes Anti-Join és String Tisztítás:** A `NOT EXISTS (SELECT 1 FROM uploaded_invoice_nums WHERE clean_num = REPLACE(LOWER(n.invoice_number), ' ', ''))` feltétel nem a számlák szintjén, hanem **minden egyes tételsoron** lefutott.
+2. **Kézi feltöltésekkel fedett számlák felesleges beolvasása:** Az olyan nagy forgalmú cégeknél, mint a *Ván Iroda Kft.* (4 103 NAV számla, 13 571 tételsor) a NAV számlák ~43%-a (1 764 számla) duplikálta a kézzel feltöltött számlákat. A korábbi lekérdezés a teljes 13 571 tételsort beolvasta, típus- és regex-vizsgálatnak vetette alá, és csak a legvégén dobta el a duplikátumokat.
+3. **Háromszoros Újraértékelés:** A ③_vat és ③_partner uniókban a `nav_invoices` táblát, a dátumtartomány-vizsgálatot és az anti-joint még 2 alkalommal újraértékelte a PostgreSQL.
+
+### 6.2. Megoldás (`20261006030000_optimize_gl_nav_invoices_prematerialization.sql`):
+Bevezettük a számlafejlécek előszűrését és memóriabeli materializációját a `get_gl_balances` és `get_gl_categorized_items` eljárásokban:
+- `valid_invoices AS MATERIALIZED`: Egyetlen indexelt szkenneléssel szűri a bérlő (`p_company_id`), dátumtartomány (`p_date_basis`), könyvelési kizárás (`exclude_from_accounting`) és könyvelési státusz (`p_posting_status`) feltételeit.
+- `valid_nav_invoices AS MATERIALIZED`: Ugyanilyen előszűrés mellett **egyetlen alkalommal hajtja végre az anti-joint** az `uploaded_invoice_nums` CTE-vel a számlaszám alapján.
+- A `raw_items` ágai (②, ②_vat, ②_partner, ③, ③_vat, ③_partner) és a parciális ÁFA CTE-k (`inv_partial_deductible`, `nav_partial_deductible`) közvetlenül a `valid_invoices` és `valid_nav_invoices` memóriatáblákhoz csatlakoznak, teljesen kiiktatva a duplikált táblabejárásokat és string átalakításokat.
+
+### 6.3. Verifikált Mérések és Eredmények:
+| Vizsgált Cég / Lekérdezés | Eredeti Állapot | A-189.2 Új Állapot | Gyorsulás |
+| :--- | :--- | :--- | :--- |
+| **Ván Iroda Kft. (`get_gl_balances`, 21 255 tétel)** | 8 787 ms (timeout-veszély) | **221.7 ms** | **~40x gyorsulás** ⚡ |
+| **Mandala Fogadó Kft. (`get_gl_balances`, 37 100 tétel)** | 6 083 ms | **707.5 ms** | **~8.6x gyorsulás** ⚡ |
+| **Ván Iroda Kft. (`get_gl_categorized_items`, 311-es számla)** | 3 688 ms | **174.2 ms** | **~21x gyorsulás** ⚡ |
+
+### Matematikai Ekvivalencia:
+- Ván Iroda Kft. egyenlege: Eredeti = Új = `-1 264 300.60 HUF` (0.00 HUF eltérés, 21 255 tétel).
+- Mandala Fogadó Kft. egyenlege: Eredeti = Új = `130 870 188 732.65 HUF` (0.00 HUF eltérés, 37 100 tétel).
+

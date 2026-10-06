@@ -373,23 +373,7 @@ export class NavIngestionService {
 
           // 2. Szülő rekord és tételsorok atomi, idempotens mentése tárolt eljárással (RPC)
           const resolvedCompanyId = dbInvoice.company_id || companyId || null;
-          const itemsToInsert = (details.lineItems && details.lineItems.length > 0)
-            ? details.lineItems.map(item => ({
-                company_id: resolvedCompanyId,
-                line_number: item.lineNumber,
-                line_description: item.lineDescription || null,
-                quantity: item.quantity || null,
-                unit_of_measure: item.unitOfMeasure || null,
-                unit_price: item.unitPrice || null,
-                net_amount: item.netAmount || 0,
-                vat_rate: item.vatRate || null,
-                vat_amount: item.vatAmount || 0,
-                gross_amount: item.grossAmount || 0,
-                product_code: item.productCode || null,
-                line_delivery_period_from: item.lineDeliveryPeriodFrom || null,
-                line_delivery_period_to: item.lineDeliveryPeriodTo || null
-              }))
-            : [];
+          const itemsToInsert = this.normalizeItemsForRpc(details.lineItems, resolvedCompanyId);
 
           const { error: rpcErr } = await this.supabase.rpc('save_nav_invoice_details_and_items', {
             p_invoice_id: dbInvoice.id,
@@ -507,23 +491,7 @@ export class NavIngestionService {
 
         // Szülő rekord és tételsorok atomi, idempotens mentése tárolt eljárással (RPC)
         const resolvedCompanyId = inv.company_id || companyId;
-        const itemsToInsert = (details.lineItems && details.lineItems.length > 0)
-          ? details.lineItems.map((item: any) => ({
-              company_id: resolvedCompanyId,
-              line_number: item.lineNumber,
-              line_description: item.lineDescription || null,
-              quantity: item.quantity || null,
-              unit_of_measure: item.unitOfMeasure || null,
-              unit_price: item.unitPrice || null,
-              net_amount: item.netAmount || 0,
-              vat_rate: item.vatRate || null,
-              vat_amount: item.vatAmount || 0,
-              gross_amount: item.grossAmount || 0,
-              product_code: item.productCode || null,
-              line_delivery_period_from: item.lineDeliveryPeriodFrom || null,
-              line_delivery_period_to: item.lineDeliveryPeriodTo || null
-            }))
-          : [];
+        const itemsToInsert = this.normalizeItemsForRpc(details.lineItems, resolvedCompanyId);
 
         const { error: rpcErr } = await this.supabase.rpc('save_nav_invoice_details_and_items', {
           p_invoice_id: inv.id,
@@ -596,5 +564,42 @@ export class NavIngestionService {
     } catch (err) {
       console.warn('[NavIngestionService] Validation status update warning:', err);
     }
+  }
+
+  /**
+   * Tételsorok normalizálása és sorszám-ütközések feloldása a mentés előtt.
+   * Megelőzi a PostgreSQL 21000 ("ON CONFLICT DO UPDATE command cannot affect row a second time") hibát.
+   */
+  private normalizeItemsForRpc(rawItems: any[] | undefined, companyId: string | null): any[] {
+    if (!rawItems || rawItems.length === 0) return [];
+    const seen = new Set<number>();
+    let nextSeq = 1;
+
+    return rawItems.map((item: any, idx: number) => {
+      let lineNum = typeof item.lineNumber === 'number' && item.lineNumber > 0 ? item.lineNumber : (idx + 1);
+      if (seen.has(lineNum)) {
+        while (seen.has(nextSeq)) {
+          nextSeq++;
+        }
+        lineNum = nextSeq;
+      }
+      seen.add(lineNum);
+
+      return {
+        company_id: companyId,
+        line_number: lineNum,
+        line_description: item.lineDescription || null,
+        quantity: item.quantity || null,
+        unit_of_measure: item.unitOfMeasure || null,
+        unit_price: item.unitPrice || null,
+        net_amount: item.netAmount || 0,
+        vat_rate: item.vatRate || null,
+        vat_amount: item.vatAmount || 0,
+        gross_amount: item.grossAmount || 0,
+        product_code: item.productCode || null,
+        line_delivery_period_from: item.lineDeliveryPeriodFrom || null,
+        line_delivery_period_to: item.lineDeliveryPeriodTo || null
+      };
+    });
   }
 }

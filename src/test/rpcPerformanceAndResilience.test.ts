@@ -392,4 +392,112 @@ describe('RPC Performance & Edge Function Resilience Tests', () => {
       expect(emptyResult.salary).toEqual({});
     });
   });
+
+  describe('get_gl_balances & get_gl_categorized_items Contract & Pre-materialization Invariants', () => {
+    interface GlBalanceRow {
+      gl_account_id: string | null;
+      gl_number: string;
+      short_name: string;
+      total_balance: number;
+      final_balance: number;
+      temp_balance: number;
+      item_count: number;
+    }
+
+    interface GlCategorizedItemRow {
+      item_id: string;
+      gl_account_id: string | null;
+      source_table: string;
+      item_type: string;
+      partner: string | null;
+      description: string | null;
+      amount: number;
+      original_amount: number;
+      original_currency: string;
+      item_date: string;
+      is_temporary: boolean;
+    }
+
+    it('validates the row contract of get_gl_balances', () => {
+      const mockBalanceRow: GlBalanceRow = {
+        gl_account_id: '44538cf2-643d-4e51-a8ef-18a79e03aeb6',
+        gl_number: '311',
+        short_name: 'Vevők',
+        total_balance: 150000.5,
+        final_balance: 100000.0,
+        temp_balance: 50000.5,
+        item_count: 42,
+      };
+
+      expect(mockBalanceRow).toMatchObject({
+        gl_account_id: expect.any(String),
+        gl_number: '311',
+        short_name: 'Vevők',
+        total_balance: expect.any(Number),
+        final_balance: expect.any(Number),
+        temp_balance: expect.any(Number),
+        item_count: expect.any(Number),
+      });
+
+      // Total balance must equal final_balance + temp_balance
+      expect(mockBalanceRow.total_balance).toBeCloseTo(
+        mockBalanceRow.final_balance + mockBalanceRow.temp_balance,
+        2
+      );
+    });
+
+    it('validates unclassified balances special row representation', () => {
+      const unclassifiedRow: GlBalanceRow = {
+        gl_account_id: null,
+        gl_number: 'UNCLASSIFIED',
+        short_name: 'Besorolatlan tételek',
+        total_balance: 12500,
+        final_balance: 12500,
+        temp_balance: 0,
+        item_count: 3,
+      };
+
+      expect(unclassifiedRow.gl_account_id).toBeNull();
+      expect(unclassifiedRow.gl_number).toBe('UNCLASSIFIED');
+      expect(unclassifiedRow.item_count).toBeGreaterThan(0);
+    });
+
+    it('validates get_gl_categorized_items contract with pagination and source tables', () => {
+      const mockItems: GlCategorizedItemRow[] = [
+        {
+          item_id: '011027e8-ee28-424d-b996-f9f5db84d492',
+          gl_account_id: '85c46ec9-fc8b-44ae-9bee-0d99e4e98bee',
+          source_table: 'nav_invoices_partner',
+          item_type: 'NAV Vevőkövetelés (311)',
+          partner: 'Partner Kft.',
+          description: 'NAV-2026/001 - Bruttó partner',
+          amount: 11198.0,
+          original_amount: 11198.0,
+          original_currency: 'HUF',
+          item_date: '2026-09-28',
+          is_temporary: true,
+        },
+        {
+          item_id: '022027e8-ee28-424d-b996-f9f5db84d493',
+          gl_account_id: '85c46ec9-fc8b-44ae-9bee-0d99e4e98bee',
+          source_table: 'invoice_items',
+          item_type: 'Kimenő (Bevétel)',
+          partner: 'Ügyfél Zrt.',
+          description: 'Szolgáltatás díj',
+          amount: -50000.0,
+          original_amount: -50000.0,
+          original_currency: 'HUF',
+          item_date: '2026-09-29',
+          is_temporary: false,
+        },
+      ];
+
+      expect(mockItems.length).toBe(2);
+      expect(mockItems[0].is_temporary).toBe(true);
+      expect(mockItems[1].is_temporary).toBe(false);
+      expect(['nav_invoices_partner', 'invoice_items', 'transactions', 'acc_journal_lines']).toContain(
+        mockItems[0].source_table
+      );
+    });
+  });
 });

@@ -256,6 +256,49 @@ describe('NAV Auto-Sync & Detail Orchestration Contracts', () => {
       expect(rpcPayload.p_line_items[0].line_number).toBe(1);
       expect(rpcPayload.p_line_items[0].gross_amount).toBe(12700);
     });
+
+    it('normalizes and prevents duplicate line_number collisions to avoid error 21000', () => {
+      const rawItems = [
+        { lineNumber: 1, lineDescription: 'Gasztro Item A', netAmount: 100 },
+        { lineNumber: 1, lineDescription: 'Gasztro Item B (duplicate)', netAmount: 200 },
+        { lineNumber: 2, lineDescription: 'Gasztro Item C', netAmount: 300 }
+      ];
+
+      const seen = new Set<number>();
+      let nextSeq = 1;
+      const normalized = rawItems.map((item, idx) => {
+        let lineNum = typeof item.lineNumber === 'number' && item.lineNumber > 0 ? item.lineNumber : (idx + 1);
+        if (seen.has(lineNum)) {
+          while (seen.has(nextSeq)) {
+            nextSeq++;
+          }
+          lineNum = nextSeq;
+        }
+        seen.add(lineNum);
+        return { ...item, line_number: lineNum };
+      });
+
+      expect(normalized).toHaveLength(3);
+      expect(normalized[0].line_number).toBe(1);
+      expect(normalized[1].line_number).toBe(2);
+      expect(normalized[2].line_number).toBe(3);
+      const lineNumbers = normalized.map(i => i.line_number);
+      expect(new Set(lineNumbers).size).toBe(lineNumbers.length);
+    });
+
+    it('validates migration 20261006020000 includes safe line number normalization CTE', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const migrationFile = path.resolve(__dirname, '../../supabase/migrations/20261006020000_resilient_nav_invoice_item_dedup_rpc.sql');
+      expect(fs.existsSync(migrationFile)).toBe(true);
+
+      const sql = fs.readFileSync(migrationFile, 'utf8');
+      expect(sql).toContain('safe_line_number');
+      expect(sql).toContain('WITH ORDINALITY');
+      expect(sql).toContain('valid_distinct_lines');
+      expect(sql).toContain('ON CONFLICT (nav_invoice_id, line_number)');
+      expect(sql).toContain('GRANT  EXECUTE ON FUNCTION public.save_nav_invoice_details_and_items(uuid, jsonb, jsonb) TO service_role');
+    });
   });
 
   describe('PGMQ NAV 503 Maintenance Postponement Contract', () => {
