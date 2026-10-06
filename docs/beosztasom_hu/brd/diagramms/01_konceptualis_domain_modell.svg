@@ -1,0 +1,273 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 780" width="100%" height="100%">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+    </pattern>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee"/>
+    </marker>
+    <marker id="arrow-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#34d399"/>
+    </marker>
+    <marker id="arrow-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa"/>
+    </marker>
+  </defs>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap');
+    text { font-family: 'JetBrains Mono', 'SF Mono', 'Segoe UI', monospace; }
+  </style>
+
+  <!-- 1. Background -->
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <rect width="100%" height="100%" fill="url(#grid)"/>
+
+  <!-- Title Block -->
+  <text x="40" y="42" fill="#f8fafc" font-size="17" font-weight="700">Konceptuális Üzleti Domain Modell</text>
+  <text x="40" y="62" fill="#94a3b8" font-size="11">BRD 01 · A munkaidő- és beosztáskezelő modul entitásai, felelősségi körei és kapcsolatai</text>
+
+  <!-- 2. Connection Lines (behind boxes) -->
+  <!-- CEG to MUNKAHELY -->
+  <path d="M 450,140 L 150,140 L 150,180" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="210" y="132" fill="#94a3b8" font-size="8">1..N birtokol</text>
+
+  <!-- CEG to MUNKAKOR -->
+  <path d="M 450,155 L 360,155 L 360,180" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="370" y="170" fill="#94a3b8" font-size="8">1..N</text>
+
+  <!-- CEG to MUNKAVALLALO -->
+  <line x1="560" y1="180" x2="560" y2="230" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrow-cyan)"/>
+  <text x="568" y="210" fill="#22d3ee" font-size="8.5">1..N foglalkoztat</text>
+
+  <!-- CEG to BEOSZTASI_IDOSZAK -->
+  <path d="M 670,140 L 960,140 L 960,180" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="830" y="132" fill="#94a3b8" font-size="8">1..N tervez</text>
+
+  <!-- CEG to MUSZAK_SABLON & MUNKAREND -->
+  <path d="M 670,155 L 770,155 L 770,180" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="730" y="170" fill="#94a3b8" font-size="8">1..N</text>
+
+  <!-- MUNKAHELY to LETSZAMIGENY -->
+  <line x1="150" y1="285" x2="150" y2="350" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="158" y="320" fill="#94a3b8" font-size="8">meghatároz</text>
+
+  <!-- BEOSZTASI_IDOSZAK to LETSZAMIGENY -->
+  <path d="M 910,290 L 910,380 L 250,380" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="600" y="374" fill="#94a3b8" font-size="8">keretében rögzít</text>
+
+  <!-- MUNKAVALLALO to TAVOLLET -->
+  <path d="M 450,290 L 370,290 L 370,470" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="380" y="440" fill="#94a3b8" font-size="8">1..N távol van</text>
+
+  <!-- TAVOLLET_TIPUS to TAVOLLET -->
+  <line x1="160" y1="520" x2="270" y2="520" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="200" y="512" fill="#94a3b8" font-size="8">besorolja</text>
+
+  <!-- MUNKAVALLALO to MUSZAK -->
+  <line x1="560" y1="365" x2="560" y2="440" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrow-cyan)"/>
+  <text x="568" y="405" fill="#22d3ee" font-size="8.5">1..N beosztva</text>
+
+  <!-- MUNKAHELY to MUSZAK -->
+  <path d="M 180,285 L 180,475 L 460,475" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="210" y="468" fill="#94a3b8" font-size="8">helyszíne</text>
+
+  <!-- MUNKAKOR to MUSZAK -->
+  <path d="M 360,285 L 360,455 L 460,455" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="375" y="468" fill="#94a3b8" font-size="8">feladatköre</text>
+
+  <!-- BEOSZTASI_IDOSZAK to MUSZAK -->
+  <path d="M 960,290 L 960,455 L 660,455" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="800" y="448" fill="#94a3b8" font-size="8">tartalmazza (1..N)</text>
+
+  <!-- MUSZAK to JELENLETI_NAP -->
+  <line x1="560" y1="585" x2="560" y2="640" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-emerald)"/>
+  <text x="568" y="618" fill="#34d399" font-size="8.5">igazolás (1..1)</text>
+
+  <!-- MUNKAVALLALO to MUNKAIDOKERET -->
+  <path d="M 670,290 L 760,290 L 760,470" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="770" y="440" fill="#94a3b8" font-size="8">elszámolva</text>
+
+  <!-- BEOSZTASI_IDOSZAK to HAVI_EXPORT -->
+  <line x1="960" y1="290" x2="960" y2="640" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-emerald)"/>
+  <text x="968" y="530" fill="#34d399" font-size="8.5">lezáráskor generál</text>
+
+  <!-- JELENLETI_NAP to HAVI_EXPORT -->
+  <line x1="670" y1="695" x2="860" y2="695" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-emerald)"/>
+  <text x="720" y="687" fill="#34d399" font-size="8">aggregálja a jegyzékbe</text>
+
+  <!-- MUNKAVALLALO Self-loop (Partner helyettesítés) -->
+  <path d="M 670,250 C 720,230 720,270 670,265" fill="none" stroke="#22d3ee" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrow-cyan)"/>
+  <text x="715" y="255" fill="#22d3ee" font-size="7.5">helyettesíti (partner)</text>
+
+  <!-- 3. Entity Boxes (2-compartment structural cards) -->
+
+  <!-- ENTITY 1: CEG (Top Center) -->
+  <g transform="translate(450, 85)">
+    <rect width="220" height="95" rx="8" fill="#0f172a"/>
+    <rect width="220" height="95" rx="8" fill="rgba(8,51,68,0.6)" stroke="#22d3ee" stroke-width="2"/>
+    <text x="110" y="24" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">CÉG (Ügyfélszervezet)</text>
+    <line x1="0" y1="34" x2="220" y2="34" stroke="#22d3ee" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="12" y="50" fill="#e2e8f0" font-size="8.5">• Hivatalos név, adószám, székhely</text>
+    <text x="12" y="64" fill="#94a3b8" font-size="8">• Alapértelmezett napi pihenőidő</text>
+    <text x="12" y="78" fill="#94a3b8" font-size="8">• Mt. szabálymotor ki/be kapcsolás</text>
+    <text x="12" y="90" fill="#94a3b8" font-size="8">• Céges logó (export fejléchez)</text>
+  </g>
+
+  <!-- ENTITY 2: MUNKAHELY (Left Top) -->
+  <g transform="translate(40, 180)">
+    <rect width="200" height="105" rx="8" fill="#0f172a"/>
+    <rect width="200" height="105" rx="8" fill="rgba(30,41,59,0.7)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="100" y="24" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">MUNKAHELY / TELEPHELY</text>
+    <line x1="0" y1="34" x2="200" y2="34" stroke="#94a3b8" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="12" y="50" fill="#e2e8f0" font-size="8.5">• Megnevezés (pl. Kőrösi üzlet)</text>
+    <text x="12" y="64" fill="#94a3b8" font-size="8">• Cím, fizikai helyszín</text>
+    <text x="12" y="78" fill="#94a3b8" font-size="8">• Alapértelmezett munkahely jelölő</text>
+    <text x="12" y="92" fill="#94a3b8" font-size="8">• Alapértelmezett sablon kapcsolat</text>
+  </g>
+
+  <!-- ENTITY 3: MUNKAKOR (Left Middle-Top) -->
+  <g transform="translate(265, 180)">
+    <rect width="160" height="105" rx="8" fill="#0f172a"/>
+    <rect width="160" height="105" rx="8" fill="rgba(30,41,59,0.7)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="80" y="24" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">MUNKAKÖR</text>
+    <line x1="0" y1="34" x2="160" y2="34" stroke="#94a3b8" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="12" y="50" fill="#e2e8f0" font-size="8.5">• Megnevezés (szakács, pultos)</text>
+    <text x="12" y="64" fill="#94a3b8" font-size="8">• Egyedi megjelenítési szín</text>
+    <text x="12" y="78" fill="#94a3b8" font-size="8">• Színkód (Hex a rácshoz)</text>
+    <text x="12" y="92" fill="#94a3b8" font-size="8">• Munkaköri leírás &amp; FEOR</text>
+  </g>
+
+  <!-- ENTITY 4: MUNKAVALLALO (Center Middle) -->
+  <g transform="translate(450, 230)">
+    <rect width="220" height="135" rx="8" fill="#0f172a"/>
+    <rect width="220" height="135" rx="8" fill="rgba(8,51,68,0.7)" stroke="#22d3ee" stroke-width="2"/>
+    <text x="110" y="24" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">MUNKAVÁLLALÓ</text>
+    <line x1="0" y1="34" x2="220" y2="34" stroke="#22d3ee" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="12" y="50" fill="#e2e8f0" font-size="8.5">• Név, adóazonosító, TAJ szám</text>
+    <text x="12" y="64" fill="#94a3b8" font-size="8">• Jogviszony kezdete / vége</text>
+    <text x="12" y="78" fill="#94a3b8" font-size="8">• Mt. típus (teljes, diák, kismama)</text>
+    <text x="12" y="92" fill="#94a3b8" font-size="8">• Szabadságkeret &amp; betegszabi napok</text>
+    <text x="12" y="106" fill="#94a3b8" font-size="8">• Egyedi pihenőidő &amp; órakorlátok</text>
+    <text x="12" y="120" fill="#22d3ee" font-size="8">• Partneri helyettesítési lista</text>
+  </g>
+
+  <!-- ENTITY 5: SABLONOK & MUNKAREND (Right Top) -->
+  <g transform="translate(700, 180)">
+    <rect width="150" height="105" rx="8" fill="#0f172a"/>
+    <rect width="150" height="105" rx="8" fill="rgba(30,41,59,0.7)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="75" y="24" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">MŰSZAKSABLON</text>
+    <line x1="0" y1="34" x2="150" y2="34" stroke="#94a3b8" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="10" y="50" fill="#e2e8f0" font-size="8.5">• Megnevezés (Délelőttös)</text>
+    <text x="10" y="64" fill="#94a3b8" font-size="8">• Kezdés &amp; Végzés időpont</text>
+    <text x="10" y="78" fill="#94a3b8" font-size="8">• Levonandó pihenőidő</text>
+    <text x="10" y="92" fill="#94a3b8" font-size="8">• Újrafelhasználható minta</text>
+  </g>
+
+  <!-- ENTITY 6: BEOSZTASI IDOSZAK (Right Middle-Top) -->
+  <g transform="translate(875, 180)">
+    <rect width="200" height="110" rx="8" fill="#0f172a"/>
+    <rect width="200" height="110" rx="8" fill="rgba(120,53,15,0.4)" stroke="#fbbf24" stroke-width="1.8"/>
+    <text x="100" y="24" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">BEOSZTÁSI IDŐSZAK</text>
+    <line x1="0" y1="34" x2="200" y2="34" stroke="#fbbf24" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="12" y="50" fill="#e2e8f0" font-size="8.5">• Megnevezés (pl. 2026. október)</text>
+    <text x="12" y="64" fill="#94a3b8" font-size="8">• Kezdő &amp; záró naptári nap</text>
+    <text x="12" y="78" fill="#fbbf24" font-size="8">• Státusz: Tervezet / Lezárt</text>
+    <text x="12" y="92" fill="#94a3b8" font-size="8">• Munkaügyi megfelelőség: OK</text>
+    <text x="12" y="104" fill="#94a3b8" font-size="7.5">• Módosítási napló kötött</text>
+  </g>
+
+  <!-- ENTITY 7: LETSZAMIGENY (Left Center) -->
+  <g transform="translate(50, 350)">
+    <rect width="200" height="85" rx="8" fill="#0f172a"/>
+    <rect width="200" height="85" rx="8" fill="rgba(30,41,59,0.7)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="100" y="24" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">LÉTSZÁMIGÉNY</text>
+    <line x1="0" y1="34" x2="200" y2="34" stroke="#94a3b8" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="12" y="50" fill="#e2e8f0" font-size="8.5">• Naptári nap &amp; Telephely</text>
+    <text x="12" y="64" fill="#94a3b8" font-size="8">• Szükséges műszak &amp; minimális létszám</text>
+    <text x="12" y="78" fill="#94a3b8" font-size="8">• Automata generálás bemenete</text>
+  </g>
+
+  <!-- ENTITY 8: TAVOLLET TIPUS (Far Left Lower) -->
+  <g transform="translate(40, 470)">
+    <rect width="120" height="100" rx="8" fill="#0f172a"/>
+    <rect width="120" height="100" rx="8" fill="rgba(30,41,59,0.7)" stroke="#94a3b8" stroke-width="1.2"/>
+    <text x="60" y="22" fill="#ffffff" font-size="10" font-weight="700" text-anchor="middle">TÁVOLLÉT TÍPUS</text>
+    <line x1="0" y1="32" x2="120" y2="32" stroke="#94a3b8" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="8" y="48" fill="#e2e8f0" font-size="8">• 28+ Mt. jogcím</text>
+    <text x="8" y="62" fill="#94a3b8" font-size="7.5">• Kód (TL-01..28)</text>
+    <text x="8" y="76" fill="#94a3b8" font-size="7.5">• Kieső idő jelölő</text>
+    <text x="8" y="90" fill="#94a3b8" font-size="7.5">• Szabadságkeret-e</text>
+  </g>
+
+  <!-- ENTITY 9: TAVOLLET (Left Lower) -->
+  <g transform="translate(270, 470)">
+    <rect width="165" height="115" rx="8" fill="#0f172a"/>
+    <rect width="165" height="115" rx="8" fill="rgba(76,29,149,0.5)" stroke="#a78bfa" stroke-width="1.8"/>
+    <text x="82" y="24" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">TÁVOLLÉT</text>
+    <line x1="0" y1="34" x2="165" y2="34" stroke="#a78bfa" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="10" y="50" fill="#e2e8f0" font-size="8.5">• Kezdő &amp; záró dátum</text>
+    <text x="10" y="64" fill="#a78bfa" font-size="8">• Hivatalos típus azonosító</text>
+    <text x="10" y="78" fill="#94a3b8" font-size="8">• Kieső idő-e (táppénz)</text>
+    <text x="10" y="92" fill="#94a3b8" font-size="8">• Keretet csökkenti-e</text>
+    <text x="10" y="106" fill="#fb7185" font-size="8">• Blokkolja a műszakot!</text>
+  </g>
+
+  <!-- ENTITY 10: MUSZAK (Center Lower) -->
+  <g transform="translate(460, 440)">
+    <rect width="200" height="145" rx="8" fill="#0f172a"/>
+    <rect width="200" height="145" rx="8" fill="rgba(8,51,68,0.7)" stroke="#22d3ee" stroke-width="2"/>
+    <text x="100" y="24" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">MŰSZAK (Tervezett)</text>
+    <line x1="0" y1="34" x2="200" y2="34" stroke="#22d3ee" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="12" y="50" fill="#e2e8f0" font-size="8.5">• Dátum, Dolgozó, Telephely</text>
+    <text x="12" y="64" fill="#94a3b8" font-size="8">• Kezdési &amp; befejezési idő (HH:MM)</text>
+    <text x="12" y="78" fill="#94a3b8" font-size="8">• Pihenőidő levonás (perc)</text>
+    <text x="12" y="92" fill="#22d3ee" font-size="8">• Számított nettó munkaidő (óra)</text>
+    <text x="12" y="106" fill="#94a3b8" font-size="8">• Munkakör &amp; Műszak típusa</text>
+    <text x="12" y="120" fill="#94a3b8" font-size="8">• Otthoni munkavégzés jelölő</text>
+    <text x="12" y="134" fill="#94a3b8" font-size="8">• Opcionális megjegyzés</text>
+  </g>
+
+  <!-- ENTITY 11: MUNKAIDOKERET (Right Lower) -->
+  <g transform="translate(690, 470)">
+    <rect width="165" height="115" rx="8" fill="#0f172a"/>
+    <rect width="165" height="115" rx="8" fill="rgba(30,41,59,0.7)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="82" y="24" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">MUNKAIDŐKERET</text>
+    <line x1="0" y1="34" x2="165" y2="34" stroke="#94a3b8" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="10" y="50" fill="#e2e8f0" font-size="8.5">• Ciklus kezdete &amp; hossza (1-4 hó)</text>
+    <text x="10" y="64" fill="#94a3b8" font-size="8">• Teljes keret-óraszám</text>
+    <text x="10" y="78" fill="#fbbf24" font-size="8">• Keretből hátralévő órák</text>
+    <text x="10" y="92" fill="#94a3b8" font-size="8">• Zárási túlóra elszámolás</text>
+    <text x="10" y="106" fill="#94a3b8" font-size="8">• Állásidő kompenzáció</text>
+  </g>
+
+  <!-- ENTITY 12: TENYLEGES JELENLETI NAP (Center Bottom) -->
+  <g transform="translate(460, 640)">
+    <rect width="210" height="110" rx="8" fill="#0f172a"/>
+    <rect width="210" height="110" rx="8" fill="rgba(6,78,59,0.6)" stroke="#34d399" stroke-width="2"/>
+    <text x="105" y="24" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">TÉNYLEGES JELENLÉTI NAP</text>
+    <line x1="0" y1="34" x2="210" y2="34" stroke="#34d399" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="12" y="50" fill="#e2e8f0" font-size="8.5">• Tényleges kezdés &amp; végzés</text>
+    <text x="12" y="64" fill="#94a3b8" font-size="8">• Igazolt ledolgozott munkaóra</text>
+    <text x="12" y="78" fill="#34d399" font-size="8">• Jóváhagyási státusz (Igazolva)</text>
+    <text x="12" y="92" fill="#94a3b8" font-size="8">• Túlóra / késés korrekció indok</text>
+    <text x="12" y="104" fill="#94a3b8" font-size="7.5">• Forrás: Tömeges igazolás / Kézi</text>
+  </g>
+
+  <!-- ENTITY 13: HAVI EXPORT (Right Bottom) -->
+  <g transform="translate(860, 640)">
+    <rect width="220" height="110" rx="8" fill="#0f172a"/>
+    <rect width="220" height="110" rx="8" fill="rgba(6,78,59,0.6)" stroke="#34d399" stroke-width="2"/>
+    <text x="110" y="24" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">HAVI MUNKAIDŐ-JEGYZÉK</text>
+    <line x1="0" y1="34" x2="220" y2="34" stroke="#34d399" stroke-width="0.8" stroke-opacity="0.6"/>
+    <text x="12" y="50" fill="#e2e8f0" font-size="8.5">• Hiteles Excel (.xlsx) &amp; PDF export</text>
+    <text x="12" y="64" fill="#94a3b8" font-size="8">• Dolgozónként külön munkalap</text>
+    <text x="12" y="78" fill="#34d399" font-size="8">• Terv (Beosztás) &amp; Tény (Jelenlét)</text>
+    <text x="12" y="92" fill="#94a3b8" font-size="8">• Pótlékok, távollétek, túlórák</text>
+    <text x="12" y="104" fill="#fbbf24" font-size="7.5">• Cégszerű aláírási blokk (NAV-biztos)</text>
+  </g>
+
+</svg>

@@ -1,0 +1,254 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1520 960" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&amp;display=swap');
+      text { font-family: 'JetBrains Mono', monospace; }
+    </style>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#1e293b" stroke-width="0.75" stroke-opacity="0.7"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#fb923c"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399"/>
+    </marker>
+    <marker id="arrow-violet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#a78bfa"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <rect width="100%" height="100%" fill="url(#grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(60, 42)">
+    <text x="0" y="0" fill="#f8fafc" font-size="20" font-weight="800">BÉRSZÁMFEJTÉSI HÍD ÉS HATÓSÁGI EXPORT ARCHITEKTÚRA</text>
+    <text x="0" y="24" fill="#94a3b8" font-size="12" font-weight="500">A lezárt jelenlétből generált automatikus aggregáció, pótlékszámítás és többcsatornás bérfeladás</text>
+  </g>
+
+  <!-- ==================== LEFT COLUMN: FORRÁS ADATOK ==================== -->
+  <g transform="translate(60, 95)">
+    <rect width="360" height="825" rx="10" fill="rgba(15, 23, 42, 0.75)" stroke="#38bdf8" stroke-width="1.5"/>
+    <rect width="360" height="42" rx="10" fill="rgba(12, 74, 110, 0.9)" stroke="#38bdf8" stroke-width="1"/>
+    <rect x="0" y="32" width="360" height="10" fill="rgba(12, 74, 110, 0.9)"/>
+    <text x="18" y="26" fill="#38bdf8" font-size="12" font-weight="700">1. HITELTES FORRÁSADATOK</text>
+    <text x="280" y="26" fill="#bae6fd" font-size="10" font-weight="600">Bemenet</text>
+
+    <!-- Source Box 1: Lezárt Jelenlét -->
+    <g transform="translate(16, 60)">
+      <rect width="328" height="130" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#0284c7" stroke-width="1.5"/>
+      <rect x="0" y="0" width="5" height="130" rx="2" fill="#0284c7"/>
+      <text x="16" y="22" fill="#38bdf8" font-size="11" font-weight="700">Lezárt Havi Jelenlét (Tény)</text>
+      <text x="16" y="42" fill="#cbd5e1" font-size="9.5">• Tényleges munkaidő kezdés / befejezés</text>
+      <text x="16" y="58" fill="#cbd5e1" font-size="9.5">• Levont kötelező munkaközi szünetek</text>
+      <text x="16" y="74" fill="#cbd5e1" font-size="9.5">• Tervezett vs. tényleges eltérések</text>
+      <text x="16" y="90" fill="#cbd5e1" font-size="9.5">• Tömegesen vagy egyedileg igazolt órák</text>
+      <text x="16" y="112" fill="#34d399" font-size="9" font-weight="600">✓ Zárolt, védett havi állapot</text>
+    </g>
+
+    <!-- Source Box 2: Távollét Törzs -->
+    <g transform="translate(16, 210)">
+      <rect width="328" height="145" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#a78bfa" stroke-width="1.5"/>
+      <rect x="0" y="0" width="5" height="145" rx="2" fill="#a78bfa"/>
+      <text x="16" y="22" fill="#c4b5fd" font-size="11" font-weight="700">Távollét Törzs (28 Mt. Jogcím)</text>
+      <text x="16" y="42" fill="#cbd5e1" font-size="9.5">• Fizetett rendes szabadságnapok (TL-01)</text>
+      <text x="16" y="58" fill="#cbd5e1" font-size="9.5">• Betegszabadság 1–15. napja (TL-02)</text>
+      <text x="16" y="74" fill="#cbd5e1" font-size="9.5">• Táppénz 15 nap feletti napjai (TL-03)</text>
+      <text x="16" y="90" fill="#cbd5e1" font-size="9.5">• Fizetés nélküli szabadságok (TL-15)</text>
+      <text x="16" y="106" fill="#cbd5e1" font-size="9.5">• Apasági, szülői és egyéb jogcímek</text>
+      <text x="16" y="128" fill="#c4b5fd" font-size="9" font-weight="600">✓ Automatikus 15 napos split motor</text>
+    </g>
+
+    <!-- Source Box 3: Szerződéses Törzsadat -->
+    <g transform="translate(16, 375)">
+      <rect width="328" height="140" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#059669" stroke-width="1.5"/>
+      <rect x="0" y="0" width="5" height="140" rx="2" fill="#059669"/>
+      <text x="16" y="22" fill="#34d399" font-size="11" font-weight="700">Dolgozói &amp; Céges Törzsadatok</text>
+      <text x="16" y="42" fill="#cbd5e1" font-size="9.5">• Adóazonosító jel, TAJ szám, törzsszám</text>
+      <text x="16" y="58" fill="#cbd5e1" font-size="9.5">• Szerződéses heti munkaidő (heti 40h/20h)</text>
+      <text x="16" y="74" fill="#cbd5e1" font-size="9.5">• Mt. besorolás (teljes / fiatalkorú / kismama)</text>
+      <text x="16" y="90" fill="#cbd5e1" font-size="9.5">• Munkaidőkeret kezdete és kerethossza</text>
+      <text x="16" y="106" fill="#cbd5e1" font-size="9.5">• Műszakpótlékra jogosító munkakör jelölés</text>
+      <text x="16" y="126" fill="#a7f3d0" font-size="9" font-weight="600">✓ eaisyBooks integrált cégtörzs</text>
+    </g>
+
+    <!-- Source summary info -->
+    <g transform="translate(16, 535)">
+      <rect width="328" height="270" rx="8" fill="rgba(30, 41, 59, 0.6)" stroke="#475569" stroke-width="1"/>
+      <text x="16" y="24" fill="#f8fafc" font-size="10.5" font-weight="700">AUDITÁLT ADATALAP</text>
+      <text x="16" y="44" fill="#cbd5e1" font-size="9.5">Minden forrásadat automatikusan</text>
+      <text x="16" y="60" fill="#cbd5e1" font-size="9.5">átmegy az Mt. szabályellenőrzésen.</text>
+      <text x="16" y="76" fill="#cbd5e1" font-size="9.5">Nem juthat el bérfeladásba jóváhagyatlan</text>
+      <text x="16" y="92" fill="#cbd5e1" font-size="9.5">vagy fel nem oldott adateltérés.</text>
+      
+      <line x1="16" y1="112" x2="312" y2="112" stroke="#334155" stroke-width="1"/>
+      <text x="16" y="132" fill="#38bdf8" font-size="9.5" font-weight="700">KETTŐS VÉDELEM:</text>
+      <text x="16" y="152" fill="#cbd5e1" font-size="9">1. Cégvezetői jóváhagyás</text>
+      <text x="16" y="170" fill="#cbd5e1" font-size="9">2. Könyvelőirodai operátori zárópecsét</text>
+      <text x="16" y="196" fill="#34d399" font-size="9.5" font-weight="700">ELŐNY A KÖNYVELŐNEK:</text>
+      <text x="16" y="216" fill="#cbd5e1" font-size="9">Nem kell telefonálgatni a hiányzó</text>
+      <text x="16" y="232" fill="#cbd5e1" font-size="9">napok és orvosi igazolások miatt.</text>
+    </g>
+  </g>
+
+  <!-- ==================== CENTER COLUMN: BÉRSZÁMFEJTÉSI HÍD MOTOR ==================== -->
+  <g transform="translate(450, 95)">
+    <rect width="560" height="825" rx="10" fill="rgba(15, 23, 42, 0.75)" stroke="#fb923c" stroke-width="1.5"/>
+    <rect width="560" height="42" rx="10" fill="rgba(124, 45, 18, 0.9)" stroke="#fb923c" stroke-width="1"/>
+    <rect x="0" y="32" width="560" height="10" fill="rgba(124, 45, 18, 0.9)"/>
+    <text x="20" y="26" fill="#fed7aa" font-size="12" font-weight="700">2. BÉRSZÁMFEJTÉSI HÍD (AGGREGÁTOR MOTOR)</text>
+    <text x="460" y="26" fill="#ffedd5" font-size="10" font-weight="600">Számítás</text>
+
+    <!-- Sub-module A: Alapbér & Munkaórák -->
+    <g transform="translate(18, 60)">
+      <rect width="524" height="110" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#0284c7" stroke-width="1.2"/>
+      <rect x="0" y="0" width="5" height="110" rx="2" fill="#0284c7"/>
+      <text x="18" y="22" fill="#38bdf8" font-size="11" font-weight="700">A) Alapbér és Munkaórák Elszámolása</text>
+      <text x="18" y="42" fill="#cbd5e1" font-size="9.5">• Havi hivatalos munkanapok száma (pl. 22 nap / 176 óra)</text>
+      <text x="18" y="58" fill="#cbd5e1" font-size="9.5">• Ténylegesen teljesített normál munkanapok és munkaórák</text>
+      <text x="18" y="74" fill="#cbd5e1" font-size="9.5">• Részmunkaidős és időbéresek tört havi munkaideje</text>
+      <text x="18" y="92" fill="#bae6fd" font-size="9" font-weight="600">Kimenet: Ledolgozott normál alapbér órák</text>
+    </g>
+
+    <!-- Sub-module B: Műszak- és Időpótlékok -->
+    <g transform="translate(18, 185)">
+      <rect width="524" height="130" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#fbbf24" stroke-width="1.2"/>
+      <rect x="0" y="0" width="5" height="130" rx="2" fill="#fbbf24"/>
+      <text x="18" y="22" fill="#fbbf24" font-size="11" font-weight="700">B) Mt. szerinti Törvényes Bérpótlékok Számítása</text>
+      <text x="18" y="42" fill="#cbd5e1" font-size="9.5">• <tspan fill="#fbbf24" font-weight="700">15% Éjszakai pótlék:</tspan> 22:00 – 06:00 közötti munkavégzés órái</text>
+      <text x="18" y="58" fill="#cbd5e1" font-size="9.5">• <tspan fill="#fbbf24" font-weight="700">30% Műszakpótlék:</tspan> Többműszakos munkarend, 18:00 – 06:00 közt</text>
+      <text x="18" y="74" fill="#cbd5e1" font-size="9.5">• <tspan fill="#fbbf24" font-weight="700">50% Vasárnapi pótlék:</tspan> Rendes vasárnapi műszak óraszáma</text>
+      <text x="18" y="90" fill="#cbd5e1" font-size="9.5">• <tspan fill="#fbbf24" font-weight="700">100% Munkaszüneti napi pótlék:</tspan> Piros betűs ünnepnapi munka</text>
+      <text x="18" y="112" fill="#fde68a" font-size="9" font-weight="600">Kimenet: Pontos pótlékalap óraszámok jogcímenként</text>
+    </g>
+
+    <!-- Sub-module C: Túlórák és Keret -->
+    <g transform="translate(18, 330)">
+      <rect width="524" height="120" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#ea580c" stroke-width="1.2"/>
+      <rect x="0" y="0" width="5" height="120" rx="2" fill="#ea580c"/>
+      <text x="18" y="22" fill="#fb923c" font-size="11" font-weight="700">C) Rendkívüli Munkaidő és Munkaidőkeret Zárás</text>
+      <text x="18" y="42" fill="#cbd5e1" font-size="9.5">• <tspan fill="#fb923c" font-weight="700">50% Munkanapi túlóra:</tspan> Napi beosztáson felüli rendkívüli munka</text>
+      <text x="18" y="58" fill="#cbd5e1" font-size="9.5">• <tspan fill="#fb923c" font-weight="700">100% Pihenőnapi túlóra:</tspan> Heti pihenőnapon elrendelt munkavégzés</text>
+      <text x="18" y="74" fill="#cbd5e1" font-size="9.5">• <tspan fill="#fb923c" font-weight="700">Kerettúlóra:</tspan> Munkaidőkeret végén jelentkező többlet órák</text>
+      <text x="18" y="90" fill="#cbd5e1" font-size="9.5">• <tspan fill="#fb923c" font-weight="700">Kerethiány (Állásidő):</tspan> Munkáltatói kötelező alapbérfizetés</text>
+      <text x="18" y="108" fill="#fed7aa" font-size="9" font-weight="600">Kimenet: Túlóra jogcímek és keret-elszámolási jegyzőkönyv</text>
+    </g>
+
+    <!-- Sub-module D: Távolléti Díjak és Kieső Idők -->
+    <g transform="translate(18, 465)">
+      <rect width="524" height="150" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#a78bfa" stroke-width="1.2"/>
+      <rect x="0" y="0" width="5" height="150" rx="2" fill="#a78bfa"/>
+      <text x="18" y="22" fill="#c4b5fd" font-size="11" font-weight="700">D) Távolléti Díjak, Betegszabadság és Kieső Idők</text>
+      <text x="18" y="42" fill="#cbd5e1" font-size="9.5">• <tspan fill="#34d399" font-weight="700">Fizetett szabadság (TL-01):</tspan> 100%-os távolléti díj alap</text>
+      <text x="18" y="58" fill="#cbd5e1" font-size="9.5">• <tspan fill="#34d399" font-weight="700">Betegszabadság (TL-02):</tspan> 15 napig 70%-os távolléti díj (Munkáltató)</text>
+      <text x="18" y="74" fill="#cbd5e1" font-size="9.5">• <tspan fill="#fb7185" font-weight="700">Táppénz (TL-03):</tspan> 15 nap felett KIESŐ IDŐ (NEAK, bérmentes)</text>
+      <text x="18" y="90" fill="#cbd5e1" font-size="9.5">• <tspan fill="#fb7185" font-weight="700">Fizetés nélküli szabadság (TL-15):</tspan> TB szünetelés napjai</text>
+      <text x="18" y="106" fill="#cbd5e1" font-size="9.5">• <tspan fill="#c4b5fd" font-weight="700">Apasági szabadság (TL-09):</tspan> Első 5 nap 100%, 6-10. nap 40%</text>
+      <text x="18" y="128" fill="#ddd6fe" font-size="9" font-weight="600">Kimenet: Jogcímenként szétválogatott távolléti óra- és naptábla</text>
+    </g>
+
+    <!-- Aggregator summary banner -->
+    <g transform="translate(18, 630)">
+      <rect width="524" height="175" rx="6" fill="rgba(30, 41, 59, 0.85)" stroke="#fb923c" stroke-width="1.5"/>
+      <text x="18" y="24" fill="#fed7aa" font-size="11" font-weight="700">STRUKTURÁLT BÉRFELADÁSI KÖTÉS (DATA CONTRACT)</text>
+      <text x="18" y="44" fill="#cbd5e1" font-size="9">Minden egyesített dolgozói rekord tartalmazza:</text>
+      <text x="18" y="60" fill="#cbd5e1" font-size="9">• Dolgozó azonosítók (Adóazonosító, TAJ, belső törzsszám)</text>
+      <text x="18" y="76" fill="#cbd5e1" font-size="9">• Alapbér órák, pótlék órák (15%, 30%, 50%, 100%)</text>
+      <text x="18" y="92" fill="#cbd5e1" font-size="9">• Rendkívüli munkaórák (50%, 100%)</text>
+      <text x="18" y="108" fill="#cbd5e1" font-size="9">• Távolléti napok és kieső napok jogcímkóddal</text>
+      <line x1="18" y1="122" x2="506" y2="122" stroke="#334155" stroke-width="1"/>
+      <text x="18" y="142" fill="#34d399" font-size="10" font-weight="700">NULLA MANUÁLIS KÖNYVELŐI SZÁMOLÁS VAGY ÁTÍRÁS</text>
+      <text x="18" y="158" fill="#cbd5e1" font-size="8.5">Közvetlen API integráció és szabványos import állományok</text>
+    </g>
+  </g>
+
+  <!-- ==================== RIGHT COLUMN: CÉLRENDSZEREK & EXPORTOK ==================== -->
+  <g transform="translate(1040, 95)">
+    <rect width="420" height="825" rx="10" fill="rgba(15, 23, 42, 0.75)" stroke="#059669" stroke-width="1.5"/>
+    <rect width="420" height="42" rx="10" fill="rgba(6, 78, 59, 0.9)" stroke="#059669" stroke-width="1"/>
+    <rect x="0" y="32" width="420" height="10" fill="rgba(6, 78, 59, 0.9)"/>
+    <text x="20" y="26" fill="#34d399" font-size="12" font-weight="700">3. HATÓSÁGI EXPORTOK &amp; CÉLRENDSZEREK</text>
+    <text x="350" y="26" fill="#a7f3d0" font-size="10" font-weight="600">Kimenet</text>
+
+    <!-- Output 1: Excel Jegyzék -->
+    <g transform="translate(16, 60)">
+      <rect width="388" height="135" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#34d399" stroke-width="1.5"/>
+      <rect x="0" y="0" width="5" height="135" rx="2" fill="#34d399"/>
+      <text x="16" y="22" fill="#34d399" font-size="11" font-weight="700">Hivatalos Munkaidő-jegyzék (.xlsx)</text>
+      <text x="16" y="42" fill="#cbd5e1" font-size="9.5">• <tspan fill="#34d399" font-weight="700">Dolgozónként külön fülön</tspan> a teljes havi adatsor</text>
+      <text x="16" y="58" fill="#cbd5e1" font-size="9.5">• „Beosztás” (terv) és „Jelenlét” (tény) egymás mellett</text>
+      <text x="16" y="74" fill="#cbd5e1" font-size="9.5">• Opcionális pótléksorok kapcsolóval</text>
+      <text x="16" y="90" fill="#cbd5e1" font-size="9.5">• Hivatalos cégszerű és dolgozói aláírási blokk</text>
+      <text x="16" y="112" fill="#a7f3d0" font-size="9" font-weight="600">✓ NAV és Munkaügyi Felügyelet által elfogadott</text>
+    </g>
+
+    <!-- Output 2: PDF Nyomtatvány -->
+    <g transform="translate(16, 210)">
+      <rect width="388" height="110" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#0284c7" stroke-width="1.2"/>
+      <rect x="0" y="0" width="5" height="110" rx="2" fill="#0284c7"/>
+      <text x="16" y="22" fill="#38bdf8" font-size="11" font-weight="700">Nyomtatható Havi Jelenléti Ív (.pdf)</text>
+      <text x="16" y="42" fill="#cbd5e1" font-size="9.5">• A4 fekvő formátumra optimalizált dizájn</text>
+      <text x="16" y="58" fill="#cbd5e1" font-size="9.5">• Havonta egyszeri cégszerű aláírásra kész</text>
+      <text x="16" y="74" fill="#cbd5e1" font-size="9.5">• Dolgozói egyedi karton és cégösszesítő nézet</text>
+      <text x="16" y="94" fill="#bae6fd" font-size="9" font-weight="600">✓ 1-kattintásos kötegelt nyomtatás</text>
+    </g>
+
+    <!-- Output 3: eaisyBooks Integráció -->
+    <g transform="translate(16, 335)">
+      <rect width="388" height="120" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#a78bfa" stroke-width="1.5"/>
+      <rect x="0" y="0" width="5" height="120" rx="2" fill="#a78bfa"/>
+      <text x="16" y="22" fill="#c4b5fd" font-size="11" font-weight="700">eaisyBooks Bérszámfejtés (Belső API)</text>
+      <text x="16" y="42" fill="#cbd5e1" font-size="9.5">• Közvetlen adatbázis kapcsolat (accounty)</text>
+      <text x="16" y="58" fill="#cbd5e1" font-size="9.5">• Bérszámfejtési ciklusok (payroll cycles) generálása</text>
+      <text x="16" y="74" fill="#cbd5e1" font-size="9.5">• Adó- és járulékszámítás azonnali indítása</text>
+      <text x="16" y="96" fill="#ddd6fe" font-size="9" font-weight="600">✓ Teljes platformon belüli automatizáció</text>
+    </g>
+
+    <!-- Output 4: Külső Bérprogram Exportok -->
+    <g transform="translate(16, 470)">
+      <rect width="388" height="145" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#fb923c" stroke-width="1.2"/>
+      <rect x="0" y="0" width="5" height="145" rx="2" fill="#fb923c"/>
+      <text x="16" y="22" fill="#fb923c" font-size="11" font-weight="700">Külső Bérprogramok Feladása</text>
+      <text x="16" y="42" fill="#cbd5e1" font-size="9.5">• <tspan fill="#f8fafc" font-weight="700">Kulcs-Bér:</tspan> Szabványos XML / CSV feladási fájl</text>
+      <text x="16" y="58" fill="#cbd5e1" font-size="9.5">• <tspan fill="#f8fafc" font-weight="700">Novitax:</tspan> Időbér és pótlék import állomány</text>
+      <text x="16" y="74" fill="#cbd5e1" font-size="9.5">• <tspan fill="#f8fafc" font-weight="700">BaBér / RLB / Egyéb:</tspan> Formátumspecifikus export</text>
+      <text x="16" y="90" fill="#cbd5e1" font-size="9.5">• T1041 kieső idő bejelentési lista export</text>
+      <text x="16" y="118" fill="#fed7aa" font-size="9" font-weight="600">✓ Megszünteti a párhuzamos manuális rögzítést</text>
+    </g>
+
+    <!-- Output 5: Visibill Dokumentumtár -->
+    <g transform="translate(16, 630)">
+      <rect width="388" height="175" rx="8" fill="rgba(30, 41, 59, 0.85)" stroke="#059669" stroke-width="1.5"/>
+      <text x="16" y="24" fill="#34d399" font-size="11" font-weight="700">VISIBILL KÖZPONTI DOKUMENTUMTÁR</text>
+      <text x="16" y="44" fill="#cbd5e1" font-size="9.5">• Automatikus archiválás: HR / Munkaidő kategória</text>
+      <text x="16" y="60" fill="#cbd5e1" font-size="9.5">• Verziózás (pl. Munkaido_2026_10_v1.xlsx)</text>
+      <text x="16" y="76" fill="#cbd5e1" font-size="9.5">• Visszatöltött cégszerűen aláírt PDF őrzése</text>
+      <text x="16" y="92" fill="#cbd5e1" font-size="9.5">• Audit napló: ki, mikor töltötte le és módosította</text>
+      <line x1="16" y1="108" x2="372" y2="108" stroke="#334155" stroke-width="1"/>
+      <text x="16" y="130" fill="#a7f3d0" font-size="9.5" font-weight="700">5 ÉVES TÖRVÉNYES MEGŐRZÉS</text>
+      <text x="16" y="148" fill="#cbd5e1" font-size="8.5">Bármikor előhívható NAV vagy bírósági vizsgálat esetén</text>
+    </g>
+  </g>
+
+  <!-- Connectors: Left to Center -->
+  <path d="M 420 180 L 450 180" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-cyan)"/>
+  <path d="M 420 280 L 450 280" stroke="#a78bfa" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-violet)"/>
+  <path d="M 420 440 L 450 440" stroke="#34d399" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-emerald)"/>
+
+  <!-- Connectors: Center to Right -->
+  <path d="M 1010 180 L 1040 180" stroke="#34d399" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-emerald)"/>
+  <path d="M 1010 380 L 1040 380" stroke="#a78bfa" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-violet)"/>
+  <path d="M 1010 520 L 1040 520" stroke="#fb923c" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-orange)"/>
+  <path d="M 1010 700 L 1040 700" stroke="#059669" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-emerald)"/>
+</svg>

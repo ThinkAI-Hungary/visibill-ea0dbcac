@@ -57,13 +57,19 @@ A cégvezető vagy pénzügyes semmilyen technikai felülettel, kóddal vagy be�
 
 ### B) Új Ügyfél / Cég Bekapcsolása (1 perc/cég)
 
-Amikor egy új ügyfél csatlakozik, csupán ennyi a teendő a ThinkAI Drive-on:
-
-1. A központi `Visibill Számlák` mappában hozz létre egy új mappát a cég **adószámával** (pl. `12345678-1-42` vagy `12345678 - Kovacs Bt`).
+#### 1. Normál Visibill PROD cég bekötése:
+1. A központi `Visibill` mappában hozz létre egy új mappát a cég **adószámával** (pl. `12345678-1-42` vagy `12345678 - Kovacs Bt`).
 2. Kattints a jobb gombbal a mappára → **Megosztás** (Share).
 3. Írd be a cégvezető / pénzügyes Google email címét, és add meg neki a **Szerkesztő** (Editor) jogosultságot.
 
-**Ennyi!** Az ügyfél azonnal megkapja az értesítést a Drive-ban, behúzza a számláit, a script pedig az adószám alapján automatikusan tudni fogja, hogy melyik céghez tartozik, felküldi a Visibillbe a PGMQ sorba, a worker feldolgozza, a Drive-on pedig átkerül a `Feldolgozva` mappába.
+#### 2. Thinkerman projekt cég bekötése:
+1. A központi `Visibill` mappában nyisd meg a **`Thinkerman`** nevű mappát (ha még nincs, hozd létre).
+2. Ezen a `Thinkerman` mappán belül hozz létre egy új mappát a Thinkerman cég **adószámával** (pl. `24383691-2-06 - Medixwell Kft.` vagy `14921029-2-06`).
+3. Oszd meg az ügyféllel Szerkesztő joggal.
+
+A script az automatikus intelligens útválasztásnak köszönhetően felismeri:
+* Ami a `Visibill` gyökérben van -> a **Visibill PROD** adatbázisba és a `visibill-worker-prod` workerhez kerül.
+* Ami a `Thinkerman` mappában van -> a **Thinkerman Supabase** adatbázisba és a `visibill-worker-thinkerman` workerhez kerül!
 
 ---
 

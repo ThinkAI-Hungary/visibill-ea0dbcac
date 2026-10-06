@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0f172a; }
+      .grid-pattern { stroke: #1e293b; stroke-width: 1; stroke-opacity: 0.35; }
+      .title { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 20px; font-weight: 700; fill: #f8fafc; }
+      .subtitle { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 13px; fill: #94a3b8; }
+      .header-title { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 14px; font-weight: 700; fill: #e2e8f0; }
+      .txt { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 12px; fill: #cbd5e1; }
+      .txt-bold { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 12px; font-weight: 700; fill: #f8fafc; }
+      .txt-sm { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 11px; fill: #94a3b8; }
+      .box { rx: 8px; stroke-width: 1.5; }
+      .b-border { stroke: #334155; fill: #1e293b; }
+      .b-card { stroke: #334155; fill: #0f172a; rx: 8px; }
+      .b-step { stroke: #0284c7; fill: #1e293b; stroke-width: 1.5; rx: 8px; }
+      .arrow { stroke: #38bdf8; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#38bdf8" />
+    </marker>
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" class="grid-pattern" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="760" class="bg" />
+  <rect width="1200" height="760" fill="url(#grid)" />
+
+  <text x="50" y="45" class="title">PRD-04 · Távollét-kezelés és Partnerhelyettesítési Folyamat</text>
+  <text x="50" y="68" class="subtitle">Jogcímek rögzítése, 15 napos betegszabadság split automatika és helyetteskereső UI</text>
+
+  <!-- Left Side: 15-Day Sick Leave Split -->
+  <g transform="translate(50, 95)">
+    <rect width="520" height="610" class="box b-border" />
+    <text x="24" y="35" class="header-title">15 NAPOS BETEGSZABADSÁG → TÁPPÉNZ FELÜLETI MOTOR</text>
+
+    <!-- Context Explanation -->
+    <rect x="24" y="55" width="470" height="85" class="b-card" />
+    <text x="40" y="80" class="txt-bold" fill="#38bdf8">Mt. 126. § szerinti Éves Korlát Figyelése</text>
+    <text x="40" y="100" class="txt-sm">• Évente max. 15 munkanap betegszabadság (Munkáltató fizeti: 70%)</text>
+    <text x="40" y="118" class="txt-sm">• 16. munkanaptól: Táppénz (NEAK folyósítás, munkáltatói kieső idő)</text>
+
+    <!-- Visual Progress Bar Simulation -->
+    <g transform="translate(24, 160)">
+      <text x="0" y="20" class="txt-bold">Tóth Béla · 2026. évi betegszabadság számláló</text>
+      <rect x="0" y="32" width="470" height="24" rx="6" fill="#0f172a" stroke="#475569" />
+      <!-- Used 12 days -->
+      <rect x="0" y="32" width="376" height="24" rx="6" fill="#d97706" />
+      <text x="120" y="48" font-family="'JetBrains Mono', monospace" font-size="11px" font-weight="700" fill="#fff">Felhasznált: 12 / 15 munkanap</text>
+      <rect x="376" y="32" width="94" height="24" fill="#047857" rx="0" />
+      <text x="390" y="48" font-family="'JetBrains Mono', monospace" font-size="10px" font-weight="700" fill="#fff">3 nap maradt</text>
+    </g>
+
+    <!-- Scenario Card -->
+    <g transform="translate(24, 250)">
+      <rect width="470" height="180" class="b-card" stroke="#f59e0b" />
+      <text x="20" y="28" class="txt-bold" fill="#fbbf24">Példa: 10 napos egybefüggő orvosi igazolás</text>
+      <text x="20" y="48" class="txt-sm">Időszak: Szept. 7 – Szept. 18 (10 munkanap)</text>
+
+      <g transform="translate(20, 65)">
+        <rect width="430" height="42" rx="4" fill="#78350f" stroke="#f59e0b" />
+        <text x="14" y="20" class="txt-bold" fill="#fef3c7">Első 3 nap (Szept 7-9): BETEGSZABADSÁG (70%)</text>
+        <text x="14" y="34" class="txt-sm" fill="#fef3c7">→ Ezzel kimerül a 2026-os 15 napos keret (12 + 3 = 15 nap)</text>
+      </g>
+
+      <g transform="translate(20, 118)">
+        <rect width="430" height="42" rx="4" fill="#1e3a8a" stroke="#3b82f6" />
+        <text x="14" y="20" class="txt-bold" fill="#bfdbfe">További 7 nap (Szept 10-18): TÁPPÉNZ (Kieső idő)</text>
+        <text x="14" y="34" class="txt-sm" fill="#bfdbfe">→ Automatikus kettéválasztás az exportban és bérfeladásban</text>
+      </g>
+    </g>
+
+    <!-- Manual Override Note -->
+    <g transform="translate(24, 455)">
+      <rect width="470" height="130" class="b-card" />
+      <text x="20" y="28" class="txt-bold" fill="#34d399">Operátori Felülbírálási Lehetőség</text>
+      <text x="20" y="50" class="txt-sm">• Ha a dolgozó év közben lépett be, és hozott igazolást máshonnan</text>
+      <text x="20" y="68" class="txt-sm">• Baleseti táppénz (1. naptól táppénz, nem terheli a 15 napot)</text>
+      <text x="20" y="86" class="txt-sm">• Gyermekápolási táppénz (GYÁP - külön jogcím)</text>
+      <text x="20" y="104" class="txt-sm">• Kattintható toggle: „Automatikus split kikapcsolása”</text>
+    </g>
+  </g>
+
+  <!-- Right Side: Partner Replacement UI Flow -->
+  <g transform="translate(610, 95)">
+    <rect width="540" height="610" class="box b-border" />
+    <text x="24" y="35" class="header-title">PARTNERHELYETTESÍTÉSI MUNKAIDŐ-ÁTRUHÁZÁS</text>
+
+    <!-- Step 1 -->
+    <g transform="translate(30, 60)">
+      <rect width="480" height="90" class="b-step" />
+      <text x="20" y="28" class="txt-bold" fill="#38bdf8">1. Távollét Felvitele Miatt Üresen Maradt Műszakok</text>
+      <text x="20" y="48" class="txt-sm">A rendszer detektálja: Tóth Béla hiányzása miatt a Nagy Sándor</text>
+      <text x="20" y="64" class="txt-sm">utcai üzletben Szept 7-9 napokon a létszámigény 4/5 főre esik.</text>
+      <text x="20" y="80" class="txt-sm" fill="#f87171">⚠️ Figyelmeztetés: Minimális létszámhiány lépett fel!</text>
+    </g>
+
+    <line x1="270" y1="150" x2="270" y2="180" class="arrow" />
+
+    <!-- Step 2 -->
+    <g transform="translate(30, 180)">
+      <rect width="480" height="95" class="b-step" stroke="#a78bfa" />
+      <text x="20" y="28" class="txt-bold" fill="#a78bfa">2. Intelligens Helyetteskereső Algoritmus</text>
+      <text x="20" y="48" class="txt-sm">A rendszer szűri az elérhető kollégákat:</text>
+      <text x="20" y="64" class="txt-sm">• 1. Elsődleges helyettesítő partnerek (Munkavállaló karton „Párok”)</text>
+      <text x="20" y="80" class="txt-sm">• 2. Azonos munkakörű dolgozók, akik aznap pihenőnapon vannak</text>
+      <text x="20" y="94" class="txt-sm">• 3. Mt. ellenőrzés: A beugró nem lépi-e túl a heti 48 órát?</text>
+    </g>
+
+    <line x1="270" y1="275" x2="270" y2="305" class="arrow" />
+
+    <!-- Step 3 -->
+    <g transform="translate(30, 305)">
+      <rect width="480" height="100" class="b-step" stroke="#fbbf24" />
+      <text x="20" y="28" class="txt-bold" fill="#fbbf24">3. Helyettes Kiválasztó Drawer / Modal</text>
+      <text x="20" y="48" class="txt-sm">Felkínált jelöltek rangsorolva:</text>
+      <text x="20" y="66" class="txt-sm">• 🟢 Kiss Gábor (Partner, ráér, heti óraszáma: 32/40h)</text>
+      <text x="20" y="82" class="txt-sm">• 🟡 Varga Zoltán (Ráér, de 11h pihenője épp határon van)</text>
+      <text x="20" y="98" class="txt-sm">• 🔴 Szabó Péter (Kizárva: aznap szabadságon van)</text>
+    </g>
+
+    <line x1="270" y1="405" x2="270" y2="435" class="arrow" />
+
+    <!-- Step 4 -->
+    <g transform="translate(30, 435)">
+      <rect width="480" height="90" class="b-step" stroke="#34d399" />
+      <text x="20" y="28" class="txt-bold" fill="#34d399">4. Egykattintásos Műszakátruházás &amp; Audit</text>
+      <text x="20" y="48" class="txt-sm">Az operátor jóváhagyja Kiss Gábor kijelölését:</text>
+      <text x="20" y="64" class="txt-sm">• A műszak átkerül Kiss Gábor sorába „Helyettesítés” jelvénnyel</text>
+      <text x="20" y="80" class="txt-sm">• Automatikus e-mail / push értesítés generálódik a dolgozónak</text>
+    </g>
+  </g>
+</svg>

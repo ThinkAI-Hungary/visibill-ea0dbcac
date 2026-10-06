@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 860" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&amp;display=swap');
+      text { font-family: 'JetBrains Mono', monospace; }
+    </style>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#1e293b" stroke-width="0.75" stroke-opacity="0.7"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24"/>
+    </marker>
+    <marker id="arrow-rose" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#fb7185"/>
+    </marker>
+    <marker id="arrow-violet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#a78bfa"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <rect width="100%" height="100%" fill="url(#grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(60, 42)">
+    <text x="0" y="0" fill="#f8fafc" font-size="20" font-weight="800">TÁVOLLÉT-BEJELENTÉS ÉS HELYETTESÍTÉSI FOLYAMAT</text>
+    <text x="0" y="24" fill="#94a3b8" font-size="12" font-weight="500">Munkavállalói hiányzás, automatikus naptárblokkolás, létszámhiány-riasztás, partnerhelyettesítés és bérhíd</text>
+  </g>
+
+  <!-- Lifeline coordinate definitions:
+       D (Dolgozó): cx = 130
+       O (Operátor): cx = 380
+       R (Visibill Beosztás Modul): cx = 660
+       M (Mt. Szabálymotor): cx = 950
+       B (Bérszámfejtési Híd): cx = 1200
+  -->
+
+  <!-- Lifelines -->
+  <line x1="130" y1="140" x2="130" y2="760" stroke="#334155" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="380" y1="140" x2="380" y2="760" stroke="#334155" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="660" y1="140" x2="660" y2="760" stroke="#334155" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="950" y1="140" x2="950" y2="760" stroke="#334155" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="1200" y1="140" x2="1200" y2="760" stroke="#334155" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+  <!-- Actor Header Boxes -->
+  <!-- 1. Dolgozó -->
+  <g transform="translate(45, 95)">
+    <rect width="170" height="46" rx="6" fill="rgba(8, 51, 68, 0.6)" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="85" y="22" fill="#f8fafc" font-size="11" font-weight="700" text-anchor="middle">Munkavállaló</text>
+    <text x="85" y="36" fill="#38bdf8" font-size="9.5" text-anchor="middle">(Molnár Péter)</text>
+  </g>
+
+  <!-- 2. Operátor -->
+  <g transform="translate(295, 95)">
+    <rect width="170" height="46" rx="6" fill="rgba(6, 78, 59, 0.6)" stroke="#34d399" stroke-width="1.5"/>
+    <text x="85" y="22" fill="#f8fafc" font-size="11" font-weight="700" text-anchor="middle">Operátor</text>
+    <text x="85" y="36" fill="#34d399" font-size="9.5" text-anchor="middle">(Kati - Könyvelőiroda)</text>
+  </g>
+
+  <!-- 3. Visibill Beosztás Modul -->
+  <g transform="translate(575, 95)">
+    <rect width="170" height="46" rx="6" fill="rgba(120, 53, 15, 0.6)" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="85" y="22" fill="#f8fafc" font-size="11" font-weight="700" text-anchor="middle">Visibill Modul</text>
+    <text x="85" y="36" fill="#fbbf24" font-size="9.5" text-anchor="middle">(Beosztás &amp; Jelenlét)</text>
+  </g>
+
+  <!-- 4. Mt. Szabálymotor -->
+  <g transform="translate(865, 95)">
+    <rect width="170" height="46" rx="6" fill="rgba(136, 19, 55, 0.6)" stroke="#fb7185" stroke-width="1.5"/>
+    <text x="85" y="22" fill="#f8fafc" font-size="11" font-weight="700" text-anchor="middle">Mt. Szabálymotor</text>
+    <text x="85" y="36" fill="#fb7185" font-size="9.5" text-anchor="middle">(Munkaügyi Szabályok)</text>
+  </g>
+
+  <!-- 5. Bérszámfejtési Híd -->
+  <g transform="translate(1115, 95)">
+    <rect width="170" height="46" rx="6" fill="rgba(76, 29, 149, 0.6)" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="85" y="22" fill="#f8fafc" font-size="11" font-weight="700" text-anchor="middle">Bérszámfejtési Híd</text>
+    <text x="85" y="36" fill="#a78bfa" font-size="9.5" text-anchor="middle">(eaisyBooks / Export)</text>
+  </g>
+
+  <!-- ==================== ACTIVATION BARS ==================== -->
+  <!-- D activation: y=165 to 195 -->
+  <rect x="125" y="170" width="10" height="30" rx="2" fill="rgba(56, 189, 248, 0.4)" stroke="#38bdf8" stroke-width="1"/>
+  <!-- O activation: y=185 to 240, and 450 to 500 -->
+  <rect x="375" y="185" width="10" height="60" rx="2" fill="rgba(52, 211, 153, 0.4)" stroke="#34d399" stroke-width="1"/>
+  <rect x="375" y="440" width="10" height="65" rx="2" fill="rgba(52, 211, 153, 0.4)" stroke="#34d399" stroke-width="1"/>
+  <!-- R activation: y=230 to 425, and 485 to 640 -->
+  <rect x="655" y="235" width="10" height="190" rx="2" fill="rgba(251, 191, 36, 0.4)" stroke="#fbbf24" stroke-width="1"/>
+  <rect x="655" y="490" width="10" height="155" rx="2" fill="rgba(251, 191, 36, 0.4)" stroke="#fbbf24" stroke-width="1"/>
+  <!-- M activation: y=530 to 585 -->
+  <rect x="945" y="535" width="10" height="50" rx="2" fill="rgba(251, 113, 133, 0.4)" stroke="#fb7185" stroke-width="1"/>
+  <!-- B activation: y=685 to 745 -->
+  <rect x="1195" y="695" width="10" height="50" rx="2" fill="rgba(167, 139, 250, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+
+
+  <!-- ==================== MESSAGES & INTERACTIONS ==================== -->
+
+  <!-- 1. Dolgozó -> Operátor -->
+  <g transform="translate(0, 185)">
+    <circle cx="130" cy="0" r="10" fill="#0284c7" stroke="#38bdf8" stroke-width="1"/>
+    <text x="130" y="4" fill="#ffffff" font-size="9" font-weight="700" text-anchor="middle">1</text>
+    <line x1="140" y1="0" x2="370" y2="0" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arrow-cyan)"/>
+    <text x="255" y="-9" fill="#e2e8f0" font-size="10" font-weight="600" text-anchor="middle">Megbetegedés jelzése (okt. 12–14.)</text>
+  </g>
+
+  <!-- 2. Operátor -> Modul -->
+  <g transform="translate(0, 240)">
+    <circle cx="380" cy="0" r="10" fill="#059669" stroke="#34d399" stroke-width="1"/>
+    <text x="380" y="4" fill="#ffffff" font-size="9" font-weight="700" text-anchor="middle">2</text>
+    <line x1="390" y1="0" x2="650" y2="0" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-emerald)"/>
+    <text x="520" y="-9" fill="#e2e8f0" font-size="10" font-weight="600" text-anchor="middle">Új távollét: Molnár Péter, Betegszabadság</text>
+  </g>
+
+  <!-- 3. Modul Self-check: 15 napos keret -->
+  <g transform="translate(0, 290)">
+    <circle cx="660" cy="0" r="10" fill="#d97706" stroke="#fbbf24" stroke-width="1"/>
+    <text x="660" y="4" fill="#ffffff" font-size="9" font-weight="700" text-anchor="middle">3</text>
+    <path d="M 665 0 L 730 0 L 730 26 L 670 26" fill="none" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+    <text x="740" y="10" fill="#fbbf24" font-size="10" font-weight="600">Keretellenőrzés:</text>
+    <text x="740" y="24" fill="#cbd5e1" font-size="9">15 napból 11 nap még elérhető</text>
+  </g>
+
+  <!-- 4. Modul Self-check: Rács-blokkolás -->
+  <g transform="translate(0, 345)">
+    <circle cx="660" cy="0" r="10" fill="#d97706" stroke="#fbbf24" stroke-width="1"/>
+    <text x="660" y="4" fill="#ffffff" font-size="9" font-weight="700" text-anchor="middle">4</text>
+    <path d="M 665 0 L 730 0 L 730 26 L 670 26" fill="none" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+    <text x="740" y="10" fill="#fb7185" font-size="10" font-weight="600">Automatikus Rács-blokkolás:</text>
+    <text x="740" y="24" fill="#cbd5e1" font-size="9">Okt. 12-14 kék sáv, műszak törölve</text>
+  </g>
+
+  <!-- 5. Modul -> Operátor Riasztás -->
+  <g transform="translate(0, 410)">
+    <circle cx="660" cy="0" r="10" fill="#e11d48" stroke="#fb7185" stroke-width="1"/>
+    <text x="660" y="4" fill="#ffffff" font-size="9" font-weight="700" text-anchor="middle">5</text>
+    <line x1="650" y1="0" x2="390" y2="0" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-rose)"/>
+    <text x="520" y="-12" fill="#fb7185" font-size="10" font-weight="700" text-anchor="middle">Riasztás: Okt. 13-án a Nagy Sándor üzletben</text>
+    <text x="520" y="1" fill="#fca5a5" font-size="9" text-anchor="middle">hiányzik 1 fő a minimális létszámigényhez!</text>
+  </g>
+
+  <!-- 6. Operátor -> Modul: Műszak áthelyezése partnerhez -->
+  <g transform="translate(0, 485)">
+    <circle cx="380" cy="0" r="10" fill="#059669" stroke="#34d399" stroke-width="1"/>
+    <text x="380" y="4" fill="#ffffff" font-size="9" font-weight="700" text-anchor="middle">6</text>
+    <line x1="390" y1="0" x2="650" y2="0" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-emerald)"/>
+    <text x="520" y="-9" fill="#e2e8f0" font-size="10" font-weight="600" text-anchor="middle">Műszak hozzárendelése partnerhez: Szabó Anna</text>
+  </g>
+
+  <!-- 7. Modul -> Mt. Motor validáció -->
+  <g transform="translate(0, 540)">
+    <circle cx="660" cy="0" r="10" fill="#d97706" stroke="#fbbf24" stroke-width="1"/>
+    <text x="660" y="4" fill="#ffffff" font-size="9" font-weight="700" text-anchor="middle">7</text>
+    <line x1="670" y1="0" x2="940" y2="0" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+    <text x="805" y="-9" fill="#e2e8f0" font-size="10" font-weight="600" text-anchor="middle">Szabó Anna pihenőidő &amp; heti 48h ellenőrzése</text>
+  </g>
+
+  <!-- 8. Mt. Motor -> Modul válasz -->
+  <g transform="translate(0, 580)">
+    <circle cx="950" cy="0" r="10" fill="#059669" stroke="#34d399" stroke-width="1"/>
+    <text x="950" y="4" fill="#ffffff" font-size="9" font-weight="700" text-anchor="middle">8</text>
+    <line x1="940" y1="0" x2="670" y2="0" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-emerald)"/>
+    <text x="805" y="-9" fill="#34d399" font-size="10" font-weight="600" text-anchor="middle">Szabályos! 11h pihenő biztosított, nincs túllépés</text>
+  </g>
+
+  <!-- 9. Modul -> Operátor Visszaigazolás -->
+  <g transform="translate(0, 630)">
+    <circle cx="660" cy="0" r="10" fill="#059669" stroke="#34d399" stroke-width="1"/>
+    <text x="660" y="4" fill="#ffffff" font-size="9" font-weight="700" text-anchor="middle">9</text>
+    <line x1="650" y1="0" x2="390" y2="0" stroke="#34d399" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-emerald)"/>
+    <text x="520" y="-9" fill="#34d399" font-size="10" font-weight="600" text-anchor="middle">Műszak sikeresen pótolva Szabó Annával</text>
+  </g>
+
+  <!-- 10. Frame: Hó Végi Bérfeladás -->
+  <g transform="translate(580, 680)">
+    <!-- Alt frame box -->
+    <rect x="-10" y="0" width="670" height="65" rx="6" fill="rgba(76, 29, 149, 0.2)" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="4,2"/>
+    <rect x="-10" y="0" width="120" height="20" rx="4" fill="rgba(76, 29, 149, 0.8)"/>
+    <text x="50" y="14" fill="#f8fafc" font-size="9.5" font-weight="700" text-anchor="middle">Hó Végi Zárás</text>
+    
+    <!-- 10. Modul -> Bérhíd -->
+    <g transform="translate(0, 42)">
+      <circle cx="80" cy="0" r="10" fill="#7c3aed" stroke="#a78bfa" stroke-width="1"/>
+      <text x="80" y="4" fill="#ffffff" font-size="9" font-weight="700" text-anchor="middle">10</text>
+      <line x1="90" y1="0" x2="610" y2="0" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow-violet)"/>
+      <text x="350" y="-8" fill="#e2e8f0" font-size="10" font-weight="600" text-anchor="middle">Zárt jelenlét átadása: 3 nap betegszabadság (70%-os távolléti díj alap)</text>
+    </g>
+  </g>
+
+  <!-- Bottom Summary Note -->
+  <g transform="translate(45, 785)">
+    <rect width="1240" height="48" rx="6" fill="rgba(30, 41, 59, 0.7)" stroke="#334155" stroke-width="1"/>
+    <circle cx="20" cy="24" r="7" fill="#0284c7"/>
+    <text x="16" y="28" fill="#ffffff" font-size="9" font-weight="700">i</text>
+    <text x="38" y="21" fill="#e2e8f0" font-size="10" font-weight="600">Üzleti Biztonság és Kölcsönös Védelem:</text>
+    <text x="38" y="37" fill="#94a3b8" font-size="9.5">A betegszabadság rögzítése azonnal megelőzi a létszámhiányból vagy téves műszakbeosztásból adódó munkaügyi bírságot és elszámolási vitát.</text>
+  </g>
+</svg>

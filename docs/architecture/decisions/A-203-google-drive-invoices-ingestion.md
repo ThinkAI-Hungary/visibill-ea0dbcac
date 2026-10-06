@@ -44,6 +44,12 @@ A `customer-api/index.ts` korábbi megvalósítása hardkódolva `contentType: "
 - **API szinten:** A script minden fájlhoz egyedi `Idempotency-Key` fejlécet küld (`gdrive_<fileId>_<timestamp>`), amelyet a Customer REST API az `api_idempotency_keys` táblában ellenőriz ([A-117](./A-117-customer-rest-api-and-multi-company-keys.md)).
 - **Adatbázis szinten:** Az [A-023](./A-023-upload-dedup-protection.md) SHA-256 hash indexe és a trigger dedup safety net megvédi a rendszert a redundáns feldolgozástól.
 
+### 5. Multi-Project Útválasztás (Visibill PROD vs. Thinkerman Sharding)
+A rendszer támogatja az izolált adatbázis-példányok közötti intelligens szétosztást:
+- A Google Drive gyökérmappában közvetlenül elhelyezett cégmappák a **Visibill PROD** adatbázisba kerülnek (`vxxgvdlqvvchtlmqnrqf`, 84 cég, `visibill-worker-prod`).
+- A gyökérmappán belüli **`Thinkerman`** nevű gyűjtőmappába helyezett cégmappák a **Thinkerman Supabase** adatbázisba kerülnek (`zgnukiocrnfnlwkbcssi`, 5 cég, `visibill-worker-thinkerman`).
+- Mindkét projekt saját dedikált `customer-api` Edge Functionnel és Master API kulccsal rendelkezik, így a feldolgozásuk és PGMQ soraik teljesen függetlenek maradnak.
+
 ---
 
 ## Consequences

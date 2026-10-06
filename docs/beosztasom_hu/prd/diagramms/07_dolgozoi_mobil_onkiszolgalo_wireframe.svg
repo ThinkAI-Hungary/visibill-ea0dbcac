@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0f172a; }
+      .grid-pattern { stroke: #1e293b; stroke-width: 1; stroke-opacity: 0.35; }
+      .title { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 20px; font-weight: 700; fill: #f8fafc; }
+      .subtitle { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 13px; fill: #94a3b8; }
+      .header-title { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 14px; font-weight: 700; fill: #e2e8f0; }
+      .txt { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 12px; fill: #cbd5e1; }
+      .txt-bold { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 12px; font-weight: 700; fill: #f8fafc; }
+      .txt-sm { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 11px; fill: #94a3b8; }
+      .box { rx: 8px; stroke-width: 1.5; }
+      .b-border { stroke: #334155; fill: #1e293b; }
+      .b-phone { stroke: #475569; stroke-width: 3; fill: #020617; rx: 32px; }
+      .b-card { stroke: #334155; fill: #1e293b; rx: 8px; }
+      .b-shift { fill: #0369a1; stroke: #38bdf8; rx: 8px; }
+      .b-btn { fill: #0284c7; rx: 8px; }
+    </style>
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" class="grid-pattern" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="760" class="bg" />
+  <rect width="1200" height="760" fill="url(#grid)" />
+
+  <text x="50" y="45" class="title">PRD-08 · Dolgozói Önkiszolgáló Portál (PWA &amp; Mobil Wireframe)</text>
+  <text x="50" y="68" class="subtitle">Személyes beosztásnézet, műszakcsere indítása és mobil távollét-igénylés</text>
+
+  <!-- Left: Mobile Phone Wireframe -->
+  <g transform="translate(100, 95)">
+    <rect width="360" height="630" class="b-phone" />
+    <!-- Speaker & Camera notch -->
+    <rect x="130" y="10" width="100" height="18" rx="9" fill="#0f172a" />
+    <circle cx="210" cy="19" r="4" fill="#334155" />
+
+    <!-- Mobile Screen Container -->
+    <g transform="translate(20, 38)">
+      <!-- App Topbar -->
+      <rect width="320" height="45" rx="6" fill="#0f172a" />
+      <text x="14" y="28" font-family="'JetBrains Mono', monospace" font-size="13px" font-weight="700" fill="#f8fafc">BEOSZTÁSOM</text>
+      <text x="280" y="28" font-size="16px">🔔</text>
+
+      <!-- Worker Profile Header -->
+      <rect y="55" width="320" height="65" class="b-card" />
+      <circle cx="30" cy="87" r="16" fill="#38bdf8" />
+      <text x="55" y="82" class="txt-bold">Kovács István</text>
+      <text x="55" y="98" class="txt-sm">Pultos · Szeptemberi órák: 128 / 176h</text>
+
+      <!-- Mini Week Strip -->
+      <g transform="translate(0, 130)">
+        <rect width="320" height="45" rx="6" fill="#0f172a" />
+        <text x="15" y="28" class="txt-sm" fill="#94a3b8">H 1</text>
+        <text x="60" y="28" class="txt-sm" fill="#94a3b8">K 2</text>
+        <rect x="95" y="8" width="40" height="30" rx="6" fill="#0284c7" />
+        <text x="105" y="28" class="txt-bold" fill="#fff">Sze 3</text>
+        <text x="155" y="28" class="txt-sm" fill="#94a3b8">Cs 4</text>
+        <text x="205" y="28" class="txt-sm" fill="#94a3b8">P 5</text>
+        <text x="250" y="28" class="txt-sm" fill="#a5b4fc">Szo 6</text>
+        <text x="290" y="28" class="txt-sm" fill="#a5b4fc">V 7</text>
+      </g>
+
+      <!-- Today's Shift Card -->
+      <g transform="translate(0, 185)">
+        <rect width="320" height="120" class="b-shift" />
+        <text x="16" y="28" font-family="'JetBrains Mono', monospace" font-size="12px" font-weight="700" fill="#93c5fd">MAI MŰSZAKOD</text>
+        <text x="16" y="55" font-family="'JetBrains Mono', monospace" font-size="20px" font-weight="700" fill="#fff">08:00 - 16:30</text>
+        <text x="16" y="78" class="txt-sm" fill="#e0f2fe">Nagy Sándor utcai üzlet · Pultos</text>
+        <text x="16" y="98" class="txt-sm" fill="#e0f2fe">Szünet: 30 perc · Nettó: 8.0 óra</text>
+      </g>
+
+      <!-- Tomorrow's Shift Card -->
+      <g transform="translate(0, 315)">
+        <rect width="320" height="85" class="b-card" />
+        <text x="16" y="25" class="txt-sm" fill="#94a3b8">HOLNAPI MŰSZAK (Csütörtök)</text>
+        <text x="16" y="48" font-family="'JetBrains Mono', monospace" font-size="16px" font-weight="700" fill="#f8fafc">08:00 - 16:30</text>
+        <text x="16" y="68" class="txt-sm">Nagy Sándor utcai üzlet · Pultos</text>
+      </g>
+
+      <!-- Quick Action Mobile Buttons -->
+      <g transform="translate(0, 410)">
+        <rect width="155" height="45" class="b-btn" fill="#0284c7" />
+        <text x="16" y="27" font-family="'JetBrains Mono', monospace" font-size="11px" font-weight="700" fill="#fff">🔄 Műszakcsere</text>
+
+        <rect x="165" y="0" width="155" height="45" class="b-btn" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1" />
+        <text x="180" y="27" font-family="'JetBrains Mono', monospace" font-size="11px" font-weight="700" fill="#93c5fd">🏖️ Szabadságkérés</text>
+      </g>
+
+      <!-- Bottom Nav Bar -->
+      <g transform="translate(0, 520)">
+        <rect width="320" height="45" rx="6" fill="#0f172a" />
+        <text x="30" y="28" font-size="14px">📅</text>
+        <text x="110" y="28" font-size="14px">📊</text>
+        <text x="190" y="28" font-size="14px">💬</text>
+        <text x="270" y="28" font-size="14px">⚙️</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Right Side: Interaction Flow & Capabilities -->
+  <g transform="translate(520, 95)">
+    <rect width="630" height="630" class="box b-border" />
+    <text x="30" y="35" class="header-title">ÖNKISZOLGÁLÓ FUNKCIÓK &amp; DOLGOZÓI MUNKAFOLYAMATOK</text>
+
+    <!-- Flow 1: Shift Swap -->
+    <g transform="translate(30, 55)">
+      <rect width="570" height="165" rx="6" fill="#0f172a" stroke="#0284c7" />
+      <text x="20" y="28" class="txt-bold" fill="#38bdf8">1. Műszakcsere Kérelem (Shift Swap Workflow)</text>
+      <text x="20" y="50" class="txt-sm">• Dolgozó kiválasztja az elcserélni kívánt saját műszakját</text>
+      <text x="20" y="68" class="txt-sm">• Kiválasztja a célkollégát (vagy nyílt csereigényként bedobja a falra)</text>
+      <text x="20" y="86" class="txt-sm">• A kolléga mobil értesítést kap: „Elfogadom” / „Elutasítom”</text>
+      <text x="20" y="104" class="txt-sm">• Elfogadás után az Operátornak jóváhagyási kérelem jelenik meg</text>
+      <text x="20" y="122" class="txt-sm">• Szabálymotor ellenőrzi: a csere után nem sérül-e a 11h pihenőidő!</text>
+      <text x="20" y="142" class="txt-bold" fill="#34d399">→ Jóváhagyáskor a naptárrács automatikusan frissül mindkét dolgozónál</text>
+    </g>
+
+    <!-- Flow 2: Leave Request -->
+    <g transform="translate(30, 240)">
+      <rect width="570" height="165" rx="6" fill="#0f172a" stroke="#8b5cf6" />
+      <text x="20" y="28" class="txt-bold" fill="#a78bfa">2. Szabadságigény Leadása (Leave Request Workflow)</text>
+      <text x="20" y="50" class="txt-sm">• Dátumválasztó naptár (tól–ig munkanapok kijelölése)</text>
+      <text x="20" y="68" class="txt-sm">• Éves szabadságegyenleg azonnali kijelzése (Kivehető: 21 nap · Kivett: 13 nap)</text>
+      <text x="20" y="86" class="txt-sm">• Megjegyzés mező (pl. „Családi nyaralás”)</text>
+      <text x="20" y="104" class="txt-sm">• Beküldés után Operátori jóváhagyási queue-ba kerül</text>
+      <text x="20" y="122" class="txt-sm">• Operátor jóváhagyáskor automatikusan létrejön a távolléti rekord</text>
+      <text x="20" y="142" class="txt-bold" fill="#34d399">→ Dolgozó push/e-mail értesítést kap az elfogadásról</text>
+    </g>
+
+    <!-- Flow 3: Availability & Preferences -->
+    <g transform="translate(30, 425)">
+      <rect width="570" height="175" rx="6" fill="#0f172a" stroke="#10b981" />
+      <text x="20" y="28" class="txt-bold" fill="#34d399">3. Dolgozói Rendelkezésre Állás (Jelentkezés a Hónapra)</text>
+      <text x="20" y="50" class="txt-sm">• Ha a cég engedélyezi: dolgozó a hónap előtt bejelölheti, mikor ér rá</text>
+      <text x="20" y="68" class="txt-sm">• Preferált időszakok: „Inkább délelőtt”, „Csak hétvégén”</text>
+      <text x="20" y="86" class="txt-sm">• Kizárt napok: vizsgaidőszak, tanulmányok, magánélet</text>
+      <text x="20" y="104" class="txt-sm">• A Beosztáskezelő automatikus tervezője figyelembe veszi a preferenciákat</text>
+      <text x="20" y="122" class="txt-sm">• Ha az operátor mégis kizárt napra osztja be, figyelmeztető badge jelenik meg</text>
+      <text x="20" y="145" class="txt-bold" fill="#38bdf8">→ Minimális adminisztrációs súrlódás a dolgozók és a vezetők között</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,314 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1520 960" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&amp;display=swap');
+      text { font-family: 'JetBrains Mono', monospace; }
+    </style>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#1e293b" stroke-width="0.75" stroke-opacity="0.7"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24"/>
+    </marker>
+    <marker id="arrow-rose" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#fb7185"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <rect width="100%" height="100%" fill="url(#grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(60, 42)">
+    <text x="0" y="0" fill="#f8fafc" font-size="20" font-weight="800">MUNKAÜGYI SZABÁLYMOTOR ARCHITEKTÚRA ÉS DÖNTÉSI HIERARCHIA</text>
+    <text x="0" y="24" fill="#94a3b8" font-size="12" font-weight="500">3-szintű szabályöröklés, valós idejű Mt. validáció és 4-fokozatú súlyossági besorolás a munkaügyi bírságok megelőzésére</text>
+  </g>
+
+  <!-- ==================== LEFT COLUMN: 3-SZINTŰ ÖRÖKLÉS ==================== -->
+  <g transform="translate(60, 95)">
+    <!-- Column container -->
+    <rect width="430" height="825" rx="10" fill="rgba(15, 23, 42, 0.75)" stroke="#38bdf8" stroke-width="1.5"/>
+    <rect width="430" height="42" rx="10" fill="rgba(12, 74, 110, 0.9)" stroke="#38bdf8" stroke-width="1"/>
+    <rect x="0" y="32" width="430" height="10" fill="rgba(12, 74, 110, 0.9)"/>
+    <text x="20" y="26" fill="#38bdf8" font-size="12" font-weight="700">1. HÁROMSZINTŰ SZABÁLYÖRÖKLÉS</text>
+    <text x="360" y="26" fill="#bae6fd" font-size="10" font-weight="600">Bemenet</text>
+
+    <!-- Tier 1: Cég szint -->
+    <g transform="translate(18, 60)">
+      <rect width="394" height="145" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#0284c7" stroke-width="1.5"/>
+      <rect x="0" y="0" width="6" height="145" rx="3" fill="#0284c7"/>
+      <text x="18" y="24" fill="#38bdf8" font-size="11.5" font-weight="700">1. SZINT: Vállalkozás Globális Beállításai</text>
+      <text x="18" y="42" fill="#cbd5e1" font-size="9.5">• Alapértelmezett napi munkaközi szünet (pl. 30 perc)</text>
+      <text x="18" y="58" fill="#cbd5e1" font-size="9.5">• Mt. szabályellenőrzés globális be/kikapcsolása</text>
+      <text x="18" y="74" fill="#cbd5e1" font-size="9.5">• Általános munkarend definíciók és műszaksablonok</text>
+      <text x="18" y="90" fill="#cbd5e1" font-size="9.5">• Negatív szabadságegyenleg engedélyezése/tiltása</text>
+      <text x="18" y="106" fill="#cbd5e1" font-size="9.5">• Telephelyek és minimális üzletenkénti létszámigény</text>
+      <text x="18" y="128" fill="#64748b" font-size="8.5" font-style="italic">Alapbeállítás: Minden munkavállalóra érvényes, hacsak felül nem bírálják</text>
+    </g>
+
+    <!-- Inheritance Arrow 1 -> 2 -->
+    <path d="M 215 205 L 215 240" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow-cyan)"/>
+    <text x="225" y="226" fill="#38bdf8" font-size="9" font-weight="600">öröklődik &amp; felülbírálható</text>
+
+    <!-- Tier 2: Dolgozó szint -->
+    <g transform="translate(18, 240)">
+      <rect width="394" height="175" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#38bdf8" stroke-width="1.5"/>
+      <rect x="0" y="0" width="6" height="175" rx="3" fill="#38bdf8"/>
+      <text x="18" y="24" fill="#38bdf8" font-size="11.5" font-weight="700">2. SZINT: Munkavállaló Egyedi Adatlapja</text>
+      <text x="18" y="42" fill="#cbd5e1" font-size="9.5">• Mt. védelmi besorolás: Teljes / Fiatalkorú / Kismama</text>
+      <text x="18" y="58" fill="#cbd5e1" font-size="9.5">• Szerződéses heti munkaidő (pl. 20h, 30h, 40h)</text>
+      <text x="18" y="74" fill="#cbd5e1" font-size="9.5">• Napi munkaidő korlátok: egyedi minimum és maximum</text>
+      <text x="18" y="90" fill="#cbd5e1" font-size="9.5">• Napi pihenőidő minimum (alap: 11h, egyedi: 8h KSZ alapján)</text>
+      <text x="18" y="106" fill="#cbd5e1" font-size="9.5">• Munkaidőkeret paraméterek: kezdőnap és ciklus hossza</text>
+      <text x="18" y="122" fill="#cbd5e1" font-size="9.5">• Egyedi dolgozói preferenciák (pl. kizárt vasárnapok)</text>
+      <text x="18" y="138" fill="#cbd5e1" font-size="9.5">• Partner dolgozók kijelölése helyettesítéshez</text>
+      <text x="18" y="158" fill="#64748b" font-size="8.5" font-style="italic">Szerződéses szint: Felülbírálja a céges globális szabályt</text>
+    </g>
+
+    <!-- Inheritance Arrow 2 -> 3 -->
+    <path d="M 215 415 L 215 450" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow-cyan)"/>
+    <text x="225" y="436" fill="#38bdf8" font-size="9" font-weight="600">öröklődik &amp; felülbírálható</text>
+
+    <!-- Tier 3: Időszak szint -->
+    <g transform="translate(18, 450)">
+      <rect width="394" height="150" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#fbbf24" stroke-width="1.5"/>
+      <rect x="0" y="0" width="6" height="150" rx="3" fill="#fbbf24"/>
+      <text x="18" y="24" fill="#fbbf24" font-size="11.5" font-weight="700">3. SZINT: Adott Beosztási Időszak Szabályai</text>
+      <text x="18" y="42" fill="#cbd5e1" font-size="9.5">• Havi naptárrácsban elérhető időszaki szabálypanel</text>
+      <text x="18" y="58" fill="#cbd5e1" font-size="9.5">• Szezonális és kampányidőszaki egyedi eltérések</text>
+      <text x="18" y="74" fill="#cbd5e1" font-size="9.5">• Ünnepnapok és áthelyezett munkanapok naptára</text>
+      <text x="18" y="90" fill="#cbd5e1" font-size="9.5">• Időszaki létszámigény finomhangolás telephelyenként</text>
+      <text x="18" y="106" fill="#cbd5e1" font-size="9.5">• Beosztástervezet zárási pecsét (7 napos határidő)</text>
+      <text x="18" y="132" font-size="8.5" fill="#fde68a" font-style="italic">Időszaki szint: A legmagasabb prioritású helyi szabálykészlet</text>
+    </g>
+
+    <!-- Bottom summary box -->
+    <g transform="translate(18, 620)">
+      <rect width="394" height="185" rx="6" fill="rgba(30, 41, 59, 0.6)" stroke="#475569" stroke-width="1"/>
+      <text x="16" y="24" fill="#f8fafc" font-size="10.5" font-weight="700">DÖNTÉSI ELSŐBBSÉG (PRECEDENCIA):</text>
+      <text x="16" y="46" fill="#cbd5e1" font-size="9.5">1. <tspan fill="#fbbf24" font-weight="700">Időszaki Szabály</tspan> (adott hónapra felülír mindent)</text>
+      <text x="16" y="66" fill="#cbd5e1" font-size="9.5">2. <tspan fill="#38bdf8" font-weight="700">Dolgozói Szerződés</tspan> (ha nincs időszaki eltérés)</text>
+      <text x="16" y="86" fill="#cbd5e1" font-size="9.5">3. <tspan fill="#0284c7" font-weight="700">Céges Globális Szabály</tspan> (alapértelmezett keret)</text>
+      <line x1="16" y1="104" x2="378" y2="104" stroke="#334155" stroke-width="1"/>
+      <text x="16" y="124" fill="#fb7185" font-size="9.5" font-weight="700">ABSZOLÚT KORLÁT: KÓGENS MT. SZABÁLYOK</text>
+      <text x="16" y="142" fill="#cbd5e1" font-size="9">A Munka Törvénykönyve kógens (eltérést nem engedő)</text>
+      <text x="16" y="156" fill="#cbd5e1" font-size="9">szabályait (pl. fiatalkorú éjszakai munka) semelyik</text>
+      <text x="16" y="170" fill="#cbd5e1" font-size="9">szint nem bírálhatja felül!</text>
+    </g>
+  </g>
+
+  <!-- ==================== CENTER COLUMN: SZABÁLYMOTOR FOLYAMAT ==================== -->
+  <g transform="translate(520, 95)">
+    <rect width="470" height="825" rx="10" fill="rgba(15, 23, 42, 0.75)" stroke="#fbbf24" stroke-width="1.5"/>
+    <rect width="470" height="42" rx="10" fill="rgba(120, 53, 15, 0.9)" stroke="#fbbf24" stroke-width="1"/>
+    <rect x="0" y="32" width="470" height="10" fill="rgba(120, 53, 15, 0.9)"/>
+    <text x="20" y="26" fill="#fbbf24" font-size="12" font-weight="700">2. VALÓS IDEJŰ VALIDÁCIÓS MOTOR</text>
+    <text x="380" y="26" fill="#fde68a" font-size="10" font-weight="600">Kiértékelés</text>
+
+    <!-- Trigger Events -->
+    <g transform="translate(18, 60)">
+      <rect width="434" height="66" rx="6" fill="rgba(30, 41, 59, 0.85)" stroke="#475569" stroke-width="1"/>
+      <text x="16" y="20" fill="#f8fafc" font-size="10" font-weight="700">KIVÁLTÓ ESEMÉNYEK (TRIGGEREK):</text>
+      <text x="16" y="38" fill="#cbd5e1" font-size="9">• Műszak beírása, másolása (Ctrl+V) vagy áthelyezése a rácsban</text>
+      <text x="16" y="52" fill="#cbd5e1" font-size="9">• Távollét rögzítése • Automatikus generálás • Jelenlét jóváhagyás</text>
+    </g>
+
+    <!-- Arrow down to catalog -->
+    <path d="M 235 126 L 235 150" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+
+    <!-- Rule Evaluation Blocks -->
+    <g transform="translate(18, 150)">
+      <rect width="434" height="440" rx="8" fill="rgba(15, 23, 42, 0.95)" stroke="#64748b" stroke-width="1.2"/>
+      <text x="16" y="24" fill="#fbbf24" font-size="11" font-weight="700">ELLENŐRZÖTT MT. ÉS EGYEDI SZABÁLYOK:</text>
+
+      <!-- Rule 1: Távollét -->
+      <g transform="translate(12, 36)">
+        <rect width="410" height="38" rx="4" fill="rgba(30, 41, 59, 0.7)" stroke="#fb7185" stroke-width="1"/>
+        <circle cx="16" cy="19" r="6" fill="#e11d48"/>
+        <text x="32" y="17" fill="#f8fafc" font-size="9.5" font-weight="700">RULE-01: Távollét Ütközés &amp; Jogviszony Határ</text>
+        <text x="32" y="29" fill="#94a3b8" font-size="8.5">Szabadság, betegség vagy inaktív jogviszony idejére munka nem adható</text>
+      </g>
+
+      <!-- Rule 2: Pihenőidő 11h -->
+      <g transform="translate(12, 80)">
+        <rect width="410" height="38" rx="4" fill="rgba(30, 41, 59, 0.7)" stroke="#fb923c" stroke-width="1"/>
+        <circle cx="16" cy="19" r="6" fill="#ea580c"/>
+        <text x="32" y="17" fill="#f8fafc" font-size="9.5" font-weight="700">RULE-06: Napi Pihenőidő Műszakok Között</text>
+        <text x="32" y="29" fill="#94a3b8" font-size="8.5">Legalább 11 összefüggő óra pihenő a zárás és a következő nyitás közt</text>
+      </g>
+
+      <!-- Rule 3: Napi és Heti max -->
+      <g transform="translate(12, 124)">
+        <rect width="410" height="38" rx="4" fill="rgba(30, 41, 59, 0.7)" stroke="#fb923c" stroke-width="1"/>
+        <circle cx="16" cy="19" r="6" fill="#ea580c"/>
+        <text x="32" y="17" fill="#f8fafc" font-size="9.5" font-weight="700">RULE-03 &amp; 05: Napi Max (12h) és Heti Max (48h)</text>
+        <text x="32" y="29" fill="#94a3b8" font-size="8.5">Napi maximális munkaidő és heti 48 órás összesített korlát betartása</text>
+      </g>
+
+      <!-- Rule 4: 6 munkanap + pihenő -->
+      <g transform="translate(12, 168)">
+        <rect width="410" height="38" rx="4" fill="rgba(30, 41, 59, 0.7)" stroke="#fb923c" stroke-width="1"/>
+        <circle cx="16" cy="19" r="6" fill="#ea580c"/>
+        <text x="32" y="17" fill="#f8fafc" font-size="9.5" font-weight="700">RULE-07 &amp; 08: 6 Munkanap utáni Pihenőnap és Heti 48h</text>
+        <text x="32" y="29" fill="#94a3b8" font-size="8.5">Max. 6 egymást követő munkanap; heti 48 órás egybefüggő pihenő</text>
+      </g>
+
+      <!-- Rule 5: Vasárnapi pihenőnap -->
+      <g transform="translate(12, 212)">
+        <rect width="410" height="38" rx="4" fill="rgba(30, 41, 59, 0.7)" stroke="#fb923c" stroke-width="1"/>
+        <circle cx="16" cy="19" r="6" fill="#ea580c"/>
+        <text x="32" y="17" fill="#f8fafc" font-size="9.5" font-weight="700">RULE-09: Havi Legalább Egy Vasárnapi Pihenőnap</text>
+        <text x="32" y="29" fill="#94a3b8" font-size="8.5">Egyenlőtlen munkaidőben kötelező havi legalább 1 vasárnap pihenőnap</text>
+      </g>
+
+      <!-- Rule 6: Védett dolgozók -->
+      <g transform="translate(12, 256)">
+        <rect width="410" height="38" rx="4" fill="rgba(30, 41, 59, 0.7)" stroke="#fb7185" stroke-width="1"/>
+        <circle cx="16" cy="19" r="6" fill="#e11d48"/>
+        <text x="32" y="17" fill="#f8fafc" font-size="9.5" font-weight="700">RULE-10 &amp; 11: Fiatalkorúak és Kismamák Védelme</text>
+        <text x="32" y="29" fill="#94a3b8" font-size="8.5">Éjszakai munka és túlóra abszolút tiltása, 12h pihenő fiatalkorúaknál</text>
+      </g>
+
+      <!-- Rule 7: Munkaidőkeret -->
+      <g transform="translate(12, 300)">
+        <rect width="410" height="38" rx="4" fill="rgba(30, 41, 59, 0.7)" stroke="#38bdf8" stroke-width="1"/>
+        <circle cx="16" cy="19" r="6" fill="#0284c7"/>
+        <text x="32" y="17" fill="#f8fafc" font-size="9.5" font-weight="700">RULE-12: Munkaidőkeret Óraegyenleg Számláló</text>
+        <text x="32" y="29" fill="#94a3b8" font-size="8.5">Ciklus óráinak göngyölítése, túlóra / állásidő lebegtetés megelőzése</text>
+      </g>
+
+      <!-- Rule 8: Egyedi igények -->
+      <g transform="translate(12, 344)">
+        <rect width="410" height="38" rx="4" fill="rgba(30, 41, 59, 0.7)" stroke="#fbbf24" stroke-width="1"/>
+        <circle cx="16" cy="19" r="6" fill="#d97706"/>
+        <text x="32" y="17" fill="#f8fafc" font-size="9.5" font-weight="700">RULE-13: Dolgozói Preferenciák és Kizárt Napok</text>
+        <text x="32" y="29" fill="#94a3b8" font-size="8.5">Dolgozói kívánságok (nem szeretne kedden délelőtt dolgozni)</text>
+      </g>
+
+      <!-- Rule 9: Létszámigény -->
+      <g transform="translate(12, 388)">
+        <rect width="410" height="38" rx="4" fill="rgba(30, 41, 59, 0.7)" stroke="#34d399" stroke-width="1"/>
+        <circle cx="16" cy="19" r="6" fill="#059669"/>
+        <text x="32" y="17" fill="#f8fafc" font-size="9.5" font-weight="700">RULE-14: Telephelyi Minimális Létszámfedezet</text>
+        <text x="32" y="29" fill="#94a3b8" font-size="8.5">Üzletenként meghatározott min. létszám hiánya esetén riasztás</text>
+      </g>
+    </g>
+
+    <!-- Arrow down to status header -->
+    <path d="M 235 590 L 235 620" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+
+    <!-- Dynamic Status Banner Simulation -->
+    <g transform="translate(18, 620)">
+      <rect width="434" height="185" rx="6" fill="rgba(15, 23, 42, 0.95)" stroke="#334155" stroke-width="1"/>
+      <text x="16" y="24" fill="#f8fafc" font-size="10.5" font-weight="700">RÁCS FEJLÉC ÉLŐ VISSZAJELZÉSE:</text>
+      
+      <!-- Green State -->
+      <rect x="16" y="38" width="402" height="32" rx="4" fill="rgba(6, 78, 59, 0.5)" stroke="#34d399" stroke-width="1"/>
+      <circle cx="32" cy="54" r="5" fill="#34d399"/>
+      <text x="46" y="58" fill="#a7f3d0" font-size="9" font-weight="700">„A beosztás megfelel a munkaügyi előírásoknak”</text>
+
+      <!-- Amber/Red Warning State -->
+      <rect x="16" y="78" width="402" height="42" rx="4" fill="rgba(120, 53, 15, 0.5)" stroke="#fbbf24" stroke-width="1"/>
+      <circle cx="32" cy="99" r="5" fill="#fbbf24"/>
+      <text x="46" y="95" fill="#fde68a" font-size="8.5" font-weight="700">„1 szabálysértés található a beosztásban:”</text>
+      <text x="46" y="110" fill="#fef08a" font-size="8">Kovács János (okt. 14.): A napi pihenőidő kevesebb mint 11 óra (9h)</text>
+
+      <text x="16" y="142" fill="#cbd5e1" font-size="8.5">• A szabálymotor aszinkron, mikromásodperces késleltetésű</text>
+      <text x="16" y="156" fill="#cbd5e1" font-size="8.5">• A vágólapos többcellás műveleteket azonnal kötegben vizsgálja</text>
+      <text x="16" y="170" fill="#cbd5e1" font-size="8.5">• Zárási pecsét előtt kötelező érvényű záróauditot futtat</text>
+    </g>
+  </g>
+
+  <!-- ==================== RIGHT COLUMN: 4 SÚLYOSSÁGI SZINT ==================== -->
+  <g transform="translate(1015, 95)">
+    <rect width="445" height="825" rx="10" fill="rgba(15, 23, 42, 0.75)" stroke="#e11d48" stroke-width="1.5"/>
+    <rect width="445" height="42" rx="10" fill="rgba(136, 19, 55, 0.9)" stroke="#e11d48" stroke-width="1"/>
+    <rect x="0" y="32" width="445" height="10" fill="rgba(136, 19, 55, 0.9)"/>
+    <text x="20" y="26" fill="#fecdd3" font-size="12" font-weight="700">3. SÚLYOSSÁGI SZINTEK ÉS REAKCIÓ</text>
+    <text x="375" y="26" fill="#fecdd3" font-size="10" font-weight="600">Hatás</text>
+
+    <!-- Level 1: TILTÁS (Red) -->
+    <g transform="translate(18, 60)">
+      <rect width="409" height="125" rx="8" fill="rgba(136, 19, 55, 0.35)" stroke="#fb7185" stroke-width="1.5"/>
+      <rect width="409" height="30" rx="8" fill="rgba(136, 19, 55, 0.8)"/>
+      <rect x="0" y="20" width="409" height="10" fill="rgba(136, 19, 55, 0.8)"/>
+      <text x="16" y="20" fill="#ffffff" font-size="11" font-weight="700">🔴 1. TILTÁS (BLOKKOLÓ)</text>
+      <text x="16" y="48" fill="#fb7185" font-size="10" font-weight="700">Rendszerválasz: A művelet nem menthető el</text>
+      <text x="16" y="66" fill="#cbd5e1" font-size="9">• Távollét idejére nem hozható létre műszak</text>
+      <text x="16" y="82" fill="#cbd5e1" font-size="9">• Fiatalkorúnak éjszakai műszak vagy túlóra nem adható</text>
+      <text x="16" y="98" fill="#cbd5e1" font-size="9">• Kilépett dolgozó a kilépési dátum után nem osztható be</text>
+      <text x="16" y="114" fill="#fca5a5" font-size="8.5" font-style="italic">Felülbírálás: NINCS felülbírálás. Kógens törvényi tiltás.</text>
+    </g>
+
+    <!-- Level 2: HIBA (Orange) -->
+    <g transform="translate(18, 200)">
+      <rect width="409" height="150" rx="8" fill="rgba(124, 45, 18, 0.35)" stroke="#fb923c" stroke-width="1.5"/>
+      <rect width="409" height="30" rx="8" fill="rgba(124, 45, 18, 0.8)"/>
+      <rect x="0" y="20" width="409" height="10" fill="rgba(124, 45, 18, 0.8)"/>
+      <text x="16" y="20" fill="#ffffff" font-size="11" font-weight="700">🟠 2. HIBA (MUNKAJOGI SÉRELEM)</text>
+      <text x="16" y="48" fill="#fb923c" font-size="10" font-weight="700">Rendszerválasz: Piros szegély, hibalista a fejlécben</text>
+      <text x="16" y="66" fill="#cbd5e1" font-size="9">• Pihenőidő kevesebb mint 11 óra • Heti 48 óra túllépés</text>
+      <text x="16" y="82" fill="#cbd5e1" font-size="9">• 7. egymást követő munkanap • Havi vasárnap hiánya</text>
+      <text x="16" y="98" fill="#fed7aa" font-size="9">• Menthető, de <tspan font-weight="700">kötelező szöveges indoklást</tspan> kér a rendszer</text>
+      <text x="16" y="114" fill="#fed7aa" font-size="9">• A rendszer audit naplóban (ki, mikor, miért) rögzíti</text>
+      <text x="16" y="132" fill="#fdba74" font-size="8.5" font-style="italic">Cél: A munkáltató felelősségvállalásának dokumentálása bírság esetén</text>
+    </g>
+
+    <!-- Level 3: FIGYELMEZTETÉS (Yellow) -->
+    <g transform="translate(18, 365)">
+      <rect width="409" height="125" rx="8" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+      <rect width="409" height="30" rx="8" fill="rgba(120, 53, 15, 0.75)"/>
+      <rect x="0" y="20" width="409" height="10" fill="rgba(120, 53, 15, 0.75)"/>
+      <text x="16" y="20" fill="#ffffff" font-size="11" font-weight="700">🟡 3. FIGYELMEZTETÉS (PREFERENCIA)</text>
+      <text x="16" y="48" fill="#fbbf24" font-size="10" font-weight="700">Rendszerválasz: Sárga ikon, nem akadályozza a mentést</text>
+      <text x="16" y="66" fill="#cbd5e1" font-size="9">• Munkavállaló egyedi kívánságának sérülése</text>
+      <text x="16" y="82" fill="#cbd5e1" font-size="9">• Telephelyi minimális létszámhiány egy adott idősávban</text>
+      <text x="16" y="98" fill="#cbd5e1" font-size="9">• Negatív szabadságkeretbe lépés jóváhagyott céges beállításnál</text>
+      <text x="16" y="114" fill="#fde68a" font-size="8.5" font-style="italic">Nem munkajogi bírság, hanem szervezési kompromisszum</text>
+    </g>
+
+    <!-- Level 4: TÁJÉKOZTATÁS (Cyan / Blue) -->
+    <g transform="translate(18, 505)">
+      <rect width="409" height="120" rx="8" fill="rgba(8, 51, 68, 0.3)" stroke="#38bdf8" stroke-width="1.5"/>
+      <rect width="409" height="30" rx="8" fill="rgba(8, 51, 68, 0.75)"/>
+      <rect x="0" y="20" width="409" height="10" fill="rgba(8, 51, 68, 0.75)"/>
+      <text x="16" y="20" fill="#ffffff" font-size="11" font-weight="700">🔵 4. TÁJÉKOZTATÁS (KALKULÁCIÓ)</text>
+      <text x="16" y="48" fill="#38bdf8" font-size="10" font-weight="700">Rendszerválasz: Statisztikai adatok és óraszámlálók</text>
+      <text x="16" y="66" fill="#cbd5e1" font-size="9">• Munkaidőkeret aktuális lebegő egyenlege (+/- óra)</text>
+      <text x="16" y="82" fill="#cbd5e1" font-size="9">• Éjszakai pótlékra jogosító órák száma (22:00–06:00)</text>
+      <text x="16" y="98" fill="#cbd5e1" font-size="9">• Vasárnapi műszakpótlékra jogosult órák összege</text>
+      <text x="16" y="112" fill="#bae6fd" font-size="8.5" font-style="italic">Segíti az operatív tervezést és a bérköltségek előrejelzését</text>
+    </g>
+
+    <!-- Bottom Shield / Audit Guarantee -->
+    <g transform="translate(18, 640)">
+      <rect width="409" height="165" rx="6" fill="rgba(30, 41, 59, 0.85)" stroke="#059669" stroke-width="1.5"/>
+      <rect width="409" height="28" rx="6" fill="rgba(6, 78, 59, 0.9)"/>
+      <text x="16" y="19" fill="#a7f3d0" font-size="10" font-weight="700">NAV ÉS MUNKAÜGYI AUDITVÉDELEM</text>
+      
+      <text x="16" y="48" fill="#e2e8f0" font-size="9">• <tspan fill="#34d399" font-weight="700">Zárolt állapot védelem:</tspan> Hó lezárása után a beosztás</text>
+      <text x="16" y="62" fill="#cbd5e1" font-size="9">csak hivatalos indoklással nyitható újra</text>
+      <text x="16" y="80" fill="#e2e8f0" font-size="9">• <tspan fill="#34d399" font-weight="700">Verziózás (v1, v2):</tspan> Minden exportált és aláírt</text>
+      <text x="16" y="94" fill="#cbd5e1" font-size="9">munkaidő-jegyzék eredeti példánya megőrződik</text>
+      <text x="16" y="112" fill="#e2e8f0" font-size="9">• <tspan fill="#34d399" font-weight="700">Teljes visszakövethetőség:</tspan> Ki hagyta jóvá a hibát,</text>
+      <text x="16" y="126" fill="#cbd5e1" font-size="9">milyen hivatkozással és mikor</text>
+      <text x="16" y="150" fill="#34d399" font-size="9" font-weight="700">0 Ft KISZABOTT MUNKAÜGYI BÍRSÁG CÉLKITŰZÉS</text>
+    </g>
+  </g>
+
+  <!-- Connectors from Left to Center -->
+  <path d="M 490 280 L 520 280" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-cyan)"/>
+  <path d="M 490 520 L 520 520" stroke="#fbbf24" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-amber)"/>
+
+  <!-- Connectors from Center to Right -->
+  <path d="M 990 240 L 1015 240" stroke="#fb7185" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-rose)"/>
+  <path d="M 990 380 L 1015 380" stroke="#fbbf24" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-amber)"/>
+  <path d="M 990 550 L 1015 550" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-cyan)"/>
+</svg>

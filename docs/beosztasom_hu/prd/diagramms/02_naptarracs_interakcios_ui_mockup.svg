@@ -1,0 +1,266 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0f172a; }
+      .grid-pattern { stroke: #1e293b; stroke-width: 1; stroke-opacity: 0.35; }
+      .title { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 20px; font-weight: 700; fill: #f8fafc; }
+      .subtitle { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 13px; fill: #94a3b8; }
+      .header-title { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+      .txt { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 12px; fill: #cbd5e1; }
+      .txt-bold { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 12px; font-weight: 700; fill: #f8fafc; }
+      .txt-sm { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 10px; fill: #94a3b8; }
+      .txt-badge { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 10px; font-weight: 700; fill: #ffffff; }
+      .txt-shift { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 11px; font-weight: 700; fill: #f8fafc; }
+      .txt-shift-sub { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 9px; fill: #93c5fd; }
+      .box { rx: 6px; stroke-width: 1.5; }
+      .b-border { stroke: #334155; fill: #1e293b; }
+      .b-cell { stroke: #334155; fill: #0f172a; }
+      .b-cell-weekend { stroke: #334155; fill: #1e1b4b; fill-opacity: 0.4; }
+      .b-shift { fill: #0284c7; stroke: #38bdf8; stroke-width: 1; rx: 4px; }
+      .b-shift-amber { fill: #d97706; stroke: #fcd34d; stroke-width: 1; rx: 4px; }
+      .b-absence { fill: #1e3a8a; stroke: #60a5fa; stroke-width: 1; rx: 4px; }
+      .b-selected { stroke: #38bdf8; stroke-width: 2; stroke-dasharray: 4 2; fill: #0284c7; fill-opacity: 0.2; }
+    </style>
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" class="grid-pattern" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="760" class="bg" />
+  <rect width="1200" height="760" fill="url(#grid)" />
+
+  <text x="50" y="45" class="title">PRD-02 · Havi Beosztástervező Naptárrács UI Mockup és Interakciók</text>
+  <text x="50" y="68" class="subtitle">Fejléc vezérlők, dolgozói swimlane sorok, cellaműveletek, vágólap és létszámigény összesítő</text>
+
+  <!-- Control & Filter Toolbar -->
+  <g transform="translate(50, 88)">
+    <rect width="1100" height="52" class="box b-border" />
+    <!-- Filters -->
+    <rect x="15" y="10" width="150" height="32" rx="4" fill="#0f172a" stroke="#475569" />
+    <text x="25" y="30" class="txt">🏢 Összes üzlet ▾</text>
+
+    <rect x="175" y="10" width="150" height="32" rx="4" fill="#0f172a" stroke="#475569" />
+    <text x="185" y="30" class="txt">💼 Munkakörök ▾</text>
+
+    <rect x="335" y="10" width="130" height="32" rx="4" fill="#0f172a" stroke="#475569" />
+    <text x="345" y="30" class="txt">🎨 Színezés: Cég ▾</text>
+
+    <!-- Quick action buttons -->
+    <rect x="490" y="10" width="130" height="32" rx="4" fill="#0284c7" stroke="#38bdf8" />
+    <text x="502" y="30" class="txt-bold">⚡ Auto-kitöltés</text>
+
+    <rect x="630" y="10" width="110" height="32" rx="4" fill="#1e293b" stroke="#475569" />
+    <text x="642" y="30" class="txt">📋 Sablonból</text>
+
+    <rect x="750" y="10" width="90" height="32" rx="4" fill="#1e293b" stroke="#475569" />
+    <text x="760" y="30" class="txt">↩ Vissza</text>
+
+    <rect x="850" y="10" width="90" height="32" rx="4" fill="#1e293b" stroke="#475569" />
+    <text x="760" y="30" class="txt"></text>
+    <text x="860" y="30" class="txt">↪ Mégis</text>
+
+    <rect x="960" y="10" width="125" height="32" rx="4" fill="#10b981" stroke="#34d399" />
+    <text x="975" y="30" class="txt-bold">💾 Mentés &amp; Zárás</text>
+  </g>
+
+  <!-- Live Compliance Status Bar -->
+  <g transform="translate(50, 148)">
+    <rect width="1100" height="36" rx="6" fill="#064e3b" stroke="#10b981" stroke-width="1.5" />
+    <text x="20" y="23" font-family="'JetBrains Mono', monospace" font-size="12px" font-weight="700" fill="#34d399">✓ A beosztás megfelel a Munka Törvénykönyve szabályainak (0 hiba, 0 tiltás)</text>
+    <rect x="940" y="7" width="145" height="22" rx="4" fill="#047857" />
+    <text x="950" y="22" class="txt-badge">Szabályok áttekintése ▾</text>
+  </g>
+
+  <!-- The Schedule Grid -->
+  <g transform="translate(50, 194)">
+    <!-- Header Row -->
+    <rect width="1100" height="40" class="box b-border" />
+    <text x="15" y="25" class="header-title">MUNKAVÁLLALÓ / KERET</text>
+
+    <!-- Days Header (1 to 7 shown as sample slice) -->
+    <!-- Day 1 Mon -->
+    <rect x="250" y="0" width="110" height="40" stroke="#334155" fill="#1e293b" />
+    <text x="275" y="18" class="txt-bold">Szept 1</text>
+    <text x="280" y="32" class="txt-sm">Hétfő</text>
+
+    <!-- Day 2 Tue -->
+    <rect x="360" y="0" width="110" height="40" stroke="#334155" fill="#1e293b" />
+    <text x="385" y="18" class="txt-bold">Szept 2</text>
+    <text x="390" y="32" class="txt-sm">Kedd</text>
+
+    <!-- Day 3 Wed -->
+    <rect x="470" y="0" width="110" height="40" stroke="#334155" fill="#1e293b" />
+    <text x="495" y="18" class="txt-bold">Szept 3</text>
+    <text x="500" y="32" class="txt-sm">Szerda</text>
+
+    <!-- Day 4 Thu -->
+    <rect x="580" y="0" width="110" height="40" stroke="#334155" fill="#1e293b" />
+    <text x="605" y="18" class="txt-bold">Szept 4</text>
+    <text x="610" y="32" class="txt-sm">Csütörtök</text>
+
+    <!-- Day 5 Fri -->
+    <rect x="690" y="0" width="110" height="40" stroke="#334155" fill="#1e293b" />
+    <text x="715" y="18" class="txt-bold">Szept 5</text>
+    <text x="720" y="32" class="txt-sm">Péntek</text>
+
+    <!-- Day 6 Sat (Weekend) -->
+    <rect x="800" y="0" width="110" height="40" stroke="#334155" fill="#312e81" />
+    <text x="825" y="18" class="txt-bold" fill="#a5b4fc">Szept 6</text>
+    <text x="830" y="32" class="txt-sm" fill="#c7d2fe">Szombat</text>
+
+    <!-- Day 7 Sun (Weekend) -->
+    <rect x="910" y="0" width="110" height="40" stroke="#334155" fill="#312e81" />
+    <text x="935" y="18" class="txt-bold" fill="#a5b4fc">Szept 7</text>
+    <text x="940" y="32" class="txt-sm" fill="#c7d2fe">Vasárnap</text>
+
+    <!-- Total Month Summary Column -->
+    <rect x="1020" y="0" width="80" height="40" stroke="#334155" fill="#0f172a" />
+    <text x="1035" y="25" class="txt-bold" fill="#38bdf8">ÖSSZES</text>
+
+    <!-- Row 1: Kovács István -->
+    <g transform="translate(0, 40)">
+      <rect width="250" height="85" class="box b-cell" />
+      <text x="15" y="26" class="txt-bold">Kovács István</text>
+      <text x="15" y="44" class="txt-sm">Munkakör: Pultos / Értékesítő</text>
+      <text x="15" y="62" class="txt-sm">Havi keret: <tspan fill="#38bdf8" font-weight="700">128 / 176 óra</tspan></text>
+      <text x="15" y="78" class="txt-sm">3 havi keretből még: 48 óra</text>
+
+      <!-- Cells -->
+      <rect x="250" y="0" width="110" height="85" class="box b-cell" />
+      <rect x="255" y="10" width="100" height="65" class="b-shift" />
+      <text x="263" y="32" class="txt-shift">08:00 - 16:30</text>
+      <text x="263" y="50" class="txt-shift-sub">8.0h · 30p szünet</text>
+      <text x="263" y="65" class="txt-shift-sub">Nagy Sándor u.</text>
+
+      <rect x="360" y="0" width="110" height="85" class="box b-cell" />
+      <rect x="365" y="10" width="100" height="65" class="b-shift" />
+      <text x="373" y="32" class="txt-shift">08:00 - 16:30</text>
+      <text x="373" y="50" class="txt-shift-sub">8.0h · 30p szünet</text>
+      <text x="373" y="65" class="txt-shift-sub">Nagy Sándor u.</text>
+
+      <!-- Day 3 Wed (Multi-selection sample) -->
+      <rect x="470" y="0" width="110" height="85" class="box b-cell" />
+      <rect x="472" y="5" width="106" height="75" class="b-selected" />
+      <rect x="475" y="10" width="100" height="65" class="b-shift" />
+      <text x="483" y="32" class="txt-shift">08:00 - 16:30</text>
+      <text x="483" y="50" class="txt-shift-sub">8.0h · 30p szünet</text>
+      <text x="483" y="65" class="txt-shift-sub">Nagy Sándor u.</text>
+
+      <rect x="580" y="0" width="110" height="85" class="box b-cell" />
+      <rect x="585" y="10" width="100" height="65" class="b-shift" />
+      <text x="593" y="32" class="txt-shift">08:00 - 16:30</text>
+      <text x="593" y="50" class="txt-shift-sub">8.0h · 30p szünet</text>
+      <text x="593" y="65" class="txt-shift-sub">Nagy Sándor u.</text>
+
+      <rect x="690" y="0" width="110" height="85" class="box b-cell" />
+      <rect x="695" y="10" width="100" height="65" class="b-shift" />
+      <text x="703" y="32" class="txt-shift">08:00 - 16:30</text>
+      <text x="703" y="50" class="txt-shift-sub">8.0h · 30p szünet</text>
+      <text x="703" y="65" class="txt-shift-sub">Nagy Sándor u.</text>
+
+      <!-- Weekend Empty -->
+      <rect x="800" y="0" width="110" height="85" class="box b-cell-weekend" />
+      <text x="830" y="47" class="txt-sm" fill="#64748b">Pihenőnap</text>
+      <rect x="910" y="0" width="110" height="85" class="box b-cell-weekend" />
+      <text x="940" y="47" class="txt-sm" fill="#64748b">Pihenőnap</text>
+
+      <!-- Summary -->
+      <rect x="1020" y="0" width="80" height="85" class="box b-cell" />
+      <text x="1035" y="38" class="txt-bold" fill="#38bdf8">40.0h</text>
+      <text x="1035" y="56" class="txt-sm">5 nap</text>
+    </g>
+
+    <!-- Row 2: Nagy Éva (Absence sample) -->
+    <g transform="translate(0, 125)">
+      <rect width="250" height="85" class="box b-cell" />
+      <text x="15" y="26" class="txt-bold">Nagy Éva</text>
+      <text x="15" y="44" class="txt-sm">Munkakör: Szakács / Konyhafőnök</text>
+      <text x="15" y="62" class="txt-sm">Havi keret: <tspan fill="#fbbf24" font-weight="700">96 / 176 óra</tspan></text>
+      <text x="15" y="78" class="txt-sm">Fizetett szabi: 8 nap maradt</text>
+
+      <!-- Day 1 & 2 Paid Leave -->
+      <rect x="250" y="0" width="110" height="85" class="box b-cell" />
+      <rect x="255" y="10" width="100" height="65" class="b-absence" />
+      <text x="265" y="35" class="txt-shift" fill="#93c5fd">🏖️ Szabadság</text>
+      <text x="265" y="55" class="txt-shift-sub">Fizetett (8.0h)</text>
+
+      <rect x="360" y="0" width="110" height="85" class="box b-cell" />
+      <rect x="365" y="10" width="100" height="65" class="b-absence" />
+      <text x="375" y="35" class="txt-shift" fill="#93c5fd">🏖️ Szabadság</text>
+      <text x="375" y="55" class="txt-shift-sub">Fizetett (8.0h)</text>
+
+      <!-- Day 3, 4, 5 Shift -->
+      <rect x="470" y="0" width="110" height="85" class="box b-cell" />
+      <rect x="475" y="10" width="100" height="65" class="b-shift-amber" />
+      <text x="483" y="32" class="txt-shift">10:00 - 18:30</text>
+      <text x="483" y="50" class="txt-shift-sub" fill="#fef3c7">8.0h · Melegkonyha</text>
+      <text x="483" y="65" class="txt-shift-sub" fill="#fef3c7">Kőrösi üzlet</text>
+
+      <rect x="580" y="0" width="110" height="85" class="box b-cell" />
+      <rect x="585" y="10" width="100" height="65" class="b-shift-amber" />
+      <text x="593" y="32" class="txt-shift">10:00 - 18:30</text>
+      <text x="593" y="50" class="txt-shift-sub" fill="#fef3c7">8.0h · Melegkonyha</text>
+      <text x="593" y="65" class="txt-shift-sub" fill="#fef3c7">Kőrösi üzlet</text>
+
+      <rect x="690" y="0" width="110" height="85" class="box b-cell" />
+      <rect x="695" y="10" width="100" height="65" class="b-shift-amber" />
+      <text x="703" y="32" class="txt-shift">10:00 - 18:30</text>
+      <text x="703" y="50" class="txt-shift-sub" fill="#fef3c7">8.0h · Melegkonyha</text>
+      <text x="703" y="65" class="txt-shift-sub" fill="#fef3c7">Kőrösi üzlet</text>
+
+      <!-- Weekend -->
+      <rect x="800" y="0" width="110" height="85" class="box b-cell-weekend" />
+      <text x="830" y="47" class="txt-sm" fill="#64748b">Pihenőnap</text>
+      <rect x="910" y="0" width="110" height="85" class="box b-cell-weekend" />
+      <text x="940" y="47" class="txt-sm" fill="#64748b">Pihenőnap</text>
+
+      <!-- Summary -->
+      <rect x="1020" y="0" width="80" height="85" class="box b-cell" />
+      <text x="1035" y="38" class="txt-bold" fill="#fbbf24">40.0h</text>
+      <text x="1030" y="56" class="txt-sm">2 szabi+3m</text>
+    </g>
+
+    <!-- Bottom Requirement Summary Bar (Létszámigény) -->
+    <g transform="translate(0, 210)">
+      <rect width="250" height="45" class="box b-border" />
+      <text x="15" y="27" class="header-title" fill="#38bdf8">LÉTSZÁMIGÉNY (Nagy S.)</text>
+
+      <!-- Day totals: Planned / Required -->
+      <rect x="250" y="0" width="110" height="45" stroke="#334155" fill="#1e293b" />
+      <text x="275" y="27" class="txt-bold" fill="#34d399">5 / 5 fő ✓</text>
+
+      <rect x="360" y="0" width="110" height="45" stroke="#334155" fill="#1e293b" />
+      <text x="385" y="27" class="txt-bold" fill="#34d399">5 / 5 fő ✓</text>
+
+      <rect x="470" y="0" width="110" height="45" stroke="#334155" fill="#1e293b" />
+      <text x="495" y="27" class="txt-bold" fill="#f87171">4 / 5 fő ⚠️</text>
+
+      <rect x="580" y="0" width="110" height="45" stroke="#334155" fill="#1e293b" />
+      <text x="605" y="27" class="txt-bold" fill="#34d399">5 / 5 fő ✓</text>
+
+      <rect x="690" y="0" width="110" height="45" stroke="#334155" fill="#1e293b" />
+      <text x="715" y="27" class="txt-bold" fill="#34d399">6 / 5 fő (+1)</text>
+
+      <rect x="800" y="0" width="110" height="45" stroke="#334155" fill="#1e293b" />
+      <text x="825" y="27" class="txt-sm" fill="#94a3b8">2 / 2 fő</text>
+
+      <rect x="910" y="0" width="110" height="45" stroke="#334155" fill="#1e293b" />
+      <text x="935" y="27" class="txt-sm" fill="#94a3b8">ZÁRVA</text>
+
+      <rect x="1020" y="0" width="80" height="45" stroke="#334155" fill="#1e293b" />
+      <text x="1035" y="27" class="txt-bold" fill="#38bdf8">98%</text>
+    </g>
+  </g>
+
+  <!-- Interactive Shortcuts & Legend footer -->
+  <g transform="translate(50, 490)">
+    <rect width="1100" height="45" rx="6" fill="#1e293b" stroke="#334155" />
+    <text x="20" y="27" class="txt-sm"><tspan font-weight="700" fill="#38bdf8">Gyorsbillentyűk:</tspan> Ctrl+C: Másolás · Ctrl+V: Beillesztés · Del: Műszak törlése · Húzás: Cella kitöltése · Shift+Kattintás: Tartomány</text>
+    <circle cx="850" cy="22" r="6" fill="#0284c7" />
+    <text x="862" y="26" class="txt-sm">Műszak</text>
+    <circle cx="930" cy="22" r="6" fill="#1e3a8a" stroke="#60a5fa" />
+    <text x="942" y="26" class="txt-sm">Távollét</text>
+    <circle cx="1020" cy="22" r="6" fill="#f87171" />
+    <text x="1032" y="26" class="txt-sm">Létszámhiány</text>
+  </g>
+</svg>

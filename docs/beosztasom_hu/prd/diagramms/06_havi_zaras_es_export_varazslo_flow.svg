@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0f172a; }
+      .grid-pattern { stroke: #1e293b; stroke-width: 1; stroke-opacity: 0.35; }
+      .title { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 20px; font-weight: 700; fill: #f8fafc; }
+      .subtitle { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 13px; fill: #94a3b8; }
+      .header-title { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 14px; font-weight: 700; fill: #e2e8f0; }
+      .txt { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 12px; fill: #cbd5e1; }
+      .txt-bold { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 12px; font-weight: 700; fill: #f8fafc; }
+      .txt-sm { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 11px; fill: #94a3b8; }
+      .box { rx: 8px; stroke-width: 1.5; }
+      .b-border { stroke: #334155; fill: #1e293b; }
+      .b-step { stroke: #0284c7; fill: #0f172a; rx: 8px; stroke-width: 1.5; }
+      .arrow { stroke: #38bdf8; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#38bdf8" />
+    </marker>
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" class="grid-pattern" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="760" class="bg" />
+  <rect width="1200" height="760" fill="url(#grid)" />
+
+  <text x="50" y="45" class="title">PRD-06 · Jelenlét-Igazolás, Havi Zárási Varázsló és Export Architektúra</text>
+  <text x="50" y="68" class="subtitle">Tervezett vs. Tényleges ellenőrzés, lakatolási munkafolyamat és NAV/Bérprogram feladási csatornák</text>
+
+  <!-- Wizard 4 Steps Timeline -->
+  <g transform="translate(50, 95)">
+    <!-- Step 1 -->
+    <rect width="260" height="150" class="b-step" stroke="#38bdf8" />
+    <rect width="260" height="35" rx="8" fill="#0369a1" />
+    <text x="16" y="23" font-family="'JetBrains Mono', monospace" font-size="12px" font-weight="700" fill="#fff">1. LÉPÉS: BEOSZTÁS ZÁRÁS</text>
+    <text x="16" y="60" class="txt-bold">Tervezetből Végleges</text>
+    <text x="16" y="80" class="txt-sm">• Szabályellenőrzés lefutása</text>
+    <text x="16" y="98" class="txt-sm">• Maradék hibák jóváhagyása</text>
+    <text x="16" y="116" class="txt-sm">• Státusz: „Lezárt beosztás”</text>
+    <text x="16" y="134" class="txt-sm" fill="#38bdf8">→ Jelenlét forrása lesz</text>
+
+    <!-- Step 2 -->
+    <g transform="translate(280, 0)">
+      <rect width="260" height="150" class="b-step" stroke="#a78bfa" />
+      <rect width="260" height="35" rx="8" fill="#6d28d9" />
+      <text x="16" y="23" font-family="'JetBrains Mono', monospace" font-size="12px" font-weight="700" fill="#fff">2. LÉPÉS: JELENLÉT IGAZOLÁS</text>
+      <text x="16" y="60" class="txt-bold">Tervezett vs. Tényleges</text>
+      <text x="16" y="80" class="txt-sm">• Tömeges elfogadás („Mindent”)</text>
+      <text x="16" y="98" class="txt-sm">• Eltérések kézi módosítása</text>
+      <text x="16" y="116" class="txt-sm">• Beléptetőrendszer párosítás</text>
+      <text x="16" y="134" class="txt-sm" fill="#a78bfa">→ Jóváhagyott jelenléti napok</text>
+    </g>
+
+    <!-- Step 3 -->
+    <g transform="translate(560, 0)">
+      <rect width="260" height="150" class="b-step" stroke="#f59e0b" />
+      <rect width="260" height="35" rx="8" fill="#b45309" />
+      <text x="16" y="23" font-family="'JetBrains Mono', monospace" font-size="12px" font-weight="700" fill="#fff">3. LÉPÉS: HÓVÉGI LAKATOLÁS</text>
+      <text x="16" y="60" class="txt-bold">Zárolás &amp; Integritás</text>
+      <text x="16" y="80" class="txt-sm">• Időszak lezárása (🔒 Lakat)</text>
+      <text x="16" y="98" class="txt-sm">• További módosítás tiltva</text>
+      <text x="16" y="116" class="txt-sm">• Audit hash képzése</text>
+      <text x="16" y="134" class="txt-sm" fill="#fbbf24">→ NAV-ellenőrzésre kész</text>
+    </g>
+
+    <!-- Step 4 -->
+    <g transform="translate(840, 0)">
+      <rect width="260" height="150" class="b-step" stroke="#10b981" />
+      <rect width="260" height="35" rx="8" fill="#047857" />
+      <text x="16" y="23" font-family="'JetBrains Mono', monospace" font-size="12px" font-weight="700" fill="#fff">4. LÉPÉS: EXPORT &amp; ADATHÍD</text>
+      <text x="16" y="60" class="txt-bold">Bérszámfejtési Feladás</text>
+      <text x="16" y="80" class="txt-sm">• Hivatalos NAV Excel munkafüzet</text>
+      <text x="16" y="98" class="txt-sm">• Bérprogram feladás (Nexon/Kulcs)</text>
+      <text x="16" y="116" class="txt-sm">• Archívum tárolása 5 évig</text>
+      <text x="16" y="134" class="txt-sm" fill="#34d399">→ Dolgozói aláírás &amp; Bér</text>
+    </g>
+  </g>
+
+  <!-- Bottom Part: Export Formats & Data Contract -->
+  <g transform="translate(50, 265)">
+    <!-- NAV Excel Card -->
+    <rect width="530" height="440" class="box b-border" />
+    <text x="24" y="32" class="header-title" fill="#38bdf8">HIVATALOS NAV EXCEL MUNKAIDŐ-JEGYZÉK</text>
+    
+    <g transform="translate(24, 50)">
+      <rect width="480" height="100" rx="6" fill="#0f172a" stroke="#334155" />
+      <text x="16" y="25" class="txt-bold">Struktúra és Munkalapok</text>
+      <text x="16" y="46" class="txt-sm">• Dolgozónként külön munkalap / fül („Kovács I.”, „Nagy É.”)</text>
+      <text x="16" y="64" class="txt-sm">• „Beosztás” oszlopcsoport (Tervezett kezdés, végzés, óra)</text>
+      <text x="16" y="82" class="txt-sm">• „Jelenlét” oszlopcsoport (Tényleges kezdés, végzés, szünet, óra)</text>
+    </g>
+
+    <g transform="translate(24, 165)">
+      <rect width="480" height="100" rx="6" fill="#0f172a" stroke="#334155" />
+      <text x="16" y="25" class="txt-bold">Távollétek és Bérpótlék Sorok</text>
+      <text x="16" y="46" class="txt-sm">• Távollét pontos Mt. jogcímmel (nem csak megjegyzés!)</text>
+      <text x="16" y="64" class="txt-sm">• Fizetett szabi: 8 óra/nap (részmunkaidőnél arányos)</text>
+      <text x="16" y="82" class="txt-sm">• Opcionális kapcsoló: Éjszakai, vasárnapi, túlóra sorok</text>
+    </g>
+
+    <g transform="translate(24, 280)">
+      <rect width="480" height="135" rx="6" fill="#0f172a" stroke="#10b981" />
+      <text x="16" y="25" class="txt-bold" fill="#34d399">Aláírás és Hitelesítés</text>
+      <text x="16" y="46" class="txt-sm">• Hó végén egyszer kinyomtatva aláírható bizonylat</text>
+      <text x="16" y="64" class="txt-sm">• Dolgozói és Munkáltatói aláírás blokk az oldal alján</text>
+      <text x="16" y="82" class="txt-sm">• NAV ellenőrzésen teljes bizonyító erejű magánokiratként elfogadott</text>
+      <text x="16" y="104" class="txt-bold" fill="#38bdf8">→ Nem szükséges naponta papíron aláíratni!</text>
+    </g>
+  </g>
+
+  <g transform="translate(620, 265)">
+    <!-- Payroll Bridge Card -->
+    <rect width="530" height="440" class="box b-border" />
+    <text x="24" y="32" class="header-title" fill="#a78bfa">BÉRSZÁMFEJTÉSI GÉPI INTEGRÁCIÓS INTERFÉSZ</text>
+
+    <!-- Supported Systems Grid -->
+    <g transform="translate(24, 50)">
+      <rect width="480" height="140" rx="6" fill="#0f172a" stroke="#475569" />
+      <text x="16" y="25" class="txt-bold">Támogatott Bérszámfejtő Rendszerek</text>
+      <text x="16" y="50" class="txt-sm">🏢 <tspan font-weight="700" fill="#fff">Nexon Bér:</tspan> XML és CSV direkt import feladás</text>
+      <text x="16" y="70" class="txt-sm">🏢 <tspan font-weight="700" fill="#fff">Kulcs-Bér:</tspan> Kulcs-Soft jelenléti ív fájlstruktúra</text>
+      <text x="16" y="90" class="txt-sm">🏢 <tspan font-weight="700" fill="#fff">RLB-60:</tspan> Havi munkaidő és pótlék aggregátumok</text>
+      <text x="16" y="110" class="txt-sm">🏢 <tspan font-weight="700" fill="#fff">ÁNYK / Bérsoft / Szabványos CSV:</tspan> Általános táblázat</text>
+    </g>
+
+    <g transform="translate(24, 205)">
+      <rect width="480" height="210" rx="6" fill="#0f172a" stroke="#8b5cf6" />
+      <text x="16" y="25" class="txt-bold" fill="#c084fc">Átadott Adatkörök (Data Contract)</text>
+      <text x="16" y="50" class="txt-sm">• Dolgozói azonosító (Adóazonosító, TAJ, Belső ID)</text>
+      <text x="16" y="70" class="txt-sm">• Ledolgozott rendes munkaórák száma (hóközi)</text>
+      <text x="16" y="90" class="txt-sm">• 50%-os és 100%-os elrendelt túlórák száma</text>
+      <text x="16" y="110" class="txt-sm">• 15%-os éjszakai pótlékra jogosító órák (22:00-06:00)</text>
+      <text x="16" y="130" class="txt-sm">• 50%-os vasárnapi pótlékra jogosító órák</text>
+      <text x="16" y="150" class="txt-sm">• 100%-os munkaszüneti napi pótlékra jogosító órák</text>
+      <text x="16" y="170" class="txt-sm">• Távollétnapok és órák Mt. jogcímenként (Betegszabi vs. Táppénz)</text>
+      <text x="16" y="190" class="txt-sm" fill="#34d399">→ Könyvelőirodai munkaidő-megtakarítás: 90%</text>
+    </g>
+  </g>
+</svg>

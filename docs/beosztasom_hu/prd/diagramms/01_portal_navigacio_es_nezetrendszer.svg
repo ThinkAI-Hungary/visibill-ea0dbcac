@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0f172a; }
+      .grid-pattern { stroke: #1e293b; stroke-width: 1; stroke-opacity: 0.35; }
+      .title { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 20px; font-weight: 700; fill: #f8fafc; }
+      .subtitle { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 13px; fill: #94a3b8; }
+      .header-title { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 14px; font-weight: 700; fill: #e2e8f0; }
+      .txt { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 12px; fill: #cbd5e1; }
+      .txt-sm { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 11px; fill: #94a3b8; }
+      .txt-badge { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 10px; font-weight: 700; fill: #ffffff; }
+      .txt-hl { font-family: 'JetBrains Mono', 'Segoe UI', monospace; font-size: 12px; font-weight: 600; fill: #38bdf8; }
+      .box { rx: 8px; stroke-width: 1.5; }
+      .b-border { stroke: #334155; fill: #1e293b; }
+      .b-active { stroke: #38bdf8; fill: #0369a1; fill-opacity: 0.25; }
+      .b-nav { stroke: #475569; fill: #1e293b; }
+      .b-card { stroke: #334155; fill: #0f172a; }
+      .b-badge-red { fill: #ef4444; rx: 10px; }
+      .b-badge-blue { fill: #0284c7; rx: 4px; }
+      .b-badge-green { fill: #10b981; rx: 4px; }
+      .b-badge-purple { fill: #8b5cf6; rx: 4px; }
+    </style>
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" class="grid-pattern" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="760" class="bg" />
+  <rect width="1200" height="760" fill="url(#grid)" />
+
+  <!-- Main Header -->
+  <text x="50" y="45" class="title">PRD-01 · Beosztásom Portál Navigáció és Képernyőrendszer</text>
+  <text x="50" y="68" class="subtitle">Globális fejléc, szerepkör-vezérelt bal oldali navigáció és munkaterület-választó</text>
+
+  <!-- Global Top Bar -->
+  <g transform="translate(50, 90)">
+    <rect width="1100" height="56" class="box b-border" />
+    <text x="20" y="34" class="header-title">VISIBILL · BEOSZTÁSOM</text>
+    <rect x="230" y="12" width="220" height="32" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1" />
+    <text x="245" y="32" class="txt">🏢 Alpha Kft. (Ügyfél) ▾</text>
+    <rect x="465" y="12" width="160" height="32" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1" />
+    <text x="480" y="32" class="txt">📅 2026. Szeptember ▾</text>
+    
+    <!-- Status & Alerts -->
+    <rect x="830" y="14" width="28" height="28" rx="6" fill="#1e293b" stroke="#334155" />
+    <text x="839" y="32" class="txt">🔔</text>
+    <rect x="848" y="10" width="16" height="14" class="b-badge-red" />
+    <text x="852" y="21" class="txt-badge">3</text>
+
+    <!-- User Profile & 2FA -->
+    <rect x="880" y="12" width="200" height="32" rx="6" fill="#0f172a" stroke="#0284c7" stroke-width="1" />
+    <circle cx="898" cy="28" r="8" fill="#38bdf8" />
+    <text x="914" y="32" class="txt">Kovács Anna (Operátor)</text>
+    <rect x="1040" y="18" width="32" height="18" class="b-badge-green" />
+    <text x="1044" y="31" class="txt-badge">2FA</text>
+  </g>
+
+  <!-- Left Sidebar (Menu Structure) -->
+  <g transform="translate(50, 165)">
+    <rect width="280" height="555" class="box b-border" />
+    <text x="20" y="30" class="header-title">FŐ MENÜSTRUKTÚRA</text>
+
+    <!-- Operational Block -->
+    <text x="20" y="60" class="txt-sm" font-weight="700">MŰVELETI MODULOK</text>
+    
+    <rect x="15" y="70" width="250" height="34" class="box b-active" />
+    <text x="30" y="92" class="txt-hl">📅 Beosztáskezelő (Rács)</text>
+    <rect x="225" y="77" width="30" height="18" class="b-badge-blue" />
+    <text x="232" y="90" class="txt-badge">FŐ</text>
+
+    <rect x="15" y="110" width="250" height="32" class="box b-nav" />
+    <text x="30" y="131" class="txt">🏖️ Távollétek (30+ Mt.)</text>
+    
+    <rect x="15" y="148" width="250" height="32" class="box b-nav" />
+    <text x="30" y="169" class="txt">⏱️ Jelenlét &amp; Zárás</text>
+
+    <rect x="15" y="186" width="250" height="32" class="box b-nav" />
+    <text x="30" y="207" class="txt">📊 Statisztikák &amp; Túlóra</text>
+
+    <rect x="15" y="224" width="250" height="32" class="box b-nav" />
+    <text x="30" y="245" class="txt">💬 Üzenetek</text>
+
+    <!-- Master Data Block -->
+    <text x="20" y="280" class="txt-sm" font-weight="700">TÖRZSEDATOK &amp; ADMIN</text>
+
+    <rect x="15" y="290" width="250" height="30" class="box b-nav" />
+    <text x="30" y="310" class="txt">👥 Munkavállalók (Karton)</text>
+
+    <rect x="15" y="325" width="250" height="30" class="box b-nav" />
+    <text x="30" y="345" class="txt">🏢 Munkahelyek &amp; Munkakörök</text>
+
+    <rect x="15" y="360" width="250" height="30" class="box b-nav" />
+    <text x="30" y="380" class="txt">⚙️ Operátorok &amp; Jogok</text>
+
+    <!-- Templates & System -->
+    <text x="20" y="415" class="txt-sm" font-weight="700">SABLONOK &amp; RENDSZER</text>
+
+    <rect x="15" y="425" width="250" height="30" class="box b-nav" />
+    <text x="30" y="445" class="txt">📋 Munkarendek &amp; Sablonok</text>
+
+    <rect x="15" y="460" width="250" height="30" class="box b-nav" />
+    <text x="30" y="480" class="txt">🚪 Beléptető &amp; Ellenőrzőpont</text>
+
+    <rect x="15" y="495" width="250" height="30" class="box b-nav" />
+    <text x="30" y="515" class="txt">🛠️ Cégbeállítások &amp; Export</text>
+  </g>
+
+  <!-- Right Main Workspace Views Showcase -->
+  <g transform="translate(350, 165)">
+    <rect width="800" height="555" class="box b-border" />
+    <text x="30" y="32" class="header-title">FŐ MUNKA- ÉS NÉZETTERÜLETEK (SZEREPKÖRÖK SZERINT)</text>
+
+    <!-- View Cards Grid -->
+    <g transform="translate(30, 55)">
+      <!-- View 1: Scheduling Grid -->
+      <rect width="355" height="150" class="box b-card" stroke="#0284c7" />
+      <text x="16" y="28" class="txt-hl">1. Havi Beosztástervező Naptárrács</text>
+      <text x="16" y="50" class="txt-sm">• Dolgozói sávok (swimlanes), 1-31 napos cellák</text>
+      <text x="16" y="68" class="txt-sm">• Műszakok, szünetek, távollétek színes kártyái</text>
+      <text x="16" y="86" class="txt-sm">• Élő munkaügyi szabályellenőrző sáv</text>
+      <text x="16" y="104" class="txt-sm">• Vágólap (Ctrl+C/V), tartománykitöltő fül</text>
+      <rect x="16" y="118" width="90" height="20" class="b-badge-blue" />
+      <text x="24" y="132" class="txt-badge">PRD-02 / BK-20</text>
+
+      <!-- View 2: Shift Editor Modal -->
+      <g transform="translate(385, 0)">
+        <rect width="355" height="150" class="box b-card" stroke="#8b5cf6" />
+        <text x="16" y="28" class="txt-hl" fill="#a78bfa">2. Műszakszerkesztő &amp; Sablon Drawer</text>
+        <text x="16" y="50" class="txt-sm">• Kezdés/Befejezés, szünet, munkakör, szín</text>
+        <text x="16" y="68" class="txt-sm">• Home office jelölés, megjegyzés mező</text>
+        <text x="16" y="86" class="txt-sm">• Alternatív táblázatos kitöltő soros nézet</text>
+        <text x="16" y="104" class="txt-sm">• Sablonokból azonnali másolás a hétre</text>
+        <rect x="16" y="118" width="90" height="20" class="b-badge-purple" />
+        <text x="24" y="132" class="txt-badge">PRD-03 / BK-40</text>
+      </g>
+    </g>
+
+    <g transform="translate(30, 220)">
+      <!-- View 3: Absence & Replacement -->
+      <rect width="355" height="150" class="box b-card" stroke="#10b981" />
+      <text x="16" y="28" class="txt-hl" fill="#34d399">3. Távollét &amp; Helyettesítéskezelő</text>
+      <text x="16" y="50" class="txt-sm">• 30+ Mt. szerinti távollét jogcím választó</text>
+      <text x="16" y="68" class="txt-sm">• 15 napos betegszabadság → táppénz split</text>
+      <text x="16" y="86" class="txt-sm">• Szabadságegyenleg dinamikus levonása</text>
+      <text x="16" y="104" class="txt-sm">• Partnerhelyettesítés hozzárendelése</text>
+      <rect x="16" y="118" width="90" height="20" class="b-badge-green" />
+      <text x="24" y="132" class="txt-badge">PRD-04 / TL-01</text>
+
+      <!-- View 4: Compliance & Rules Engine -->
+      <g transform="translate(385, 0)">
+        <rect width="355" height="150" class="box b-card" stroke="#f59e0b" />
+        <text x="16" y="28" class="txt-hl" fill="#fbbf24">4. Szabálymotor Élő Sáv &amp; Drawer</text>
+        <text x="16" y="50" class="txt-sm">• 4 súlyossági szint (Blocker, Hiba, Warn, Info)</text>
+        <text x="16" y="68" class="txt-sm">• 11 órás napi, 48 órás heti pihenőidő őr</text>
+        <text x="16" y="86" class="txt-sm">• Munkaidőkeret egyenleg (pl. 3 havi göngyölés)</text>
+        <text x="16" y="104" class="txt-sm">• Konfliktusfeloldó és felülbírálási modal</text>
+        <rect x="16" y="118" width="90" height="20" fill="#d97706" rx="4" />
+        <text x="24" y="132" class="txt-badge">PRD-05 / SZ-01</text>
+      </g>
+    </g>
+
+    <g transform="translate(30, 385)">
+      <!-- View 5: Attendance, Lock & Export -->
+      <rect width="355" height="145" class="box b-card" stroke="#ec4899" />
+      <text x="16" y="26" class="txt-hl" fill="#f472b6">5. Hóvégi Zárás &amp; Bérszámfejtési Export</text>
+      <text x="16" y="46" class="txt-sm">• Tervezett vs. Tényleges jelenlét igazolás</text>
+      <text x="16" y="64" class="txt-sm">• Hóvégi lakatolási munkafolyamat (Lock)</text>
+      <text x="16" y="82" class="txt-sm">• NAV-kompatibilis Excel (külön fül dolgozónként)</text>
+      <text x="16" y="100" class="txt-sm">• Nexon, Kulcs-Bér, RLB bérprogram export</text>
+      <rect x="16" y="114" width="90" height="20" fill="#db2777" rx="4" />
+      <text x="24" y="128" class="txt-badge">PRD-06 / EX-01</text>
+
+      <!-- View 6: Employee Self-Service Mobile -->
+      <g transform="translate(385, 0)">
+        <rect width="355" height="145" class="box b-card" stroke="#06b6d4" />
+        <text x="16" y="26" class="txt-hl" fill="#22d3ee">6. Dolgozói Önkiszolgáló (PWA / Mobil)</text>
+        <text x="16" y="46" class="txt-sm">• Saját beosztás megtekintése okostelefonon</text>
+        <text x="16" y="64" class="txt-sm">• Műszakcsere kérelem indítása kollégával</text>
+        <text x="16" y="82" class="txt-sm">• Szabadságigény leadása és státuszkövetés</text>
+        <text x="16" y="100" class="txt-sm">• Értesítések műszakváltozásról (push/email)</text>
+        <rect x="16" y="114" width="90" height="20" fill="#0891b2" rx="4" />
+        <text x="24" y="128" class="txt-badge">PRD-08 / MO-01</text>
+      </g>
+    </g>
+
+  </g>
+</svg>
