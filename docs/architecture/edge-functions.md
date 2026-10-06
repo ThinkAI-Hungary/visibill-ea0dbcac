@@ -178,7 +178,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ---
 
-## 10. 🔌 Külső Integrációk & API (2 db)
+## 10. 🔌 Külső Integrációk & API (3 db)
 
 > Harmadik felek és külső rendszerek biztonságos integrációs végpontja.
 
@@ -186,6 +186,8 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 |---|:---:|---|---|---|
 | [`openclaw-api`](../../supabase/functions/openclaw-api/index.ts) | ❌ Nyilvános / Belső | Külső integrációs kliensek (OpenClaw) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Szigorúan korlátozott, olvasási jogú REST API végpont SHA-256 hash-elt API kulcs hitelesítéssel (`api_keys` tábla). |
 | [`customer-api`](../../supabase/functions/customer-api/index.ts) | ❌ Nyilvános / API Key | Külső ügyfél integrációk (M2M, curl, Python, ERP) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Hivatalos ügyfél REST API v2.2 (33 végpont) OpenAPI 3.0.3 gépi specifikációval (`/v1/openapi.json`). Lefedi a cégeket, beállításokat, számlákat (normalizált bejövő/kimenő, signed image letöltés, védett törlés), partnereket, tranzakciókat (párosítás, unmatch, bulk-delete), hibajegyeket és kommenteket (`/v1/tickets`), kategóriákat, főkönyvet (`/v1/ledger`), ÁFA/eredmény kimutatásokat, NAV státuszt és manuális szinkron indítást 60s cooldownnal, valamint 24 órás `Idempotency-Key` védelmet (`api_idempotency_keys`). |
+| [`tickets-api`](../../supabase/functions/tickets-api/index.ts) | ❌ Nyilvános / API Key & JWT | Management, Support Adminok, Külső botok & CLI-k | `SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY` | Dedikált VisiBill Ticket Management REST API felület nélküli ügyféltámogatáshoz. Támogatja az állandó M2M API kulcsot (`vb_...`) és a Supabase Auth JWT-t (`thinkai`, `management` vagy `is_support_admin` jogosultsággal). Funkciók: `overview` (KPI mutatók), `list` (szűrés, keresés, pagináció), `get` (részletes adatlap kommentekkel és audit idővonallal, olvasottra jelöléssel), `comment` (ügyfélválasz vagy belső jegyzet küldése), `update` (státuszváltás, prioritás, felelős hozzárendelés), `resolve` (gyors lezárás vagy megerősítés kérése), `create` (jegy nyitása ügyfél nevében), `help` (interaktív OpenAPI-szerű leírás). |
+
 
 ---
 

@@ -99,3 +99,5 @@ verify_jwt = false
 [functions.nav-fetch-details]
 verify_jwt = false
 
+[functions.tickets-api]
+verify_jwt = false
