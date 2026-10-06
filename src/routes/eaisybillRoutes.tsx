@@ -33,6 +33,7 @@ const TicketsPage = lazy(() => import("@/pages/TicketsPage"));
 const KnowledgeBasePage = lazy(() => import("@/pages/KnowledgeBasePage"));
 const ChangelogPage = lazy(() => import("@/pages/ChangelogPage"));
 const TransfersPage = lazy(() => import("@/pages/TransfersPage"));
+const OpgPage = lazy(() => import("@/pages/OpgPage"));
 
 /**
  * Returns the scoped child route elements for eaisybill
@@ -67,6 +68,7 @@ export function renderEaisybillScopedRoutes() {
       <Route path="prompts/:tab?" element={<ProtectedPage><AccountingRulesPage /></ProtectedPage>} />
       <Route path="kintlevo/:tab?" element={<ProtectedPage><KintlevoPage /></ProtectedPage>} />
       <Route path="petty-cash/:tab?" element={<ProtectedPage><PettyCashPage /></ProtectedPage>} />
+      <Route path="opg/:tab?" element={<ProtectedPage><PettyCashPage /></ProtectedPage>} />
       <Route path="teny/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />
       <Route path="fixed-assets/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />
       <Route path="notes" element={<ProtectedPage><NotesPage /></ProtectedPage>} />
@@ -133,6 +135,7 @@ export function renderEaisybillLegacyAndFallbackRoutes() {
       <Route path="/prompts" element={<LegacyRedirect page="accounting-rules" />} />
       <Route path="/kintlevo" element={<LegacyRedirect page="kintlevo" />} />
       <Route path="/petty-cash" element={<LegacyRedirect page="petty-cash" />} />
+      <Route path="/opg" element={<LegacyRedirect page="petty-cash/opg" />} />
       <Route path="/teny" element={<LegacyRedirect page="teny" />} />
       <Route path="/fixed-assets" element={<LegacyRedirect page="teny" />} />
 

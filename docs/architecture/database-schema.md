@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-10-01  
-> **Összesen:** 192 aktív alkalmazás-tábla (193 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-10-06  
+> **Összesen:** 195 aktív alkalmazás-tábla (196 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -19,7 +19,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [💳 Tranzakciók & Bank](./database/06-transactions-bank.md) — 13 tábla, ~7945 sor
 - [📊 Főkönyv (General Ledger)](./database/07-general-ledger.md) — 9 tábla, ~30771 sor
 - [💰 Bér & Munkaidő](./database/08-salary-hr.md) — 5 tábla, ~341 sor
-- [🏦 Házipénztár](./database/09-petty-cash.md) — 5 tábla, ~1227 sor
+- [🏦 Házipénztár & OPG](./database/09-petty-cash.md) — 8 tábla, ~1380 sor
 - [📦 Tárgyi Eszközök](./database/10-assets.md) — 4 tábla, ~35 sor
 - [🚚 Szállítmányozás](./database/11-shipping.md) — 4 tábla, ~0 sor
 - [📋 Éves Beszámoló & ÁFA](./database/12-annual-reports.md) — 11 tábla, ~1934 sor
@@ -192,6 +192,9 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `notes` | 📋 Jegyzetek | 0 | Kétpaneles megosztott és belső céges jegyzetek. |
 | `nylas_tokens` | 🔐 Auth & Felhasználók | 0 | Nylas OAuth tokenek. |
 | `outgoing_emails` | 🛠️ Platform & Üzemeltetés | 1 | Rendszer által kiküldött emailek naplója. |
+| `opg_cash_registers` | 🏦 Házipénztár & OPG | 0 | NAV Online Pénztárgépek (OPG) törzsadatai, AP kód és házipénztár illesztés |
+| `opg_sync_logs` | 🏦 Házipénztár & OPG | 0 | OPG M2M és manuális szinkronizációs audit napló |
+| `opg_transactions` | 🏦 Házipénztár & OPG | 0 | Pénztárgépi nyugták, egyszerűsített számlák, Z-zárások és sztornó bizonylatok |
 | `partners` | 🏷️ Törzsadatok | 5186 | Partnertörzs (vevők és szállítók adatai). |
 | `payment_transfers` | 💳 Tranzakciók & Bank | 0 | Banki utalási csomagok (GIRO/OTP/SEPA) és állapotuk. |
 | `pdf_export_jobs` | 🛠️ Platform & Üzemeltetés | 0 | Aszinkron PDF export feladatok és letöltési linkek. |

@@ -110,7 +110,7 @@ Visibill
 │   ├── /upload/:tab?              Feltöltés
 │   ├── /salaries/:tab?            Bérek / Járulékok (tabok: /salaries [Alkalmazottak & NAV], /purchase_vouchers [Mezőgazdasági felvásárlási jegyek])
 │   ├── /working-time/:tab?        Munkaidő
-│   ├── /petty-cash/:tab?          Házipénztár
+│   ├── /petty-cash/:tab?          Házipénztár és Online Pénztárgép (OPG) (Fejléc címváltó: Házipénztár [Tételek, Jóváhagyások, Pénztárjelentések, Pénztárak, Routing szabályok] / OPG [Forgalmi áttekintés KPI, Bizonylatok & Nyugták, Pénztárgépek, Szinkron napló]; automatikus házipénztári bizonylat-átvezetés, P-163, A-204)
 │   ├── /teny/:tab?                Tárgyi eszközök (TENY felső tabok: /teny [Eszközök], /teny?tab=development_reserves [Fejlesztési tartalékok nyilvántartása]; [ 🧮 ÉCS elszámolás ] Vegyes napló feladási varázsló: havi/negyedéves/éves zárás, P-141, A-180)
 │   ├── /shipments/:tab?           Fuvarok és Szállítmányozás (CMR, import, eszkaláció)
 │   ├── /integrations              Integrációk (NAV, bank)
@@ -121,7 +121,7 @@ Visibill
 │   ├── /tickets/:ticketId?        Hibajegyek és ügyfélszolgálat (P-035, A-018)
 │   ├── /settings/:tab?            Beállítások
 │   ├── /analytics/:tab?           Analitika
-│   └── /vat-return/:tab?          ÁFA bevallás (9 moduláris fül: 65-ös bevallás és replika [43/45 sorok adóösszeg kalkulációval és magyarázó sávval, P-160, A-201], Éves mátrix, Tételes M-lap, Fordított ÁFA, A60 közösségi nyilatkozat és hivatalos 26A60 replika [P-155, A-197], ÁFA tétellista, Gyűjtőkódok, 26TFEJLH, Beállítások + NAV OSA ellenőrzés modal + Könyvelési szabályok modal gomb [P-156, A-196])
+│   └── /vat-return/:tab?          ÁFA bevallás (9 moduláris fül: 65-ös bevallás és replika [43/45 sorok adóösszeg kalkulációval és magyarázó sávval, P-160, A-201; 77-es sor, P-162, A-203], Éves mátrix, Tételes M-lap és Hivatalos 2665M Digitális Replika [Főlap, 02-es és 02-K lapok lapozható és folyamatos görgetési módban, P-164, A-205], Fordított ÁFA, A60 közösségi nyilatkozat és hivatalos 26A60 replika [P-155, A-197], ÁFA tétellista, Gyűjtőkódok, 26TFEJLH, Beállítások + NAV OSA ellenőrzés modal + Könyvelési szabályok modal gomb [P-156, A-196])
 
 │
 ├── eaisyBooks (/accounty/)                ← korábban: Accounty

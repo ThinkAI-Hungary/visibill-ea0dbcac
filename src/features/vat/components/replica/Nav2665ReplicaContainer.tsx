@@ -227,8 +227,7 @@ export function Nav2665ReplicaContainer({
             break-after: auto !important;
             page-break-after: auto !important;
           }
-          .print\:hidden,
-          header,
+          [class*="print:hidden"],
           nav,
           aside,
           [data-sidebar],
@@ -405,6 +404,23 @@ export function Nav2665ReplicaContainer({
             )}
 
             <div className="w-[1px] h-5 bg-neutral-300 mx-1 hidden sm:block" />
+
+            {partnerCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('tab', 'teteles_m');
+                  url.searchParams.set('mView', 'replica');
+                  window.location.href = url.toString();
+                }}
+                className="h-7 px-2.5 text-xs font-mono font-medium bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                title="Átlépés a 2665M tételes M-lap replikára"
+              >
+                📄 2665M M-lapok ({partnerCount} partner)
+              </Button>
+            )}
 
             <Button
               variant={activeSheet === 'all' ? 'default' : 'outline'}

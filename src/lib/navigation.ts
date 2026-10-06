@@ -74,6 +74,7 @@ export const PAGE_PATHS = {
   generalLedger: 'general-ledger',
   kintlevo: 'kintlevo',
   pettyCash: 'petty-cash',
+  opg: 'opg',
   teny: 'teny',
   upload: 'upload',
   settings: 'settings',

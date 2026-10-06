@@ -26,8 +26,13 @@ export function Nav2665PageFrame({
   children,
   className,
 }: Nav2665PageFrameProps) {
-  const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
-  const currentTime = new Date().toTimeString().slice(0, 8);
+  const [{ currentDate, currentTime }] = React.useState(() => {
+    const d = new Date();
+    return {
+      currentDate: d.toISOString().slice(0, 10).replace(/-/g, '.'),
+      currentTime: d.toTimeString().slice(0, 8),
+    };
+  });
 
   const isFolap = sheetCode === '2665A' || /^\d{2}A60$/.test(sheetCode);
 

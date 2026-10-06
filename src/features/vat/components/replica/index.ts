@@ -18,3 +18,7 @@ export { Nav2665Sheet08 } from './Nav2665Sheet08';
 export { Nav26A60ReplicaContainer } from './Nav26A60ReplicaContainer';
 export { Nav26A60SheetFolap } from './Nav26A60SheetFolap';
 export { Nav26A60SheetTable } from './Nav26A60SheetTable';
+export { Nav2665MReplicaContainer } from './Nav2665MReplicaContainer';
+export { Nav2665MSheetFolap } from './Nav2665MSheetFolap';
+export { Nav2665MSheet02 } from './Nav2665MSheet02';
+export { Nav2665MSheet02K } from './Nav2665MSheet02K';

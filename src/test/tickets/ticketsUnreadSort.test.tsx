@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import TicketsPage, { sortTicketsByUnreadAndDate } from '@/pages/TicketsPage';
@@ -45,7 +45,7 @@ vi.mock('react-i18next', async (importOriginal) => {
   return {
     ...actual,
     useTranslation: () => ({
-      t: (k: string) => k,
+      t: (k: string, fallback?: any) => (typeof fallback === 'string' ? fallback : k),
       i18n: { language: 'hu' },
     }),
   };
@@ -217,5 +217,53 @@ describe('TicketsPage unread ticket sorting integration', () => {
     // In console sidebar, unread tickets MUST be at the top!
     expect(renderedNumbers[0]).toBe('#EB-0090');
     expect(renderedNumbers[1]).toBe('#EB-0080');
+  });
+
+  it('sorts tickets by created_at DESC when showAllTickets (Összes ticket) is enabled on Management Dashboard', () => {
+    vi.mocked(useTickets).mockReturnValue({
+      data: sampleTickets,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as any);
+    vi.mocked(useIsSupportAdmin).mockReturnValue({ data: true } as any);
+    vi.mocked(useSupportAgents).mockReturnValue({ data: [] } as any);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/management?view=tickets&subView=list']}>
+          <TicketsPage embeddedInManagement={true} />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    // Initial state: unread tickets at top
+    let ticketCells = screen.getAllByText(/#EB-\d{4}/);
+    let renderedNumbers = ticketCells.map(el => el.textContent?.trim());
+    expect(renderedNumbers[0]).toBe('#EB-0090');
+    expect(renderedNumbers[1]).toBe('#EB-0080');
+
+    // Toggle "Összes ticket"
+    const showAllCheckbox = screen.getByRole('checkbox', { name: /Összes ticket/i });
+    fireEvent.click(showAllCheckbox);
+
+    // After clicking "Összes ticket", tickets must be sorted by created_at DESC:
+    // EB-0095 (2026-09-11), EB-0090 (2026-09-05), EB-0080 (2026-09-01), EB-0070 (2026-08-20)
+    ticketCells = screen.getAllByText(/#EB-\d{4}/);
+    renderedNumbers = ticketCells.map(el => el.textContent?.trim());
+    expect(renderedNumbers[0]).toBe('#EB-0095');
+    expect(renderedNumbers[1]).toBe('#EB-0090');
+    expect(renderedNumbers[2]).toBe('#EB-0080');
+    expect(renderedNumbers[3]).toBe('#EB-0070');
+
+    // Click "Létrehozva" column header to toggle to ASC
+    const createdHeader = screen.getByText('Létrehozva');
+    fireEvent.click(createdHeader);
+
+    ticketCells = screen.getAllByText(/#EB-\d{4}/);
+    renderedNumbers = ticketCells.map(el => el.textContent?.trim());
+    expect(renderedNumbers[0]).toBe('#EB-0070');
+    expect(renderedNumbers[1]).toBe('#EB-0080');
+    expect(renderedNumbers[2]).toBe('#EB-0090');
+    expect(renderedNumbers[3]).toBe('#EB-0095');
   });
 });

@@ -292,4 +292,16 @@ export const queryKeys = {
     ['accounty-module-permissions'] as const,
   accountyRole: (userId: string) =>
     ['accounty-role', userId] as const,
+
+  // ── Online Pénztárgép (OPG) ──
+  opgRegisters: (companyId: string) =>
+    ['opgRegisters', companyId] as const,
+  opgTransactions: (companyId: string, filters?: Record<string, unknown>) =>
+    ['opgTransactions', companyId, filters] as const,
+  opgTurnoverKpi: (companyId: string, startDate?: string, endDate?: string, opgId?: string) =>
+    ['opgTurnoverKpi', companyId, startDate, endDate, opgId] as const,
+  opgDailyTurnover: (companyId: string, startDate?: string, endDate?: string, opgId?: string) =>
+    ['opgDailyTurnover', companyId, startDate, endDate, opgId] as const,
+  opgSyncLogs: (companyId: string) =>
+    ['opgSyncLogs', companyId] as const,
 };

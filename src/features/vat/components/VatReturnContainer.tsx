@@ -28,6 +28,7 @@ import { VatAnnualMatrixView } from './VatAnnualMatrixView';
 import { VatSteelProductsSection } from './VatSteelProductsSection';
 import { VatA60Table } from './VatA60Table';
 import { VatNavA60Replica } from './VatNavA60Replica';
+import { VatNav65MReplica } from './VatNav65MReplica';
 import { VatItemizedJournalView } from './VatItemizedJournalView';
 import { VatTourismTaxSection } from './VatTourismTaxSection';
 import { VatScopeRadioGroup } from './VatScopeRadioGroup';
@@ -83,6 +84,7 @@ export function VatReturnContainer() {
   const rawTab = searchParams.get('tab') || pathTab || 'return';
   const currentTab = rawTab === 'replica' ? 'return' : rawTab;
   const a60SubView = (searchParams.get('a60View') as 'table' | 'replica') || 'table';
+  const mSubView = (searchParams.get('mView') as 'table' | 'replica') || 'table';
 
   const setA60SubView = useCallback(
     (view: 'table' | 'replica') => {
@@ -93,6 +95,24 @@ export function VatReturnContainer() {
             next.delete('a60View');
           } else {
             next.set('a60View', view);
+          }
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  const setMSubView = useCallback(
+    (view: 'table' | 'replica') => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (view === 'table') {
+            next.delete('mView');
+          } else {
+            next.set('mView', view);
           }
           return next;
         },
@@ -346,15 +366,71 @@ export function VatReturnContainer() {
         {!isCroatia && (
           <TabsContent value="teteles_m" className="mt-0">
             <VatReturnErrorBoundary>
-              <VatMLineMasterDetail
-                mLines={mLines}
-                companyId={selectedCompany.id}
-                year={year}
-                month={month}
-                frequency={frequency}
-                selectedCompany={selectedCompany}
-                vatScope={vatScope}
-              />
+              <div className="space-y-4">
+                {/* Sub-view switcher: Table vs Replica (identical to A60 pattern) */}
+                <div className="flex items-center justify-between bg-muted/40 p-1.5 rounded-xl border border-border/60 print:hidden">
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant={mSubView === 'table' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setMSubView('table')}
+                      className={cn(
+                        'h-8 text-xs font-medium gap-1.5',
+                        mSubView === 'table'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Keresztellenőrzés & Számlák</span>
+                    </Button>
+                    <Button
+                      variant={mSubView === 'replica' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setMSubView('replica')}
+                      className={cn(
+                        'h-8 text-xs font-medium gap-1.5',
+                        mSubView === 'replica'
+                          ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      <span>Hivatalos 2665M Nyomtatvány Replika</span>
+                    </Button>
+                  </div>
+
+                  <span className="text-[11px] text-muted-foreground pr-2 hidden sm:inline">
+                    {mSubView === 'replica'
+                      ? 'ÁNYK hivatalos 2665M nyomtatvány A4 lapszimuláció (Főlap, 02, 02-K)'
+                      : 'Belföldi partnerek számlaszintű tételes ellenőrzése'}
+                  </span>
+                </div>
+
+                {mSubView === 'replica' ? (
+                  <VatNav65MReplica
+                    selectedCompany={selectedCompany}
+                    year={year}
+                    month={month}
+                    frequency={frequency}
+                    mLines={mLines}
+                    onRecalculate={async () => {
+                      await calculate.mutateAsync();
+                    }}
+                    isRecalculating={calculate.isPending}
+                  />
+                ) : (
+                  <VatMLineMasterDetail
+                    mLines={mLines}
+                    companyId={selectedCompany.id}
+                    year={year}
+                    month={month}
+                    frequency={frequency}
+                    selectedCompany={selectedCompany}
+                    vatScope={vatScope}
+                  />
+                )}
+              </div>
             </VatReturnErrorBoundary>
           </TabsContent>
         )}

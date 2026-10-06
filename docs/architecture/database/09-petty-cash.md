@@ -2,7 +2,7 @@
 
 > Házipénztár pénztárgépek, nyitó egyenlegek, tételek, szabályok.
 
-**Táblák ebben a csoportban:** 5
+**Táblák ebben a csoportban:** 8
 
 ---
 
@@ -119,6 +119,103 @@ A `settle_invoices_via_petty_cash(p_company_id, p_register_id, p_entry_date, p_i
 **FK:** `company_id` → `companies.id`, `created_by` → `auth.users.id`
 
 **Indexek:** `idx_hp_settings_created_by`, `unique_company_settings`
+
+---
+
+### `opg_cash_registers`
+
+> NAV Online Pénztárgépek (OPG) törzsadatai, AP kód nyilvántartás és házipénztár illesztés.
+
+**RLS:** ✅ | **Sorok:** ~5
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — |  |
+| ap_code | text | — |  |
+| name | text | — |  |
+| location | text | ✓ |  |
+| status | text | — | `'active'::text` |
+| petty_cash_register_id | uuid | ✓ |  |
+| cash_booking_mode | text | — | `'daily_z_summary'::text` |
+| sync_interval_minutes | integer | — | `60` |
+| last_successful_sync_at | timestamp with time zone | ✓ |  |
+| last_failed_sync_at | timestamp with time zone | ✓ |  |
+| last_error_message | text | ✓ |  |
+| metadata | jsonb | ✓ | `'{}'::jsonb` |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+| created_by | uuid | ✓ |  |
+
+**FK:** `company_id` → `companies.id`, `petty_cash_register_id` → `petty_cash_registers.id`, `created_by` → `auth.users.id`
+
+**Indexek:** `idx_opg_cash_registers_company`, `idx_opg_cash_registers_status`, `idx_opg_cash_registers_pcr`, `uq_opg_cash_registers_company_ap`
+
+---
+
+### `opg_transactions`
+
+> Pénztárgépi nyugták, egyszerűsített számlák, Z-zárások és sztornó bizonylatok tételei.
+
+**RLS:** ✅ | **Sorok:** ~100
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — |  |
+| opg_id | uuid | — |  |
+| external_transaction_id | text | — |  |
+| receipt_number | text | — |  |
+| transaction_date | date | — |  |
+| transaction_time | time | — |  |
+| transaction_type | text | — | `'receipt'::text` |
+| total_gross_amount | numeric(15,2) | — | `0` |
+| cash_amount | numeric(15,2) | — | `0` |
+| card_amount | numeric(15,2) | — | `0` |
+| szep_card_amount | numeric(15,2) | — | `0` |
+| voucher_amount | numeric(15,2) | — | `0` |
+| other_payment_amount | numeric(15,2) | — | `0` |
+| payment_method_breakdown | jsonb | — | `'{"cash": 0, "card": 0, "szep_card": 0, "voucher": 0, "other": 0}'::jsonb` |
+| vat_breakdown | jsonb | — | `'{}'::jsonb` |
+| processing_status | text | — | `'new'::text` |
+| cash_entry_id | uuid | ✓ |  |
+| source_payload | jsonb | ✓ |  |
+| error_message | text | ✓ |  |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`, `opg_id` → `opg_cash_registers.id`, `cash_entry_id` → `petty_cash_entries.id`
+
+**Indexek:** `idx_opg_transactions_company_date`, `idx_opg_transactions_opg_date`, `idx_opg_transactions_status`, `idx_opg_transactions_cash_entry`, `idx_opg_transactions_external_id`, `uq_opg_transactions_company_external`
+
+---
+
+### `opg_sync_logs`
+
+> OPG M2M és manuális szinkronizációs audit napló.
+
+**RLS:** ✅ | **Sorok:** ~50
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — |  |
+| opg_id | uuid | ✓ |  |
+| started_at | timestamp with time zone | — | `now()` |
+| finished_at | timestamp with time zone | ✓ |  |
+| period_from | date | ✓ |  |
+| period_to | date | ✓ |  |
+| records_fetched | integer | — | `0` |
+| records_new | integer | — | `0` |
+| records_duplicated | integer | — | `0` |
+| records_errors | integer | — | `0` |
+| status | text | — | `'running'::text` |
+| error_message | text | ✓ |  |
+| created_by | uuid | ✓ |  |
+
+**FK:** `company_id` → `companies.id`, `opg_id` → `opg_cash_registers.id`, `created_by` → `auth.users.id`
+
+**Indexek:** `idx_opg_sync_logs_company_time`, `idx_opg_sync_logs_opg`
 
 ---
 

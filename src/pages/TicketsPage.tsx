@@ -55,6 +55,9 @@ import {
   Building2,
   X,
   AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
 } from "lucide-react";
 import { TicketSlaBadge } from "@/components/tickets/TicketSlaBadge";
 import {
@@ -184,6 +187,26 @@ export default function TicketsPage({
 
   const { user } = useAuth();
   const [showAllTickets, setShowAllTickets] = useState(false);
+  const [createdSortDirection, setCreatedSortDirection] = useState<'desc' | 'asc' | null>(null);
+
+  // When showAllTickets is active, default to 'desc' unless user explicitly toggled it
+  const effectiveCreatedSort = createdSortDirection ?? (showAllTickets ? 'desc' : null);
+  const shouldSortByCreated = Boolean(effectiveCreatedSort);
+
+  const handleToggleShowAllTickets = (checked: boolean) => {
+    setShowAllTickets(checked);
+    // Reset manual sort direction so toggling showAllTickets consistently applies 'desc'
+    setCreatedSortDirection(null);
+  };
+
+  const handleToggleCreatedSort = () => {
+    setCreatedSortDirection((prev) => {
+      const current = prev ?? (showAllTickets ? 'desc' : null);
+      if (current === 'desc') return 'asc';
+      if (current === 'asc') return showAllTickets ? 'desc' : null;
+      return 'desc';
+    });
+  };
   const { data: tickets = [], isLoading, refetch } = useTickets();
   const { data: isSupportAdmin } = useIsSupportAdmin();
   const { data: isManagement } = useIsManagementRole();
@@ -314,8 +337,35 @@ export default function TicketsPage({
       return matchesSearch && matchesCompany && matchesPriority && matchesService && matchesCategory && matchesSla && matchesStatus && matchesOwner;
     });
 
+    if (shouldSortByCreated) {
+      return [...filtered].sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        const validTimeA = isNaN(timeA) ? 0 : timeA;
+        const validTimeB = isNaN(timeB) ? 0 : timeB;
+        if (effectiveCreatedSort === 'asc') {
+          return validTimeA - validTimeB;
+        }
+        return validTimeB - validTimeA;
+      });
+    }
+
     return sortTicketsByUnreadAndDate(filtered);
-  }, [tickets, search, companySearch, priorityFilter, serviceFilter, categoryFilter, slaFilter, selectedStatuses, isAdmin, showAllTickets, user]);
+  }, [
+    tickets,
+    search,
+    companySearch,
+    priorityFilter,
+    serviceFilter,
+    categoryFilter,
+    slaFilter,
+    selectedStatuses,
+    isAdmin,
+    showAllTickets,
+    user,
+    shouldSortByCreated,
+    effectiveCreatedSort,
+  ]);
 
   // Tickets for Console View (Unresolved tickets filtered by search, company and owner, sorted with unread first)
   const consoleTickets = useMemo(() => {
@@ -333,15 +383,28 @@ export default function TicketsPage({
       })
       .filter((t) => matchTicketSearch(t, search));
 
+    if (shouldSortByCreated) {
+      return [...filtered].sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        const validTimeA = isNaN(timeA) ? 0 : timeA;
+        const validTimeB = isNaN(timeB) ? 0 : timeB;
+        if (effectiveCreatedSort === 'asc') {
+          return validTimeA - validTimeB;
+        }
+        return validTimeB - validTimeA;
+      });
+    }
+
     return sortTicketsByUnreadAndDate(filtered);
-  }, [tickets, search, companySearch, isAdmin, showAllTickets, user]);
+  }, [tickets, search, companySearch, isAdmin, showAllTickets, user, shouldSortByCreated, effectiveCreatedSort]);
 
   const [page, setPage] = useState(1);
   const pageSize = embeddedInManagement && isAdmin ? 25 : 15;
 
   React.useEffect(() => {
     setPage(1);
-  }, [search, companySearch, selectedStatuses, priorityFilter, serviceFilter, categoryFilter, slaFilter, showAllTickets]);
+  }, [search, companySearch, selectedStatuses, priorityFilter, serviceFilter, categoryFilter, slaFilter, showAllTickets, effectiveCreatedSort]);
 
   const totalPages = Math.ceil(filteredTickets.length / pageSize);
   const paginatedTickets = useMemo(() => {
@@ -499,7 +562,7 @@ export default function TicketsPage({
     } else {
       initialConsoleSelectedRef.current = false;
     }
-  }, [subView, ticketId, consoleTickets]);
+  }, [subView, ticketId, consoleTickets, updateParams]);
 
   // Switch Sub-Tab
   const setSubTab = (tab: 'list' | 'console' | 'analytics' | 'assignment') => {
@@ -931,15 +994,28 @@ export default function TicketsPage({
                   />
                 </div>
                 {isAdmin && (
-                  <div className="flex items-center gap-2 h-10 border border-input rounded-md px-3 bg-background/50 hover:bg-accent/50 transition-colors shrink-0">
+                  <div
+                    onClick={() => handleToggleShowAllTickets(!showAllTickets)}
+                    className="flex items-center gap-2 h-10 border border-input rounded-md px-3 bg-background/50 hover:bg-accent/50 transition-colors shrink-0 cursor-pointer select-none"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        handleToggleShowAllTickets(!showAllTickets);
+                      }
+                    }}
+                  >
                     <Checkbox
                       id="show-all-tickets"
                       checked={showAllTickets}
-                      onCheckedChange={(checked) => setShowAllTickets(!!checked)}
+                      onCheckedChange={(checked) => handleToggleShowAllTickets(!!checked)}
+                      onClick={(e) => e.stopPropagation()}
                     />
                     <label
                       htmlFor="show-all-tickets"
                       className="text-xs font-semibold leading-none cursor-pointer select-none text-foreground/80"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {t('tickets:show_all_tickets', 'Összes ticket')}
                     </label>
@@ -985,7 +1061,30 @@ export default function TicketsPage({
                   {isAdmin && <TableHead className="w-[180px] min-w-[170px]">{t('tickets:table.col_assignee', 'Felelős')}</TableHead>}
                   <TableHead className="w-[170px] min-w-[165px] text-center">{t('tickets:table.col_status', 'Státusz')}</TableHead>
                   <TableHead className="w-[130px] min-w-[125px] text-center">{t('tickets:table.col_priority', 'Prioritás')}</TableHead>
-                  <TableHead className="w-[110px] text-center">{t('tickets:table.col_created_at', 'Létrehozva')}</TableHead>
+                  <TableHead
+                    className="w-[120px] text-center cursor-pointer select-none hover:text-foreground transition-colors group"
+                    onClick={handleToggleCreatedSort}
+                    title={
+                      effectiveCreatedSort === 'desc'
+                        ? t('tickets:table.sort_created_asc', 'Rendezés: legrégebbi elöl')
+                        : effectiveCreatedSort === 'asc'
+                        ? t('tickets:table.sort_created_default', 'Rendezés visszaállítása')
+                        : t('tickets:table.sort_created_desc', 'Rendezés: legújabb elöl')
+                    }
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span>{t('tickets:table.col_created_at', 'Létrehozva')}</span>
+                      {shouldSortByCreated ? (
+                        effectiveCreatedSort === 'asc' ? (
+                          <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="h-3 w-3 opacity-40 group-hover:opacity-80 shrink-0" />
+                      )}
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

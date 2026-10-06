@@ -57,7 +57,7 @@ export function Nav2665SheetFolap({
     return `${y}1231`;
   })();
 
-  const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const [todayStr] = React.useState(() => new Date().toISOString().slice(0, 10).replace(/-/g, ''));
 
   return (
     <div className="border border-neutral-900 bg-white p-3 sm:p-5 text-neutral-900 text-[11px] leading-tight select-text">

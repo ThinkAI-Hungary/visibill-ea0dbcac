@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-05  
-> **Összesen:** 222 döntés (204 egyedi döntési fájl) | ✅ Decided: 220 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-06  
+> **Összesen:** 224 döntés (206 egyedi döntési fájl) | ✅ Decided: 222 | ⛔ Superseded: 2
 
 
 ---
@@ -256,6 +256,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-201 | NAV 2665 ÁFA Bevallás 43. és 45. Sorok Adóösszeg Kalkulációja és Hivatalos Nyomtatvány Megjelenítése | ✅ Decided | [A-201](./A-201-nav-2665-vat-return-row43-and-row45-tax-amount.md) |
 | A-202 | Bérszámfejtési Haladó Riportok, Nyilatkozatok Állapotmegőrző Navigációja és Ergonómiai Témakezelése | ✅ Decided | [A-202](./A-202-payroll-advanced-reports-and-declarations-navigation-architecture.md) |
 | A-203 | NAV 2665 ÁFA Bevallás: 77. Sor (Közösségi Adómentes Termékértékesítés) Adóalap Implementáció és 2665A-01-03 Nyomtatvány Replika | ✅ Decided | [A-203](./A-203-nav-2665-vat-return-row77-base-amount.md) |
+| A-204 | Online Pénztárgép (OPG) Modul Architektúra és Házipénztár Integráció | ✅ Decided | [A-204](./A-204-online-cash-register-opg-architecture.md) |
+| A-205 | NAV 2665M Digitális Nyomtatvány Replika és Partner Tördelő Motor Architektúrája | ✅ Decided | [A-205](./A-205-nav-2665m-digital-replica-and-partner-pagination-architecture.md) |
 
 
 ## 💳 Fizetés

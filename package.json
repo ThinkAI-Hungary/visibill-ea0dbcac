@@ -107,7 +107,7 @@
     "globals": "^15.15.0",
     "jsdom": "^29.0.1",
     "lovable-tagger": "^1.1.9",
-    "oxlint": "^1.86.0",
+    "oxlint": "^1.87.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.1.200",
     "postcss": "^8.5.6",
