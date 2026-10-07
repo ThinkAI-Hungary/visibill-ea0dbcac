@@ -223,22 +223,21 @@ describe('Online Pénztárgép (OPG) Modul Tesztek', () => {
       expect(screen.getByText('Napi forgalmi kimutatás')).toBeInTheDocument();
     });
 
-    it('Kattintás a szinkron gombra meghívja az onSyncNow handlert', () => {
-      const handleSync = vi.fn().mockResolvedValue({});
+    it('Kattintás az Összes tranzakció gombra navigál a tranzakciók fülre', () => {
+      const handleNavigate = vi.fn();
       renderWithProviders(
         <OpgOverviewTab
           kpi={mockKpi}
           dailyTurnover={mockDailyTurnover}
-          onSyncNow={handleSync}
           onBookAllPending={vi.fn()}
-          onNavigateToTransactions={vi.fn()}
+          onNavigateToTransactions={handleNavigate}
           onNavigateToRegisters={vi.fn()}
         />
       );
 
-      const syncBtn = screen.getByRole('button', { name: /NAV OPG Szinkronizáció indítása/i });
-      fireEvent.click(syncBtn);
-      expect(handleSync).toHaveBeenCalled();
+      const navBtn = screen.getByRole('button', { name: /Összes tranzakció megtekintése/i });
+      fireEvent.click(navBtn);
+      expect(handleNavigate).toHaveBeenCalled();
     });
   });
 
@@ -276,11 +275,19 @@ describe('Online Pénztárgép (OPG) Modul Tesztek', () => {
         />
       );
 
+      // Alapértelmezetten a csoportosított sor látható, a tételek lenyitás előtt rejtettek
+      expect(screen.getByText('3 tétel')).toBeInTheDocument();
+      expect(screen.queryByText('NY-20261006/001')).not.toBeInTheDocument();
+
+      // Lenyitás az "Összes lenyitása" gombbal vagy sorra kattintva
+      const expandAllBtn = screen.getByRole('button', { name: /Összes lenyitása/i });
+      fireEvent.click(expandAllBtn);
+
       expect(screen.getByText('NY-20261006/001')).toBeInTheDocument();
       expect(screen.getByText('NY-20261006/002')).toBeInTheDocument();
       expect(screen.getByText('SZ-20261006/003')).toBeInTheDocument();
 
-      // Keresés sztornó bizonylatra
+      // Keresés sztornó bizonylatra: automatikusan nyitva tartja a találatot
       const searchInput = screen.getByPlaceholderText(/Keresés nyugtaszámra/i);
       fireEvent.change(searchInput, { target: { value: 'SZ-20261006' } });
 

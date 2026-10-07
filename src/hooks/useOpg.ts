@@ -252,6 +252,25 @@ export function useOpg(companyId?: string, filters?: OpgTransactionFilter) {
     },
   });
 
+  // NAV-ból történő automatikus pénztárgép felderítés
+  const discoverRegistersMutation = useMutation({
+    mutationFn: () => OpgService.discoverCashRegisters(companyId || ''),
+    onSuccess: async (res) => {
+      await invalidateAllOpg();
+      toast({
+        title: 'NAV felderítés sikeres',
+        description: `Talált és szinkronizált online pénztárgépek: ${res.discoveredCount} db.`,
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Hiba a NAV felderítéskor',
+        description: err.message || 'Nem sikerült lekérdezni a pénztárgépeket a NAV-tól.',
+      });
+    },
+  });
+
   return {
     // Data
     registers,
@@ -277,6 +296,8 @@ export function useOpg(companyId?: string, filters?: OpgTransactionFilter) {
     refetchSyncLogs,
 
     // Mutations
+    discoverRegisters: discoverRegistersMutation.mutateAsync,
+    isDiscovering: discoverRegistersMutation.isPending,
     createRegister: createRegisterMutation.mutateAsync,
     isCreatingRegister: createRegisterMutation.isPending,
     updateRegister: updateRegisterMutation.mutateAsync,

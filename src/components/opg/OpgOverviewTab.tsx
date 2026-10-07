@@ -15,14 +15,13 @@ import {
   CreditCard,
   Receipt,
   FileSpreadsheet,
-  RefreshCw,
   ArrowUpRight,
   Calculator,
   Calendar,
   AlertCircle,
   CheckCircle2,
-  Loader2,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import type { OpgTurnoverKpi, OpgDailySummary } from '@/types/opg';
 
@@ -30,7 +29,7 @@ interface OpgOverviewTabProps {
   kpi?: OpgTurnoverKpi;
   dailyTurnover: OpgDailySummary[];
   isLoading?: boolean;
-  onSyncNow: () => Promise<any>;
+  onSyncNow?: () => Promise<any>;
   isSyncing?: boolean;
   onBookAllPending: () => Promise<any>;
   isBookingPending?: boolean;
@@ -185,50 +184,10 @@ export const OpgOverviewTab: React.FC<OpgOverviewTabProps> = ({
         </Card>
       </div>
 
-      {/* Gyorsgombok */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-muted/30 border rounded-xl">
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={onSyncNow}
-            disabled={isSyncing}
-            size="sm"
-            className="gap-2"
-          >
-            {isSyncing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            NAV OPG Szinkronizáció indítása
-          </Button>
-
-          {dailyTurnover.length === 0 && onSeedDemoData && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onSeedDemoData}
-              className="gap-1.5 border-dashed"
-            >
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              Minta adatok generálása
-            </Button>
-          )}
-        </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onNavigateToTransactions}
-          className="gap-1 text-xs text-muted-foreground hover:text-foreground"
-        >
-          Összes tranzakció megtekintése <ArrowUpRight className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-
       {/* Napi bontású összesítő táblázat */}
       <Card className="bg-card shadow-sm border">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />
@@ -237,6 +196,28 @@ export const OpgOverviewTab: React.FC<OpgOverviewTabProps> = ({
               <CardDescription>
                 A napi forgalom megoszlása fizetési módonként és a lezárt bizonylatok száma.
               </CardDescription>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {dailyTurnover.length === 0 && onSeedDemoData && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onSeedDemoData}
+                  className="gap-1.5 border-dashed h-8 text-xs"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                  Minta adatok generálása
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onNavigateToTransactions}
+                className="gap-1 text-xs text-muted-foreground hover:text-foreground h-8"
+              >
+                Összes tranzakció megtekintése <ArrowUpRight className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         </CardHeader>

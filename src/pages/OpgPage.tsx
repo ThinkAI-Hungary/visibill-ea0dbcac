@@ -43,6 +43,8 @@ export const OpgPage: React.FC<OpgPageProps> = ({ embedded = false }) => {
     dailyTurnover,
     syncLogs,
     isLoading,
+    discoverRegisters,
+    isDiscovering,
     createRegister,
     updateRegister,
     deleteRegister,
@@ -218,6 +220,8 @@ export const OpgPage: React.FC<OpgPageProps> = ({ embedded = false }) => {
             onUpdateRegister={updateRegister}
             onDeleteRegister={deleteRegister}
             onTestConnection={testConnection}
+            onDiscoverRegisters={discoverRegisters}
+            isDiscovering={isDiscovering}
             onSeedDemoData={seedMockData}
             isTestingConnection={isTestingConnection}
           />

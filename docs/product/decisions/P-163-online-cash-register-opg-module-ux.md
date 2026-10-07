@@ -4,7 +4,7 @@
 Elfogadva
 
 ## Dátum
-2026-10-06
+2026-10-07 (Frissítve: hierarchikus Z-zárás nézet, automatikus AP felderítés és szinkron UX)
 
 ## Kontextus és Problémafelvetés
 A kiskereskedelmi és vendéglátóipari ügyfelek jelentős része kötelezett NAV Online Pénztárgép (OPG) használatára. Korábban a pénztárgépi nyugták és napi Z-zárások adatai manuális rögzítést vagy papíralapú pénztárkönyvelést igényeltek, ami lassú, hibalehetőségekre nyitott és nehezen egyeztethető folyamat volt a házipénztár analitikával.
@@ -23,12 +23,27 @@ Szükségessé vált egy dedikált, automatizált Online Pénztárgép (OPG) mod
 - **OPG állapot:** Az "OPG" szöveg aktív fehérre vált, a "Házipénztár" kiszürkül, és a teljes beágyazott OPG funkciócsalád jelenik meg.
 - A közvetlen `/petty-cash/opg` vagy legacy `/opg` útvonalon keresztül a felület automatikusan OPG állapotban nyílik meg.
 - A Házipénztár felületén egy kiemelt integrációs sáv és közvetlen váltógomb is segíti a könyvelőt, ha függő, még le nem könyvelt készpénzes OPG forgalom áll rendelkezésre.
+- **Egységes szinkronizáció:** A fejléc jobb felső sarkában elhelyezett, minden fülön folyamatosan elérhető `OPG Szinkronizáció` gomb az egyetlen hivatalos indítóeszköz, megelőzve a felületi duplikációt.
 
 ### 2. Modul felépítés (Fülek)
-- **Forgalmi áttekintés**: KPI mutatókártyák (Összes OPG forgalom, Készpénzarány, Bankkártya arány, Pénztárgépek állapota), napi bontású forgalmi összesítő tábla, gyors szinkronizáció és kötegelt házipénztárba könyvelés.
-- **Bizonylatok & Nyugták**: Kereshető és szűrhető tételes bizonylatlista (dátum, bizonylatszám, AP kód, típus, készpénz, bankkártya, könyvelési állapot). Oldalsó részletező lap (Sheet) ÁFA gyűjtőkkel és nyers NAV OPG audit adatokkal.
-- **Pénztárgépek**: Regisztrált kasszák listája (AP kód, telephely, állapot, hozzárendelt házipénztár, utolsó szinkronizáció). Kapcsolat tesztelése és kassza-konfiguráció modal.
-- **Szinkron napló**: Audit napló az automatikus és manuális adatlehívások eredményeiről, új/duplikált bizonylatok statisztikájáról és hibákról.
+
+- **Forgalmi áttekintés**:
+  - KPI mutatókártyák (Összes OPG forgalom, Készpénzarány, Bankkártya arány, Pénztárgépek állapota).
+  - Napi bontású forgalmi összesítő táblázat, amelynek kártyafejlécébe integráltuk az "Összes tranzakció megtekintése" és a mintaadat-generáló gyorsgombokat a letisztult, sallangmentes felépítés érdekében.
+
+- **Bizonylatok & Nyugták (Hierarchikus Napi Z-zárás Nézet)**:
+  - **Alapértelmezett csoportosított nézet:** A könyvelőnek nem kell több száz apró nyugta között keresgélnie; a táblázat fő sorai a **Napi Z-zárások** (dátum/időpont, zárásszám, tételszám jelvény pl. `6 tétel`, pénztárgép neve és AP kódja, napi forgalom, készpénz és bankkártya összeg, könyvelési státusz).
+  - **Lenyitható (Accordion) tételek:** Bármely Z-zárás sorára kattintva azonnal lenyílik a záráshoz tartozó belső bizonylatlista (nyugtaszám, időpont, összeg, fizetési mód, házipénztári státusz és közvetlen könyvelés).
+  - **Intelligens keresés:** Bizonylatszámra vagy tételre történő kereséskor a találatot tartalmazó szülő zárás automatikusan lenyílik és kiemeli a tételt.
+  - **Összes lenyitása / Összes becsukása:** Egyetlen gombnyomással áttekinthető az összes nap összes tétele.
+  - **Nézetváltó:** `[Napi zárások]` fa-struktúra és `[Lapos lista]` közötti azonnali váltás.
+
+- **Pénztárgépek**:
+  - Regisztrált kasszák listája (AP kód, telephely, állapot, hozzárendelt házipénztár, utolsó szinkronizáció).
+  - **Pénztárgépek automatikus felderítése NAV-ból:** Egy kattintásos funkció, amely a meglévő NAV Online Számla technikai felhasználó segítségével lekérdezi és automatikusan rögzíti a vállalkozáshoz tartozó kasszákat AP kóddal és elérhető napló-tartományokkal, elkerülve a manuális adatrögzítést.
+
+- **Szinkron napló**:
+  - Audit napló az automatikus és manuális adatlehívások eredményeiről, új/duplikált bizonylatok statisztikájáról és hibákról.
 
 ### 3. Házipénztári könyvelési mód
 - Pénztárgépenként konfigurálható:
@@ -37,3 +52,4 @@ Szükségessé vált egy dedikált, automatizált Online Pénztárgép (OPG) mod
 
 ## Kapcsolódó Architektúra Döntés
 - [A-204: Online Pénztárgép (OPG) Modul Architektúra és Házipénztár Integráció](../architecture/decisions/A-204-online-cash-register-opg-architecture.md)
+- [A-005: Supabase Edge Functions Katalógus](../architecture/decisions/A-005-edge-functions.md)

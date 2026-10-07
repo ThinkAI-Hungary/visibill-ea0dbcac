@@ -38,8 +38,10 @@ interface OpgRegistersTabProps {
   onUpdateRegister: (input: UpdateOpgRegisterInput) => Promise<any>;
   onDeleteRegister: (id: string) => Promise<any>;
   onTestConnection: (id: string) => Promise<any>;
+  onDiscoverRegisters?: () => Promise<any>;
   onSeedDemoData?: () => Promise<any>;
   isTestingConnection?: boolean;
+  isDiscovering?: boolean;
 }
 
 export const OpgRegistersTab: React.FC<OpgRegistersTabProps> = ({
@@ -51,8 +53,10 @@ export const OpgRegistersTab: React.FC<OpgRegistersTabProps> = ({
   onUpdateRegister,
   onDeleteRegister,
   onTestConnection,
+  onDiscoverRegisters,
   onSeedDemoData,
   isTestingConnection = false,
+  isDiscovering = false,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRegister, setEditingRegister] = useState<OpgCashRegister | null>(null);
@@ -126,6 +130,23 @@ export const OpgRegistersTab: React.FC<OpgRegistersTabProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {onDiscoverRegisters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onDiscoverRegisters}
+              disabled={isDiscovering}
+              className="gap-1.5"
+            >
+              {isDiscovering ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : (
+                <RefreshCw className="h-4 w-4 text-primary" />
+              )}
+              Pénztárgépek felderítése NAV-ból
+            </Button>
+          )}
+
           {registers.length === 0 && onSeedDemoData && (
             <Button
               variant="outline"
@@ -156,17 +177,27 @@ export const OpgRegistersTab: React.FC<OpgRegistersTabProps> = ({
             <Calculator className="h-12 w-12 text-muted-foreground/60 mb-3" />
             <h4 className="text-base font-semibold">Még nincs rögzített online pénztárgép</h4>
             <p className="text-sm text-muted-foreground max-w-md mt-1 mb-6">
-              Rögzítse az üzletében vagy telephelyén üzemelő online pénztárgép AP kódját a NAV nyugtaforgalom és a házipénztári automatizmusok bekapcsolásához.
+              A NAV technikai kulcson keresztül egyetlen kattintással lekérdezheti a cég összes bejegyzett online pénztárgépét (AP kódját), vagy rögzítheti azokat manuálisan is.
             </p>
-            <div className="flex gap-3">
-              <Button onClick={handleAddNew} className="gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {onDiscoverRegisters && (
+                <Button onClick={onDiscoverRegisters} disabled={isDiscovering} className="gap-2">
+                  {isDiscovering ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Pénztárgépek automatikus felderítése NAV-ból
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleAddNew} className="gap-2">
                 <Plus className="h-4 w-4" />
-                Pénztárgép hozzáadása
+                Kézi rögzítés
               </Button>
               {onSeedDemoData && (
-                <Button variant="outline" onClick={onSeedDemoData} className="gap-2">
+                <Button variant="ghost" onClick={onSeedDemoData} className="gap-2 text-muted-foreground">
                   <Sparkles className="h-4 w-4 text-amber-500" />
-                  Minta adatok betöltése
+                  Minta adatok
                 </Button>
               )}
             </div>

@@ -110,7 +110,7 @@ Visibill
 │   ├── /upload/:tab?              Feltöltés
 │   ├── /salaries/:tab?            Bérek / Járulékok (tabok: /salaries [Alkalmazottak & NAV], /purchase_vouchers [Mezőgazdasági felvásárlási jegyek])
 │   ├── /working-time/:tab?        Munkaidő
-│   ├── /petty-cash/:tab?          Házipénztár és Online Pénztárgép (OPG) (Fejléc címváltó: Házipénztár [Tételek, Jóváhagyások, Pénztárjelentések, Pénztárak, Routing szabályok] / OPG [Forgalmi áttekintés KPI, Bizonylatok & Nyugták, Pénztárgépek, Szinkron napló]; automatikus házipénztári bizonylat-átvezetés, P-163, A-204)
+│   ├── /petty-cash/:tab?          Házipénztár és Online Pénztárgép (OPG) (Fejléc címváltó: Házipénztár [Tételek, Jóváhagyások, Pénztárjelentések, Pénztárak, Routing szabályok] / OPG [Forgalmi áttekintés KPI és konszolidált forgalmi kimutatás, Bizonylatok & Nyugták hierarchikus Napi Z-zárás accordion és tételes lista nézettel, Pénztárgépek automatikus NAV felderítéssel, Szinkron napló]; automatikus házipénztári bizonylat-átvezetés, P-163, A-204)
 │   ├── /teny/:tab?                Tárgyi eszközök (TENY felső tabok: /teny [Eszközök], /teny?tab=development_reserves [Fejlesztési tartalékok nyilvántartása]; [ 🧮 ÉCS elszámolás ] Vegyes napló feladási varázsló: havi/negyedéves/éves zárás, P-141, A-180)
 │   ├── /shipments/:tab?           Fuvarok és Szállítmányozás (CMR, import, eszkaláció)
 │   ├── /integrations              Integrációk (NAV, bank)

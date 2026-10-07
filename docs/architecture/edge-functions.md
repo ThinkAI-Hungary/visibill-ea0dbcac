@@ -1,7 +1,7 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-10-06  
-> **Összesen:** 68 dokumentált Deno Edge Function a repó 70-éből (hiányzik: `minimax-sync`, `sync-szamlazz-outbound-invoices`; deploy-állapot: [A-005](./decisions/A-005-edge-functions.md)) + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
+> **Utoljára frissítve:** 2026-10-07  
+> **Összesen:** 69 dokumentált Deno Edge Function a repó 71-éből (hiányzik: `minimax-sync`, `sync-szamlazz-outbound-invoices`; deploy-állapot: [A-005](./decisions/A-005-edge-functions.md)) + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
 A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) könyvtárban található. A technikai architektúra döntést az [A-005: Edge Functions a Serverless Logikához](./decisions/A-005-edge-functions.md), az adatbázis sémát a [database-schema.md](./database-schema.md), az eljárásokat pedig az [rpc-catalog.md](./rpc-catalog.md) írja le.
@@ -21,7 +21,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ## Tartalomjegyzék
 
-1. [🏛️ NAV Integráció (10 db)](#1-nav-integráció)
+1. [🏛️ NAV Integráció (11 db)](#1-nav-integráció)
 2. [📧 Email Küldés & Riportok (10 db)](#2-email-küldés--riportok)
 3. [📥 Email Fogadás & Saját Levelező (5 db)](#3-email-fogadás--saját-levelező)
 4. [⚡ Queue & Export Generálás (2 db)](#4-queue--export-generálás)
@@ -37,9 +37,9 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ---
 
-## 1. 🏛️ NAV Integráció (10 db)
+## 1. 🏛️ NAV Integráció (11 db)
 
-> NAV Online Számla v3 protokoll motor, hitelesítés, számla és adószám szinkronizáció, valamint NAV ÜPO M2M kapcsolat.
+> NAV Online Számla v3 protokoll motor, hitelesítés, számla és adószám szinkronizáció, NAV Online Pénztárgép (OPG) napló-lekérdezés és ÜPO M2M kapcsolat.
 
 | Edge Function | JWT Auth | Meghívó Réteg | Szükséges Környezeti Változók | Leírás és Üzleti Szerepkör |
 |---|:---:|---|---|---|
@@ -53,6 +53,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | [`query-nav-invoices`](../../supabase/functions/query-nav-invoices/index.ts) | ✅ Kötelező | Frontend (NavSearchModal) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Egyedi számlakeresés és részletek lekérdezése NAV bizonylatszám vagy tranzakcióazonosító alapján. |
 | [`nav-tax-profile-sync`](../../supabase/functions/nav-tax-profile-sync/index.ts) | ❌ Nyilvános / Belső | pg_cron / Company onboarding | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Cég adózási státuszának, ÁFA csoportazonosítójának és telephelyeinek frissítése a NAV nyilvántartásból. |
 | [`nav-m2m-proxy`](../../supabase/functions/nav-m2m-proxy/index.ts) | ✅ Kötelező (vagy service_role / cron secret) | Frontend (NavUpoM2mCard) / pg_cron (`cron_sync_all`) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, NAV_M2M_CLIENT_ID, NAV_M2M_CLIENT_SECRET, CRON_SECRET` | NAV ÜPO (Ügyfélportál) M2M proxy: felhasználói token igénylés, nonce beváltás, SHA-256 digitális aláírás, kapcsolat aktiválás, KOMA teszt, valamint automatikus napi EFO és munkavállalói jogviszony szinkronizáció 90 napos audit naplózással (A-154, P-114). |
+| [`nav-opg-proxy`](../../supabase/functions/nav-opg-proxy/index.ts) | ✅ Kötelező (vagy service_role) | Frontend (`OpgService.ts`, `OpgRegistersTab.tsx`, `OpgPage.tsx`) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | NAV Online Pénztárgép (OPG) SOAP proxy: OPG SOAP v1 protokoll (`queryCashRegisterStatus`, `queryCashRegisterFile`), SHA-512 és HMAC-SHA-512 hitelesítés, multipart letöltés és GZIP kitömörítés, automatikus AP kód felderítés (`discover_registers`), pénztárgépi nyugták, egyszerűsített számlák és Z-zárások parse-olása és idempotens mentése a `opg_transactions` táblába (A-204, P-163). |
 
 ---
 

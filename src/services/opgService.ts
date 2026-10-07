@@ -35,6 +35,30 @@ export class OpgService {
   }
 
   /**
+   * Pénztárgépek automatikus felderítése és importálása NAV-ból a technikai felhasználó segítségével
+   */
+  static async discoverCashRegisters(companyId: string): Promise<{ discoveredCount: number; registers: OpgCashRegister[] }> {
+    if (!companyId) return { discoveredCount: 0, registers: [] };
+
+    const { data, error } = await supabase.functions.invoke('nav-opg-proxy', {
+      body: {
+        action: 'discover_registers',
+        company_id: companyId,
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Nem sikerült elérni a NAV felderítő szolgáltatást.');
+    }
+
+    if (!data?.success) {
+      throw new Error(data?.error || 'A NAV pénztárgép felderítés nem sikerült.');
+    }
+
+    return data.data || { discoveredCount: 0, registers: [] };
+  }
+
+  /**
    * Új pénztárgép rögzítése
    */
   static async createCashRegister(input: CreateOpgRegisterInput): Promise<OpgCashRegister> {
@@ -153,22 +177,92 @@ export class OpgService {
       };
     }
 
-    // Sikeres kapcsolat szimuláció / mentés
-    await (supabase as any)
-      .from('opg_cash_registers')
-      .update({
-        status: 'active',
-        last_successful_sync_at: timestamp,
-        last_error_message: null,
-        updated_at: timestamp,
-      })
-      .eq('id', registerId);
+    try {
+      const { data, error } = await supabase.functions.invoke('nav-opg-proxy', {
+        body: {
+          action: 'query_status',
+          company_id: register.company_id,
+          register_id: register.id,
+          ap_code: register.ap_code,
+        },
+      });
 
-    return {
-      success: true,
-      message: `A kapcsolat a(z) ${register.ap_code} azonosítójú pénztárgéppel (NAV OPG átjáró) aktív és stabil.`,
-      timestamp,
-    };
+      if (error || !data?.success) {
+        const errorMsg = error?.message || data?.error || 'A NAV OPG kapcsolat nem jött létre.';
+        await (supabase as any)
+          .from('opg_cash_registers')
+          .update({
+            status: 'error',
+            last_failed_sync_at: timestamp,
+            last_error_message: errorMsg,
+            updated_at: timestamp,
+          })
+          .eq('id', registerId);
+
+        return {
+          success: false,
+          message: errorMsg,
+          timestamp,
+        };
+      }
+
+      const statusData = data.data;
+      if (!statusData.found) {
+        await (supabase as any)
+          .from('opg_cash_registers')
+          .update({
+            status: 'error',
+            last_failed_sync_at: timestamp,
+            last_error_message: statusData.message,
+            updated_at: timestamp,
+          })
+          .eq('id', registerId);
+
+        return {
+          success: false,
+          message: statusData.message,
+          timestamp,
+        };
+      }
+
+      const lastComm = statusData.lastCommunicationDate
+        ? new Date(statusData.lastCommunicationDate).toLocaleString('hu-HU')
+        : 'N/A';
+      const fileRange = `Elérhető naplófájlok: #${statusData.minAvailableFileNumber} - #${statusData.maxAvailableFileNumber}`;
+
+      await (supabase as any)
+        .from('opg_cash_registers')
+        .update({
+          status: 'active',
+          last_successful_sync_at: timestamp,
+          last_error_message: null,
+          updated_at: timestamp,
+        })
+        .eq('id', registerId);
+
+      return {
+        success: true,
+        message: `NAV OPG kapcsolat aktív! Utolsó kommunikáció: ${lastComm}. ${fileRange}`,
+        timestamp,
+      };
+    } catch (err: any) {
+      const errorMsg = err.message || 'Kapcsolódási hiba a NAV átjáróval.';
+      await (supabase as any)
+        .from('opg_cash_registers')
+        .update({
+          status: 'error',
+          last_failed_sync_at: timestamp,
+          last_error_message: errorMsg,
+          updated_at: timestamp,
+        })
+        .eq('id', registerId);
+
+      return {
+        success: false,
+        message: errorMsg,
+        timestamp,
+      };
+    }
   }
 
   /**
@@ -650,119 +744,43 @@ export class OpgService {
     const logId = logEntry?.id;
 
     try {
-      // 2. Érintett pénztárgépek listája
-      let regQuery = (supabase as any)
-        .from('opg_cash_registers')
-        .select('*')
-        .eq('company_id', companyId);
+      // 2. Valós NAV OPG szinkronizáció meghívása az Edge Function-ön keresztül
+      const { data, error } = await supabase.functions.invoke('nav-opg-proxy', {
+        body: {
+          action: 'sync_transactions',
+          company_id: companyId,
+          register_id: opgId && opgId !== 'all' ? opgId : null,
+          period_from: periodFrom,
+          period_to: periodTo,
+        },
+      });
 
-      if (opgId && opgId !== 'all') {
-        regQuery = regQuery.eq('id', opgId);
+      if (error) {
+        throw new Error(error.message || 'Nem sikerült elérni a NAV OPG szinkronizációs átjárót.');
       }
 
-      const { data: registers } = await regQuery;
-
-      if (!registers || registers.length === 0) {
-        if (logId) {
-          await (supabase as any)
-            .from('opg_sync_logs')
-            .update({
-              status: 'success',
-              finished_at: new Date().toISOString(),
-              records_fetched: 0,
-              records_new: 0,
-            })
-            .eq('id', logId);
-        }
-        return { fetched: 0, newRecords: 0, duplicates: 0, errors: 0 };
+      if (!data?.success) {
+        throw new Error(data?.error || 'A NAV OPG szinkronizáció sikertelen.');
       }
 
-      let totalFetched = 0;
-      let totalNew = 0;
-      let totalDup = 0;
-      let totalErrors = 0;
-
-      for (const reg of registers) {
-        // Szimulált vagy valós tranzakció lekérés
-        const mockBatch = this.createMockTransactions(reg, periodFrom, periodTo);
-        totalFetched += mockBatch.length;
-
-        for (const tx of mockBatch) {
-          try {
-            const { error: insErr } = await (supabase as any)
-              .from('opg_transactions')
-              .insert({
-                company_id: companyId,
-                opg_id: reg.id,
-                external_transaction_id: tx.external_transaction_id,
-                receipt_number: tx.receipt_number,
-                transaction_date: tx.transaction_date,
-                transaction_time: tx.transaction_time,
-                transaction_type: tx.transaction_type,
-                total_gross_amount: tx.total_gross_amount,
-                cash_amount: tx.cash_amount,
-                card_amount: tx.card_amount,
-                szep_card_amount: tx.szep_card_amount,
-                voucher_amount: tx.voucher_amount,
-                other_payment_amount: tx.other_payment_amount,
-                payment_method_breakdown: tx.payment_method_breakdown,
-                vat_breakdown: tx.vat_breakdown,
-                processing_status: 'new',
-                source_payload: tx.source_payload,
-              });
-
-            if (insErr) {
-              if (insErr.code === '23505' || insErr.message?.includes('duplicate key')) {
-                totalDup++;
-              } else {
-                totalErrors++;
-                console.warn('[OpgService.syncTransactions] Insert error:', insErr);
-              }
-            } else {
-              totalNew++;
-            }
-          } catch (e) {
-            totalErrors++;
-          }
-        }
-
-        // Pénztárgép utolsó sikeres szinkron idejének frissítése
-        await (supabase as any)
-          .from('opg_cash_registers')
-          .update({
-            last_successful_sync_at: new Date().toISOString(),
-            last_error_message: null,
-            status: 'active',
-          })
-          .eq('id', reg.id);
-      }
-
-      // Automatikus házipénztárba könyvelés futtatása az új tételekre
-      if (totalNew > 0) {
-        await this.bookAllPendingToPettyCash(companyId, opgId);
-      }
+      const syncStats = data.data || { fetched: 0, newRecords: 0, duplicates: 0, errors: 0 };
 
       // 3. Napló véglegesítése
       if (logId) {
         await (supabase as any)
           .from('opg_sync_logs')
           .update({
-            status: totalErrors === 0 ? 'success' : totalNew > 0 ? 'partial' : 'failed',
+            status: syncStats.errors === 0 ? 'success' : syncStats.newRecords > 0 ? 'partial' : 'failed',
             finished_at: new Date().toISOString(),
-            records_fetched: totalFetched,
-            records_new: totalNew,
-            records_duplicated: totalDup,
-            records_errors: totalErrors,
+            records_fetched: syncStats.fetched,
+            records_new: syncStats.newRecords,
+            records_duplicated: syncStats.duplicates,
+            records_errors: syncStats.errors,
           })
           .eq('id', logId);
       }
 
-      return {
-        fetched: totalFetched,
-        newRecords: totalNew,
-        duplicates: totalDup,
-        errors: totalErrors,
-      };
+      return syncStats;
     } catch (err: any) {
       if (logId) {
         await (supabase as any)

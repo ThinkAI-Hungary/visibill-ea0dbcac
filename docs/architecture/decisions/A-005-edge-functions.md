@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-10-06
+**Utoljára frissítve:** 2026-10-07
 
 ## Context
 
@@ -10,11 +10,11 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — **70 function a repóban** (`supabase/functions/*/index.ts`) + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — **71 function a repóban** (`supabase/functions/*/index.ts`) + `_shared/` közös kód.
 
-> ℹ️ **Deploy-állapot (2026-10-04):** élesben 72 function van deployolva. Ebből 5 legacy, csak élesben létező function (`check-subscription`, `check-subscription-status`, `create-checkout`, `create-management-user`, `customer-portal`). 2 repóbeli function nincs deployolva (`accounty-ai-depreciation`, `process-accounting-policy`).
+> ℹ️ **Deploy-állapot (2026-10-07):** élesben 73 function van deployolva. Ebből 5 legacy, csak élesben létező function (`check-subscription`, `check-subscription-status`, `create-checkout`, `create-management-user`, `customer-portal`). 2 repóbeli function nincs deployolva (`accounty-ai-depreciation`, `process-accounting-policy`). A `nav-opg-proxy` élesben sikeresen deployolva van (vxxgvdlqvvchtlmqnrqf).
 
-> 📖 **Teljes, részletes katalógus:** Az Edge Function-ök részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza. Jelenleg 68-at dokumentál a 70-ből; hiányzik a `minimax-sync` és a `sync-szamlazz-outbound-invoices` (külön feladat).
+> 📖 **Teljes, részletes katalógus:** Az Edge Function-ök részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza. Jelenleg 69-et dokumentál a 71-ből; hiányzik a `minimax-sync` és a `sync-szamlazz-outbound-invoices` (külön feladat).
 
 **Közös kód:** `_shared/` mappa:
 - `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
@@ -23,9 +23,9 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ---
 
-### Teljes Edge Function Katalógus (68 db dokumentálva a 70-ből)
+### Teljes Edge Function Katalógus (69 db dokumentálva a 71-ből)
 
-#### 🏛️ NAV Integráció (10 db)
+#### 🏛️ NAV Integráció (11 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
@@ -39,6 +39,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `query-nav-invoices` | ✅ | NAV számlák keresése és szűrése (`NavIngestionService`) |
 | `nav-tax-profile-sync` | ❌ | Adószám profil szinkronizáció NAV-ból |
 | `nav-m2m-proxy` | ✅ | NAV ÜPO M2M (Ügyfélportál gép-gép) proxy, aktiválás, EFO és biztosítotti jogviszony szinkron |
+| `nav-opg-proxy` | ✅ | NAV Online Pénztárgép (OPG) SOAP proxy: AP kód felderítés, logfájl letöltés, kitömörítés és bizonylat-mentés ([A-204](./A-204-online-cash-register-opg-architecture.md)) |
 
 #### 📧 Email Küldés & Riportok (10 db)
 

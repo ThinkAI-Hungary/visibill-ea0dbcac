@@ -155,7 +155,7 @@ A `settle_invoices_via_petty_cash(p_company_id, p_register_id, p_entry_date, p_i
 
 ### `opg_transactions`
 
-> Pénztárgépi nyugták, egyszerűsített számlák, Z-zárások és sztornó bizonylatok tételei.
+> Pénztárgépi nyugták, egyszerűsített számlák, Z-zárások, sztornók és pénzmozgások tételei (`receipt`, `simplified_invoice`, `z_report`, `storno`, `refund`, `cash_movement`).
 
 **RLS:** ✅ | **Sorok:** ~100
 
