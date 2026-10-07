@@ -196,7 +196,7 @@ export function useOpg(companyId?: string, filters?: OpgTransactionFilter) {
 
   // Összes függő tétel kötegelt házipénztárba könyvelése
   const bookAllPendingMutation = useMutation({
-    mutationFn: (opgId?: string) => OpgService.bookAllPendingToPettyCash(companyId || '', opgId),
+    mutationFn: (opgId?: string | void) => OpgService.bookAllPendingToPettyCash(companyId || '', opgId || undefined),
     onSuccess: async (res) => {
       await invalidateAllOpg();
       toast({
@@ -215,12 +215,12 @@ export function useOpg(companyId?: string, filters?: OpgTransactionFilter) {
 
   // Manuális szinkronizáció indítása
   const syncMutation = useMutation({
-    mutationFn: (variables?: { opgId?: string; periodFrom?: string; periodTo?: string }) =>
+    mutationFn: (variables?: { opgId?: string; periodFrom?: string; periodTo?: string } | void) =>
       OpgService.syncTransactions(
         companyId || '',
-        variables?.opgId,
-        variables?.periodFrom,
-        variables?.periodTo
+        variables ? variables.opgId : undefined,
+        variables ? variables.periodFrom : undefined,
+        variables ? variables.periodTo : undefined
       ),
     onSuccess: async (res) => {
       await invalidateAllOpg();
@@ -308,9 +308,10 @@ export function useOpg(companyId?: string, filters?: OpgTransactionFilter) {
     isTestingConnection: testConnectionMutation.isPending,
     bookTransaction: bookTransactionMutation.mutateAsync,
     isBookingTransaction: bookTransactionMutation.isPending,
-    bookAllPending: bookAllPendingMutation.mutateAsync,
+    bookAllPending: (opgId?: string) => bookAllPendingMutation.mutateAsync(opgId),
     isBookingAllPending: bookAllPendingMutation.isPending,
-    syncTransactions: syncMutation.mutateAsync,
+    syncTransactions: (variables?: { opgId?: string; periodFrom?: string; periodTo?: string }) =>
+      syncMutation.mutateAsync(variables),
     isSyncing: syncMutation.isPending,
     seedMockData: seedMockDataMutation.mutateAsync,
   };

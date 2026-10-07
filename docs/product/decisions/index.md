@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-10-06  
-> **Összesen:** 177 döntés (160 egyedi döntési fájl) | ✅ Decided: 173 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-10-07  
+> **Összesen:** 178 döntés (161 egyedi döntési fájl) | ✅ Decided: 174 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -283,5 +283,6 @@
 | P-156 | Könyvelési Szabályok Elérése az ÁFA Bevallás és Napló Alól, Valamint Egységes Szabálykezelő Dialógus UX | ✅ Decided | [P-156](./P-156-accounting-rules-integration-in-vat-and-journals.md) |
 | P-159 | Tárgyi Eszközök és Nyitó Állomány Tömeges Import (Excel/CSV) Felhasználói Élmény (UX) | ✅ Decided | [P-159](./P-159-fixed-assets-bulk-excel-csv-import-and-opening-balances-ux.md) |
 | P-161 | Bérszámfejtés Haladó Riportok és Adóelőleg-Nyilatkozatok Munkafolyamat és Export UX | ✅ Decided | [P-161](./P-161-payroll-advanced-reports-and-declarations-workflow-ux.md) |
+| P-165 | Folyószámla 50-es Lapozás (UnifiedPagination) és Főkönyv Lekérdezési Vihar Megszüntetése UX | ✅ Decided | [P-165](./P-165-general-ledger-and-subledger-pagination-and-concurrency-ux.md) |
 
 

@@ -308,6 +308,7 @@ export default function JournalsPage() {
       return count || 0;
     },
     enabled: !!selectedCompany?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Fetch pending drafts count for Munkalista badge (respecting selected date range)
@@ -374,12 +375,13 @@ export default function JournalsPage() {
 
   // Fetch MNB daily exchange rates for currency conversion and tooltips
   const { data: dailyExchangeRates = [] } = useQuery({
-    queryKey: ['daily-exchange-rates-journals'],
+    queryKey: ['daily_exchange_rates'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('daily_exchange_rates')
         .select('currency, rate_date, rate')
-        .order('rate_date', { ascending: false });
+        .order('rate_date', { ascending: false })
+        .limit(500);
       if (error) return [];
       return data || [];
     },
@@ -408,6 +410,7 @@ export default function JournalsPage() {
       return data || [];
     },
     enabled: !!selectedCompany?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Fetch finalized VAT returns for the company
@@ -424,6 +427,7 @@ export default function JournalsPage() {
       return data || [];
     },
     enabled: !!selectedCompany?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Check if an entry is locked due to closed period or finalized VAT
@@ -483,7 +487,7 @@ export default function JournalsPage() {
 
       const { data, error } = await query
         .order('posting_date', { ascending: false })
-        .limit(10000);
+        .limit(2000);
       if (error) throw error;
       return data || [];
     },

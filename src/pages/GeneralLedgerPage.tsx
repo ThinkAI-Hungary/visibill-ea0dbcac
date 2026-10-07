@@ -779,7 +779,7 @@ export default function GeneralLedgerPage() {
       </div>
 
       {/* ── Kartonok nézet (Főkönyvi & Analitikus Kartonok modul) ── */}
-      <div className={activeViewTab !== 'cards' ? 'hidden' : ''}>
+      {activeViewTab === 'cards' && (
         <Card className="border-border/60 shadow-md content-animate">
           <CardHeader className="py-4 border-b border-border/40 bg-muted/30">
             <CardTitle className="text-xl font-bold flex items-center justify-between gap-3">
@@ -853,10 +853,10 @@ export default function GeneralLedgerPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+      )}
 
       {/* F7: Journal view */}
-      <div className={activeViewTab !== 'journal' ? 'hidden' : ''}>
+      {activeViewTab === 'journal' && (
         <Card className="border-border/60 shadow-md content-animate">
           <CardHeader className="py-4 border-b border-border/40 bg-muted/30">
             <CardTitle className="text-xl font-bold flex items-center gap-3">
@@ -886,10 +886,10 @@ export default function GeneralLedgerPage() {
             />
           </CardContent>
         </Card>
-      </div>
+      )}
 
       {/* Comparison view */}
-      <div className={activeViewTab !== 'comparison' ? 'hidden' : ''}>
+      {activeViewTab === 'comparison' && (
         <Card className="border-border/60 shadow-md content-animate">
           <CardHeader className="py-4 border-b border-border/40 bg-muted/30">
             <CardTitle className="text-xl font-bold flex items-center gap-3">
@@ -918,7 +918,7 @@ export default function GeneralLedgerPage() {
             />
           </CardContent>
         </Card>
-      </div>
+      )}
       </>
       )}
 

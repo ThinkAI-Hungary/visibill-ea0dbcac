@@ -41,15 +41,17 @@ export function GlAnalyticReconciliationView({
       }
 
       // 2. Optimized Client-Side Fallback calculation
-      // Fetch G/L journal balances
+      // Fetch G/L journal balances for this company only
       const { data: rawLines } = await supabase
         .from('acc_journal_lines')
         .select(`
           dc_type,
           amount,
-          gl_account:gl_accounts(gl_number),
-          header:acc_journal_headers(company_id, posting_date)
-        `);
+          gl_account:gl_accounts!inner(gl_number),
+          header:acc_journal_headers!inner(company_id, posting_date)
+        `)
+        .eq('header.company_id', companyId)
+        .lte('header.posting_date', dateTo);
 
       let vevoGl = 0;
       let szallitoGl = 0;

@@ -109,3 +109,5 @@ A lekönyvelt naplófejek módosítása szigorúan tiltott (`acc_enforce_header_
 - [A-043: Könyvelési Naplók és Kettős Könyvviteli Folyószámlák](./A-043-accounting-journals.md)
 - [A-111: Közvetlen Bizonylat-visszanyitás és Sorszámfolytonossági Védelem](./A-111-accounting-journal-unpost-gl-storno-and-numbering-integrity.md)
 - [A-191: Folyószámla Kettős Devizakezelés, Árfolyam-számítás és Csoportosítási Architektúra](./A-191-subledger-dual-currency-and-grouping-architecture.md)
+- [A-226: Főkönyvi és Folyószámlai Lekérdezési Vihar Felszámolása, Sémajavítás és Folyószámla Pagináció](./A-226-gl-subledger-concurrency-storm-and-analytic-reconciliation-schema-fix.md)
+- [P-165: Folyószámla 50-es Lapozás (UnifiedPagination) és Főkönyv Lekérdezési Vihar UX](../../product/decisions/P-165-general-ledger-and-subledger-pagination-and-concurrency-ux.md)

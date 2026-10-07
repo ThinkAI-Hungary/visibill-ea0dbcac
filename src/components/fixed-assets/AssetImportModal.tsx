@@ -190,7 +190,7 @@ export function AssetImportModal({
       });
     } catch (err: any) {
       reportError({
-        type: 'custom',
+        type: 'upload',
         component: 'AssetImportModal',
         action: 'processBuffer',
         message: err?.message || 'Hiba a fájl feldolgozása közben',

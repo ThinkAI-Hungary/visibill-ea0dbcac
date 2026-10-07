@@ -103,18 +103,25 @@ export function useSubledgerItems(
 /**
  * Fetch accounts eligible for subledger view (partner or detail managed accounts)
  */
-export function useSubledgerAccounts(companyId?: string) {
+export function useSubledgerAccounts(companyId?: string, presetId?: string) {
   return useQuery({
-    queryKey: subledgerQueryKeys.accounts(companyId || ''),
+    queryKey: [...subledgerQueryKeys.all, 'accounts', companyId || '', presetId || 'all'] as const,
     queryFn: async () => {
       if (!companyId) return [];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('gl_accounts')
         .select('id, gl_number, short_name, subledger_type, is_open_item_managed')
-        .or(`company_id.eq.${companyId},preset_id.not.is.null`)
         .or('is_open_item_managed.eq.true,subledger_type.in.(partner,detail)')
         .order('gl_number', { ascending: true });
+
+      if (presetId) {
+        query = query.or(`company_id.eq.${companyId},preset_id.eq.${presetId}`);
+      } else {
+        query = query.or(`company_id.eq.${companyId},preset_id.not.is.null`);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching subledger accounts:', error);

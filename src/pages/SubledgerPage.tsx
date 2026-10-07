@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +53,8 @@ import { BulkRoundingWriteOffModal } from '@/components/subledger/BulkRoundingWr
 import { SubledgerExportDialog } from '@/components/subledger/SubledgerExportDialog';
 import { SubledgerPostingModal } from '@/components/subledger/SubledgerPostingModal';
 import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEntryModal';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { useActivePreset } from '@/hooks/useActivePreset';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +73,7 @@ export default function SubledgerPage() {
   const companyName = selectedCompany?.name || 'Cég';
 
   const { dateFromFormatted: dateFrom, dateToFormatted: dateTo } = useDateRange();
+  const { activePresetId } = useActivePreset(companyId);
 
   // Filters & State
   const [selectedGlAccountId, setSelectedGlAccountId] = useState<string>('all');
@@ -79,6 +82,10 @@ export default function SubledgerPage() {
   const [statusFilter, setStatusFilter] = useState<SubledgerStatusFilter>('ALL_ACTIVE');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showHelpGuide, setShowHelpGuide] = useState<boolean>(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(50);
 
   // Selected Group Keys for Multi-pairing / Batch Actions (group keys of invoices)
   const [selectedGroupKeys, setSelectedGroupKeys] = useState<Set<string>>(new Set());
@@ -103,10 +110,10 @@ export default function SubledgerPage() {
   const unpostMutation = useUnpostSubledgerEntry();
 
   // Queries
-  const { data: accounts = [], isLoading: isLoadingAccounts } = useSubledgerAccounts(companyId);
+  const { data: accounts = [], isLoading: isLoadingAccounts } = useSubledgerAccounts(companyId, activePresetId);
 
   const { data: partners = [] } = useQuery({
-    queryKey: ['subledgerPartners', companyId],
+    queryKey: ['partners', companyId],
     queryFn: async () => {
       if (!companyId) return [];
       const { data, error } = await supabase
@@ -118,6 +125,7 @@ export default function SubledgerPage() {
       return data || [];
     },
     enabled: !!companyId,
+    staleTime: 60_000,
   });
 
   const {
@@ -156,6 +164,19 @@ export default function SubledgerPage() {
   const groupedInvoices = useMemo<GroupedSubledgerInvoice[]>(() => {
     return groupSubledgerItems(filteredItems);
   }, [filteredItems]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [mode, statusFilter, searchTerm, selectedGlAccountId, selectedPartnerId, dateFrom, dateTo]);
+
+  // Pagination calculations
+  const totalItems = groupedInvoices.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const paginatedInvoices = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return groupedInvoices.slice(start, start + itemsPerPage);
+  }, [groupedInvoices, currentPage, itemsPerPage]);
 
   // Overall stats based on grouped invoices
   const stats = useMemo(() => {
@@ -286,10 +307,10 @@ export default function SubledgerPage() {
   };
 
   const handleToggleAllExpand = () => {
-    if (expandedGroupKeys.size === groupedInvoices.length && groupedInvoices.length > 0) {
+    if (expandedGroupKeys.size >= paginatedInvoices.length && paginatedInvoices.length > 0) {
       setExpandedGroupKeys(new Set());
     } else {
-      setExpandedGroupKeys(new Set(groupedInvoices.map((i) => i.group_key)));
+      setExpandedGroupKeys(new Set(paginatedInvoices.map((i) => i.group_key)));
     }
   };
 
@@ -363,9 +384,17 @@ export default function SubledgerPage() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedGroupKeys(new Set(groupedInvoices.map((i) => i.group_key)));
+      setSelectedGroupKeys((prev) => {
+        const next = new Set(prev);
+        paginatedInvoices.forEach((i) => next.add(i.group_key));
+        return next;
+      });
     } else {
-      setSelectedGroupKeys(new Set());
+      setSelectedGroupKeys((prev) => {
+        const next = new Set(prev);
+        paginatedInvoices.forEach((i) => next.delete(i.group_key));
+        return next;
+      });
     }
   };
 
@@ -373,8 +402,8 @@ export default function SubledgerPage() {
   const handlePairSelected = async () => {
     if (!companyId || selectedItems.length < 2) return;
 
-    const tItems = [...selectedItems.filter((i) => i.dc_type === 'T')];
-    const kItems = [...selectedItems.filter((i) => i.dc_type === 'K')];
+    const tItems = selectedItems.filter((i) => i.dc_type === 'T');
+    const kItems = selectedItems.filter((i) => i.dc_type === 'K');
 
     if (tItems.length === 0 || kItems.length === 0) {
       alert(t('accounting:subledger.floating_bar.imbalance_warning', 'Párosításhoz legalább 1 Tartozik (T) és 1 Követel (K) tétel kijelölése szükséges!'));
@@ -839,12 +868,12 @@ export default function SubledgerPage() {
                       onClick={handleToggleAllExpand}
                       className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                       title={
-                        expandedGroupKeys.size === groupedInvoices.length && groupedInvoices.length > 0
+                        expandedGroupKeys.size >= paginatedInvoices.length && paginatedInvoices.length > 0
                           ? t('accounting:subledger.table.collapse_all', 'Összes becsukása')
                           : t('accounting:subledger.table.expand_all', 'Összes lenyitása')
                       }
                     >
-                      {expandedGroupKeys.size === groupedInvoices.length && groupedInvoices.length > 0 ? (
+                      {expandedGroupKeys.size >= paginatedInvoices.length && paginatedInvoices.length > 0 ? (
                         <ChevronDown className="w-3.5 h-3.5" />
                       ) : (
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -852,8 +881,8 @@ export default function SubledgerPage() {
                     </Button>
                     <Checkbox
                       checked={
-                        groupedInvoices.length > 0 &&
-                        groupedInvoices.every((i) => selectedGroupKeys.has(i.group_key))
+                        paginatedInvoices.length > 0 &&
+                        paginatedInvoices.every((i) => selectedGroupKeys.has(i.group_key))
                       }
                       onCheckedChange={(checked) => handleSelectAll(!!checked)}
                     />
@@ -891,7 +920,7 @@ export default function SubledgerPage() {
                   </td>
                 </tr>
               ) : (
-                groupedInvoices.map((inv) => {
+                paginatedInvoices.map((inv) => {
                   const isSelected = selectedGroupKeys.has(inv.group_key);
                   const isExpanded = expandedGroupKeys.has(inv.group_key);
                   const isOverdue =
@@ -1385,6 +1414,25 @@ export default function SubledgerPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination controls */}
+        {totalItems > 0 && (
+          <div className="p-3 border-t bg-muted/20">
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setItemsPerPage(newSize);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[25, 50, 100, 200]}
+              className="py-1"
+            />
+          </div>
+        )}
       </Card>
 
       {/* Two-Sided Posting & Editing Modal */}

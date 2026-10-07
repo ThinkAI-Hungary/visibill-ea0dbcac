@@ -62,7 +62,7 @@ export function GeneralLedgerComparisonTable({
 
   // Current year balances
   const { data: currData = [], isLoading: currLoading } = useQuery({
-    queryKey: ['glBalancesCurr', presetId, companyId, dateFrom, dateTo, dateBasis, postingStatus],
+    queryKey: ['glBalances', presetId, companyId, dateFrom, dateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!presetId || !companyId) return [];
       return await fetchAllGlBalances({
@@ -80,7 +80,7 @@ export function GeneralLedgerComparisonTable({
 
   // Previous year balances
   const { data: prevData = [], isLoading: prevLoading } = useQuery({
-    queryKey: ['glBalancesPrev', presetId, companyId, prevDateFrom, prevDateTo, dateBasis, postingStatus],
+    queryKey: ['glBalances', presetId, companyId, prevDateFrom, prevDateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!presetId || !companyId || !prevDateFrom || !prevDateTo) return [];
       return await fetchAllGlBalances({
@@ -153,7 +153,7 @@ export function GeneralLedgerComparisonTable({
       if (b.originalKey === 'UNCLASSIFIED') return -1;
       return a.glNumber.localeCompare(b.glNumber);
     });
-  }, [currData, prevData, isLoading]);
+  }, [currData, prevData, isLoading, t]);
 
   const filteredData = useMemo(() => {
     let result = comparisonData;

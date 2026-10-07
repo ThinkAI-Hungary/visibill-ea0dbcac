@@ -36,8 +36,8 @@ function sha3512Hex(str: string): string {
   const encoder = new TextEncoder();
   const data = encoder.encode(str);
   const hash = sha3_512(data);
-  return Array.from(hash)
-    .map((b) => b.toString(16).padStart(2, '0'))
+  return Array.from(new Uint8Array(hash))
+    .map((b: number) => b.toString(16).padStart(2, '0'))
     .join('')
     .toUpperCase();
 }
@@ -289,7 +289,7 @@ function extractAeeXmlFromMtomPayload(rawPayload: Uint8Array): Array<{ filename:
           const unzipped = fflate.unzipSync(zipSlice);
           for (const [entryName, entryBytes] of Object.entries(unzipped)) {
             const textDecoder = new TextDecoder('utf-8');
-            const fullDecoded = textDecoder.decode(entryBytes);
+            const fullDecoded = textDecoder.decode(entryBytes as Uint8Array);
 
             const xmlStart = fullDecoded.indexOf('<?xml');
             const xmlEnd = fullDecoded.lastIndexOf('</ROWS>');
@@ -327,7 +327,7 @@ interface ParsedOpgTransaction {
   receipt_number: string;
   transaction_date: string;
   transaction_time: string;
-  transaction_type: 'receipt' | 'simplified_invoice' | 'daily_z_summary' | 'cash_movement';
+  transaction_type: 'receipt' | 'simplified_invoice' | 'daily_z_summary' | 'cash_movement' | 'z_report' | 'storno' | 'refund';
   total_gross_amount: number;
   cash_amount: number;
   card_amount: number;
@@ -767,13 +767,15 @@ Deno.serve(async (req: Request) => {
           continue;
         }
 
-        if (!statusResult.found || statusResult.maxAvailableFileNumber === 0) {
+        if (!statusResult.found || !('maxAvailableFileNumber' in statusResult) || !statusResult.maxAvailableFileNumber) {
           continue;
         }
 
-        const lastDownloaded = reg.metadata?.last_downloaded_file_number || (statusResult.minAvailableFileNumber - 1);
-        let startFile = file_start ? parseInt(file_start, 10) : Math.max(statusResult.minAvailableFileNumber, lastDownloaded + 1);
-        let endFile = file_end ? parseInt(file_end, 10) : statusResult.maxAvailableFileNumber;
+        const minFile = (statusResult as any).minAvailableFileNumber ?? 1;
+        const maxFile = (statusResult as any).maxAvailableFileNumber;
+        const lastDownloaded = reg.metadata?.last_downloaded_file_number || (minFile - 1);
+        let startFile = file_start ? parseInt(file_start, 10) : Math.max(minFile, lastDownloaded + 1);
+        let endFile = file_end ? parseInt(file_end, 10) : maxFile;
 
         if (startFile > endFile) {
           await adminClient
@@ -843,7 +845,7 @@ Deno.serve(async (req: Request) => {
             status: 'active',
             last_error_message: null,
             metadata: {
-              ...(reg.metadata || {}),
+              ...reg.metadata,
               last_downloaded_file_number: endFile,
               last_status: statusResult,
               updated_at: new Date().toISOString(),

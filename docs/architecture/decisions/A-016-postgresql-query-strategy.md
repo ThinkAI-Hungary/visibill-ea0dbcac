@@ -47,7 +47,7 @@ await supabase.from('invoices').update({ status: 'verified' }).eq('id', invoiceI
 
 ### 2. Teljes RPC Function Katalógus Áttekintés
 
-**Összesen: 133 hívható RPC function** és **73 trigger function** a `public` sémában (részletesen: [rpc-catalog.md](../rpc-catalog.md)).
+**Összesen: 145 hívható RPC function** és **74 trigger function** a `public` sémában (részletesen: [rpc-catalog.md](../rpc-catalog.md)).
 
 ---
 

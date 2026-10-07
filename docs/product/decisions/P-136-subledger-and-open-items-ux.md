@@ -95,3 +95,5 @@ Ha a könyvelő kijelöl egy vagy több sort:
 - [P-055: Könyvelési Napló UX](./P-055-accounting-journals-ux.md)
 - [P-135: Főkönyvi Kivonat Klasszikus Nézet Oszlopszélességek és Összesítő Sáv UX](./P-135-general-ledger-classic-view-column-widths-and-totals-ux.md)
 - [P-152: Folyószámla Kettős Devizamegjelenítés, Árfolyam Tooltip és Vegyes Devizás Kijelölés UX](./P-152-subledger-dual-currency-display-and-multicurrency-selection-ux.md)
+- [P-165: Folyószámla 50-es Lapozás (UnifiedPagination) és Főkönyv Lekérdezési Vihar UX](./P-165-general-ledger-and-subledger-pagination-and-concurrency-ux.md)
+- [A-226: Főkönyvi és Folyószámlai Lekérdezési Vihar Felszámolása, Sémajavítás és Folyószámla Pagináció](../../architecture/decisions/A-226-gl-subledger-concurrency-storm-and-analytic-reconciliation-schema-fix.md)
