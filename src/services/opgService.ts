@@ -362,6 +362,18 @@ export class OpgService {
 
     if (error) {
       console.error('[OpgService.getTurnoverKpis] Error:', error);
+      if ((error as any).code === 'PGRST205' || (error as any).code === '42P01') {
+        return {
+          totalGross: 0,
+          totalCash: 0,
+          totalCard: 0,
+          otherTotal: 0,
+          transactionCount: 0,
+          zReportCount: 0,
+          pendingCashBookingCount: 0,
+          activeRegisterCount: 0,
+        };
+      }
       throw error;
     }
 
