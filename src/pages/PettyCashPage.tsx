@@ -112,10 +112,16 @@ const PettyCashPage = () => {
     queryKey: ['opgTurnoverKpi', companyId],
     queryFn: async () => {
       if (!companyId) return null;
-      const { OpgService } = await import('@/services/opgService');
-      return OpgService.getTurnoverKpis(companyId);
+      try {
+        const { OpgService } = await import('@/services/opgService');
+        return await OpgService.getTurnoverKpis(companyId);
+      } catch (err) {
+        console.warn('[PettyCashPage] Failed to fetch OPG KPI:', err);
+        return null;
+      }
     },
     enabled: !!companyId,
+    staleTime: 60000,
   });
 
   // Registers list for passing to tabs

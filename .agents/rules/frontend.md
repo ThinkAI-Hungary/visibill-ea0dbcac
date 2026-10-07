@@ -32,6 +32,11 @@ description: Apply when working on React components, UI styling, frontend state,
   * Szigorúan kerüld az `any` típus használatát!
   * Minden komponens propjaihoz definiálj explicit `interface` vagy `type` leírást.
   * Az adatbázisból érkező adatokhoz mindig a generált Supabase típusokat használd (`src/integrations/supabase/types.ts`).
+* **Zéró Fantom Mező (PGRST204 Megelőzés):**
+  * `.from('...').insert(payload)` vagy `.update(payload)` hívások összeállításakor győződj meg róla, hogy a payload **minden egyes kulcsa** létező adatbázis oszlop a migrálások szerint.
+  * Tilos olyan feltételezett kapcsolat-kulcsokat beszúrni (pl. `nav_invoice_id`, `invoice_id`), amelyek nem részei a cél tábla sémájának.
+* **Aggregáló / Banner Lekérdezések Rezilienciája (PGRST205 Védelem):**
+  * Új vagy kiegészítő modulok adatainak lekérésekor (pl. fejléc számlálók, dashboard widgetek) mindig alkalmazz hibavédelmet és `staleTime`-ot a TanStack Query-ben, hogy egy még le nem futott migráció vagy schema cache frissülés ne rántsa magával a teljes oldal betöltését.
 
 ## 5. Gyors Kódminőség és Hook Ellenőrzés (Oxlint)
 * **Aktív és kötelező használat frontend módosítások után:**

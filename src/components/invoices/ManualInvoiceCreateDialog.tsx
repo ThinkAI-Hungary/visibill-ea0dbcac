@@ -430,7 +430,6 @@ export function ManualInvoiceCreateDialog({
         image_url: uploadedFileUrl,
         melleklet_url: uploadedFileUrl,
         attachments: fileAttachmentJson,
-        nav_invoice_id: selectedNavInvoice?.id || null,
         nav_status: selectedNavInvoice ? 'verified' : 'missing_nav',
         statusz: isFullyPaid ? 'feldolgozva' : (isPartiallyPaid ? 'partially_paid' : 'feldolgozva'),
         fizetve: isFullyPaid,

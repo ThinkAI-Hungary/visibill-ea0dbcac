@@ -183,3 +183,27 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
          1. A számlafejléceket (`valid_invoices`, `valid_nav_invoices`) dedikált `AS MATERIALIZED` CTE-kbe kell kiemelni, ahol a bérlő (`company_id`), dátumtartomány és az anti-join **pontosan egyszer, fejléc szinten** fut le.
          2. A tételek, ÁFA sorok és partner sorok kizárólag ezekhez az előszűrt memóriatáblákhoz csatlakozhatnak, soha nem hivatkozhatnak közvetlenül a nyers `invoices` vagy `nav_invoices` alaptáblákra.
 
+---
+
+## 🛑 8. PostgREST Schema Cache Integritás (PGRST204 & PGRST205 Védelem)
+
+A Supabase API rétege (PostgREST) belső séma-gyorsítótárral (schema cache) dolgozik. Bármilyen eltérés a kód és a DB között azonnali 4xx hibát dob.
+
+### A) PGRST204 Védelem — Zéró Fantom Oszlop (Zero Phantom Columns):
+* **Hiba tünete:** `Could not find the 'xyz' column of 'table' in the schema cache`.
+* **Kiváltó ok:** A frontend vagy Edge Function olyan mezőt küld be `.insert()` / `.update()` payloadban, vagy kér le `.select()`-ben, amely fizikailag nem létezik a PostgreSQL táblában (pl. elírás vagy feltételezett kapcsolat, mint a `nav_invoice_id` az `invoices` táblán).
+* **Kötelező Invariáns:**
+  1. **Séma-ellenőrzés írás előtt:** Tilos mezőneveket intuíció alapján beírni! Új lekérdezés vagy mutációs payload készítésekor **kötelező megnézni a tábla valós sémáját** a legutolsó releváns migrációs fájlban vagy élő DB esetén az `information_schema.columns` táblában (`execute_sql`).
+  2. **Típusosítás:** Ha egy tábla sémája változik, tilos `Record<string, any>` maszkolással elrejteni az oszlopokat; törekedni kell a generált vagy explicit interfészek használatára.
+
+### B) PGRST205 Védelem — Schema-First Deploy & Reziliens Cache:
+* **Hiba tünete:** `Could not find the table 'public.xyz' in the schema cache`.
+* **Kiváltó ok:** A felület már hivatkozik egy új táblára, de a migráció még nem futott le az éles DB-ben, vagy lefutott, de a PostgREST cache nem frissült / a migráció nincs regisztrálva a `schema_migrations` táblában.
+* **Kötelező Invariáns:**
+  1. **Schema-First Sorrend:** Új táblát használó frontend kódot kizárólag **azután** szabad élesíteni, miután a migráció fizikailag lefutott a távoli adatbázison, regisztrálva lett a `supabase_migrations.schema_migrations` táblában, és ki lett adva a cache frissítés:
+     ```sql
+     NOTIFY pgrst, 'reload schema';
+     ```
+  2. **UI Nem-Kritikus Query Résiliencia (Graceful Degradation):**
+     * Nem-kritikus összefoglaló kártyáknál, fejléc számlálóknál vagy banner KPI lekérdezéseknél (pl. OPG forgalom, függő tételek) a query catch blokkjának fel kell ismernie a `PGRST205` / `42P01` hibakódot, és csendes default értékkel (`0` / `null`) kell visszatérnie a teljes oldal összeomlása és az `app_error_logs` elárasztása helyett.
+

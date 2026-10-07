@@ -1505,8 +1505,8 @@
     "semantic_hash": ""
   },
   "src/pages/PettyCashPage.tsx": {
-    "mtime": 1791291599.068184,
-    "ast_hash": "d2c27b649081be884c32f38c4461c306",
+    "mtime": 1791377135.2043521,
+    "ast_hash": "ad4b76c947c704f29bf3b3b25b4f07ab",
     "semantic_hash": ""
   },
   "src/pages/ProfitAndLoss.tsx": {
@@ -2905,8 +2905,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-005-edge-functions.md": {
-    "mtime": 1791291599.2442806,
-    "ast_hash": "9ce2bda7f58383b33792051a16621209",
+    "mtime": 1791377130.7213721,
+    "ast_hash": "305e81e01e9bf4da12008a30cc69f559",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-006-python-worker.md": {
@@ -3465,8 +3465,8 @@
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1791291598.9872558,
-    "ast_hash": "bc9e7d0795ce46c36104e3955a9a5756",
+    "mtime": 1791377130.723458,
+    "ast_hash": "0a64d3e9b9bb57fc24ea05068286cc7e",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -4935,8 +4935,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/09-petty-cash.md": {
-    "mtime": 1791291598.9812255,
-    "ast_hash": "79cfdde18f9b18f45b56374fb72e48f7",
+    "mtime": 1791377130.7208474,
+    "ast_hash": "30572827dd9960ac4559ec846bfc5d6d",
     "semantic_hash": ""
   },
   "docs/architecture/database/10-assets.md": {
@@ -8570,8 +8570,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1791291599.2452776,
-    "ast_hash": "70a381cdde0fdbac8f1e37afde848036",
+    "mtime": 1791377130.7224183,
+    "ast_hash": "f1734fc30080cf6c306783b48382dfb3",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
@@ -13908,8 +13908,8 @@
     "semantic_hash": ""
   },
   "src/components/invoices/ManualInvoiceCreateDialog.tsx": {
-    "mtime": 1791291599.3173976,
-    "ast_hash": "75f93f176f4f300a28c681a55b03c5ed",
+    "mtime": 1791377135.2043521,
+    "ast_hash": "3daec747239583653f9c668f9e162ce4",
     "semantic_hash": ""
   },
   "src/components/invoices/__tests__/ManualInvoiceCreateDialog.test.tsx": {
@@ -14003,8 +14003,8 @@
     "semantic_hash": ""
   },
   "scripts/gdrive-sync/VisibillGoogleDriveSync.js": {
-    "mtime": 1791247082.5036316,
-    "ast_hash": "0a0d8527f054e1628dfcf29ad942b785",
+    "mtime": 1791298983.4207075,
+    "ast_hash": "b58887c187d2f66812ab54aaa24d48e9",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetImportModal.tsx": {
@@ -14103,8 +14103,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-203-google-drive-invoices-ingestion.md": {
-    "mtime": 1791247082.437124,
-    "ast_hash": "594179c64a0d69ac35991aaef519ed31",
+    "mtime": 1791298156.5663342,
+    "ast_hash": "03ee0891925c1ff4f1a9191f0b156328",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-158-nav-65m-02-k-correction-and-storno-invoices-ux.md": {
@@ -14128,8 +14128,8 @@
     "semantic_hash": ""
   },
   "scripts/gdrive-sync/README.md": {
-    "mtime": 1791247082.5036316,
-    "ast_hash": "f8318a198c126978e7667ac71922ef74",
+    "mtime": 1791298141.3536422,
+    "ast_hash": "b0f97ef8386bace344ae0e6f9b5e9c60",
     "semantic_hash": ""
   },
   "session-summary/\u00c1ron/2026-10-05/summary-133000-fixed-assets-bulk-import-nav-65m-02-k-storno-and-cash-closing-support.md": {
@@ -14193,8 +14193,8 @@
     "semantic_hash": ""
   },
   "src/components/opg/OpgOverviewTab.tsx": {
-    "mtime": 1791291599.0559363,
-    "ast_hash": "3ece4294d3d73410aaa14508c8eeb78c",
+    "mtime": 1791377130.7239718,
+    "ast_hash": "610f63a8d9656a16b4a4407d1e2fc581",
     "semantic_hash": ""
   },
   "src/components/opg/OpgRegisterModal.tsx": {
@@ -14203,8 +14203,8 @@
     "semantic_hash": ""
   },
   "src/components/opg/OpgRegistersTab.tsx": {
-    "mtime": 1791291599.0569353,
-    "ast_hash": "2e04a841ed37806c6b0849fe75d36f34",
+    "mtime": 1791377130.7244878,
+    "ast_hash": "720ecca35ea59282bc3a8a738aab8f56",
     "semantic_hash": ""
   },
   "src/components/opg/OpgSyncLogsTab.tsx": {
@@ -14218,8 +14218,8 @@
     "semantic_hash": ""
   },
   "src/components/opg/OpgTransactionsTab.tsx": {
-    "mtime": 1791291599.0589354,
-    "ast_hash": "e66960ab5d8452226b8a1495be4004f2",
+    "mtime": 1791377130.725009,
+    "ast_hash": "c547e6a6b931194f88fdc2355d504f4c",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatNav65MReplica.tsx": {
@@ -14253,23 +14253,23 @@
     "semantic_hash": ""
   },
   "src/hooks/useOpg.ts": {
-    "mtime": 1791291599.0661843,
-    "ast_hash": "2e9cd3502f107a089bfd8c41761f3c10",
+    "mtime": 1791377130.7255268,
+    "ast_hash": "c759955ae01c8ff49949206ceb5bfd78",
     "semantic_hash": ""
   },
   "src/pages/OpgPage.tsx": {
-    "mtime": 1791291599.067184,
-    "ast_hash": "abb76e6db4bfcc17c3cb1374eef7d44c",
+    "mtime": 1791377130.7260416,
+    "ast_hash": "775e3d328b2fd0f6ec286c9c52f39fd4",
     "semantic_hash": ""
   },
   "src/services/opgService.ts": {
-    "mtime": 1791291599.0691855,
-    "ast_hash": "52c55fa0e8d5948cb4385bcc74a2ffb2",
+    "mtime": 1791377135.2043521,
+    "ast_hash": "89c39a38b4a78aba52f4534ba21028a0",
     "semantic_hash": ""
   },
   "src/test/opg/opgModule.test.tsx": {
-    "mtime": 1791291599.0701852,
-    "ast_hash": "4508f9f138d275ecef278cf41c6eb633",
+    "mtime": 1791377130.7265606,
+    "ast_hash": "014a8af02324cdd97d48db182101facd",
     "semantic_hash": ""
   },
   "src/test/pettyCashHeaderToggle.test.tsx": {
@@ -14293,8 +14293,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-204-online-cash-register-opg-architecture.md": {
-    "mtime": 1791291598.9842632,
-    "ast_hash": "15c7cafae6026cae166f89403399ef31",
+    "mtime": 1791377130.7218897,
+    "ast_hash": "2606eaee70f8fadd7160a35d98b56904",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-205-nav-2665m-digital-replica-and-partner-pagination-architecture.md": {
@@ -14308,8 +14308,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-163-online-cash-register-opg-module-ux.md": {
-    "mtime": 1791291598.9862561,
-    "ast_hash": "3ca3c14cb0ca33ef54f080ce3ed9af94",
+    "mtime": 1791377130.7229385,
+    "ast_hash": "713f75fb4b6faf0caa782109baaf1440",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-164-nav-2665m-digital-replica-and-partner-pagination-ux.md": {
@@ -14320,6 +14320,331 @@
   "session-summary/Jani/2026-10-06/summary-161600-eb0250-worker-pdf-splitter-nav-fuzzy-matching-and-db-repair.md": {
     "mtime": 1791296226.1836176,
     "ast_hash": "2dc431d412b9fd9abbb94965d2f118d5",
+    "semantic_hash": ""
+  },
+  ".agents/skills/create-brd/scripts/verify_brd.py": {
+    "mtime": 1791316080.4636474,
+    "ast_hash": "4c1c99d52d844ef343ebc02e3da6f927",
+    "semantic_hash": ""
+  },
+  ".agents/skills/create-prd/scripts/verify_prd.py": {
+    "mtime": 1791316316.1273062,
+    "ast_hash": "98b3154072cf9f67e2f6af7a27d612bd",
+    "semantic_hash": ""
+  },
+  "src/test/invoices/manualInvoiceCreatePayload.test.ts": {
+    "mtime": 1791376935.498758,
+    "ast_hash": "93ebbfaf008fe7dc3eff6f527d66b6ed",
+    "semantic_hash": ""
+  },
+  ".agents/skills/create-brd/SKILL.md": {
+    "mtime": 1791316442.520522,
+    "ast_hash": "ac44056e955524f7eef7987df191a55e",
+    "semantic_hash": ""
+  },
+  ".agents/skills/create-brd/references/brd-structure-template.md": {
+    "mtime": 1791316455.4880402,
+    "ast_hash": "4dc005868d3d6ede72c1af6d30025f08",
+    "semantic_hash": ""
+  },
+  ".agents/skills/create-brd/references/diagram-mapping-guide.md": {
+    "mtime": 1791315593.33705,
+    "ast_hash": "637ba35c107df9b81261c7b997cf1574",
+    "semantic_hash": ""
+  },
+  ".agents/skills/create-brd/references/purity-audit-checklist.md": {
+    "mtime": 1791316462.7470214,
+    "ast_hash": "86797ad6681ff4a7f0a252e756e36481",
+    "semantic_hash": ""
+  },
+  ".agents/skills/create-prd/SKILL.md": {
+    "mtime": 1791316403.1446292,
+    "ast_hash": "950ae834b698925470037c37862ed9b6",
+    "semantic_hash": ""
+  },
+  ".agents/skills/create-prd/references/diagram-mapping-guide.md": {
+    "mtime": 1791316308.108252,
+    "ast_hash": "1aa7c00112da19097dd1ac8e8e438dff",
+    "semantic_hash": ""
+  },
+  ".agents/skills/create-prd/references/prd-purity-checklist.md": {
+    "mtime": 1791316429.1204433,
+    "ast_hash": "7354e8ba5e3be3c62e813f23fa31da2a",
+    "semantic_hash": ""
+  },
+  ".agents/skills/create-prd/references/prd-structure-template.md": {
+    "mtime": 1791316416.8122196,
+    "ast_hash": "0f62634d131bc69acceb4d5cfbfddf03",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/VISIBILL_BEOSZTASOM_FEJLESZTESI_MESTERKONYV (1).md": {
+    "mtime": 1791310420.9896855,
+    "ast_hash": "41b3f92ffb78eabb4fd8da5acc4e0461",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/00_BRD_OVERVIEW_AND_EXECUTIVE_SUMMARY.md": {
+    "mtime": 1791315551.8574483,
+    "ast_hash": "c0acfbbd3bade92448d1d9d361593f15",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/01_BRD_GLOSSARY_AND_DOMAIN_MODEL.md": {
+    "mtime": 1791315551.8574483,
+    "ast_hash": "c1645cb64159b23e3d39060db14e2c42",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/02_BRD_CORE_WORKFLOWS_AND_USER_JOURNEYS.md": {
+    "mtime": 1791315551.8574483,
+    "ast_hash": "c1645fdb274c86355644b0e1863d4f4f",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/03_BRD_FUNCTIONAL_REQUIREMENTS_SCHEDULING.md": {
+    "mtime": 1791315551.8584485,
+    "ast_hash": "b820cc0ca9f9d32fcd4132c05bfb9db4",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/04_BRD_ABSENCE_AND_ATTENDANCE_MANAGEMENT.md": {
+    "mtime": 1791315551.8584485,
+    "ast_hash": "26d744e604d0906756653c92e0fb578b",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/05_BRD_LABOR_LAW_RULES_ENGINE_AND_COMPLIANCE.md": {
+    "mtime": 1791315551.8594458,
+    "ast_hash": "c5b18d08fc6b134169e5c38e773fb1ee",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/06_BRD_EXPORTS_PAYROLL_AND_INTEGRATION.md": {
+    "mtime": 1791315551.8594458,
+    "ast_hash": "014a52fbd7840cbf5500a942c4b9f09d",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/07_BRD_ROADMAP_PHASING_AND_OPEN_QUESTIONS.md": {
+    "mtime": 1791315551.8594458,
+    "ast_hash": "325c5bf1c4b59085e7b726d19ff741e2",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/INDEX.md": {
+    "mtime": 1791316502.9819672,
+    "ast_hash": "5dfcdd2dba918c477799d48f5401563d",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/INDEX.md": {
+    "mtime": 1791316475.3205018,
+    "ast_hash": "55953724fff4f4a2ea371f99efa8db9b",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/PRD-01-navigacio-es-menustruktura.md": {
+    "mtime": 1791315889.607087,
+    "ast_hash": "1bcb0dfb4c29cf4904ac1cecd7b09598",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/PRD-02-havi-beosztastervezo-naptarracs.md": {
+    "mtime": 1791315906.464996,
+    "ast_hash": "41eb603155674b5673f22f9c4bcb781b",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/PRD-03-muszakszerkeszto-es-sablonkezelo.md": {
+    "mtime": 1791315930.8559532,
+    "ast_hash": "cd156231f02b3ead2f17605f4496f270",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/PRD-04-tavollet-es-helyettesites-kezelo.md": {
+    "mtime": 1791315947.6278472,
+    "ast_hash": "31aef24ee6a6afe697005a1101b8adda",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/PRD-05-szabalymotor-es-eloe-megfeleloseg.md": {
+    "mtime": 1791315960.737404,
+    "ast_hash": "3f4f273ec142ee85b2dcef8077197d09",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/PRD-06-jelenlet-zaras-es-berszamfejtesi-export.md": {
+    "mtime": 1791315976.1943514,
+    "ast_hash": "72091a7048646cecb8a64812c23e08aa",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/PRD-07-torzsadat-es-munkavallalo-karton.md": {
+    "mtime": 1791315990.725764,
+    "ast_hash": "c7fca620ce02f66bd7ae8fc42597732c",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/PRD-08-dolgozoi-onkiszolgalo-es-mobil-nezet.md": {
+    "mtime": 1791316003.785043,
+    "ast_hash": "30497db4b694ecd6ce294be5ad743cf6",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/PRD-09-fejlesztesi-roadmap-es-mvp-kiadas.md": {
+    "mtime": 1791316017.4302099,
+    "ast_hash": "a74ca904d9754700d60a3f872ceee83a",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/00_rendszer_attekintes.svg": {
+    "mtime": 1791313121.6185002,
+    "ast_hash": "870e7e7fef40d614f46ee0809f3a497c",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/00_rendszer_attekintes@2x.png": {
+    "mtime": 1791313130.55,
+    "ast_hash": "1f44a1d58c9740636e1baf93aa08e762",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/01_konceptualis_domain_modell.svg": {
+    "mtime": 1791313153.1992173,
+    "ast_hash": "e0521c1a5874a01c9e1dce1dc77dc67a",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/01_konceptualis_domain_modell@2x.png": {
+    "mtime": 1791313172.628,
+    "ast_hash": "0827fd04561a3aedee25c531441a9e44",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/02_havi_munkafolyamat_e2e.svg": {
+    "mtime": 1791313223.7847993,
+    "ast_hash": "9a54cac68dfb49d2cf348c9af6ab6c44",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/02_havi_munkafolyamat_e2e@2x.png": {
+    "mtime": 1791313224.982,
+    "ast_hash": "4e4281b2e2ea46b063cdaf65502fdcf9",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/02_helyettesitesi_folyamat_sequence.svg": {
+    "mtime": 1791313269.714961,
+    "ast_hash": "a85bceacc9d8e20daf84a3ecc8479a71",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/02_helyettesitesi_folyamat_sequence@2x.png": {
+    "mtime": 1791313271.033,
+    "ast_hash": "d7aa5f5bf0d6f324c021955adb5abcf3",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/03_naptarracs_es_gyorskitoltes_architektura.svg": {
+    "mtime": 1791313561.9478786,
+    "ast_hash": "d041ca695dd12a913642fa2060c43236",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/03_naptarracs_es_gyorskitoltes_architektura@2x.png": {
+    "mtime": 1791313563.409,
+    "ast_hash": "aab53114fecb1e003bed7636fadd4950",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/04_betegszabadsag_tappenzen_atfordulas_flowchart.svg": {
+    "mtime": 1791313369.6294324,
+    "ast_hash": "9e6d5a1f04c7181c74a00411d827edfc",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/04_betegszabadsag_tappenzen_atfordulas_flowchart@2x.png": {
+    "mtime": 1791313370.884,
+    "ast_hash": "9585f19315f92772b758e855b69d912e",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/05_munkaugyi_szabalyomotor_hierarchia.svg": {
+    "mtime": 1791313418.3492703,
+    "ast_hash": "fdcc5d61c98569a88bb828722482c310",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/05_munkaugyi_szabalyomotor_hierarchia@2x.png": {
+    "mtime": 1791313419.652,
+    "ast_hash": "d1f4f05b63338532614d19de3476959a",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/06_berszamfejtesi_hid_integracio.svg": {
+    "mtime": 1791313457.293887,
+    "ast_hash": "c4f8e1f8aabd62b9d0bbbc670334be5b",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/06_berszamfejtesi_hid_integracio@2x.png": {
+    "mtime": 1791313458.503,
+    "ast_hash": "a88045955ba62c16da75e18c36c2254b",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/07_roadmap_fazisok_timeline.svg": {
+    "mtime": 1791313498.6040742,
+    "ast_hash": "b5408fa2ee3cf1f30a650dc3af503fbf",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/brd/diagramms/07_roadmap_fazisok_timeline@2x.png": {
+    "mtime": 1791313499.835,
+    "ast_hash": "beaa3ebed2a5a8e460d0f6811852e35f",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/01_portal_navigacio_es_nezetrendszer.svg": {
+    "mtime": 1791315842.998929,
+    "ast_hash": "8c09a8b283cec3e2856ba833eacf3ac9",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/01_portal_navigacio_es_nezetrendszer@2x.png": {
+    "mtime": 1791315865.051,
+    "ast_hash": "9251c227742e44d7f26d3c72b79de9ba",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/02_naptarracs_interakcios_ui_mockup.svg": {
+    "mtime": 1791315842.998929,
+    "ast_hash": "93218869f9034bb77009b571e3250ed9",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/02_naptarracs_interakcios_ui_mockup@2x.png": {
+    "mtime": 1791315866.173,
+    "ast_hash": "1564bcbeaacb8bb829169661466bceea",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/03_muszakszerkeszto_modal_es_allapotgep.svg": {
+    "mtime": 1791315842.998929,
+    "ast_hash": "f621612ff9da70625f8b87d8e468174b",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/03_muszakszerkeszto_modal_es_allapotgep@2x.png": {
+    "mtime": 1791315867.278,
+    "ast_hash": "6298227905b35389a3c76267647398ce",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/04_tavollet_es_helyettesites_ui_flow.svg": {
+    "mtime": 1791315842.9999354,
+    "ast_hash": "aa25b9a0e92e56c97d36aabd85f03dde",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/04_tavollet_es_helyettesites_ui_flow@2x.png": {
+    "mtime": 1791315868.379,
+    "ast_hash": "29b79b32af26c3cb1722d256180c0334",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/05_szabalymotor_feluleti_visszajelzes_hierarchia.svg": {
+    "mtime": 1791315842.9999354,
+    "ast_hash": "208f6dbe38f63581acb77cce6623ebaf",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/05_szabalymotor_feluleti_visszajelzes_hierarchia@2x.png": {
+    "mtime": 1791315869.493,
+    "ast_hash": "4f2b982a0eb6d6833bcb51aa6caf5ce5",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/06_havi_zaras_es_export_varazslo_flow.svg": {
+    "mtime": 1791315842.9999354,
+    "ast_hash": "d2bee45eea88f27539aca19ecf2b78f1",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/06_havi_zaras_es_export_varazslo_flow@2x.png": {
+    "mtime": 1791315870.597,
+    "ast_hash": "66759d4a9d04c248384fb52634208880",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/07_dolgozoi_mobil_onkiszolgalo_wireframe.svg": {
+    "mtime": 1791315842.9999354,
+    "ast_hash": "7461777eda15e0a59a1a520ef92c598d",
+    "semantic_hash": ""
+  },
+  "docs/beosztasom_hu/prd/diagramms/07_dolgozoi_mobil_onkiszolgalo_wireframe@2x.png": {
+    "mtime": 1791315871.737,
+    "ast_hash": "f5101b064b82024ab489f584d21bcb5e",
+    "semantic_hash": ""
+  },
+  "src/test/opg/opgNavProxy.test.ts": {
+    "mtime": 1791377130.7265606,
+    "ast_hash": "fc44ff07c291fc73a28f35d3159c12e4",
+    "semantic_hash": ""
+  },
+  "supabase/functions/nav-opg-proxy/index.ts": {
+    "mtime": 1791377130.7285676,
+    "ast_hash": "1254d1f39d3f6e0dde9d2bb00bf8fc0d",
     "semantic_hash": ""
   }
 }
