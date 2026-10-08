@@ -1455,8 +1455,8 @@
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
-    "mtime": 1790777018.5705795,
-    "ast_hash": "05e17864a45a3ad75539105ac6599141",
+    "mtime": 1791404760.9046786,
+    "ast_hash": "e34bd80892efe24d9613cfa898301fa3",
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
@@ -2960,8 +2960,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1791247082.217473,
-    "ast_hash": "884edc48bcd4ff12fb37c026000b3156",
+    "mtime": 1791404760.8936577,
+    "ast_hash": "4450caf1a13e925bd94f6d6d717cf205",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -2985,8 +2985,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791296325.2469435,
-    "ast_hash": "3dba1758190fe34d85a1e94b61a010ea",
+    "mtime": 1791404760.8956585,
+    "ast_hash": "19508028f854f9cf9112e79f2501de7b",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3460,13 +3460,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1791291598.9872558,
-    "ast_hash": "e13ecd4283d7b717375d70beeb89947b",
+    "mtime": 1791404760.898163,
+    "ast_hash": "82b926ffd702744419e33015974b70e2",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1791377130.723458,
-    "ast_hash": "0a64d3e9b9bb57fc24ea05068286cc7e",
+    "mtime": 1791404760.8996682,
+    "ast_hash": "36e98f25b71940bb612d4ffb7f41d478",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -6350,8 +6350,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerComparisonTable.tsx": {
-    "mtime": 1790165088.7384446,
-    "ast_hash": "0e937f8f7ef4b5c16a008ed32cd5fe8d",
+    "mtime": 1791404760.9026682,
+    "ast_hash": "d5bc9c9b50885fe5e8192b1d584806f6",
     "semantic_hash": ""
   },
   "src/components/integrations/EmailAccountCard.tsx": {
@@ -6510,8 +6510,8 @@
     "semantic_hash": ""
   },
   "src/pages/JournalsPage.tsx": {
-    "mtime": 1791213000.6370912,
-    "ast_hash": "064b45f6835ba7753b0cea236e17e759",
+    "mtime": 1791404760.9061775,
+    "ast_hash": "253cca5063fe7f7a24c8ae6ccec5032a",
     "semantic_hash": ""
   },
   "supabase/migrations/20260824120000_optimize_query_rpcs.sql": {
@@ -8575,8 +8575,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1791247082.4381242,
-    "ast_hash": "3c763fd9d377b85b1ad9d0caa1860614",
+    "mtime": 1791404760.8961577,
+    "ast_hash": "be1adf550c14080862aad4c9f8c4c2a7",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
@@ -9140,8 +9140,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GlAnalyticReconciliationView.tsx": {
-    "mtime": 1788898296.5033133,
-    "ast_hash": "0f76c203aad87ccc52abea05fb9c71cd",
+    "mtime": 1791404760.903169,
+    "ast_hash": "3aa6de34006ab514c9c0b63d777ad9bc",
     "semantic_hash": ""
   },
   "src/components/general-ledger/PartnerLedgerCardView.tsx": {
@@ -9980,8 +9980,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/database.md": {
-    "mtime": 1791247082.4341245,
-    "ast_hash": "49fb0755c509d1712bf06b20739f2ccd",
+    "mtime": 1791377623.1467159,
+    "ast_hash": "7410ff648ea7f8b90e089805efacca6d",
     "semantic_hash": ""
   },
   ".agents/rules/documentation.md": {
@@ -9995,8 +9995,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/frontend.md": {
-    "mtime": 1791063722.4388976,
-    "ast_hash": "01cbb2318ce2363ca1667fcbcae8547e",
+    "mtime": 1791377636.6523588,
+    "ast_hash": "38b3a03751a38fccaecbafdd3a71272a",
     "semantic_hash": ""
   },
   ".agents/rules/ui-ux.md": {
@@ -10130,8 +10130,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/customer-api/index.ts": {
-    "mtime": 1791247082.5066328,
-    "ast_hash": "544001466d8d4f3eda3f8fa178a93934",
+    "mtime": 1791398407.495597,
+    "ast_hash": "e0246e6f84c04ce1bcfbcbfebe6eccdf",
     "semantic_hash": ""
   },
   "supabase/migrations/20260916140000_customer_api_and_keys.sql": {
@@ -12603,13 +12603,13 @@
     "semantic_hash": ""
   },
   "src/hooks/useSubledger.ts": {
-    "mtime": 1791213000.6253316,
-    "ast_hash": "e721ef4adebc0e65f88bcf18d86bd107",
+    "mtime": 1791404760.9041724,
+    "ast_hash": "2236cc49fa5f56a2e721ed9bfc77c871",
     "semantic_hash": ""
   },
   "src/pages/SubledgerPage.tsx": {
-    "mtime": 1791213000.6395998,
-    "ast_hash": "dcf2183a3073470bd244054d5a42353d",
+    "mtime": 1791404760.9066775,
+    "ast_hash": "cfbab175ab714cdefe75f52e371c72e1",
     "semantic_hash": ""
   },
   "src/test/accounty/payrollIdempotencyAndCycleLock.test.ts": {
@@ -12643,8 +12643,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-175-subledger-and-open-items-architecture.md": {
-    "mtime": 1790958395.8070896,
-    "ast_hash": "fa6db0f0e6634204e1ffc511fb5957e0",
+    "mtime": 1791404760.8946588,
+    "ast_hash": "ce9cd3cbb02e1ba3ca863c73700dbc77",
     "semantic_hash": ""
   },
   "docs/business/decisions/063-subledger-and-open-items-accounting-policy.md": {
@@ -12663,8 +12663,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-136-subledger-and-open-items-ux.md": {
-    "mtime": 1790958395.8086433,
-    "ast_hash": "2b8be8d4dd6af9be81aabf34c84fd93f",
+    "mtime": 1791404760.8971584,
+    "ast_hash": "cc4d2100be15ccf22e1b508c328c0a34",
     "semantic_hash": ""
   },
   "session-summary/\u00c1ron/2026-09-28/summary-202200-subledger-open-items-auto-settle-and-ticket-support.md": {
@@ -14008,8 +14008,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetImportModal.tsx": {
-    "mtime": 1791213000.2739093,
-    "ast_hash": "6bdf93458a7d7d7776471c9d6b0a986c",
+    "mtime": 1791404760.9021678,
+    "ast_hash": "1dbeaa2e5b82b9f479f9b3c3b2b6220a",
     "semantic_hash": ""
   },
   "src/features/vat/utils/__tests__/vatCorrectionResolver.test.ts": {
@@ -14103,8 +14103,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-203-google-drive-invoices-ingestion.md": {
-    "mtime": 1791298156.5663342,
-    "ast_hash": "03ee0891925c1ff4f1a9191f0b156328",
+    "mtime": 1791400246.8566532,
+    "ast_hash": "88a4805a142167de0d2375aeab46da1f",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-158-nav-65m-02-k-correction-and-storno-invoices-ux.md": {
@@ -14253,8 +14253,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useOpg.ts": {
-    "mtime": 1791377130.7255268,
-    "ast_hash": "c759955ae01c8ff49949206ceb5bfd78",
+    "mtime": 1791404760.903169,
+    "ast_hash": "485ab5286877a4e4725a5d9093dfb256",
     "semantic_hash": ""
   },
   "src/pages/OpgPage.tsx": {
@@ -14268,8 +14268,8 @@
     "semantic_hash": ""
   },
   "src/test/opg/opgModule.test.tsx": {
-    "mtime": 1791377130.7265606,
-    "ast_hash": "014a8af02324cdd97d48db182101facd",
+    "mtime": 1791404760.9071772,
+    "ast_hash": "41d2d98dbba5b3c3ab04a4fb151f902c",
     "semantic_hash": ""
   },
   "src/test/pettyCashHeaderToggle.test.tsx": {
@@ -14643,8 +14643,43 @@
     "semantic_hash": ""
   },
   "supabase/functions/nav-opg-proxy/index.ts": {
-    "mtime": 1791377130.7285676,
-    "ast_hash": "1254d1f39d3f6e0dde9d2bb00bf8fc0d",
+    "mtime": 1791404760.9081826,
+    "ast_hash": "c427d07c5a26b5013ddc17a929610a53",
+    "semantic_hash": ""
+  },
+  "src/test/invoices/recordManualInvoicePayment.test.ts": {
+    "mtime": 1791405841.1165092,
+    "ast_hash": "36f983d89a143a11c1d1cddfa4c86958",
+    "semantic_hash": ""
+  },
+  "src/test/tsconfig.json": {
+    "mtime": 1791404760.9071772,
+    "ast_hash": "cb78ce5e6e35feadb557a471f637d32e",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261007150000_fix_gl_analytic_reconciliation_and_partner_ledger_card.sql": {
+    "mtime": 1791404760.9086876,
+    "ast_hash": "c16c283e3561d0e1b2a637ac876e410a",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261007223500_fix_record_manual_invoice_payment_conflict.sql": {
+    "mtime": 1791405349.129069,
+    "ast_hash": "8661fe3787dbc5de6c4150c788fe872a",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-226-gl-subledger-concurrency-storm-and-analytic-reconciliation-schema-fix.md": {
+    "mtime": 1791404760.8951585,
+    "ast_hash": "4225887fd0311f3573ea4af59051aa3e",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-165-general-ledger-and-subledger-pagination-and-concurrency-ux.md": {
+    "mtime": 1791404760.8971584,
+    "ast_hash": "d04e2c1809626683212d53069309e9de",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-10-07/summary-160200-gl-subledger-opt-opg-fixes-and-support-tickets.md": {
+    "mtime": 1791404760.9011688,
+    "ast_hash": "abfaec8a26412ac2c0ae994d7194cf6b",
     "semantic_hash": ""
   }
 }

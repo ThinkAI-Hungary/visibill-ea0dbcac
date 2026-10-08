@@ -50,12 +50,30 @@ A rendszer támogatja az izolált adatbázis-példányok közötti intelligens s
 - A gyökérmappán belüli **`Thinkerman`** nevű gyűjtőmappába helyezett cégmappák a **Thinkerman Supabase** adatbázisba kerülnek (`zgnukiocrnfnlwkbcssi`, 5 cég, `visibill-worker-thinkerman`).
 - Mindkét projekt saját dedikált `customer-api` Edge Functionnel és Master API kulccsal rendelkezik, így a feldolgozásuk és PGMQ soraik teljesen függetlenek maradnak.
 
+### 6. Fantom Számlák Megszüntetése és Teljes Folyamat-Azonosság a Kézi Feltöltéssel (Scenario 3)
+A korábbi megvalósításban, ha egy számla külső API-n vagy Google Drive-on keresztül érkezett ismeretlen bizonylatszámmal (Scenario 3: unlinked upload), az Edge Function azonnal beszúrt egy ideiglenes, üres rekordot az `invoices` táblába (`bizonylatsorszam: 'UPLOAD-xxxxxx'`, `brutto_vegosszeg: 0`, `statusz: 'feldolgozas_alatt'`). Ez a felületen és az analitikákban fantom sorokat és duplikációkat eredményezett.
+- **Új működés:** A Google Drive / API feltöltés mostantól 100%-ban megegyezik a webes felület kézi feltöltési folyamatával (`executeBatchUpload`):
+  1. A fájl a Supabase Storage-ba kerül (`invoice-uploads`).
+  2. Kizárólag az `invoice_uploads` táblába szúrunk be rekordot (`processing_status: 'pending'`).
+  3. Semmilyen előzetes rekord nem jön létre az `invoices` táblában.
+  4. Az adatbázis beépített `trg_enqueue_invoice` BEFORE INSERT triggere azonnal feladja a feladatot a `pgmq.q_invoice_jobs` üzenetsorba.
+  5. A háttér-worker dolgozza fel a sort: elvégzi az OCR-t, LLM kinyerést, partnerpárosítást, és egyetlen atomi lépésben rögzíti a valós számlát és tételsorait az `invoices` és `invoice_items` táblákba, `invoice_uploads_id` idegen kulccsal visszacsatolva az eredeti feltöltéshez.
+
+### 7. Szkennelt Duplex PDF Üres Oldal Kezelés és Sorszám-Védelem (Worker)
+A valós ügyfélfájlok tesztelése során az alábbi két kritikus worker hibát javítottuk:
+- **Kétoldalas (duplex) szkennelés üres oldalainak kezelése (`ocr_markitdown.py`):** Szkennelt PDF-eknél az üres hátoldalak (pl. 2., 4., 6. oldal) miatt az OpenAI Vision modell elutasító választ adott (*"I'm unable to assist with that."*). Mivel az elutasítás vizsgálata a teljes összefűzött szövegre futott, egyetlen üres oldal az egész 8 oldalas dokumentum szövegének eldobását okozta. Megoldás: `is_image_blank(pix)` segítségével a teljesen fehér lapokat a worker azonnal átugorja, a Vision hívások elutasításait pedig oldalanként szűri.
+- **Sorszám prefixek (`SZ/`, `SZ-`) levágásának tiltása (`models.py` & Prompts):** A `clean_szamlaszam` korábbi reguláris kifejezése az `SZ/` kezdetű számlaszámoknál (pl. `SZ/2026/000325`) az `SZ` betűket a "Számla" szó rövidítésének vélte és levágta, így `/2026/000325` került mentésre. A tisztító logikát szigorítottuk (csak a valós címkéket vágja le), beépítettünk egy biztonsági prefix-helyreállítót vezető perjel esetére, és az összes számla extraction promptba (`sima_szamla.md`, `vegszamla.md`, `dijbekero_proforma.md`, `egyszerusitett_szamla.md`) beépítettük a prefix-megőrzési invariánst.
+
 ---
 
 ## Consequences
 
 ### Pozitív:
+- **Zéró fantom rekord:** Nincsenek többé `UPLOAD-xxxxxx` 0 Ft-os ideiglenes sorok az `invoices` táblában; a számlák kizárólag sikeres worker feldolgozás után jelennek meg valós adatokkal.
+- **Tökéletes folyamat-ekvivalencia:** A Google Drive-ról, emailből és böngészőből feltöltött számlák pontosan ugyanazon a PGMQ $\rightarrow$ Worker pipeline-on haladnak át.
 - **Zéró szerverinfrastruktúra:** Nem kell új szervert vagy szolgáltatást fenntartani és fizetni.
+- **Robusztus duplex szkenner támogatás:** Az üres hátoldalak nem okoznak OCR adatvesztést.
+- **Pontos bizonylatszámok:** Az `SZ/` és egyéb perjelet vagy kötőjelet tartalmazó bizonylatszámok csonkítás nélkül kerülnek mentésre.
 - **Rendkívül gyors bevezetés:** Egy könyvelő vagy ügyfél 10 perc alatt beállíthatja a leírás alapján.
 - **Teljes biztonság:** Az A-101 védelmi reteszek és az A-003 multi-tenancy RLS garanciák 100%-ban érvényesülnek.
 - **Mobil fotók támogatása:** A dinamikus MIME kezelés révén képi számlák is biztonságosan feldolgozhatók.

@@ -875,45 +875,19 @@ serve(async (req: Request) => {
                       }
                     }
                   }
-                  // Scenario 3: Standard unlinked upload for OCR
+                  // Scenario 3: Standard unlinked upload for OCR (exact same workflow as manual UI upload)
                   else {
-                    const { data: newInv, error: insertErr } = await admin
-                      .from("invoices")
-                      .insert({
-                        company_id: targetCompanyId,
-                        user_id: effectiveUserId,
-                        invoice_direction: direction,
-                        statusz: "feldolgozas_alatt",
-                        melleklet_url: publicUrl,
-                        bizonylatsorszam: `UPLOAD-${Date.now().toString().slice(-6)}`,
-                        elado_nev: "Feldolgozás alatt",
-                        vevo_nev: "Feldolgozás alatt",
-                        kibocsatas_datuma: new Date().toISOString().slice(0, 10),
-                        teljesites_datuma: new Date().toISOString().slice(0, 10),
-                        adoalap_osszesen: 0,
-                        afa_osszeg_osszesen: 0,
-                        brutto_vegosszeg: 0,
-                        ...(createdUploadId ? { invoice_uploads_id: createdUploadId } : {}),
-                      })
-                      .select("id, bizonylatsorszam, statusz, nav_status, invoice_direction, melleklet_url, letrehozva")
-                      .single();
-
-                    if (insertErr) {
-                      response = errorResponse("DB_INSERT_FAILED", insertErr.message, 500);
-                    } else {
-                      response = json({
-                        success: true,
-                        message: "Számla sikeresen feltöltve, feldolgozás indítva.",
-                        data: {
-                          matched: false,
-                          invoice_id: newInv.id,
-                          invoice_number: newInv.bizonylatsorszam,
-                          has_image: true,
-                          attachment_url: publicUrl,
-                          status: newInv.statusz,
-                        },
-                      }, 201);
-                    }
+                    response = json({
+                      success: true,
+                      message: "Számla sikeresen feltöltve, feldolgozás indítva.",
+                      data: {
+                        upload_id: createdUploadId,
+                        matched: false,
+                        has_image: true,
+                        attachment_url: publicUrl,
+                        status: "pending",
+                      },
+                    }, 201);
                   }
                 }
               } catch (decodeErr: any) {
