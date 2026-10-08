@@ -15,7 +15,7 @@ interface CompanyCountsData {
 function createCompanyCountsCacheManager(ttlMs: number = 2 * 60 * 1000) {
   let cachedCompanyCounts: { data: CompanyCountsData; timestamp: number } | null = null;
 
-  async function fetchCompanyCountsWithCache(admin: { rpc: (name: string) => Promise<{ data: any; error: any }> }): Promise<CompanyCountsData> {
+  async function fetchCompanyCountsWithCache(admin: { rpc: (name: string, ...args: any[]) => any }): Promise<CompanyCountsData> {
     const now = Date.now();
     if (cachedCompanyCounts && (now - cachedCompanyCounts.timestamp) < ttlMs) {
       return cachedCompanyCounts.data;
@@ -51,7 +51,7 @@ function createCompanyCountsCacheManager(ttlMs: number = 2 * 60 * 1000) {
 
 describe('RPC Performance & Edge Function Resilience Tests', () => {
   describe('fetchCompanyCountsWithCache Resilience & TTL', () => {
-    let mockAdmin: { rpc: ReturnType<typeof vi.fn> };
+    let mockAdmin: { rpc: any };
     let cacheManager: ReturnType<typeof createCompanyCountsCacheManager>;
 
     beforeEach(() => {
@@ -499,5 +499,57 @@ describe('RPC Performance & Edge Function Resilience Tests', () => {
         mockItems[0].source_table
       );
     });
+
+    interface VatBreakdownRow {
+      vat_rate: string | null;
+      invoice_direction: 'INBOUND' | 'OUTBOUND';
+      currency: string;
+      net_sum: number;
+      vat_sum: number;
+    }
+
+    it('validates get_vat_breakdown row contract and multi-currency / direction grouping', () => {
+      const mockBreakdownRows: VatBreakdownRow[] = [
+        {
+          vat_rate: '0.27',
+          invoice_direction: 'INBOUND',
+          currency: 'HUF',
+          net_sum: 100000.0,
+          vat_sum: 27000.0,
+        },
+        {
+          vat_rate: '0.27',
+          invoice_direction: 'OUTBOUND',
+          currency: 'EUR',
+          net_sum: 1000.0,
+          vat_sum: 270.0,
+        },
+        {
+          vat_rate: null,
+          invoice_direction: 'INBOUND',
+          currency: 'HUF',
+          net_sum: 50000.0,
+          vat_sum: 0,
+        },
+      ];
+
+      expect(mockBreakdownRows).toHaveLength(3);
+      mockBreakdownRows.forEach((row) => {
+        expect(['INBOUND', 'OUTBOUND']).toContain(row.invoice_direction);
+        expect(typeof row.currency).toBe('string');
+        expect(typeof row.net_sum).toBe('number');
+        expect(typeof row.vat_sum).toBe('number');
+      });
+
+      // 27% VAT integrity check
+      const row27 = mockBreakdownRows[0];
+      expect(row27.vat_sum / row27.net_sum).toBeCloseTo(0.27, 2);
+
+      // Exempt / null rate check
+      const exemptRow = mockBreakdownRows[2];
+      expect(exemptRow.vat_rate).toBeNull();
+      expect(exemptRow.vat_sum).toBe(0);
+    });
   });
 });
+

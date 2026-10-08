@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
+import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NavInvoiceRow } from '../components/table/NavInvoiceRow';
 import { SubmittedInvoiceRow } from '../components/table/SubmittedInvoiceRow';
-import type { NavInvoice, SubmittedInvoice } from '../../types';
+import type { NavInvoice, SubmittedInvoice } from '../types';
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {

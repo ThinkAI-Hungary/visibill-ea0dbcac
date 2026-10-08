@@ -2960,8 +2960,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-016-postgresql-query-strategy.md": {
-    "mtime": 1791404760.8936577,
-    "ast_hash": "4450caf1a13e925bd94f6d6d717cf205",
+    "mtime": 1791427639.2484317,
+    "ast_hash": "c40c5dff41a009c39477ba68d333fc38",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-017-security-architecture.md": {
@@ -13593,8 +13593,8 @@
     "semantic_hash": ""
   },
   "src/test/rpcPerformanceAndResilience.test.ts": {
-    "mtime": 1791247082.5056324,
-    "ast_hash": "2e7371f0b20bd476c23115af185c4e09",
+    "mtime": 1791427557.8888476,
+    "ast_hash": "2038f239f1fdcc33cc01eed5a39538e7",
     "semantic_hash": ""
   },
   "supabase/migrations/20261003040000_optimize_gl_and_filter_rpcs_stability_and_tenant_isolation.sql": {
@@ -14770,6 +14770,11 @@
   "docs/WR-HOME-KFT/WR Home Kft 20251231fk (1).pdf": {
     "mtime": 1791422833.0427516,
     "ast_hash": "573547b236e7676885090ab1bbe92b2c",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261008050000_optimize_get_vat_breakdown_company_filter.sql": {
+    "mtime": 1791427532.8961556,
+    "ast_hash": "9d3bbf288bb986e35cf7c5b664a78a2b",
     "semantic_hash": ""
   }
 }
