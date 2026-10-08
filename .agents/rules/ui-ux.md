@@ -104,5 +104,14 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
   * Egyszerű státuszjelölő mezőknél (pl. *Kifizetett számla (kiegyenlítve)*) törekedj a kompakt, egyvonalas megjelenésre (`flex items-center space-x-2`).
   * Ne terheld a felületet hosszú, helyet foglaló magyarázó bekezdésekkel, kivéve ha az jogi vagy kritikus adatvesztési kockázatra hívja fel a figyelmet.
 
+---
 
-
+## 🛑 11. Fals Üres Állapot Védelem & Sorszintű Hiba-Résiliencia
+* **Fals Üres Állapot Zéró Tolerancia:**
+  * Pénzügyi táblázatokban és kartonokban, ha egy aszinkron lekérdezés hibára fut (pl. 504 Gateway Timeout, PostgREST hiba, hálózati kiesés), **szigorúan tilos az üres állapotot ("Nincsenek adatok") megjeleníteni**!
+  * Az üres állapot látványa azt a hamis látszatot kelti a könyvelőben, hogy az adott időszakban nem volt forgalom vagy kiegyenlítetlen számla.
+* **Kötelező Hiba és Retry Minta:**
+  * Minden táblázatnak, aggregáló nézetnek és expandálható kártyának kötelező külön `isError` állapotot kezelnie.
+  * Ha a lekérdezés meghiúsul:
+    1. Vizuális hibaüzenet (pl. piros/figyelmeztető sáv vagy diszkrét sorszintű hiba ikon).
+    2. Közvetlen, helyi **„Újrapróbálkozás” (Retry CTA)** gomb, amellyel a felhasználó anélkül próbálkozhat újra, hogy a teljes oldalt újra kellene töltenie.

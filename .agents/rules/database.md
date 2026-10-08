@@ -231,3 +231,24 @@ A Supabase API rétege (PostgREST) belső séma-gyorsítótárral (schema cache)
   1. **CHECK kényszer ellenőrzése:** A frontend mutációs payloadok készítésekor mindig ellenőrizni kell az adatbázis táblára vonatkozó `CHECK` kényszereket a migrációkban vagy a `pg_constraint` katalógustáblában.
   2. **Valós adatokkal való kifejezés:** Ha egy entitás részleges állapotban van (pl. részfizetett számla), azt a valós összegmezőkkel (`fizetve_osszeg > 0 AND fizetve_osszeg < brutto_osszeg`) kell kifejezni az engedélyezett enum státusz (`'feldolgozott'`) megtartása mellett, nem ad-hoc státuszstringek kitalálásával.
 
+---
+
+## 🛑 9. PostgREST 1000-Soros Csendes Csonkítás (The Silent Truncation Trap)
+* **A PostgREST 1000 soros limit veszélye:**
+  * A Supabase kliens `.from('table').select(...)` hívásai explicit `.range()` vagy `.limit()` nélkül a PostgREST alapértelmezett korlátja miatt **pontosan 1000 sornál csendben lezárják az eredményhalmazt**.
+  * Főkönyvi kartonoknál, partner analitikáknál és naplóknál ez végzetes adatcsonkítást okoz: a rendszer nem jelez hibát, de az 1001. sortól kezdve a tételek hiányoznak, ami hamis kumulált egyenlegeket és hibás audit riportokat eredményez.
+* **Kötelező Invariáns (Pagination Invariant):**
+  * Minden olyan lekérdezésben, ahol az adathalmaz meghaladhatja az 1000 sort, kötelező:
+    1. **Lapozási hurok (Loop Pagination):** Iteratív kötegelt lekérés (pl. `range(offset, offset + 999)`) mindaddig, amíg a visszaadott sorok száma eléri az 1000-et.
+    2. **Explicit Védelmi Korlát:** Kisebb analitikáknál kötelező explicit `.limit(2000)` megadása és annak UI szintű jelzése, ha a limit elérte a határt.
+
+---
+
+## 💰 10. Zero-as-Value & Falsy Védelem és RPC Tömb Pushdown
+* **Zero-as-Value Pénzügyi Szabály:**
+  * Pénzügyi logikában a `0` (nulla összeg, nulla egyenleg, nulla különbözet) teljesen érvényes és kitöltött állapot, nem kezelhető `null`-ként vagy `undefined`-ként!
+  * Szigorúan kerüld a naiv `if (amount)` vagy `amount || default` logikát, helyette mindig explicit nullish coalescing operátort használj (`amount ?? 0`).
+  * SQL tárolt eljárásokban paraméterszűrésnél a `p_value IS NOT NULL` feltételt használd ahelyett, hogy a 0 értéket a szűrő kihagyásaként értelmeznéd.
+* **RPC Tömb Pushdown (Batching Invariant):**
+  * Ha a kliensnek több entitáshoz (pl. több kijelölt főkönyvi számhoz vagy partnerhez) van szüksége tételes adatokra, **szigorúan tilos N darab párhuzamos RPC hívást indítani**.
+  * Az eljárásoknak kötelező támogatniuk a tömb alapú paraméterátadást (pl. `p_gl_account_ids uuid[] DEFAULT NULL`), lehetővé téve a PostgreSQL szintű egyetlen menetes szűrést és aggregációt.

@@ -95,5 +95,29 @@ description: Apply when working on React components, UI styling, frontend state,
     queryClient.invalidateQueries({ queryKey: ['glBalances'] });
     ```
 
+## 9. Böngésző Párhuzamosság & Burst Lekérdezés Védelem (TCP Socket & 504 Timeout)
+* **A naiv `Promise.all(batches.map(...))` csapda:**
+  * Az asztali és mobil böngészők domain-enként mindössze 6 egyidejű TCP kapcsolatot tartanak fenn.
+  * Ha a kliens kontrollálatlanul több tucat vagy több száz PostgREST / RPC kérést indít egyszerre (pl. számlatömbök egyenkénti feloldása), a böngésző hálózati sora eldugul (`net::ERR_INSUFFICIENT_RESOURCES`), a kérések feltorlódnak, és a Supabase/Cloudflare reverse proxy 504 Gateway Timeout hibát dob.
+* **Kötelező Invariáns (Concurrency Throttling):**
+  * Kötegelt lekérdezéseknél vagy N+1 jellegű relációs feloldásoknál **szigorúan kötelező egy aszinkron párhuzamosság-korlátozó (concurrency limiter / worker pool)** használata.
+  * A megengedett maximális egyidejű szálak száma: `CONCURRENCY_LIMIT = 4`.
+  ```typescript
+  // ✅ HELYES MINTA:
+  const CONCURRENCY_LIMIT = 4;
+  for (let i = 0; i < batches.length; i += CONCURRENCY_LIMIT) {
+    const chunk = batches.slice(i, i + CONCURRENCY_LIMIT);
+    await Promise.all(chunk.map(batch => fetchBatch(batch)));
+  }
+  ```
 
-
+## 10. Pénzügyi Korosítás Dátum-Invariánsa (Történeti Cutoff vs. Mai Nap)
+* **A `new Date()` korosítási torzulás:**
+  * Számla és partner korosítási analitikáknál (0–30, 31–60, 61–90, 90+ napos kintlévőségek) szigorúan tilos a bizonylatok lejárati idejét (`due_date`) az aktuális mai naphoz (`new Date()`) viszonyítani!
+  * Ha a felhasználó egy korábbi időszakot vizsgál (pl. 2024. december 31-i állapot vagy korábbi havi zárás), a mai naphoz hasonlítás miatt minden akkori nyitott számla hamisan 90+ napos lejártként jelenne meg.
+* **Kötelező Invariáns:**
+  * A késedelmi napok számát mindig a felhasználó által kiválasztott szűrési záródátumhoz (`dateTo`), ennek hiányában a bizonylat teljesítési/fordulónapjához képest kell számítani:
+  ```typescript
+  const cutoff = dateTo ? new Date(dateTo) : new Date();
+  const diffDays = Math.floor((cutoff.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+  ```
