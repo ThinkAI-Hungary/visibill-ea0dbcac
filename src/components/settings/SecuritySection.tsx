@@ -181,6 +181,80 @@ export function SecuritySection({ onChangePassword, onChangeEmail, onExportData,
           </div>
         </CardContent>
       </Card>
+
+      {/* Jogi dokumentumok & Megfelelőség */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-primary" />
+            Jogi dokumentumok & Megfelelőség
+          </CardTitle>
+          <CardDescription>
+            A szolgáltatás hivatalos, hatályos jogi és adatvédelmi dokumentumai
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* ÁSZF */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted/40 rounded-lg border border-border/60 gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">Általános Szerződési Feltételek (ÁSZF)</p>
+                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-0 text-[10px]">
+                  Hatályos
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                A felhőszolgáltatás igénybevételére vonatkozó általános szerződési feltételek.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs">
+                <a href="/aszf" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Megtekintés
+                </a>
+              </Button>
+              <Button variant="secondary" size="sm" asChild className="gap-1.5 text-xs">
+                <a href="/docs/aszf.pdf" download="Visibill_ASZF.pdf">
+                  <Download className="h-3.5 w-3.5" />
+                  PDF letöltése
+                </a>
+              </Button>
+            </div>
+          </div>
+
+          {/* Adatkezelési tájékoztató */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted/40 rounded-lg border border-border/60 gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">Adatkezelési Tájékoztató</p>
+                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-0 text-[10px]">
+                  GDPR & Infotv.
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Részletes tájékoztató a személyes adatok védelméről és az érintetti jogokról.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs">
+                <a href="/adatvedelem" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Megtekintés
+                </a>
+              </Button>
+              <Button variant="secondary" size="sm" asChild className="gap-1.5 text-xs">
+                <a href="/docs/adatkezelesi-tajekoztato.pdf" download="Visibill_Adatkezelesi_Tajekoztato.pdf">
+                  <Download className="h-3.5 w-3.5" />
+                  PDF letöltése
+                </a>
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

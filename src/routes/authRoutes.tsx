@@ -16,6 +16,7 @@ const ClientPortalPage = lazy(() => import("@/pages/Accounty/ClientPortalPage"))
 const ManagementDashboard = lazy(() => import("@/pages/ManagementDashboard"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const ApiDocsPage = lazy(() => import("@/pages/ApiDocsPage"));
+const TermsPage = lazy(() => import("@/pages/TermsPage"));
 
 /**
  * ManagementRoute — Strict role-based guard for the /management path.
@@ -199,6 +200,81 @@ export function renderAuthRoutes() {
           </Suspense>
         }
       />
+      {/* Public Legal Pages – Terms & Conditions (ÁSZF) and Privacy Policy (Adatkezelési Tájékoztató) */}
+      <Route
+        path="/terms"
+        element={
+          <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+            <RemoveInitialLoader />
+            <TermsPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/aszf"
+        element={
+          <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+            <RemoveInitialLoader />
+            <TermsPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/privacy"
+        element={
+          <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+            <RemoveInitialLoader />
+            <TermsPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/adatvedelem"
+        element={
+          <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+            <RemoveInitialLoader />
+            <TermsPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/adatkezeles"
+        element={
+          <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+            <RemoveInitialLoader />
+            <TermsPage />
+          </Suspense>
+        }
+      />
+      <Route element={<LanguageRouteWrapper language="hr" />}>
+        <Route
+          path="/hr/terms"
+          element={
+            <Suspense fallback={<LoadingSpinner message="Učitavanje..." />}>
+              <RemoveInitialLoader />
+              <TermsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/hr/aszf"
+          element={
+            <Suspense fallback={<LoadingSpinner message="Učitavanje..." />}>
+              <RemoveInitialLoader />
+              <TermsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/hr/privacy"
+          element={
+            <Suspense fallback={<LoadingSpinner message="Učitavanje..." />}>
+              <RemoveInitialLoader />
+              <TermsPage />
+            </Suspense>
+          }
+        />
+      </Route>
     </>
   );
 }

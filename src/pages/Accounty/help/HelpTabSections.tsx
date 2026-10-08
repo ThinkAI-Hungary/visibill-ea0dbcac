@@ -3,10 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Zap, BookOpen, Lightbulb, Keyboard, MessageCircle,
   ChevronDown, Shield, ExternalLink, ArrowRight, Construction,
-  Play, Scale, GraduationCap
+  Play, Scale, GraduationCap, FileText, Download
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   faqs, shortcuts, modules, glossary,
   type FaqItem, type Category, type VideoTutorial, type Legislation, type GlossaryItem,
@@ -335,6 +336,67 @@ export function HelpLegislationSection({ filteredLegislations, searchActive }: L
   return (
     <div className="space-y-4 page-animate">
       <p className="text-sm text-muted-foreground">A könyvelési és bérszámfejtési munkához legfontosabb jogszabályok gyűjteménye.</p>
+
+      {/* Visibill / eaisybooks Hivatalos jogi dokumentumok */}
+      <div className="bg-gradient-to-r from-primary/5 via-card to-card border border-primary/20 rounded-xl p-5 shadow-xs space-y-4">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary">
+            <Shield className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Szolgáltatási feltételek és Adatvédelem</h3>
+            <p className="text-xs text-muted-foreground">A szoftver használatára vonatkozó hatályos szerződési és jogi dokumentumok</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="bg-card p-3.5 rounded-lg border border-border/80 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-semibold text-foreground">Általános Szerződési Feltételek</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Hatályos ÁSZF felhőszolgáltatáshoz</p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
+                <a href="/aszf" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </Button>
+              <Button variant="outline" size="sm" asChild className="h-7 px-2 text-xs gap-1">
+                <a href="/docs/aszf.pdf" download="Visibill_ASZF.pdf">
+                  <Download className="w-3.5 h-3.5" />
+                  PDF
+                </a>
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-card p-3.5 rounded-lg border border-border/80 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-semibold text-foreground">Adatkezelési Tájékoztató</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">GDPR és Infotv. megfelelőség</p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
+                <a href="/adatvedelem" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </Button>
+              <Button variant="outline" size="sm" asChild className="h-7 px-2 text-xs gap-1">
+                <a href="/docs/adatkezelesi-tajekoztato.pdf" download="Visibill_Adatkezelesi_Tajekoztato.pdf">
+                  <Download className="w-3.5 h-3.5" />
+                  PDF
+                </a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-3">
         {filteredLegislations.map((law) => (

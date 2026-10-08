@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, Shield, CheckCircle2, FileText, Clock, Mail } from 'lucide-react';
+import { ArrowLeft, Shield, CheckCircle2, FileText, Clock, Mail, Download, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -84,16 +84,32 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6 page-animate">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link to={`${prefix}/eaisybooks/settings`} className="p-2 rounded-lg hover:bg-muted transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div className="p-2.5 bg-gradient-to-br from-primary to-primary/70 rounded-lg shadow-lg">
-          <Shield className="w-5 h-5 text-white" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Link to={`${prefix}/eaisybooks/settings`} className="p-2 rounded-lg hover:bg-muted transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div className="p-2.5 bg-gradient-to-br from-primary to-primary/70 rounded-lg shadow-lg">
+            <Shield className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Adatkezelési tájékoztató</h1>
+            <p className="text-sm text-muted-foreground">GDPR megfelelőségi dokumentum · v{PRIVACY_VERSION}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Adatkezelési tájékoztató</h1>
-          <p className="text-sm text-muted-foreground">GDPR megfelelőségi dokumentum · v{PRIVACY_VERSION}</p>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs">
+            <a href="/adatvedelem" target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="w-3.5 h-3.5" />
+              Megtekintő
+            </a>
+          </Button>
+          <Button size="sm" asChild className="gap-1.5 text-xs">
+            <a href="/docs/adatkezelesi-tajekoztato.pdf" download="Visibill_Adatkezelesi_Tajekoztato.pdf">
+              <Download className="w-3.5 h-3.5" />
+              Hivatalos PDF
+            </a>
+          </Button>
         </div>
       </div>
 

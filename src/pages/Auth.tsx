@@ -8,6 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Sun, Moon, Mail, Lock, User, TrendingUp, PieChart, BarChart3, ArrowUpRight, ArrowDownRight, FileText, CheckCircle2, Clock, AlertTriangle, Users, Wallet, Landmark, ArrowLeftRight, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -412,6 +413,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -958,6 +960,14 @@ const Auth = () => {
       toast({ title: t('toasts.password_mismatch_title', 'A jelszavak nem egyeznek'), description: t('toasts.password_mismatch_desc', 'Kérlek ellenőrizd a megadott jelszavakat.'), variant: 'destructive' });
       return;
     }
+    if (!acceptTerms) {
+      toast({
+        title: t('toasts.terms_required_title', 'Feltételek elfogadása kötelező'),
+        description: t('toasts.terms_required_desc', 'A regisztrációhoz kérjük fogadd el az Általános Szerződési Feltételeket és ismerd meg az Adatkezelési Tájékoztatót.'),
+        variant: 'destructive',
+      });
+      return;
+    }
     setLoading(true);
 
     const { error } = await signUp(email, password, name, appMode);
@@ -1465,10 +1475,47 @@ const Auth = () => {
                   <p className="text-xs text-rose-500">{t('strength.mismatch', 'A két jelszó nem egyezik')}</p>
                 )}
               </div>
+
+              {/* Terms and Privacy clickwrap consent */}
+              <div className="flex items-start space-x-2.5 pt-1 text-left">
+                <Checkbox
+                  id="signup-accept-terms"
+                  checked={acceptTerms}
+                  onCheckedChange={(checked) => setAcceptTerms(checked === true)}
+                  className="mt-0.5"
+                />
+                <label
+                  htmlFor="signup-accept-terms"
+                  className="text-xs text-muted-foreground leading-snug cursor-pointer select-none"
+                >
+                  Elfogadom az{' '}
+                  <a
+                    href={isHr ? '/hr/aszf' : '/aszf'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {t('terms.aszf_link', 'Általános Szerződési Feltételeket')}
+                  </a>
+                  {' '}és megismertem az{' '}
+                  <a
+                    href={isHr ? '/hr/privacy' : '/adatvedelem'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {t('terms.privacy_link', 'Adatkezelési Tájékoztatót')}
+                  </a>.
+                </label>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full h-10 font-medium"
                 disabled={loading || !(
+                  acceptTerms &&
                   name.trim().length > 0 &&
                   email.includes('@') &&
                   password.length >= 6 &&
@@ -1519,6 +1566,26 @@ const Auth = () => {
             <a href="#" className="text-primary hover:underline">Felhasználási feltételeket</a>.
           </p>
           */}
+          {/* Card footer legal links */}
+          <div className="mt-5 pt-3 border-t border-border/40 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+            <a
+              href={isHr ? '/hr/aszf' : '/aszf'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary hover:underline transition-colors"
+            >
+              {t('terms.aszf_short', 'ÁSZF')}
+            </a>
+            <span className="text-muted-foreground/40">•</span>
+            <a
+              href={isHr ? '/hr/privacy' : '/adatvedelem'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary hover:underline transition-colors"
+            >
+              {t('terms.privacy_short', 'Adatkezelési Tájékoztató')}
+            </a>
+          </div>
           </>
           )}
         </div>

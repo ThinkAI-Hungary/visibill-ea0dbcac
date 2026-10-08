@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Key, Clock, Shield, ChevronDown, CheckCircle2, Circle, Save, Loader2 } from 'lucide-react';
+import { Key, Clock, Shield, ChevronDown, CheckCircle2, Circle, Save, Loader2, FileText, Download, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -221,6 +221,58 @@ export default function SecuritySettingsTab({
                   >
                     {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                     {exporting ? 'Exportálás...' : 'GDPR adatexport letöltése (JSON)'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Hivatalos dokumentumok (ÁSZF & Adatkezelési Tájékoztató) */}
+          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Hivatalos szerződési és adatvédelmi dokumentumok</h3>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              A szolgáltatás hatályos Általános Szerződési Feltételei és az Adatkezelési Tájékoztató bármikor elérhető és letölthető.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="bg-card p-3 rounded-lg border border-border/80 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">ÁSZF</p>
+                  <p className="text-[11px] text-muted-foreground">Általános Szerződési Feltételek</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
+                    <a href="/aszf" target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild className="h-7 px-2 text-xs gap-1">
+                    <a href="/docs/aszf.pdf" download="Visibill_ASZF.pdf">
+                      <Download className="w-3.5 h-3.5" />
+                      PDF
+                    </a>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="bg-card p-3 rounded-lg border border-border/80 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">Adatkezelési Tájékoztató</p>
+                  <p className="text-[11px] text-muted-foreground">GDPR megfelelőség</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
+                    <a href="/adatvedelem" target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild className="h-7 px-2 text-xs gap-1">
+                    <a href="/docs/adatkezelesi-tajekoztato.pdf" download="Visibill_Adatkezelesi_Tajekoztato.pdf">
+                      <Download className="w-3.5 h-3.5" />
+                      PDF
+                    </a>
                   </Button>
                 </div>
               </div>
