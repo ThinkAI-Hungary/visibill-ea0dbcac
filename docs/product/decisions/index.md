@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-08  
-> **Összesen:** 179 döntés (162 egyedi döntési fájl) | ✅ Decided: 175 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 180 döntés (163 egyedi döntési fájl) | ✅ Decided: 176 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -285,5 +285,6 @@
 | P-159 | Tárgyi Eszközök és Nyitó Állomány Tömeges Import (Excel/CSV) Felhasználói Élmény (UX) | ✅ Decided | [P-159](./P-159-fixed-assets-bulk-excel-csv-import-and-opening-balances-ux.md) |
 | P-161 | Bérszámfejtés Haladó Riportok és Adóelőleg-Nyilatkozatok Munkafolyamat és Export UX | ✅ Decided | [P-161](./P-161-payroll-advanced-reports-and-declarations-workflow-ux.md) |
 | P-165 | Folyószámla 50-es Lapozás (UnifiedPagination) és Főkönyv Lekérdezési Vihar Megszüntetése UX | ✅ Decided | [P-165](./P-165-general-ledger-and-subledger-pagination-and-concurrency-ux.md) |
+| P-166 | RLB Könyvvizsgálói XML és CSV Import Modal és Valós Idejű Előnézet UX | ✅ Decided | [P-166](./P-166-rlb-audit-xml-and-csv-import-modal-and-realtime-preview-ux.md) |
 
 

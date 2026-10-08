@@ -124,7 +124,7 @@ export default function NotesPage() {
   const handleDeleteAttachment = async (attachment: NoteAttachment) => {
     if (!window.confirm(t('toast.delete_attachment_confirm', { defaultValue: 'Biztosan törölni szeretnéd ezt a csatolmányt?' }))) return;
     try {
-      await deleteNoteAttachment(attachment);
+      await deleteNoteAttachment(attachment.id, attachment.file_path);
       queryClient.invalidateQueries({ queryKey: ['notes', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoice-attachment-counts'] });
       queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });

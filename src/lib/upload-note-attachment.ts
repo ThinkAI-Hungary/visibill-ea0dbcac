@@ -90,7 +90,7 @@ export async function uploadNoteAttachment(
     // Cleanup orphaned storage file
     await supabase.storage.from(ATTACHMENT_BUCKET).remove([filePath]);
     reportError({
-      type: 'database',
+      type: 'db_query',
       component: 'uploadNoteAttachment',
       action: 'dbInsert',
       message: 'Note attachment metadata insert failed',
@@ -140,7 +140,7 @@ export async function deleteNoteAttachment(
 
   if (dbError) {
     reportError({
-      type: 'database',
+      type: 'db_query',
       component: 'deleteNoteAttachment',
       action: 'dbDelete',
       message: 'Note attachment deletion failed',

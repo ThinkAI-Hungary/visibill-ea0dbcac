@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-07  
-> **Összesen:** 226 döntés (208 egyedi döntési fájl) | ✅ Decided: 224 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-08  
+> **Összesen:** 227 döntés (209 egyedi döntési fájl) | ✅ Decided: 225 | ⛔ Superseded: 2
 
 
 ---
@@ -260,6 +260,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-204 | Online Pénztárgép (OPG) Modul Architektúra és Házipénztár Integráció | ✅ Decided | [A-204](./A-204-online-cash-register-opg-architecture.md) |
 | A-205 | NAV 2665M Digitális Nyomtatvány Replika és Partner Tördelő Motor Architektúrája | ✅ Decided | [A-205](./A-205-nav-2665m-digital-replica-and-partner-pagination-architecture.md) |
 | A-226 | Főkönyvi és Folyószámlai Lekérdezési Vihar (Concurrency Storm) Felszámolása, get_gl_analytic_reconciliation Sémajavítás és Folyószámla Pagináció | ✅ Decided | [A-226](./A-226-gl-subledger-concurrency-storm-and-analytic-reconciliation-schema-fix.md) |
+| A-227 | RLB-60 Könyvvizsgálói XML és CSV Főkönyvi Kivonat Parser Motor és Kliensoldali Kötegelt Ingestion Architektúra | ✅ Decided | [A-227](./A-227-rlb-60-audit-xml-and-csv-ledger-parser-and-batch-ingestion.md) |
 
 
 ## 💳 Fizetés

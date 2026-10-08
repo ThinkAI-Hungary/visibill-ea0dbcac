@@ -2985,8 +2985,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791404760.8956585,
-    "ast_hash": "19508028f854f9cf9112e79f2501de7b",
+    "mtime": 1791426564.5719414,
+    "ast_hash": "cc6a809381209e6fa2a8b78062d89ae7",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3460,8 +3460,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1791424344.4103105,
-    "ast_hash": "36fdda49fd437eac529bfc675959de89",
+    "mtime": 1791426578.653754,
+    "ast_hash": "dcf8eebaf584b4bd22be3884c6dbbb5f",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -3630,8 +3630,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/UploadAuditXmlModal.tsx": {
-    "mtime": 1789159282.982047,
-    "ast_hash": "7696a3ea1e531a1428ca0169a4f8c86e",
+    "mtime": 1791426459.5485206,
+    "ast_hash": "e234fb8cb048f98cf54c3d807050909b",
     "semantic_hash": ""
   },
   "src/components/invoices/FadInvoicePanel.tsx": {
@@ -5455,8 +5455,8 @@
     "semantic_hash": ""
   },
   "src/pages/NotesPage.tsx": {
-    "mtime": 1791423310.4706979,
-    "ast_hash": "1688d9c200e6971cae708a07a5b80213",
+    "mtime": 1791426334.171465,
+    "ast_hash": "f99cc4af4bdd80625c730fc84e59a18b",
     "semantic_hash": ""
   },
   "src/types/notes.ts": {
@@ -14708,8 +14708,8 @@
     "semantic_hash": ""
   },
   "src/lib/upload-note-attachment.ts": {
-    "mtime": 1791423020.2095985,
-    "ast_hash": "ea1d238d17fa0bf261746a163e1e29a7",
+    "mtime": 1791426329.6947668,
+    "ast_hash": "3b16ed0f7b169aa02fea81a88b074b90",
     "semantic_hash": ""
   },
   "src/test/notes/noteAttachments.test.tsx": {
@@ -14725,6 +14725,51 @@
   "session-summary/Jani/2026-10-08/summary-035100-invoice-notes-attachments-tig-and-layout-shift-protection.md": {
     "mtime": 1791424272.0909133,
     "ast_hash": "d194e3a0e888ca93a90a4f5f88735296",
+    "semantic_hash": ""
+  },
+  "src/lib/rlb/index.ts": {
+    "mtime": 1791426058.4228878,
+    "ast_hash": "dff0547a67fc6b5d254d8e27ea48a5a0",
+    "semantic_hash": ""
+  },
+  "src/lib/rlb/rlbImportService.ts": {
+    "mtime": 1791426053.8814006,
+    "ast_hash": "2560c7cddbaf67b87ccb33ce1349ed34",
+    "semantic_hash": ""
+  },
+  "src/lib/rlb/rlbParser.ts": {
+    "mtime": 1791426031.3082824,
+    "ast_hash": "b26c741f90f2e0d263d8b22c4e1c6651",
+    "semantic_hash": ""
+  },
+  "src/test/rlb/rlbImportService.test.ts": {
+    "mtime": 1791426176.9181285,
+    "ast_hash": "578ebd7c3463716bedc2dcb7b414f6c9",
+    "semantic_hash": ""
+  },
+  "src/test/rlb/rlbParser.test.ts": {
+    "mtime": 1791426157.2296205,
+    "ast_hash": "4decedfd159df43af62f40cc3f9b4591",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-227-rlb-60-audit-xml-and-csv-ledger-parser-and-batch-ingestion.md": {
+    "mtime": 1791426543.089985,
+    "ast_hash": "07e41e59909bc38fadde7b2c8a302cb7",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-166-rlb-audit-xml-and-csv-import-modal-and-realtime-preview-ux.md": {
+    "mtime": 1791426550.3446498,
+    "ast_hash": "21c95cc004965f2d26b52ade62f78e59",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-08/summary-042830-rlb-parser-and-batch-import.md": {
+    "mtime": 1791426526.2729874,
+    "ast_hash": "7e08846c4d1bf8f5d523c6282ea818af",
+    "semantic_hash": ""
+  },
+  "docs/WR-HOME-KFT/WR Home Kft 20251231fk (1).pdf": {
+    "mtime": 1791422833.0427516,
+    "ast_hash": "573547b236e7676885090ab1bbe92b2c",
     "semantic_hash": ""
   }
 }
