@@ -288,5 +288,6 @@
 | P-166 | RLB Könyvvizsgálói XML és CSV Import Modal és Valós Idejű Előnézet UX | ✅ Decided | [P-166](./P-166-rlb-audit-xml-and-csv-import-modal-and-realtime-preview-ux.md) |
 | P-167 | Automatikus Könyvelési Szabályok Konfigurációs Felülete és Cégek Közötti Másolás (EB-0256) | ✅ Decided | [P-167](./P-167-automated-accounting-rules-and-cross-company-cloning-ux.md) |
 | P-168 | Egységes Számlatükör, Cégek Közötti Másolás és Folyószámla Kényszer (EB-0255) | ✅ Decided | [P-168](./P-168-eb0255-chart-of-accounts-subledger.md) |
+| P-169 | Könyvelési Naplók Kategóriái, Szerkeszthetősége, Banki Szinkronizáció és Tételsori Partnerkezelés (EB-0257) | ✅ Decided | [P-169](./P-169-eb0257-journal-categorization-and-line-partners.md) |
 
 

@@ -263,6 +263,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-227 | RLB-60 Könyvvizsgálói XML és CSV Főkönyvi Kivonat Parser Motor és Kliensoldali Kötegelt Ingestion Architektúra | ✅ Decided | [A-227](./A-227-rlb-60-audit-xml-and-csv-ledger-parser-and-batch-ingestion.md) |
 | A-228 | Automatikus Könyvelési Szabályok Konfigurációs Felülete és Cégek Közötti Klónozása (EB-0256) | ✅ Decided | [A-228](./A-228-automated-accounting-rules-configuration-and-cross-company-cloning.md) |
 | A-229 | Egységes Számlatükör Cégenként, Cégek Közötti Klónozás és Folyószámla Szabályrendszer (EB-0255) | ✅ Decided | [A-229](./A-229-eb0255-single-active-coa-and-subledger-enforcement.md) |
+| A-230 | Könyvelési Naplók Kategorizálása, Tételsori Partner Relációk és Banki Kétirányú Szinkronizáció (EB-0257) | ✅ Decided | [A-230](./A-230-journal-categorization-and-line-partners.md) |
 
 
 ## 💳 Fizetés

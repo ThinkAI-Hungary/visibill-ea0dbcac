@@ -272,6 +272,7 @@ export type Database = {
           header_id: string
           id: string
           parent_line_id: string | null
+          partner_id: string | null
           project_id: string | null
           sequence_number: number
           vat_code: string | null
@@ -291,6 +292,7 @@ export type Database = {
           header_id: string
           id?: string
           parent_line_id?: string | null
+          partner_id?: string | null
           project_id?: string | null
           sequence_number: number
           vat_code?: string | null
@@ -310,6 +312,7 @@ export type Database = {
           header_id?: string
           id?: string
           parent_line_id?: string | null
+          partner_id?: string | null
           project_id?: string | null
           sequence_number?: number
           vat_code?: string | null
@@ -341,6 +344,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "acc_journal_lines_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "acc_journal_lines_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -351,6 +361,7 @@ export type Database = {
       }
       acc_journals: {
         Row: {
+          bank_account_number: string | null
           code: string
           company_id: string
           connected_gl_account: string | null
@@ -358,10 +369,12 @@ export type Database = {
           currency: string
           id: string
           is_active: boolean
+          is_system_locked: boolean
           name: string
           type: string
         }
         Insert: {
+          bank_account_number?: string | null
           code: string
           company_id: string
           connected_gl_account?: string | null
@@ -369,10 +382,12 @@ export type Database = {
           currency?: string
           id?: string
           is_active?: boolean
+          is_system_locked?: boolean
           name: string
           type: string
         }
         Update: {
+          bank_account_number?: string | null
           code?: string
           company_id?: string
           connected_gl_account?: string | null
@@ -380,6 +395,7 @@ export type Database = {
           currency?: string
           id?: string
           is_active?: boolean
+          is_system_locked?: boolean
           name?: string
           type?: string
         }

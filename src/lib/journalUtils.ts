@@ -187,3 +187,69 @@ export const COMMON_JOURNAL_DESCRIPTIONS = [
   'Késedelmi kamat / kötbér',
   'Nyitó rendezés',
 ];
+
+export type JournalCategoryKey = 'ALL' | 'OPENING' | 'BANK' | 'PETTY_CASH' | 'INVOICE' | 'MIXED' | 'CLOSING';
+
+export interface JournalCategoryDef {
+  key: JournalCategoryKey;
+  label: string;
+  codeRange: string;
+}
+
+export const JOURNAL_CATEGORIES: JournalCategoryDef[] = [
+  { key: 'ALL', label: 'Összes napló', codeRange: '' },
+  { key: 'OPENING', label: 'Nyitó', codeRange: '101' },
+  { key: 'BANK', label: 'Bankok', codeRange: '201..253' },
+  { key: 'PETTY_CASH', label: 'Pénztárak', codeRange: '301..351' },
+  { key: 'INVOICE', label: 'Számlák', codeRange: '401..552' },
+  { key: 'MIXED', label: 'Vegyesek', codeRange: '601..605' },
+  { key: 'CLOSING', label: 'Záró', codeRange: '901' },
+];
+
+export function getJournalCategory(journal: JournalLike): JournalCategoryKey {
+  const code = (journal.code || '').trim().toUpperCase();
+  const type = (journal.type || '').trim().toUpperCase();
+
+  if (type === 'OPENING' || code === 'NY' || code.startsWith('1')) return 'OPENING';
+  if (type === 'BANK' || code.startsWith('B') || (code.length === 3 && code.startsWith('2'))) return 'BANK';
+  if (type === 'PETTY_CASH' || code.startsWith('P') || (code.length === 3 && code.startsWith('3'))) return 'PETTY_CASH';
+  if (type === 'MIXED' || type === 'SYSTEM' || type === 'GENERAL' || code.startsWith('VE') || code.startsWith('BÉR') || code.startsWith('BER') || (code.length === 3 && code.startsWith('6'))) return 'MIXED';
+  if (type === 'CUSTOMER' || type === 'SUPPLIER' || (code.startsWith('V') && !code.startsWith('VE')) || code.startsWith('SZ') || (code.length === 3 && (code.startsWith('4') || code.startsWith('5')))) return 'INVOICE';
+  if (type === 'CLOSING' || code === 'Z' || code.startsWith('9')) return 'CLOSING';
+
+  return 'MIXED';
+}
+
+export function isJournalSystemLocked(journal: JournalLike & { is_system_locked?: boolean }): boolean {
+  if (journal.is_system_locked) return true;
+  const code = (journal.code || '').trim().toUpperCase();
+  return ['603', '605', '901'].includes(code);
+}
+
+export const MNB_CURRENCIES = [
+  { code: 'HUF', name: 'Magyar forint', unit: 1, symbol: 'Ft' },
+  { code: 'EUR', name: 'Euro', unit: 1, symbol: 'EUR' },
+  { code: 'USD', name: 'Amerikai dollár', unit: 1, symbol: 'USD' },
+  { code: 'GBP', name: 'Angol font', unit: 1, symbol: 'GBP' },
+  { code: 'CHF', name: 'Svájci frank', unit: 1, symbol: 'CHF' },
+  { code: 'CAD', name: 'Kanadai dollár', unit: 1, symbol: 'CAD' },
+  { code: 'CZK', name: 'Cseh korona', unit: 1, symbol: 'CZK' },
+  { code: 'DKK', name: 'Dán korona', unit: 1, symbol: 'Dkk' },
+  { code: 'PLN', name: 'Lengyel zloty', unit: 1, symbol: 'Zlo' },
+  { code: 'RON', name: 'Román lej', unit: 1, symbol: 'RON' },
+  { code: 'RSD', name: 'Szerb dínár', unit: 1, symbol: 'RSD' },
+  { code: 'BGN', name: 'Bulgár leva', unit: 1, symbol: 'BGN' },
+  { code: 'SEK', name: 'Svéd korona', unit: 1, symbol: 'SEK' },
+  { code: 'NOK', name: 'Norvég korona', unit: 1, symbol: 'NOK' },
+  { code: 'TRY', name: 'Török líra', unit: 1, symbol: 'TRY' },
+  { code: 'JPY', name: 'Japán jen (100)', unit: 100, symbol: 'JPY' },
+  { code: 'CNY', name: 'Kínai jüan', unit: 1, symbol: 'CNY' },
+  { code: 'HRK', name: 'Horvát kuna', unit: 1, symbol: 'HRK' },
+  { code: 'INR', name: 'Indiai rúpia', unit: 1, symbol: 'INR' },
+  { code: 'EGP', name: 'Egyiptomi font', unit: 1, symbol: 'EGP' },
+  { code: 'QAR', name: 'Katari riál', unit: 1, symbol: 'QAR' },
+  { code: 'RUB', name: 'Orosz rubel', unit: 1, symbol: 'Rub' },
+  { code: 'LEJ', name: 'Román lej', unit: 1, symbol: 'LEJ' },
+  { code: 'MKD', name: 'Macedón dénár', unit: 1, symbol: 'MKD' },
+];
+

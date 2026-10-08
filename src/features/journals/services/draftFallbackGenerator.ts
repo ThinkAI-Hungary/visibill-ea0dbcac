@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { resolveBankJournal } from './bankJournalResolver';
 
 /**
  * Robust client-side fallback draft generator for accounting journals.
@@ -36,7 +37,7 @@ export async function generateDraftsFallback(
 
   const { data: journals } = await supabase
     .from('acc_journals')
-    .select('id, code, name, type, connected_gl_account, currency')
+    .select('id, code, name, type, connected_gl_account, currency, bank_account_number')
     .eq('company_id', companyId);
 
   const { data: companyBankAccounts } = await supabase
@@ -194,46 +195,26 @@ export async function generateDraftsFallback(
       source = 'AUTO_BANK';
       docId = `TR-${item.item_id.substring(0, 8).toUpperCase()}`;
 
-      const descLower = (item.description || '').toLowerCase();
-      const cleanDesc = descLower.replace(/[-\s]/g, '');
+      // Resolve bank journal using resolveBankJournal (EB-0257)
+      const matched = resolveBankJournal(
+        {
+          accountNumber: item.account_number || item.raw_data?.account_number || item.bank_account_number,
+          currency,
+          description: item.description,
+        },
+        journals || [],
+        companyBankAccounts || []
+      );
 
-      // 1. Try matching with configured company_bank_accounts first
-      matchedBankAccount = companyBankAccounts?.find((cba: any) => {
-        if (!cba.journal_id && !cba.gl_account_id) return false;
-
-        // Exact or partial account number match in description
-        if (cba.account_number) {
-          const cleanCbaNum = cba.account_number.replace(/[-\s]/g, '').toLowerCase();
-          if (cleanCbaNum && cleanDesc.includes(cleanCbaNum)) return true;
-        }
-
-        // Bank name + currency match
-        if (cba.currency === currency && cba.bank_name) {
-          const bName = cba.bank_name.toLowerCase();
-          if (descLower.includes(bName) || (bName.includes('k&h') && (descLower.includes('kh') || descLower.includes('k&h')))) {
-            return true;
-          }
-        }
-        return false;
-      }) || (currency ? companyBankAccounts?.find((cba: any) => cba.currency === currency && (cba.journal_id || cba.gl_account_id)) : null);
-
-      if (matchedBankAccount?.journal_id) {
-        journalId = matchedBankAccount.journal_id;
+      if (matched) {
+        journalId = matched.id;
+        matchedBankAccount = companyBankAccounts?.find(cba => 
+          (cba.journal_id && cba.journal_id === matched.id) ||
+          (cba.account_number && matched.bank_account_number && cba.account_number.replace(/[-\s./]/g, '') === matched.bank_account_number.replace(/[-\s./]/g, ''))
+        ) || null;
       } else {
-        // Match specific BANK journal by keyword if multiple bank journals exist for this currency
-        const bankKeywords = ['otp', 'kh', 'k&h', 'erste', 'revolut', 'cib', 'raiffeisen', 'mbh', 'unicredit', 'binx', 'wise', 'oberbank', 'paypal'];
-        const specificJournal = journals?.find(j => {
-          if (j.type !== 'BANK' || j.currency !== currency) return false;
-          const nameLower = (j.name || '').toLowerCase();
-          const codeLower = (j.code || '').toLowerCase();
-          return bankKeywords.some(kw => 
-            (descLower.includes(kw) || (kw === 'kh' && descLower.includes('k&h'))) && 
-            (nameLower.includes(kw) || codeLower.includes(kw) || (kw === 'kh' && nameLower.includes('k&h')))
-          );
-        });
-
-        journalId = specificJournal?.id
-                 || journals?.find(j => j.type === 'BANK' && j.currency === currency && (currency === 'HUF' ? j.code === 'B1' : (currency === 'EUR' ? j.code === 'B2' : true)))?.id
+        // Fallback to currency or B1
+        journalId = journals?.find(j => j.type === 'BANK' && j.currency === currency && (currency === 'HUF' ? j.code === 'B1' : (currency === 'EUR' ? j.code === 'B2' : true)))?.id
                  || journals?.find(j => j.type === 'BANK' && j.currency === currency)?.id
                  || journals?.find(j => j.code === 'B1')?.id
                  || journalId;

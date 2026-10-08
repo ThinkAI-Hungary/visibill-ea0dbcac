@@ -155,6 +155,7 @@ describe('CreateJournalModal Component', () => {
         type: 'BANK',
         currency: 'HUF',
         connected_gl_account: null,
+        bank_account_number: null,
         is_active: true,
       });
       expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['acc-journals', 'test-company-123'] });

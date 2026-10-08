@@ -410,6 +410,8 @@ export function BankAccountsTab({ companyId }: Props) {
       toast({ title: t('common:status.success', 'Siker'), description: t('bank_accounts.toast_update_success', 'Bankszámla könyvelési beállításai frissítve.') });
       setEditingAccount(null);
       queryClient.invalidateQueries({ queryKey: ['company-bank-accounts', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['acc-journals', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['acc-bank-journals', companyId] });
     } catch (err: any) {
       reportError({
         type: 'db_query',
@@ -465,6 +467,8 @@ export function BankAccountsTab({ companyId }: Props) {
       setSelectedGlAccountId('none');
       setShowAddForm(false);
       queryClient.invalidateQueries({ queryKey: ['company-bank-accounts', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['acc-journals', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['acc-bank-journals', companyId] });
     } catch (err: any) {
       reportError({
         type: 'db_query',
@@ -492,6 +496,8 @@ export function BankAccountsTab({ companyId }: Props) {
 
       toast({ title: t('common:status.success', 'Siker'), description: t('bank_accounts.toast_delete_success', 'Bankszámla törölve.') });
       queryClient.invalidateQueries({ queryKey: ['company-bank-accounts', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['acc-journals', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['acc-bank-journals', companyId] });
     } catch (err: any) {
       reportError({
         type: 'db_query',

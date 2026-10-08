@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Loader2, AlertCircle, ChevronsUpDown, Check, Sparkles, Copy } from 'lucide-react';
+import { Plus, Trash2, Loader2, AlertCircle, Sparkles, Copy, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/locale/formatters';
@@ -20,7 +20,8 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { Badge } from '@/components/ui/badge';
-import { getLocalizedJournalName, getNextDocumentId, COMMON_JOURNAL_DESCRIPTIONS } from '@/lib/journalUtils';
+import { getLocalizedJournalName, getNextDocumentId, COMMON_JOURNAL_DESCRIPTIONS, isJournalSystemLocked } from '@/lib/journalUtils';
+import JournalLinePartnerPicker from './JournalLinePartnerPicker';
 
 interface AddManualJournalEntryModalProps {
   open: boolean;
@@ -35,6 +36,7 @@ interface AddManualJournalEntryModalProps {
 interface JournalLineInput {
   id?: string;
   gl_account_id: string;
+  partner_id?: string | null;
   dc_type: 'T' | 'K';
   amount: number;
   foreign_amount?: number | null;
@@ -59,17 +61,14 @@ export default function AddManualJournalEntryModal({
 
   // Form states
   const [journalId, setJournalId] = useState<string>('');
-  const [postingDate, setPostingDate] = useState<string>(new Date().toISOString().substring(0, 10));
-  const [documentDate, setDocumentDate] = useState<string>(new Date().toISOString().substring(0, 10));
+  const [postingDate, setPostingDate] = useState<string>(() => new Date().toISOString().substring(0, 10));
+  const [documentDate, setDocumentDate] = useState<string>(() => new Date().toISOString().substring(0, 10));
   const [documentId, setDocumentId] = useState<string>('');
-  const [partnerId, setPartnerId] = useState<string>('none');
-  const [partnerComboOpen, setPartnerComboOpen] = useState(false);
-  const [partnerSearchQuery, setPartnerSearchQuery] = useState('');
   const [description, setDescription] = useState<string>('');
   const [justification, setJustification] = useState<string>('');
   const [lines, setLines] = useState<JournalLineInput[]>([
-    { gl_account_id: '', dc_type: 'T', amount: 0, project_id: null, description: '' },
-    { gl_account_id: '', dc_type: 'K', amount: 0, project_id: null, description: '' },
+    { gl_account_id: '', partner_id: null, dc_type: 'T', amount: 0, project_id: null, description: '' },
+    { gl_account_id: '', partner_id: null, dc_type: 'K', amount: 0, project_id: null, description: '' },
   ]);
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,7 +81,7 @@ export default function AddManualJournalEntryModal({
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
         .from('acc_journals')
-        .select('id, code, name')
+        .select('id, code, name, is_system_locked')
         .eq('company_id', selectedCompany.id);
       if (error) throw error;
       return data;
@@ -102,7 +101,6 @@ export default function AddManualJournalEntryModal({
         setPostingDate(cloneData.posting_date || new Date().toISOString().substring(0, 10));
         setDocumentDate(cloneData.document_date || new Date().toISOString().substring(0, 10));
         setDocumentId(getNextDocumentId(cloneData.document_id) || suggestedDocumentId || '');
-        setPartnerId(cloneData.partner_id || 'none');
         setDescription(cloneData.description || '');
         setJustification(cloneData.justification || '');
         if (cloneData.lines && cloneData.lines.length > 0) {
@@ -121,6 +119,7 @@ export default function AddManualJournalEntryModal({
             }
             return {
               gl_account_id: l.gl_account_id || '',
+              partner_id: l.partner_id || cloneData.partner_id || null,
               dc_type: (l.dc_type === 'K' ? 'K' : 'T') as 'T' | 'K',
               amount: displayAmount,
               foreign_amount: fAmount,
@@ -130,18 +129,19 @@ export default function AddManualJournalEntryModal({
           }));
         } else {
           setLines([
-            { gl_account_id: '', dc_type: 'T', amount: 0, project_id: null, description: '' },
-            { gl_account_id: '', dc_type: 'K', amount: 0, project_id: null, description: '' },
+            { gl_account_id: '', partner_id: null, dc_type: 'T', amount: 0, project_id: null, description: '' },
+            { gl_account_id: '', partner_id: null, dc_type: 'K', amount: 0, project_id: null, description: '' },
           ]);
         }
       } else if (!entryId) {
         // Mode 2: Fresh new entry -> ALWAYS clean slate reset!
         let targetJournalId = '';
-        if (defaultJournalId && defaultJournalId !== 'munkalista' && journals.some((j: any) => j.id === defaultJournalId)) {
+        const eligibleJournals = journals.filter((j: any) => !isJournalSystemLocked(j));
+        if (defaultJournalId && defaultJournalId !== 'munkalista' && eligibleJournals.some((j: any) => j.id === defaultJournalId)) {
           targetJournalId = defaultJournalId;
-        } else if (journals.length > 0) {
-          const veJournal = journals.find((j: any) => j.code === 'VE');
-          const defaultJ = veJournal || journals.find((j: any) => j.code !== 'NY') || journals[0];
+        } else if (eligibleJournals.length > 0) {
+          const veJournal = eligibleJournals.find((j: any) => j.code === 'VE' || j.code === '601');
+          const defaultJ = veJournal || eligibleJournals.find((j: any) => j.code !== 'NY') || eligibleJournals[0];
           targetJournalId = defaultJ.id;
         }
         if (targetJournalId) setJournalId(targetJournalId);
@@ -149,12 +149,11 @@ export default function AddManualJournalEntryModal({
         setPostingDate(new Date().toISOString().substring(0, 10));
         setDocumentDate(new Date().toISOString().substring(0, 10));
         setDocumentId(suggestedDocumentId || '');
-        setPartnerId('none');
         setDescription('');
         setJustification('');
         setLines([
-          { gl_account_id: '', dc_type: 'T', amount: 0, project_id: null, description: '' },
-          { gl_account_id: '', dc_type: 'K', amount: 0, project_id: null, description: '' },
+          { gl_account_id: '', partner_id: null, dc_type: 'T', amount: 0, project_id: null, description: '' },
+          { gl_account_id: '', partner_id: null, dc_type: 'K', amount: 0, project_id: null, description: '' },
         ]);
         setOpenDropdownIndex(null);
         setSearchQuery('');
@@ -166,11 +165,12 @@ export default function AddManualJournalEntryModal({
   // Set default journal if lookup resolves after open
   useEffect(() => {
     if (journals.length > 0 && !journalId && !entryId && !cloneData) {
-      if (defaultJournalId && defaultJournalId !== 'munkalista' && journals.some((j: any) => j.id === defaultJournalId)) {
+      const eligibleJournals = journals.filter((j: any) => !isJournalSystemLocked(j));
+      if (defaultJournalId && defaultJournalId !== 'munkalista' && eligibleJournals.some((j: any) => j.id === defaultJournalId)) {
         setJournalId(defaultJournalId);
-      } else {
-        const veJournal = journals.find((j: any) => j.code === 'VE');
-        const defaultJ = veJournal || journals.find((j: any) => j.code !== 'NY') || journals[0];
+      } else if (eligibleJournals.length > 0) {
+        const veJournal = eligibleJournals.find((j: any) => j.code === 'VE' || j.code === '601');
+        const defaultJ = veJournal || eligibleJournals.find((j: any) => j.code !== 'NY') || eligibleJournals[0];
         setJournalId(defaultJ.id);
       }
     }
@@ -262,7 +262,6 @@ export default function AddManualJournalEntryModal({
       setPostingDate(existingEntry.posting_date);
       setDocumentDate(existingEntry.document_date);
       setDocumentId(existingEntry.document_id);
-      setPartnerId(existingEntry.partner_id || 'none');
       setDescription(existingEntry.description);
       setJustification(existingEntry.justification || '');
       if (existingEntry.lines && existingEntry.lines.length > 0) {
@@ -282,6 +281,7 @@ export default function AddManualJournalEntryModal({
           return {
             id: l.id,
             gl_account_id: l.gl_account_id || '',
+            partner_id: l.partner_id || existingEntry.partner_id || null,
             dc_type: l.dc_type,
             amount: displayAmount,
             foreign_amount: fAmount,
@@ -292,24 +292,6 @@ export default function AddManualJournalEntryModal({
       }
     }
   }, [existingEntry]);
-
-  // Partner selection helper
-  const selectedPartner = partners.find((p: any) => p.id === partnerId);
-  const selectedPartnerLabel = partnerId === 'none' || !partnerId
-    ? t('accounting:dialogs.manual_journal.no_partner')
-    : (selectedPartner?.name || t('accounting:dialogs.manual_journal.choose_partner'));
-
-  const normalizeSearchText = (text: string) =>
-    (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-  const normalizedPartnerSearch = normalizeSearchText(partnerSearchQuery.trim());
-  const filteredPartners = partners.filter((p: any) => {
-    if (!normalizedPartnerSearch) return true;
-    const nameMatch = normalizeSearchText(p.name).includes(normalizedPartnerSearch);
-    const taxMatch = (p.tax_number || '').includes(normalizedPartnerSearch);
-    return nameMatch || taxMatch;
-  });
-  const showNoPartnerOption = !normalizedPartnerSearch || normalizeSearchText('— Nincs partner — nincs').includes(normalizedPartnerSearch);
 
   // Balance calculation
   const totalDebit = lines.reduce((sum, line) => (line.dc_type === 'T' ? sum + Number(line.amount) : sum), 0);
@@ -347,6 +329,7 @@ export default function AddManualJournalEntryModal({
         ...prev,
         {
           gl_account_id: '',
+          partner_id: null,
           dc_type: defaultDcType,
           amount: defaultAmount,
           project_id: null,
@@ -429,6 +412,9 @@ export default function AddManualJournalEntryModal({
       const isForeign = existingEntry?.currency && existingEntry.currency !== 'HUF';
       const headerRate = Number(existingEntry?.exchange_rate) || 1;
 
+      // Primary partner for backwards compatibility
+      const primaryPartnerId = lines.find(l => l.partner_id && l.partner_id !== 'none')?.partner_id || null;
+
       const headerData: Record<string, any> = {
         company_id: selectedCompany!.id,
         journal_id: journalId,
@@ -437,7 +423,7 @@ export default function AddManualJournalEntryModal({
         posting_date: postingDate,
         document_date: documentDate,
         document_id: documentId,
-        partner_id: partnerId === 'none' ? null : partnerId,
+        partner_id: primaryPartnerId,
         description: description,
         justification: justification || null,
         created_by: user.id,
@@ -497,6 +483,7 @@ export default function AddManualJournalEntryModal({
           header_id: headerIdResult!,
           sequence_number: index + 1,
           gl_account_id: (line.gl_account_id && line.gl_account_id !== '00000000-0000-0000-0000-000000000000') ? line.gl_account_id : null,
+          partner_id: (line.partner_id && line.partner_id !== 'none') ? line.partner_id : null,
           dc_type: line.dc_type,
           amount: baseAmt,
           foreign_amount: isForeign ? lineAmt : null,
@@ -538,6 +525,17 @@ export default function AddManualJournalEntryModal({
       });
       return;
     }
+
+    const selectedJ = journals.find((j: any) => j.id === journalId);
+    if (selectedJ && isJournalSystemLocked(selectedJ)) {
+      toast({
+        title: "Zárt rendszer-napló",
+        description: `A(z) ${selectedJ.code} napló automatikus gépi zárású napló, ide kézi vegyes bizonylat nem rögzíthető!`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!postingDate?.trim() || !dateRegex.test(postingDate.trim())) {
       toast({
@@ -602,20 +600,20 @@ export default function AddManualJournalEntryModal({
       return;
     }
 
-    // EB-0255: Partnerkényszeres folyószámla ellenőrzés
-    const partnerRequiredLine = lines.find(l => {
-      if (!l.gl_account_id) return false;
-      const gl = glAccounts.find((g: any) => g.id === l.gl_account_id);
-      return gl && gl.subledger_type === 'partner';
-    });
-    if (partnerRequiredLine && (!partnerId || partnerId === 'none')) {
-      const gl = glAccounts.find((g: any) => g.id === partnerRequiredLine.gl_account_id);
-      toast({
-        title: "Partner megadása kötelező",
-        description: `A(z) ${gl?.gl_number || ''} — ${gl?.short_name || ''} főkönyvi számlánál partnerkényszeres folyószámla van beállítva. Kérjük, válasszon partnert a bizonylathoz!`,
-        variant: "destructive"
-      });
-      return;
+    // EB-0255 & EB-0257: Partnerkényszeres folyószámla ellenőrzés TÉTELENKÉNT
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.gl_account_id) {
+        const gl = glAccounts.find((g: any) => g.id === line.gl_account_id);
+        if (gl && gl.subledger_type === 'partner' && (!line.partner_id || line.partner_id === 'none')) {
+          toast({
+            title: "Partner megadása kötelező",
+            description: `A(z) ${i + 1}. tételsorban megadott (${gl?.gl_number || ''} — ${gl?.short_name || ''}) főkönyvi számlánál partnerkényszeres folyószámla van beállítva. Kérjük, válasszon partnert a tételhez!`,
+            variant: "destructive"
+          });
+          return;
+        }
+      }
     }
 
     saveMutation.mutate();
@@ -651,7 +649,7 @@ export default function AddManualJournalEntryModal({
             }}
             className="flex flex-col flex-1 min-h-0 space-y-4 overflow-hidden"
           >
-            {/* Header Fields */}
+            {/* Header Fields (Clean 3-column layout) */}
             <div className="grid grid-cols-3 gap-3.5 shrink-0">
               <div className="space-y-1.5">
                 <Label htmlFor="journal">{t('accounting:dialogs.manual_journal.journal')}</Label>
@@ -668,9 +666,13 @@ export default function AddManualJournalEntryModal({
                     <SelectValue placeholder={t('accounting:dialogs.manual_journal.choose_journal')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {journals.map((j: any) => (
-                      <SelectItem key={j.id} value={j.id}>{j.code} - {getLocalizedJournalName(j, j.name, t)}</SelectItem>
-                    ))}
+                    {journals
+                      .filter((j: any) => !isJournalSystemLocked(j) || j.id === journalId)
+                      .map((j: any) => (
+                        <SelectItem key={j.id} value={j.id}>
+                          {j.code} - {getLocalizedJournalName(j, j.name, t)}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -683,106 +685,6 @@ export default function AddManualJournalEntryModal({
                   onChange={e => setDocumentId(e.target.value)}
                   placeholder={t('accounting:dialogs.manual_journal.document_id_placeholder')}
                   autoComplete="off"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="partner">{t('accounting:dialogs.manual_journal.partner')}</Label>
-                <Popover 
-                  open={partnerComboOpen} 
-                  onOpenChange={(open) => {
-                    setPartnerComboOpen(open);
-                    if (open) setPartnerSearchQuery('');
-                  }}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="partner"
-                      type="button"
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={partnerComboOpen}
-                      className="h-10 w-full justify-between font-normal text-left px-3 border border-input bg-background hover:bg-muted/50 outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus:border-primary focus-visible:border-primary transition-colors"
-                    >
-                      <span className="truncate flex-1 min-w-0">
-                        {selectedPartnerLabel}
-                      </span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent 
-                    className="w-[350px] max-w-[90vw] p-0 z-[1200]" 
-                    align="start"
-                    onWheel={(e) => e.stopPropagation()}
-                    onTouchMove={(e) => e.stopPropagation()}
-                  >
-                    <Command shouldFilter={false}>
-                      <CommandInput
-                        placeholder={t('accounting:dialogs.manual_journal.partner_search_placeholder')}
-                        value={partnerSearchQuery}
-                        onValueChange={setPartnerSearchQuery}
-                      />
-                      <CommandList className="max-h-[260px] overflow-y-auto">
-                        <CommandEmpty>{t('accounting:dialogs.manual_journal.no_match')}</CommandEmpty>
-                        <CommandGroup>
-                          {showNoPartnerOption && (
-                            <CommandItem
-                              value="none"
-                              onSelect={() => {
-                                setPartnerId('none');
-                                setPartnerComboOpen(false);
-                              }}
-                              className="cursor-pointer flex items-center justify-between py-2"
-                            >
-                              <span className="italic text-muted-foreground">{t('accounting:dialogs.manual_journal.no_partner')}</span>
-                              {partnerId === 'none' && <Check className="h-4 w-4 text-primary shrink-0" />}
-                            </CommandItem>
-                          )}
-                          {filteredPartners.map((p: any) => (
-                            <CommandItem
-                              key={p.id}
-                              value={p.name}
-                              onSelect={() => {
-                                setPartnerId(p.id);
-                                setPartnerComboOpen(false);
-                              }}
-                              className="cursor-pointer flex items-center justify-between py-2"
-                            >
-                              <div className="flex flex-col min-w-0 flex-1 mr-2">
-                                <span className="truncate text-sm font-medium">{p.name}</span>
-                                {p.tax_number && (
-                                  <span className="text-[11px] text-muted-foreground font-mono">{p.tax_number}</span>
-                                )}
-                              </div>
-                              {partnerId === p.id && <Check className="h-4 w-4 text-primary shrink-0" />}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="postingDate">{t('accounting:dialogs.manual_journal.posting_date')}</Label>
-                <DatePicker
-                  id="postingDate"
-                  value={postingDate}
-                  allowInput={true}
-                  onChange={(val) => setPostingDate(val || new Date().toISOString().substring(0, 10))}
-                  placeholder={t('accounting:dialogs.manual_journal.choose_date')}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="documentDate">{t('accounting:dialogs.manual_journal.document_date')}</Label>
-                <DatePicker
-                  id="documentDate"
-                  value={documentDate}
-                  allowInput={true}
-                  onChange={(val) => setDocumentDate(val || new Date().toISOString().substring(0, 10))}
-                  placeholder={t('accounting:dialogs.manual_journal.choose_date')}
                 />
               </div>
 
@@ -829,7 +731,29 @@ export default function AddManualJournalEntryModal({
                 />
               </div>
 
-              <div className="col-span-3 space-y-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="postingDate">{t('accounting:dialogs.manual_journal.posting_date')}</Label>
+                <DatePicker
+                  id="postingDate"
+                  value={postingDate}
+                  allowInput={true}
+                  onChange={(val) => setPostingDate(val || new Date().toISOString().substring(0, 10))}
+                  placeholder={t('accounting:dialogs.manual_journal.choose_date')}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="documentDate">{t('accounting:dialogs.manual_journal.document_date')}</Label>
+                <DatePicker
+                  id="documentDate"
+                  value={documentDate}
+                  allowInput={true}
+                  onChange={(val) => setDocumentDate(val || new Date().toISOString().substring(0, 10))}
+                  placeholder={t('accounting:dialogs.manual_journal.choose_date')}
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="justification">{t('accounting:dialogs.manual_journal.justification')}</Label>
                 <Input
                   id="justification"
@@ -855,258 +779,275 @@ export default function AddManualJournalEntryModal({
                 className="border rounded-lg overflow-y-auto overflow-x-auto bg-card/40 flex-1 min-h-[140px]"
                 style={{ maxHeight: 'clamp(180px, calc(88vh - 440px), 360px)' }}
               >
-                <table className="w-full text-left border-collapse text-xs table-fixed min-w-[880px]">
+                <table className="w-full text-left border-collapse text-xs table-fixed min-w-[960px]">
                   <colgroup>
-                    <col className="w-[300px]" />
-                    <col className="w-[115px]" />
-                    <col className="w-[155px]" />
-                    <col className="w-[150px]" />
+                    <col className="w-[280px]" />
+                    <col className="w-[190px]" />
+                    <col className="w-[105px]" />
+                    <col className="w-[140px]" />
+                    <col className="w-[130px]" />
                     <col className="w-auto" />
                     <col className="w-[45px]" />
                   </colgroup>
                   <thead className="sticky top-0 z-10 bg-muted shadow-sm">
                     <tr className="border-b border-border/40 font-semibold text-muted-foreground uppercase text-[10px]">
-                      <th className="p-2.5 w-[300px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.gl_account')}</th>
-                      <th className="p-2.5 w-[115px] text-center bg-muted">{t('accounting:dialogs.manual_journal.table_headers.dc_type')}</th>
-                      <th className="p-2.5 w-[155px] text-right bg-muted">
+                      <th className="p-2.5 w-[280px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.gl_account')}</th>
+                      <th className="p-2.5 w-[190px] bg-muted">{t('accounting:dialogs.manual_journal.partner', 'Partner')}</th>
+                      <th className="p-2.5 w-[105px] text-center bg-muted">{t('accounting:dialogs.manual_journal.table_headers.dc_type')}</th>
+                      <th className="p-2.5 w-[140px] text-right bg-muted">
                         {existingEntry?.currency && existingEntry.currency !== 'HUF'
                           ? `${t('accounting:dialogs.manual_journal.table_headers.amount').replace(/\s*\(HUF\)/i, '')} (${existingEntry.currency})`
                           : t('accounting:dialogs.manual_journal.table_headers.amount')}
                       </th>
-                      <th className="p-2.5 w-[150px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.project')}</th>
-                      <th className="p-2.5 min-w-[160px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.comment')}</th>
+                      <th className="p-2.5 w-[130px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.project')}</th>
+                      <th className="p-2.5 min-w-[140px] bg-muted">{t('accounting:dialogs.manual_journal.table_headers.comment')}</th>
                       <th className="p-2.5 w-[45px] text-center bg-muted"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/20">
-                    {lines.map((line, index) => (
-                      <tr key={index} className="hover:bg-muted/10">
-                        {/* GL Account Select */}
-                        <td className="p-2 w-[300px] overflow-hidden">
-                          <Popover 
-                            open={openDropdownIndex === index} 
-                            onOpenChange={(open) => {
-                              if (open) {
-                                setOpenDropdownIndex(index);
-                                setSearchQuery('');
-                              } else {
-                                setOpenDropdownIndex(null);
-                              }
-                            }}
-                          >
-                            <PopoverTrigger asChild>
-                              <Button
-                                id={`gl-account-trigger-${index}`}
-                                variant="outline"
-                                role="combobox"
-                                onKeyDown={(e) => {
-                                  if (/^[0-9a-zA-Z]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
-                                    e.preventDefault();
-                                    setOpenDropdownIndex(index);
-                                    setSearchQuery(e.key);
-                                  }
-                                }}
-                                className="h-8 w-full justify-between font-mono text-xs text-left px-2 border border-input bg-background hover:bg-muted/50 overflow-hidden outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus:border-primary focus-visible:border-primary transition-colors"
-                              >
-                                <span className="truncate flex-1 min-w-0">
-                                  {line.gl_account_id
-                                    ? (() => {
-                                        const gl = glAccounts.find((g: any) => g.id === line.gl_account_id);
-                                        if (!gl) return t('accounting:dialogs.manual_journal.choose_gl');
-                                        const isParent = parentAccountIds.has(gl.id);
-                                        return isParent
-                                          ? `${gl.gl_number} - ${gl.short_name} ⚠️ (${t('accounting:dialogs.manual_journal.parent_badge', 'Gyűjtő')})`
-                                          : `${gl.gl_number} - ${gl.short_name}`;
-                                      })()
-                                    : t('accounting:dialogs.manual_journal.choose_gl')}
-                                </span>
-                                <span className="text-[10px] text-muted-foreground ml-1 shrink-0">▼</span>
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent 
-                              className="w-[450px] max-w-[85vw] p-0 z-[1200]" 
-                              align="start"
-                              onWheel={(e) => e.stopPropagation()}
-                              onTouchMove={(e) => e.stopPropagation()}
-                            >
-                              <Command shouldFilter={false}>
-                                <CommandInput
-                                  placeholder={t('accounting:dialogs.manual_journal.search_gl_placeholder')}
-                                  value={searchQuery}
-                                  onValueChange={setSearchQuery}
-                                  autoFocus
-                                />
-                                <CommandList className="max-h-[250px] overflow-y-auto">
-                                  <CommandEmpty>{t('accounting:dialogs.manual_journal.no_match')}</CommandEmpty>
-                                  <CommandGroup>
-                                    {glAccounts
-                                      ?.filter((gl: any) => 
-                                        !searchQuery || 
-                                        `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(searchQuery.toLowerCase())
-                                      )
-                                      .map((gl: any) => {
-                                        const isGroup = gl.account_type === 'group' || parentAccountIds.has(gl.id);
-                                        const isPartner = gl.subledger_type === 'partner';
-                                        const isDetail = gl.subledger_type === 'detail';
-                                        return (
-                                          <CommandItem
-                                            key={gl.id}
-                                            value={`${gl.gl_number} ${gl.short_name} ${isGroup ? '(Csoport - nem könyvelhető)' : ''}`}
-                                            disabled={isGroup}
-                                            onSelect={() => {
-                                              if (isGroup) return;
-                                              handleUpdateLine(index, 'gl_account_id', gl.id);
-                                              setOpenDropdownIndex(null);
-                                              setSearchQuery('');
-                                              setTimeout(() => {
-                                                document.getElementById(`dc-type-trigger-${index}`)?.focus();
-                                              }, 50);
-                                            }}
-                                            className={cn(
-                                              "font-mono text-xs flex items-center justify-between py-1.5",
-                                              isGroup
-                                                ? "opacity-50 cursor-not-allowed bg-muted/20 text-muted-foreground"
-                                                : "cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                                            )}
-                                          >
-                                            <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2 flex-wrap">
-                                              <span className={cn("font-semibold shrink-0", isGroup && "text-muted-foreground")}>
-                                                {gl.gl_number}
-                                              </span>
-                                              <span className="truncate">{gl.short_name}</span>
-                                              {isGroup && (
-                                                <Badge
-                                                  variant="outline"
-                                                  className="text-[9px] px-1.5 py-0 text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10 ml-auto shrink-0 font-sans"
-                                                >
-                                                  Csoport — nem könyvelhető
-                                                </Badge>
-                                              )}
-                                              {!isGroup && isPartner && (
-                                                <Badge
-                                                  variant="outline"
-                                                  className="text-[9px] px-1.5 py-0 text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10 ml-auto shrink-0 font-sans"
-                                                >
-                                                  Partner
-                                                </Badge>
-                                              )}
-                                              {!isGroup && isDetail && (
-                                                <Badge
-                                                  variant="outline"
-                                                  className="text-[9px] px-1.5 py-0 text-purple-600 dark:text-purple-400 border-purple-500/30 bg-purple-500/10 ml-auto shrink-0 font-sans"
-                                                >
-                                                  Egyéb analitika
-                                                </Badge>
-                                              )}
-                                            </div>
-                                            {line.gl_account_id === gl.id && <Check className="h-4 w-4 text-primary shrink-0" />}
-                                          </CommandItem>
-                                        );
-                                      })}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                        </td>
-
-                        {/* T/K Select */}
-                        <td className="p-2 w-[115px]">
-                          <Select
-                            value={line.dc_type}
-                            onValueChange={v => handleUpdateLine(index, 'dc_type', v as any)}
-                          >
-                            <SelectTrigger id={`dc-type-trigger-${index}`} className="h-8 text-xs w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="T">{t('accounting:dialogs.manual_journal.debit_label')}</SelectItem>
-                              <SelectItem value="K">{t('accounting:dialogs.manual_journal.credit_label')}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-
-                        {/* Amount */}
-                        <td className="p-2 w-[155px]">
-                          <NumberInput
-                            id={`amount-input-${index}`}
-                            value={line.amount || ''}
-                            onChange={e => handleAmountChange(index, Number(e.target.value))}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                document.getElementById(`desc-input-${index}`)?.focus();
-                              }
-                            }}
-                            className="h-8 text-right font-semibold text-xs min-w-[120px] w-full"
-                            min="0"
-                            step="any"
-                          />
-                        </td>
-
-                        {/* Project Select */}
-                        <td className="p-2 w-[150px]">
-                          <Select
-                            value={line.project_id || 'none'}
-                            onValueChange={v => handleUpdateLine(index, 'project_id', v === 'none' ? null : v)}
-                          >
-                            <SelectTrigger id={`project-trigger-${index}`} className="h-8 text-xs w-full">
-                              <SelectValue placeholder={t('accounting:dialogs.manual_journal.no_project')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">{t('accounting:dialogs.manual_journal.no_project')}</SelectItem>
-                              {projects.map((p: any) => (
-                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </td>
-
-                        {/* Line Description */}
-                        <td className="p-2 min-w-[160px]">
-                          <Input
-                            id={`desc-input-${index}`}
-                            value={line.description}
-                            onChange={e => handleUpdateLine(index, 'description', e.target.value)}
-                            onKeyDown={(e) => {
-                              if ((e.key === 'Tab' && !e.shiftKey) || e.key === 'Enter') {
-                                if (index === lines.length - 1) {
-                                  e.preventDefault();
-                                  handleAddLine();
-                                } else if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  const nextIdx = index + 1;
-                                  setOpenDropdownIndex(nextIdx);
+                    {lines.map((line, index) => {
+                      const lineGl = glAccounts.find((g: any) => g.id === line.gl_account_id);
+                      const isPartnerRequired = lineGl?.subledger_type === 'partner';
+                      return (
+                        <tr key={index} className="hover:bg-muted/10">
+                          {/* GL Account Select */}
+                          <td className="p-2 w-[280px] overflow-hidden">
+                            <Popover 
+                              open={openDropdownIndex === index} 
+                              onOpenChange={(open) => {
+                                if (open) {
+                                  setOpenDropdownIndex(index);
                                   setSearchQuery('');
-                                  setTimeout(() => {
-                                    document.getElementById(`gl-account-trigger-${nextIdx}`)?.focus();
-                                  }, 50);
+                                } else {
+                                  setOpenDropdownIndex(null);
                                 }
-                              }
-                            }}
-                            placeholder={t('accounting:dialogs.manual_journal.item_desc_placeholder')}
-                            className="h-8 text-xs w-full"
-                          />
-                        </td>
-
-                        {/* Delete Row */}
-                        <td className="p-2 w-[45px] text-center">
-                          <CustomTooltip content={t('accounting:dialogs.manual_journal.delete_row_tooltip', { index: index + 1 })}>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              tabIndex={-1}
-                              aria-label={t('accounting:dialogs.manual_journal.delete_row_tooltip', { index: index + 1 })}
-                              className="w-8 h-8 text-destructive hover:bg-destructive/10"
-                              onClick={() => handleRemoveLine(index)}
+                              }}
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </CustomTooltip>
-                        </td>
-                      </tr>
-                    ))}
+                              <PopoverTrigger asChild>
+                                <Button
+                                  id={`gl-account-trigger-${index}`}
+                                  variant="outline"
+                                  role="combobox"
+                                  onKeyDown={(e) => {
+                                    if (/^[0-9a-zA-Z]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                                      e.preventDefault();
+                                      setOpenDropdownIndex(index);
+                                      setSearchQuery(e.key);
+                                    }
+                                  }}
+                                  className="h-8 w-full justify-between font-mono text-xs text-left px-2 border border-input bg-background hover:bg-muted/50 overflow-hidden outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus:border-primary focus-visible:border-primary transition-colors"
+                                >
+                                  <span className="truncate flex-1 min-w-0">
+                                    {line.gl_account_id
+                                      ? (() => {
+                                          const gl = glAccounts.find((g: any) => g.id === line.gl_account_id);
+                                          if (!gl) return t('accounting:dialogs.manual_journal.choose_gl');
+                                          const isParent = parentAccountIds.has(gl.id);
+                                          return isParent
+                                            ? `${gl.gl_number} - ${gl.short_name} ⚠️ (${t('accounting:dialogs.manual_journal.parent_badge', 'Gyűjtő')})`
+                                            : `${gl.gl_number} - ${gl.short_name}`;
+                                        })()
+                                      : t('accounting:dialogs.manual_journal.choose_gl')}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground ml-1 shrink-0">▼</span>
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent 
+                                className="w-[450px] max-w-[85vw] p-0 z-[1200]" 
+                                align="start"
+                                onWheel={(e) => e.stopPropagation()}
+                                touchAction="none"
+                              >
+                                <Command shouldFilter={false}>
+                                  <CommandInput
+                                    placeholder={t('accounting:dialogs.manual_journal.search_gl_placeholder')}
+                                    value={searchQuery}
+                                    onValueChange={setSearchQuery}
+                                    autoFocus
+                                  />
+                                  <CommandList className="max-h-[250px] overflow-y-auto">
+                                    <CommandEmpty>{t('accounting:dialogs.manual_journal.no_match')}</CommandEmpty>
+                                    <CommandGroup>
+                                      {glAccounts
+                                        ?.filter((gl: any) => 
+                                          !searchQuery || 
+                                          `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(searchQuery.toLowerCase())
+                                        )
+                                        .map((gl: any) => {
+                                          const isGroup = gl.account_type === 'group' || parentAccountIds.has(gl.id);
+                                          const isPartner = gl.subledger_type === 'partner';
+                                          const isDetail = gl.subledger_type === 'detail';
+                                          return (
+                                            <CommandItem
+                                              key={gl.id}
+                                              value={`${gl.gl_number} ${gl.short_name} ${isGroup ? '(Csoport - nem könyvelhető)' : ''}`}
+                                              disabled={isGroup}
+                                              onSelect={() => {
+                                                if (isGroup) return;
+                                                handleUpdateLine(index, 'gl_account_id', gl.id);
+                                                setOpenDropdownIndex(null);
+                                                setSearchQuery('');
+                                                setTimeout(() => {
+                                                  document.getElementById(`dc-type-trigger-${index}`)?.focus();
+                                                }, 50);
+                                              }}
+                                              className={cn(
+                                                "font-mono text-xs flex items-center justify-between py-1.5",
+                                                isGroup
+                                                  ? "opacity-50 cursor-not-allowed bg-muted/20 text-muted-foreground"
+                                                  : "cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                                              )}
+                                            >
+                                              <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2 flex-wrap">
+                                                <span className={cn("font-semibold shrink-0", isGroup && "text-muted-foreground")}>
+                                                  {gl.gl_number}
+                                                </span>
+                                                <span className="truncate">{gl.short_name}</span>
+                                                {isGroup && (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-[9px] px-1.5 py-0 text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10 ml-auto shrink-0 font-sans"
+                                                  >
+                                                    Gyűjtő — nem könyvelhető
+                                                  </Badge>
+                                                )}
+                                                {!isGroup && isPartner && (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-[9px] px-1.5 py-0 text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10 ml-auto shrink-0 font-sans"
+                                                  >
+                                                    Partner
+                                                  </Badge>
+                                                )}
+                                                {!isGroup && isDetail && (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-[9px] px-1.5 py-0 text-purple-600 dark:text-purple-400 border-purple-500/30 bg-purple-500/10 ml-auto shrink-0 font-sans"
+                                                  >
+                                                    Egyéb analitika
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                              {line.gl_account_id === gl.id && <Check className="h-4 w-4 text-primary shrink-0" />}
+                                            </CommandItem>
+                                          );
+                                        })}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          </td>
+
+                          {/* Line Partner Picker */}
+                          <td className="p-2 w-[190px]">
+                            <JournalLinePartnerPicker
+                              id={`partner-trigger-${index}`}
+                              selectedPartnerId={line.partner_id}
+                              partners={partners}
+                              isRequired={isPartnerRequired}
+                              onChange={(newPartnerId) => handleUpdateLine(index, 'partner_id', newPartnerId)}
+                            />
+                          </td>
+
+                          {/* T/K Select */}
+                          <td className="p-2 w-[105px]">
+                            <Select
+                              value={line.dc_type}
+                              onValueChange={v => handleUpdateLine(index, 'dc_type', v as any)}
+                            >
+                              <SelectTrigger id={`dc-type-trigger-${index}`} className="h-8 text-xs w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="T">{t('accounting:dialogs.manual_journal.debit_label')}</SelectItem>
+                                <SelectItem value="K">{t('accounting:dialogs.manual_journal.credit_label')}</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </td>
+
+                          {/* Amount */}
+                          <td className="p-2 w-[140px]">
+                            <NumberInput
+                              id={`amount-input-${index}`}
+                              value={line.amount || ''}
+                              onChange={e => handleAmountChange(index, Number(e.target.value))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  document.getElementById(`desc-input-${index}`)?.focus();
+                                }
+                              }}
+                              className="h-8 text-right font-semibold text-xs min-w-[110px] w-full"
+                              min="0"
+                              step="any"
+                            />
+                          </td>
+
+                          {/* Project Select */}
+                          <td className="p-2 w-[130px]">
+                            <Select
+                              value={line.project_id || 'none'}
+                              onValueChange={v => handleUpdateLine(index, 'project_id', v === 'none' ? null : v)}
+                            >
+                              <SelectTrigger id={`project-trigger-${index}`} className="h-8 text-xs w-full">
+                                <SelectValue placeholder={t('accounting:dialogs.manual_journal.no_project')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">{t('accounting:dialogs.manual_journal.no_project')}</SelectItem>
+                                {projects.map((p: any) => (
+                                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </td>
+
+                          {/* Line Description */}
+                          <td className="p-2 min-w-[140px]">
+                            <Input
+                              id={`desc-input-${index}`}
+                              value={line.description}
+                              onChange={e => handleUpdateLine(index, 'description', e.target.value)}
+                              onKeyDown={(e) => {
+                                if ((e.key === 'Tab' && !e.shiftKey) || e.key === 'Enter') {
+                                  if (index === lines.length - 1) {
+                                    e.preventDefault();
+                                    handleAddLine();
+                                  } else if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const nextIdx = index + 1;
+                                    setOpenDropdownIndex(nextIdx);
+                                    setSearchQuery('');
+                                    setTimeout(() => {
+                                      document.getElementById(`gl-account-trigger-${nextIdx}`)?.focus();
+                                    }, 50);
+                                  }
+                                }
+                              }}
+                              placeholder={t('accounting:dialogs.manual_journal.item_desc_placeholder')}
+                              className="h-8 text-xs w-full"
+                            />
+                          </td>
+
+                          {/* Delete Row */}
+                          <td className="p-2 w-[45px] text-center">
+                            <CustomTooltip content={t('accounting:dialogs.manual_journal.delete_row_tooltip', { index: index + 1 })}>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                tabIndex={-1}
+                                aria-label={t('accounting:dialogs.manual_journal.delete_row_tooltip', { index: index + 1 })}
+                                className="w-8 h-8 text-destructive hover:bg-destructive/10"
+                                onClick={() => handleRemoveLine(index)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </CustomTooltip>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

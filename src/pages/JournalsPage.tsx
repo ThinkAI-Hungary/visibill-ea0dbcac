@@ -52,11 +52,19 @@ import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadCh
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
 import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
 import { ManageJournalsModal } from '@/components/journals/ManageJournalsModal';
-import { getLocalizedJournalName, getNextDocumentId } from '@/lib/journalUtils';
+import {
+  getLocalizedJournalName,
+  getNextDocumentId,
+  JOURNAL_CATEGORIES,
+  JournalCategoryKey,
+  getJournalCategory,
+  isJournalSystemLocked,
+} from '@/lib/journalUtils';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { generatePettyCashDrafts, generateDraftsFallback } from '@/features/journals/services/draftFallbackGenerator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -371,7 +379,34 @@ export default function JournalsPage() {
     if (!loadingJournals && journals.length === 0 && selectedCompany?.id) {
       seedMutation.mutate();
     }
-  }, [journals, loadingJournals, selectedCompany]);
+  }, [journals, loadingJournals, selectedCompany, seedMutation]);
+
+  // EB-0257: Journal Category Filter State
+  const [activeCategoryKey, setActiveCategoryKey] = useState<JournalCategoryKey>('ALL');
+
+  const categoryCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {
+      ALL: journals.length,
+      OPENING: 0,
+      BANK: 0,
+      PETTY_CASH: 0,
+      INVOICE: 0,
+      MIXED: 0,
+      CLOSING: 0,
+    };
+    journals.forEach((j: any) => {
+      const cat = getJournalCategory(j);
+      if (counts[cat] !== undefined) {
+        counts[cat]++;
+      }
+    });
+    return counts;
+  }, [journals]);
+
+  const visibleJournals = React.useMemo(() => {
+    if (activeCategoryKey === 'ALL') return journals;
+    return journals.filter((j: any) => getJournalCategory(j) === activeCategoryKey);
+  }, [journals, activeCategoryKey]);
 
   // Fetch MNB daily exchange rates for currency conversion and tooltips
   const { data: dailyExchangeRates = [] } = useQuery({
@@ -1046,6 +1081,7 @@ export default function JournalsPage() {
 
   const selectedJournal = journals.find((j: any) => j.id === selectedJournalId);
   const isNyJournal = selectedJournal?.code === 'NY';
+  const isSystemLocked = selectedJournal ? isJournalSystemLocked(selectedJournal) : false;
 
   const handleOpenOpeningWizard = useCallback(() => {
     const nyJ = journals.find((j: any) => j.code === 'NY');
@@ -1120,19 +1156,126 @@ export default function JournalsPage() {
               )}
               {t('accounting:journals.generate_drafts', 'Javaslatok generálása')}
             </Button>
-            <Button
-              size="sm"
-              className="gap-1.5 shadow-sm"
-              onClick={() => { setEditingEntryId(null); setCloneData(null); setManualEntryOpen(true); }}
-            >
-              <Plus className="w-4 h-4" /> {t('accounting:journals.new_manual_entry', 'Új vegyes bizonylat')}
-              <kbd className="hidden sm:inline-flex ml-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-primary-foreground/20 text-primary-foreground">Ins</kbd>
-            </Button>
+            <Tooltip delayDuration={200}>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 shadow-sm"
+                    disabled={isSystemLocked}
+                    onClick={() => { setEditingEntryId(null); setCloneData(null); setManualEntryOpen(true); }}
+                  >
+                    <Plus className="w-4 h-4" /> {t('accounting:journals.new_manual_entry', 'Új vegyes bizonylat')}
+                    <kbd className="hidden sm:inline-flex ml-1 px-1.5 py-0.5 text-[10px] font-mono rounded bg-primary-foreground/20 text-primary-foreground">Ins</kbd>
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {isSystemLocked && (
+                <TooltipContent side="bottom" className="text-xs">
+                  A(z) {selectedJournal?.code} egy zárt automatikus rendszer-napló, ide kézi bizonylat nem rögzíthető.
+                </TooltipContent>
+              )}
+            </Tooltip>
           </div>
         }
       />
 
-      {/* Horizontal Journals Selector */}
+      {/* EB-0257: Category Filter Tabs & Quick Jump Dropdown */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none max-w-full">
+          <Button
+            type="button"
+            variant={activeCategoryKey === 'ALL' ? 'default' : 'outline'}
+            size="sm"
+            className="h-7 text-xs px-2.5 rounded-full"
+            onClick={() => setActiveCategoryKey('ALL')}
+          >
+            Összes napló
+            <span className="ml-1.5 px-1.5 py-0.2 text-[10px] rounded-full bg-background/20 font-mono">
+              {journals.length}
+            </span>
+          </Button>
+
+          {JOURNAL_CATEGORIES.filter(c => c.key !== 'ALL').map((cat) => {
+            const count = categoryCounts[cat.key] || 0;
+            return (
+              <Button
+                key={cat.key}
+                type="button"
+                variant={activeCategoryKey === cat.key ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 text-xs px-2.5 rounded-full"
+                onClick={() => {
+                  setActiveCategoryKey(cat.key);
+                  if (selectedJournalId !== 'munkalista') {
+                    const inCat = journals.find((j: any) => getJournalCategory(j) === cat.key);
+                    if (inCat && getJournalCategory(selectedJournal || {}) !== cat.key) {
+                      setSelectedJournalId(inCat.id);
+                    }
+                  }
+                }}
+              >
+                <span>{cat.label}</span>
+                {cat.codeRange && (
+                  <span className="ml-1 text-[10px] opacity-75 font-mono">({cat.codeRange})</span>
+                )}
+                <span className="ml-1.5 px-1.5 py-0.2 text-[10px] rounded-full bg-muted font-mono">
+                  {count}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+
+        {/* Quick Jump Dropdown */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Select 
+            value={selectedJournalId} 
+            onValueChange={(val) => {
+              setSelectedJournalId(val);
+              if (val !== 'munkalista') {
+                const target = journals.find((j: any) => j.id === val);
+                if (target) {
+                  const cat = getJournalCategory(target);
+                  setActiveCategoryKey(cat);
+                }
+              }
+            }}
+          >
+            <SelectTrigger className="h-8 text-xs w-[240px]">
+              <SelectValue placeholder="Gyors naplóválasztó..." />
+            </SelectTrigger>
+            <SelectContent className="max-h-[360px] z-[1200]">
+              <SelectItem value="munkalista" className="font-semibold text-primary">
+                ⚠️ Munkalista ({munkalistaCount} piszkozat)
+              </SelectItem>
+              {JOURNAL_CATEGORIES.filter(c => c.key !== 'ALL').map((cat) => {
+                const catJournals = journals.filter((j: any) => getJournalCategory(j) === cat.key);
+                if (catJournals.length === 0) return null;
+                return (
+                  <div key={cat.key} className="py-1">
+                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/40">
+                      {cat.label} ({cat.codeRange})
+                    </div>
+                    {catJournals.map((j: any) => (
+                      <SelectItem key={j.id} value={j.id} className="text-xs pl-4 font-mono">
+                        <span className="font-bold mr-1.5">{j.code}</span>
+                        <span>{getLocalizedJournalName(j, j.name, t)}</span>
+                        <span className="text-[10px] text-muted-foreground ml-2">({j.currency})</span>
+                        {isJournalSystemLocked(j) && (
+                          <span className="ml-1 text-[9px] text-amber-600 dark:text-amber-400">🔒</span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </div>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Horizontal Journals Selector (Filtered by Category) */}
       <div className="w-full flex items-center gap-1.5 overflow-x-auto py-1 min-h-[3.5rem] scrollbar-none select-none shrink-0">
         <button
           onClick={() => setSelectedJournalId('munkalista')}
@@ -1165,40 +1308,60 @@ export default function JournalsPage() {
         {loadingJournals ? (
           <div className="flex items-center pl-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
         ) : (
-          journals.map((j: any) => (
-            <Tooltip key={j.id} delayDuration={300}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => {
-                    setSelectedJournalId(j.id);
-                    if (j.code === 'NY' && nyEntriesCount === 0) {
-                      setOpeningWizardOpen(true);
-                    }
-                  }}
-                  className={cn(
-                    "flex items-center gap-3 pl-3 pr-4 h-12 rounded-lg text-xs transition-all border shrink-0 text-left justify-between flex-1 min-w-[80px]",
-                    selectedJournalId === j.id
-                      ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
-                      : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
+          visibleJournals.map((j: any) => {
+            const locked = isJournalSystemLocked(j);
+            return (
+              <Tooltip key={j.id} delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => {
+                      setSelectedJournalId(j.id);
+                      if (j.code === 'NY' && nyEntriesCount === 0) {
+                        setOpeningWizardOpen(true);
+                      }
+                    }}
+                    className={cn(
+                      "flex items-center gap-2 pl-3 pr-3 h-12 rounded-lg text-xs transition-all border shrink-0 text-left justify-between min-w-[120px]",
+                      selectedJournalId === j.id
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
+                        : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
+                    )}
+                  >
+                    <div className="flex flex-col min-w-0 pr-1 leading-tight flex-1">
+                      <div className="flex items-center gap-1">
+                        <span className={cn("font-bold text-[11px] leading-tight truncate", selectedJournalId === j.id ? "text-primary-foreground" : "text-foreground")}>
+                          {j.code}
+                        </span>
+                        {locked && (
+                          <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                        )}
+                      </div>
+                      <span className={cn("text-[8px] leading-none truncate max-w-[100px]", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                        {getLocalizedJournalName(j, j.name, t)}
+                      </span>
+                    </div>
+                    <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal">
+                      {j.currency}
+                    </Badge>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
+                  <p className="font-semibold text-popover-foreground">
+                    {j.code} - {getLocalizedJournalName(j, j.name, t)}
+                    {locked && " 🔒 (Zárt gépi napló)"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {t('accounting:journals.currency_label', { currency: j.currency, defaultValue: `Pénznem: ${j.currency}` })}
+                  </p>
+                  {j.bank_account_number && (
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                      Bankszámla: {j.bank_account_number}
+                    </p>
                   )}
-                >
-                  <div className="flex flex-col min-w-0 pr-1 leading-tight flex-1">
-                    <span className={cn("font-bold text-[11px] leading-tight truncate", selectedJournalId === j.id ? "text-primary-foreground" : "text-foreground")}>{j.code}</span>
-                    <span className={cn("text-[8px] leading-none truncate", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>{getLocalizedJournalName(j, j.name, t)}</span>
-                  </div>
-                  <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
-                    {j.currency}
-                  </Badge>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
-                <p className="font-semibold text-popover-foreground">{j.code} - {getLocalizedJournalName(j, j.name, t)}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {t('accounting:journals.currency_label', { currency: j.currency, defaultValue: `Pénznem: ${j.currency}` })}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          ))
+                </TooltipContent>
+              </Tooltip>
+            );
+          })
         )}
 
         {/* Manage Journals Button */}
@@ -1223,6 +1386,28 @@ export default function JournalsPage() {
       <div className="grid grid-cols-12 gap-4 items-start">
         {/* Full-width list table */}
         <div className="col-span-12 space-y-4">
+          {/* EB-0257: System Locked Journal Banner */}
+          {isSystemLocked && selectedJournal && (
+            <Card className="border-amber-500/30 bg-amber-500/5 p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg shrink-0">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm flex items-center gap-2 text-amber-900 dark:text-amber-200">
+                    <span>Zárt automatikus rendszer-napló ({selectedJournal.code} - {selectedJournal.name})</span>
+                    <Badge variant="outline" className="border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10 text-[10px]">
+                      Gépi zárású napló
+                    </Badge>
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Ez a napló kizárólag automatikus gépi zárásokhoz, tárgyi eszköz écs-hez vagy évközi árfolyam-különbözetekhez van fenntartva. Kézi bizonylat rögzítése, valamint meglévő tételek módosítása vagy törlése tiltott.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Special NY (Nyitó Napló) Banner */}
           {isNyJournal && (
             <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent p-4">
@@ -1664,7 +1849,15 @@ export default function JournalsPage() {
                                   </Button>
                                 </CustomTooltip>
 
-                                {e.status === 'KONYVELT' && (
+                                {isJournalSystemLocked(e.journal || selectedJournal || {}) ? (
+                                  <CustomTooltip content="Zárt rendszer-napló (603/605/901) — a tétel automatikus gépi védelmű, kézzel nem módosítható és nem törölhető.">
+                                    <span className="inline-flex items-center justify-center p-1 text-amber-500/80 cursor-help">
+                                      <Lock className="w-3.5 h-3.5" />
+                                    </span>
+                                  </CustomTooltip>
+                                ) : (
+                                  <>
+                                    {e.status === 'KONYVELT' && (
                                   <>
                                     <CustomTooltip content={t('accounting:journals.actions.storno_cancel', 'Sztornózás (érvénytelenítés)')}>
                                       <Button
@@ -1772,6 +1965,8 @@ export default function JournalsPage() {
                                     )}
                                   </>
                                 )}
+                              </>
+                            )}
                               </div>
                             </TableCell>
                           </TableRow>

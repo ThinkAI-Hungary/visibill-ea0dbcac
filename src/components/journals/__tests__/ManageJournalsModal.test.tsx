@@ -75,7 +75,7 @@ describe('ManageJournalsModal Component', () => {
     expect(screen.getByText('K&H bank EUR')).toBeInTheDocument();
   });
 
-  it('allows inline editing of a journal name and saving', async () => {
+  it('opens CreateJournalModal in Edit mode when clicking edit on a journal', async () => {
     render(
       <ManageJournalsModal
         open={true}
@@ -89,24 +89,10 @@ describe('ManageJournalsModal Component', () => {
     const editButtons = screen.getAllByTitle('Szerkesztés');
     fireEvent.click(editButtons[0]);
 
-    // Input appears
-    const nameInput = screen.getByDisplayValue('K&H bank HUF');
-    fireEvent.change(nameInput, { target: { value: 'OTP Bank HUF' } });
-
-    // Click save
-    const saveButton = screen.getByTitle('Mentés');
-    fireEvent.click(saveButton);
-
-    await waitFor(() => {
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'OTP Bank HUF',
-          is_active: true,
-        })
-      );
-      expect(mockToast).toHaveBeenCalledWith({ title: 'Napló sikeresen frissítve' });
-      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['acc-journals', 'comp-1'] });
-    });
+    // Full edit modal appears with journal details (EB-0257)
+    expect(screen.getByText(/Könyvelési Napló Módosítása/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue('K&H bank HUF')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('B1')).toBeInTheDocument();
   });
 
   it('opens child CreateJournalModal when clicking Új Napló button', () => {

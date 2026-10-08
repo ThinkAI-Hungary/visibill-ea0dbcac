@@ -225,20 +225,20 @@ describe('AddManualJournalEntryModal - Layout and Keyboard Navigation', () => {
     expect(['input', 'button']).toContain(documentDatePicker?.tagName.toLowerCase());
   });
 
-  it('renders searchable partner combobox and allows searching and selecting a partner', async () => {
+  it('renders searchable partner combobox on line and allows searching and selecting a partner', async () => {
     renderModal();
 
-    // The partner combobox trigger button
-    const partnerTrigger = document.getElementById('partner');
+    // The line-level partner combobox trigger button (EB-0257)
+    const partnerTrigger = document.getElementById('partner-trigger-0');
     expect(partnerTrigger).toBeInTheDocument();
     expect(partnerTrigger?.getAttribute('role')).toBe('combobox');
-    expect(partnerTrigger).toHaveTextContent('— Nincs partner —');
+    expect(partnerTrigger).toHaveTextContent(/Nincs partner/i);
 
     // Click trigger to open combobox
     fireEvent.click(partnerTrigger!);
 
     // Partner search input should be visible
-    const searchInput = screen.getByPlaceholderText(/Keresés név vagy adószám alapján/i);
+    const searchInput = screen.getByPlaceholderText(/keresés/i);
     expect(searchInput).toBeInTheDocument();
 
     // Wait for partner options to render
@@ -259,7 +259,7 @@ describe('AddManualJournalEntryModal - Layout and Keyboard Navigation', () => {
     fireEvent.click(partnerTrigger!);
     const noPartnerOption = screen.getByText('— Nincs partner —');
     fireEvent.click(noPartnerOption);
-    expect(partnerTrigger).toHaveTextContent('— Nincs partner —');
+    expect(partnerTrigger).toHaveTextContent(/Nincs partner/i);
   });
 
   it('marks collective/parent accounts (e.g. 471) with Gyűjtő badge and disables them when sub-accounts exist', async () => {
