@@ -105,8 +105,10 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | RPC Függvény és Paraméterek | Biztonság | Visszatérési érték | Hívó | Cél és Működés |
 |---|:---:|---|---|---|
 | `acc_check_opening_subledger_reconciliation(p_company_id uuid, p_year smallint)` | `DEFINER` | `jsonb` | Nyitó Napló / Analitika | Nyitó mérlegtételek és folyószámla analitikák (vevő/szállító) egyezőségének ellenőrzése. |
-| `acc_generate_drafts_from_ledger(p_company_id uuid, p_preset_id uuid)` | `DEFINER` | `integer` | Napló Generátor | Könyvelési bizonylat tervezetek generálása a meglévő operatív és NAV számlákból. |
+| `acc_copy_auto_accounting_rules(p_source_company_id uuid, p_target_company_id uuid)` | `DEFINER` | `jsonb` | AutoAccountingRulesTab.tsx / CopyCompanyRulesModal.tsx | Automatikus könyvelési szabályok 1-kattintásos átvétele forrás cégről cél cégre számlaszám és naplókód intelligens illesztéssel (A-228). |
+| `acc_generate_drafts_from_ledger(p_company_id uuid, p_preset_id uuid)` | `DEFINER` | `integer` | Napló Generátor | Könyvelési bizonylat tervezetek generálása a meglévő operatív és NAV számlákból (dinamikusan a company_auto_accounting_rules beállításaival). |
 | `acc_generate_post_opening_reconciliations(p_company_id uuid, p_user_id uuid, p_year smallint)` | `DEFINER` | `jsonb` | Nyitó Napló | Nyitó bizonylat könyvelése utáni analitikus egyeztető kimutatás generálása. |
+| `acc_get_auto_accounting_rules(p_company_id uuid)` | `DEFINER` | `jsonb` | AutoAccountingRulesTab.tsx / useAutoAccountingRules | Cég automatikus könyvelési szabályainak és feloldott kontóinak lekérdezése intelligens számlatükör fallbackkel (A-228). |
 | `acc_get_next_journal_number(p_journal_id uuid, p_year smallint)` | `DEFINER` | `integer` | Naplófej Létrehozás | Ugrásmentes, szigorú számadású folyósorszám generálása adott naplóhoz és üzleti évhez. |
 | `acc_post_journal_entry(p_header_id uuid, p_user_id uuid)` | `DEFINER` | `boolean` | JournalEntryDetail.tsx | Könyvelési bizonylat végleges lekönyvelése (könyvelt státusz, immutabilitási zár bekapcsolása). |
 | `acc_seed_default_journals(p_company_id uuid)` | `DEFINER` | `boolean` | Cég Inicializálás / Beállítások | Alapértelmezett 8 könyvelési napló (Vevő, Szállító, Bank, Pénztár, Vegyes, Bér, Nyitó, Záró) inicializálása. |

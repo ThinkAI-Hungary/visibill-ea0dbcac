@@ -273,6 +273,19 @@ export function useInvoiceData(
     return map;
   }, [courierReports]);
 
+  // Map: transaction_id -> courier reports (fallback mapping)
+  const trxIdToCourierReportsMap = useMemo(() => {
+    const map = new Map<string, CourierReportRecord[]>();
+    for (const cr of courierReports) {
+      if (cr.matched_transaction_id) {
+        const existing = map.get(cr.matched_transaction_id) || [];
+        existing.push(cr);
+        map.set(cr.matched_transaction_id, existing);
+      }
+    }
+    return map;
+  }, [courierReports]);
+
   const loading = submittedLoading;
 
   const { data: credentialsExist = false } = useQuery({
@@ -320,6 +333,7 @@ export function useInvoiceData(
     projects,
     courierReports,
     navIdToCourierReportsMap,
+    trxIdToCourierReportsMap,
     loading,
     credentialsExist,
     invalidateInvoiceData,

@@ -108,7 +108,35 @@ describe('NAV 2665 6/B Steel Products & Compliance Validation', () => {
     expect(isSteelCandidate({ line_description: 'Betonacél 12mm bordás szálban' })).toBe(true);
     expect(isSteelCandidate({ line_description: 'Zártszelvény 40x40x2' })).toBe(true);
     expect(isSteelCandidate({ line_description: 'HEB 200 gerenda acél' })).toBe(true);
+    expect(isSteelCandidate({ line_description: 'Hegesztett síkháló 6mm 150x150', vat_rate: 'FAD' })).toBe(true);
+    expect(isSteelCandidate({ line_description: 'Köracél 20mm', vat_rate: 'FAD' })).toBe(true);
     expect(isSteelCandidate({ line_description: 'Irodaszer A4 fénymásolópapír' })).toBe(false);
+
+    // False positive protections: Telecom, straight VAT and network services
+    expect(isSteelCandidate({
+      line_description: 'SMS One mobilhálózatba (TESZOR61.20.13) (Mobilhívószám: (70)4240024)',
+      product_code: '61.20.13',
+      vat_rate: '27%',
+    })).toBe(false);
+    expect(isSteelCandidate({
+      line_description: 'MMS belföldi más mobilhálózatba (TESZOR61.20.14) (Mobilhívószám: (70)4240024)',
+      product_code: '61.20.14',
+      vat_rate: '27%',
+    })).toBe(false);
+    expect(isSteelCandidate({
+      line_description: 'SMS One mobilhálózatba',
+      vat_rate: null,
+    })).toBe(false);
+    expect(isSteelCandidate({
+      line_description: 'Üzleti Net Plusz havidíj (TESZOR 61.10.43)',
+      product_code: '61.10.43',
+      vat_rate: '5%',
+    })).toBe(false);
+    expect(isSteelCandidate({
+      line_description: 'Festési és burkolási munkák',
+      vat_rate: 'FAD_EPIT_27',
+      fad_category: 'construction',
+    })).toBe(false);
   });
 
   it('correctly determines completeness of steel records for NAV 2665-07/08', () => {

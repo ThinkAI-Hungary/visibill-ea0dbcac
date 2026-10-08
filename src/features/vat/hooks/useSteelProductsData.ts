@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { isReverseChargeVatRate, normalizeVatRatePercent } from '@/lib/utils';
 import type { VatFrequency } from '../types';
 
 export interface SteelItemRecord {
@@ -29,27 +30,99 @@ export function isSteelCandidate(item: {
   net_weight_kg?: number | null;
   vat_rate?: string | null;
   line_description?: string | null;
+  fad_category?: string | null;
 }): boolean {
-  if (item.net_weight_kg != null && item.net_weight_kg > 0) return true;
+  const rateStr = (item.vat_rate || '').trim().toUpperCase();
+  const normPercent = normalizeVatRatePercent(rateStr);
+  const isRC = isReverseChargeVatRate(rateStr);
+
+  // 1. Straight positive VAT check (27%, 18%, 5%, 0.27 etc.) is NOT reverse charge.
+  // Áfa tv. 6/B. melléklet and NAV 2665-07 / 2665-08 declarations apply EXCLUSIVELY
+  // to domestic reverse charge (belföldi fordított adózás, 142. § (1) i)).
+  if (normPercent != null && normPercent > 0 && !isRC) {
+    return false;
+  }
+
+  // 2. Explicit non-reverse-charge exemptions (TAM, AAM, KBAET, etc.)
+  if (['AAM', 'TAM', 'KBAET', 'ATHK', 'EUK', 'AHK'].some(code => rateStr === code || rateStr.startsWith(code))) {
+    return false;
+  }
+
+  // 3. Explicit other FAD categories (construction, labor hire, natural gas, etc.)
+  if (item.fad_category && item.fad_category !== 'steel' && item.fad_category !== 'scrap_metal') {
+    return false;
+  }
+  if (rateStr.includes('EPIT') || rateStr.includes('BERMUNKA') || rateStr.includes('KVOTA') || rateStr.includes('GAZ')) {
+    return false;
+  }
+
+  // 4. Telecom / IT services exclusion (TESZOR 61, 62, 63 or telecom descriptions)
   const code = (item.product_code || '').trim();
-  if (code.startsWith('72') || code.startsWith('73')) return true;
-  const rate = (item.vat_rate || '').toUpperCase();
-  if (rate.includes('ACEL') || rate.includes('HULL') || rate.includes('FAD')) return true;
+  if (code.startsWith('61.') || code.startsWith('62.') || code.startsWith('63.')) {
+    return false;
+  }
+
   const desc = (item.line_description || '').trim();
-  if (/^7[23]\d{2}/.test(desc)) return true;
   const descLower = desc.toLowerCase();
+
+  // Exclude telecommunications / network services (mobilhálózat, hálózat, távközlés, etc.)
+  if (
+    descLower.includes('mobilhálózat') ||
+    descLower.includes('telefonhálózat') ||
+    descLower.includes('adathálózat') ||
+    descLower.includes('távközl') ||
+    descLower.includes('mobiltelefon') ||
+    descLower.includes('internetszolg') ||
+    /\b(hálózat|hálózati|mobilnet|sms|mms)\b/.test(descLower)
+  ) {
+    return false;
+  }
+
+  // 5. Positive indicators:
+  // a) Explicit net weight entered (> 0)
+  if (item.net_weight_kg != null && item.net_weight_kg > 0) return true;
+
+  // b) VTSZ / KN code in chapters 72 or 73 (4-8 digits, e.g. 7214, 7306, 7214 20 00)
+  const cleanCode = code.replace(/\s+/g, '');
+  if (/^7[23]\d{2}/.test(cleanCode) && !code.includes('.')) return true;
+
+  // c) Explicit steel VAT rate
+  if (rateStr.includes('ACEL') || rateStr.includes('HULL')) return true;
+
+  // d) Description starts with VTSZ 72xx or 73xx
+  if (/^7[23]\d{2}/.test(desc)) return true;
+
+  // e) Explicit steel product keywords (avoiding generic "háló" and "lemez")
   if (
     descLower.includes('acél') ||
     descLower.includes('betonacél') ||
     descLower.includes('zártszelvény') ||
     descLower.includes('idomacél') ||
-    descLower.includes('gerenda') ||
-    descLower.includes('lemez') ||
-    descLower.includes('háló') ||
-    descLower.includes('fémhulladék')
+    descLower.includes('köracél') ||
+    descLower.includes('laposacél') ||
+    descLower.includes('szögacél') ||
+    descLower.includes('acéllemez') ||
+    descLower.includes('vaslemez') ||
+    descLower.includes('trapézlemez') ||
+    descLower.includes('hullámlemez') ||
+    descLower.includes('acélcső') ||
+    descLower.includes('vascső') ||
+    descLower.includes('acélgerenda') ||
+    descLower.includes('vasgerenda') ||
+    descLower.includes('acélháló') ||
+    descLower.includes('betonháló') ||
+    descLower.includes('vasháló') ||
+    descLower.includes('síkháló') ||
+    descLower.includes('drótháló') ||
+    descLower.includes('hegesztett háló') ||
+    descLower.includes('fémhulladék') ||
+    descLower.includes('vashulladék') ||
+    descLower.includes('acélhulladék') ||
+    /\b(heb|hea|ipe|unp)\s*\d+/i.test(descLower)
   ) {
     return true;
   }
+
   return false;
 }
 

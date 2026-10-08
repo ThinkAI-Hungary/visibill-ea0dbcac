@@ -40,6 +40,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { InvoiceItemRulesManager } from '@/components/invoices/InvoiceItemRulesManager';
+import { AutoAccountingRulesTab } from '@/components/accounting/rules/AutoAccountingRulesTab';
 
 interface PromptRule {
   id: string;
@@ -112,7 +113,7 @@ export default function PromptsPage() {
   const isHr = prefix === '/hr' || i18n.language === 'hr';
   const RULE_TEMPLATES = isHr ? RULE_TEMPLATES_HR : RULE_TEMPLATES_HU;
 
-  const { companyId } = useParams<{ companyId: string }>();
+  const { companyId, tab: routeTab } = useParams<{ companyId?: string; tab?: string }>();
   const { selectedCompany } = useCompany();
   const { data: client } = useAccountyClient(companyId);
   const { user } = useAuth();
@@ -120,7 +121,8 @@ export default function PromptsPage() {
   const queryClient = useQueryClient();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentTab = searchParams.get('tab') === 'ai_prompts' ? 'ai_prompts' : 'item_rules';
+  const tabParam = searchParams.get('tab') || routeTab;
+  const currentTab = tabParam === 'item_rules' ? 'item_rules' : tabParam === 'ai_prompts' ? 'ai_prompts' : 'auto_rules';
 
   const effectiveCompanyId = companyId || selectedCompany?.id;
   const effectiveCompanyName = client?.name || selectedCompany?.name || (isHr ? 'Odabrana tvrtka' : 'Kiválasztott cég');
@@ -237,7 +239,7 @@ export default function PromptsPage() {
   const handleTabChange = (newTab: string) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      if (newTab === 'item_rules') {
+      if (newTab === 'auto_rules') {
         next.delete('tab');
       } else {
         next.set('tab', newTab);
@@ -276,10 +278,14 @@ export default function PromptsPage() {
       {/* Tabs */}
       <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/60">
-          <TabsList className="grid grid-cols-2 w-full sm:w-[440px] h-10 p-1 bg-muted/60 border border-border/50">
+          <TabsList className="grid grid-cols-3 w-full sm:w-[660px] h-10 p-1 bg-muted/60 border border-border/50">
+            <TabsTrigger value="auto_rules" className="gap-2 text-xs font-semibold">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span>{t('prompts_page.tab_auto_rules', { defaultValue: 'Automata könyvelés' })}</span>
+            </TabsTrigger>
             <TabsTrigger value="item_rules" className="gap-2 text-xs font-semibold">
               <Sliders className="h-3.5 w-3.5" />
-              {t('prompts_page.tab_item_rules', { defaultValue: 'Számlatétel szabályok' })}
+              <span>{t('prompts_page.tab_item_rules', { defaultValue: 'Számlatétel szabályok' })}</span>
               <Badge
                 variant="secondary"
                 className="ml-1 px-1.5 py-0 h-4 text-[10px] font-mono bg-background border border-border/40"
@@ -289,7 +295,7 @@ export default function PromptsPage() {
             </TabsTrigger>
             <TabsTrigger value="ai_prompts" className="gap-2 text-xs font-semibold">
               <Brain className="h-3.5 w-3.5" />
-              {t('prompts_page.tab_ai_prompts', { defaultValue: 'AI Prompt könyvtár' })}
+              <span>{t('prompts_page.tab_ai_prompts', { defaultValue: 'AI Prompt könyvtár' })}</span>
               <Badge
                 variant="secondary"
                 className="ml-1 px-1.5 py-0 h-4 text-[10px] font-mono bg-background border border-border/40"
@@ -355,7 +361,15 @@ export default function PromptsPage() {
           )}
         </div>
 
-        {/* Tab 1: Determinisztikus Számlatétel Szabályok */}
+        {/* Tab 1: Automata Könyvelési Szabályok (EB-0256) */}
+        <TabsContent value="auto_rules" className="m-0 space-y-4">
+          <AutoAccountingRulesTab
+            companyId={effectiveCompanyId}
+            companyName={effectiveCompanyName}
+          />
+        </TabsContent>
+
+        {/* Tab 2: Determinisztikus Számlatétel Szabályok */}
         <TabsContent value="item_rules" className="m-0 space-y-4">
           <Card className="border-border/60 shadow-soft">
             <CardContent className="p-6">

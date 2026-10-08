@@ -77,6 +77,7 @@ export interface InvoiceContextValue
   categories: Category[];
   projects: Project[];
   navIdToCourierReportsMap: Map<string, any[]>;
+  trxIdToCourierReportsMap?: Map<string, any[]>;
   dataLoading: boolean;
   credentialsExist: boolean;
   invalidateInvoiceData: () => void;
@@ -327,6 +328,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     categories,
     projects,
     navIdToCourierReportsMap,
+    trxIdToCourierReportsMap,
     loading: dataLoading,
     credentialsExist,
     invalidateInvoiceData,
@@ -1421,6 +1423,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       categories,
       projects,
       navIdToCourierReportsMap,
+      trxIdToCourierReportsMap,
       dataLoading,
       credentialsExist,
       invalidateInvoiceData,
@@ -1515,6 +1518,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       categories,
       projects,
       navIdToCourierReportsMap,
+      trxIdToCourierReportsMap,
       dataLoading,
       credentialsExist,
       invalidateInvoiceData,

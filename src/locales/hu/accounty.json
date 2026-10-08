@@ -725,6 +725,7 @@
     "title_unified": "Könyvelési Szabályok",
     "subtitle": "Határozz meg egyedi AI prompt szabályokat a cégedre szabva. Az itt bekapcsolt instrukciók a legmagasabb prioritással futnak le az AI főkönyvi osztályozásakor.",
     "subtitle_unified": "Kezeld a számlatételek automatikus szövegminta-szabályait és az egyedi AI prompt instrukciókat.",
+    "tab_auto_rules": "Automata könyvelés",
     "tab_item_rules": "Számlatétel szabályok",
     "tab_ai_prompts": "AI Prompt könyvtár",
     "btn_add_rule": "Új szabály hozzáadása",

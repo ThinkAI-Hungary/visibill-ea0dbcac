@@ -63,6 +63,8 @@ export function SubmittedInvoiceRow({
     linkedInvoicesLoading,
     linkedInvoicesMap,
     invalidateInvoiceData,
+    navIdToCourierReportsMap,
+    trxIdToCourierReportsMap,
     setApprovalDialogOpen,
     setSelectedInvoiceForApproval,
     getPaymentMethodLabel,
@@ -149,11 +151,35 @@ export function SubmittedInvoiceRow({
       (pageInvoiceIdToTransactionsMap.get(link.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
     });
 
+    const courierReportsList: any[] = [];
+    matchedNav.forEach(nav => {
+      const crs = navIdToCourierReportsMap?.get(nav.id) || [];
+      crs.forEach(c => {
+        if (!courierReportsList.some(existing => existing.id === c.id)) {
+          courierReportsList.push(c);
+        }
+      });
+    });
+
+    if (courierReportsList.length === 0 && allTxMap.size > 0 && trxIdToCourierReportsMap) {
+      for (const txId of allTxMap.keys()) {
+        const txReports = trxIdToCourierReportsMap.get(txId);
+        if (txReports && txReports.length > 0) {
+          for (const tr of txReports) {
+            if (!courierReportsList.some(r => r.id === tr.id)) {
+              courierReportsList.push(tr);
+            }
+          }
+        }
+      }
+    }
+
     return {
       matchedSubmitted: [] as SubmittedInvoice[],
       matchedTransactions: Array.from(allTxMap.values()),
       matchedNav,
       linkedInvoices,
+      matchedCourierReports: courierReportsList,
     };
   };
 
@@ -625,6 +651,7 @@ export function SubmittedInvoiceRow({
           matchedSubmittedInvoices={[]}
           matchedNavInvoices={matches.matchedNav}
           matchedTransactions={matches.matchedTransactions}
+          matchedCourierReports={matches.matchedCourierReports}
           linkedInvoices={matches.linkedInvoices}
           invoiceReferenceNumber={invoice.reference_number}
           linkedInvoicesLoading={linkedInvoicesLoading}

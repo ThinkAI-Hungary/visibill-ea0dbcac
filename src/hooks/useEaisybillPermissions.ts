@@ -150,6 +150,7 @@ export const URL_TO_MODULE: Record<string, EaisybillModule> = {
   '/vat-return': 'vat_return',
   '/journals': 'journals',
   '/accounting-rules': 'journals',
+  '/auto-accounting-rules': 'journals',
   '/prompts': 'journals',
   '/salaries': 'salaries',
   '/working-time': 'working_time',

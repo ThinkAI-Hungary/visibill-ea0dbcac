@@ -2,7 +2,7 @@
 
 > Kettős könyvviteli naplók, tétel fejek és sorok, ugrásmentes folyósorszámozás, zárt időszakok és esemény audit naplózás.
 
-**Táblák ebben a csoportban:** 7
+**Táblák ebben a csoportban:** 8
 
 ---
 
@@ -241,6 +241,39 @@
 - `batch_post_subledger_items(p_company_id uuid, p_header_ids uuid[])`:
   - Kijelölt javaslat státuszú bizonylatok tömeges végleges könyvelése `acc_post_journal_entry` hívással.
 - `write_off_subledger_difference(p_company_id uuid, p_line_id uuid, p_diff_amount_huf numeric, p_reason text, p_user_id uuid)`:
-  - 1-kattintásos kerekítési (8755/9779, $\le 10$ Ft) vagy árfolyamkülönbözet (8762/9762) leírás automatikus Vegyes (`VE`) napló bizonylat generálásával és azonnali összevezetésével.
+  - 1-kattintásos kerekítési (9699/8699, alapesetben $\le 10$ Ft) vagy árfolyamkülönbözet (9779/8755) leírás automatikus Vegyes (`VE`) napló bizonylat generálásával és azonnali összevezetésével. A számlákat és a limitet a `company_auto_accounting_rules` táblából olvassa fel (A-228).
+
+---
+
+### `company_auto_accounting_rules` (A-228, EB-0256)
+
+**RLS:** ✅ | **Sorok:** 1 sor cégenként (`company_id UNIQUE`)
+
+Automatikus könyvelési szabályok központi konfigurációja a háttérben futó ÁFA átvezetésekhez, árfolyam-különbözetekhez és kerekítési elszámolásokhoz.
+
+| Oszlop | Típus | Null | Default | Leírás |
+|---|---|---|---|---|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `company_id` | uuid | — | — | FK → `companies.id` (CASCADE, UNIQUE) |
+| `vat_pf_payable_gl_id` | uuid | ✓ | NULL | Pénzforgalmi fizetendő ÁFA átvezetési számla (pl. 47911 / 47993) |
+| `vat_pf_deductible_gl_id` | uuid | ✓ | NULL | Pénzforgalmi levonható ÁFA átvezetési számla (pl. 36911 / 3689) |
+| `vat_advance_gross_gl_id` | uuid | ✓ | NULL | Bruttó előleg ÁFA technikai számla (pl. 36914) |
+| `vat_intra_year_payable_gl_id` | uuid | ✓ | NULL | Éven belüli eltérő havi fizetendő ÁFA átvezetés (pl. 47912) |
+| `vat_intra_year_deductible_gl_id` | uuid | ✓ | NULL | Éven belüli eltérő havi levonható ÁFA átvezetés (pl. 36912) |
+| `vat_cross_year_payable_gl_id` | uuid | ✓ | NULL | Évek közötti fizetendő ÁFA átvezetés (pl. 47913) |
+| `vat_cross_year_deductible_gl_id` | uuid | ✓ | NULL | Évek közötti levonható ÁFA átvezetés (pl. 36913) |
+| `fx_realized_journal_id` | uuid | ✓ | NULL | Realizált árfolyam-különbözet naplója (FK → `acc_journals.id`, pl. VE) |
+| `fx_realized_gain_gl_id` | uuid | ✓ | NULL | Realizált árfolyamnyereség főkönyvi számla (pl. 9779) |
+| `fx_realized_loss_gl_id` | uuid | ✓ | NULL | Realizált árfolyamveszteség főkönyvi számla (pl. 8755) |
+| `fx_unrealized_journal_id` | uuid | ✓ | NULL | Nem realizált árfolyam-különbözet naplója (FK → `acc_journals.id`, pl. VE) |
+| `fx_unrealized_gain_gl_id` | uuid | ✓ | NULL | Nem realizált árfolyamnyereség főkönyvi számla (pl. 9762) |
+| `fx_unrealized_loss_gl_id` | uuid | ✓ | NULL | Nem realizált árfolyamveszteség főkönyvi számla (pl. 8762) |
+| `rounding_gain_gl_id` | uuid | ✓ | NULL | Kerekítési többlet főkönyvi számla (pl. 9699) |
+| `rounding_loss_gl_id` | uuid | ✓ | NULL | Kerekítési veszteség főkönyvi számla (pl. 8699) |
+| `rounding_max_limit_huf` | numeric(12,2) | — | `10.00` | Maximális kerekítési tűréshatár forintban (alapértelmezetten 10 Ft) |
+| `is_active` | boolean | — | `true` | Szabályok érvényessége |
+| `created_at` | timestamptz | — | `now()` | Létrehozás időbélyeg |
+| `updated_at` | timestamptz | — | `now()` | Utolsó módosítás időbélyeg |
+
 
 

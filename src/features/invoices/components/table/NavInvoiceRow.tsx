@@ -132,6 +132,7 @@ function NavInvoiceRowComponent({
     linkedInvoicesMap,
     invalidateInvoiceData,
     navIdToCourierReportsMap,
+    trxIdToCourierReportsMap,
     setSuggestedLinkDialogOpen,
     setSelectedSuggestedLinkPair,
     lastViewedInvoiceId,
@@ -235,12 +236,28 @@ function NavInvoiceRowComponent({
       (pageInvoiceIdToTransactionsMap.get(link.id) || []).forEach(tx => allTxMap.set(tx.id, tx));
     });
 
+    const directReports = navIdToCourierReportsMap.get(navInvoice.id) || [];
+    const fallbackReports: any[] = [];
+    if (directReports.length === 0 && allTxMap.size > 0 && trxIdToCourierReportsMap) {
+      for (const txId of allTxMap.keys()) {
+        const txReports = trxIdToCourierReportsMap.get(txId);
+        if (txReports && txReports.length > 0) {
+          for (const tr of txReports) {
+            if (!fallbackReports.some(r => r.id === tr.id)) {
+              fallbackReports.push(tr);
+            }
+          }
+        }
+      }
+    }
+    const matchedCourierReports = directReports.length > 0 ? directReports : fallbackReports;
+
     return {
       matchedSubmitted,
       matchedTransactions: Array.from(allTxMap.values()),
       matchedNav: [] as NavInvoice[],
       linkedInvoices,
-      matchedCourierReports: navIdToCourierReportsMap.get(navInvoice.id) || [],
+      matchedCourierReports,
     };
   };
 
