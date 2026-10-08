@@ -159,6 +159,8 @@ describe('ManualInvoiceCreateDialog', () => {
       );
       expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['invoices'] });
       expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['submittedInvoices'] });
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['general_ledger'] });
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['glBalances'] });
       expect(defaultProps.onSuccess).toHaveBeenCalled();
       expect(defaultProps.onClose).toHaveBeenCalled();
     });

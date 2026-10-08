@@ -62,4 +62,38 @@ description: Apply when working on React components, UI styling, frontend state,
 * **Végtelen Ciklus Megszakítása Hibánál (Break-on-Error):**
   * `IntersectionObserver` alapú görgetésnél ha a `handleLoadMore` hívás bármilyen hibára fut (`catch (err)`), **kötelező lekapcsolni a lapozást (`setHasMore(false)`)**! Ellenkező esetben a képernyőn maradó sentinel másodpercenként többször újratriggereli a hibát, lefagyasztva a böngészőt.
 
+## 7. i18next Dinamikus Objektum és Tömb Lekérések (Tömb-Fallback Invariáns)
+* **A naiv `t(...) || DEFAULT_ARRAY` csapda (`TypeError: b.map is not a function`):**
+  * Amikor a `useTranslation` hook `returnObjects: true` opcióját használjuk (pl. hónapnevek, legördülő opciók lekérésére), hiányzó kulcs vagy hibás fordítási fájl esetén az i18next nem tömböt ad vissza, hanem **a keresőkulcs nevét mint stringet** (pl. `"hr:calendar.months"`).
+  * Mivel JavaScriptben a nem-üres string *truthy*, a `(t(...) as string[]) || DEFAULT_ARRAY` kifejezés a stringre értékelődik ki! Emiatt a `.map()` hívás futásidőben azonnali összeomlást okoz (`TypeError: b.map is not a function`).
+* **Kötelező Minta:**
+  Mindig szigorú típus- és tömbellenőrzést kell alkalmazni:
+  ```typescript
+  // ❌ HIBÁS:
+  const months = (t('hr:calendar.months', { returnObjects: true }) as string[]) || DEFAULT_MONTHS;
+  months.map(...); // TypeError: months.map is not a function!
+
+  // ✅ HELYES:
+  const rawMonths = t('hr:calendar.months', { returnObjects: true });
+  const months = Array.isArray(rawMonths) ? (rawMonths as string[]) : DEFAULT_MONTHS;
+  ```
+
+## 8. Pénzügyi Előjelek & Keresztmoduláris Cache Érvénytelenítés
+* **Jóváíró / Helyesbítő Számlák Abszolútérték-Szabálya (`Math.abs`):**
+  * Pénzügyi kintlévőség, részfizetés vagy teljes kifizetettség vizsgálatakor tilos a bruttó összeget közvetlenül relációs operátorral összevetni a kifizetett összeggel, mert negatív előjelű (jóváíró / helyesbítő / stornó) számláknál a reláció megfordul (pl. `5000 >= -10000.5` hamisan teljesül).
+  * Mindig `Math.abs` használatával hasonlítsd össze a bizonylatösszeget a kifizetett tranzakciók összegével:
+    ```typescript
+    const absGross = Math.abs(invoiceGross);
+    const isPaid = totalTxAmount > 0 && totalTxAmount >= (absGross - 0.5);
+    const isPartial = totalTxAmount > 0 && !isPaid && (absGross > 0 ? totalTxAmount < absGross : false);
+    ```
+* **Keresztmoduláris TanStack Query Cache Érvénytelenítés:**
+  * Számla vagy pénzügyi bizonylat rögzítésekor/módosításakor nem elég a saját domént (`['invoices']`) érvényteleníteni.
+  * Ha a bizonylat könyvelési vagy főkönyvi hatással bír, a kapcsolódó aggregált lekérdezéseket is kötelező érvényteleníteni:
+    ```typescript
+    queryClient.invalidateQueries({ queryKey: ['general_ledger'] });
+    queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+    ```
+
+
 

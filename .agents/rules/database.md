@@ -182,6 +182,23 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
        * **Kötelező Minta (Header Pre-Materialization Invariant):**
          1. A számlafejléceket (`valid_invoices`, `valid_nav_invoices`) dedikált `AS MATERIALIZED` CTE-kbe kell kiemelni, ahol a bérlő (`company_id`), dátumtartomány és az anti-join **pontosan egyszer, fejléc szinten** fut le.
          2. A tételek, ÁFA sorok és partner sorok kizárólag ezekhez az előszűrt memóriatáblákhoz csatlakozhatnak, soha nem hivatkozhatnak közvetlenül a nyers `invoices` vagy `nav_invoices` alaptáblákra.
+    5. **⚠️ Materialized CTE & Gyermektábla Index-Pruning Csapda (`company_id` szűrés kötelezettsége):**
+       * Amikor egy `MATERIALIZED` CTE-t (pl. `valid_nav_invoices`) összekapcsolunk egy nagy méretű, partícionált vagy összetett indexszel ellátott gyermektáblával (pl. `nav_invoice_items`), a PostgreSQL query optimizer **nem tudja automatikusan áttolni a bérlői szűrést a belső joinba**, ha az `ON` feltételben kizárólag a foreign key (`ni.nav_invoice_id = n.id`) szerepel!
+       * **Miért okozott 30.5 másodperces timeoutot (57014)?**
+         Mivel a feltételben nem szerepelt az `ni.company_id = p_company_id`, a motor nem tudta használni az `idx_nav_invoice_items_comp_inv (company_id, nav_invoice_id)` összetett indexet, és több ezer soros szekvenciális nested loop vizsgálatot végzett.
+       * **Kötelező Invariáns:**
+         Összetett indexszel rendelkező gyermektáblák csatolásakor a bérlői szűrőt **kötelező explicit megadni a JOIN feltételben**:
+         ```sql
+         -- ❌ HIBÁS (Index kihagyás, 30s timeout):
+         FROM valid_nav_invoices n
+         JOIN public.nav_invoice_items ni ON ni.nav_invoice_id = n.id
+
+         -- ✅ HELYES (Összetett index azonnal aktiválódik, 2.7s futásidő):
+         FROM valid_nav_invoices n
+         JOIN public.nav_invoice_items ni 
+           ON ni.nav_invoice_id = n.id 
+          AND ni.company_id = p_company_id
+         ```
 
 ---
 
@@ -206,4 +223,11 @@ A Supabase API rétege (PostgREST) belső séma-gyorsítótárral (schema cache)
      ```
   2. **UI Nem-Kritikus Query Résiliencia (Graceful Degradation):**
      * Nem-kritikus összefoglaló kártyáknál, fejléc számlálóknál vagy banner KPI lekérdezéseknél (pl. OPG forgalom, függő tételek) a query catch blokkjának fel kell ismernie a `PGRST205` / `42P01` hibakódot, és csendes default értékkel (`0` / `null`) kell visszatérnie a teljes oldal összeomlása és az `app_error_logs` elárasztása helyett.
+
+### C) PostgreSQL CHECK Kényszer Integritás (Hiba 23514 Megelőzése):
+* **Hiba tünete:** `new row for relation "xyz" violates check constraint "xyz_check"` (PostgreSQL hibakód: `23514`).
+* **Kiváltó ok:** A kliensoldalról vagy Edge Function-ből feltételezett, kitalált státusz-értékeket küldünk be (pl. `invoices.statusz = 'partially_paid'` vagy `'feldolgozva'`), amelyek nem szerepelnek a DB `CHECK` kényszerében megengedett literálok között.
+* **Kötelező Invariáns:**
+  1. **CHECK kényszer ellenőrzése:** A frontend mutációs payloadok készítésekor mindig ellenőrizni kell az adatbázis táblára vonatkozó `CHECK` kényszereket a migrációkban vagy a `pg_constraint` katalógustáblában.
+  2. **Valós adatokkal való kifejezés:** Ha egy entitás részleges állapotban van (pl. részfizetett számla), azt a valós összegmezőkkel (`fizetve_osszeg > 0 AND fizetve_osszeg < brutto_osszeg`) kell kifejezni az engedélyezett enum státusz (`'feldolgozott'`) megtartása mellett, nem ad-hoc státuszstringek kitalálásával.
 

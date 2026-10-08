@@ -392,8 +392,9 @@ export function ManualInvoiceCreateDialog({
 
       // Calculate payment status from selected transactions OR direct paid checkbox
       const totalTxAmount = selectedTransactions.reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-      const isPaidViaTx = totalTxAmount > 0 && totalTxAmount >= (invoiceGross - 0.5);
-      const isPartiallyPaid = totalTxAmount > 0 && !isPaidViaTx;
+      const absInvoiceGross = Math.abs(invoiceGross);
+      const isPaidViaTx = totalTxAmount > 0 && totalTxAmount >= (absInvoiceGross - 0.5);
+      const isPartiallyPaid = totalTxAmount > 0 && !isPaidViaTx && (absInvoiceGross > 0 ? totalTxAmount < absInvoiceGross : false);
       const isFullyPaid = isPaidViaTx || formData.is_paid;
 
       // Ensure non-primary partner is NEVER null or empty (satisfies PostgreSQL NOT NULL constraint)
@@ -431,7 +432,7 @@ export function ManualInvoiceCreateDialog({
         melleklet_url: uploadedFileUrl,
         attachments: fileAttachmentJson,
         nav_status: selectedNavInvoice ? 'verified' : 'missing_nav',
-        statusz: isFullyPaid ? 'feldolgozva' : (isPartiallyPaid ? 'partially_paid' : 'feldolgozva'),
+        statusz: isFullyPaid ? 'kifizetve' : 'feldolgozott',
         fizetve: isFullyPaid,
         transaction_id: selectedTransactions.length > 0 ? selectedTransactions[0].id : null,
         is_manual_payment: formData.is_paid && selectedTransactions.length === 0 ? true : undefined,
@@ -540,6 +541,8 @@ export function ManualInvoiceCreateDialog({
       queryClient.invalidateQueries({ queryKey: ['invoiceKpis'] });
       queryClient.invalidateQueries({ queryKey: ['invoice-kpis'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['general_ledger'] });
+      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
 
       toast({
         title: t('invoices:manual_create.toast_save_success'),

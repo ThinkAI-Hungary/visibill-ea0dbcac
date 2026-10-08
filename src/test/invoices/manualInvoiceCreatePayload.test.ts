@@ -36,6 +36,52 @@ describe('Manual Invoice Create & OPG Schema Resilience Tests', () => {
       
       // 2. Ensure nav_status is present
       expect(dialogContent).toContain("nav_status: selectedNavInvoice ? 'verified' : 'missing_nav'");
+
+      // 3. Ensure statusz adheres to PostgreSQL check constraint: invoices_statusz_check
+      expect(dialogContent).not.toContain("'feldolgozva'");
+      expect(dialogContent).not.toContain("'partially_paid'");
+      expect(dialogContent).toContain("statusz: isFullyPaid ? 'kifizetve' : 'feldolgozott'");
+
+      // 4. Ensure absolute value comparison is used for credit/negative invoices (Math.abs(invoiceGross))
+      expect(dialogContent).toContain("const absInvoiceGross = Math.abs(invoiceGross);");
+      expect(dialogContent).toContain("totalTxAmount >= (absInvoiceGross - 0.5)");
+
+      // 5. Ensure general_ledger and glBalances cache invalidation
+      expect(dialogContent).toContain("queryClient.invalidateQueries({ queryKey: ['general_ledger'] });");
+      expect(dialogContent).toContain("queryClient.invalidateQueries({ queryKey: ['glBalances'] });");
+    });
+
+    it('validates absolute value payment status logic for positive and negative (credit) invoices', () => {
+      const calculatePaymentStatus = (invoiceGross: number, totalTxAmount: number, isPaidManual: boolean) => {
+        const absInvoiceGross = Math.abs(invoiceGross);
+        const isPaidViaTx = totalTxAmount > 0 && totalTxAmount >= (absInvoiceGross - 0.5);
+        const isPartiallyPaid = totalTxAmount > 0 && !isPaidViaTx && (absInvoiceGross > 0 ? totalTxAmount < absInvoiceGross : false);
+        const isFullyPaid = isPaidViaTx || isPaidManual;
+        const statusz = isFullyPaid ? 'kifizetve' : 'feldolgozott';
+        return { isPaidViaTx, isPartiallyPaid, isFullyPaid, statusz };
+      };
+
+      // Scenario A: Positive invoice 10000 HUF, 5000 HUF paid (Partial)
+      const resPosPartial = calculatePaymentStatus(10000, 5000, false);
+      expect(resPosPartial.isPaidViaTx).toBe(false);
+      expect(resPosPartial.isPartiallyPaid).toBe(true);
+      expect(resPosPartial.isFullyPaid).toBe(false);
+      expect(resPosPartial.statusz).toBe('feldolgozott');
+
+      // Scenario B: Negative credit invoice -10000 HUF, 5000 HUF matched (Partial)
+      // Without Math.abs, 5000 >= -10000 - 0.5 would evaluate to TRUE!
+      const resNegPartial = calculatePaymentStatus(-10000, 5000, false);
+      expect(resNegPartial.isPaidViaTx).toBe(false);
+      expect(resNegPartial.isPartiallyPaid).toBe(true);
+      expect(resNegPartial.isFullyPaid).toBe(false);
+      expect(resNegPartial.statusz).toBe('feldolgozott');
+
+      // Scenario C: Negative credit invoice -10000 HUF, 10000 HUF matched (Full)
+      const resNegFull = calculatePaymentStatus(-10000, 10000, false);
+      expect(resNegFull.isPaidViaTx).toBe(true);
+      expect(resNegFull.isPartiallyPaid).toBe(false);
+      expect(resNegFull.isFullyPaid).toBe(true);
+      expect(resNegFull.statusz).toBe('kifizetve');
     });
   });
 

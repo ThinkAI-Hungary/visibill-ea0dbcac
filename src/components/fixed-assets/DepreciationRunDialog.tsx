@@ -52,7 +52,8 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
 
-  const monthNames = (t('hr:calendar.months', { returnObjects: true }) as string[]) || MONTH_NAMES;
+  const rawMonths = t('hr:calendar.months', { returnObjects: true });
+  const monthNames = Array.isArray(rawMonths) ? (rawMonths as string[]) : MONTH_NAMES;
 
   const now = new Date();
   const currentYear = now.getFullYear();
