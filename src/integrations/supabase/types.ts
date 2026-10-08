@@ -6427,6 +6427,13 @@ export type Database = {
           company_id: string
           created_at: string
           gl_date_basis: string | null
+          gl_default_view_mode: string | null
+          fx_accounting_bank_code: string | null
+          fx_accounting_rate_type: string | null
+          fx_revaluation_bank_code: string | null
+          fx_revaluation_rate_type: string | null
+          vat_code_display_mode: string | null
+          has_purchase_vouchers: boolean | null
           id: string
           monthly_working_hours: number
           updated_at: string
@@ -6438,6 +6445,13 @@ export type Database = {
           company_id: string
           created_at?: string
           gl_date_basis?: string | null
+          gl_default_view_mode?: string | null
+          fx_accounting_bank_code?: string | null
+          fx_accounting_rate_type?: string | null
+          fx_revaluation_bank_code?: string | null
+          fx_revaluation_rate_type?: string | null
+          vat_code_display_mode?: string | null
+          has_purchase_vouchers?: boolean | null
           id?: string
           monthly_working_hours?: number
           updated_at?: string
@@ -6449,6 +6463,13 @@ export type Database = {
           company_id?: string
           created_at?: string
           gl_date_basis?: string | null
+          gl_default_view_mode?: string | null
+          fx_accounting_bank_code?: string | null
+          fx_accounting_rate_type?: string | null
+          fx_revaluation_bank_code?: string | null
+          fx_revaluation_rate_type?: string | null
+          vat_code_display_mode?: string | null
+          has_purchase_vouchers?: boolean | null
           id?: string
           monthly_working_hours?: number
           updated_at?: string

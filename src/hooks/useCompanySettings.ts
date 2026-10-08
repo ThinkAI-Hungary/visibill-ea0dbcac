@@ -78,13 +78,13 @@ export function useCompanySettings() {
       if (form.admin_deadline !== undefined) payload.admin_deadline = form.admin_deadline;
       if (form.monthly_working_hours !== undefined) payload.monthly_working_hours = form.monthly_working_hours;
       if (form.gl_date_basis !== undefined) payload.gl_date_basis = form.gl_date_basis;
-      if (form.gl_default_view_mode !== undefined) (payload as any).gl_default_view_mode = form.gl_default_view_mode;
-      if (form.fx_accounting_bank_code !== undefined) (payload as any).fx_accounting_bank_code = form.fx_accounting_bank_code;
-      if (form.fx_accounting_rate_type !== undefined) (payload as any).fx_accounting_rate_type = form.fx_accounting_rate_type;
-      if (form.fx_revaluation_bank_code !== undefined) (payload as any).fx_revaluation_bank_code = form.fx_revaluation_bank_code;
-      if (form.fx_revaluation_rate_type !== undefined) (payload as any).fx_revaluation_rate_type = form.fx_revaluation_rate_type;
-      if (form.vat_code_display_mode !== undefined) (payload as any).vat_code_display_mode = form.vat_code_display_mode;
-      if (form.has_purchase_vouchers !== undefined) (payload as any).has_purchase_vouchers = form.has_purchase_vouchers;
+      if (form.gl_default_view_mode !== undefined) payload.gl_default_view_mode = form.gl_default_view_mode;
+      if (form.fx_accounting_bank_code !== undefined) payload.fx_accounting_bank_code = form.fx_accounting_bank_code;
+      if (form.fx_accounting_rate_type !== undefined) payload.fx_accounting_rate_type = form.fx_accounting_rate_type;
+      if (form.fx_revaluation_bank_code !== undefined) payload.fx_revaluation_bank_code = form.fx_revaluation_bank_code;
+      if (form.fx_revaluation_rate_type !== undefined) payload.fx_revaluation_rate_type = form.fx_revaluation_rate_type;
+      if (form.vat_code_display_mode !== undefined) payload.vat_code_display_mode = form.vat_code_display_mode;
+      if (form.has_purchase_vouchers !== undefined) payload.has_purchase_vouchers = form.has_purchase_vouchers;
 
       const { error } = await supabase
         .from('company_settings')
