@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles, BookOpen, Calendar, CalendarCheck, Landmark, ExternalLink, Wheat, UserCheck } from 'lucide-react';
+import { Building2, AlertCircle, Info, MapPin, Plus, X, Sparkles, BookOpen, Calendar, CalendarCheck, Landmark, ExternalLink, Wheat, UserCheck, Search, Loader2, ArrowRightLeft, Layers } from 'lucide-react';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { getJurisdictionRules } from '@/hooks/useCompanyJurisdiction';
 import { AccountingPolicySection } from './AccountingPolicySection';
+import { queryTaxpayerFromNav } from '@/lib/nav/navTaxpayerService';
+import { EXCHANGE_RATE_BANKS, FX_RATE_TYPES, FxRateType } from '@/lib/banking/exchangeRateBanks';
 
 interface Company {
   id: string;
@@ -84,7 +86,87 @@ export function BusinessSection({
   const { toast } = useToast();
   const { locations, isLoading: locationsLoading, addLocation, deleteLocation } = useCompanyLocations(selectedCompany?.id);
   const { effectiveSettings: compEffectiveSettings, saveMutation: compSaveMutation } = useCompanySettings();
-  const [glBasis, setGlBasis] = useState<'kibocsatas' | 'teljesites'>('kibocsatas');
+  
+  // Derived state pattern (Vercel React Best Practices: avoid setState in useEffect)
+  const [userGlBasis, setUserGlBasis] = useState<'kibocsatas' | 'teljesites' | null>(null);
+  const glBasis = userGlBasis ?? (compEffectiveSettings?.gl_date_basis as 'kibocsatas' | 'teljesites') ?? 'teljesites';
+
+  const [userGlDefaultViewMode, setUserGlDefaultViewMode] = useState<'osszevont' | 'teteles' | null>(null);
+  const glDefaultViewMode = userGlDefaultViewMode ?? (compEffectiveSettings?.gl_default_view_mode as 'osszevont' | 'teteles') ?? 'osszevont';
+
+  const [userFxAccountingBankCode, setUserFxAccountingBankCode] = useState<string | null>(null);
+  const fxAccountingBankCode = userFxAccountingBankCode ?? compEffectiveSettings?.fx_accounting_bank_code ?? 'MNB';
+
+  const [userFxAccountingRateType, setUserFxAccountingRateType] = useState<FxRateType | null>(null);
+  const fxAccountingRateType = userFxAccountingRateType ?? (compEffectiveSettings?.fx_accounting_rate_type as FxRateType) ?? 'mid';
+
+  const [userFxRevaluationBankCode, setUserFxRevaluationBankCode] = useState<string | null>(null);
+  const fxRevaluationBankCode = userFxRevaluationBankCode ?? compEffectiveSettings?.fx_revaluation_bank_code ?? 'MNB';
+
+  const [userFxRevaluationRateType, setUserFxRevaluationRateType] = useState<FxRateType | null>(null);
+  const fxRevaluationRateType = userFxRevaluationRateType ?? (compEffectiveSettings?.fx_revaluation_rate_type as FxRateType) ?? 'mid';
+
+  const [userPurchaseVouchers, setUserPurchaseVouchers] = useState<boolean | null>(null);
+  const hasPurchaseVouchers = userPurchaseVouchers ?? Boolean(compEffectiveSettings?.has_purchase_vouchers);
+
+  const [isNavLoading, setIsNavLoading] = useState(false);
+
+  const handleNavLookup = async () => {
+    if (!companyTaxNumber || !companyTaxNumber.trim()) {
+      toast({
+        title: 'Adószám megadása szükséges',
+        description: 'Kérjük, írd be a cég adószámát a NAV lekérdezéshez!',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const cleanTax = companyTaxNumber.replace(/[^0-9]/g, '').slice(0, 8);
+    if (!cleanTax || cleanTax.length !== 8) {
+      toast({
+        title: 'Érvénytelen adószám',
+        description: 'Kérjük, adj meg legalább egy 8-jegyű érvényes magyar adószámot!',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsNavLoading(true);
+    try {
+      const res = await queryTaxpayerFromNav(companyTaxNumber, selectedCompany?.id);
+      if (!res.success || !res.taxpayer) {
+        toast({
+          title: 'NAV lekérdezés sikertelen',
+          description: res.error || 'Nem találhatók hivatalos cégadatok a megadott adószámhoz.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const tp = res.taxpayer;
+      if (tp.taxpayerName) {
+        setCompanyName(tp.taxpayerName);
+      }
+      if (tp.address?.formattedAddress) {
+        setCompanyAddress(tp.address.formattedAddress);
+      }
+      if (tp.taxpayerId && tp.vatCode && tp.countyCode && !companyTaxNumber.includes('-')) {
+        setCompanyTaxNumber(`${tp.taxpayerId}-${tp.vatCode}-${tp.countyCode}`);
+      }
+
+      toast({
+        title: 'NAV cégadatok sikeresen betöltve',
+        description: `${tp.taxpayerName || ''} (${tp.taxNumber})`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a lekérdezés során',
+        description: err?.message || 'Váratlan hiba történt a NAV lekérdezésekor.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsNavLoading(false);
+    }
+  };
 
   const { data: companyBankAccounts = [], isLoading: bankAccountsLoading } = useQuery({
     queryKey: ['company-bank-accounts', selectedCompany?.id],
@@ -101,40 +183,73 @@ export function BusinessSection({
     enabled: !!selectedCompany?.id,
   });
 
-  useEffect(() => {
-    if (compEffectiveSettings?.gl_date_basis) {
-      setGlBasis(compEffectiveSettings.gl_date_basis as 'kibocsatas' | 'teljesites');
-    }
-  }, [compEffectiveSettings?.gl_date_basis]);
-
   const handleGlBasisChange = async (newBasis: 'kibocsatas' | 'teljesites') => {
     if (newBasis === glBasis || compSaveMutation.isPending) return;
-    const prevBasis = glBasis;
-    setGlBasis(newBasis);
+    setUserGlBasis(newBasis);
     try {
       await compSaveMutation.mutateAsync({ gl_date_basis: newBasis });
     } catch {
-      // Revert optimistic state if mutation fails (error toast shown by mutation)
-      setGlBasis(prevBasis);
+      setUserGlBasis(null);
     }
   };
 
-  const [hasPurchaseVouchers, setHasPurchaseVouchers] = useState(false);
-
-  useEffect(() => {
-    if (compEffectiveSettings) {
-      setHasPurchaseVouchers(Boolean(compEffectiveSettings.has_purchase_vouchers));
+  const handleGlDefaultViewModeChange = async (newMode: 'osszevont' | 'teteles') => {
+    if (newMode === glDefaultViewMode || compSaveMutation.isPending) return;
+    setUserGlDefaultViewMode(newMode);
+    try {
+      await compSaveMutation.mutateAsync({ gl_default_view_mode: newMode });
+    } catch {
+      setUserGlDefaultViewMode(null);
     }
-  }, [compEffectiveSettings?.has_purchase_vouchers]);
+  };
+
+  const handleFxAccountingBankChange = async (newBank: string) => {
+    if (newBank === fxAccountingBankCode || compSaveMutation.isPending) return;
+    setUserFxAccountingBankCode(newBank);
+    try {
+      await compSaveMutation.mutateAsync({ fx_accounting_bank_code: newBank });
+    } catch {
+      setUserFxAccountingBankCode(null);
+    }
+  };
+
+  const handleFxAccountingRateTypeChange = async (newType: FxRateType) => {
+    if (newType === fxAccountingRateType || compSaveMutation.isPending) return;
+    setUserFxAccountingRateType(newType);
+    try {
+      await compSaveMutation.mutateAsync({ fx_accounting_rate_type: newType });
+    } catch {
+      setUserFxAccountingRateType(null);
+    }
+  };
+
+  const handleFxRevaluationBankChange = async (newBank: string) => {
+    if (newBank === fxRevaluationBankCode || compSaveMutation.isPending) return;
+    setUserFxRevaluationBankCode(newBank);
+    try {
+      await compSaveMutation.mutateAsync({ fx_revaluation_bank_code: newBank });
+    } catch {
+      setUserFxRevaluationBankCode(null);
+    }
+  };
+
+  const handleFxRevaluationRateTypeChange = async (newType: FxRateType) => {
+    if (newType === fxRevaluationRateType || compSaveMutation.isPending) return;
+    setUserFxRevaluationRateType(newType);
+    try {
+      await compSaveMutation.mutateAsync({ fx_revaluation_rate_type: newType });
+    } catch {
+      setUserFxRevaluationRateType(null);
+    }
+  };
 
   const handleTogglePurchaseVouchers = async (checked: boolean) => {
     if (compSaveMutation.isPending) return;
-    const prev = hasPurchaseVouchers;
-    setHasPurchaseVouchers(checked);
+    setUserPurchaseVouchers(checked);
     try {
       await compSaveMutation.mutateAsync({ has_purchase_vouchers: checked });
     } catch {
-      setHasPurchaseVouchers(prev);
+      setUserPurchaseVouchers(null);
     }
   };
 
@@ -249,13 +364,34 @@ export function BusinessSection({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="tax_number">{jurisdiction.taxNumberLabel}</Label>
-                  <Input 
-                    id="tax_number" 
-                    value={companyTaxNumber || ''} 
-                    onChange={e => setCompanyTaxNumber(e.target.value)} 
-                    placeholder={jurisdiction.taxNumberPlaceholder} 
-                    disabled={!canEdit} 
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      id="tax_number" 
+                      value={companyTaxNumber || ''} 
+                      onChange={e => setCompanyTaxNumber(e.target.value)} 
+                      placeholder={jurisdiction.taxNumberPlaceholder} 
+                      disabled={!canEdit} 
+                      className="flex-1"
+                    />
+                    {activeCountry === 'HU' && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="default"
+                        onClick={handleNavLookup}
+                        disabled={isNavLoading || !companyTaxNumber?.trim() || !canEdit}
+                        className="shrink-0 gap-1.5 h-10 border-indigo-500/30 text-indigo-600 hover:bg-indigo-500/10 hover:text-indigo-700 dark:text-indigo-400 font-medium text-xs"
+                        title="Hivatalos cégadatok (név, székhely, ÁFA kód) automatikus lekérdezése NAV-ból"
+                      >
+                        {isNavLoading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
+                        ) : (
+                          <Search className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                        )}
+                        <span>NAV adatok</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">
@@ -589,35 +725,6 @@ export function BusinessSection({
                   className={cn(
                     "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
                     isOwner && !compSaveMutation.isPending ? "cursor-pointer" : "cursor-default opacity-80",
-                    glBasis === 'kibocsatas'
-                      ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
-                      : "border-border bg-card hover:bg-muted/50"
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="main_gl_date_basis"
-                    value="kibocsatas"
-                    checked={glBasis === 'kibocsatas'}
-                    onChange={() => isOwner && !compSaveMutation.isPending && handleGlBasisChange('kibocsatas')}
-                    disabled={!isOwner || compSaveMutation.isPending}
-                    className="mt-1 accent-primary"
-                  />
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
-                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                      {t('business.gl_basis_issue_title', 'Kibocsátás kelte (Alapértelmezett)')}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {t('business.gl_basis_issue_desc', 'A számlák és bizonylatok hivatalos kiállítási dátuma alapján veszi figyelembe a tételeket.')}
-                    </p>
-                  </div>
-                </label>
-
-                <label
-                  className={cn(
-                    "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
-                    isOwner && !compSaveMutation.isPending ? "cursor-pointer" : "cursor-default opacity-80",
                     glBasis === 'teljesites'
                       ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
                       : "border-border bg-card hover:bg-muted/50"
@@ -635,13 +742,230 @@ export function BusinessSection({
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
                       <CalendarCheck className="w-3.5 h-3.5 text-primary" />
-                      {t('business.gl_basis_fulfillment_title', 'Teljesítés dátuma')}
+                      <span>{t('business.gl_basis_fulfillment_title', 'Teljesítés dátuma (Alapértelmezett / Ajánlott)')}</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {t('business.gl_basis_fulfillment_desc', 'A gazdasági esemény vagy szolgáltatás tényleges teljesítésének napja alapján gyűjti az adatokat.')}
+                      {t('business.gl_basis_fulfillment_desc', 'A gazdasági esemény vagy szolgáltatás tényleges teljesítésének napja alapján gyűjti az adatokat. A könyvelésben ez a mérvadó dátum.')}
                     </p>
                   </div>
                 </label>
+
+                <label
+                  className={cn(
+                    "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
+                    isOwner && !compSaveMutation.isPending ? "cursor-pointer" : "cursor-default opacity-80",
+                    glBasis === 'kibocsatas'
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
+                      : "border-border bg-card hover:bg-muted/50"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="main_gl_date_basis"
+                    value="kibocsatas"
+                    checked={glBasis === 'kibocsatas'}
+                    onChange={() => isOwner && !compSaveMutation.isPending && handleGlBasisChange('kibocsatas')}
+                    disabled={!isOwner || compSaveMutation.isPending}
+                    className="mt-1 accent-primary"
+                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
+                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span>{t('business.gl_basis_issue_title', 'Kibocsátás kelte')}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      {t('business.gl_basis_issue_desc', 'A számlák és bizonylatok hivatalos kiállítási dátuma alapján veszi figyelembe a tételeket.')}
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* EB-0258: Főkönyvi Kivonat Alapértelmezett Nézete */}
+            <div className="space-y-2 pt-3 border-t border-border/40">
+              <Label className="text-sm font-semibold flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-primary" />
+                <span>Főkönyvi kivonat alapértelmezett megjelenítése</span>
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Határozd meg, hogy a főkönyv megnyitásakor számonként összevontan, vagy részletező soronként jelenjenek meg a tételek.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <label
+                  className={cn(
+                    "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
+                    isOwner && !compSaveMutation.isPending ? "cursor-pointer" : "cursor-default opacity-80",
+                    glDefaultViewMode === 'osszevont'
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
+                      : "border-border bg-card hover:bg-muted/50"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="main_gl_default_view_mode"
+                    value="osszevont"
+                    checked={glDefaultViewMode === 'osszevont'}
+                    onChange={() => isOwner && !compSaveMutation.isPending && handleGlDefaultViewModeChange('osszevont')}
+                    disabled={!isOwner || compSaveMutation.isPending}
+                    className="mt-1 accent-primary"
+                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
+                      <Layers className="w-3.5 h-3.5 text-primary" />
+                      <span>Összevont nézet (Alapértelmezett / Ajánlott)</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      A főkönyv összecsukva, főkönyvi számonként összevont egyenlegekkel indul. Az al-tételek és bizonylatok csak rákattintásra / kibontásra nyílnak meg.
+                    </p>
+                  </div>
+                </label>
+
+                <label
+                  className={cn(
+                    "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
+                    isOwner && !compSaveMutation.isPending ? "cursor-pointer" : "cursor-default opacity-80",
+                    glDefaultViewMode === 'teteles'
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary"
+                      : "border-border bg-card hover:bg-muted/50"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="main_gl_default_view_mode"
+                    value="teteles"
+                    checked={glDefaultViewMode === 'teteles'}
+                    onChange={() => isOwner && !compSaveMutation.isPending && handleGlDefaultViewModeChange('teteles')}
+                    disabled={!isOwner || compSaveMutation.isPending}
+                    className="mt-1 accent-primary"
+                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
+                      <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span>Tételes nézet</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Minden főkönyvi szám és bizonylattétel automatikusan kibontva jelenik meg a táblázat betöltésekor.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* EB-0258: Céges Devizaárfolyam és Pénzintézet Beállítások */}
+            <div className="space-y-3 pt-3 border-t border-border/40">
+              <div className="flex items-center gap-2">
+                <Landmark className="w-4 h-4 text-primary" />
+                <Label className="text-sm font-semibold">Devizaárfolyam és Pénzintézet Beállítások</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                A cég számviteli politikája szerinti hivatalos árfolyamkezelő bank és árfolyamtípus a könyveléshez és a zárási átértékeléshez.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                {/* Könyvelés Bankja */}
+                <div className="space-y-2 p-3.5 rounded-xl border border-border bg-card/60">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold flex items-center gap-1.5">
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-primary" />
+                      <span>Könyvelés bankja</span>
+                    </Label>
+                    <Badge variant="outline" className="text-[10px] font-mono">
+                      {fxAccountingBankCode}
+                    </Badge>
+                  </div>
+                  <Select
+                    value={fxAccountingBankCode}
+                    onValueChange={(val) => isOwner && handleFxAccountingBankChange(val)}
+                    disabled={!isOwner || compSaveMutation.isPending}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Válassz bankot..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {EXCHANGE_RATE_BANKS.map((bank) => (
+                        <SelectItem key={bank.code} value={bank.code} className="text-xs font-mono">
+                          <span className="mr-1.5">{bank.flag}</span>
+                          <span className="font-bold mr-1.5">{bank.code}</span>
+                          <span>{bank.name}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="pt-2">
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">Könyvelési árfolyam típusa</Label>
+                    <Select
+                      value={fxAccountingRateType}
+                      onValueChange={(val) => isOwner && handleFxAccountingRateTypeChange(val as FxRateType)}
+                      disabled={!isOwner || compSaveMutation.isPending}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FX_RATE_TYPES.map((t) => (
+                          <SelectItem key={t.value} value={t.value} className="text-xs">
+                            <span className="font-medium mr-1.5">{t.label}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Átértékelés Bankja */}
+                <div className="space-y-2 p-3.5 rounded-xl border border-border bg-card/60">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold flex items-center gap-1.5">
+                      <Landmark className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Év végi átértékelés bankja</span>
+                    </Label>
+                    <Badge variant="outline" className="text-[10px] font-mono border-indigo-500/30 text-indigo-600 dark:text-indigo-400">
+                      {fxRevaluationBankCode}
+                    </Badge>
+                  </div>
+                  <Select
+                    value={fxRevaluationBankCode}
+                    onValueChange={(val) => isOwner && handleFxRevaluationBankChange(val)}
+                    disabled={!isOwner || compSaveMutation.isPending}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Válassz bankot..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {EXCHANGE_RATE_BANKS.map((bank) => (
+                        <SelectItem key={bank.code} value={bank.code} className="text-xs font-mono">
+                          <span className="mr-1.5">{bank.flag}</span>
+                          <span className="font-bold mr-1.5">{bank.code}</span>
+                          <span>{bank.name}</span>
+                          {bank.recommendedForRevaluation && (
+                            <span className="ml-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-sans font-medium">(Ajánlott)</span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="pt-2">
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">Átértékelési árfolyam típusa</Label>
+                    <Select
+                      value={fxRevaluationRateType}
+                      onValueChange={(val) => isOwner && handleFxRevaluationRateTypeChange(val as FxRateType)}
+                      disabled={!isOwner || compSaveMutation.isPending}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FX_RATE_TYPES.map((t) => (
+                          <SelectItem key={t.value} value={t.value} className="text-xs">
+                            <span className="font-medium mr-1.5">{t.label}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </div>
 

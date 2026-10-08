@@ -47,6 +47,11 @@ export interface CompanyWorkSettings {
   admin_deadline: string;
   monthly_working_hours: number;
   gl_date_basis?: 'kibocsatas' | 'teljesites' | null;
+  gl_default_view_mode?: 'osszevont' | 'teteles' | null;
+  fx_accounting_bank_code?: string | null;
+  fx_accounting_rate_type?: 'mid' | 'buy' | 'sell' | null;
+  fx_revaluation_bank_code?: string | null;
+  fx_revaluation_rate_type?: 'mid' | 'buy' | 'sell' | null;
   vat_code_display_mode?: 'legacy' | 'nav' | null;
   has_purchase_vouchers?: boolean | null;
   created_at: string;

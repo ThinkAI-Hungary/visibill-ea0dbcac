@@ -109,7 +109,7 @@ export default function GeneralLedgerPage() {
   const urlDateBasis = searchParams.get('date_basis') as GlDateBasis | null;
   const [dateBasis, setDateBasis] = useState<GlDateBasis>(() => {
     if (urlDateBasis === 'kibocsatas' || urlDateBasis === 'teljesites') return urlDateBasis;
-    return (effectiveSettings?.gl_date_basis as GlDateBasis) || 'kibocsatas';
+    return (effectiveSettings?.gl_date_basis as GlDateBasis) || 'teljesites';
   });
 
   const urlPostingStatus = searchParams.get('posting_status') as GlPostingStatus | null;
@@ -774,6 +774,7 @@ export default function GeneralLedgerPage() {
               searchQuery={glSearchQuery}
               searchResults={glSearchResults}
               isPolling={isAIRunning}
+              defaultViewMode={effectiveSettings?.gl_default_view_mode || 'osszevont'}
               onStatsChange={handleStatsChange}
               onLoadingChange={handleLoadingChange}
             />
@@ -1010,6 +1011,8 @@ export default function GeneralLedgerPage() {
                 presetId={activePresetId}
                 dateFrom={dateFrom}
                 dateTo={dateTo}
+                dateBasis={dateBasis}
+                defaultViewMode={effectiveSettings?.gl_default_view_mode || 'osszevont'}
                 printLayoutMode={printLayoutMode}
               />
             </div>

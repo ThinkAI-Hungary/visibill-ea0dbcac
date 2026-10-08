@@ -289,5 +289,6 @@
 | P-167 | Automatikus Könyvelési Szabályok Konfigurációs Felülete és Cégek Közötti Másolás (EB-0256) | ✅ Decided | [P-167](./P-167-automated-accounting-rules-and-cross-company-cloning-ux.md) |
 | P-168 | Egységes Számlatükör, Cégek Közötti Másolás és Folyószámla Kényszer (EB-0255) | ✅ Decided | [P-168](./P-168-eb0255-chart-of-accounts-subledger.md) |
 | P-169 | Könyvelési Naplók Kategóriái, Szerkeszthetősége, Banki Szinkronizáció és Tételsori Partnerkezelés (EB-0257) | ✅ Decided | [P-169](./P-169-eb0257-journal-categorization-and-line-partners.md) |
+| P-170 | Könyvelési Dátum-alapértelmezés (Teljesítés), Összevont Főkönyv, Devizaárfolyam Bankválasztó és NAV Adószám Auto-kitöltés (EB-0258) | ✅ Decided | [P-170](./P-170-eb0258-default-date-gl-aggregated-view-fx-bank-and-nav-autofill.md) |
 
 

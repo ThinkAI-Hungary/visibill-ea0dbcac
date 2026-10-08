@@ -160,6 +160,7 @@ interface GeneralLedgerTableProps {
   viewLayout?: 'summary' | 'classic';
   viewGranularity?: GlViewGranularity;
   itemGrouping?: GlItemGroupingMode;
+  defaultViewMode?: 'osszevont' | 'teteles';
 }
 
 interface LoadMoreSentinelRowProps {
@@ -221,13 +222,24 @@ function LoadMoreSentinelRow({ row, hiddenClass, indentPadding, onLoadMore, view
   );
 }
 
+export const DEFAULT_EXPANDED_IDS = new Set<string>([
+  '1', '1.', '2', '2.', '3', '3.', '31', '31.', '311', '311.',
+  '4', '4.', '45', '45.', '454', '454.', '46', '46.', '466', '466.',
+  '5', '5.', '8', '8.', '9', '9.', 'UNCLASSIFIED'
+]);
+
+// EB-0258: Aggregated view mode keeps child accounts collapsed by default (only root classes visible)
+export const AGGREGATED_EXPANDED_IDS = new Set<string>([
+  '1', '1.', '2', '2.', '3', '3.', '4', '4.', '5', '5.', '8', '8.', '9', '9.', 'UNCLASSIFIED'
+]);
+
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
   const { t } = useTranslation(['accounting', 'common']);
   const {
     presetId,
     dateFrom,
     dateTo,
-    dateBasis = 'kibocsatas',
+    dateBasis = 'teljesites',
     postingStatus = 'all',
     hideZeroBalances = false,
     searchQuery = '',
@@ -239,6 +251,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     viewLayout = 'summary',
     viewGranularity = 'kontirok',
     itemGrouping = 'by_invoice',
+    defaultViewMode = 'osszevont',
   } = props;
   const { selectedCompany } = useCompany();
   const { isCroatia, defaultCurrency } = useCompanyJurisdiction();
@@ -356,11 +369,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     }
   }, [presetId]);
 
-  const DEFAULT_EXPANDED_IDS = [
-    '1', '1.', '2', '2.', '3', '3.', '31', '31.', '311', '311.',
-    '4', '4.', '45', '45.', '454', '454.', '46', '46.', '466', '466.',
-    '5', '5.', '8', '8.', '9', '9.', 'UNCLASSIFIED'
-  ];
+  const isAggregatedMode = defaultViewMode === 'osszevont';
+  const initialDefaultIds = isAggregatedMode ? AGGREGATED_EXPANDED_IDS : DEFAULT_EXPANDED_IDS;
 
   // Cache tree expansion state in localStorage
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(() => {
@@ -370,7 +380,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         return new Set(JSON.parse(stored));
       }
     } catch (e) {}
-    return new Set(DEFAULT_EXPANDED_IDS);
+    return new Set(initialDefaultIds);
   });
   
   const [highlightedRowId, setHighlightedRowId] = useState<string | null>(null);
@@ -383,12 +393,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       if (stored) {
         setExpandedRowIds(new Set(JSON.parse(stored)));
       } else {
-        setExpandedRowIds(new Set(DEFAULT_EXPANDED_IDS));
+        setExpandedRowIds(new Set(initialDefaultIds));
       }
     } catch (e) {
-      setExpandedRowIds(new Set(DEFAULT_EXPANDED_IDS));
+      setExpandedRowIds(new Set(initialDefaultIds));
     }
-  }, [presetId, selectedCompany?.id]);
+  }, [presetId, selectedCompany?.id, initialDefaultIds]);
 
   useEffect(() => {
     if (!presetId || !selectedCompany?.id) return;

@@ -10,12 +10,17 @@ import type { Database } from '@/integrations/supabase/types';
 
 type CompanySettingsInsert = Database['public']['Tables']['company_settings']['Insert'];
 
-const DEFAULT_SETTINGS: Omit<CompanyWorkSettings, 'id' | 'company_id' | 'created_at' | 'updated_at'> = {
+export const DEFAULT_SETTINGS: Omit<CompanyWorkSettings, 'id' | 'company_id' | 'created_at' | 'updated_at'> = {
   work_start_time: '09:00',
   work_end_time: '17:00',
   admin_deadline: '20:00',
   monthly_working_hours: 168,
-  gl_date_basis: 'kibocsatas',
+  gl_date_basis: 'teljesites',
+  gl_default_view_mode: 'osszevont',
+  fx_accounting_bank_code: 'MNB',
+  fx_accounting_rate_type: 'mid',
+  fx_revaluation_bank_code: 'MNB',
+  fx_revaluation_rate_type: 'mid',
   vat_code_display_mode: 'legacy',
   has_purchase_vouchers: false,
 };
@@ -53,6 +58,11 @@ export function useCompanySettings() {
       admin_deadline?: string;
       monthly_working_hours?: number;
       gl_date_basis?: 'kibocsatas' | 'teljesites';
+      gl_default_view_mode?: 'osszevont' | 'teteles';
+      fx_accounting_bank_code?: string;
+      fx_accounting_rate_type?: 'mid' | 'buy' | 'sell';
+      fx_revaluation_bank_code?: string;
+      fx_revaluation_rate_type?: 'mid' | 'buy' | 'sell';
       vat_code_display_mode?: 'legacy' | 'nav';
       has_purchase_vouchers?: boolean;
     }) => {
@@ -68,6 +78,11 @@ export function useCompanySettings() {
       if (form.admin_deadline !== undefined) payload.admin_deadline = form.admin_deadline;
       if (form.monthly_working_hours !== undefined) payload.monthly_working_hours = form.monthly_working_hours;
       if (form.gl_date_basis !== undefined) payload.gl_date_basis = form.gl_date_basis;
+      if (form.gl_default_view_mode !== undefined) (payload as any).gl_default_view_mode = form.gl_default_view_mode;
+      if (form.fx_accounting_bank_code !== undefined) (payload as any).fx_accounting_bank_code = form.fx_accounting_bank_code;
+      if (form.fx_accounting_rate_type !== undefined) (payload as any).fx_accounting_rate_type = form.fx_accounting_rate_type;
+      if (form.fx_revaluation_bank_code !== undefined) (payload as any).fx_revaluation_bank_code = form.fx_revaluation_bank_code;
+      if (form.fx_revaluation_rate_type !== undefined) (payload as any).fx_revaluation_rate_type = form.fx_revaluation_rate_type;
       if (form.vat_code_display_mode !== undefined) (payload as any).vat_code_display_mode = form.vat_code_display_mode;
       if (form.has_purchase_vouchers !== undefined) (payload as any).has_purchase_vouchers = form.has_purchase_vouchers;
 
@@ -100,6 +115,11 @@ export function useCompanySettings() {
     admin_deadline: settings?.admin_deadline ?? DEFAULT_SETTINGS.admin_deadline,
     monthly_working_hours: settings?.monthly_working_hours ?? DEFAULT_SETTINGS.monthly_working_hours,
     gl_date_basis: (settings?.gl_date_basis as 'kibocsatas' | 'teljesites') ?? DEFAULT_SETTINGS.gl_date_basis,
+    gl_default_view_mode: (settings?.gl_default_view_mode as 'osszevont' | 'teteles') ?? DEFAULT_SETTINGS.gl_default_view_mode,
+    fx_accounting_bank_code: settings?.fx_accounting_bank_code ?? DEFAULT_SETTINGS.fx_accounting_bank_code,
+    fx_accounting_rate_type: (settings?.fx_accounting_rate_type as 'mid' | 'buy' | 'sell') ?? DEFAULT_SETTINGS.fx_accounting_rate_type,
+    fx_revaluation_bank_code: settings?.fx_revaluation_bank_code ?? DEFAULT_SETTINGS.fx_revaluation_bank_code,
+    fx_revaluation_rate_type: (settings?.fx_revaluation_rate_type as 'mid' | 'buy' | 'sell') ?? DEFAULT_SETTINGS.fx_revaluation_rate_type,
     vat_code_display_mode: (settings?.vat_code_display_mode as 'legacy' | 'nav') ?? DEFAULT_SETTINGS.vat_code_display_mode,
     has_purchase_vouchers: Boolean(settings?.has_purchase_vouchers ?? DEFAULT_SETTINGS.has_purchase_vouchers),
   }), [settings]);
