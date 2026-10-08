@@ -67,6 +67,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Tooltip,
   TooltipContent,
@@ -242,6 +243,14 @@ export default function TransfersPage() {
   const [settlePaymentDate, setSettlePaymentDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [settleNote, setSettleNote] = useState<string>('');
   const [settling, setSettling] = useState(false);
+
+  // Bulk manual settlement dialog state
+  const [bulkSettleDialogOpen, setBulkSettleDialogOpen] = useState(false);
+  const [bulkSettleDateMode, setBulkSettleDateMode] = useState<'issue_date' | 'today' | 'custom'>('issue_date');
+  const [bulkSettleCustomDate, setBulkSettleCustomDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [bulkSettlePaymentType, setBulkSettlePaymentType] = useState<string>('cash');
+  const [bulkSettleNote, setBulkSettleNote] = useState<string>('');
+  const [bulkSettling, setBulkSettling] = useState(false);
 
   // Pagination State
   const [activePage, setActivePage] = useState(1);
@@ -1079,6 +1088,88 @@ export default function TransfersPage() {
     }
   };
 
+  // Bulk manual settlement helpers
+  const selectedTransferItems = useMemo(() => {
+    return displayItems.filter(item => selectedIds.includes(item.key));
+  }, [displayItems, selectedIds]);
+
+  const selectedInvoicesCount = useMemo(() => {
+    return selectedTransferItems.reduce((acc, item) => acc + (item.original_invoices?.length || 0), 0);
+  }, [selectedTransferItems]);
+
+  const handleConfirmBulkSettle = async () => {
+    if (selectedTransferItems.length === 0 || !selectedCompany) return;
+    try {
+      setBulkSettling(true);
+      const todayStr = new Date().toISOString().split('T')[0];
+      const allInvoices = selectedTransferItems.flatMap(item => item.original_invoices || []);
+
+      for (const inv of allInvoices) {
+        let paymentDate = todayStr;
+        if (bulkSettleDateMode === 'issue_date') {
+          paymentDate = inv.issue_date || inv.due_date || todayStr;
+        } else if (bulkSettleDateMode === 'custom') {
+          paymentDate = bulkSettleCustomDate || todayStr;
+        } else {
+          paymentDate = todayStr;
+        }
+
+        if (inv.source === 'purchase_voucher') {
+          const { error: pvErr } = await supabase
+            .from('purchase_vouchers')
+            .update({
+              payment_status: 'paid',
+              paid_amount: inv.amount,
+              paid_at: new Date(paymentDate).toISOString(),
+            })
+            .eq('id', inv.id);
+          if (pvErr) console.warn("Failed to settle purchase voucher in bulk:", pvErr);
+          continue;
+        }
+
+        const note = bulkSettleNote.trim() || `Tömeges rendezés (${inv.partner_name})`;
+        const { error: rpcErr } = await supabase.rpc('record_manual_invoice_payment', {
+          p_invoice_id: inv.id,
+          p_payment_date: paymentDate,
+          p_payment_type: bulkSettlePaymentType,
+          p_note: note
+        });
+
+        if (rpcErr) {
+          const targetTable = inv.source === 'nav' ? 'nav_invoices' : 'invoices';
+          await supabase
+            .from(targetTable)
+            .update({
+              is_manual_payment: true,
+              manual_payment_date: paymentDate,
+              manual_payment_type: bulkSettlePaymentType,
+              manual_payment_note: note
+            })
+            .eq('id', inv.id);
+        }
+      }
+
+      toast({
+        title: t('transfers:toasts.settle_success_title', 'Sikeres rendezés'),
+        description: t('transfers:toasts.settle_success_desc', { count: allInvoices.length }),
+      });
+
+      setBulkSettleDialogOpen(false);
+      setSelectedIds([]);
+      setBulkSettleNote('');
+      refetchInvoices();
+    } catch (err: any) {
+      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleConfirmBulkSettle', message: 'Failed to bulk settle invoices manually', error: err });
+      toast({
+        title: t('common:error', 'Hiba történt'),
+        description: err.message || t('transfers:toasts.settle_error', 'Nem sikerült a számlák tömeges rendezése.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setBulkSettling(false);
+    }
+  };
+
   const handleDeleteTransfer = async (id: string) => {
     try {
       const { error } = await supabase
@@ -1744,10 +1835,27 @@ export default function TransfersPage() {
               )}
             </div>
             {selectedIds.length > 0 && (
-              <Button size="sm" onClick={triggerFileExport} className="gap-1.5 shadow-md z-10">
-                {t('transfers:stats.download', 'Letöltés')}
-                <Download className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2 z-10">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setBulkSettleDateMode('issue_date');
+                    setBulkSettleCustomDate(new Date().toISOString().split('T')[0]);
+                    setBulkSettlePaymentType('cash');
+                    setBulkSettleNote('');
+                    setBulkSettleDialogOpen(true);
+                  }}
+                  className="gap-1.5 border-emerald-600/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-600 font-semibold shadow-xs"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  {t('transfers:bulk_settle.button', 'Tömeges rendezés')}
+                </Button>
+                <Button size="sm" onClick={triggerFileExport} className="gap-1.5 shadow-md">
+                  {t('transfers:stats.download', 'Letöltés')}
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -2158,7 +2266,8 @@ export default function TransfersPage() {
                                           onClick={() => {
                                             setSettleItem(item);
                                             setSettlePaymentType('cash');
-                                            setSettlePaymentDate(new Date().toISOString().split('T')[0]);
+                                            const defaultDate = item.original_invoices[0]?.issue_date || new Date().toISOString().split('T')[0];
+                                            setSettlePaymentDate(defaultDate);
                                             setSettleNote('');
                                             setSettleDialogOpen(true);
                                           }}
@@ -2752,6 +2861,12 @@ export default function TransfersPage() {
                         <span>{t('transfers:settle_dialog.opt_private_card')}</span>
                       </div>
                     </SelectItem>
+                    <SelectItem value="compensation">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-purple-500" />
+                        <span>{t('transfers:bulk_settle.opt_compensation', 'Kompenzáció / Beszámítás')}</span>
+                      </div>
+                    </SelectItem>
                     <SelectItem value="other">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-amber-500" />
@@ -2763,7 +2878,31 @@ export default function TransfersPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">{t('transfers:settle_dialog.payment_date')}</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold">{t('transfers:settle_dialog.payment_date')}</Label>
+                  <div className="flex items-center gap-1">
+                    {settleItem?.original_invoices[0]?.issue_date && (
+                      <Button
+                        type="button"
+                        variant={settlePaymentDate === settleItem.original_invoices[0].issue_date ? "secondary" : "ghost"}
+                        size="sm"
+                        className="h-6 px-1.5 text-[11px] font-medium"
+                        onClick={() => setSettlePaymentDate(settleItem.original_invoices[0].issue_date!)}
+                      >
+                        Kiállítás napja ({settleItem.original_invoices[0].issue_date})
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant={settlePaymentDate === new Date().toISOString().split('T')[0] ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-6 px-1.5 text-[11px] font-medium"
+                      onClick={() => setSettlePaymentDate(new Date().toISOString().split('T')[0])}
+                    >
+                      Mai nap
+                    </Button>
+                  </div>
+                </div>
                 <Input
                   type="date"
                   value={settlePaymentDate}
@@ -2811,6 +2950,173 @@ export default function TransfersPage() {
                 <>
                   <CheckCircle2 className="h-4 w-4" />
                   {t('transfers:settle_dialog.confirm')}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Manual Settlement Dialog */}
+      <Dialog open={bulkSettleDialogOpen} onOpenChange={setBulkSettleDialogOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              {t('transfers:bulk_settle.dialog_title', 'Tömeges kézi rendezés')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('transfers:bulk_settle.dialog_desc', 'A kijelölt tételek számláinak megjelölése kifizetettként / rendezettként egyetlen lépésben.')}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Summary card */}
+            <div className="bg-muted/40 rounded-lg p-3 text-xs space-y-1.5 border border-border/60">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('transfers:bulk_settle.selected_partners', 'Kijelölt partnerek / tételek:')}</span>
+                <span className="font-semibold text-foreground">{selectedTransferItems.length} db</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('transfers:bulk_settle.selected_invoices', 'Érintett számlák összesen:')}</span>
+                <span className="font-semibold text-foreground">{selectedInvoicesCount} db</span>
+              </div>
+              <div className="flex justify-between border-t border-border/40 pt-1.5">
+                <span className="text-muted-foreground font-medium">{t('transfers:bulk_settle.total_amount', 'Összes kifizetendő összeg:')}</span>
+                <span className="font-bold text-foreground font-mono">
+                  {formatCurrency(
+                    selectedTransferItems.reduce((acc, item) => acc + (item.amount || 0), 0),
+                    selectedTransferItems[0]?.currency || 'HUF'
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {/* Date mode selection */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">{t('transfers:bulk_settle.date_mode_title', 'Rendezés dátuma')}</Label>
+              <RadioGroup
+                value={bulkSettleDateMode}
+                onValueChange={(val: any) => setBulkSettleDateMode(val)}
+                className="space-y-2"
+              >
+                <div className="flex items-start space-x-2 rounded-md border p-2.5 hover:bg-muted/30 transition-colors">
+                  <RadioGroupItem value="issue_date" id="date-issue" className="mt-0.5" />
+                  <Label htmlFor="date-issue" className="text-xs font-medium cursor-pointer leading-tight">
+                    <span className="font-semibold text-foreground block">
+                      {t('transfers:bulk_settle.opt_date_issue', 'Számlák kiállítási dátuma')}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Minden számla a saját eredeti kiállítási napjával lesz rendezve (ajánlott múltbeli számlákhoz)
+                    </span>
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2 rounded-md border p-2.5 hover:bg-muted/30 transition-colors">
+                  <RadioGroupItem value="today" id="date-today" />
+                  <Label htmlFor="date-today" className="text-xs font-medium cursor-pointer">
+                    <span className="font-semibold text-foreground">
+                      {t('transfers:bulk_settle.opt_date_today', 'Mai nap')}
+                    </span>
+                    <span className="text-muted-foreground ml-1.5 font-mono text-[11px]">
+                      ({new Date().toISOString().split('T')[0]})
+                    </span>
+                  </Label>
+                </div>
+
+                <div className="flex items-start space-x-2 rounded-md border p-2.5 hover:bg-muted/30 transition-colors">
+                  <RadioGroupItem value="custom" id="date-custom" className="mt-0.5" />
+                  <div className="space-y-1.5 flex-1">
+                    <Label htmlFor="date-custom" className="text-xs font-semibold text-foreground cursor-pointer">
+                      {t('transfers:bulk_settle.opt_date_custom', 'Egyedi megadott dátum')}
+                    </Label>
+                    {bulkSettleDateMode === 'custom' && (
+                      <Input
+                        type="date"
+                        value={bulkSettleCustomDate}
+                        onChange={(e) => setBulkSettleCustomDate(e.target.value)}
+                        className="h-8 text-xs w-full mt-1"
+                      />
+                    )}
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Payment method selection */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">{t('transfers:settle_dialog.payment_method')}</Label>
+              <Select value={bulkSettlePaymentType} onValueChange={setBulkSettlePaymentType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('transfers:settle_dialog.payment_method_placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">
+                    <div className="flex items-center gap-2">
+                      <Banknote className="h-4 w-4 text-emerald-600" />
+                      <span>{t('transfers:settle_dialog.opt_cash')}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="private_card">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-blue-500" />
+                      <span>{t('transfers:settle_dialog.opt_private_card')}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="compensation">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-purple-500" />
+                      <span>{t('transfers:bulk_settle.opt_compensation', 'Kompenzáció / Beszámítás')}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="other">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-amber-500" />
+                      <span>{t('transfers:settle_dialog.opt_other')}</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Note */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">{t('transfers:settle_dialog.note')}</Label>
+              <Textarea
+                value={bulkSettleNote}
+                onChange={(e) => setBulkSettleNote(e.target.value)}
+                placeholder="pl. Tömeges kézi rendezés"
+                rows={2}
+                className="text-xs resize-none"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setBulkSettleDialogOpen(false);
+                setBulkSettleNote('');
+              }}
+              disabled={bulkSettling}
+            >
+              {t('transfers:settle_dialog.cancel')}
+            </Button>
+            <Button
+              onClick={handleConfirmBulkSettle}
+              disabled={bulkSettling || selectedTransferItems.length === 0}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+            >
+              {bulkSettling ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('transfers:bulk_settle.confirming', 'Rendezés folyamatban...')}
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  {t('transfers:bulk_settle.confirm_button', { count: selectedInvoicesCount, defaultValue: `Tömeges rendezés megerősítése (${selectedInvoicesCount} számla)` })}
                 </>
               )}
             </Button>

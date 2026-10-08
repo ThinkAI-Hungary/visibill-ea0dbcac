@@ -122,6 +122,7 @@
     "opt_cash": "Készpénz / Házipénztár (381)",
     "opt_private_card": "Privát számla / Tagi kölcsön",
     "opt_other": "Egyéb manuális rendezés",
+    "opt_compensation": "Kompenzáció / Beszámítás",
     "payment_date": "Kifizetés dátuma",
     "note": "Megjegyzés (opcionális)",
     "note_placeholder": "pl. Privát számláról fizetve, pénztárból elszámolva",
@@ -129,5 +130,19 @@
     "saving": "Rendezés mentése...",
     "confirm": "Rendezés megerősítése",
     "cancel": "Mégse"
+  },
+  "bulk_settle": {
+    "button": "Tömeges rendezés",
+    "dialog_title": "Tömeges kézi rendezés",
+    "dialog_desc": "A kijelölt tételek számláinak megjelölése kifizetettként / rendezettként egyetlen lépésben.",
+    "selected_partners": "Kijelölt partnerek / tételek:",
+    "selected_invoices": "Érintett számlák összesen:",
+    "total_amount": "Összes kifizetendő összeg:",
+    "date_mode_title": "Rendezés dátuma",
+    "opt_date_issue": "Számlák kiállítási dátuma (minden számla a saját kiállítási napjával lesz rendezve)",
+    "opt_date_today": "Mai nap",
+    "opt_date_custom": "Egyedi megadott dátum",
+    "confirm_button": "Tömeges rendezés megerősítése ({{count}} számla)",
+    "confirming": "Rendezés folyamatban..."
   }
 }
