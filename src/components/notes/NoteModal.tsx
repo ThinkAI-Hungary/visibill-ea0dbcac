@@ -23,6 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { NoteAttachmentUploader } from './NoteAttachmentUploader';
+import { NoteAttachmentList } from './NoteAttachmentList';
 
 interface NoteModalProps {
   open: boolean;
@@ -37,6 +39,7 @@ interface NoteModalProps {
     invoice_ids: string[];
     transaction_id: string | null;
     transaction_ids: string[];
+    files?: File[];
   }) => void;
   isSaving: boolean;
 }
@@ -55,6 +58,7 @@ export function NoteModal({
   const [isPrivate, setIsPrivate] = useState(true); // Default to private
   const [invoiceIds, setInvoiceIds] = useState<string[]>([]);
   const [selectedInvoices, setSelectedInvoices] = useState<any[]>([]);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
 
   // Transactions linkage states
   const [transactionIds, setTransactionIds] = useState<string[]>([]);
@@ -80,6 +84,7 @@ export function NoteModal({
   // Reset state when opening/changing note
   useEffect(() => {
     if (open) {
+      setNewFiles([]);
       if (note) {
         setTitle(note.title);
         setContent(note.content);
@@ -335,6 +340,7 @@ export function NoteModal({
       invoice_ids: invoiceIds,
       transaction_id: transactionIds[0] || null,
       transaction_ids: transactionIds,
+      files: newFiles,
     });
   };
 
@@ -374,6 +380,24 @@ export function NoteModal({
                 required
                 rows={4}
                 className="bg-background/50 resize-none text-xs"
+              />
+            </div>
+
+            {/* Note Attachments */}
+            <div className="space-y-1.5">
+              <Label>{t('invoices:attachments.upload_label', { defaultValue: 'Csatolmányok (PDF, Képek, TIG)' })}</Label>
+              {note?.note_attachments && note.note_attachments.length > 0 && (
+                <div className="mb-2">
+                  <NoteAttachmentList
+                    attachments={note.note_attachments}
+                    canDelete={false}
+                  />
+                </div>
+              )}
+              <NoteAttachmentUploader
+                files={newFiles}
+                onFilesChange={setNewFiles}
+                disabled={isSaving}
               />
             </div>
 

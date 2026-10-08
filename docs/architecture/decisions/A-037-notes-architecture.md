@@ -23,21 +23,44 @@ Létrehozunk egy dedikált `public.notes` táblát a Supabase adatbázisban a je
 - A jegyzetekhez akár több számla is rendelhető egyszerre az `invoice_ids` UUID tömb segítségével.
 - A frontend a PostgREST JOIN korlátai miatt egy kliensoldali batch query segítségével, egyetlen kérésben kérdezi le az összes érintett számla adatait (egy `.in('id', allInvoiceIds)` lekérdezéssel), megelőzve az N+1 adatbázis lekérési problémákat.
 
+**Csatolmányok és Mellékletek Architektúra (Note Attachments):**
+- **Adattábla:** `public.note_attachments`
+  - `id` (uuid PRIMARY KEY)
+  - `note_id` (uuid REFERENCES notes(id) ON DELETE CASCADE)
+  - `company_id` (uuid REFERENCES companies(id) ON DELETE CASCADE)
+  - `file_name` (text, eredeti fájlnév)
+  - `file_path` (text, tárolási útvonal a storage bucketben)
+  - `file_size` (bigint, fájlméret bájtban)
+  - `mime_type` (text, MIME típus)
+  - `public_url` (text, közvetlen elérési URL)
+  - `created_at` (timestamptz)
+- **Supabase Storage Bucket:** `invoice-attachments`
+  - Nyilvános olvasás (`public: true`) a gyors PDF/kép beágyazás és előnézet érdekében.
+  - Elérési útvonal formátum: `${companyId}/${noteId}/${crypto.randomUUID()}.${ext}` (kiszámíthatatlan UUID védelem).
+  - Fájlméret korlát: maximum 20 MB / fájl.
+  - Engedélyezett formátumok: `application/pdf`, `image/jpeg`, `image/png`, `image/webp`.
+- **Táblázati Melléklet Indikáció (Aggregation & Cross-matching):**
+  - A `useInvoiceAttachmentCounts` hook aggregálja az aktív cég csatolmányait, megjelölve a TIG (teljesítésigazolás) állományokat.
+  - A táblázati sorokban (`NavInvoiceRow`, `SubmittedInvoiceRow`) a bizonylatszám mellett közvetlen gémkapocs badge jelzi a mellékletek jelenlétét, szinkronban tartva a párosított NAV és beküldött bizonylatokat is.
+
 **Row Level Security (RLS) szabályok:**
 - **Select:** A felhasználó láthatja a jegyzetet, ha:
   1. Az saját privát jegyzete (`is_private = true` és `user_id = auth.uid()`).
   2. Közös jegyzet (`is_private = false`), és a felhasználó tagja az adott cégnek (`company_members` táblán alapuló tagsági ellenőrzés).
 - **Insert / Update / Delete:** Hasonlóan korlátozva: a privát jegyzeteket csak a létrehozó módosíthatja, a közös jegyzeteket a cégtagok módosíthatják vagy törölhetik.
+- **note_attachments RLS:** A csatolmányok RLS-e a `notes` szülő tábla láthatóságához és a `company_members` tagsághoz igazodik (külön SELECT, INSERT, UPDATE, DELETE policy-k).
 
 **Frontend integráció:**
-- React Query alapú gyorsítótárazás és valós idejű cache invalidáció.
+- React Query alapú gyorsítótárazás és valós idejű cache invalidáció (`['notes']`, `['invoice-attachment-counts']`, `['invoice-notes']`).
 - Split-Pane (osztott kétpaneles) felület a gyors áttekinthetőségért.
+- `NoteAttachmentUploader` és `NoteAttachmentList` komponensek a rugalmas drag-and-drop és azonnali előnézet támogatására.
 
 ## Consequences
 **Pozitív:**
-- Tiszta adatbázis-szeparálás: a jegyzetek nem terhelik a számlák lekérdezését feleslegesen.
+- Tiszta adatbázis-szeparálás: a jegyzetek és csatolmányok nem terhelik a számlák lekérdezését feleslegesen.
+- Dedikált TIG (teljesítésigazolás) és szerződés csatolás a számlákhoz, a könyvelők közvetlenül a számlasorból látják a mellékleteket.
 - Biztonságos RLS alapú hozzáférés-szabályozás: nem szivároghatnak ki privát adatok.
-- Kényelmes számla-kapcsolat: a számla részletező popupban azonnal láthatóak a kapcsolódó jegyzetek.
+- Kényelmes számla-kapcsolat: a számla részletező popupban és a lenyíló sorban azonnal láthatóak és kezelhetőek a kapcsolódó jegyzetek és csatolmányaik.
 
 **Negatív:**
-- Külön JOIN-ok szükségesek a profilnév feloldásához (külön Supabase lekéréssel optimalizálva a teljesítmény érdekében).
+- Külön JOIN-ok szükségesek a profilnév és csatolmányok feloldásához (PostgREST `note_attachments (*)` beágyazással és külön Supabase lekérésekkel optimalizálva a teljesítmény érdekében).

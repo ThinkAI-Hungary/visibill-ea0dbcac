@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNotesData } from '@/hooks/useNotesData';
 import { NoteModal } from '@/components/notes/NoteModal';
+import { NoteAttachmentList } from '@/components/notes/NoteAttachmentList';
+import { deleteNoteAttachment } from '@/lib/upload-note-attachment';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { Note } from '../types/notes';
+import type { Note, NoteAttachment } from '../types/notes';
 import {
   Search,
   Plus,
@@ -24,6 +27,7 @@ import {
   AlertCircle,
   ClipboardEdit,
   Wallet,
+  Paperclip,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +40,8 @@ export default function NotesPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const { notes, isLoading, addNote, updateNote, deleteNote } = useNotesData(companyId);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'private' | 'shared' | 'invoice'>('all');
@@ -115,6 +121,26 @@ export default function NotesPage() {
     }
   };
 
+  const handleDeleteAttachment = async (attachment: NoteAttachment) => {
+    if (!window.confirm(t('toast.delete_attachment_confirm', { defaultValue: 'Biztosan törölni szeretnéd ezt a csatolmányt?' }))) return;
+    try {
+      await deleteNoteAttachment(attachment);
+      queryClient.invalidateQueries({ queryKey: ['notes', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-attachment-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });
+      toast({
+        title: t('toast.attachment_deleted_title', { defaultValue: 'Csatolmány törölve' }),
+        description: t('toast.attachment_deleted_desc', { defaultValue: 'A csatolmány sikeresen eltávolítva.' }),
+      });
+    } catch (err: any) {
+      toast({
+        title: t('toast.error_title', { defaultValue: 'Hiba történt' }),
+        description: err.message || t('toast.delete_failed', { defaultValue: 'Nem sikerült törölni a csatolmányt.' }),
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleSaveNote = async (params: {
     title: string;
     content: string;
@@ -123,6 +149,7 @@ export default function NotesPage() {
     invoice_ids: string[];
     transaction_id: string | null;
     transaction_ids: string[];
+    files?: File[];
   }) => {
     try {
       if (editingNote) {
@@ -302,6 +329,18 @@ export default function NotesPage() {
                         </span>
                       </div>
                     )}
+
+                    {((note.note_attachments?.length || note.attachments?.length || 0) > 0) && (
+                      <div className="mt-1 flex items-center gap-1 text-[10px] text-amber-600/90 dark:text-amber-400/90 font-medium">
+                        <Paperclip className="h-3 w-3" />
+                        <span>
+                          {t('notes:list.attachments_count', {
+                            count: note.note_attachments?.length || note.attachments?.length || 0,
+                            defaultValue: `${note.note_attachments?.length || note.attachments?.length || 0} db csatolmány`
+                          })}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -376,6 +415,20 @@ export default function NotesPage() {
                   {selectedNote.content}
                 </p>
               </div>
+
+              {/* Note Attachments */}
+              {((selectedNote.note_attachments?.length || selectedNote.attachments?.length || 0) > 0) && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {t('notes:detail.attachments', { defaultValue: 'Csatolmányok' })}
+                  </h4>
+                  <NoteAttachmentList
+                    attachments={selectedNote.note_attachments || selectedNote.attachments || []}
+                    canDelete={selectedNote.user_id === user?.id}
+                    onDelete={handleDeleteAttachment}
+                  />
+                </div>
+              )}
 
               {/* Attached Invoices Details */}
               {selectedNote.invoices && selectedNote.invoices.length > 0 && (

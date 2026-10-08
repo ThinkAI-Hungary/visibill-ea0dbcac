@@ -1,7 +1,7 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-10-07  
-> **Összesen:** 69 dokumentált Deno Edge Function a repó 71-éből (hiányzik: `minimax-sync`, `sync-szamlazz-outbound-invoices`; deploy-állapot: [A-005](./decisions/A-005-edge-functions.md)) + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
+> **Utoljára frissítve:** 2026-10-08  
+> **Összesen:** 70 dokumentált Deno Edge Function a repó 71-éből (hiányzik: `minimax-sync`; deploy-állapot: [A-005](./decisions/A-005-edge-functions.md)) + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
 A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) könyvtárban található. A technikai architektúra döntést az [A-005: Edge Functions a Serverless Logikához](./decisions/A-005-edge-functions.md), az adatbázis sémát a [database-schema.md](./database-schema.md), az eljárásokat pedig az [rpc-catalog.md](./rpc-catalog.md) írja le.
@@ -30,7 +30,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 7. [📱 eaisyBooks / Accounty Modul (16 db)](#7-eaisybooks--accounty-modul)
 8. [🔗 Nylas Email Integráció (2 db)](#8-nylas-email-integráció)
 9. [🛠️ Management, Üzemeltetés & AI Segédek (9 db)](#9-management,-üzemeltetés--ai-segédek)
-10. [🔌 Külső Integrációk & API (1 db)](#10-külső-integrációk--api)
+10. [🔌 Külső Integrációk & API (4 db)](#10-külső-integrációk--api)
 11. [🗓️ MNB & Jogi Frissítések (2 db)](#11-mnb--jogi-frissítések)
 12. [🚚 Szállítmányozás / HRTSPED (1 db)](#12-szállítmányozás--hrtsped)
 13. [🏦 Open Banking & Aggreg8 Integráció (2 db)](#13-open-banking--aggreg8-integráció)
@@ -179,7 +179,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 ---
 
-## 10. 🔌 Külső Integrációk & API (3 db)
+## 10. 🔌 Külső Integrációk & API (4 db)
 
 > Harmadik felek és külső rendszerek biztonságos integrációs végpontja.
 
@@ -188,6 +188,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | [`openclaw-api`](../../supabase/functions/openclaw-api/index.ts) | ❌ Nyilvános / Belső | Külső integrációs kliensek (OpenClaw) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Szigorúan korlátozott, olvasási jogú REST API végpont SHA-256 hash-elt API kulcs hitelesítéssel (`api_keys` tábla). |
 | [`customer-api`](../../supabase/functions/customer-api/index.ts) | ❌ Nyilvános / API Key | Külső ügyfél integrációk (M2M, curl, Python, ERP) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Hivatalos ügyfél REST API v2.2 (33 végpont) OpenAPI 3.0.3 gépi specifikációval (`/v1/openapi.json`). Lefedi a cégeket, beállításokat, számlákat (normalizált bejövő/kimenő, signed image letöltés, védett törlés), partnereket, tranzakciókat (párosítás, unmatch, bulk-delete), hibajegyeket és kommenteket (`/v1/tickets`), kategóriákat, főkönyvet (`/v1/ledger`), ÁFA/eredmény kimutatásokat, NAV státuszt és manuális szinkron indítást 60s cooldownnal, valamint 24 órás `Idempotency-Key` védelmet (`api_idempotency_keys`). |
 | [`tickets-api`](../../supabase/functions/tickets-api/index.ts) | ❌ Nyilvános / API Key & JWT | Management, Support Adminok, Külső botok & CLI-k | `SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY` | Dedikált VisiBill Ticket Management REST API felület nélküli ügyféltámogatáshoz. Támogatja az állandó M2M API kulcsot (`vb_...`) és a Supabase Auth JWT-t (`thinkai`, `management` vagy `is_support_admin` jogosultsággal). Funkciók: `overview` (KPI mutatók), `list` (szűrés, keresés, pagináció), `get` (részletes adatlap kommentekkel és audit idővonallal, olvasottra jelöléssel), `comment` (ügyfélválasz vagy belső jegyzet küldése), `update` (státuszváltás, prioritás, felelős hozzárendelés), `resolve` (gyors lezárás vagy megerősítés kérése), `create` (jegy nyitása ügyfél nevében), `help` (interaktív OpenAPI-szerű leírás). |
+| [`sync-szamlazz-outbound-invoices`](../../supabase/functions/sync-szamlazz-outbound-invoices/index.ts) | ✅ Kötelező | Frontend (`SzamlazzSyncModal`, `NavInvoiceRow`, `ClientInvoicesPage`) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Számlázz.hu Számla Agent API integráció saját kimenő számlaképek (PDF) letöltésére és összerendelésére. Feloldja a cég Agent kulcsát a `get_szamlazz_agent_key` RPC-ből, letölti a PDF-et a Számlázz.hu API-n keresztül, elmenti a Supabase Storage `invoice-uploads` bucketbe, kettős mentést végez (`invoice_uploads` + `invoices`, a `fizetesi_mod` mezőt a NAV számlapárból szinkronizálva), és a `nav_invoices.submitted = true` állapotjelzőt beállítja (P-140, A-173). |
 
 
 ---
@@ -228,7 +229,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 
 | Típus | Darabszám | Szabályzat |
 |---|:---:|---|
-| `verify_jwt: true` | 15 | Közvetlenül a bejelentkezett felhasználó böngészőjéből, érvényes Bearer JWT token kíséretében hívható végpontok. |
+| `verify_jwt: true` | 16 | Közvetlenül a bejelentkezett felhasználó böngészőjéből, érvényes Bearer JWT token kíséretében hívható végpontok. |
 | `verify_jwt: false` | 48 | Időzített feladatok (`pg_cron`), külső webhookok (Mailgun, Nylas, Twilio, Aggreg8), admin műveletek (`service_role`), API kulcsos hívások, vagy bejelentkezés előtti publikus végpontok (pl. jelszó-visszaállítás, email ellenőrzés). |
 
 ---

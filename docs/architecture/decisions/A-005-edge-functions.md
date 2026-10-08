@@ -14,7 +14,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 > ℹ️ **Deploy-állapot (2026-10-07):** élesben 73 function van deployolva. Ebből 5 legacy, csak élesben létező function (`check-subscription`, `check-subscription-status`, `create-checkout`, `create-management-user`, `customer-portal`). 2 repóbeli function nincs deployolva (`accounty-ai-depreciation`, `process-accounting-policy`). A `nav-opg-proxy` élesben sikeresen deployolva van (vxxgvdlqvvchtlmqnrqf).
 
-> 📖 **Teljes, részletes katalógus:** Az Edge Function-ök részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza. Jelenleg 69-et dokumentál a 71-ből; hiányzik a `minimax-sync` és a `sync-szamlazz-outbound-invoices` (külön feladat).
+> 📖 **Teljes, részletes katalógus:** Az Edge Function-ök részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza. Jelenleg 70-et dokumentál a 71-ből; hiányzik a `minimax-sync` (külön feladat).
 
 **Közös kód:** `_shared/` mappa:
 - `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
@@ -23,7 +23,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ---
 
-### Teljes Edge Function Katalógus (69 db dokumentálva a 71-ből)
+### Teljes Edge Function Katalógus (70 db dokumentálva a 71-ből)
 
 #### 🏛️ NAV Integráció (11 db)
 
@@ -130,13 +130,14 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `sandbox-storage-cleanup` | ❌ | SANDBOX cég mock számlaképek törlése Storage-ból. |
 | `generate-company-description` | ✅ | Cég tevékenység és profil intelligens AI generálása TEÁOR kód alapján (DeepSeek / OpenAI). |
 
-#### 🔌 External API (3 db)
+#### 🔌 External API & Számlázó Integrációk (4 db)
 
 | Function | JWT | Leírás |
 |----------|-----|--------|
 | `openclaw-api` | ❌ | Read-only REST API belső AI ügynök integrációhoz (OpenClaw). Saját API key auth (SHA-256 hash, `api_keys` tábla). |
 | `customer-api` | ❌ | Hivatalos ügyfél REST API cégadatok és beállítások M2M eléréséhez és módosításához. Saját API key auth (`vb_` kulcs, SHA-256 hash, `authenticate_customer_api_key` RPC, rate limit, audit log). |
 | `tickets-api` | ❌ | Dedikált VisiBill Ticket Management REST API support adminoknak és külső scripteknek (API kulcs és JWT auth, overview, list, get, comment, update, resolve, create, help). |
+| `sync-szamlazz-outbound-invoices` | ✅ | Számlázz.hu Számla Agent API integráció saját kimenő számlaképek (PDF) lehívására és NAV párosítására (P-140, A-173). Mentés a Storage-ba (`invoice-uploads`), kettős rekord beszúrás (`invoices` + `invoice_uploads`), a `fizetesi_mod` szinkronizálása a NAV számlapárból és a `nav_invoices.submitted` flag atomi beállítása. |
 
 #### 🗓️ MNB & Jogi Frissítések (2 db)
 
@@ -164,7 +165,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 | JWT beállítás | Darabszám | Mikor |
 |---|---|---|
-| `verify_jwt: true` | 15 | Frontend-ből közvetlenül, bejelentkezett felhasználói JWT-vel hívott function-ök |
+| `verify_jwt: true` | 16 | Frontend-ből közvetlenül, bejelentkezett felhasználói JWT-vel hívott function-ök |
 | `verify_jwt: false` | 48 | Webhook-ok, cron jobok, belső hívások, service_role auth, API key auth, magic link tokenek |
 
 ---
@@ -181,6 +182,8 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Kapcsolódó
 - [Supabase Edge Functions Katalógus](../edge-functions.md) — Hivatalos, teljes Edge Functions jegyzék
+- [P-140: Számlázz.hu Saját Kimenő Számlaképek Lehívása és NAV Párosítás](../../product/decisions/P-140-szamlazz-hu-outbound-invoice-image-sync-and-pairing.md)
+- [A-173: Kétirányú Számlalánc és Tranzakció Propagáció](./A-173-invoice-chain-transaction-propagation.md)
 - [A-119: Aggreg8 PSD2 Open Banking Integráció](./A-119-aggreg8-psd2-open-banking-integration.md)
 - [A-011: Mailgun Email Processing](./A-011-email-processing.md)
 - [A-012: NAV Integration](./A-012-nav-integration.md)

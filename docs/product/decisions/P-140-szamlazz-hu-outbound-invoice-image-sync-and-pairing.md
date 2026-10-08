@@ -3,7 +3,7 @@
 **Dátum:** 2026-09-29  
 **Státusz:** ✅ Elfogadva és Implementálva (Decided & Implemented)  
 **Érintett képernyők:** eaisyBooks Számlák (`/eaisybooks/client-invoices`), Visibill Számlák (`/invoices`), Főkönyvi kivonat (`/general-ledger`), ÁFA analitika (`/vat`), Számlakép előnézet (`InvoiceImageDialog`)  
-**Kapcsolódó döntések:** [P-010](./P-010-invoice-list.md), [P-031](./P-031-accounty-layout.md), [P-049](./P-049-nav-sync-dialog-ux.md), [P-120](./P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md)
+**Kapcsolódó döntések:** [P-010](./P-010-invoice-list.md), [P-017](./P-017-matching-display.md), [P-031](./P-031-accounty-layout.md), [P-049](./P-049-nav-sync-dialog-ux.md), [P-120](./P-120-general-ledger-invoice-document-preview-and-osa-fallback-ux.md), [A-173](../../architecture/decisions/A-173-invoice-chain-transaction-propagation.md)
 
 ---
 
@@ -28,7 +28,7 @@ A hazai kkv-k jelentős része (például a Think AI Kft.) a **Számlázz.hu** r
 ### 2.2. Automatikus Adatbázis Párosítás (Dual-Table Upsert)
 Hogy az összes létező komponens (Főkönyv, ÁFA, Számlák, `InvoiceImageDialog`, `ExpandedInvoiceRow`) azonnal és módosítás nélkül megjelenítse a számlaképet:
 1. Rekord jön létre az `invoice_uploads` táblában a tárolási útvonallal és metaadatokkal.
-2. Rekord jön létre / frissül az `invoices` táblában (`melleklet_url`, `statusz: 'feldolgozott'`, `nav_status: 'verified'`, `is_self_issued: true`).
+2. Rekord jön létre / frissül az `invoices` táblában (`melleklet_url`, `statusz: 'feldolgozott'`, `nav_status: 'verified'`, `is_self_issued: true`, valamint a `fizetesi_mod` átvétele a NAV bizonylat metaadatából, kiküszöbölve a felületi „Nem megadott” állapotot — lásd: [A-173](../../architecture/decisions/A-173-invoice-chain-transaction-propagation.md)).
 3. A `nav_invoices` rekord állapota frissül: `submitted = true`.
 
 ---

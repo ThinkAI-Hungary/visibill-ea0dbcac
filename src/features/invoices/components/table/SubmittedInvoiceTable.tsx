@@ -7,7 +7,8 @@ import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { TableEmptyState } from '@/components/ui/table-empty-state';
 import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
 import { StickyHorizontalScrollbar } from '@/components/ui/sticky-horizontal-scrollbar';
-import { ArrowUpDown, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
+import { ArrowUpDown, ChevronsUpDown, ChevronsDownUp, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { SubmittedInvoiceRow } from './SubmittedInvoiceRow';
@@ -152,7 +153,7 @@ export function SubmittedInvoiceTable({
                   </TableHead>
 
                   <TableHead
-                    className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap"
+                    className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap min-w-[130px]"
                     onClick={() => handleSort('bizonylatsorszam')}
                   >
                     <div className="flex items-center gap-1">
@@ -191,6 +192,26 @@ export function SubmittedInvoiceTable({
                     </div>
                   </TableHead>
 
+                  <TableHead className="font-semibold text-center whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-1">
+                      {t('common:labels.status', { defaultValue: 'Státusz' })}
+                      <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" align="end" sideOffset={8} className="max-w-[280px] whitespace-normal">
+                            <p className="text-xs font-normal normal-case tracking-normal leading-relaxed whitespace-normal">
+                              {t('invoices:table.status_tooltip', {
+                                defaultValue: 'A számla fizetési állapota automatikusan változik: „Kifizetve" lesz, ha a számlához tartozó tranzakció párosítva van.'
+                              })}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableHead>
+
                   <TableHead className="font-semibold text-center whitespace-nowrap text-emerald-600 dark:text-emerald-400">
                     {t('invoices:table.booked', { defaultValue: 'Kikontírozva' })}
                   </TableHead>
@@ -207,10 +228,10 @@ export function SubmittedInvoiceTable({
                 tabFetching && paginatedSubmittedInvoices.length > 0 && "opacity-60 pointer-events-none"
               )}>
                 {(loading || tabFetching) && paginatedSubmittedInvoices.length === 0 ? (
-                  <TableSkeleton rows={10} columns={13} />
+                  <TableSkeleton rows={10} columns={14} />
                 ) : paginatedSubmittedInvoices.length === 0 ? (
                   <TableEmptyState
-                    colSpan={13}
+                    colSpan={14}
                     title={
                       kpiFilter !== 'all'
                         ? t('invoices:table.no_matching_status', { defaultValue: 'Nincs ilyen státuszú számla ezen az oldalon' })
@@ -238,7 +259,7 @@ export function SubmittedInvoiceTable({
                 <TablePlaceholderRows
                   currentCount={paginatedSubmittedInvoices.length}
                   pageSize={submittedPageSize}
-                  columns={13}
+                  columns={14}
                 />
               </TableBody>
             </Table>

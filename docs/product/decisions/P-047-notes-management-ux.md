@@ -21,6 +21,12 @@ Az **osztott kétpaneles (Split-Pane)** elrendezést használjuk a fő Jegyzetek
    - A Számlák listáján a számlasor lenyitásakor egy dedikált `Kapcsolódó feljegyzések` szekció jelenik meg a tételek felett.
    - A lekérdezés figyelembe veszi a NAV és a beküldött számlák közötti párosítási kapcsolatokat is (ha a jegyzet a párosított pár bármelyik tagjához van csatolva, megjelenik a feljegyzés mindkét oldalon).
    - Ha nincs látható jegyzet, a rendszer egy letisztult default kártyát jelenít meg: *"Nincs kapcsolódó feljegyzés ehhez a számlához."*
+10. **Többszörös Csatolmány és TIG (Teljesítésigazolás) Feltöltés:**
+   - Bármely feljegyzéshez tetszőleges számú PDF dokumentum és képállomány (JPEG, PNG, WebP) csatolható (fájlonként legfeljebb 20 MB méretben).
+   - A fájlok feltöltése drag-and-drop módon vagy a fájlválasztó segítségével történik a `NoteAttachmentUploader` felületen, törlési lehetőséggel és előkészített várólistával.
+   - **TIG felismerés és vizuális kiemelés:** Amennyiben a fájl nevében szerepel a `tig` vagy `teljesites` kifejezés, a rendszer automatikusan zöld színű `TIG` jelvényt jelenít meg a melléklet mellett, jelezve a könyvelőnek a teljesítésigazolás meglétét.
+   - **Táblázati indikátor & Layout Shift Védelem:** A Számlák főlistáján (`NavInvoiceRow`, `SubmittedInvoiceRow`) a bizonylatszám mellett közvetlenül megjelenik a csatolmány badge (pl. `📎 2` vagy zöld `📎 1`). A felületen a badge számára egy fix szélességű (`30px`), dedikált slot van fenntartva (`reserveSpace = true`). Így a csatolmány nélküli sorok is pontosan ugyanakkora helyet tartanak fel láthatatlanul, elkerülve bármilyen ugrálást és tördelési elcsúszást (layout shift) a sorok és a környező figyelmeztető jelzések között, miközben az oszlopfejléc (`min-w-[130px]`) stabil szélességet biztosít.
+   - **Közvetlen előnézet:** A csatolt képek és PDF-ek a `FilePreviewModal` segítségével az alkalmazás elhagyása nélkül, beágyazva megtekinthetők, valamint letölthetők.
 
 **Current Implementation:**
 Korábban nem létezett jegyzetelési funkció és a hozzá kapcsolódó megerősítő vagy kereszt-lekérdező logikák sem a rendszerben.

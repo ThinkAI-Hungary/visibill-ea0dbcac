@@ -16,6 +16,7 @@
 **Érintett Komponensek és Fájlok:**
 - [`supabase/migrations/20260928150000_invoice_chain_transaction_propagation.sql`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/supabase/migrations/20260928150000_invoice_chain_transaction_propagation.sql)
 - [`supabase/migrations/20260929110000_fix_invoice_chain_propagation_partner_match.sql`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/supabase/migrations/20260929110000_fix_invoice_chain_propagation_partner_match.sql)
+- [`supabase/migrations/20261008031500_sync_submitted_invoices_matching_and_triggers.sql`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/migrations/20261008031500_sync_submitted_invoices_matching_and_triggers.sql)
 - [`src/features/invoices/utils/invoiceRelations.ts`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/features/invoices/utils/invoiceRelations.ts)
 - [`src/features/invoices/components/table/NavInvoiceRow.tsx`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/features/invoices/components/table/NavInvoiceRow.tsx)
 - [`src/features/invoices/components/table/SubmittedInvoiceRow.tsx`](file:///c:/Users/adetw/.antigravity/visibill/visibill-709fffdf/src/features/invoices/components/table/SubmittedInvoiceRow.tsx)
@@ -128,6 +129,25 @@ A kezdeti implementációban (`20260928150000`) a LÁNC 1 és LÁNC 2 aggregáci
    `i.invoice_type IN ('dijbekero_proforma', 'dijbekero', 'elolegszamla', 'vegszamla')`.
 3. **Trigger Szinkronizáció:** Ugyanez a szigorú irányfüggő feltételrendszer került beépítésre a `match_nav_invoice_on_insert()` trigger eljárásba is, megakadályozva, hogy új NAV számla beérkezésekor egy másik cég előlegét kösse össze.
 
+### D-7: Kétirányú Beküldött Számla Szimmetria és Trigger Szinkronizáció (2026-10-08 — Migráció `20261008031500`)
+
+A korábbi implementációban a szerveroldali RPC-k és a triggerek között aszimmetria állt fenn:
+- A `get_filtered_nav_invoices` rendelkezett `sub_matches` CTE-vel, így a beküldött számlához rendelt tranzakció zöldre állította a NAV számlát.
+- Viszont a `get_filtered_submitted_invoices` nem tartalmazott `nav_matches` CTE-t: ha a banki tranzakció a NAV számlához lett közvetlenül vagy manuálisan párosítva, a beküldött számla `match_status = 'unmatched'` maradt, annak ellenére, hogy a lenyíló sor kliensoldali JavaScriptje összekötötte őket és zöld kártyaként jelenítette meg a NAV számlát és tranzakciót.
+- Továbbá a `mark_invoice_paid_on_multi_match` és `mark_nav_invoice_paid_on_transaction_match` triggerek NAV számla párosításakor nem frissítették az `invoices` tábla `fizetve` és `transaction_id` mezőit.
+
+**Architektúrális Megoldás:**
+1. **`nav_matches` CTE a `get_filtered_submitted_invoices` RPC-ben:**
+   - Normalizált bizonylatszám (`UPPER(TRIM(ni.invoice_number)) = UPPER(TRIM(b.bizonylatsorszam))`) és cégazonosító alapján aggregálja a NAV számlák fizetettségét és kapcsolódó tranzakcióit.
+   - A beküldött számla azonnal `matched` vagy `partially_paid` státuszt és valós kifizetett összeget kap.
+2. **Kétoldalú Triggerek (`mark_invoice_paid_on_multi_match`, `mark_nav_invoice_paid_on_transaction_match`):**
+   - Amikor egy `nav_invoices` rekord kiegyenlítésre kerül, a trigger automatikusan frissíti a kapcsolódó beküldött számlát:
+     `UPDATE invoices SET fizetve = v_is_full_paid, transaction_id = COALESCE(transaction_id, v_transaction_id) WHERE bizonylatsorszam = v_nav_invoice_number AND company_id = v_company_id`.
+3. **Szimmetrikus Törlés (`reset_paid_on_multi_match_delete`):**
+   - Ha egy NAV számláról eltávolítják a multi-match párosítást, a trigger a beküldött számlánál is visszaállítja a `fizetve = false` és `transaction_id = NULL` állapotot.
+4. **Kliensoldali Reaktív Híd (`SubmittedInvoiceRow.tsx`):**
+   - A komponens `navMatches` alapján ellenőrzi a kapcsolt NAV számla állapotát (`navMatches.some(n => n.paid || n.match_status === 'matched')`), és azonnal zöld kiemelést ad még hálózati query frissülési késés esetén is.
+
 ---
 
 ## 3. Következmények & Éles Eredmények
@@ -138,6 +158,7 @@ A kezdeti implementációban (`20260928150000`) a LÁNC 1 és LÁNC 2 aggregáci
   - *Financial Genie Kft.*: `D-THINK-127` ↔ `E-THINK-2026-75` (800 100 Ft, `paid = true`)
   - *HRT Spedition Kft.*: `D-THINK-126` ↔ `E-THINK-2026-73` (2 806 700 Ft, `paid = true`)
   - *Victoria Music Kft.*: `D007346` ↔ `047874` (18 002 Ft, `paid = true`)
+  - *Think AI Kft.*: `DR-2026-297` és `THINK-2026-51` számlaképei azonnal szinkronba kerültek a NAV kifizetéssel.
 - **Hamis Átkötések Megszűnése:** A `20260929110000` migráció leválasztotta a tévesen összekapcsolt bejövő szállítói számlákat (pl. *Szanyi Zoltánné `SZZJ-2026-3`* azonnal visszanyílt kifizetetlenné és készpénzben rendezhetővé vált).
 - **Nulla Manuális Utómunka:** Az újonnan beérkező NAV számlák a díjbekérő megléte esetén automatikusan feloldódnak, nem igényelnek könyvelői beavatkozást.
 - **Transzparens Auditálhatóság:** A `transaction_invoice_matches` tábla `created_by = 'chain_propagated'` értéke egyértelműen megkülönbözteti a közvetlen manuális/AI párosításokat a láncolatból származó örökölt tételektől.

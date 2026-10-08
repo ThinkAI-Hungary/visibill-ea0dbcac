@@ -292,7 +292,7 @@ Deno.serve(async (req) => {
             : 'sima_szla';
 
           // 3. Upsert invoices record
-          const existingInv = existingMap.get(invNum.trim().toLowerCase());
+            const existingInv = existingMap.get(invNum.trim().toLowerCase());
           if (existingInv) {
             const { error: invUpErr } = await serviceClient.from('invoices').update({
               melleklet_url: publicUrl,
@@ -300,6 +300,7 @@ Deno.serve(async (req) => {
               invoice_uploads_id: uploadRec?.id || existingInv.invoice_uploads_id,
               nav_status: 'verified',
               statusz: 'feldolgozott',
+              fizetesi_mod: candidate.payment_method || existingInv.fizetesi_mod || null,
               frissitve: new Date().toISOString(),
             }).eq('id', existingInv.id);
 
@@ -332,6 +333,7 @@ Deno.serve(async (req) => {
               afa_osszeg_osszesen: candidate.invoice_vat_amount ?? 0,
               penznem: candidate.currency || 'HUF',
               fizetve: candidate.paid || false,
+              fizetesi_mod: candidate.payment_method || null,
               forditott_adozas: Boolean(candidate.is_reverse_charge),
               reverse_charge_category: candidate.reverse_charge_category || null,
             });

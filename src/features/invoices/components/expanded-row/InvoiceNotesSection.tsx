@@ -23,7 +23,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { formatDateLocale } from '@/lib/locale/formatters';
 import { cn } from '@/lib/utils';
-import type { InvoiceNote, MatchedSubmittedInvoice, MatchedNavInvoice } from './types';
+import { useAuth } from '@/contexts/AuthContext';
+import { NoteAttachmentUploader } from '@/components/notes/NoteAttachmentUploader';
+import { NoteAttachmentList } from '@/components/notes/NoteAttachmentList';
+import {
+  uploadMultipleNoteAttachments,
+  deleteNoteAttachment,
+} from '@/lib/upload-note-attachment';
+import type {
+  InvoiceNote,
+  NoteAttachment,
+  MatchedSubmittedInvoice,
+  MatchedNavInvoice,
+} from './types';
 
 interface InvoiceNotesSectionProps {
   invoiceId?: string;
@@ -43,11 +55,13 @@ export function InvoiceNotesSection({
   matchedNavInvoices,
 }: InvoiceNotesSectionProps) {
   const { t } = useTranslation(['invoices', 'common']);
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showAddNote, setShowAddNote] = useState(false);
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const [newNoteText, setNewNoteText] = useState('');
   const [newNotePrivate, setNewNotePrivate] = useState(true);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
   const [addingNote, setAddingNote] = useState(false);
 
   const subIdsKey = useMemo(
@@ -59,7 +73,7 @@ export function InvoiceNotesSection({
     [matchedNavInvoices]
   );
 
-  // Fetch linked notes
+  // Fetch linked notes with attachments
   const { data: notes = [] } = useQuery<InvoiceNote[]>({
     queryKey: ['invoice-notes', invoiceId, subIdsKey, navIdsKey],
     queryFn: async () => {
@@ -75,7 +89,10 @@ export function InvoiceNotesSection({
 
       const { data, error } = await supabase
         .from('notes')
-        .select('*')
+        .select(`
+          *,
+          note_attachments (*)
+        `)
         .or(
           `invoice_id.in.(${allRelatedInvoiceIds.join(',')}),invoice_ids.ov.{${allRelatedInvoiceIds.join(',')}}`
         )
@@ -98,12 +115,34 @@ export function InvoiceNotesSection({
         return data.map((n) => ({
           ...n,
           profile_name: nameMap[n.user_id] || 'Ismeretlen',
+          note_attachments: (n.note_attachments as NoteAttachment[]) || [],
+          attachments: (n.note_attachments as NoteAttachment[]) || [],
         }));
       }
       return [];
     },
     enabled: !!invoiceId,
   });
+
+  const handleDeleteAttachment = async (attachment: NoteAttachment) => {
+    try {
+      await deleteNoteAttachment(attachment.id, attachment.file_path);
+      toast({
+        title: t('invoices:attachments.delete_success_title', 'Csatolmány törölve'),
+        description: t('invoices:attachments.delete_success_desc', 'A fájl sikeresen eltávolításra került.'),
+        duration: 3000,
+      });
+      queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-attachment-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    } catch (err: any) {
+      toast({
+        title: t('common:error', 'Hiba a törléskor'),
+        description: err.message || 'Nem sikerült törölni a csatolmányt.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,28 +164,42 @@ export function InvoiceNotesSection({
         finalInvoiceIds = [invoiceId];
       }
 
-      const { error } = await supabase.from('notes').insert({
-        company_id: companyId,
-        user_id: userId,
-        title: newNoteTitle.trim() || 'Számla feljegyzés',
-        content: newNoteText.trim(),
-        is_private: newNotePrivate,
-        invoice_id: finalInvoiceId,
-        invoice_ids: finalInvoiceIds,
-        transaction_id: transactionId || undefined,
-      });
+      const { data: insertedNote, error: insertError } = await supabase
+        .from('notes')
+        .insert({
+          company_id: companyId,
+          user_id: userId,
+          title: newNoteTitle.trim() || 'Számla feljegyzés',
+          content: newNoteText.trim(),
+          is_private: newNotePrivate,
+          invoice_id: finalInvoiceId,
+          invoice_ids: finalInvoiceIds,
+          transaction_id: transactionId || undefined,
+        })
+        .select('id')
+        .single();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
+
+      // Upload queued attachments if any
+      if (newFiles.length > 0 && insertedNote) {
+        await uploadMultipleNoteAttachments(newFiles, companyId, insertedNote.id);
+      }
+
       setNewNoteText('');
       setNewNoteTitle('');
       setNewNotePrivate(true);
+      setNewFiles([]);
       toast({
         title: 'Sikeres mentés',
-        description: 'Új jegyzet sikeresen rögzítve.',
+        description: newFiles.length > 0
+          ? `Új jegyzet és ${newFiles.length} db csatolmány sikeresen rögzítve.`
+          : 'Új jegyzet sikeresen rögzítve.',
         duration: 3000,
       });
       queryClient.invalidateQueries({ queryKey: ['invoice-notes', invoiceId] });
       queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-attachment-counts'] });
       queryClient.invalidateQueries({ queryKey: ['notes'] });
       if (transactionId) {
         queryClient.invalidateQueries({ queryKey: ['transaction-notes', transactionId] });
@@ -154,7 +207,7 @@ export function InvoiceNotesSection({
     } catch (err: any) {
       toast({
         title: 'Hiba',
-        description: err.message || 'Nem sikerült elmenteni a jegyzetet.',
+        description: err.message || 'Nem sikerült elmenteni a jegyzetet vagy a csatolmányokat.',
         variant: 'destructive',
       });
     } finally {
@@ -204,10 +257,15 @@ export function InvoiceNotesSection({
                   </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-3 space-y-1">
+              <CardContent className="p-3 space-y-2">
                 <p className="text-muted-foreground text-xs whitespace-pre-wrap leading-normal font-sans pl-0.5">
                   {note.content}
                 </p>
+                <NoteAttachmentList
+                  attachments={note.note_attachments || note.attachments || []}
+                  canDelete={note.user_id === user?.id}
+                  onDelete={handleDeleteAttachment}
+                />
                 <div className="text-[9px] text-muted-foreground/80 pl-0.5 pt-1">
                   {t('invoices:expanded.created_by', { name: note.profile_name, defaultValue: 'Rögzítette: {{name}}' })}
                 </div>
@@ -259,6 +317,7 @@ export function InvoiceNotesSection({
             setNewNoteTitle('');
             setNewNoteText('');
             setNewNotePrivate(true);
+            setNewFiles([]);
           }
           setShowAddNote(open);
         }}
@@ -282,7 +341,7 @@ export function InvoiceNotesSection({
                 {t('invoices:expanded.note_title_label', 'Jegyzet címe')}
               </span>
               <Input
-                placeholder={t('invoices:expanded.note_title_placeholder', 'pl. Határidő, Hiányzó papír...')}
+                placeholder={t('invoices:expanded.note_title_placeholder', 'pl. Határidő, TIG, Teljesítésigazolás...')}
                 value={newNoteTitle}
                 onChange={(e) => setNewNoteTitle(e.target.value)}
                 className="h-9 text-xs bg-background/30 border-border/50"
@@ -301,6 +360,19 @@ export function InvoiceNotesSection({
                 className="text-xs bg-background/30 border-border/50 resize-none min-h-[72px]"
               />
             </div>
+
+            {/* Note Attachment Uploader */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                {t('invoices:attachments.upload_label', 'Csatolmányok (PDF, Képek, TIG)')}
+              </span>
+              <NoteAttachmentUploader
+                files={newFiles}
+                onFilesChange={setNewFiles}
+                disabled={addingNote}
+              />
+            </div>
+
             <div className="space-y-1.5">
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                 {t('invoices:expanded.note_visibility_label', 'Láthatóság')}

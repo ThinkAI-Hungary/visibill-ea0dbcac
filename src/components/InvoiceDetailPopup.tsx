@@ -40,6 +40,11 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { checkBuyerTaxMismatch } from '@/lib/invoiceMatchingUtils';
 import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
 import { InvoiceGlAccountSelector } from '@/components/invoices/InvoiceGlAccountSelector';
+import { useAuth } from '@/contexts/AuthContext';
+import { NoteAttachmentUploader } from '@/components/notes/NoteAttachmentUploader';
+import { NoteAttachmentList } from '@/components/notes/NoteAttachmentList';
+import { uploadMultipleNoteAttachments, deleteNoteAttachment } from '@/lib/upload-note-attachment';
+import type { NoteAttachment } from '@/types/notes';
 
 interface InvoiceDetailPopupProps {
   open: boolean;
@@ -179,10 +184,12 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
   const [savingBizonylat, setSavingBizonylat] = useState(false);
 
   // Notes state
+  const { user } = useAuth();
   const [notes, setNotes] = useState<any[]>([]);
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const [newNoteText, setNewNoteText] = useState('');
   const [newNotePrivate, setNewNotePrivate] = useState(true);
+  const [newNoteFiles, setNewNoteFiles] = useState<File[]>([]);
   const [addingNote, setAddingNote] = useState(false);
 
   const handleSaveBizonylatsorszam = async () => {
@@ -239,6 +246,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
       setNewNoteTitle('');
       setNewNoteText('');
       setNewNotePrivate(true);
+      setNewNoteFiles([]);
     }
   }, [open, invoiceId]);
 
@@ -247,7 +255,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
     try {
       const { data, error } = await supabase
         .from('notes')
-        .select('*')
+        .select('*, note_attachments(*)')
         .or(`invoice_id.eq.${invoiceId},invoice_ids.cs.{${invoiceId}}`)
         .order('created_at', { ascending: false });
 
@@ -269,6 +277,8 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
           data.map((n) => ({
             ...n,
             profile_name: nameMap[n.user_id] || 'Ismeretlen',
+            note_attachments: (n.note_attachments as NoteAttachment[]) || [],
+            attachments: (n.note_attachments as NoteAttachment[]) || [],
           }))
         );
       } else {
@@ -276,6 +286,26 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
       }
     } catch (err) {
       console.error('Error fetching notes for invoice:', err);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachment: NoteAttachment) => {
+    try {
+      await deleteNoteAttachment(attachment.id, attachment.file_path);
+      toast({
+        title: 'Csatolmány törölve',
+        description: 'A fájl sikeresen eltávolításra került.',
+      });
+      fetchNotes();
+      queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-attachment-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a törléskor',
+        description: err.message || 'Nem sikerült törölni a csatolmányt.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -288,7 +318,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
       const userId = sessionData.session?.user?.id;
       if (!userId) throw new Error('Unauthenticated');
 
-      const { error } = await supabase
+      const { data: insertedNote, error } = await supabase
         .from('notes')
         .insert({
           company_id: invoice.company_id,
@@ -297,15 +327,24 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
           content: newNoteText.trim(),
           is_private: newNotePrivate,
           invoice_id: invoiceId,
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      if (newNoteFiles.length > 0 && insertedNote) {
+        await uploadMultipleNoteAttachments(newNoteFiles, invoice.company_id, insertedNote.id);
+      }
+
       setNewNoteText('');
       setNewNoteTitle('');
       setNewNotePrivate(true);
+      setNewNoteFiles([]);
       fetchNotes();
       queryClient.invalidateQueries({ queryKey: ['notes'] });
       queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-attachment-counts'] });
     } catch (err) {
       console.error('Error adding note:', err);
     } finally {
@@ -703,6 +742,11 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                             <p className="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap">
                               {note.content}
                             </p>
+                            <NoteAttachmentList
+                              attachments={note.note_attachments || note.attachments || []}
+                              canDelete={note.user_id === user?.id}
+                              onDelete={handleDeleteAttachment}
+                            />
                             <div className="text-[10px] text-muted-foreground/80 pt-0.5 border-t border-border/10">
                               {t('invoices:dialogs.detail.author', { name: note.profile_name })}
                             </div>
@@ -737,6 +781,13 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
                             {t('invoices:dialogs.detail.shared_note_checkbox')}
                           </label>
                         </div>
+                      </div>
+                      <div className="space-y-1">
+                        <NoteAttachmentUploader
+                          files={newNoteFiles}
+                          onFilesChange={setNewNoteFiles}
+                          disabled={addingNote}
+                        />
                       </div>
                       <div className="flex gap-1.5">
                         <Textarea

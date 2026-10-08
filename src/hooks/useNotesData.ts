@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Note } from '@/types/notes';
+import { uploadMultipleNoteAttachments } from '@/lib/upload-note-attachment';
+import type { Note, NoteAttachment } from '@/types/notes';
 
 export function useNotesData(companyId: string | undefined) {
   const queryClient = useQueryClient();
@@ -24,7 +25,8 @@ export function useNotesData(companyId: string | undefined) {
           transaction_id,
           transaction_ids,
           created_at,
-          updated_at
+          updated_at,
+          note_attachments (*)
         `)
         .eq('company_id', companyId)
         .order('created_at', { ascending: false });
@@ -257,6 +259,7 @@ export function useNotesData(companyId: string | undefined) {
       invoice_ids?: string[] | null;
       transaction_id?: string | null;
       transaction_ids?: string[] | null;
+      files?: File[];
     }) => {
       if (!companyId) throw new Error('Cég nincs kiválasztva');
 
@@ -281,10 +284,17 @@ export function useNotesData(companyId: string | undefined) {
         .single();
 
       if (error) throw error;
+
+      if (params.files && params.files.length > 0 && data) {
+        await uploadMultipleNoteAttachments(params.files, companyId, data.id);
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-attachment-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });
     },
   });
 
@@ -298,6 +308,7 @@ export function useNotesData(companyId: string | undefined) {
       invoice_ids?: string[] | null;
       transaction_id?: string | null;
       transaction_ids?: string[] | null;
+      files?: File[];
     }) => {
       const { data, error } = await supabase
         .from('notes')
@@ -316,10 +327,17 @@ export function useNotesData(companyId: string | undefined) {
         .single();
 
       if (error) throw error;
+
+      if (params.files && params.files.length > 0 && companyId) {
+        await uploadMultipleNoteAttachments(params.files, companyId, params.id);
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-attachment-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });
     },
   });
 
@@ -334,6 +352,8 @@ export function useNotesData(companyId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-attachment-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-notes'] });
     },
   });
 

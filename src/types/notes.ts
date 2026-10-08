@@ -33,4 +33,19 @@ export interface Note {
     currency: string;
     bank_name: string;
   }>;
+  note_attachments?: NoteAttachment[];
+  attachments?: NoteAttachment[];
 }
+
+export interface NoteAttachment {
+  id: string;
+  note_id: string;
+  company_id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  content_type: string;
+  created_at: string;
+  public_url?: string;
+}
+

@@ -170,7 +170,7 @@ export function NavInvoiceTable({
                   </TableHead>
 
                   <TableHead
-                    className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap min-w-[110px]"
+                    className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap min-w-[130px]"
                     onClick={() => handleSort('invoice_number')}
                   >
                     <div className="flex items-center gap-1">

@@ -1,8 +1,8 @@
 # 📄 Számlák
 
-> Számlafeldolgozás, feltöltések, tételmutató, backup táblák.
+> Számlafeldolgozás, feltöltések, tételmutató, backup táblák és feljegyzések (notes, csatolmányok).
 
-**Táblák ebben a csoportban:** 12
+**Táblák ebben a csoportban:** 14
 
 ---
 
@@ -404,5 +404,64 @@
 
 **RLS policies:**
 - ALL: `has_company_access_via_cache(company_id)`
+
+---
+
+### `notes`
+
+**RLS:** ✅ | **Sorok:** ~50
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| user_id | uuid | — | |
+| title | text | — | |
+| content | text | — | |
+| is_private | boolean | — | `true` |
+| invoice_id | uuid | ✓ | |
+| invoice_ids | uuid[] | ✓ | `'{}'::uuid[]` |
+| transaction_id | uuid | ✓ | |
+| transaction_ids | uuid[] | ✓ | `'{}'::uuid[]` |
+| created_at | timestamptz | — | `now()` |
+| updated_at | timestamptz | — | `now()` |
+
+**FK:** `company_id` → `companies.id` ON DELETE CASCADE, `user_id` → `auth.users.id`
+
+**Indexek:** `idx_notes_company_id`, `idx_notes_user_id`, `idx_notes_invoice_id`
+
+**RLS policies:**
+- SELECT: `(is_private = false AND has_company_access(company_id)) OR (is_private = true AND user_id = auth.uid())`
+- INSERT / UPDATE / DELETE: `(is_private = false AND has_company_access(company_id)) OR (user_id = auth.uid())`
+
+> **Architektúra Döntés:** Jegyzetek rendszer architektúra — lásd [A-037](../decisions/A-037-notes-architecture.md) és [P-047](../../product/decisions/P-047-notes-management-ux.md).
+
+---
+
+### `note_attachments`
+
+**RLS:** ✅ | **Sorok:** ~10
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| note_id | uuid | — | |
+| company_id | uuid | — | |
+| file_name | text | — | |
+| file_path | text | — | |
+| file_size | bigint | — | |
+| mime_type | text | — | |
+| public_url | text | — | |
+| created_at | timestamptz | — | `now()` |
+
+**FK:** `note_id` → `notes.id` ON DELETE CASCADE, `company_id` → `companies.id` ON DELETE CASCADE
+
+**Indexek:** `idx_note_attachments_note_id`, `idx_note_attachments_company_id`, `idx_note_attachments_created_at`
+
+**RLS policies:**
+- SELECT / INSERT / UPDATE / DELETE: `notes` szülő tábla láthatósága és `company_members` tagság alapján
+
+> **Architektúra Döntés (2026-10-08):** Számla megjegyzések és TIG állományok csatolása (PDF/képek), Storage bucket és relációs adatbázis — lásd [A-037](../decisions/A-037-notes-architecture.md) és [P-047](../../product/decisions/P-047-notes-management-ux.md).
+
 
 

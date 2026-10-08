@@ -23,6 +23,8 @@ import type { NavInvoice, SubmittedInvoice, TransactionRecord } from '../../type
 import { resolveLinkedInvoices, type SuggestedSubmittedInvoiceWithScore } from '../../utils/invoiceRelations';
 import type { LinkedInvoice } from '../expanded-row/types';
 import { supabase } from '@/integrations/supabase/client';
+import { useInvoiceAttachmentCounts } from '../../hooks/useInvoiceAttachmentCounts';
+import { InvoiceAttachmentBadge } from './InvoiceAttachmentBadge';
 
 interface NavInvoiceRowProps {
   invoice: NavInvoice;
@@ -162,6 +164,24 @@ function NavInvoiceRowComponent({
   const hasSzamlazzKey = hasSzamlazzKeyProp ?? Boolean(fallbackSzamlazzStatus?.hasAgentKey);
   const syncSzamlazz = useSyncSzamlazzOutbound(companyId);
   const [isDownloadingSingle, setIsDownloadingSingle] = useState(false);
+
+  const targetCompanyId = companyId || invoice.company_id || undefined;
+  const { data: attachmentCounts } = useInvoiceAttachmentCounts(targetCompanyId);
+  const { totalAttachmentCount, hasTig } = useMemo(() => {
+    if (!attachmentCounts) return { totalAttachmentCount: 0, hasTig: false };
+    const navInfo = attachmentCounts[invoice.id];
+    let count = navInfo?.count || 0;
+    let tig = navInfo?.hasTig || false;
+
+    for (const sub of submittedMatches) {
+      const subInfo = attachmentCounts[sub.id];
+      if (subInfo) {
+        count += subInfo.count;
+        if (subInfo.hasTig) tig = true;
+      }
+    }
+    return { totalAttachmentCount: count, hasTig: tig };
+  }, [attachmentCounts, invoice.id, submittedMatches]);
 
   const handleDownloadSingleSzamlazz = async (invoiceNumber: string) => {
     if (!hasSzamlazzKey) return;
@@ -343,10 +363,13 @@ function NavInvoiceRowComponent({
         </TableCell>
 
         <TableCell className="font-medium font-mono whitespace-nowrap">
-          <CopyableCell
-            value={invoice.invoice_number || '-'}
-            ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`}
-          />
+          <div className="flex items-center gap-1.5">
+            <CopyableCell
+              value={invoice.invoice_number || '-'}
+              ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`}
+            />
+            <InvoiceAttachmentBadge count={totalAttachmentCount} hasTig={hasTig} />
+          </div>
         </TableCell>
 
         <TableCell

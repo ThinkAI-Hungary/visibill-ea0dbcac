@@ -249,5 +249,44 @@ describe('Invoice Table Row Status Colors & Focus Highlighting', () => {
     expect(row.className).toContain('bg-[var(--row-unmatched-bg)]');
     expect(row.className).toContain('border-l-primary');
     expect(row.className).not.toContain('bg-primary/15');
+    expect(screen.getByText('Nyitott')).toBeInTheDocument();
+  });
+
+  it('renders Kifizetve status badge and matched background when SubmittedInvoiceRow has paid NAV counterpart', () => {
+    const subInvoice: SubmittedInvoice = {
+      id: 'sub-with-nav-1',
+      company_id: 'comp-1',
+      bizonylatsorszam: 'DR-2026-297',
+      kelt: '2026-08-01',
+      fizetesi_mod: 'Átutalás',
+      penznem: 'HUF',
+      brutto: 800100,
+      netto: 630000,
+      afa: 170100,
+      match_status: 'unmatched', // DB may say unmatched if unpropagated, but navMatches has paid NAV invoice
+    } as any;
+
+    const navMap = new Map();
+    navMap.set('DR-2026-297', [{
+      id: 'nav-dr-1',
+      invoice_number: 'DR-2026-297',
+      paid: true,
+      match_status: 'matched',
+    }]);
+
+    renderInTable(
+      <SubmittedInvoiceRow
+        invoice={subInvoice}
+        submittedToNavMap={navMap}
+        pageInvoiceIdToTransactionsMap={new Map()}
+        onRowClick={mockOnRowClick}
+        onToggleExclude={vi.fn()}
+      />
+    );
+
+    const row = screen.getByRole('row');
+    expect(row.className).toContain('bg-[var(--row-matched-bg)]');
+    expect(screen.getByText('Kifizetve')).toBeInTheDocument();
   });
 });
+

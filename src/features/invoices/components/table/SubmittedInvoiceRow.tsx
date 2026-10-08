@@ -20,6 +20,8 @@ import { resolveLinkedInvoices } from '../../utils/invoiceRelations';
 import type { SubmittedInvoice, NavInvoice, TransactionRecord } from '../../types';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
+import { useInvoiceAttachmentCounts } from '../../hooks/useInvoiceAttachmentCounts';
+import { InvoiceAttachmentBadge } from './InvoiceAttachmentBadge';
 
 interface SubmittedInvoiceRowProps {
   invoice: SubmittedInvoice;
@@ -86,7 +88,14 @@ export function SubmittedInvoiceRow({
   const isReviewed = isOptimisticReviewed !== null
     ? isOptimisticReviewed
     : invoice.is_accountant_reviewed === true;
-  const matchStatus = (invoice as any).match_status || 'unmatched';
+  const rawMatchStatus = (invoice as any).match_status || (invoice.fizetve ? 'matched' : 'unmatched');
+  const hasMatchedNav = navMatches.some(n => n.paid || (n as any).match_status === 'matched');
+  const hasPartialNav = navMatches.some(n => (n as any).match_status === 'partially_paid');
+  const matchStatus = (rawMatchStatus === 'unmatched' && hasMatchedNav)
+    ? 'matched'
+    : (rawMatchStatus === 'unmatched' && hasPartialNav)
+      ? 'partially_paid'
+      : rawMatchStatus;
   const isMatched = matchStatus === 'matched';
   const isPartiallyPaid = matchStatus === 'partially_paid';
   const isSuggested = matchStatus === 'suggested';
@@ -105,6 +114,24 @@ export function SubmittedInvoiceRow({
       }),
     [invoice, activeTab]
   );
+
+  const targetCompanyId = companyId || invoice.company_id || undefined;
+  const { data: attachmentCounts } = useInvoiceAttachmentCounts(targetCompanyId);
+  const { totalAttachmentCount, hasTig } = useMemo(() => {
+    if (!attachmentCounts) return { totalAttachmentCount: 0, hasTig: false };
+    const subInfo = attachmentCounts[invoice.id];
+    let count = subInfo?.count || 0;
+    let tig = subInfo?.hasTig || false;
+
+    for (const nav of navMatches) {
+      const navInfo = attachmentCounts[nav.id];
+      if (navInfo) {
+        count += navInfo.count;
+        if (navInfo.hasTig) tig = true;
+      }
+    }
+    return { totalAttachmentCount: count, hasTig: tig };
+  }, [attachmentCounts, invoice.id, navMatches]);
 
   const getSubmittedInvoiceMatches = (subInvoice: SubmittedInvoice) => {
     const matchedNav = subInvoice.bizonylatsorszam
@@ -238,6 +265,8 @@ export function SubmittedInvoiceRow({
               value={invoice.bizonylatsorszam || '-'}
               ariaLabel={`${invoice.bizonylatsorszam} bizonylatsorszám másolása`}
             />
+
+            <InvoiceAttachmentBadge count={totalAttachmentCount} hasTig={hasTig} />
 
             {/* Buyer mismatch warning badge */}
             {buyerMismatch.isMismatch && (
@@ -395,6 +424,45 @@ export function SubmittedInvoiceRow({
         </TableCell>
 
         <TableCell className="text-center">
+          <div className="flex items-center justify-center gap-1.5">
+            {isMatched ? (
+              <span className="inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-black/10 dark:border-white/10 bg-success/10 text-success">
+                {t('invoices:filters.paid', 'Kifizetve')}
+              </span>
+            ) : isPartiallyPaid ? (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-blue-500/30 bg-blue-500/15 text-blue-600 dark:text-blue-400 cursor-help">
+                      {t('invoices:filters.partial', 'Részben fizetve')}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs space-y-1">
+                    <p className="font-semibold text-blue-400">{t('invoices:filters.partial', 'Részben kifizetve')}</p>
+                    <p>
+                      {t('invoices:expanded.paid_label', 'Kifizetve:')}{' '}
+                      <span className="font-mono font-medium text-emerald-400">
+                        {formatCurrency(invoice.paid_amount || 0, invoice.penznem || defaultCurrency)}
+                      </span>
+                    </p>
+                    <p>
+                      {t('invoices:expanded.remaining_label', 'Fennmaradó:')}{' '}
+                      <span className="font-mono font-medium text-destructive">
+                        {formatCurrency(invoice.remaining_amount || 0, invoice.penznem || defaultCurrency)}
+                      </span>
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <span className="inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-black/10 dark:border-white/10 bg-destructive/10 text-destructive">
+                {t('invoices:filters.open', 'Nyitott')}
+              </span>
+            )}
+          </div>
+        </TableCell>
+
+        <TableCell className="text-center">
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -435,7 +503,7 @@ export function SubmittedInvoiceRow({
         <TableCell className="text-center">
           <div className="flex items-center justify-center gap-1.5">
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground border border-black/10 dark:border-white/10">
-              {getPaymentMethodLabel(invoice.fizetesi_mod)}
+              {getPaymentMethodLabel(invoice.fizetesi_mod || navMatches[0]?.payment_method || null)}
             </span>
             {invoice.exclude_from_accounting && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-300/40 whitespace-nowrap">

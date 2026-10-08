@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-10-07  
-> **Összesen:** 178 döntés (161 egyedi döntési fájl) | ✅ Decided: 174 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-10-08  
+> **Összesen:** 179 döntés (162 egyedi döntési fájl) | ✅ Decided: 175 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -39,6 +39,7 @@
 | P-015 | Tömeges műveletek (lebegő műveleti sáv, dual choice törlés, lapozási auto-recovery) | ✅ Decided | [P-015](./P-015-bulk-actions.md) |
 | P-045 | PDF Export UX & Banner viselkedés (auto-download, fallback, toast) | ✅ Decided | [P-045](./P-045-pdf-export-ux.md) |
 | P-046 | Pénztárbizonylatok feltöltési fül (vouchers tab + elkülönített upload) | ✅ Decided | [P-046](./P-046-penztarbizonylat-upload-ux.md) |
+| P-047 | Jegyzetek Kezelése, Csatolmányok és Layout-Shift Védelem UX | ✅ Decided | [P-047](./P-047-notes-management-ux.md) |
 | P-054 | Scalable Server-Side Invoice Pagination & KPI Card Filtering UX | ✅ Decided | [P-054](./P-054-server-side-invoice-pagination-and-kpi-filters-ux.md) |
 | P-057 | Számla Kezelő Moduláris Felület (Invoices Feature Slice) UX | ✅ Decided | [P-057](./P-057-invoices-feature-slice-ux.md) |
 | P-058 | Egységes Export & Dokumentumgeneráló Motor (DocumentEngine) UX | ✅ Decided | [P-058](./P-058-unified-document-engine-ux.md) |

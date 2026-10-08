@@ -77,6 +77,7 @@ export interface NavInvoice {
 
 export interface SubmittedInvoice {
   id: string;
+  company_id?: string | null;
   bizonylatsorszam: string | null;
   kibocsatas_datuma: string;
   teljesites_datuma: string | null;
@@ -96,6 +97,7 @@ export interface SubmittedInvoice {
   invoice_direction: string | null;
   reference_number: string | null;
   fizetesi_mod: string | null;
+  fizetve?: boolean | null;
   invoice_type: string | null;
   exclude_from_accounting?: boolean;
   elolegszamla_hivatkozas?: string | null;
