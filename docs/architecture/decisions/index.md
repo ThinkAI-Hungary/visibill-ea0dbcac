@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-08  
-> **Összesen:** 228 döntés (210 egyedi döntési fájl) | ✅ Decided: 226 | ⛔ Superseded: 2
+> **Összesen:** 229 döntés (211 egyedi döntési fájl) | ✅ Decided: 227 | ⛔ Superseded: 2
 
 
 ---
@@ -146,6 +146,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-173 | Számlalánc Tranzakció-örökítés, Irányfüggő Partnerillesztés és PostgreSQL Propagáció | ✅ Decided | [A-173](./A-173-invoice-chain-transaction-propagation.md) |
 | A-179 | Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra | ✅ Decided | [A-179](./A-179-aggreg8-psd2-cross-import-deduplication.md) |
 | A-182 | Részfizetés és Jutaléklevonás Számlapárosítás és Deduplikációs Architektúra | ✅ Decided | [A-182](./A-182-partial-payment-matching-and-transaction-deduplication.md) |
+| A-233 | Kézi Készpénzes Számlarendezések Automatikus Házipénztár Integrációja és GLS Kompenzációs Normalizálás | ✅ Decided | [A-233](./A-233-transfers-manual-cash-settlement-to-petty-cash-and-gls-compensation-normalization.md) |
 
 ## 🖥️ Frontend
 
