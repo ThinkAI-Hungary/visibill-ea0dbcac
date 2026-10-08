@@ -856,7 +856,7 @@ export default function AddManualJournalEntryModal({
                                 className="w-[450px] max-w-[85vw] p-0 z-[1200]" 
                                 align="start"
                                 onWheel={(e) => e.stopPropagation()}
-                                touchAction="none"
+                                style={{ touchAction: 'none' }}
                               >
                                 <Command shouldFilter={false}>
                                   <CommandInput

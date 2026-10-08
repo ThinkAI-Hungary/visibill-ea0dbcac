@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Printer, UserCheck, AlertTriangle, CheckCircle2, FileText, ArrowRightLeft, ArrowLeft, Coins } from 'lucide-react';
+import { Search, Printer, UserCheck, AlertTriangle, CheckCircle2, FileText, ArrowRightLeft, ArrowLeft, Coins, AlertCircle, RefreshCw } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { formatNumberLocale } from '@/lib/locale/formatters';
 import { generateBalanceConfirmationPdf, BalanceConfirmationPdfData } from '@/lib/ledgerCardPdfs';
@@ -52,40 +52,69 @@ export function PartnerLedgerCardView({
   });
 
   // ── Query Partner Card Data ──
-  const { data: partnerCardData, isLoading } = useQuery({
+  const { data: partnerCardData, isLoading, isError, refetch } = useQuery({
     queryKey: ['partnerLedgerCardData', companyId, selectedPartnerId, dateFrom, dateTo],
     queryFn: async () => {
       if (!companyId) return { partnersSummary: [], invoices: [], openTotal: 0, aging: { c: 0, d30: 0, d60: 0, d90: 0 } };
 
       // 1. Query journal headers & lines for partner accounts (311x & 454x)
-      let query = supabase
-        .from('acc_journal_lines')
-        .select(`
-          id,
-          dc_type,
-          amount,
-          foreign_amount,
-          header:acc_journal_headers!inner(
+      // Paginated fetch to safely support companies with >1000 partner ledger lines
+      const PAGE_SIZE = 1000;
+      let allLines: any[] = [];
+      let page = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        let query = supabase
+          .from('acc_journal_lines')
+          .select(`
             id,
-            company_id,
-            posting_date,
-            document_date,
-            document_id,
-            description,
-            currency,
-            partner_id,
-            partner:partners(id, name, tax_number, address)
-          ),
-          gl_account:gl_accounts!inner(gl_number)
-        `)
-        .eq('header.company_id', companyId);
+            dc_type,
+            amount,
+            foreign_amount,
+            header:acc_journal_headers!inner(
+              id,
+              company_id,
+              posting_date,
+              document_date,
+              due_date,
+              document_id,
+              description,
+              currency,
+              status,
+              partner_id,
+              partner:partners(id, name, tax_number, address)
+            ),
+            gl_account:gl_accounts!inner(gl_number)
+          `)
+          .eq('header.company_id', companyId)
+          .in('header.status', ['KONYVELT', 'SZTORNOZOTT']);
 
-      if (selectedPartnerId !== 'all') {
-        query = query.eq('header.partner_id', selectedPartnerId);
+        if (dateFrom) {
+          query = query.gte('header.posting_date', dateFrom);
+        }
+        if (dateTo) {
+          query = query.lte('header.posting_date', dateTo);
+        }
+
+        if (selectedPartnerId !== 'all') {
+          query = query.eq('header.partner_id', selectedPartnerId);
+        }
+
+        const { data: lines, error } = await query.range(from, to);
+        if (error) throw error;
+
+        if (lines && lines.length > 0) {
+          allLines = allLines.concat(lines);
+          hasMore = lines.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+        page++;
       }
-
-      const { data: lines, error } = await query;
-      if (error) throw error;
 
       // Group by partner and calculate invoice/payment netting
       const partnerMap: Record<string, {
@@ -100,7 +129,7 @@ export function PartnerLedgerCardView({
         invoices: any[];
       }> = {};
 
-      (lines || []).forEach((line: any) => {
+      (allLines || []).forEach((line: any) => {
         const pId = line.header?.partner?.id || 'unassigned';
         const pName = line.header?.partner?.name || 'Nincs partner';
         const pTax = line.header?.partner?.tax_number || '';
@@ -165,7 +194,7 @@ export function PartnerLedgerCardView({
           header_id: line.header?.id,
           document_id: line.header?.document_id,
           issue_date: line.header?.posting_date,
-          due_date: line.header?.document_date || line.header?.posting_date,
+          due_date: line.header?.due_date || line.header?.document_date || line.header?.posting_date,
           amount: amt,
           foreign_amount: line.foreign_amount != null ? Number(line.foreign_amount) : null,
           currency: curr,
@@ -176,6 +205,11 @@ export function PartnerLedgerCardView({
       });
 
       const summaryList = Object.values(partnerMap);
+
+      // True aging based on due_date against dateTo reference date
+      const refDateStr = dateTo || new Date().toISOString().substring(0, 10);
+      const refTime = new Date(refDateStr).getTime();
+
       let grandOpenTotal = 0;
       let ageCurrent = 0;
       let age30 = 0;
@@ -185,10 +219,41 @@ export function PartnerLedgerCardView({
       summaryList.forEach(p => {
         if (p.open_net > 0) {
           grandOpenTotal += p.open_net;
-          ageCurrent += p.open_net * 0.4;
-          age30 += p.open_net * 0.3;
-          age60 += p.open_net * 0.2;
-          age90 += p.open_net * 0.1;
+
+          const claims = p.invoices
+            .filter(inv => {
+              const isCust = (inv.gl_number || '').replace(/\./g, '').startsWith('31');
+              return isCust ? inv.dc_type === 'T' : inv.dc_type === 'K';
+            })
+            .sort((a, b) => (a.due_date || '').localeCompare(b.due_date || ''));
+
+          let remainingNet = p.open_net;
+
+          if (claims.length > 0) {
+            for (const claim of claims) {
+              if (remainingNet <= 0) break;
+              const allocated = Math.min(claim.amount, remainingNet);
+              remainingNet -= allocated;
+
+              const dDate = claim.due_date ? new Date(claim.due_date).getTime() : refTime;
+              const diffDays = Math.floor((refTime - dDate) / (1000 * 60 * 60 * 24));
+
+              if (diffDays <= 0) {
+                ageCurrent += allocated;
+              } else if (diffDays <= 30) {
+                age30 += allocated;
+              } else if (diffDays <= 60) {
+                age60 += allocated;
+              } else {
+                age90 += allocated;
+              }
+            }
+            if (remainingNet > 0) {
+              ageCurrent += remainingNet;
+            }
+          } else {
+            ageCurrent += p.open_net;
+          }
         }
       });
 
@@ -365,6 +430,20 @@ export function PartnerLedgerCardView({
             <div className="p-6 space-y-3">
               <Skeleton className="h-8 w-full" />
               <Skeleton className="h-8 w-full" />
+            </div>
+          ) : isError ? (
+            <div className="py-12 text-center text-destructive space-y-3">
+              <AlertCircle className="w-8 h-8 text-destructive/80 mx-auto" />
+              <p className="text-sm font-medium">Hiba történt a partner folyószámla adatok betöltésekor.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                className="gap-1.5 text-xs border-destructive/30 hover:bg-destructive/10 cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Újratöltés
+              </Button>
             </div>
           ) : !partnerCardData?.partnersSummary.length ? (
             <div className="py-12 text-center text-muted-foreground text-sm italic">

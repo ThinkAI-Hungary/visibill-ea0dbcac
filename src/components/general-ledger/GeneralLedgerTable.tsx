@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { getLocalizedGlAccountName, getLocalizedGlItemType, getLocalizedGlItemDescription } from '@/lib/glUtils';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
-import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, FileSearch, Search, ArrowRightLeft, Trash2, AlertTriangle, Settings2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, FileSearch, Search, ArrowRightLeft, Trash2, AlertTriangle, AlertCircle, Settings2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { EditGlAccountModal } from '@/components/general-ledger/EditGlAccountModal';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
@@ -103,6 +103,7 @@ interface LedgerItem {
   directItemCount?: number;
   glAccountId?: string | null;
   isLoadingRow?: boolean;
+  isErrorRow?: boolean;
   isLoadMoreRow?: boolean;
   targetCid?: string;
   isLoadingMore?: boolean;
@@ -416,7 +417,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const { data: exchangeRates } = useExchangeRates();
 
   // Fetch real data for the preset and company using the new RPC (paginated)
-  const { data: dbData, isLoading, isFetching, refetch: refetchBalances } = useQuery({
+  const { data: dbData, isLoading, isFetching, isError: isBalancesError, refetch: refetchBalances } = useQuery({
     queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!presetId || !selectedCompany?.id) return [];
@@ -433,7 +434,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         });
       } catch (error: any) {
         reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching GL balances:', error });
-        return [];
+        throw error;
       }
     },
     enabled: !!presetId && !!selectedCompany?.id && !!exchangeRates,
@@ -442,7 +443,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   });
 
   // Batch categorized items query for 'teteles' mode (prevents N+1 on-demand fetches)
-  const { data: batchCategorizedItems, isLoading: isBatchItemsLoading } = useQuery({
+  const { data: batchCategorizedItems, isLoading: isBatchItemsLoading, isError: isBatchItemsError, refetch: refetchBatchItems } = useQuery({
     queryKey: ['glCategorizedItems', presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!presetId || !selectedCompany?.id) return [];
@@ -459,7 +460,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         return await enrichGlItemsWithInvoiceMeta(raw);
       } catch (error: any) {
         reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching categorized GL items:', error });
-        return [];
+        throw error;
       }
     },
     enabled: viewGranularity === 'teteles' && !!presetId && !!selectedCompany?.id,
@@ -558,6 +559,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const [loadedRawAccountItems, setLoadedRawAccountItems] = useState<Map<string, LedgerItem[]>>(new Map());
   const [loadingAccountCids, setLoadingAccountCids] = useState<Set<string>>(new Set());
   const loadingAccountCidsRef = useRef<Set<string>>(new Set());
+  const [failedAccountCids, setFailedAccountCids] = useState<Set<string>>(new Set());
   const [hasMoreAccountCids, setHasMoreAccountCids] = useState<Set<string>>(new Set());
   const [loadingMoreAccountCids, setLoadingMoreAccountCids] = useState<Set<string>>(new Set());
   const loadingMoreAccountCidsRef = useRef<Set<string>>(new Set());
@@ -577,6 +579,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     loadingMoreAccountCidsRef.current.clear();
     setLoadedRawAccountItems(new Map());
     setLoadingAccountCids(new Set());
+    setFailedAccountCids(new Set());
     setHasMoreAccountCids(new Set());
     setLoadingMoreAccountCids(new Set());
   }, [presetId, selectedCompany?.id, dateFrom, dateTo, dateBasis, postingStatus]);
@@ -588,7 +591,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const [renderedFilterKey, setRenderedFilterKey] = useState(currentFilterKey);
 
   const isFilterChanging = currentFilterKey !== renderedFilterKey;
-  const isDataLoading = isLoading || (viewGranularity === 'teteles' && isBatchItemsLoading && !batchCategorizedItems) || isFilterChanging || !presetId || !dbData;
+  const isDataLoading = !isBalancesError && !isBatchItemsError && (isLoading || (viewGranularity === 'teteles' && isBatchItemsLoading && !batchCategorizedItems) || isFilterChanging || !presetId || !dbData);
 
   useEffect(() => {
     if (isFilterChanging && !isFetching && !isBatchItemsLoading) {
@@ -748,13 +751,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const activeImportId = importData?.[0]?.id;
       if (!activeImportId) return [];
 
-      // Fetch entries for this account and import
+      // Fetch entries for this account and import (bounded up to 2000 to prevent silent truncation)
       const { data, error } = await supabase
         .from('gl_journal_entries')
         .select('*')
         .eq('import_id', activeImportId)
         .or(`debit_account.eq.${selectedLeafAccount.code},credit_account.eq.${selectedLeafAccount.code}`)
-        .order('voucher_date', { ascending: false });
+        .order('voucher_date', { ascending: false })
+        .limit(2000);
 
       if (error) throw error;
       return data || [];
@@ -765,7 +769,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const handleRefetchAll = () => {
     loadingAccountCidsRef.current.clear();
     loadingMoreAccountCidsRef.current.clear();
+    setFailedAccountCids(new Set());
     refetchBalances();
+    if (viewGranularity === 'teteles') {
+      refetchBatchItems();
+    }
     setLoadedRawAccountItems(new Map());
   };
 
@@ -1212,6 +1220,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               depth: itemDepth,
               isRoot: false
             });
+          } else if (!isTetelesMode && failedAccountCids.has(node.cid)) {
+            combinedData.push({
+              id: `error_${node.cid}`,
+              name: t('accounting:general_ledger.error_loading_items', 'Nem sikerült betölteni a tételeket'),
+              balance: 0,
+              hasChildren: false,
+              cid: `${node.cid}_error`,
+              isItem: true,
+              isErrorRow: true,
+              targetCid: node.cid,
+              ancestorIds: itemAncestors,
+              depth: itemDepth,
+              isRoot: false
+            });
           } else {
             let directItems = (isTetelesMode && batchItemsByGL)
               ? (batchItemsByGL.get(node.cid) || [])
@@ -1334,21 +1356,30 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return combinedData;
     }
     return [];
-  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, hideZeroBalances, normalizeText, t, isCroatia, viewGranularity, batchItemsByGL, isBatchItemsLoading, accountsMetaById, accountsMetaByNumber]);
+  }, [dbData, loadedAccountItems, loadingAccountCids, failedAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, hideZeroBalances, normalizeText, t, isCroatia, viewGranularity, batchItemsByGL, isBatchItemsLoading, accountsMetaById, accountsMetaByNumber]);
 
   const orphanItem = dbData?.find(d => d.gl_number === 'UNCLASSIFIED');
   const orphanCount = orphanItem ? Number(orphanItem.item_count || 0) : 0;
 
   // Separate list of excluded items for the "Nem könyvelt" section
   const { data: excludedItems = [] } = useQuery({
-    queryKey: ['glExcludedItems', selectedCompany?.id],
+    queryKey: ['glExcludedItems', selectedCompany?.id, dateFrom, dateTo],
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from('invoices')
         .select('id, bizonylatsorszam, elado_nev, vevo_nev, brutto_vegosszeg, kibocsatas_datuma, invoice_type')
         .eq('company_id', selectedCompany.id)
         .eq('exclude_from_accounting', true);
+
+      if (dateFrom) {
+        query = query.gte('kibocsatas_datuma', dateFrom);
+      }
+      if (dateTo) {
+        query = query.lte('kibocsatas_datuma', dateTo);
+      }
+
+      const { data, error } = await query.limit(1000);
 
       if (error || !data) return [];
       return data.map(item => {
@@ -1678,6 +1709,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     const requestFilterKey = activeFilterKeyRef.current;
     loadingAccountCidsRef.current.add(targetCid);
     setLoadingAccountCids(prev => new Set(prev).add(targetCid));
+    setFailedAccountCids(prev => {
+      if (!prev.has(targetCid)) return prev;
+      const next = new Set(prev);
+      next.delete(targetCid);
+      return next;
+    });
     try {
       const cleanId = cleanIdVal;
       const glAccountId = targetCid === 'UNCLASSIFIED'
@@ -1762,6 +1799,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       }
     } catch (error) {
       reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching account items:', error });
+      setFailedAccountCids(prev => new Set(prev).add(targetCid));
     } finally {
       loadingAccountCidsRef.current.delete(targetCid);
       setLoadingAccountCids(prev => {
@@ -2292,7 +2330,49 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
               {/* Body */}
               <div className="flex-1 divide-y divide-border/30">
-                {processedRows.length === 0 ? (
+                {isBalancesError ? (
+                  <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+                    <AlertCircle className="w-10 h-10 text-destructive opacity-80" />
+                    <div className="max-w-md">
+                      <p className="text-base font-semibold text-foreground">
+                        {t('accounting:general_ledger.errors.balances_title', 'Nem sikerült betölteni a főkönyvi egyenlegeket')}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t('accounting:general_ledger.errors.balances_desc', 'Hiba történt a főkönyvi egyenlegek lekérése során. Kérjük, próbálja újra.')}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRefetchAll}
+                      className="mt-2 gap-2 border-destructive/30 hover:bg-destructive/10 text-destructive"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      {t('accounting:general_ledger.tooltips.refresh', 'Újratöltés')}
+                    </Button>
+                  </div>
+                ) : isBatchItemsError && viewGranularity === 'teteles' ? (
+                  <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+                    <AlertCircle className="w-10 h-10 text-destructive opacity-80" />
+                    <div className="max-w-md">
+                      <p className="text-base font-semibold text-foreground">
+                        {t('accounting:general_ledger.errors.items_title', 'Nem sikerült betölteni a tételes főkönyvi adatokat')}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t('accounting:general_ledger.errors.items_desc', 'Hiba történt a tételek csoportos lekérése során. Kérjük, próbálja újra.')}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetchBatchItems()}
+                      className="mt-2 gap-2 border-destructive/30 hover:bg-destructive/10 text-destructive"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      {t('accounting:general_ledger.tooltips.refresh', 'Újratöltés')}
+                    </Button>
+                  </div>
+                ) : processedRows.length === 0 ? (
                    searchQuery.trim() ? (
                      <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
                        <Search className="w-8 h-8 opacity-40 text-muted-foreground" />
@@ -2341,6 +2421,52 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           <span className="text-xs text-muted-foreground italic flex items-center gap-2">
                             {row.name}
                           </span>
+                        </div>
+                        {viewLayout === 'classic' ? (
+                          <>
+                            <div className="p-3" />
+                            <div className="p-3" />
+                            <div className="p-3" />
+                            <div className="p-3" />
+                          </>
+                        ) : (
+                          <div className="col-span-2 p-3 flex justify-end items-center" />
+                        )}
+                      </div>
+                    );
+                  }
+
+                  if (row.isErrorRow && row.targetCid) {
+                    return (
+                      <div
+                        key={row.rowKey || row.id}
+                        className={cn(
+                          "grid divide-x divide-border/10 bg-destructive/5 items-center",
+                          gridColsClass,
+                          hiddenClass
+                        )}
+                      >
+                        <div className={cn(viewLayout === 'classic' ? "p-3" : "col-span-2 p-3", "flex items-center justify-center")}>
+                          <AlertCircle className="w-4 h-4 text-destructive" />
+                        </div>
+                        <div className={cn(viewLayout === 'classic' ? "py-3 pr-3" : "col-span-8 py-3 pr-3", "text-sm flex items-center justify-between gap-2")} style={{ paddingLeft: indentPadding }}>
+                          <span className="text-xs text-destructive font-medium flex items-center gap-1.5">
+                            {row.name}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-xs px-2 border-destructive/30 hover:bg-destructive/10 text-destructive gap-1 print:hidden"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (row.targetCid) {
+                                fetchAccountItemsOnDemand(row.targetCid);
+                              }
+                            }}
+                          >
+                            <RefreshCw className="w-3 h-3" />
+                            Újrapróbálkozás
+                          </Button>
                         </div>
                         {viewLayout === 'classic' ? (
                           <>

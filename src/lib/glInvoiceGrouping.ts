@@ -70,12 +70,12 @@ export async function enrichGlItemsWithInvoiceMeta(
     return res;
   };
 
-  const queries: Promise<void>[] = [];
+  const tasks: (() => Promise<void>)[] = [];
 
   // 1. Invoices items
   if (uncachedInvoiceItemIds.length > 0) {
     for (const batch of chunk(uncachedInvoiceItemIds)) {
-      queries.push((async () => {
+      tasks.push(async () => {
         try {
           const { data } = await supabase
             .from('invoice_items')
@@ -93,14 +93,14 @@ export async function enrichGlItemsWithInvoiceMeta(
         } catch (e) {
           console.warn('Error fetching invoice_items metadata:', e);
         }
-      })());
+      });
     }
   }
 
   // 2. NAV Invoices items
   if (uncachedNavItemIds.length > 0) {
     for (const batch of chunk(uncachedNavItemIds)) {
-      queries.push((async () => {
+      tasks.push(async () => {
         try {
           const { data } = await supabase
             .from('nav_invoice_items')
@@ -118,14 +118,14 @@ export async function enrichGlItemsWithInvoiceMeta(
         } catch (e) {
           console.warn('Error fetching nav_invoice_items metadata:', e);
         }
-      })());
+      });
     }
   }
 
   // 3. Accounting journal lines
   if (uncachedAccLineIds.length > 0) {
     for (const batch of chunk(uncachedAccLineIds)) {
-      queries.push((async () => {
+      tasks.push(async () => {
         try {
           const { data } = await supabase
             .from('acc_journal_lines')
@@ -143,14 +143,14 @@ export async function enrichGlItemsWithInvoiceMeta(
         } catch (e) {
           console.warn('Error fetching acc_journal_lines metadata:', e);
         }
-      })());
+      });
     }
   }
 
   // 4. Invoices headers
   if (uncachedInvoiceHeaderIds.length > 0) {
     for (const batch of chunk(uncachedInvoiceHeaderIds)) {
-      queries.push((async () => {
+      tasks.push(async () => {
         try {
           const { data } = await supabase
             .from('invoices')
@@ -168,14 +168,14 @@ export async function enrichGlItemsWithInvoiceMeta(
         } catch (e) {
           console.warn('Error fetching invoices header metadata:', e);
         }
-      })());
+      });
     }
   }
 
   // 5. NAV Invoices headers
   if (uncachedNavInvoiceHeaderIds.length > 0) {
     for (const batch of chunk(uncachedNavInvoiceHeaderIds)) {
-      queries.push((async () => {
+      tasks.push(async () => {
         try {
           const { data } = await supabase
             .from('nav_invoices')
@@ -193,14 +193,14 @@ export async function enrichGlItemsWithInvoiceMeta(
         } catch (e) {
           console.warn('Error fetching nav_invoices header metadata:', e);
         }
-      })());
+      });
     }
   }
 
   // 6. XML Journal entries
   if (uncachedJournalEntryIds.length > 0) {
     for (const batch of chunk(uncachedJournalEntryIds)) {
-      queries.push((async () => {
+      tasks.push(async () => {
         try {
           const { data } = await supabase
             .from('gl_journal_entries')
@@ -218,14 +218,14 @@ export async function enrichGlItemsWithInvoiceMeta(
         } catch (e) {
           console.warn('Error fetching gl_journal_entries metadata:', e);
         }
-      })());
+      });
     }
   }
 
   // 7. Transactions with matched invoices
   if (uncachedTransactionIds.length > 0) {
     for (const batch of chunk(uncachedTransactionIds)) {
-      queries.push((async () => {
+      tasks.push(async () => {
         try {
           const { data } = await supabase
             .from('transactions')
@@ -264,12 +264,27 @@ export async function enrichGlItemsWithInvoiceMeta(
         } catch (e) {
           console.warn('Error fetching transaction invoice metadata:', e);
         }
-      })());
+      });
     }
   }
 
-  if (queries.length > 0) {
-    await Promise.all(queries);
+  // Execute batch tasks with a concurrency pool of max 4 concurrent requests
+  // Prevents TCP socket exhaustion and ERR_INSUFFICIENT_RESOURCES in browser
+  if (tasks.length > 0) {
+    const CONCURRENCY_LIMIT = 4;
+    let taskIndex = 0;
+    const workers = Array.from(
+      { length: Math.min(CONCURRENCY_LIMIT, tasks.length) },
+      async () => {
+        while (taskIndex < tasks.length) {
+          const nextTask = tasks[taskIndex++];
+          if (nextTask) {
+            await nextTask();
+          }
+        }
+      }
+    );
+    await Promise.all(workers);
   }
 
   // Assign metadata back to the items

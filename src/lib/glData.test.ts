@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset, fetchGlItemsForAccount } from './glData';
+import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchAllGlAccountsByPreset, fetchGlItemsForAccount, fetchGlItemsForAccounts } from './glData';
 
 import { supabase } from '@/integrations/supabase/client';
 
@@ -316,6 +316,40 @@ describe('glData pagination utilities', () => {
       expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', expect.objectContaining({
         p_limit: 100,
         p_offset: 0,
+      }));
+    });
+
+    it('passes p_gl_account_ids to RPC when glAccountIds array is provided', async () => {
+      (supabase.rpc as any).mockResolvedValue({ data: [{ item_id: 'i1' }], error: null });
+
+      const result = await fetchGlItemsForAccount({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        glAccountIds: ['acc-1', 'acc-2'],
+      });
+
+      expect(result).toHaveLength(1);
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', expect.objectContaining({
+        p_gl_account_id: null,
+        p_gl_account_ids: ['acc-1', 'acc-2'],
+      }));
+    });
+
+    it('fetchGlItemsForAccounts forwards array correctly via helper', async () => {
+      (supabase.rpc as any).mockResolvedValue({ data: [{ item_id: 'i2' }], error: null });
+
+      const result = await fetchGlItemsForAccounts({
+        companyId: 'company-1',
+        presetId: 'preset-1',
+        glAccountIds: ['acc-a', 'acc-b'],
+        limit: 50,
+      });
+
+      expect(result).toHaveLength(1);
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_categorized_items', expect.objectContaining({
+        p_gl_account_id: null,
+        p_gl_account_ids: ['acc-a', 'acc-b'],
+        p_limit: 50,
       }));
     });
   });

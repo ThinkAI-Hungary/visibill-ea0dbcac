@@ -4,6 +4,7 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   subledgerQueryKeys,
+  useSubledgerAccounts,
   useSubledgerItems,
   useSettleOpenItems,
   useAutoSettleSubledgerItems,
@@ -58,6 +59,50 @@ describe('useSubledger Hooks', () => {
         'all',
         'ALL_ACTIVE',
       ]);
+    });
+  });
+
+  describe('useSubledgerAccounts', () => {
+    it('queries gl_accounts with valid columns (excluding non-existent name column) and filters out group accounts', async () => {
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockOr = vi.fn().mockReturnThis();
+      const mockOrder = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockResolvedValue({
+        data: [
+          { id: '1', gl_number: '311', short_name: 'Vevők', account_type: 'detail', subledger_type: 'partner' },
+          { id: '2', gl_number: '31', short_name: 'Követelések', account_type: 'group', subledger_type: 'none' },
+          { id: '3', gl_number: '454', short_name: 'Szállítók', account_type: 'detail', subledger_type: 'partner' },
+        ],
+        error: null,
+      });
+
+      const mockFrom = vi.fn().mockReturnValue({
+        select: mockSelect,
+        or: mockOr,
+        order: mockOrder,
+        eq: mockEq,
+      });
+
+      (supabase.from as any) = mockFrom;
+
+      const { result } = renderHook(
+        () => useSubledgerAccounts('company-123'),
+        { wrapper: createWrapper() }
+      );
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(mockFrom).toHaveBeenCalledWith('gl_accounts');
+      expect(mockSelect).toHaveBeenCalledWith(
+        'id, gl_number, short_name, subledger_type, is_open_item_managed, account_type'
+      );
+      // Ensure 'name' is NOT selected as a standalone column
+      expect(mockSelect.mock.calls[0][0].split(',').map((s: string) => s.trim())).not.toContain('name');
+
+      // Group accounts filtered out
+      expect(result.current.data).toHaveLength(2);
+      expect(result.current.data?.[0].gl_number).toBe('311');
+      expect(result.current.data?.[1].gl_number).toBe('454');
     });
   });
 

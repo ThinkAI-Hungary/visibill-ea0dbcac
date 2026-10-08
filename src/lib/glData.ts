@@ -187,7 +187,8 @@ export async function fetchAllGlAccountsByPreset(presetId: string): Promise<GlAc
 export interface FetchGlItemsForAccountParams {
   companyId: string;
   presetId: string;
-  glAccountId: string | null;
+  glAccountId?: string | null;
+  glAccountIds?: string[] | null;
   dateFrom?: string | null;
   dateTo?: string | null;
   dateBasis?: GlDateBasis;
@@ -197,12 +198,19 @@ export interface FetchGlItemsForAccountParams {
   offset?: number;
 }
 
+export interface FetchGlItemsForAccountsParams extends Omit<FetchGlItemsForAccountParams, 'glAccountId'> {
+  glAccountIds: string[];
+}
+
 /**
- * Fetch GL categorized items for a single account (on-demand drilldown).
+ * Fetch GL categorized items for a single account or multiple accounts in batch (on-demand drilldown).
  * Runs in ~30-50ms instead of loading all items across the company.
  * Supports optional limit and offset for chunked / infinite-scroll loading.
  */
 export async function fetchGlItemsForAccount(params: FetchGlItemsForAccountParams): Promise<GlCategorizedItem[]> {
+  const accountId = params.glAccountId ?? (params.glAccountIds && params.glAccountIds.length > 0 ? null : '00000000-0000-0000-0000-000000000000');
+  const accountIdsPayload = params.glAccountIds && params.glAccountIds.length > 0 ? { p_gl_account_ids: params.glAccountIds } : {};
+
   // If an explicit limit is given, perform a single direct SQL query with p_limit and p_offset
   if (params.limit !== undefined && params.limit !== null) {
     const { data, error } = await (supabase.rpc as any)('get_gl_categorized_items', {
@@ -213,9 +221,10 @@ export async function fetchGlItemsForAccount(params: FetchGlItemsForAccountParam
       p_exchange_rates: (params.exchangeRates as Json) || {},
       p_date_basis: params.dateBasis || 'kibocsatas',
       p_posting_status: params.postingStatus === 'posted_only' ? 'POSTED_ONLY' : 'ALL',
-      p_gl_account_id: params.glAccountId || '00000000-0000-0000-0000-000000000000',
+      p_gl_account_id: accountId,
       p_limit: params.limit,
       p_offset: params.offset ?? 0,
+      ...accountIdsPayload,
     });
 
     if (error) throw error;
@@ -238,9 +247,10 @@ export async function fetchGlItemsForAccount(params: FetchGlItemsForAccountParam
       p_exchange_rates: (params.exchangeRates as Json) || {},
       p_date_basis: params.dateBasis || 'kibocsatas',
       p_posting_status: params.postingStatus === 'posted_only' ? 'POSTED_ONLY' : 'ALL',
-      p_gl_account_id: params.glAccountId || '00000000-0000-0000-0000-000000000000',
+      p_gl_account_id: accountId,
       p_limit: PAGE_SIZE,
       p_offset: offset,
+      ...accountIdsPayload,
     });
 
     if (error) throw error;
@@ -255,6 +265,18 @@ export async function fetchGlItemsForAccount(params: FetchGlItemsForAccountParam
   }
 
   return allItems;
+}
+
+/**
+ * Fetch GL categorized items for multiple accounts in a single batch query.
+ * Eliminates N+1 burst calls when expanding account trees or subledger views.
+ */
+export async function fetchGlItemsForAccounts(params: FetchGlItemsForAccountsParams): Promise<GlCategorizedItem[]> {
+  return fetchGlItemsForAccount({
+    ...params,
+    glAccountId: null,
+    glAccountIds: params.glAccountIds,
+  });
 }
 
 export interface GlSearchResult {

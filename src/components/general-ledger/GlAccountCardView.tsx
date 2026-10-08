@@ -195,34 +195,59 @@ export function GlAccountCardView({
         };
       }
 
-      // 2. Client-side fallback engine (Fully optimized column selection)
-      const { data: rawLines, error: linesErr } = await supabase
-        .from('acc_journal_lines')
-        .select(`
-          id,
-          dc_type,
-          amount,
-          foreign_amount,
-          description,
-          sequence_number,
-          gl_account:gl_accounts(id, gl_number, short_name),
-          header:acc_journal_headers!inner(
-            id,
-            company_id,
-            posting_date,
-            document_date,
-            document_id,
-            description,
-            status,
-            currency,
-            journal:acc_journals(code, name),
-            partner:partners(id, name, tax_number)
-          ),
-          project:projects(name)
-        `)
-        .eq('header.company_id', companyId);
+      // 2. Client-side fallback engine (with pushdown filters and pagination)
+      const dateCol = dateBasis === 'teljesites' ? 'document_date' : 'posting_date';
+      const PAGE_SIZE = 1000;
+      let rawLines: any[] = [];
+      let page = 0;
+      let hasMore = true;
 
-      if (linesErr) throw linesErr;
+      while (hasMore) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        let query = supabase
+          .from('acc_journal_lines')
+          .select(`
+            id,
+            dc_type,
+            amount,
+            foreign_amount,
+            description,
+            sequence_number,
+            gl_account:gl_accounts!inner(id, gl_number, short_name),
+            header:acc_journal_headers!inner(
+              id,
+              company_id,
+              posting_date,
+              document_date,
+              document_id,
+              description,
+              status,
+              currency,
+              journal:acc_journals(code, name),
+              partner:partners(id, name, tax_number)
+            ),
+            project:projects(name)
+          `)
+          .eq('header.company_id', companyId)
+          .lte(`header.${dateCol}`, dateTo);
+
+        if (postingStatus === 'posted_only') {
+          query = query.in('header.status', ['KONYVELT', 'SZTORNOZOTT']);
+        }
+
+        const { data: pageData, error: linesErr } = await query.range(from, to);
+        if (linesErr) throw linesErr;
+
+        if (pageData && pageData.length > 0) {
+          rawLines = rawLines.concat(pageData);
+          hasMore = pageData.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+        page++;
+      }
 
       // Filter lines matching G/L number prefix
       const filteredLines = (rawLines || []).filter((line: any) => {

@@ -111,7 +111,7 @@ export function useSubledgerAccounts(companyId?: string, presetId?: string) {
 
       let query = supabase
         .from('gl_accounts')
-        .select('id, gl_number, short_name, name, subledger_type, is_open_item_managed, account_type')
+        .select('id, gl_number, short_name, subledger_type, is_open_item_managed, account_type')
         .or('is_open_item_managed.eq.true,subledger_type.in.(partner,detail)')
         .order('gl_number', { ascending: true });
 

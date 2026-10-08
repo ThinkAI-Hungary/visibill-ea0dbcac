@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
-import { Loader2, TrendingUp, TrendingDown, Search, Download, BookOpen } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, Search, Download, BookOpen, AlertCircle, RefreshCw } from 'lucide-react';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
@@ -61,7 +61,7 @@ export function GeneralLedgerComparisonTable({
   }, [dateTo]);
 
   // Current year balances
-  const { data: currData = [], isLoading: currLoading } = useQuery({
+  const { data: currData = [], isLoading: currLoading, isError: isCurrError, refetch: refetchCurr } = useQuery({
     queryKey: ['glBalances', presetId, companyId, dateFrom, dateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!presetId || !companyId) return [];
@@ -79,7 +79,7 @@ export function GeneralLedgerComparisonTable({
   });
 
   // Previous year balances
-  const { data: prevData = [], isLoading: prevLoading } = useQuery({
+  const { data: prevData = [], isLoading: prevLoading, isError: isPrevError, refetch: refetchPrev } = useQuery({
     queryKey: ['glBalances', presetId, companyId, prevDateFrom, prevDateTo, dateBasis, postingStatus],
     queryFn: async () => {
       if (!presetId || !companyId || !prevDateFrom || !prevDateTo) return [];
@@ -97,6 +97,12 @@ export function GeneralLedgerComparisonTable({
   });
 
   const isLoading = currLoading || prevLoading;
+  const isError = isCurrError || isPrevError;
+
+  const handleRefetch = () => {
+    refetchCurr();
+    refetchPrev();
+  };
 
   const comparisonData = useMemo(() => {
     if (isLoading) return [];
@@ -304,6 +310,24 @@ export function GeneralLedgerComparisonTable({
                     <td className="p-3 text-center"><Skeleton className="h-5 w-10 mx-auto bg-muted/50 rounded" /></td>
                   </tr>
                 ))
+              ) : isError ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-destructive">
+                    <div className="flex flex-col items-center gap-3">
+                      <AlertCircle className="w-8 h-8 text-destructive/80" />
+                      <p className="text-sm font-medium">Hiba történt az összehasonlító adatok betöltésekor.</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefetch}
+                        className="gap-1.5 text-xs border-destructive/30 hover:bg-destructive/10 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        Újratöltés
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
               ) : paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-muted-foreground">

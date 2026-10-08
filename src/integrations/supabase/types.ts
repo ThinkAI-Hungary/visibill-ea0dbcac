@@ -7128,6 +7128,7 @@ export type Database = {
       }
       gl_accounts: {
         Row: {
+          account_type: string | null
           company_id: string | null
           created_at: string | null
           currency: string | null
@@ -7135,12 +7136,15 @@ export type Database = {
           gl_number: string
           id: string
           is_multicurrency: boolean
+          is_open_item_managed: boolean | null
           parent_id: string | null
           preset_id: string
           short_name: string
+          subledger_type: string | null
           updated_at: string | null
         }
         Insert: {
+          account_type?: string | null
           company_id?: string | null
           created_at?: string | null
           currency?: string | null
@@ -7148,12 +7152,15 @@ export type Database = {
           gl_number: string
           id?: string
           is_multicurrency?: boolean
+          is_open_item_managed?: boolean | null
           parent_id?: string | null
           preset_id: string
           short_name: string
+          subledger_type?: string | null
           updated_at?: string | null
         }
         Update: {
+          account_type?: string | null
           company_id?: string | null
           created_at?: string | null
           currency?: string | null
@@ -7161,9 +7168,11 @@ export type Database = {
           gl_number?: string
           id?: string
           is_multicurrency?: boolean
+          is_open_item_managed?: boolean | null
           parent_id?: string | null
           preset_id?: string
           short_name?: string
+          subledger_type?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -12590,6 +12599,7 @@ export type Database = {
           p_date_to?: string
           p_exchange_rates?: Json
           p_gl_account_id?: string
+          p_gl_account_ids?: string[]
           p_limit?: number
           p_offset?: number
           p_posting_status?: string

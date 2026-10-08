@@ -110,7 +110,12 @@ export default function SubledgerPage() {
   const unpostMutation = useUnpostSubledgerEntry();
 
   // Queries
-  const { data: accounts = [], isLoading: isLoadingAccounts } = useSubledgerAccounts(companyId, activePresetId);
+  const {
+    data: accounts = [],
+    isLoading: isLoadingAccounts,
+    isError: isErrorAccounts,
+    refetch: refetchAccounts,
+  } = useSubledgerAccounts(companyId, activePresetId);
 
   const { data: partners = [] } = useQuery({
     queryKey: ['partners', companyId],
@@ -121,7 +126,10 @@ export default function SubledgerPage() {
         .select('id, name, tax_number')
         .eq('company_id', companyId)
         .order('name', { ascending: true });
-      if (error) return [];
+      if (error) {
+        console.error('Error fetching partners:', error);
+        return [];
+      }
       return data || [];
     },
     enabled: !!companyId,
@@ -131,6 +139,7 @@ export default function SubledgerPage() {
   const {
     data: items = [],
     isLoading: isLoadingItems,
+    isError: isErrorItems,
     refetch: refetchItems,
   } = useSubledgerItems(
     companyId,
@@ -696,9 +705,9 @@ export default function SubledgerPage() {
               </div>
 
               {/* GL Account Selector */}
-              <div className="w-full sm:w-[210px]">
+              <div className="w-full sm:w-[210px] flex items-center gap-1.5">
                 <Select value={selectedGlAccountId} onValueChange={setSelectedGlAccountId}>
-                  <SelectTrigger className="text-xs">
+                  <SelectTrigger className="text-xs flex-1">
                     <SelectValue placeholder={t('accounting:subledger.filters.gl_placeholder', 'Főkönyvi számla...')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
@@ -717,6 +726,17 @@ export default function SubledgerPage() {
                     })}
                   </SelectContent>
                 </Select>
+                {isErrorAccounts && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => refetchAccounts()}
+                    className="h-8 w-8 text-destructive hover:bg-destructive/10 shrink-0"
+                    title="Számlatükör újratöltése"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </Button>
+                )}
               </div>
 
               {/* Partner Selector */}
@@ -915,6 +935,27 @@ export default function SubledgerPage() {
                   <td colSpan={13} className="py-12 text-center text-muted-foreground">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-600" />
                     {t('accounting:subledger.table.loading', 'Folyószámla adatok betöltése...')}
+                  </td>
+                </tr>
+              ) : isErrorItems ? (
+                <tr>
+                  <td colSpan={13} className="py-12 text-center text-muted-foreground space-y-3">
+                    <AlertCircle className="w-8 h-8 text-destructive mx-auto opacity-80" />
+                    <div className="text-sm font-semibold text-foreground">
+                      Nem sikerült betölteni a folyószámla tételeket
+                    </div>
+                    <div className="text-xs text-muted-foreground max-w-md mx-auto">
+                      Hiba történt a folyószámla tételek lekérése során. Kérjük, ellenőrizze a kapcsolatot vagy próbálja újra.
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetchItems()}
+                      className="gap-2 border-destructive/30 hover:bg-destructive/10 text-destructive mx-auto"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Újratöltés
+                    </Button>
                   </td>
                 </tr>
               ) : groupedInvoices.length === 0 ? (

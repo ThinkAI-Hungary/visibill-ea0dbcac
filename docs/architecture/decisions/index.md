@@ -265,6 +265,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-229 | Egységes Számlatükör Cégenként, Cégek Közötti Klónozás és Folyószámla Szabályrendszer (EB-0255) | ✅ Decided | [A-229](./A-229-eb0255-single-active-coa-and-subledger-enforcement.md) |
 | A-230 | Könyvelési Naplók Kategorizálása, Tételsori Partner Relációk és Banki Kétirányú Szinkronizáció (EB-0257) | ✅ Decided | [A-230](./A-230-journal-categorization-and-line-partners.md) |
 | A-231 | Cégprofil Számviteli Beállítások: Teljesítés Dátum, Összevont Főkönyvi Nézet és Devizaárfolyam Bankkatalógus (EB-0258) | ✅ Decided | [A-231](./A-231-company-accounting-settings-date-gl-view-fx-bank.md) |
+| A-232 | Főkönyvi Zero-as-Value Számviteli Elv, Multi-Account Kötegelt Lekérdezés, N+1 Throttling és Valós Esedékességi Partner Korosítás | ✅ Decided | [A-232](./A-232-gl-zero-as-value-multi-account-batching-and-partner-aging.md) |
 
 
 ## 💳 Fizetés
