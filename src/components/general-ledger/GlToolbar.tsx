@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { 
   Database, Settings2, Plus, BookOpen, FileUp, UploadCloud, 
   FileText, Bot, Loader2, Download, Eye, Printer, FileSpreadsheet, 
-  Table2, Layers, Filter, ChevronDown 
+  Table2, Layers, Filter, ChevronDown, Copy 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,7 @@ interface GlToolbarProps {
   onSelectPreset: (presetId: string) => void;
   onOpenManagePresets: () => void;
   onOpenUploadPreset: () => void;
+  onOpenCopyPreset?: () => void;
   onOpenAddAccount: () => void;
   onOpenManualEntry: () => void;
   onOpenUploadAuditXml: () => void;
@@ -50,6 +51,7 @@ export function GlToolbar({
   onSelectPreset,
   onOpenManagePresets,
   onOpenUploadPreset,
+  onOpenCopyPreset,
   onOpenAddAccount,
   onOpenManualEntry,
   onOpenUploadAuditXml,
@@ -122,7 +124,7 @@ export function GlToolbar({
               </Button>
             </DropdownMenuTrigger>
           </CustomTooltip>
-          <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuContent align="start" className="w-64">
             <DropdownMenuItem onClick={onOpenManagePresets} className="cursor-pointer gap-2 text-xs py-2">
               <Settings2 className="w-4 h-4 text-primary shrink-0" />
               <div className="flex flex-col">
@@ -138,6 +140,18 @@ export function GlToolbar({
                 <span className="text-[10px] text-muted-foreground">{t('accounting:general_ledger.toolbar.upload_preset_sub', 'Excel vagy CSV számlatükör beolvasása')}</span>
               </div>
             </DropdownMenuItem>
+            {onOpenCopyPreset && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onOpenCopyPreset} className="cursor-pointer gap-2 text-xs py-2">
+                  <Copy className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">{t('accounting:general_ledger.toolbar.copy_preset', 'Számlatükör másolása másik cégből...')}</span>
+                    <span className="text-[10px] text-muted-foreground">{t('accounting:general_ledger.toolbar.copy_preset_sub', 'Beállítások és analitika 1-kattintásos átvétele')}</span>
+                  </div>
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

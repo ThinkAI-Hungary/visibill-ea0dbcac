@@ -6,9 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn, fixCharacterEncoding } from '@/lib/utils';
 import { getLocalizedGlAccountName, getLocalizedGlItemType, getLocalizedGlItemDescription } from '@/lib/glUtils';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
-import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, FileSearch, Search, ArrowRightLeft, Trash2, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown, FileText, FileSearch, Search, ArrowRightLeft, Trash2, AlertTriangle, Settings2 } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { EditGlAccountModal } from '@/components/general-ledger/EditGlAccountModal';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
-import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
+import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, fetchAllGlAccountsByPreset, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
+import type { GlAccountType, SubledgerType, GlAccountRecord } from '@/types/accounting';
 import { GlItemGroupingMode, enrichGlItemsWithInvoiceMeta, groupLedgerItemsByInvoice } from '@/lib/glInvoiceGrouping';
 export type { GlItemGroupingMode };
 import { useGlInvoiceDocumentResolver } from '@/hooks/useGlInvoiceDocumentResolver';
@@ -77,6 +80,10 @@ interface LedgerItem {
   hasChildren?: boolean;
   hasAccountChildren?: boolean;
   hasItemChildren?: boolean;
+  accountType?: GlAccountType;
+  subledgerType?: SubledgerType;
+  isOpenItemManaged?: boolean;
+  rawAccountRecord?: GlAccountRecord;
   cid: string;
   isItem?: boolean;
   itemType?: string;
@@ -277,6 +284,60 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAiReclassifying, setIsAiReclassifying] = useState(false);
   const [dismissedBannerForPreset, setDismissedBannerForPreset] = useState<string | null>(null);
+  
+  // Edit GL Account modal state (EB-0255)
+  const [editAccountModalOpen, setEditAccountModalOpen] = useState(false);
+  const [accountToEdit, setAccountToEdit] = useState<GlAccountRecord | null>(null);
+
+  // Fetch all accounts metadata for the preset (account_type, subledger_type, is_open_item_managed)
+  const { data: glPresetAccounts } = useQuery({
+    queryKey: ['glPresetAccountsMeta', presetId],
+    queryFn: async () => {
+      if (!presetId) return [];
+      return await fetchAllGlAccountsByPreset(presetId);
+    },
+    enabled: !!presetId,
+    staleTime: 60_000,
+  });
+
+  const accountsMetaByNumber = useMemo(() => {
+    const map = new Map<string, any>();
+    glPresetAccounts?.forEach(a => {
+      map.set(a.gl_number, a);
+      map.set(cleanIdVal(a.gl_number), a);
+    });
+    return map;
+  }, [glPresetAccounts]);
+
+  const accountsMetaById = useMemo(() => {
+    const map = new Map<string, any>();
+    glPresetAccounts?.forEach(a => {
+      if (a.id) map.set(a.id, a);
+    });
+    return map;
+  }, [glPresetAccounts]);
+
+  const handleOpenEditAccount = useCallback((row: LedgerItem) => {
+    const matched = (row.glAccountId ? accountsMetaById.get(row.glAccountId) : null) || accountsMetaByNumber.get(row.id);
+    const record: GlAccountRecord = matched || {
+      id: row.glAccountId || '',
+      preset_id: presetId || '',
+      company_id: selectedCompany?.id || '',
+      gl_number: row.id,
+      name: row.name,
+      short_name: row.name,
+      account_type: row.accountType || (row.hasAccountChildren ? 'group' : 'detail'),
+      subledger_type: row.subledgerType || 'none',
+      is_open_item_managed: !!row.isOpenItemManaged,
+      is_active: true,
+      currency: 'HUF',
+      is_multicurrency: false,
+      created_at: '',
+      updated_at: '',
+    };
+    setAccountToEdit(record);
+    setEditAccountModalOpen(true);
+  }, [presetId, selectedCompany?.id, accountsMetaById, accountsMetaByNumber]);
   
   // Track if the user explicitly switched presets during this session
   const previousPresetIdRef = useRef<string | undefined>(presetId);
@@ -791,11 +852,16 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         const cid = cleanId(dbItem.gl_number);
         const directItemCount = Number(dbItem.item_count) || 0;
         const hasItemChildren = directItemCount > 0;
+        const meta = (dbItem.gl_account_id ? accountsMetaById.get(dbItem.gl_account_id) : null) || accountsMetaByNumber.get(dbItem.gl_number);
         
         const item: LedgerItem = {
           id: String(dbItem.gl_number),
           name: getLocalizedGlAccountName(dbItem.gl_number, fixCharacterEncoding(dbItem.short_name), t, isCroatia),
           glAccountId: dbItem.gl_account_id,
+          accountType: (meta?.account_type as GlAccountType) || (hasItemChildren ? 'detail' : undefined),
+          subledgerType: (meta?.subledger_type as SubledgerType) || 'none',
+          isOpenItemManaged: !!meta?.is_open_item_managed,
+          rawAccountRecord: meta as GlAccountRecord | undefined,
           balance: Number(dbItem.total_balance) || 0,
           debitTurnover: 0,
           creditTurnover: 0,
@@ -844,6 +910,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       rawData.forEach(node => {
         const hasAccountChildren = (childrenMap.get(node.cid)?.length ?? 0) > 0;
         node.hasAccountChildren = hasAccountChildren;
+        if (!node.accountType) {
+          node.accountType = hasAccountChildren ? 'group' : 'detail';
+        }
         const hasBatchItems = batchItemsByGL ? (batchItemsByGL.get(node.cid)?.length ?? 0) > 0 : false;
         node.hasChildren = hasAccountChildren || !!node.hasItemChildren || hasBatchItems;
       });
@@ -1255,7 +1324,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return combinedData;
     }
     return [];
-  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, hideZeroBalances, normalizeText, t, viewGranularity, batchItemsByGL, isBatchItemsLoading]);
+  }, [dbData, loadedAccountItems, loadingAccountCids, hasMoreAccountCids, loadingMoreAccountCids, expandedRowIds, searchQuery, searchResults, hideZeroBalances, normalizeText, t, isCroatia, viewGranularity, batchItemsByGL, isBatchItemsLoading, accountsMetaById, accountsMetaByNumber]);
 
   const orphanItem = dbData?.find(d => d.gl_number === 'UNCLASSIFIED');
   const orphanCount = orphanItem ? Number(orphanItem.item_count || 0) : 0;
@@ -1986,7 +2055,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         }
       }
     });
-  }, [searchQuery, searchResults, dbData, selectedCompany?.id, presetId, loadedAccountItems, fetchAccountItemsOnDemand]);
+  }, [searchQuery, searchResults, dbData, selectedCompany?.id, presetId, loadedAccountItems, fetchAccountItemsOnDemand, viewGranularity]);
 
 
 
@@ -2461,6 +2530,26 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             {t('accounting:general_ledger.status.final', 'Végleges')}
                           </span>
                         )}
+                        {!row.isItem && (row.accountType === 'group' || row.hasAccountChildren) && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-muted/70 text-muted-foreground font-medium whitespace-nowrap border border-border/70">
+                            {t('accounting:general_ledger.account_type.group', 'Csoport')}
+                          </span>
+                        )}
+                        {!row.isItem && row.subledgerType === 'partner' && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 font-medium whitespace-nowrap border border-blue-200 dark:border-blue-800">
+                            {t('accounting:general_ledger.subledger.partner', 'Partner')}
+                          </span>
+                        )}
+                        {!row.isItem && row.subledgerType === 'detail' && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 font-medium whitespace-nowrap border border-purple-200 dark:border-purple-800">
+                            {t('accounting:general_ledger.subledger.detail', 'Egyéb analitika')}
+                          </span>
+                        )}
+                        {!row.isItem && row.isOpenItemManaged && row.subledgerType === 'none' && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 font-medium whitespace-nowrap border border-amber-200 dark:border-amber-800">
+                            {t('accounting:general_ledger.subledger.matched', 'Párosítható')}
+                          </span>
+                        )}
                       </div>
                       
                       {viewLayout === 'classic' ? (
@@ -2550,6 +2639,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </Button>
                               </CustomTooltip>
+                            ) : !row.isItem && isCustomPreset ? (
+                              <CustomTooltip content={t('accounting:general_ledger.tooltips.edit_account', 'Számlaszám és beállítások szerkesztése')} side="left">
+                                <Button
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6 rounded-md opacity-40 hover:opacity-100 group-hover:opacity-100 transition-opacity print:hidden shrink-0 text-muted-foreground hover:text-primary hover:bg-muted/60"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEditAccount(row);
+                                  }}
+                                >
+                                  <Settings2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </CustomTooltip>
                             ) : (
                               <div className="w-6 h-6 shrink-0 print:hidden" />
                             )}
@@ -2624,6 +2727,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                                 }}
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </CustomTooltip>
+                          ) : !row.isItem && isCustomPreset ? (
+                            <CustomTooltip content={t('accounting:general_ledger.tooltips.edit_account', 'Számlaszám és beállítások szerkesztése')} side="left">
+                              <Button
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 rounded-md opacity-40 hover:opacity-100 group-hover:opacity-100 transition-opacity print:hidden shrink-0 text-muted-foreground hover:text-primary hover:bg-muted/60"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenEditAccount(row);
+                                }}
+                              >
+                                <Settings2 className="w-3.5 h-3.5" />
                               </Button>
                             </CustomTooltip>
                           ) : (
@@ -2875,15 +2992,31 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                 </SheetDescription>
               </div>
               {isCustomPreset && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 gap-1.5 h-8 text-xs shrink-0 mr-6"
-                  onClick={() => setConfirmDeleteOpen(true)}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  {t('accounting:general_ledger.entries_sheet.delete_account', 'Számla törlése')}
-                </Button>
+                <div className="flex items-center gap-2 shrink-0 mr-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-primary hover:bg-primary/10 border-primary/20 gap-1.5 h-8 text-xs"
+                    onClick={() => {
+                      const foundRow = allAccountsRef.current.find(a => a.id === selectedLeafAccount?.code);
+                      if (foundRow) {
+                        handleOpenEditAccount(foundRow);
+                      }
+                    }}
+                  >
+                    <Settings2 className="w-3.5 h-3.5" />
+                    {t('accounting:general_ledger.entries_sheet.edit_account', 'Szerkesztés')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 gap-1.5 h-8 text-xs"
+                    onClick={() => setConfirmDeleteOpen(true)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {t('accounting:general_ledger.entries_sheet.delete_account', 'Számla törlése')}
+                  </Button>
+                </div>
               )}
             </div>
           </SheetHeader>
@@ -2898,7 +3031,21 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               <div className="text-center py-12 text-muted-foreground text-xs space-y-3">
                 <p>{t('accounting:general_ledger.entries_sheet.no_entries')}</p>
                 {isCustomPreset && (
-                  <div>
+                  <div className="flex items-center gap-2 justify-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-primary hover:bg-primary/10 border-primary/20 gap-1.5 text-xs"
+                      onClick={() => {
+                        const foundRow = allAccountsRef.current.find(a => a.id === selectedLeafAccount?.code);
+                        if (foundRow) {
+                          handleOpenEditAccount(foundRow);
+                        }
+                      }}
+                    >
+                      <Settings2 className="w-3.5 h-3.5" />
+                      {t('accounting:general_ledger.entries_sheet.edit_account', 'Számla szerkesztése')}
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -3069,6 +3216,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           {t('accounting:general_ledger.bulk.reclassify_btn', 'Átkontírozás másik számlára')}
         </Button>
       </FloatingBulkBar>
+
+      <EditGlAccountModal
+        open={editAccountModalOpen}
+        onOpenChange={setEditAccountModalOpen}
+        account={accountToEdit}
+        presetId={presetId}
+        companyId={selectedCompany?.id}
+      />
     </>
   );
 }

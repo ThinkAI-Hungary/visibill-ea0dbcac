@@ -703,11 +703,18 @@ export default function SubledgerPage() {
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
                     <SelectItem value="all">{t('accounting:subledger.filters.all_accounts', 'Összes analitikus számla')}</SelectItem>
-                    {accounts.map((acc: any) => (
-                      <SelectItem key={acc.id} value={acc.id}>
-                        {acc.gl_number} - {acc.short_name}
-                      </SelectItem>
-                    ))}
+                    {accounts.map((acc: any) => {
+                      const typeTag = acc.subledger_type === 'partner'
+                        ? ' [Partner]'
+                        : acc.subledger_type === 'detail'
+                          ? ' [Egyéb]'
+                          : '';
+                      return (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.gl_number} - {acc.short_name}{typeTag}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

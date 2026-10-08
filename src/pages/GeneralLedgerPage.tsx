@@ -26,6 +26,7 @@ import { GlKpiBar } from '@/components/general-ledger/GlKpiBar';
 import { GlFilterBar } from '@/components/general-ledger/GlFilterBar';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { AddGlAccountModal } from '@/components/general-ledger/AddGlAccountModal';
+import { CopyChartOfAccountsModal } from '@/components/general-ledger/CopyChartOfAccountsModal';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
 import JournalView from '@/components/general-ledger/JournalView'; // F7
@@ -59,6 +60,7 @@ export default function GeneralLedgerPage() {
   
   const [partnerBreakdown, setPartnerBreakdown] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [copyCoaModalOpen, setCopyCoaModalOpen] = useState(false);
   const [addGlAccountOpen, setAddGlAccountOpen] = useState(false);
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [auditXmlModalOpen, setAuditXmlModalOpen] = useState(false);
@@ -638,6 +640,7 @@ export default function GeneralLedgerPage() {
             onSelectPreset={handleSelectPreset}
             onOpenManagePresets={handleOpenManage}
             onOpenUploadPreset={handleOpenUpload}
+            onOpenCopyPreset={() => setCopyCoaModalOpen(true)}
             onOpenAddAccount={() => setAddGlAccountOpen(true)}
             onOpenManualEntry={() => setManualEntryOpen(true)}
             onOpenUploadAuditXml={() => setAuditXmlModalOpen(true)}
@@ -964,6 +967,16 @@ export default function GeneralLedgerPage() {
         presetId={activePresetId}
         presetName={presets?.find(p => p.id === activePresetId)?.name}
         companyId={selectedCompany?.id}
+      />
+
+      <CopyChartOfAccountsModal
+        open={copyCoaModalOpen}
+        onOpenChange={setCopyCoaModalOpen}
+        targetCompanyId={selectedCompany?.id}
+        targetCompanyName={selectedCompany?.name}
+        onSuccess={(newPresetId) => {
+          handleSelectPreset(newPresetId);
+        }}
       />
 
       {/* F5: Print Preview Dialog */}

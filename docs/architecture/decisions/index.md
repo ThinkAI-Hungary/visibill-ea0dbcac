@@ -262,6 +262,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-226 | Főkönyvi és Folyószámlai Lekérdezési Vihar (Concurrency Storm) Felszámolása, get_gl_analytic_reconciliation Sémajavítás és Folyószámla Pagináció | ✅ Decided | [A-226](./A-226-gl-subledger-concurrency-storm-and-analytic-reconciliation-schema-fix.md) |
 | A-227 | RLB-60 Könyvvizsgálói XML és CSV Főkönyvi Kivonat Parser Motor és Kliensoldali Kötegelt Ingestion Architektúra | ✅ Decided | [A-227](./A-227-rlb-60-audit-xml-and-csv-ledger-parser-and-batch-ingestion.md) |
 | A-228 | Automatikus Könyvelési Szabályok Konfigurációs Felülete és Cégek Közötti Klónozása (EB-0256) | ✅ Decided | [A-228](./A-228-automated-accounting-rules-configuration-and-cross-company-cloning.md) |
+| A-229 | Egységes Számlatükör Cégenként, Cégek Közötti Klónozás és Folyószámla Szabályrendszer (EB-0255) | ✅ Decided | [A-229](./A-229-eb0255-single-active-coa-and-subledger-enforcement.md) |
 
 
 ## 💳 Fizetés

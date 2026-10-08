@@ -111,14 +111,14 @@ export function useSubledgerAccounts(companyId?: string, presetId?: string) {
 
       let query = supabase
         .from('gl_accounts')
-        .select('id, gl_number, short_name, subledger_type, is_open_item_managed')
+        .select('id, gl_number, short_name, name, subledger_type, is_open_item_managed, account_type')
         .or('is_open_item_managed.eq.true,subledger_type.in.(partner,detail)')
         .order('gl_number', { ascending: true });
 
       if (presetId) {
-        query = query.or(`company_id.eq.${companyId},preset_id.eq.${presetId}`);
+        query = query.eq('preset_id', presetId);
       } else {
-        query = query.or(`company_id.eq.${companyId},preset_id.not.is.null`);
+        query = query.eq('company_id', companyId);
       }
 
       const { data, error } = await query;
@@ -128,7 +128,10 @@ export function useSubledgerAccounts(companyId?: string, presetId?: string) {
         throw error;
       }
 
-      return data || [];
+      // Requirement EB-0255: Only genuine detail posting accounts can be matched in open items (exclude group accounts)
+      return (data || []).filter(
+        (acc) => (acc as any).account_type !== 'group'
+      );
     },
     enabled: !!companyId,
     staleTime: 60_000,

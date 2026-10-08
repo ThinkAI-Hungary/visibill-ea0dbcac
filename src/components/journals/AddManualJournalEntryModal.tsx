@@ -587,16 +587,37 @@ export default function AddManualJournalEntryModal({
       });
       return;
     }
-    const parentAccountLine = lines.find(l => l.gl_account_id && parentAccountIds.has(l.gl_account_id));
-    if (parentAccountLine) {
-      const gl = glAccounts.find((g: any) => g.id === parentAccountLine.gl_account_id);
+    const groupAccountLine = lines.find(l => {
+      if (!l.gl_account_id) return false;
+      const gl = glAccounts.find((g: any) => g.id === l.gl_account_id);
+      return gl && (gl.account_type === 'group' || parentAccountIds.has(l.gl_account_id));
+    });
+    if (groupAccountLine) {
+      const gl = glAccounts.find((g: any) => g.id === groupAccountLine.gl_account_id);
       toast({
-        title: "Érvénytelen főkönyvi szám",
-        description: `A(z) ${gl?.gl_number || ''} — ${gl?.short_name || ''} egy gyűjtő számla, amely alá van bontva. Kérjük, válasszon analitikus (alszám) tételt!`,
+        title: "Érvénytelen csoportszámla",
+        description: `A(z) ${gl?.gl_number || ''} — ${gl?.short_name || ''} egy csoportszámla (gyűjtő), közvetlen könyvelés nem megengedett. Kérjük, válasszon könyvelési számlát!`,
         variant: "destructive"
       });
       return;
     }
+
+    // EB-0255: Partnerkényszeres folyószámla ellenőrzés
+    const partnerRequiredLine = lines.find(l => {
+      if (!l.gl_account_id) return false;
+      const gl = glAccounts.find((g: any) => g.id === l.gl_account_id);
+      return gl && gl.subledger_type === 'partner';
+    });
+    if (partnerRequiredLine && (!partnerId || partnerId === 'none')) {
+      const gl = glAccounts.find((g: any) => g.id === partnerRequiredLine.gl_account_id);
+      toast({
+        title: "Partner megadása kötelező",
+        description: `A(z) ${gl?.gl_number || ''} — ${gl?.short_name || ''} főkönyvi számlánál partnerkényszeres folyószámla van beállítva. Kérjük, válasszon partnert a bizonylathoz!`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     saveMutation.mutate();
   };
 
@@ -924,14 +945,16 @@ export default function AddManualJournalEntryModal({
                                         `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(searchQuery.toLowerCase())
                                       )
                                       .map((gl: any) => {
-                                        const isParent = parentAccountIds.has(gl.id);
+                                        const isGroup = gl.account_type === 'group' || parentAccountIds.has(gl.id);
+                                        const isPartner = gl.subledger_type === 'partner';
+                                        const isDetail = gl.subledger_type === 'detail';
                                         return (
                                           <CommandItem
                                             key={gl.id}
-                                            value={`${gl.gl_number} ${gl.short_name} ${isParent ? '(Gyűjtő - nem könyvelhető)' : ''}`}
-                                            disabled={isParent}
+                                            value={`${gl.gl_number} ${gl.short_name} ${isGroup ? '(Csoport - nem könyvelhető)' : ''}`}
+                                            disabled={isGroup}
                                             onSelect={() => {
-                                              if (isParent) return;
+                                              if (isGroup) return;
                                               handleUpdateLine(index, 'gl_account_id', gl.id);
                                               setOpenDropdownIndex(null);
                                               setSearchQuery('');
@@ -941,22 +964,38 @@ export default function AddManualJournalEntryModal({
                                             }}
                                             className={cn(
                                               "font-mono text-xs flex items-center justify-between py-1.5",
-                                              isParent
+                                              isGroup
                                                 ? "opacity-50 cursor-not-allowed bg-muted/20 text-muted-foreground"
                                                 : "cursor-pointer hover:bg-accent hover:text-accent-foreground"
                                             )}
                                           >
-                                            <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
-                                              <span className={cn("font-semibold shrink-0", isParent && "text-muted-foreground")}>
+                                            <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2 flex-wrap">
+                                              <span className={cn("font-semibold shrink-0", isGroup && "text-muted-foreground")}>
                                                 {gl.gl_number}
                                               </span>
                                               <span className="truncate">{gl.short_name}</span>
-                                              {isParent && (
+                                              {isGroup && (
                                                 <Badge
                                                   variant="outline"
                                                   className="text-[9px] px-1.5 py-0 text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10 ml-auto shrink-0 font-sans"
                                                 >
-                                                  Gyűjtő — nem könyvelhető
+                                                  Csoport — nem könyvelhető
+                                                </Badge>
+                                              )}
+                                              {!isGroup && isPartner && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="text-[9px] px-1.5 py-0 text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10 ml-auto shrink-0 font-sans"
+                                                >
+                                                  Partner
+                                                </Badge>
+                                              )}
+                                              {!isGroup && isDetail && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="text-[9px] px-1.5 py-0 text-purple-600 dark:text-purple-400 border-purple-500/30 bg-purple-500/10 ml-auto shrink-0 font-sans"
+                                                >
+                                                  Egyéb analitika
                                                 </Badge>
                                               )}
                                             </div>
