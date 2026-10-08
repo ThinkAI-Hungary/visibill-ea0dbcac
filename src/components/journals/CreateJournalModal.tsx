@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { BookOpen, Loader2, Landmark } from 'lucide-react';
+import { BookOpen, Loader2, Landmark, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MNB_CURRENCIES } from '@/lib/journalUtils';
 
@@ -38,6 +38,7 @@ export interface CreateJournalModalProps {
   glAccounts?: Array<{ id: string; gl_number: string; short_name: string; currency?: string | null }>;
   onJournalCreated?: (journal: CreatedJournalPayload) => void;
   onJournalUpdated?: (journal: CreatedJournalPayload) => void;
+  onDeleteRequested?: (journalId: string) => void;
 }
 
 export const JOURNAL_TYPES = [
@@ -119,6 +120,7 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
   glAccounts = [],
   onJournalCreated,
   onJournalUpdated,
+  onDeleteRequested,
 }) => {
   const { t } = useTranslation(['accounting', 'common']);
   const { toast } = useToast();
@@ -434,31 +436,51 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
             )}
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              {t('common:actions.cancel', 'Mégse')}
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="min-w-[120px]"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {t('accounting:journals.create_modal.btn_submitting', 'Mentés...')}
-                </>
-              ) : (
-                isEditMode
-                  ? t('accounting:journals.create_modal.btn_submit_edit', 'Módosítások Mentése')
-                  : t('accounting:journals.create_modal.btn_submit', 'Napló Létrehozása')
-              )}
-            </Button>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-2 pt-2">
+            {isEditMode && editJournalId && onDeleteRequested ? (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  if (editJournalId) {
+                    onDeleteRequested(editJournalId);
+                  }
+                }}
+                disabled={isSubmitting}
+                className="text-xs text-destructive hover:bg-destructive/10 hover:text-destructive h-9 px-2.5 gap-1.5 w-full sm:w-auto justify-center"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{t('accounting:journals.manage_modal.btn_delete', 'Napló törlése')}</span>
+              </Button>
+            ) : (
+              <div />
+            )}
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                {t('common:actions.cancel', 'Mégse')}
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="min-w-[120px]"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {t('accounting:journals.create_modal.btn_submitting', 'Mentés...')}
+                  </>
+                ) : (
+                  isEditMode
+                    ? t('accounting:journals.create_modal.btn_submit_edit', 'Módosítások Mentése')
+                    : t('accounting:journals.create_modal.btn_submit', 'Napló Létrehozása')
+                )}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

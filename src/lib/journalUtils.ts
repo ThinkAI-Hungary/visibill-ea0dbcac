@@ -226,6 +226,14 @@ export function isJournalSystemLocked(journal: JournalLike & { is_system_locked?
   return ['603', '605', '901'].includes(code);
 }
 
+export const CORE_JOURNAL_CODES = ['NY', 'SZ', 'V', 'Z', 'BÉR', 'BER', 'VE'];
+
+export function isJournalCoreSystem(journal: JournalLike & { is_system_locked?: boolean }): boolean {
+  if (isJournalSystemLocked(journal)) return true;
+  const code = (journal.code || '').trim().toUpperCase();
+  return CORE_JOURNAL_CODES.includes(code);
+}
+
 export const MNB_CURRENCIES = [
   { code: 'HUF', name: 'Magyar forint', unit: 1, symbol: 'Ft' },
   { code: 'EUR', name: 'Euro', unit: 1, symbol: 'EUR' },

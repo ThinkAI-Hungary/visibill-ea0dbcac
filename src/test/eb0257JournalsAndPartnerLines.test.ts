@@ -4,6 +4,7 @@ import {
   JournalCategoryKey,
   getJournalCategory,
   isJournalSystemLocked,
+  isJournalCoreSystem,
   MNB_CURRENCIES,
 } from '@/lib/journalUtils';
 import {
@@ -76,6 +77,25 @@ describe('EB-0257 - Journal Categorization and Utilities', () => {
     expect(isJournalSystemLocked({ code: '301', is_system_locked: false })).toBe(false);
     expect(isJournalSystemLocked({ code: '401', is_system_locked: false })).toBe(false);
     expect(isJournalSystemLocked({ code: '601', is_system_locked: false })).toBe(false);
+  });
+
+  it('correctly protects core system journals from deletion with isJournalCoreSystem', () => {
+    // Fundamental system journals that cannot be deleted
+    expect(isJournalCoreSystem({ code: 'NY', name: 'Nyitó tételek' })).toBe(true);
+    expect(isJournalCoreSystem({ code: 'SZ', name: 'Szállító számlák' })).toBe(true);
+    expect(isJournalCoreSystem({ code: 'V', name: 'Vevő számlák' })).toBe(true);
+    expect(isJournalCoreSystem({ code: 'VE', name: 'Vegyes tételek' })).toBe(true);
+    expect(isJournalCoreSystem({ code: 'Z', name: 'Záró tételek' })).toBe(true);
+    expect(isJournalCoreSystem({ code: 'BÉR', name: 'Bérfeladás' })).toBe(true);
+    expect(isJournalCoreSystem({ code: 'BER', name: 'Bérfeladás' })).toBe(true);
+    expect(isJournalCoreSystem({ code: '603', name: 'Árfolyamkülönbözet' })).toBe(true);
+
+    // Custom or secondary user journals that can be deleted when empty
+    expect(isJournalCoreSystem({ code: 'B1', name: 'K&H bank HUF' })).toBe(false);
+    expect(isJournalCoreSystem({ code: 'B2', name: 'K&H bank EUR' })).toBe(false);
+    expect(isJournalCoreSystem({ code: 'B3', name: 'OTP bank HUF' })).toBe(false);
+    expect(isJournalCoreSystem({ code: 'P1', name: 'Házipénztár HUF' })).toBe(false);
+    expect(isJournalCoreSystem({ code: 'VE2', name: 'Egyéb vegyes' })).toBe(false);
   });
 
   it('supports all 24 official MNB currencies specified in EB-0257', () => {

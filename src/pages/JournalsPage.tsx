@@ -41,6 +41,10 @@ import {
   Copy,
   Settings2,
   Sliders,
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  ChevronsLeftRight,
 } from 'lucide-react';
 import { AccountingRulesDialog } from '@/components/accounting/AccountingRulesDialog';
 import { extractStoragePath } from '@/lib/utils';
@@ -277,6 +281,44 @@ export default function JournalsPage() {
   // Manage Journals dialog state
   const [manageJournalsOpen, setManageJournalsOpen] = useState(false);
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
+
+  // Wrap vs Scroll horizontal layout for journal cards
+  const [isWrapLayout, setIsWrapLayout] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('visibill_journals_wrap_layout');
+      if (saved !== null) return saved === 'true';
+    } catch (e) {}
+    return true; // Default to true so all journals are visible without clipping
+  });
+
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 6);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 6);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el || isWrapLayout) return;
+    checkScroll();
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [isWrapLayout, checkScroll]);
+
+  const scrollByAmount = (delta: number) => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: delta, behavior: 'smooth' });
+    }
+  };
 
   // Lookup GL accounts for preset
   const { data: glAccounts = [] } = useQuery({
@@ -1227,8 +1269,40 @@ export default function JournalsPage() {
           })}
         </div>
 
-        {/* Quick Jump Dropdown */}
+        {/* Quick Jump Dropdown & Layout Mode Toggle */}
         <div className="flex items-center gap-2 shrink-0">
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <Button
+                variant={isWrapLayout ? "secondary" : "outline"}
+                size="sm"
+                className="h-8 px-2.5 gap-1.5 text-xs font-medium border-border"
+                onClick={() => {
+                  setIsWrapLayout(prev => {
+                    const next = !prev;
+                    try { localStorage.setItem('visibill_journals_wrap_layout', String(next)); } catch (e) {}
+                    return next;
+                  });
+                }}
+              >
+                {isWrapLayout ? (
+                  <>
+                    <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+                    <span className="hidden sm:inline">Többsoros nézet</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronsLeftRight className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="hidden sm:inline">Görgethető nézet</span>
+                  </>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs shadow-md">
+              {isWrapLayout ? 'Váltás vízszintesen görgethető egy soros nézetre' : 'Váltás többsoros elrendezésre (hogy minden napló egyszerre látszódjon)'}
+            </TooltipContent>
+          </Tooltip>
+
           <Select 
             value={selectedJournalId} 
             onValueChange={(val) => {
@@ -1275,112 +1349,149 @@ export default function JournalsPage() {
         </div>
       </div>
 
-      {/* Horizontal Journals Selector (Filtered by Category) */}
-      <div className="w-full flex items-center gap-1.5 overflow-x-auto py-1 min-h-[3.5rem] scrollbar-none select-none shrink-0">
-        <button
-          onClick={() => setSelectedJournalId('munkalista')}
-          className={cn(
-            "flex items-center gap-3 pl-3 pr-4 h-12 rounded-lg text-xs transition-all border shrink-0 justify-between text-left",
-            selectedJournalId === 'munkalista'
-              ? "bg-primary text-primary-foreground border-primary shadow-sm"
-              : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
-          )}
-        >
-          <div className="flex items-center gap-1.5 min-w-0 shrink-0">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-            <div className="flex flex-col leading-tight min-w-0 pr-1 shrink-0">
-              <span className={cn("font-bold text-[11px] leading-tight whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground" : "text-foreground")}>
-                {t('accounting:journals.worklist', 'Munkalista')}
-              </span>
-              <span className={cn("text-[8px] leading-none whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                {t('accounting:journals.drafts_sub', 'Drafts')}
-              </span>
-            </div>
-          </div>
-          <Badge variant={selectedJournalId === 'munkalista' ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
-            {t('accounting:journals.pending_badge', {
-              count: munkalistaCount,
-              defaultValue: `${munkalistaCount} db jóváhagyásra vár`,
-            })}
-          </Badge>
-        </button>
-
-        {loadingJournals ? (
-          <div className="flex items-center pl-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
-        ) : (
-          visibleJournals.map((j: any) => {
-            const locked = isJournalSystemLocked(j);
-            return (
-              <Tooltip key={j.id} delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => {
-                      setSelectedJournalId(j.id);
-                      if (j.code === 'NY' && nyEntriesCount === 0) {
-                        setOpeningWizardOpen(true);
-                      }
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 pl-3 pr-3 h-12 rounded-lg text-xs transition-all border shrink-0 text-left justify-between min-w-[120px]",
-                      selectedJournalId === j.id
-                        ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
-                        : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
-                    )}
-                  >
-                    <div className="flex flex-col min-w-0 pr-1 leading-tight flex-1">
-                      <div className="flex items-center gap-1">
-                        <span className={cn("font-bold text-[11px] leading-tight truncate", selectedJournalId === j.id ? "text-primary-foreground" : "text-foreground")}>
-                          {j.code}
-                        </span>
-                        {locked && (
-                          <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
-                        )}
-                      </div>
-                      <span className={cn("text-[8px] leading-none truncate max-w-[100px]", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                        {getLocalizedJournalName(j, j.name, t)}
-                      </span>
-                    </div>
-                    <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal">
-                      {j.currency}
-                    </Badge>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
-                  <p className="font-semibold text-popover-foreground">
-                    {j.code} - {getLocalizedJournalName(j, j.name, t)}
-                    {locked && " 🔒 (Zárt gépi napló)"}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {t('accounting:journals.currency_label', { currency: j.currency, defaultValue: `Pénznem: ${j.currency}` })}
-                  </p>
-                  {j.bank_account_number && (
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                      Bankszámla: {j.bank_account_number}
-                    </p>
-                  )}
-                </TooltipContent>
-              </Tooltip>
-            );
-          })
+      {/* Journals Selector (Wrap or Scroll with Navigation Controls) */}
+      <div className="relative w-full group">
+        {!isWrapLayout && canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => scrollByAmount(-280)}
+            className="absolute -left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-background/95 hover:bg-background border border-border shadow-md flex items-center justify-center text-foreground transition-all hover:scale-110"
+            aria-label="Görgetés balra"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
         )}
 
-        {/* Manage Journals Button */}
-        <Tooltip delayDuration={300}>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => setManageJournalsOpen(true)}
-              className="flex items-center gap-1.5 px-3 h-12 rounded-lg text-xs transition-all border border-dashed border-border hover:border-primary/50 hover:bg-muted/50 text-muted-foreground hover:text-foreground shrink-0"
-              title="Naplótörzs kezelése / Új napló"
-            >
-              <Settings2 className="w-3.5 h-3.5 text-primary" />
-              <span className="font-semibold text-[11px] whitespace-nowrap">Naplók kezelése</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
-            <p className="font-semibold text-popover-foreground">Könyvelési Naplótörzs Kezelése</p>
-            <p className="text-[10px] text-muted-foreground">Új napló felvétele, meglévő naplók átnevezése és testreszabása.</p>
-          </TooltipContent>
-        </Tooltip>
+        <div
+          ref={scrollContainerRef}
+          onWheel={(e) => {
+            if (!isWrapLayout && e.deltaY !== 0) {
+              e.currentTarget.scrollLeft += e.deltaY;
+            }
+          }}
+          className={cn(
+            "w-full flex items-center gap-1.5 select-none transition-all",
+            isWrapLayout
+              ? "flex-wrap py-1.5 min-h-[3.5rem]"
+              : "overflow-x-auto scrollbar-thin scrollbar-thumb-border hover:scrollbar-thumb-muted-foreground/40 scroll-smooth py-1 min-h-[3.5rem]"
+          )}
+        >
+          <button
+            onClick={() => setSelectedJournalId('munkalista')}
+            className={cn(
+              "flex items-center gap-3 pl-3 pr-4 h-12 rounded-lg text-xs transition-all border shrink-0 justify-between text-left",
+              selectedJournalId === 'munkalista'
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
+            )}
+          >
+            <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <div className="flex flex-col leading-tight min-w-0 pr-1 shrink-0">
+                <span className={cn("font-bold text-[11px] leading-tight whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground" : "text-foreground")}>
+                  {t('accounting:journals.worklist', 'Munkalista')}
+                </span>
+                <span className={cn("text-[8px] leading-none whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                  {t('accounting:journals.drafts_sub', 'Drafts')}
+                </span>
+              </div>
+            </div>
+            <Badge variant={selectedJournalId === 'munkalista' ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
+              {t('accounting:journals.pending_badge', {
+                count: munkalistaCount,
+                defaultValue: `${munkalistaCount} db jóváhagyásra vár`,
+              })}
+            </Badge>
+          </button>
+
+          {loadingJournals ? (
+            <div className="flex items-center pl-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+          ) : (
+            visibleJournals.map((j: any) => {
+              const locked = isJournalSystemLocked(j);
+              return (
+                <Tooltip key={j.id} delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => {
+                        setSelectedJournalId(j.id);
+                        if (j.code === 'NY' && nyEntriesCount === 0) {
+                          setOpeningWizardOpen(true);
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 pl-3 pr-3 h-12 rounded-lg text-xs transition-all border shrink-0 text-left justify-between min-w-[120px]",
+                        selectedJournalId === j.id
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
+                          : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
+                      )}
+                    >
+                      <div className="flex flex-col min-w-0 pr-1 leading-tight flex-1">
+                        <div className="flex items-center gap-1">
+                          <span className={cn("font-bold text-[11px] leading-tight truncate", selectedJournalId === j.id ? "text-primary-foreground" : "text-foreground")}>
+                            {j.code}
+                          </span>
+                          {locked && (
+                            <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                          )}
+                        </div>
+                        <span className={cn("text-[8px] leading-none truncate max-w-[100px]", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                          {getLocalizedJournalName(j, j.name, t)}
+                        </span>
+                      </div>
+                      <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal">
+                        {j.currency}
+                      </Badge>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
+                    <p className="font-semibold text-popover-foreground">
+                      {j.code} - {getLocalizedJournalName(j, j.name, t)}
+                      {locked && " 🔒 (Zárt gépi napló)"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {t('accounting:journals.currency_label', { currency: j.currency, defaultValue: `Pénznem: ${j.currency}` })}
+                    </p>
+                    {j.bank_account_number && (
+                      <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                        Bankszámla: {j.bank_account_number}
+                      </p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })
+          )}
+
+          {/* Manage Journals Button */}
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setManageJournalsOpen(true)}
+                className="flex items-center gap-1.5 px-3 h-12 rounded-lg text-xs transition-all border border-dashed border-border hover:border-primary/50 hover:bg-muted/50 text-muted-foreground hover:text-foreground shrink-0"
+                title="Naplótörzs kezelése / Új napló"
+              >
+                <Settings2 className="w-3.5 h-3.5 text-primary" />
+                <span className="font-semibold text-[11px] whitespace-nowrap">Naplók kezelése</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
+              <p className="font-semibold text-popover-foreground">Könyvelési Naplótörzs Kezelése</p>
+              <p className="text-[10px] text-muted-foreground">Új napló felvétele, meglévő naplók átnevezése és testreszabása.</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        {!isWrapLayout && canScrollRight && (
+          <button
+            type="button"
+            onClick={() => scrollByAmount(280)}
+            className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-background/95 hover:bg-background border border-border shadow-md flex items-center justify-center text-foreground transition-all hover:scale-110"
+            aria-label="Görgetés jobbra"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-12 gap-4 items-start">
@@ -1598,7 +1709,7 @@ export default function JournalsPage() {
                     <TableHead className="w-[150px] whitespace-nowrap">{t('accounting:journals.table.col_doc_num', 'Bizonylatszám')}</TableHead>
                     <TableHead className="w-[180px] whitespace-nowrap">{t('accounting:journals.table.col_partner', 'Partner')}</TableHead>
                     <TableHead className="w-auto min-w-[180px]">{t('accounting:journals.table.col_description', 'Megnevezés')}</TableHead>
-                    <TableHead className="w-[120px] text-center whitespace-nowrap">{t('accounting:journals.table.col_gl_accounts', 'Kontír (T / K)')}</TableHead>
+                    <TableHead className="w-[130px] text-center whitespace-nowrap">{t('accounting:journals.table.col_gl_accounts', 'Kontír (T / K)')}</TableHead>
                     <TableHead className="w-[140px] text-right whitespace-nowrap">{t('accounting:journals.table.col_amount', 'Összeg')}</TableHead>
                     <TableHead className="w-[100px] text-center whitespace-nowrap">{t('accounting:journals.table.col_type', 'Típus')}</TableHead>
                     <TableHead className="w-[130px] text-center whitespace-nowrap">{t('accounting:journals.table.col_status', 'Státusz')}</TableHead>
@@ -1766,23 +1877,49 @@ export default function JournalsPage() {
                               </Tooltip>
                             </TableCell>
                             {(() => {
-                              const tAccounts = e.lines?.filter((l: any) => l.dc_type === 'T').map((l: any) => l.gl_account?.gl_number || (l.gl_account_id ? String(l.gl_account_id).slice(0, 4) : '')).filter(Boolean) || [];
-                              const kAccounts = e.lines?.filter((l: any) => l.dc_type === 'K').map((l: any) => l.gl_account?.gl_number || (l.gl_account_id ? String(l.gl_account_id).slice(0, 4) : '')).filter(Boolean) || [];
-                              const tStr = [...new Set(tAccounts)].join(', ');
-                              const kStr = [...new Set(kAccounts)].join(', ');
+                              const tAccounts = [...new Set(e.lines?.filter((l: any) => l.dc_type === 'T').map((l: any) => l.gl_account?.gl_number || (l.gl_account_id ? String(l.gl_account_id).slice(0, 4) : '')).filter(Boolean))] as string[];
+                              const kAccounts = [...new Set(e.lines?.filter((l: any) => l.dc_type === 'K').map((l: any) => l.gl_account?.gl_number || (l.gl_account_id ? String(l.gl_account_id).slice(0, 4) : '')).filter(Boolean))] as string[];
+                              const isComplex = tAccounts.length > 2 || kAccounts.length > 2;
+
+                              const formatSide = (accounts: string[]) => {
+                                if (accounts.length === 0) return '—';
+                                if (accounts.length <= 2) return accounts.join(', ');
+                                return `${accounts[0]} (+${accounts.length - 1})`;
+                              };
+
+                              const tDisplay = formatSide(tAccounts);
+                              const kDisplay = formatSide(kAccounts);
+                              const fullT = tAccounts.join(', ') || '—';
+                              const fullK = kAccounts.join(', ') || '—';
 
                               return (
-                                <TableCell className="w-[120px] text-center whitespace-nowrap">
-                                  {tStr || kStr ? (
-                                    <div className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold">
-                                      <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20" title={`Tartozik: ${tStr || '—'}`}>
-                                        {tStr || '—'}
-                                      </span>
-                                      <span className="text-muted-foreground/40 font-normal">/</span>
-                                      <span className="text-rose-700 dark:text-rose-300 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20" title={`Követel: ${kStr || '—'}`}>
-                                        {kStr || '—'}
-                                      </span>
-                                    </div>
+                                <TableCell className="w-[130px] max-w-[130px] text-center whitespace-nowrap overflow-hidden">
+                                  {tAccounts.length > 0 || kAccounts.length > 0 ? (
+                                    <Tooltip delayDuration={100}>
+                                      <TooltipTrigger asChild>
+                                        <div className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold cursor-help truncate max-w-full">
+                                          <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 truncate" title={`Tartozik: ${fullT}`}>
+                                            {tDisplay}
+                                          </span>
+                                          <span className="text-muted-foreground/40 font-normal shrink-0">/</span>
+                                          <span className="text-rose-700 dark:text-rose-300 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20 truncate" title={`Követel: ${fullK}`}>
+                                            {kDisplay}
+                                          </span>
+                                        </div>
+                                      </TooltipTrigger>
+                                      {isComplex && (
+                                        <TooltipContent side="top" className="max-w-[320px] p-2.5 text-xs shadow-lg space-y-1.5 font-sans">
+                                          <div>
+                                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">Tartozik ({tAccounts.length} számla):</span>
+                                            <p className="font-mono text-[11px] text-muted-foreground break-words">{fullT}</p>
+                                          </div>
+                                          <div className="border-t border-border/40 pt-1">
+                                            <span className="font-semibold text-rose-600 dark:text-rose-400">Követel ({kAccounts.length} számla):</span>
+                                            <p className="font-mono text-[11px] text-muted-foreground break-words">{fullK}</p>
+                                          </div>
+                                        </TooltipContent>
+                                      )}
+                                    </Tooltip>
                                   ) : (
                                     <span className="text-muted-foreground">—</span>
                                   )}
@@ -2847,6 +2984,11 @@ export default function JournalsPage() {
         companyId={selectedCompany?.id || ''}
         journals={journals}
         glAccounts={glAccounts}
+        onJournalDeleted={(deletedId) => {
+          if (selectedJournalId === deletedId) {
+            setSelectedJournalId('munkalista');
+          }
+        }}
       />
       </div>
     </TooltipProvider>
