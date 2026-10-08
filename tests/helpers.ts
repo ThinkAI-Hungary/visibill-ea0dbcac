@@ -33,9 +33,17 @@ function loadEnvLocal(): Record<string, string> {
 const envLocal = loadEnvLocal();
 
 export const TEST_EMAIL =
-  process.env.PLAYWRIGHT_TEST_EMAIL ?? envLocal.PLAYWRIGHT_TEST_EMAIL ?? "";
+  process.env.PLAYWRIGHT_TEST_EMAIL ??
+  process.env.TEST_USER_EMAIL ??
+  envLocal.PLAYWRIGHT_TEST_EMAIL ??
+  envLocal.TEST_USER_EMAIL ??
+  "";
 export const TEST_PASSWORD =
-  process.env.PLAYWRIGHT_TEST_PASSWORD ?? envLocal.PLAYWRIGHT_TEST_PASSWORD ?? "";
+  process.env.PLAYWRIGHT_TEST_PASSWORD ??
+  process.env.TEST_USER_PASSWORD ??
+  envLocal.PLAYWRIGHT_TEST_PASSWORD ??
+  envLocal.TEST_USER_PASSWORD ??
+  "";
 
 // ─── Validation ────────────────────────────────────────
 if (!TEST_EMAIL || !TEST_PASSWORD) {
