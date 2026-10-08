@@ -1088,87 +1088,6 @@ export default function TransfersPage() {
     }
   };
 
-  // Bulk manual settlement helpers
-  const selectedTransferItems = useMemo(() => {
-    return displayItems.filter(item => selectedIds.includes(item.key));
-  }, [displayItems, selectedIds]);
-
-  const selectedInvoicesCount = useMemo(() => {
-    return selectedTransferItems.reduce((acc, item) => acc + (item.original_invoices?.length || 0), 0);
-  }, [selectedTransferItems]);
-
-  const handleConfirmBulkSettle = async () => {
-    if (selectedTransferItems.length === 0 || !selectedCompany) return;
-    try {
-      setBulkSettling(true);
-      const todayStr = new Date().toISOString().split('T')[0];
-      const allInvoices = selectedTransferItems.flatMap(item => item.original_invoices || []);
-
-      for (const inv of allInvoices) {
-        let paymentDate = todayStr;
-        if (bulkSettleDateMode === 'issue_date') {
-          paymentDate = inv.issue_date || inv.due_date || todayStr;
-        } else if (bulkSettleDateMode === 'custom') {
-          paymentDate = bulkSettleCustomDate || todayStr;
-        } else {
-          paymentDate = todayStr;
-        }
-
-        if (inv.source === 'purchase_voucher') {
-          const { error: pvErr } = await supabase
-            .from('purchase_vouchers')
-            .update({
-              payment_status: 'paid',
-              paid_amount: inv.amount,
-              paid_at: new Date(paymentDate).toISOString(),
-            })
-            .eq('id', inv.id);
-          if (pvErr) console.warn("Failed to settle purchase voucher in bulk:", pvErr);
-          continue;
-        }
-
-        const note = bulkSettleNote.trim() || `Tömeges rendezés (${inv.partner_name})`;
-        const { error: rpcErr } = await supabase.rpc('record_manual_invoice_payment', {
-          p_invoice_id: inv.id,
-          p_payment_date: paymentDate,
-          p_payment_type: bulkSettlePaymentType,
-          p_note: note
-        });
-
-        if (rpcErr) {
-          const targetTable = inv.source === 'nav' ? 'nav_invoices' : 'invoices';
-          await supabase
-            .from(targetTable)
-            .update({
-              is_manual_payment: true,
-              manual_payment_date: paymentDate,
-              manual_payment_type: bulkSettlePaymentType,
-              manual_payment_note: note
-            })
-            .eq('id', inv.id);
-        }
-      }
-
-      toast({
-        title: t('transfers:toasts.settle_success_title', 'Sikeres rendezés'),
-        description: t('transfers:toasts.settle_success_desc', { count: allInvoices.length }),
-      });
-
-      setBulkSettleDialogOpen(false);
-      setSelectedIds([]);
-      setBulkSettleNote('');
-      refetchInvoices();
-    } catch (err: any) {
-      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleConfirmBulkSettle', message: 'Failed to bulk settle invoices manually', error: err });
-      toast({
-        title: t('common:error', 'Hiba történt'),
-        description: err.message || t('transfers:toasts.settle_error', 'Nem sikerült a számlák tömeges rendezése.'),
-        variant: 'destructive',
-      });
-    } finally {
-      setBulkSettling(false);
-    }
-  };
 
   const handleDeleteTransfer = async (id: string) => {
     try {
@@ -1356,6 +1275,88 @@ export default function TransfersPage() {
     const start = (activePage - 1) * activePageSize;
     return displayItems.slice(start, start + activePageSize);
   }, [displayItems, activePage, activePageSize]);
+
+  // Bulk manual settlement helpers
+  const selectedTransferItems = useMemo(() => {
+    return displayItems.filter(item => selectedIds.includes(item.key));
+  }, [displayItems, selectedIds]);
+
+  const selectedInvoicesCount = useMemo(() => {
+    return selectedTransferItems.reduce((acc, item) => acc + (item.original_invoices?.length || 0), 0);
+  }, [selectedTransferItems]);
+
+  const handleConfirmBulkSettle = async () => {
+    if (selectedTransferItems.length === 0 || !selectedCompany) return;
+    try {
+      setBulkSettling(true);
+      const todayStr = new Date().toISOString().split('T')[0];
+      const allInvoices = selectedTransferItems.flatMap(item => item.original_invoices || []);
+
+      for (const inv of allInvoices) {
+        let paymentDate = todayStr;
+        if (bulkSettleDateMode === 'issue_date') {
+          paymentDate = inv.issue_date || inv.due_date || todayStr;
+        } else if (bulkSettleDateMode === 'custom') {
+          paymentDate = bulkSettleCustomDate || todayStr;
+        } else {
+          paymentDate = todayStr;
+        }
+
+        if (inv.source === 'purchase_voucher') {
+          const { error: pvErr } = await supabase
+            .from('purchase_vouchers')
+            .update({
+              payment_status: 'paid',
+              paid_amount: inv.amount,
+              paid_at: new Date(paymentDate).toISOString(),
+            })
+            .eq('id', inv.id);
+          if (pvErr) console.warn("Failed to settle purchase voucher in bulk:", pvErr);
+          continue;
+        }
+
+        const note = bulkSettleNote.trim() || `Tömeges rendezés (${inv.partner_name})`;
+        const { error: rpcErr } = await supabase.rpc('record_manual_invoice_payment', {
+          p_invoice_id: inv.id,
+          p_payment_date: paymentDate,
+          p_payment_type: bulkSettlePaymentType,
+          p_note: note
+        });
+
+        if (rpcErr) {
+          const targetTable = inv.source === 'nav' ? 'nav_invoices' : 'invoices';
+          await supabase
+            .from(targetTable)
+            .update({
+              is_manual_payment: true,
+              manual_payment_date: paymentDate,
+              manual_payment_type: bulkSettlePaymentType,
+              manual_payment_note: note
+            })
+            .eq('id', inv.id);
+        }
+      }
+
+      toast({
+        title: t('transfers:toasts.settle_success_title', 'Sikeres rendezés'),
+        description: t('transfers:toasts.settle_success_desc', { count: allInvoices.length }),
+      });
+
+      setBulkSettleDialogOpen(false);
+      setSelectedIds([]);
+      setBulkSettleNote('');
+      refetchInvoices();
+    } catch (err: any) {
+      reportError({ type: 'db_query', component: 'TransfersPage', action: 'handleConfirmBulkSettle', message: 'Failed to bulk settle invoices manually', error: err });
+      toast({
+        title: t('common:error', 'Hiba történt'),
+        description: err.message || t('transfers:toasts.settle_error', 'Nem sikerült a számlák tömeges rendezése.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setBulkSettling(false);
+    }
+  };
 
   useEffect(() => {
     setActivePage(1);
