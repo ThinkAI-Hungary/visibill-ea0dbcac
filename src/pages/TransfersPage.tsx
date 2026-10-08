@@ -1836,27 +1836,10 @@ export default function TransfersPage() {
               )}
             </div>
             {selectedIds.length > 0 && (
-              <div className="flex items-center gap-2 z-10">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setBulkSettleDateMode('issue_date');
-                    setBulkSettleCustomDate(new Date().toISOString().split('T')[0]);
-                    setBulkSettlePaymentType('cash');
-                    setBulkSettleNote('');
-                    setBulkSettleDialogOpen(true);
-                  }}
-                  className="gap-1.5 border-emerald-600/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-600 font-semibold shadow-xs"
-                >
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  {t('transfers:bulk_settle.button', 'Tömeges rendezés')}
-                </Button>
-                <Button size="sm" onClick={triggerFileExport} className="gap-1.5 shadow-md">
-                  {t('transfers:stats.download', 'Letöltés')}
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
+              <Button size="sm" onClick={triggerFileExport} className="gap-1.5 shadow-md z-10">
+                {t('transfers:stats.download', 'Letöltés')}
+                <Download className="h-4 w-4" />
+              </Button>
             )}
           </CardContent>
         </Card>
@@ -2768,10 +2751,26 @@ export default function TransfersPage() {
               {t('transfers:floating_bar.total', 'Összesen:')} <span className="font-bold text-foreground">{formatCurrency(stats.selectedSumHuf, isHr ? 'EUR' : 'HUF')}</span>
             </p>
           </div>
-          <Button onClick={triggerFileExport} className="gap-2 shadow-lg hover:shadow-primary/20 transition-all font-semibold h-9 text-xs rounded-xl">
-            <Download className="h-4 w-4" />
-            {t('transfers:floating_bar.download_button', 'Utalási lista letöltése')}
-          </Button>
+          <div className="flex items-center gap-2.5">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setBulkSettleDateMode('issue_date');
+                setBulkSettleCustomDate(new Date().toISOString().split('T')[0]);
+                setBulkSettlePaymentType('cash');
+                setBulkSettleNote('');
+                setBulkSettleDialogOpen(true);
+              }}
+              className="gap-1.5 border-emerald-600/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-600 font-semibold h-9 text-xs rounded-xl shadow-xs"
+            >
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              {t('transfers:bulk_settle.button', 'Tömeges rendezés')}
+            </Button>
+            <Button onClick={triggerFileExport} className="gap-2 shadow-lg hover:shadow-primary/20 transition-all font-semibold h-9 text-xs rounded-xl">
+              <Download className="h-4 w-4" />
+              {t('transfers:floating_bar.download_button', 'Utalási lista letöltése')}
+            </Button>
+          </div>
         </div>,
         document.body
       )}
