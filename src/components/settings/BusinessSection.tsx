@@ -81,8 +81,8 @@ export function BusinessSection({
   const { t } = useTranslation(['settings', 'common']);
   const activeCountry = companyCountryCode || (selectedCompany?.country_code as 'HU' | 'HR') || 'HU';
   const jurisdiction = getJurisdictionRules(activeCountry);
-  const isOwner = selectedCompany?.owner_id === userId;
-  const canEdit = canEditProp !== undefined ? canEditProp : isOwner;
+  const isOwner = canEditProp !== undefined ? canEditProp : selectedCompany?.owner_id === userId;
+  const canEdit = isOwner;
   const { toast } = useToast();
   const { locations, isLoading: locationsLoading, addLocation, deleteLocation } = useCompanyLocations(selectedCompany?.id);
   const { effectiveSettings: compEffectiveSettings, saveMutation: compSaveMutation } = useCompanySettings();
