@@ -2,7 +2,7 @@
 
 > NAV bevallások, TAO kalkuláció, adóparaméterek, jogszabályfigyelő, cégkapu, NAV meghatalmazás.
 
-**Táblák ebben a csoportban:** 10
+**Táblák ebben a csoportban:** 11
 
 ---
 
@@ -270,4 +270,40 @@
 **FK:** `company_id` → `companies.id`
 
 ---
+
+### `import_customs_declarations`
+
+> Termékimport vámhatározatok nyilvántartása, adóalap és ÁFA összeg bontás, önadózói és kivetéses vámkezelés (Áfa tv. 74–75. §, lásd [A-235](../decisions/A-235-import-customs-vat-declarations-and-return-integration.md)).
+
+**RLS:** ✅ | **Sorok:** ~5
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — |  |
+| declaration_number | text | — |  |
+| customs_office_id | text | ✓ | NULL |
+| issue_date | date | — |  |
+| due_date | date | ✓ | NULL |
+| tax_point_date | date | — |  |
+| seller_name | text | ✓ | NULL |
+| seller_country_code | text | ✓ | NULL |
+| is_self_assessed | boolean | — | `false` |
+| tax_base | numeric(15,2) | — | `0` |
+| vat_code | text | — |  |
+| vat_amount | numeric(15,2) | — | `0` |
+| customs_duty_amount | numeric(15,2) | ✓ | `0` |
+| is_paid | boolean | — | `false` |
+| payment_date | date | ✓ | NULL |
+| notes | text | ✓ | NULL |
+| attachment_url | text | ✓ | NULL |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`
+
+**Indexek:** `idx_import_customs_declarations_company_tax_point`, `idx_import_customs_declarations_declaration_num`
+
+---
+
 

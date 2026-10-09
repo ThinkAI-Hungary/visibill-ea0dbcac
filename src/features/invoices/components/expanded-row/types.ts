@@ -106,8 +106,14 @@ export interface ExpandedInvoiceRowProps {
   hideStandaloneTransactions?: boolean;
   /** Invoice exclude from accounting state */
   excludeFromAccounting?: boolean;
+  /** Accounting exclusion type ('PERMANENT' | 'DEFERRED_VAT') */
+  accountingExclusionType?: 'PERMANENT' | 'DEFERRED_VAT' | string | null;
+  /** Reason/note for exclusion or deferral */
+  deferredVatReason?: string | null;
   /** Callback to toggle exclude from accounting */
   onToggleExclude?: () => void;
+  /** Callback to open the full exclusion / deferral dialog */
+  onOpenExclusionDialog?: () => void;
   // ── Invoice-side transaction matching props ──
   /** Invoice ID for matching (enables matching UI when set) */
   invoiceId?: string;

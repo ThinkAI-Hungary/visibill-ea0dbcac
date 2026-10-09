@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,7 @@ import { buildNavToSubmittedMap, buildSubmittedToNavMap, buildNavToSuggestedSubm
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import { usePageDeductibilityMap, type InvoiceDeductibilitySummary } from '../../hooks/usePageDeductibilityMap';
 import { toast } from '@/hooks/use-toast';
+import { ExclusionReasonDialog, type ExclusionDialogInvoice } from '../ExclusionReasonDialog';
 import type { TransactionRecord } from '../../types';
 
 export function InvoiceTableContainer() {
@@ -216,15 +217,47 @@ export function InvoiceTableContainer() {
   );
 
   // 5. Handle Toggle Exclude from accounting
+  const [isExclusionDialogOpen, setIsExclusionDialogOpen] = useState(false);
+  const [selectedExclusionInvoice, setSelectedExclusionInvoice] = useState<ExclusionDialogInvoice | null>(null);
+
+  const handleOpenExclusionDialog = useCallback((invoice: any) => {
+    setSelectedExclusionInvoice({
+      id: invoice.id,
+      invoice_number: invoice.invoice_number || invoice.bizonylatsorszam || '',
+      supplier_name: invoice.supplier_name || invoice.elado_nev || null,
+      gross_amount: invoice.invoice_gross_amount || invoice.brutto_vegosszeg || null,
+      net_amount: invoice.invoice_net_amount || invoice.adoalap_osszesen || null,
+      vat_amount: invoice.invoice_vat_amount || invoice.afa_osszeg_osszesen || null,
+      currency: invoice.currency || invoice.penznem || 'HUF',
+      delivery_date: invoice.invoice_delivery_date || invoice.teljesites_datuma || invoice.invoice_issue_date || null,
+      is_submitted: isSubmittedTab,
+      exclude_from_accounting: invoice.exclude_from_accounting,
+      accounting_exclusion_type: invoice.accounting_exclusion_type,
+      deferred_vat_reason: invoice.deferred_vat_reason,
+    });
+    setIsExclusionDialogOpen(true);
+  }, [isSubmittedTab]);
+
   const handleToggleExclude = useCallback(
     async (invoiceId: string, currentValue: boolean) => {
+      // If currently not excluded, open dialog so user can choose between Deferred VAT vs Permanent exclusion
+      if (!currentValue) {
+        const found = isSubmittedTab
+          ? paginatedSubmittedInvoices.find(i => i.id === invoiceId)
+          : paginatedNavInvoices.find(i => i.id === invoiceId);
+        if (found) {
+          handleOpenExclusionDialog(found);
+          return;
+        }
+      }
+
       const newValue = !currentValue;
 
       // Optimistically update React Query cache so the UI updates instantly with zero flicker or jumping
       const updateList = (old: any) => {
         if (!Array.isArray(old)) return old;
         return old.map((inv: any) =>
-          inv.id === invoiceId ? { ...inv, exclude_from_accounting: newValue } : inv
+          inv.id === invoiceId ? { ...inv, exclude_from_accounting: newValue, accounting_exclusion_type: null } : inv
         );
       };
 
@@ -237,30 +270,23 @@ export function InvoiceTableContainer() {
 
       try {
         if (companyId) {
-          const { error } = await supabase.rpc('toggle_invoice_exclude_from_accounting', {
+          const { error } = await supabase.rpc('set_invoice_accounting_exclusion', {
             p_company_id: companyId,
             p_invoice_id: invoiceId,
             p_is_submitted: isSubmittedTab,
-            p_exclude: newValue,
+            p_exclusion_type: null,
           });
 
           if (error) {
-            console.error('Error in toggle_invoice_exclude_from_accounting RPC:', error);
+            console.error('Error in set_invoice_accounting_exclusion RPC:', error);
             // Fallback to table update if RPC returns error
             const table = isSubmittedTab ? 'invoices' : 'nav_invoices';
             const { error: fallbackError } = await supabase
               .from(table)
-              .update({ exclude_from_accounting: newValue })
+              .update({ exclude_from_accounting: newValue, accounting_exclusion_type: null })
               .eq('id', invoiceId);
             if (fallbackError) throw fallbackError;
           }
-        } else {
-          const table = isSubmittedTab ? 'invoices' : 'nav_invoices';
-          const { error } = await supabase
-            .from(table)
-            .update({ exclude_from_accounting: newValue })
-            .eq('id', invoiceId);
-          if (error) throw error;
         }
 
         invalidateInvoiceData();
@@ -291,7 +317,7 @@ export function InvoiceTableContainer() {
         });
       }
     },
-    [companyId, isSubmittedTab, invalidateInvoiceData, queryClient]
+    [companyId, isSubmittedTab, invalidateInvoiceData, queryClient, paginatedSubmittedInvoices, paginatedNavInvoices, handleOpenExclusionDialog]
   );
 
   return (
@@ -305,6 +331,7 @@ export function InvoiceTableContainer() {
           pageDeductibilityMap={pageDeductibilityMap}
           onRowClick={handleRowClick}
           onToggleExclude={handleToggleExclude}
+          onOpenExclusionDialog={handleOpenExclusionDialog}
         />
       ) : (
         <NavInvoiceTable
@@ -314,8 +341,16 @@ export function InvoiceTableContainer() {
           pageDeductibilityMap={pageDeductibilityMap}
           onRowClick={handleRowClick}
           onToggleExclude={handleToggleExclude}
+          onOpenExclusionDialog={handleOpenExclusionDialog}
         />
       )}
+
+      <ExclusionReasonDialog
+        open={isExclusionDialogOpen}
+        onOpenChange={setIsExclusionDialogOpen}
+        invoice={selectedExclusionInvoice}
+        onSuccess={invalidateInvoiceData}
+      />
     </TabsContent>
   );
 }

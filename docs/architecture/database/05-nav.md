@@ -61,6 +61,10 @@
 | manual_payment_note | text | ✓ |  |
 | original_invoice_number | text | ✓ |  | ← NAV XML `<originalInvoiceNumber>` — STORNO számlák esetén |
 | vat_summary | jsonb | ✓ | NULL | NAV Online Számla v3.0 hivatalos számlaösszesítő (`<invoiceSummary>`) blokk (lásd [A-133](../decisions/A-133-nav-official-invoice-summary-vat-breakdown.md)) |
+| accounting_exclusion_type | text | — | `'PERMANENT'::text` | Kizárás jellege: `'PERMANENT'` (végleges) vagy `'DEFERRED_VAT'` (halasztott ÁFA / kérdéses számla, lásd [A-234](../decisions/A-234-deferred-vat-deduction-and-questionable-invoices-architecture.md)) |
+| deferred_vat_reason | text | ✓ | NULL | Halasztás felhasználó/könyvelő által megadott indoka |
+| deferred_vat_since | timestamp with time zone | ✓ | NULL | Halasztott státuszba helyezés időpontja |
+| deferred_vat_target_period | text | ✓ | NULL | Célidőszak `'YYYY-MM'` formátumban, amelyik ÁFA bevallásba beemelésre került |
 
 **FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `project_id` → `projects.id`, `supplier_partner_id` → `partners.id`, `transaction_id` → `transactions.id`, `user_id` → `auth.users.id`
 
@@ -105,6 +109,10 @@
 | vat_code | text | ✓ | NULL | Kézzel felülbírált vagy gépi tanulás által felismert ÁFA kód szöveges azonosítója (pl. 27, 05, FAD, TAM), lásd [A-135](../decisions/A-135-dual-vat-code-system-and-reverse-charge-recognition.md) |
 | vat_code_id | uuid | ✓ | NULL | Hivatkozás a konkrét ÁFA kód törzsrekordra (`public.vat_codes`), lásd [A-136](../decisions/A-136-invoice-vat-code-overrides-and-machine-learning.md) |
 | is_vat_code_manual | boolean | — | `false` | Jelzi, ha az ÁFA kód manuálisan lett felülbírálva a felhasználó által |
+| accounting_exclusion_type | text | — | `'PERMANENT'::text` | Kizárás jellege: `'PERMANENT'` vagy `'DEFERRED_VAT'` (lásd [A-234](../decisions/A-234-deferred-vat-deduction-and-questionable-invoices-architecture.md)) |
+| deferred_vat_reason | text | ✓ | NULL | Halasztás indoka |
+| deferred_vat_since | timestamp with time zone | ✓ | NULL | Halasztás időpontja |
+| deferred_vat_target_period | text | ✓ | NULL | Célidőszak `'YYYY-MM'` |
 
 **FK:** `company_id` → `companies.id`, `nav_invoice_id` → `nav_invoices.id`, `project_id` → `projects.id`, `vat_code_id` → `vat_codes.id`
 

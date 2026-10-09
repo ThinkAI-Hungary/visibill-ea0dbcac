@@ -24,6 +24,7 @@ import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import UnifiedFinancialCockpit from '@/components/dashboard/UnifiedFinancialCockpit';
+import { DeferredInvoicesWidget } from '@/components/dashboard/DeferredInvoicesWidget';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
@@ -225,6 +226,9 @@ const Index = () => {
           onVatSectionOpenChange={prefs.setVatSectionOpen}
           vatRegime={selectedCompany?.vat_regime}
         />
+
+        {/* Deferred Questionable Invoices Section (Áfa tv. 153/A. §) */}
+        <DeferredInvoicesWidget />
 
         {/* Unified Financial Cockpit: Operational Action Center directly under VAT */}
         <UnifiedFinancialCockpit />

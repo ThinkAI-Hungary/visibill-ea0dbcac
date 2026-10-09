@@ -25,6 +25,7 @@ interface NavInvoiceTableProps {
   pageDeductibilityMap?: Map<string, InvoiceDeductibilitySummary>;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
+  onOpenExclusionDialog?: (invoice: any) => void;
 }
 
 export function NavInvoiceTable({
@@ -34,6 +35,7 @@ export function NavInvoiceTable({
   pageDeductibilityMap,
   onRowClick,
   onToggleExclude,
+  onOpenExclusionDialog,
 }: NavInvoiceTableProps) {
   const { t } = useTranslation(['invoices', 'common']);
   const {
@@ -276,6 +278,7 @@ export function NavInvoiceTable({
                       hasSzamlazzKey={hasSzamlazzKey}
                       onRowClick={onRowClick}
                       onToggleExclude={onToggleExclude}
+                      onOpenExclusionDialog={onOpenExclusionDialog}
                     />
                   ))
                 )}

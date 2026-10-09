@@ -22,3 +22,5 @@ export { Nav2665MReplicaContainer } from './Nav2665MReplicaContainer';
 export { Nav2665MSheetFolap } from './Nav2665MSheetFolap';
 export { Nav2665MSheet02 } from './Nav2665MSheet02';
 export { Nav2665MSheet02K } from './Nav2665MSheet02K';
+export { Nav26TfejlhReplicaContainer } from './Nav26TfejlhReplicaContainer';
+export { Nav26TfejlhSheetFolap } from './Nav26TfejlhSheetFolap';

@@ -12,6 +12,7 @@ import {
   Settings2,
   AlertTriangle,
   Sliders,
+  PackageCheck,
 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { cn } from '@/lib/utils';
@@ -31,11 +32,13 @@ import { VatNavA60Replica } from './VatNavA60Replica';
 import { VatNav65MReplica } from './VatNav65MReplica';
 import { VatItemizedJournalView } from './VatItemizedJournalView';
 import { VatTourismTaxSection } from './VatTourismTaxSection';
+import { VatImportCustomsSection } from './VatImportCustomsSection';
 import { VatScopeRadioGroup } from './VatScopeRadioGroup';
 import { useVatScope } from '../hooks/useVatScope';
 import type { VatScope } from '../types';
 import { useVatReturnData } from '../hooks/useVatReturnData';
 import { useTranslation } from 'react-i18next';
+import { DeferredVatPromptBanner } from './DeferredVatPromptBanner';
 
 class VatReturnErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -249,6 +252,15 @@ export function VatReturnContainer() {
         onOpenOsaCheck={() => handleTabChange('teteles_m')}
       />
 
+      {/* Deferred VAT Questionable Invoices Gating Banner */}
+      <DeferredVatPromptBanner
+        year={year}
+        month={month}
+        onRecalculate={async () => {
+          await calculate.mutateAsync();
+        }}
+      />
+
       <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-3 print:space-y-0">
         {/* Navigation Tabs Bar */}
         <TabsList className="print:hidden bg-muted/60 p-1 flex flex-wrap lg:flex-nowrap overflow-x-auto justify-start h-auto gap-1 border border-border/60 rounded-xl scrollbar-none shadow-sm">
@@ -300,6 +312,17 @@ export function VatReturnContainer() {
             >
               <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               A60 Közösségi
+            </TabsTrigger>
+          )}
+
+          {/* 6. Import ÁFA (Vámhatározatok, 70/71/24-26. sorok) */}
+          {!isCroatia && (
+            <TabsTrigger
+              value="import_vat"
+              className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
+            >
+              <PackageCheck className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+              Import ÁFA
             </TabsTrigger>
           )}
 
@@ -560,6 +583,23 @@ export function VatReturnContainer() {
                 month={month}
                 frequency={frequency}
                 selectedCompany={selectedCompany}
+              />
+            </VatReturnErrorBoundary>
+          </TabsContent>
+        )}
+
+        {/* Tab: Import ÁFA (Vámhatározatok) */}
+        {!isCroatia && (
+          <TabsContent value="import_vat" className="mt-0">
+            <VatReturnErrorBoundary>
+              <VatImportCustomsSection
+                companyId={selectedCompany.id}
+                year={year}
+                month={month}
+                frequency={frequency}
+                onRefreshReturn={async () => {
+                  await calculate.mutateAsync();
+                }}
               />
             </VatReturnErrorBoundary>
           </TabsContent>

@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-10-08  
-> **Összesen:** 182 döntés (165 egyedi döntési fájl) | ✅ Decided: 178 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-10-09  
+> **Összesen:** 185 döntés (168 egyedi döntési fájl) | ✅ Decided: 181 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -148,6 +148,10 @@
 | P-158 | NAV 65M-02-K Korrekciós és Sztornó Számlák Felhasználói Élménye és Tételes Megjelenítése (UX) | ✅ Decided | [P-158](./P-158-nav-65m-02-k-correction-and-storno-invoices-ux.md) |
 | P-160 | NAV 2665 ÁFA Bevallás 43. és 45. Sorok Adóösszeg Felületi Megjelenítése és Magyarázó Sáv UX | ✅ Decided | [P-160](./P-160-nav-2665-vat-return-row43-and-row45-tax-amount-ux.md) |
 | P-161 | Bérszámfejtési Haladó Riportok és Nyilatkozatok Állapotmegőrző Navigációja Felületi Élmény (UX) | ✅ Decided | [P-161](./P-161-payroll-advanced-reports-and-declarations-workflow-ux.md) |
+| P-172 | ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák UX | ✅ Decided | [P-172](./P-172-deferred-vat-deduction-and-questionable-invoices-ux.md) |
+| P-173 | Termékimport és Vámhatározatok Rögzítése és Megjelenítése UX | ✅ Decided | [P-173](./P-173-import-customs-vat-declarations-ux.md) |
+| P-174 | NAV 26TFEJLH Nyomtatvány Replika és PDF Export UX | ✅ Decided | [P-174](./P-174-nav-26tfejlh-tourism-contribution-replica-ux.md) |
+
 
 
 ## 🔍 Keresés

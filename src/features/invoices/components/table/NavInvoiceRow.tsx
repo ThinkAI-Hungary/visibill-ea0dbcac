@@ -9,7 +9,7 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/h
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
-import { ChevronDown, Scale, FileText, Package, Sparkles, DownloadCloud, Loader2 } from 'lucide-react';
+import { ChevronDown, Scale, FileText, Package, Sparkles, DownloadCloud, Loader2, Clock, Ban } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useSyncSzamlazzOutbound, useSzamlazzStatus } from '@/hooks/useSzamlazzSync';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
@@ -39,6 +39,7 @@ interface NavInvoiceRowProps {
   hasSzamlazzKey?: boolean;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
+  onOpenExclusionDialog?: (invoice: NavInvoice) => void;
 }
 
 interface LazyRowSelectProps {
@@ -105,6 +106,7 @@ function NavInvoiceRowComponent({
   hasSzamlazzKey: hasSzamlazzKeyProp,
   onRowClick,
   onToggleExclude,
+  onOpenExclusionDialog,
 }: NavInvoiceRowProps) {
   const { t } = useTranslation(['invoices', 'common']);
   const { defaultCurrency } = useCompanyJurisdiction();
@@ -545,8 +547,30 @@ function NavInvoiceRowComponent({
             )}
 
             {invoice.exclude_from_accounting && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-300/40 whitespace-nowrap">
-                {t('invoices:expanded.not_booked', 'Nem könyvelt')}
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenExclusionDialog?.(invoice);
+                }}
+                className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border whitespace-nowrap cursor-pointer transition-colors",
+                  invoice.accounting_exclusion_type === 'DEFERRED_VAT'
+                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
+                    : "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-300/40 hover:bg-rose-500/25"
+                )}
+                title={invoice.accounting_exclusion_type === 'DEFERRED_VAT' ? (invoice.deferred_vat_reason || 'ÁFA levonás elhalasztva') : 'Kizárva a könyvelésből'}
+              >
+                {invoice.accounting_exclusion_type === 'DEFERRED_VAT' ? (
+                  <>
+                    <Clock className="w-3 h-3" />
+                    {t('invoices:expanded.deferred_vat_badge', 'Kérdéses (ÁFA halasztva)')}
+                  </>
+                ) : (
+                  <>
+                    <Ban className="w-3 h-3" />
+                    {t('invoices:expanded.not_booked', 'Nem könyvelt')}
+                  </>
+                )}
               </span>
             )}
 
@@ -847,7 +871,10 @@ function NavInvoiceRowComponent({
             setLastViewedInvoiceId(invoice.id);
           }}
           excludeFromAccounting={!!invoice.exclude_from_accounting}
+          accountingExclusionType={invoice.accounting_exclusion_type}
+          deferredVatReason={invoice.deferred_vat_reason}
           onToggleExclude={() => onToggleExclude(invoice.id, !!invoice.exclude_from_accounting)}
+          onOpenExclusionDialog={() => onOpenExclusionDialog?.(invoice)}
           invoiceId={invoice.id}
           invoiceAmount={invoice.invoice_gross_amount || 0}
           invoiceCurrency={invoice.currency || 'HUF'}

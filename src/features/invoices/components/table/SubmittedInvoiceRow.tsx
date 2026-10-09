@@ -8,7 +8,7 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/h
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
-import { ChevronDown, FileText, Package, Pencil, AlertTriangle, AlertOctagon, Check, Sparkles } from 'lucide-react';
+import { ChevronDown, FileText, Package, Pencil, AlertTriangle, AlertOctagon, Check, Sparkles, Clock, Ban } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
 import { normalizeInvoiceNumber, checkBuyerTaxMismatch, isForeignSubmittedInvoice } from '@/lib/invoiceMatchingUtils';
@@ -34,6 +34,7 @@ interface SubmittedInvoiceRowProps {
   } | null;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
+  onOpenExclusionDialog?: (invoice: any) => void;
 }
 
 export function SubmittedInvoiceRow({
@@ -43,6 +44,7 @@ export function SubmittedInvoiceRow({
   nonDeductibleInfo,
   onRowClick,
   onToggleExclude,
+  onOpenExclusionDialog,
 }: SubmittedInvoiceRowProps) {
   const {
     activeTab,
@@ -661,7 +663,10 @@ export function SubmittedInvoiceRow({
             setLastViewedInvoiceId(inv.id);
           }}
           excludeFromAccounting={!!invoice.exclude_from_accounting}
+          accountingExclusionType={(invoice as any).accounting_exclusion_type}
+          deferredVatReason={(invoice as any).deferred_vat_reason}
           onToggleExclude={() => onToggleExclude(invoice.id, !!invoice.exclude_from_accounting)}
+          onOpenExclusionDialog={() => onOpenExclusionDialog?.(invoice)}
           invoiceId={invoice.id}
           invoiceAmount={invoice.brutto_vegosszeg || 0}
           invoiceCurrency={invoice.penznem || 'HUF'}

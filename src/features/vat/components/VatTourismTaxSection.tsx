@@ -20,9 +20,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  FileText,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { VatFrequency } from '../types';
+import { Nav26TfejlhReplicaContainer } from './replica/Nav26TfejlhReplicaContainer';
 
 interface VatTourismTaxSectionProps {
   companyId: string;
@@ -40,6 +42,7 @@ export function VatTourismTaxSection({
   selectedCompany,
 }: VatTourismTaxSectionProps) {
   const { toast } = useToast();
+  const [viewMode, setViewMode] = useState<'calculator' | 'replica'>('calculator');
 
   // GL accounts state for the 4 categories
   const [glEtkezohely, setGlEtkezohely] = useState(['9111', '9112', '']);
@@ -47,8 +50,8 @@ export function VatTourismTaxSection({
   const [glSzallas, setGlSzallas] = useState(['9131', '', '']);
   const [glBusz, setGlBusz] = useState(['9141', '', '']);
 
-  // Bases state
-  const [baseEtkezohely, setBaseEtkezohely] = useState<number>(0);
+  // User manual override for category 1 (null means use auto-calculated data from invoices)
+  const [manualEtkezohely, setManualEtkezohely] = useState<number | null>(null);
   const [baseEtterem, setBaseEtterem] = useState<number>(0);
   const [baseSzallas, setBaseSzallas] = useState<number>(0);
   const [baseBusz, setBaseBusz] = useState<number>(0);
@@ -72,25 +75,24 @@ export function VatTourismTaxSection({
     }
   }, [year, month, frequency]);
 
-  // Auto-populate / Feltölt from invoices or general ledger balances
-  const handleAutoFill = async () => {
-    try {
-      // Fetch outbound invoices net amounts for 5% catering or accommodation
+  // Auto-fetch 5% catering & accommodation outbound invoices for the selected period
+  const { data: autoData, isLoading: isAutoLoading, refetch: refetchAutoData } = useQuery({
+    queryKey: ['tourism_tax_auto_data', companyId, dateFrom, dateTo],
+    queryFn: async () => {
       const [navRes, subRes] = await Promise.all([
         supabase
           .from('nav_invoices')
-          .select('id, invoice_number, invoice_net_amount, invoice_vat_amount, vat_row_override')
+          .select('id, invoice_number, invoice_net_amount, invoice_vat_amount, vat_row_override, invoice_delivery_date')
           .eq('company_id', companyId)
           .eq('invoice_direction', 'OUTBOUND')
-          .or(`invoice_delivery_date.gte.${dateFrom},and(invoice_delivery_date.is.null,invoice_issue_date.gte.${dateFrom})`)
-          .or(`invoice_delivery_date.lte.${dateTo},and(invoice_delivery_date.is.null,invoice_issue_date.lte.${dateTo})`),
+          .gte('invoice_delivery_date', dateFrom)
+          .lte('invoice_delivery_date', dateTo),
         supabase
           .from('invoices')
-          .select('id, bizonylatsorszam, adoalap_osszesen, afa_osszeg_osszesen, vat_row_override')
+          .select('id, bizonylatsorszam, adoalap_osszesen, afa_osszeg_osszesen, vat_row_override, teljesites_datuma, kibocsatas_datuma')
           .eq('company_id', companyId)
           .eq('invoice_direction', 'OUTBOUND')
-          .or(`teljesites_datuma.gte.${dateFrom},and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom})`)
-          .or(`teljesites_datuma.lte.${dateTo},and(teljesites_datuma.is.null,kibocsatas_datuma.lte.${dateTo})`),
+          .or(`and(teljesites_datuma.gte.${dateFrom},teljesites_datuma.lte.${dateTo}),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFrom},kibocsatas_datuma.lte.${dateTo})`),
       ]);
 
       const navInvs = navRes.data || [];
@@ -120,10 +122,26 @@ export function VatTourismTaxSection({
         }
       });
 
-      setBaseEtkezohely(cateringNet);
+      return {
+        cateringNet,
+        invoiceCount: navInvs.length + standaloneSubInvs.length,
+      };
+    },
+    enabled: !!companyId,
+  });
+
+  // Base is manual override if user typed a value, otherwise auto-calculated from invoices
+  const baseEtkezohely = manualEtkezohely !== null ? manualEtkezohely : (autoData?.cateringNet ?? 0);
+
+  // Manual trigger / toast
+  const handleAutoFill = async () => {
+    try {
+      setManualEtkezohely(null);
+      const res = await refetchAutoData();
+      const net = res.data?.cateringNet || 0;
       toast({
-        title: 'Adatok feltöltve',
-        description: `Az időszak bizonylatai alapján ${formatCurrency(cateringNet)} összegű hozzájárulási alap került betöltésre.`,
+        title: 'Adatok sikeresen feltöltve',
+        description: `Az időszak bizonylatai alapján ${formatCurrency(net)} összegű hozzájárulási alap került betöltésre.`,
       });
     } catch (e: any) {
       toast({
@@ -203,21 +221,56 @@ export function VatTourismTaxSection({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* View mode toggle buttons */}
+          <div className="flex items-center bg-muted/80 p-0.5 rounded-lg border border-border/60">
+            <button
+              type="button"
+              onClick={() => setViewMode('calculator')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                viewMode === 'calculator'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              Kalkulátor & Főkönyv
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('replica')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                viewMode === 'replica'
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              26TFEJLH Nyomtatvány replika
+            </button>
+          </div>
+
           <Button
             onClick={handleAutoFill}
+            disabled={isAutoLoading}
             variant="outline"
             size="sm"
             className="h-9 text-xs gap-1.5 font-semibold text-primary"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            {isAutoLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
             Feltöltés forgalomból
           </Button>
+
           <Button
             onClick={handleExportXml}
             disabled={totalBase === 0}
             size="sm"
-            className="h-9 text-xs gap-1.5 font-semibold bg-primary"
+            variant={viewMode === 'replica' ? 'outline' : 'default'}
+            className="h-9 text-xs gap-1.5 font-semibold"
           >
             <Download className="w-3.5 h-3.5" />
             26TFEJLH exportálás
@@ -225,7 +278,21 @@ export function VatTourismTaxSection({
         </div>
       </div>
 
-      {/* Grid of the 4 statutory categories */}
+      {viewMode === 'replica' ? (
+        <Nav26TfejlhReplicaContainer
+          selectedCompany={selectedCompany}
+          year={year}
+          month={month}
+          frequency={frequency}
+          baseEtkezohely={baseEtkezohely}
+          baseEtterem={baseEtterem}
+          baseSzallas={baseSzallas}
+          baseBusz={baseBusz}
+          onExportXml={handleExportXml}
+        />
+      ) : (
+        <>
+          {/* Grid of the 4 statutory categories */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Category 1: Étkezőhelyi vendéglátás */}
         <Card className="border border-border/80 shadow-sm">
@@ -261,7 +328,7 @@ export function VatTourismTaxSection({
                 type="number"
                 value={baseEtkezohely || ''}
                 placeholder="0"
-                onChange={(e) => setBaseEtkezohely(Number(e.target.value) || 0)}
+                onChange={(e) => setManualEtkezohely(Number(e.target.value) || 0)}
                 className="h-9 text-sm font-mono font-bold mt-1 text-right"
               />
             </div>
@@ -418,9 +485,19 @@ export function VatTourismTaxSection({
                 {formatCurrency(taxPayable)}
               </span>
             </div>
+
+            <Button
+              onClick={() => setViewMode('replica')}
+              className="h-9 text-xs gap-1.5 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Nyomtatvány replika megtekintése
+            </Button>
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }

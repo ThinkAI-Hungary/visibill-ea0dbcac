@@ -22,6 +22,7 @@ interface SubmittedInvoiceTableProps {
   pageDeductibilityMap?: Map<string, InvoiceDeductibilitySummary>;
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
+  onOpenExclusionDialog?: (invoice: any) => void;
 }
 
 export function SubmittedInvoiceTable({
@@ -30,6 +31,7 @@ export function SubmittedInvoiceTable({
   pageDeductibilityMap,
   onRowClick,
   onToggleExclude,
+  onOpenExclusionDialog,
 }: SubmittedInvoiceTableProps) {
   const { t } = useTranslation(['invoices', 'common']);
   const {
@@ -253,6 +255,7 @@ export function SubmittedInvoiceTable({
                       nonDeductibleInfo={pageDeductibilityMap?.get(invoice.id)}
                       onRowClick={onRowClick}
                       onToggleExclude={onToggleExclude}
+                      onOpenExclusionDialog={onOpenExclusionDialog}
                     />
                   ))
                 )}

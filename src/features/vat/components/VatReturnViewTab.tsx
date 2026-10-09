@@ -30,7 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { generateVatReturnPdf } from '@/lib/vatReturnPdf';
 import { generateVatReturnXml, formatAnykPhoneNumber } from '@/lib/vatReturnXml';
@@ -48,6 +48,7 @@ import {
 import { MONTHS } from '../types';
 import { useVatReturnData } from '../hooks/useVatReturnData';
 import { useSteelProductsData } from '../hooks/useSteelProductsData';
+import { useQuestionableInvoices } from '@/features/invoices/hooks/useQuestionableInvoices';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
 import { VatCalculatorView } from './VatCalculatorView';
@@ -100,6 +101,10 @@ export function VatReturnViewTab() {
     year,
     month,
     frequency
+  );
+
+  const { totalCount: questionableCount, totalVat: questionableVat } = useQuestionableInvoices(
+    selectedCompany?.id
   );
 
   const [isXmlExportModalOpen, setIsXmlExportModalOpen] = React.useState(false);
@@ -391,6 +396,20 @@ export function VatReturnViewTab() {
                       period: `${year}/${String(month).padStart(2, '0')}`,
                       defaultValue: `Biztosan véglegesíted a ${year}/${String(month).padStart(2, '0')} időszak bevallását?`,
                     })}
+
+                    {questionableCount > 0 && (
+                      <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs text-left">
+                        <div className="font-semibold flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
+                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>
+                            Figyelem: {questionableCount} db kérdéses számla várakozik döntésre ({formatCurrency(questionableVat, 'HUF')} ÁFA tartalom)!
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-300/80">
+                          A bevallás véglegesítése előtt ezeket még beemelheted az aktuális havi levonható ÁFA tételek és költségek közé. Ha most véglegesítesz, ezek a számlák a későbbi hónapokban maradnak elszámolhatók (a 2 éves törvényi jogvesztő határidőn belül).
+                        </p>
+                      </div>
+                    )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

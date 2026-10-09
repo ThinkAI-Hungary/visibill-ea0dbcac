@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-08  
-> **Összesen:** 229 döntés (211 egyedi döntési fájl) | ✅ Decided: 227 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-09  
+> **Összesen:** 232 döntés (214 egyedi döntési fájl) | ✅ Decided: 230 | ⛔ Superseded: 2
 
 
 ---
@@ -147,6 +147,9 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-179 | Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra | ✅ Decided | [A-179](./A-179-aggreg8-psd2-cross-import-deduplication.md) |
 | A-182 | Részfizetés és Jutaléklevonás Számlapárosítás és Deduplikációs Architektúra | ✅ Decided | [A-182](./A-182-partial-payment-matching-and-transaction-deduplication.md) |
 | A-233 | Kézi Készpénzes Számlarendezések Automatikus Házipénztár Integrációja és GLS Kompenzációs Normalizálás | ✅ Decided | [A-233](./A-233-transfers-manual-cash-settlement-to-petty-cash-and-gls-compensation-normalization.md) |
+| A-234 | ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Architektúrája | ✅ Decided | [A-234](./A-234-deferred-vat-deduction-and-questionable-invoices-architecture.md) |
+| A-235 | Termékimport és Vámhatározatok ÁFA Integrációja | ✅ Decided | [A-235](./A-235-import-customs-vat-declarations-and-return-integration.md) |
+
 
 ## 🖥️ Frontend
 
@@ -267,6 +270,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-230 | Könyvelési Naplók Kategorizálása, Tételsori Partner Relációk és Banki Kétirányú Szinkronizáció (EB-0257) | ✅ Decided | [A-230](./A-230-journal-categorization-and-line-partners.md) |
 | A-231 | Cégprofil Számviteli Beállítások: Teljesítés Dátum, Összevont Főkönyvi Nézet és Devizaárfolyam Bankkatalógus (EB-0258) | ✅ Decided | [A-231](./A-231-company-accounting-settings-date-gl-view-fx-bank.md) |
 | A-232 | Főkönyvi Zero-as-Value Számviteli Elv, Multi-Account Kötegelt Lekérdezés, N+1 Throttling és Valós Esedékességi Partner Korosítás | ✅ Decided | [A-232](./A-232-gl-zero-as-value-multi-account-batching-and-partner-aging.md) |
+| A-236 | NAV 26TFEJLH Nyomtatvány Replika és PDF Generáló Motor | ✅ Decided | [A-236](./A-236-nav-26tfejlh-tourism-contribution-replica-and-pdf-engine.md) |
+
 
 
 ## 💳 Fizetés

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck, Tag, Sparkles, Landmark } from 'lucide-react';
+import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck, Tag, Sparkles, Landmark, Clock, Ban } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,10 @@ export function ExpandedInvoiceRow({
   matchedCourierReports = [],
   hideStandaloneTransactions = false,
   excludeFromAccounting = false,
+  accountingExclusionType,
+  deferredVatReason,
   onToggleExclude,
+  onOpenExclusionDialog,
   invoiceId,
   invoiceAmount,
   invoiceCurrency,
@@ -559,18 +562,24 @@ export function ExpandedInvoiceRow({
                             )}
                           </div>
                         )}
-                        {onToggleExclude && (
+                        {(onToggleExclude || onOpenExclusionDialog) && (
                           <button
                             type="button"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              onToggleExclude();
+                              if (onOpenExclusionDialog) {
+                                onOpenExclusionDialog();
+                              } else if (onToggleExclude) {
+                                onToggleExclude();
+                              }
                             }}
                             className={cn(
                               "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all duration-200 border",
                               excludeFromAccounting
-                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
+                                ? accountingExclusionType === 'DEFERRED_VAT'
+                                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
+                                  : "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-300/40 hover:bg-rose-500/25"
                                 : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground"
                             )}
                           >
@@ -578,7 +587,9 @@ export function ExpandedInvoiceRow({
                               className={cn(
                                 "w-3 h-3 rounded-sm border-2 flex items-center justify-center transition-colors",
                                 excludeFromAccounting
-                                  ? "border-amber-500 bg-amber-500"
+                                  ? accountingExclusionType === 'DEFERRED_VAT'
+                                    ? "border-amber-500 bg-amber-500"
+                                    : "border-rose-500 bg-rose-500"
                                   : "border-muted-foreground/40"
                               )}
                             >
@@ -600,7 +611,21 @@ export function ExpandedInvoiceRow({
                                 </svg>
                               )}
                             </div>
-                            {t('invoices:expanded.exclude_from_accounting', 'Nem kerül könyvelésre')}
+                            {excludeFromAccounting ? (
+                              accountingExclusionType === 'DEFERRED_VAT' ? (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {t('invoices:expanded.deferred_vat', 'Kérdéses (ÁFA halasztva)')}
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <Ban className="w-3 h-3" />
+                                  {t('invoices:expanded.exclude_from_accounting', 'Nem kerül könyvelésre')}
+                                </span>
+                              )
+                            ) : (
+                              <span>{t('invoices:expanded.exclude_from_accounting', 'Nem kerül könyvelésre')}</span>
+                            )}
                           </button>
                         )}
                       </div>

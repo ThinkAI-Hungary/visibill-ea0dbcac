@@ -131,6 +131,9 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
   const [customNonce, setCustomNonce] = useState('');
   const [copiedClientId, setCopiedClientId] = useState(false);
 
+  const cleanApiKey = apiKeyInput.replace(/[-\s]/g, '').trim();
+  const isApiKeyValid = cleanApiKey.length === 40;
+
   const activeClientId = environment === 'production' ? PROD_CLIENT_ID : DEV_CLIENT_ID;
 
   // 1. Lekérdezzük a státuszt a biztonságos SECURITY DEFINER RPC-n keresztül
@@ -323,15 +326,15 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
         environment,
       };
 
-      if (apiKeyInput.trim().length === 40) {
-        payload.api_key = apiKeyInput.trim();
+      if (cleanApiKey.length === 40) {
+        payload.api_key = cleanApiKey;
       } else if (customUsername && customPassword && customKeyPart1 && customNonce) {
-        payload.username = customUsername.trim();
-        payload.password = customPassword.trim();
-        payload.key_part_1 = customKeyPart1.trim();
-        payload.nonce = customNonce.trim();
+        payload.username = customUsername.trim().replace(/[-\s]/g, '');
+        payload.password = customPassword.trim().replace(/[-\s]/g, '');
+        payload.key_part_1 = customKeyPart1.trim().replace(/[-\s]/g, '');
+        payload.nonce = customNonce.trim().replace(/[-\s]/g, '');
       } else {
-        throw new Error('Kérjük, add meg a 40 karakteres API kulcsot, vagy töltsd ki mind a 4 mezőt!');
+        throw new Error('Kérjük, add meg a 40 karakteres API kulcsot (kötőjelekkel vagy anélkül), vagy töltsd ki mind a 4 mezőt!');
       }
 
       return await invokeNavM2mProxy(payload);
@@ -776,19 +779,20 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
                     <Label htmlFor="apiKeyInput" className="text-xs font-semibold">
                       40 karakteres egyszer használatos kód (API Key)
                     </Label>
-                    <span className={`text-[11px] font-mono ${apiKeyInput.length === 40 ? 'text-emerald-500 font-bold' : 'text-muted-foreground'}`}>
-                      {apiKeyInput.length} / 40 karakter
+                    <span className={`text-[11px] font-mono ${isApiKeyValid ? 'text-emerald-500 font-bold' : 'text-muted-foreground'}`}>
+                      {cleanApiKey.length} / 40 tiszta karakter {isApiKeyValid ? '✓' : ''}
+                      {apiKeyInput.includes('-') && isApiKeyValid ? ' (kötőjelek kezelve)' : ''}
                     </span>
                   </div>
                   <Input
                     id="apiKeyInput"
-                    placeholder="Pl. U3VjYLldpTostHdsoNKLyAxBGX6hqa6i1tdpJmrF"
+                    placeholder="Pl. U3VjYLldpTostHdsoNKLyAxBGX6hqa6i1tdpJmrF vagy kötőjelekkel"
                     value={apiKeyInput}
                     onChange={(e) => setApiKeyInput(e.target.value.replace(/\s+/g, ''))}
                     className="font-mono text-sm tracking-wide bg-background"
                   />
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    💡 <strong>Fontos:</strong> Ha a kapcsolatot újra be kell állítani, a NAV ÜPO-ban ne egy korábbi felhasználó jelszavát módosítsd, hanem hozz létre egy <strong>„Új gép-gép kapcsolatot”</strong>! A NAV csak új kapcsolat generálásakor ad érvényes, egyszer használatos (Nonce) aktiváló kódot.
+                    💡 <strong>Kötőjelek kezelése:</strong> Ha a NAV ÜPO 3 kötőjellel tagolva adta meg a kódot (pl. <code>XXXXXXXXXX-YYYYYYYYYY-ZZZZZZZZZZ-WWWWWWWWWW</code>), azt is közvetlenül beillesztheted, a rendszer automatikusan felismeri és levágja a kötőjeleket.
                   </p>
                 </div>
 
@@ -869,7 +873,7 @@ export const NavUpoM2mCard: React.FC<NavUpoM2mCardProps> = ({ companyId, isOwner
                     onClick={() => activateMutation.mutate()}
                     disabled={
                       activateMutation.isPending ||
-                      (apiKeyInput.length !== 40 &&
+                      (!isApiKeyValid &&
                         (!customUsername || !customPassword || !customKeyPart1 || !customNonce))
                     }
                     className="w-full sm:w-auto text-xs px-5 font-semibold"

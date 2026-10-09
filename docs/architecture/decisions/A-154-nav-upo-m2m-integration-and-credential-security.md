@@ -2,8 +2,8 @@
 
 **Status:** Decided  
 **Date:** 2026-09-24  
-**Utoljára frissítve:** 2026-09-25  
-**Érintett modulok:** `supabase/functions/nav-m2m-proxy/index.ts`, `supabase/migrations/20260924163000_nav_upo_m2m.sql`, `src/components/integrations/NavUpoM2mCard.tsx`  
+**Utoljára frissítve:** 2026-10-09  
+**Érintett modulok:** `supabase/functions/nav-m2m-proxy/index.ts`, `supabase/migrations/20260924163000_nav_upo_m2m.sql`, `src/components/integrations/NavUpoM2mCard.tsx`, `src/test/navUpoApiKeySanitize.test.ts`  
 
 ---
 
@@ -56,6 +56,13 @@ Központi, szerveroldali **Supabase Edge Function (`nav-m2m-proxy`)** és Postgr
   - `get_user_accountant_upo_status(p_env)`: Lekérdezi, hogy a bejelentkezett felhasználónak van-e már aktív hitelesített kapcsolata bármelyik általa kezelt cégnél.
   - `adopt_upo_credentials(p_target_company_id, p_env, p_apply_to_all)`: Zero-credential-exposure mellett szerveroldalon összekapcsolja az aktív könyvelői kapcsolatot az adott céggel vagy egyetlen kattintással kiterjeszti a könyvelő összes cégére.
   - Automatikus 90 napos audit naplózás minden örököltetésről.
+
+### 7. API Kulcs Formátum Szanálás (3-Kötőjeles és GUID Tagolás vs. 32 Hex Normalizáció)
+- **Probléma:** A felhasználók a NAV ÜPO felületéről sokszor kötőjelekkel tagolt formában másolják ki a technikai kulcsokat (pl. 3 kötőjellel tagolt 36 karakteres blokkok, vagy UUID jellegű stringek), míg a NAV M2M interfész és az aláíró algoritmus szigorúan 32 karakteres tiszta hexadecimális stringet vár el.
+- **Megoldás:**
+  - A frontend (`NavUpoM2mCard.tsx`) a beviteli mezőben azonnal normalizálja a beillesztett stringet: eltávolítja a szóközöket, kötőjeleket (`.replace(/[-\s]/g, '')`), így a 3 kötőjeles vagy szóközös másolás automatikusan tiszta 32 hex karakterre alakul.
+  - A `nav-m2m-proxy` Edge Function szerveroldalon is végrehajtja a szanálást és a regex validációt (`/^[0-9a-fA-F]{32}$/`), mielőtt a NAV token szolgáltatásnak továbbítaná a kérést.
+  - Dedikált automatizált Vitest teszt (`src/test/navUpoApiKeySanitize.test.ts`) védi a tisztítási algoritmus invarianciáját.
 
 ---
 

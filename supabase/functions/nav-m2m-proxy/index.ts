@@ -289,12 +289,12 @@ Deno.serve(async (req: Request) => {
     // ACTION: ACTIVATE
     // ═══════════════════════════════════════════════════════════════
     if (action === 'activate') {
-      let username = (body.username || '').trim();
-      let password = (body.password || '').trim();
-      let keyPart1 = (body.key_part_1 || '').trim();
-      let nonce = (body.nonce || '').trim();
+      let username = (body.username || '').trim().replace(/[-\s]/g, '');
+      let password = (body.password || '').trim().replace(/[-\s]/g, '');
+      let keyPart1 = (body.key_part_1 || '').trim().replace(/[-\s]/g, '');
+      let nonce = (body.nonce || '').trim().replace(/[-\s]/g, '');
 
-      const apiKeyRaw: string = (body.api_key || '').trim();
+      const apiKeyRaw: string = (body.api_key || '').trim().replace(/[-\s]/g, '');
       if (apiKeyRaw && apiKeyRaw.length === 40) {
         username = apiKeyRaw.slice(0, 10);
         password = apiKeyRaw.slice(10, 20);
@@ -305,7 +305,7 @@ Deno.serve(async (req: Request) => {
       if (!username || !password || !keyPart1 || !nonce) {
         return new Response(
           JSON.stringify({
-            error: 'Hiányzó azonosítási adatok! Adj meg egy 40 karakteres egybefüggő API kulcsot, vagy a 4 mezőt külön.',
+            error: 'Hiányzó azonosítási adatok! Adj meg egy 40 karakteres (vagy kötőjelekkel tagolt) API kulcsot, vagy a 4 mezőt külön.',
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
