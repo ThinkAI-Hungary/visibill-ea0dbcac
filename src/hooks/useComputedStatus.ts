@@ -72,7 +72,9 @@ export function computeMatchStatus(transaction: TransactionLike): MatchStatus {
     CASH_TYPES.includes(t) ||
     t === 'bankköltség' ||
     t === 'járulékok/adók' ||
-    t === 'bérek'
+    t === 'bérek' ||
+    t === 'számlák közötti átvezetés' ||
+    t === 'transfer'
   ) {
     return 'auto_settled';
   }

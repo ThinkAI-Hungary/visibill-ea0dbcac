@@ -209,7 +209,7 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
           // auto_settled = no_match_category OR cash/bank types
           query = query.or(
             'match_type.eq.no_match_category,' +
-            'type.in.("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók")'
+            'type.in.("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók","bérek","számlák közötti átvezetés","transfer")'
           );
         } else if (filters.matchStatus === 'suggested') {
           query = query
@@ -224,7 +224,7 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
             .not('match_type', 'eq', 'no_match_category')
             .not('match_type', 'eq', 'no_invoice')
             .not('match_type', 'eq', 'invoice_missing')
-            .not('type', 'in', '("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók")');
+            .not('type', 'in', '("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók","bérek","számlák közötti átvezetés","transfer")');
         } else if (filters.matchStatus === 'no_invoice') {
           query = query.eq('match_type', 'no_invoice');
         } else if (filters.matchStatus === 'invoice_missing') {
@@ -404,7 +404,7 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
       } else if (filters.matchStatus === 'auto_settled') {
         query = query.or(
           'match_type.eq.no_match_category,' +
-          'type.in.("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók")'
+          'type.in.("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók","bérek","számlák közötti átvezetés","transfer")'
         );
       } else if (filters.matchStatus === 'suggested') {
         query = query
@@ -419,7 +419,7 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
           .not('match_type', 'eq', 'no_match_category')
           .not('match_type', 'eq', 'no_invoice')
           .not('match_type', 'eq', 'invoice_missing')
-          .not('type', 'in', '("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók")');
+          .not('type', 'in', '("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók","bérek","számlák közötti átvezetés","transfer")');
       } else if (filters.matchStatus === 'no_invoice') {
         query = query.eq('match_type', 'no_invoice');
       } else if (filters.matchStatus === 'invoice_missing') {
