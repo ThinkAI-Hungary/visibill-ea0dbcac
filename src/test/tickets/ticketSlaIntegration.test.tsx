@@ -163,7 +163,8 @@ describe('Ticket 48h SLA Reminder Integration in TicketsPage', () => {
 
   it('renders SLA badge on the overdue ticket in the table', () => {
     renderComponent();
-    expect(screen.getByText(/48h\+ \(3 nap\)/i)).toBeInTheDocument();
+    expect(screen.getByTestId('ticket-sla-badge')).toBeInTheDocument();
+    expect(screen.getByText(/48 órán túli SLA túllépés \(3 nap\)/i)).toBeInTheDocument();
   });
 
   it('filters table to only overdue tickets when clicking the 48h+ KPI card', async () => {

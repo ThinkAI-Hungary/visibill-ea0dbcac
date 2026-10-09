@@ -58,6 +58,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  Headset,
 } from "lucide-react";
 import { TicketSlaBadge } from "@/components/tickets/TicketSlaBadge";
 import {
@@ -110,6 +111,7 @@ export const matchTicketSearch = (t: Ticket, rawSearch: string): boolean => {
     (ticketNumWithHash && ticketNumWithHash.includes(query)) ||
     (queryWithoutHash && ticketNum && ticketNum.includes(queryWithoutHash));
 
+  const matchesSubject = (t.subject || '').toLowerCase().includes(query);
   const matchesMessage = stripHtml(t.message || '').toLowerCase().includes(query);
   const matchesEmail = (t.user_email || '').toLowerCase().includes(query);
   const matchesCompany = (t.company_name || '').toLowerCase().includes(query);
@@ -120,6 +122,7 @@ export const matchTicketSearch = (t: Ticket, rawSearch: string): boolean => {
 
   return Boolean(
     matchesNumber ||
+    matchesSubject ||
     matchesMessage ||
     matchesEmail ||
     matchesCompany ||
@@ -138,12 +141,16 @@ export const sortTicketsByUnreadAndDate = (ticketList: Ticket[]): Ticket[] => {
 
     // 2. Olvasatlan jegyek között: legfrissebb aktivitás (komment vagy létrehozás) szerint csökkenő
     if (a.has_unread && b.has_unread) {
-      const timeA = new Date(a.latest_comment_at || a.created_at).getTime();
-      const timeB = new Date(b.latest_comment_at || b.created_at).getTime();
+      const timeA = new Date(a.last_activity_at || a.latest_comment_at || a.created_at).getTime();
+      const timeB = new Date(b.last_activity_at || b.latest_comment_at || b.created_at).getTime();
       if (timeB !== timeA) return timeB - timeA;
     }
 
-    // 3. Olvasott jegyek között: létrehozás dátuma szerint csökkenő
+    // 3. Olvasott jegyek között: legfrissebb aktivitás szerint csökkenő
+    const actA = new Date(a.last_activity_at || a.created_at).getTime();
+    const actB = new Date(b.last_activity_at || b.created_at).getTime();
+    if (actB !== actA) return actB - actA;
+
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 };
@@ -1052,28 +1059,28 @@ export default function TicketsPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[165px] min-w-[160px]">{t('tickets:table.col_ticket_number', 'Jegyszám')}</TableHead>
-                  <TableHead className="w-[60px]">{t('tickets:table.col_type', 'Típus')}</TableHead>
-                  <TableHead className="w-[110px]">{t('tickets:table.col_system', 'Rendszer')}</TableHead>
-                  <TableHead>{t('tickets:table.col_subject', 'Tárgy')}</TableHead>
-                  <TableHead className="w-[140px]">{t('tickets:table.col_category', 'Kategória')}</TableHead>
-                  <TableHead className="w-[180px]">{t('tickets:table.col_user_company', 'Bejelentő & Cég')}</TableHead>
-                  {isAdmin && <TableHead className="w-[180px] min-w-[170px]">{t('tickets:table.col_assignee', 'Felelős')}</TableHead>}
-                  <TableHead className="w-[170px] min-w-[165px] text-center">{t('tickets:table.col_status', 'Státusz')}</TableHead>
-                  <TableHead className="w-[130px] min-w-[125px] text-center">{t('tickets:table.col_priority', 'Prioritás')}</TableHead>
+                  <TableHead className="w-[115px] pr-2">{t('tickets:table.col_ticket_number', 'Jegyszám')}</TableHead>
+                  <TableHead className="w-[48px] text-center px-2">{t('tickets:table.col_type', 'Típus')}</TableHead>
+                  <TableHead className="w-[95px]">{t('tickets:table.col_system', 'Rendszer')}</TableHead>
+                  <TableHead className="min-w-[180px] max-w-[320px]">{t('tickets:table.col_subject', 'Tárgy')}</TableHead>
+                  <TableHead className="w-[110px]">{t('tickets:table.col_category', 'Kategória')}</TableHead>
+                  <TableHead className="w-[140px]">{t('tickets:table.col_user', 'Bejelentő')}</TableHead>
+                  {isAdmin && <TableHead className="w-[140px]">{t('tickets:table.col_assignee', 'Felelős')}</TableHead>}
+                  <TableHead className="w-[125px] text-center">{t('tickets:table.col_status', 'Státusz')}</TableHead>
+                  <TableHead className="w-[100px] text-center">{t('tickets:table.col_priority', 'Prioritás')}</TableHead>
                   <TableHead
-                    className="w-[120px] text-center cursor-pointer select-none hover:text-foreground transition-colors group"
+                    className="w-[115px] text-center cursor-pointer select-none hover:text-foreground transition-colors group"
                     onClick={handleToggleCreatedSort}
                     title={
                       effectiveCreatedSort === 'desc'
-                        ? t('tickets:table.sort_created_asc', 'Rendezés: legrégebbi elöl')
+                        ? t('tickets:table.sort_activity_asc', 'Rendezés: legrégebbi aktivitás elöl')
                         : effectiveCreatedSort === 'asc'
                         ? t('tickets:table.sort_created_default', 'Rendezés visszaállítása')
-                        : t('tickets:table.sort_created_desc', 'Rendezés: legújabb elöl')
+                        : t('tickets:table.sort_activity_desc', 'Rendezés: legfrissebb aktivitás elöl')
                     }
                   >
                     <div className="flex items-center justify-center gap-1">
-                      <span>{t('tickets:table.col_created_at', 'Létrehozva')}</span>
+                      <span>{t('tickets:table.col_activity', 'Utolsó aktivitás')}</span>
                       {shouldSortByCreated ? (
                         effectiveCreatedSort === 'asc' ? (
                           <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -1110,8 +1117,8 @@ export default function TicketsPage({
                       }`}
                       onClick={() => openTicket(ticket.id)}
                     >
-                      <TableCell className="whitespace-nowrap">
-                        <div className="flex items-center gap-2 whitespace-nowrap">
+                      <TableCell className="whitespace-nowrap w-[115px] pr-2">
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
                           {ticket.has_unread && (
                             <span className="relative flex h-2 w-2 shrink-0">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/85 opacity-75" />
@@ -1146,32 +1153,35 @@ export default function TicketsPage({
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {ticket.type === "bug" ? (
-                          <Bug className="h-4 w-4 text-red-500" />
-                        ) : ticket.type === "question" ? (
-                          <HelpCircle className="h-4 w-4 text-sky-500" />
-                        ) : (
-                          <Lightbulb className="h-4 w-4 text-amber-500" />
-                        )}
+                      <TableCell className="text-center w-[48px] px-2">
+                        <div className="flex justify-center items-center">
+                          {ticket.type === "bug" ? (
+                            <Bug className="h-4 w-4 text-red-500" />
+                          ) : ticket.type === "question" ? (
+                            <HelpCircle className="h-4 w-4 text-sky-500" />
+                          ) : (
+                            <Lightbulb className="h-4 w-4 text-amber-500" />
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="w-[95px]">
                         {ticket.service === 'eaisybill' ? (
                           <span className="text-xs font-semibold">eaisybill</span>
                         ) : (
                           <span className="text-xs font-semibold text-sky-500">eaisyBooks</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="max-w-[280px] xl:max-w-[360px] 2xl:max-w-[440px]">
                         {(() => {
-                          const { title, preview } = getTicketSummary(ticket.message);
+                          const { title } = getTicketSummary(ticket.message);
+                          const displayTitle = ticket.subject || title || "—";
                           return (
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-sm font-medium text-foreground">{title || "—"}</span>
-                              {preview ? (
-                                <span className="text-xs text-muted-foreground">{preview}</span>
-                              ) : null}
-                            </div>
+                            <span
+                              className="text-sm font-medium text-foreground truncate block whitespace-nowrap"
+                              title={displayTitle}
+                            >
+                              {displayTitle}
+                            </span>
                           );
                         })()}
                       </TableCell>
@@ -1182,13 +1192,13 @@ export default function TicketsPage({
                           <span className="text-xs text-muted-foreground/40 italic">—</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <div className="space-y-0.5">
-                          <p className="text-xs font-medium truncate max-w-[160px]">{ticket.user_name || ticket.user_email}</p>
-                          <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">
-                            {ticket.company_name}
-                          </p>
-                        </div>
+                      <TableCell className="w-[140px]">
+                        <span
+                          className="text-xs font-medium truncate block max-w-[130px] whitespace-nowrap"
+                          title={ticket.user_name ? `${ticket.user_name} (${ticket.user_email})` : ticket.user_email || ''}
+                        >
+                          {ticket.user_name || ticket.user_email}
+                        </span>
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="whitespace-nowrap">
@@ -1198,8 +1208,22 @@ export default function TicketsPage({
                         </TableCell>
                       )}
                       <TableCell className="text-center">
-                        <div className="flex justify-center items-center">
+                        <div className="flex flex-col justify-center items-center gap-1">
                           <TicketStatusBadge status={ticket.status} waitingForConfirmation={ticket.waiting_for_user_confirmation} />
+                          {/* Client-facing alert badge when support answered */}
+                          {!isAdmin && ticket.has_unread && ticket.last_commenter_is_staff && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30 animate-pulse whitespace-nowrap">
+                              <Headset className="h-3 w-3 shrink-0 text-violet-600 dark:text-violet-400" />
+                              <span>{t('tickets:status.new_staff_reply', 'Új válasz érkezett')}</span>
+                            </span>
+                          )}
+                          {/* Staff-facing alert badge when customer answered */}
+                          {isAdmin && ticket.has_unread && !ticket.last_commenter_is_staff && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 animate-pulse whitespace-nowrap">
+                              <MessageSquare className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
+                              <span>{t('tickets:status.new_customer_reply', 'Új ügyfél válasz')}</span>
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
@@ -1208,9 +1232,19 @@ export default function TicketsPage({
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-                          {formatDate(ticket.created_at)}
-                        </span>
+                        <div className="flex flex-col items-center">
+                          <span className="text-xs text-foreground font-medium tabular-nums whitespace-nowrap">
+                            {formatDate(ticket.last_activity_at || ticket.created_at)}
+                          </span>
+                          {ticket.last_activity_at && ticket.last_activity_at !== ticket.created_at && (
+                            <span
+                              className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap"
+                              title={`${t('tickets:table.created_prefix', 'Létrehozva')}: ${formatDate(ticket.created_at)}`}
+                            >
+                              {t('tickets:table.created_prefix', 'Létrehozva')}: {formatDate(ticket.created_at)}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -1309,8 +1343,15 @@ export default function TicketsPage({
                       <span className="font-mono text-[10px] font-bold text-primary">
                         #{t_item.ticket_number || t_item.id.slice(0, 8)}
                       </span>
-                      <TicketSlaBadge sla={t_item.sla} compact={true} />
-                      {t_item.waiting_for_user_confirmation ? (
+                      {(!isAdmin && t_item.has_unread && t_item.last_commenter_is_staff) ? (
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30 animate-pulse">
+                          {t('tickets:status.new_staff_reply_short', 'Új válasz')}
+                        </span>
+                      ) : isAdmin && t_item.has_unread && !t_item.last_commenter_is_staff ? (
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 animate-pulse">
+                          {t('tickets:status.new_customer_reply', 'Új ügyfél válasz')}
+                        </span>
+                      ) : t_item.waiting_for_user_confirmation ? (
                         <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25">
                           {t('tickets:status.waiting_for_confirmation', 'Visszaigazolásra vár')}
                         </span>
@@ -1327,24 +1368,20 @@ export default function TicketsPage({
                           {t('tickets:status.in_progress', 'Folyamatban')}
                         </span>
                       ) : null}
+                      <TicketSlaBadge sla={t_item.sla} compact={true} />
                     </div>
-                    <span className="text-[10px] text-muted-foreground">
-                      {formatDate(t_item.created_at)}
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                      {formatDate(t_item.last_activity_at || t_item.created_at)}
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-foreground truncate max-w-[220px]">
-                    {truncate(stripHtml(t_item.message), 32)}
+                    {t_item.subject || truncate(stripHtml(t_item.message), 32)}
                   </p>
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
+                  <div className="flex items-center justify-between w-full gap-2">
+                    <span className="text-[10px] text-muted-foreground truncate flex-1 min-w-0" title={t_item.company_name}>
                       {t_item.company_name}
                     </span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {t_item.category && (
-                        <TicketCategoryBadge category={t_item.category} showIcon={false} className="text-[9px] px-1.5 py-0" />
-                      )}
-                      <TicketPriorityBadge priority={t_item.priority} />
-                    </div>
+                    <TicketPriorityBadge priority={t_item.priority} dotOnly />
                   </div>
                 </button>
               );
@@ -1560,7 +1597,11 @@ export default function TicketsPage({
                         </div>
                       </TableCell>
                       <TableCell className="text-xs font-medium">{t_item.company_name}</TableCell>
-                      <TableCell className="text-xs text-foreground/80">{truncate(stripHtml(t_item.message), 60)}</TableCell>
+                      <TableCell className="text-xs text-foreground/80 max-w-[260px]">
+                        <span className="truncate block whitespace-nowrap" title={t_item.subject || stripHtml(t_item.message)}>
+                          {t_item.subject || truncate(stripHtml(t_item.message), 60)}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-xs font-medium text-foreground/70 whitespace-nowrap">
                         {t_item.assigned_to_name || <span className="text-muted-foreground/60 italic">{t('tickets:assignment.unassigned', 'Nincs hozzárendelve')}</span>}
                       </TableCell>

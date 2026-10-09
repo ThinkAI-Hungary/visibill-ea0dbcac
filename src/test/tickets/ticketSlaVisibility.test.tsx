@@ -132,8 +132,7 @@ describe('TicketDetailView SLA & Warning Visibility by Role', () => {
     expect(screen.queryByText(/1347 órája várakozik/i)).not.toBeInTheDocument();
 
     // 2. SLA badge in header should NOT be visible
-    expect(screen.queryByText(/48h\+ válaszra vár/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/56 nap/i)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('ticket-sla-badge')).not.toBeInTheDocument();
 
     // 3. "Nem igényel választ" button / badge should NOT be visible
     expect(screen.queryByText('Nem igényel választ')).not.toBeInTheDocument();
@@ -151,7 +150,8 @@ describe('TicketDetailView SLA & Warning Visibility by Role', () => {
     expect(screen.getByText(/A hibajegy felelőseként az ügyfél utolsó üzenete óta/i)).toBeInTheDocument();
 
     // 2. SLA badge in header is visible
-    expect(screen.getByText(/48h\+ válaszra vár \(56 nap\)/i)).toBeInTheDocument();
+    expect(screen.getByTestId('ticket-sla-badge')).toBeInTheDocument();
+    expect(screen.getByText(/48 órán túli SLA túllépés \(56 nap\)/i)).toBeInTheDocument();
 
     // 3. Quick action buttons inside banner and header
     expect(screen.getByText('Válasz írása')).toBeInTheDocument();
@@ -165,6 +165,7 @@ describe('TicketDetailView SLA & Warning Visibility by Role', () => {
 
     // Visible for management role user even if is_support_admin is false
     expect(screen.getByText(/SLA Figyelmeztetés: 48 órája megválaszolatlan megkeresés!/i)).toBeInTheDocument();
-    expect(screen.getByText(/48h\+ válaszra vár \(56 nap\)/i)).toBeInTheDocument();
+    expect(screen.getByTestId('ticket-sla-badge')).toBeInTheDocument();
+    expect(screen.getByText(/48 órán túli SLA túllépés \(56 nap\)/i)).toBeInTheDocument();
   });
 });

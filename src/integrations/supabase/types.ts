@@ -6889,6 +6889,7 @@ export type Database = {
           slack_sent: boolean
           slack_sent_at: string | null
           status: string
+          subject: string | null
           ticket_number: string | null
           type: string
           updated_at: string
@@ -6916,6 +6917,7 @@ export type Database = {
           slack_sent?: boolean
           slack_sent_at?: string | null
           status?: string
+          subject?: string | null
           ticket_number?: string | null
           type: string
           updated_at?: string
@@ -6943,6 +6945,7 @@ export type Database = {
           slack_sent?: boolean
           slack_sent_at?: string | null
           status?: string
+          subject?: string | null
           ticket_number?: string | null
           type?: string
           updated_at?: string

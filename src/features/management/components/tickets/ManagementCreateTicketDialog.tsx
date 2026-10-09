@@ -27,7 +27,7 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSupportAgents } from "@/hooks/useTickets";
 import { useManagementCreateTicket } from "../../hooks/useManagementCreateTicket";
-import { uploadTicketImage, isAllowedTicketFile, MAX_FILE_SIZE } from "@/lib/upload-ticket-image";
+import { uploadTicketImage, isAllowedTicketFile, MAX_FILE_SIZE, extractFilesFromClipboard } from "@/lib/upload-ticket-image";
 import { useToast } from "@/hooks/use-toast";
 import {
   TicketPlus,
@@ -104,6 +104,7 @@ export function ManagementCreateTicketDialog({
   const [priority, setPriority] = useState<string>("medium");
   const [category, setCategory] = useState<string | null>(null);
   const [assignedTo, setAssignedTo] = useState<string>(user?.id || "unassigned");
+  const [subject, setSubject] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [editorKey, setEditorKey] = useState<number>(0);
@@ -145,6 +146,7 @@ export function ManagementCreateTicketDialog({
     setPriority("medium");
     setCategory(null);
     setAssignedTo(user?.id || "unassigned");
+    setSubject("");
     setMessage("");
     setAttachments([]);
     setEditorKey((k) => k + 1);
@@ -184,7 +186,7 @@ export function ManagementCreateTicketDialog({
           toast({
             variant: "destructive",
             title: "Nem támogatott fájltípus",
-            description: `${file.name}: Csak kép, PDF, CSV, Excel és XML fájlok engedélyezettek.`,
+            description: `${file.name}: Csak kép, PDF, CSV, Excel, XML és Markdown (.md) fájlok engedélyezettek.`,
           });
           continue;
         }
@@ -200,7 +202,9 @@ export function ManagementCreateTicketDialog({
       }
 
       setAttachments((prev) => {
-        const combined = [...prev, ...newFiles];
+        const existingKeys = new Set(prev.map(f => `${f.size}-${f.type}`));
+        const nonDuplicates = newFiles.filter(f => !existingKeys.has(`${f.size}-${f.type}`));
+        const combined = [...prev, ...nonDuplicates];
         if (combined.length > MAX_ATTACHMENTS) {
           toast({
             variant: "destructive",
@@ -215,13 +219,28 @@ export function ManagementCreateTicketDialog({
     [toast]
   );
 
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      if ((e.target as HTMLElement)?.closest('.ProseMirror')) {
+        return;
+      }
+      const files = extractFilesFromClipboard(e);
+      if (files.length > 0) {
+        e.preventDefault();
+        validateAndAddFiles(files);
+      }
+    },
+    [validateAndAddFiles]
+  );
+
   const removeAttachment = (index: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Validation
+  const isSubjectNotEmpty = Boolean(subject.trim().length > 0);
   const isTextNotEmpty = Boolean(message && message.replace(/<[^>]*>/g, "").trim().length > 0);
-  const canSubmit = Boolean(selectedUserId && isTextNotEmpty && !isSubmitting);
+  const canSubmit = Boolean(selectedUserId && isSubjectNotEmpty && isTextNotEmpty && !isSubmitting);
 
   // Submit Handler
   const handleSubmit = async () => {
@@ -253,6 +272,7 @@ export function ManagementCreateTicketDialog({
         type,
         category: category || null,
         priority,
+        subject: subject.trim(),
         message: message.trim(),
         attachments: attachmentUrls,
         assignedTo: assignedTo === "unassigned" ? null : assignedTo,
@@ -268,7 +288,7 @@ export function ManagementCreateTicketDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[760px] max-h-[90vh] overflow-y-auto">
+      <DialogContent onPaste={handlePaste} className="sm:max-w-[760px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <TicketPlus className="h-5 w-5 text-primary" />
@@ -510,6 +530,20 @@ export function ManagementCreateTicketDialog({
             />
           </div>
 
+          {/* ═══ 3.5. Hibajegy Tárgya ═══ */}
+          <div className="space-y-1.5">
+            <Label htmlFor="mgt-ticket-subject" className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
+              <span>Hibajegy tárgya *</span>
+            </Label>
+            <Input
+              id="mgt-ticket-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="pl. Számlák könyvelési javaslatának felülvizsgálata..."
+              className="h-9 text-sm"
+            />
+          </div>
+
           {/* ═══ 4. Szöveges Leírás (Rich Text Editor) ═══ */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
@@ -522,6 +556,8 @@ export function ManagementCreateTicketDialog({
               <RichTextEditor
                 key={editorKey}
                 onChange={setMessage}
+                onPasteFiles={validateAndAddFiles}
+                onDropFiles={validateAndAddFiles}
                 placeholder="Írd meg a kezdő üzenetet az ügyfélnek (pl. Kedves Kristóf, az alábbi témában szeretnénk egyeztetni veled...)..."
                 minHeight="140px"
                 toolbarVariant="ticket"
@@ -565,7 +601,7 @@ export function ManagementCreateTicketDialog({
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.csv,.xls,.xlsx,.xml"
+                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.csv,.xls,.xlsx,.xml,.md,text/markdown"
                 onChange={(e) => {
                   if (e.target.files && e.target.files.length > 0) {
                     validateAndAddFiles(e.target.files);
@@ -576,7 +612,7 @@ export function ManagementCreateTicketDialog({
               />
               <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
                 <Paperclip className="h-3.5 w-3.5" />
-                Húzd ide a fájlokat, vagy <span className="text-primary font-medium">tallózz</span> (Kép, PDF, CSV, XML max 10MB)
+                Húzd ide a fájlokat, vagy <span className="text-primary font-medium">tallózz</span> (Kép, PDF, CSV, XML, MD max 10MB)
               </p>
             </div>
 

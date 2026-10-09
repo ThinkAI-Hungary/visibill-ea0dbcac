@@ -27,7 +27,7 @@ Mielőtt bármilyen új vizuális komponenst, gombot, táblázatot vagy modált 
 ---
 
 ## 🏛️ 2. Építészeti Döntések (ADR Fegyelem)
-A Visibill projektben a döntéshozatal dokumentált (116+ elfogadott ADR).
+A Visibill projektben a döntéshozatal dokumentált (229+ elfogadott ADR).
 
 * **Mikor kötelező új ADR-t írni?**
   1. Új Edge Function vagy külső API integráció bevezetésekor.
@@ -45,3 +45,17 @@ A Visibill projektben a döntéshozatal dokumentált (116+ elfogadott ADR).
 * Ha egy új felhasználói felület, üzleti folyamat (pl. új számlázási/adózási kalkuláció) kerül megtervezésre:
   * Hozz létre új bejegyzést: `docs/product/decisions/P-XXX-<kebab-case-cim>.md`.
   * Vezesd fel a [docs/product/decisions/index.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/product/decisions/index.md) fájlba.
+
+---
+
+## ⚖️ 4. Szabályok vs. Döntési Dokumentumok Határvonala (Thin Rule + Deep Spec Minta)
+A modell kontextusablakának tisztasága és a hatékony fejlesztés érdekében szigorúan elválasztjuk a szabályokat és a döntési dokumentumokat:
+
+* **Szabályok (`.agents/rules/*.md`):**
+  * Kizárólag a **nem-alkuképes negatív tiltásokat** (mit szigorúan tilos megtenni), a **numerikus és technikai védelmi korlátokat** (pl. `CONCURRENCY_LIMIT = 4`, PostgREST 1000 limit, `Math.abs`), valamint az **azonnali ellenőrző lépéseket** tartalmazzák.
+  * Tilos a szabályfájlokban hosszú történelmi esettanulmányokat, korábbi kudarcok elbeszélését és 30+ soros redundáns SQL/kód blokkokat tárolni!
+* **Döntési Rekordok és Specifikációk (`docs/architecture/decisions/`, `docs/design/`):**
+  * Ide tartozik a mély tervezési szándék: miért így döntöttünk, milyen alternatívák buktak el korábban, mik a pontos mérések/benchmarkok, és hogyan néz ki a teljes architektúra.
+* **Kötelező Hivatkozási Fegyelem:**
+  * Minden releváns szabálypont végén kötelező **pontos kattintható markdown linkkel** hivatkozni a forrás ADR-re (pl. `[A-189](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-189-gl-rpc-performance-optimization-and-timeout-elimination.md)`) vagy Design fejezetre (pl. `[08-interactions-animations.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/08-interactions-animations.md)`), ahol a részletes kontextus megtekinthető.
+

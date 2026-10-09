@@ -10,6 +10,8 @@ export const ALLOWED_TYPES = [
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "application/xml",
   "text/xml",
+  "text/markdown",
+  "text/x-markdown",
 ];
 export const ALLOWED_EXTENSIONS = [
   "jpg", "jpeg", "png", "gif", "webp",
@@ -17,12 +19,74 @@ export const ALLOWED_EXTENSIONS = [
   "csv",
   "xls", "xlsx",
   "xml",
+  "md",
+  "markdown",
 ];
 
 export function isAllowedTicketFile(file: File): boolean {
   if (ALLOWED_TYPES.includes(file.type)) return true;
   const ext = file.name.split(".").pop()?.toLowerCase() || "";
   return ALLOWED_EXTENSIONS.includes(ext);
+}
+
+/**
+ * Standardizes files pasted from clipboard (e.g. Snipping tool, screenshots)
+ * which often have generic names like "image.png" or "blob".
+ */
+export function sanitizeClipboardFile(file: File): File {
+  if (file.type.startsWith('image/') && (!file.name || file.name === 'image.png' || file.name === 'blob')) {
+    const ext = file.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    return new File([file], `beillesztett_kep_${timestamp}.${ext}`, {
+      type: file.type,
+      lastModified: Date.now(),
+    });
+  }
+  return file;
+}
+
+/**
+ * Extracts all valid files from a clipboard paste event (e.g. Ctrl+V with image or copied files).
+ */
+export function extractFilesFromClipboard(event: React.ClipboardEvent | ClipboardEvent): File[] {
+  const files: File[] = [];
+  const clipboardData = (event as any).clipboardData;
+  if (!clipboardData) return files;
+
+  // 1. Check direct clipboardData.files (e.g. copied files in file manager)
+  if (clipboardData.files && clipboardData.files.length > 0) {
+    for (let i = 0; i < clipboardData.files.length; i++) {
+      const f = clipboardData.files[i];
+      if (f && f.size > 0) {
+        files.push(sanitizeClipboardFile(f));
+      }
+    }
+  }
+
+  // 2. Check clipboardData.items (e.g. PrtScn / Snipping tool screenshots in clipboard)
+  if (files.length === 0 && clipboardData.items && clipboardData.items.length > 0) {
+    for (let i = 0; i < clipboardData.items.length; i++) {
+      const item = clipboardData.items[i];
+      if (item.kind === 'file') {
+        const blob = item.getAsFile();
+        if (blob) {
+          files.push(sanitizeClipboardFile(blob));
+        }
+      }
+    }
+  }
+
+  const uniqueFiles: File[] = [];
+  const seen = new Set<string>();
+  for (const f of files) {
+    const key = `${f.size}-${f.type}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueFiles.push(f);
+    }
+  }
+
+  return uniqueFiles;
 }
 
 const BUCKET = "ticket-attachments";
@@ -33,7 +97,7 @@ export async function uploadTicketImage(
   ticketId: string
 ): Promise<string> {
   if (!isAllowedTicketFile(file)) {
-    throw new Error("Csak kép (JPEG, PNG, GIF, WebP), PDF, CSV, Excel és XML fájlok engedélyezettek.");
+    throw new Error("Csak kép (JPEG, PNG, GIF, WebP), PDF, CSV, Excel, XML és Markdown (.md) fájlok engedélyezettek.");
   }
 
   if (file.size > MAX_FILE_SIZE) {
@@ -46,7 +110,15 @@ export async function uploadTicketImage(
 
   const contentType = (file.type && ALLOWED_TYPES.includes(file.type))
     ? file.type
-    : (ext === 'xml' ? 'application/xml' : ext === 'csv' ? 'text/csv' : ext === 'pdf' ? 'application/pdf' : file.type || undefined);
+    : (ext === 'xml'
+        ? 'application/xml'
+        : ext === 'csv'
+        ? 'text/csv'
+        : ext === 'pdf'
+        ? 'application/pdf'
+        : (ext === 'md' || ext === 'markdown')
+        ? 'text/markdown; charset=utf-8'
+        : file.type || undefined);
 
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
     cacheControl: "3600",
@@ -62,3 +134,4 @@ export async function uploadTicketImage(
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
+

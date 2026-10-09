@@ -102,6 +102,7 @@ describe('ManagementCreateTicketDialog', () => {
     renderDialog();
     expect(screen.getByText('Új megkeresés indítása ügyfél felé')).toBeDefined();
     expect(screen.getByText('Érintett Felhasználó (User) *')).toBeDefined();
+    expect(screen.getByText('Hibajegy tárgya *')).toBeDefined();
     expect(screen.getByText('Érintett Cég')).toBeDefined();
     expect(screen.getByText('Szolgáltatás')).toBeDefined();
     expect(screen.getByText('Típus')).toBeDefined();
@@ -109,7 +110,7 @@ describe('ManagementCreateTicketDialog', () => {
     expect(screen.getByText('Megkeresés Küldése')).toBeDefined();
   });
 
-  it('keeps submit button disabled until user and message are provided', () => {
+  it('keeps submit button disabled until user, subject, and message are provided', () => {
     renderDialog();
     const submitBtn = screen.getByRole('button', { name: /Megkeresés Küldése/i });
     expect(submitBtn.hasAttribute('disabled')).toBe(true);
@@ -128,6 +129,10 @@ describe('ManagementCreateTicketDialog', () => {
 
     // Combobox now shows Kovács Péter
     expect(screen.getByText('Kovács Péter')).toBeDefined();
+
+    // Fill subject
+    const subjectInput = screen.getByLabelText(/Hibajegy tárgya/i);
+    fireEvent.change(subjectInput, { target: { value: 'Számla letöltési hiba tárgy' } });
 
     // Fill message in RichTextEditor
     const editor = screen.getByTestId('mock-rich-editor');
@@ -155,6 +160,10 @@ describe('ManagementCreateTicketDialog', () => {
     fireEvent.click(screen.getByTestId('user-combobox-trigger'));
     fireEvent.click(await screen.findByText('Kovács Péter'));
 
+    // Type subject
+    const subjectInput = screen.getByLabelText(/Hibajegy tárgya/i);
+    fireEvent.change(subjectInput, { target: { value: 'NAV szinkron hiba' } });
+
     // Type message
     const editor = screen.getByTestId('mock-rich-editor');
     fireEvent.change(editor, { target: { value: 'Nem érkezett meg a NAV szinkron' } });
@@ -168,6 +177,7 @@ describe('ManagementCreateTicketDialog', () => {
         expect.objectContaining({
           targetUserId: 'user-uuid-1',
           companyId: 'comp-1',
+          subject: 'NAV szinkron hiba',
           message: 'Nem érkezett meg a NAV szinkron',
           service: 'eaisybill',
           type: 'bug',

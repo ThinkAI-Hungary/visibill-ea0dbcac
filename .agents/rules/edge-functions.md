@@ -5,7 +5,11 @@ description: Apply when creating, editing, testing, or deploying Supabase Edge F
 
 # Supabase Edge Functions Guidelines (Visibill / eaisybill-prod)
 
-## 🛡️ 1. Kötelező Kliens- és Költségvédelem (ADR A-101)
+> [!TIP]
+> **Központi Katalógus és Architektúra:**
+> A függvények teljes katalógusa, felépítése és konfigurációja elérhető az [ADR A-005](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-005-edge-functions.md) döntési rekordban.
+
+## 🛡️ 1. Kötelező Kliens- és Költségvédelem ([ADR A-101](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-101-direct-script-automation-restriction.md))
 A rendszer védve van a jogosulatlan szkript-alapú automatizációk és a kontrollálatlan LLM/API költségek ellen.
 * **Minden hitelesített felhasználói Edge Function-ben kötelező:**
   ```typescript
@@ -37,6 +41,7 @@ A rendszer védve van a jogosulatlan szkript-alapú automatizációk és a kontr
 * **Service Role vs Anon Client:**
   * Alapértelmezésben a felhasználó tokenjével ellátott klienst használd az RLS betartásához.
   * `SUPABASE_SERVICE_ROLE_KEY`-t kizárólag szigorúan auditált háttérműveleteknél (pl. service bypass, belső szinkronizáció) használj, ahol az RLS-t szándékosan meg kell kerülni.
+  * *Részletek:* [ADR A-009](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-009-auth-rbac.md) és [ADR A-017](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-017-security-architecture.md).
 
 ---
 
@@ -47,6 +52,7 @@ A rendszer védve van a jogosulatlan szkript-alapú automatizációk és a kontr
 * **Környezeti változók és titkok:**
   * Minden érzékeny kulcsot a `Deno.env.get("SECRET_NAME")` függvénnyel kérj le.
   * **Szigorúan tilos** API kulcsokat, jelszavakat vagy privát tokeneket kliensnek visszaküldött válaszba illeszteni vagy kódban hardkódolni.
+  * *Részletek:* [ADR A-010](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-010-credential-encryption.md) és [ADR A-017](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-017-security-architecture.md).
 
 ---
 

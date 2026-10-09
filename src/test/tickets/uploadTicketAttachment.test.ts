@@ -62,3 +62,80 @@ describe('upload-ticket-image XML support', () => {
     );
   });
 });
+
+describe('upload-ticket-image Markdown (.md) support', () => {
+  it('includes Markdown MIME types in ALLOWED_TYPES and extensions', () => {
+    expect(ALLOWED_TYPES).toContain('text/markdown');
+    expect(ALLOWED_TYPES).toContain('text/x-markdown');
+  });
+
+  it('allows .md files based on extension even if type is empty or text/plain', () => {
+    const file1 = new File(['# Bug report'], 'hibajegy_leiras.md', { type: '' });
+    expect(isAllowedTicketFile(file1)).toBe(true);
+
+    const file2 = new File(['# Specification'], 'specifikacio.MD', { type: 'text/plain' });
+    expect(isAllowedTicketFile(file2)).toBe(true);
+
+    const file3 = new File(['# Readme'], 'README.markdown', { type: 'text/markdown' });
+    expect(isAllowedTicketFile(file3)).toBe(true);
+  });
+
+  it('uploads .md file with text/markdown contentType', async () => {
+    const { supabase } = await import('@/integrations/supabase/client');
+    const uploadMock = vi.fn().mockResolvedValue({ error: null });
+    vi.mocked(supabase.storage.from).mockReturnValue({
+      upload: uploadMock,
+      getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/storage/v1/object/public/ticket-attachments/test/file.md' } }),
+    } as any);
+
+    const file = new File(['# Hiba'], 'leiras.md', { type: '' });
+    const url = await uploadTicketImage(file, 'user-123', 'ticket-456');
+    expect(url).toContain('file.md');
+    expect(uploadMock).toHaveBeenCalledWith(
+      expect.stringMatching(/ticket-456\/user-123\/.*\.md$/),
+      file,
+      expect.objectContaining({
+        contentType: 'text/markdown; charset=utf-8',
+      })
+    );
+  });
+});
+
+describe('upload-ticket-image clipboard paste helpers', () => {
+  it('extracts files from clipboardData.items (Ctrl+V image screenshot)', async () => {
+    const { extractFilesFromClipboard } = await import('@/lib/upload-ticket-image');
+    const imageBlob = new File(['binary-png-data'], 'image.png', { type: 'image/png' });
+    const fakeEvent = {
+      clipboardData: {
+        files: [],
+        items: [
+          {
+            kind: 'file',
+            type: 'image/png',
+            getAsFile: () => imageBlob,
+          },
+        ],
+      },
+    } as any;
+
+    const extracted = extractFilesFromClipboard(fakeEvent);
+    expect(extracted.length).toBe(1);
+    expect(extracted[0].type).toBe('image/png');
+    expect(extracted[0].name).toMatch(/^beillesztett_kep_/);
+  });
+
+  it('extracts files from clipboardData.files', async () => {
+    const { extractFilesFromClipboard } = await import('@/lib/upload-ticket-image');
+    const mdFile = new File(['# Leiras'], 'doc.md', { type: 'text/markdown' });
+    const fakeEvent = {
+      clipboardData: {
+        files: [mdFile],
+      },
+    } as any;
+
+    const extracted = extractFilesFromClipboard(fakeEvent);
+    expect(extracted.length).toBe(1);
+    expect(extracted[0].name).toBe('doc.md');
+  });
+});
+

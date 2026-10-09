@@ -255,8 +255,8 @@ describe('TicketsPage unread ticket sorting integration', () => {
     expect(renderedNumbers[2]).toBe('#EB-0080');
     expect(renderedNumbers[3]).toBe('#EB-0070');
 
-    // Click "Létrehozva" column header to toggle to ASC
-    const createdHeader = screen.getByText('Létrehozva');
+    // Click "Utolsó aktivitás" column header to toggle to ASC
+    const createdHeader = screen.getByText(/Utolsó aktivitás|Létrehozva/);
     fireEvent.click(createdHeader);
 
     ticketCells = screen.getAllByText(/#EB-\d{4}/);

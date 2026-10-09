@@ -70,6 +70,7 @@ const mockTickets: Ticket[] = [
   {
     id: 't-2',
     ticket_number: 'EB-0094',
+    subject: 'Banki párosítási elakadás',
     type: 'bug',
     service: 'eaisybill',
     message: 'Ismeretlen okból nem párosítja össze a tételeket',
@@ -330,5 +331,23 @@ describe('TicketsPage Console View Search', () => {
 
     // In-progress ticket (EB-0094) should display "Folyamatban" status badge
     expect(screen.getByText('Folyamatban')).toBeInTheDocument();
+  });
+
+  it('searches tickets by subject and displays subject on console cards', () => {
+    // 1. Direct unit test of matchTicketSearch with subject
+    const ticketWithSubject = mockTickets.find(t => t.id === 't-2')!;
+    expect(matchTicketSearch(ticketWithSubject, 'párosítási elakadás')).toBe(true);
+    expect(matchTicketSearch(ticketWithSubject, 'nem_letezo_targyszo')).toBe(false);
+
+    // 2. Integration test in console sidebar: EB-0094 displays its subject
+    renderConsole();
+    expect(screen.getByText('Banki párosítási elakadás')).toBeInTheDocument();
+
+    // 3. Filtering by subject via search input
+    const searchInput = screen.getByPlaceholderText('Keresés...');
+    fireEvent.change(searchInput, { target: { value: 'párosítási elakadás' } });
+
+    expect(screen.getByText('#EB-0094')).toBeInTheDocument();
+    expect(screen.queryByText('#EB-0095')).not.toBeInTheDocument();
   });
 });

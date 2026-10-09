@@ -964,6 +964,7 @@ serve(async (req: Request) => {
           type: body.type || "feedback",
           category: body.category || null,
           priority: body.priority || "medium",
+          subject: body.subject ? String(body.subject).trim() : null,
           message,
           attachments: Array.isArray(body.attachments) ? body.attachments : null,
           assigned_to: assignedTo,

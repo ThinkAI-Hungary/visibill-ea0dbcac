@@ -47,6 +47,7 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
     DROP TRIGGER IF EXISTS trg_example ON public.table_name;
     CREATE TRIGGER trg_example BEFORE INSERT ON public.table_name ...;
     ```
+  * *Részletek:* [ADR A-002](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-002-supabase-baas.md).
 
 ---
 
@@ -89,6 +90,7 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
   * **Kötelező védelem:** Minden olyan RPC-ben vagy kötegelt mentésben, amely `ON CONFLICT DO UPDATE`-et használ:
     1. **Kliens- és parserszinten:** Kötelező deduplikálni a kulcsokat az adatbázis hívása előtt (pl. `seenLineNumbers` halmaz és monoton növekvő sorszámozás).
     2. **Tárolt eljárás szinten:** Az eljárásnak belsőleg reziliensnek kell lennie. Ha a bemeneti JSON-ban duplikáció érkezik, az eljárás `WITH ORDINALITY` CTE és sorszám-normalizálás segítségével köteles belsőleg feloldani az ütközést ahelyett, hogy eldobná a tranzakciót.
+  * *Részletek:* [ADR A-016](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-016-postgresql-query-strategy.md), [ADR A-092](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-092-database-security-and-performance-optimization.md) (search_path & jogosultság-védelem), [ADR A-096](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-096-authoritative-nav-line-items-crosscheck-and-sync-guard.md), [ADR A-183](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-183-supabase-query-performance-and-financial-rpc-optimization.md) (RPC volatilitás & gyorsítás) és [ADR A-193](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md).
 
 ---
 
@@ -105,6 +107,7 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
   * Ennek elmulasztása esetén a PostgreSQL minden bérlői lekérdezésnél az adatbázis összes cégének adatait végigpásztázza, ami súlyos cross-tenant adatszivárgást és exponenciális lassulást okoz.
 * **Service Role bypass tudatosság:**
   * RLS házirendek írásakor vedd figyelembe, hogy a háttér worker (`service_role`) átlépi az RLS-t, míg a frontend kliensek szigorúan a felhasználó JWT tokenjével hajtják végre a szabályokat.
+  * *Részletek:* [ADR A-003](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-003-multi-tenancy-rls.md), [ADR A-017](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-017-security-architecture.md), [ADR A-092](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-092-database-security-and-performance-optimization.md) (InitPlan optimalizálás), [ADR A-097](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-097-multi-tenant-nav-items-denormalization-and-gl-optimization.md) (tételszintű bérlői denormalizáció) és [ADR A-103](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-103-accounty-rls-performance-optimization-and-error-guarding.md) (Hashed SubPlan & rekurzió-mentesítés).
 
 ---
 
@@ -121,6 +124,7 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
   * Tömeges szinkronizáció, backfill vagy nagy törlések után a nagy forgalmú táblákon (`nav_invoice_items`, `transactions`, `accounty_missing_items`) kötelező a `VACUUM ANALYZE` futtatása a Visibility Map és a statisztikák frissítéséhez.
 * **Nagy lekérdezések védelme:**
   * Frontend lekérdezéseknél szigorúan tilos `SELECT *` jellegű lekérdezést futtatni nagy táblákon vagy JSONB mezőkön; csak a szükséges mezőket kérd le.
+  * *Részletek:* [ADR A-016](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-016-postgresql-query-strategy.md), [ADR A-050](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-050-server-side-aggregation-and-n-plus-1-optimization.md), [ADR A-092](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-092-database-security-and-performance-optimization.md) (91 Foreign Key index & parciális indexek), [ADR A-097](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-097-multi-tenant-nav-items-denormalization-and-gl-optimization.md) és [ADR A-183](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-183-supabase-query-performance-and-financial-rpc-optimization.md) (összetett és részleges indexelés).
 
 ---
 
@@ -173,32 +177,24 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
 * **Supabase 8s Statement Timeout (57014) & Dashboard Résiliencia:**
   * A Supabase szerepkörökön 8 másodperces `statement_timeout` él.
   * Olyan Edge Function-ökben vagy felületeken, amelyek összetett aggregáló RPC-t hívnak (pl. `get_company_counts`, `get_management_files`):
-    1. **In-Memory Caching:** Használj modul-szintű memóriagyorsítótárat (pl. 2 perc TTL), hogy több egymást követő kérés ne terhelje feleslegesen a PostgreSQL-t.
+    1. **In-Memory Caching:** Használj modul-szintű memóriagyorsítótárat (pl. 2 perc TTL), hogy több egymást követő kérés ne terhelje feleslegesen a PostgreSQL-t ([ADR A-190](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-190-management-dashboard-counts-caching-and-worker-vault-offloading.md), valamint 57014 timeout kivédés: [ADR A-097](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-097-multi-tenant-nav-items-denormalization-and-gl-optimization.md) és [ADR A-103](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-103-accounty-rls-performance-optimization-and-error-guarding.md)).
     2. **Graceful Fallback:** DB timeout (57014) vagy hálózati hiba esetén a kód szolgáljon ki stale adatot vagy biztonságos üres állapotot ahelyett, hogy kivételt dobna és összeomlasztaná a képernyőt.
     3. **Slice-First Index-Only elv:** Az RPC-ken belül a lapozási szeletet (LIMIT/OFFSET) mindig a relációs JOIN-ok és komplex JSONB mezőextrakciók előtt kell képezni.
-    4. **⚠️ Számlafejléc Pre-Materializáció & Anti-Join Invariáns (Többágas Pénzügyi Összesítők - Hiba 57014):**
-       * Olyan összetett tárolt eljárásokban, amelyek több ágon (pl. `invoice_items`, `nav_invoice_items`, ÁFA sorok, partner követelések) kapcsolják össze a számlafejléceket a tételsorokkal, **szigorúan tilos az anti-joint (`NOT EXISTS (SELECT 1 FROM uploaded_invoice_nums ...)`) és a bérlői/dátumszűrést tételszinten értékelni**!
-       * **Miért bukott el 5 korábbi optimalizálás?** Mert a fejlesztők csak a külső `raw_items` vagy `je_map` CTE-t materializálták, de azon belül a tételekre illesztették a fejléceket egy Nested Loop-ban. Nagy forgalmú bérlőknél (ahol a NAV számlák ~45%-a duplikálja a feltöltött számlákat) a PostgreSQL 13 000+ tételre futtatott egyedi index-keresést, string manipulációt (`REPLACE(LOWER(...))`) és anti-joint, ami garantáltan túllépte az 8,0 másodperces `statement_timeout`-ot (PostgreSQL 57014 hiba).
-       * **Kötelező Minta (Header Pre-Materialization Invariant):**
-         1. A számlafejléceket (`valid_invoices`, `valid_nav_invoices`) dedikált `AS MATERIALIZED` CTE-kbe kell kiemelni, ahol a bérlő (`company_id`), dátumtartomány és az anti-join **pontosan egyszer, fejléc szinten** fut le.
-         2. A tételek, ÁFA sorok és partner sorok kizárólag ezekhez az előszűrt memóriatáblákhoz csatlakozhatnak, soha nem hivatkozhatnak közvetlenül a nyers `invoices` vagy `nav_invoices` alaptáblákra.
-    5. **⚠️ Materialized CTE & Gyermektábla Index-Pruning Csapda (`company_id` szűrés kötelezettsége):**
-       * Amikor egy `MATERIALIZED` CTE-t (pl. `valid_nav_invoices`) összekapcsolunk egy nagy méretű, partícionált vagy összetett indexszel ellátott gyermektáblával (pl. `nav_invoice_items`), a PostgreSQL query optimizer **nem tudja automatikusan áttolni a bérlői szűrést a belső joinba**, ha az `ON` feltételben kizárólag a foreign key (`ni.nav_invoice_id = n.id`) szerepel!
-       * **Miért okozott 30.5 másodperces timeoutot (57014)?**
-         Mivel a feltételben nem szerepelt az `ni.company_id = p_company_id`, a motor nem tudta használni az `idx_nav_invoice_items_comp_inv (company_id, nav_invoice_id)` összetett indexet, és több ezer soros szekvenciális nested loop vizsgálatot végzett.
-       * **Kötelező Invariáns:**
-         Összetett indexszel rendelkező gyermektáblák csatolásakor a bérlői szűrőt **kötelező explicit megadni a JOIN feltételben**:
+    4. **⚠️ Számlafejléc Pre-Materializáció & Anti-Join Invariáns:**
+       * Többágas összetett tárolt eljárásokban szigorúan tilos az anti-joint és a bérlői/dátumszűrést tételszinten, soronként futtatni!
+       * A számlafejléceket (`valid_invoices`, `valid_nav_invoices`) dedikált `AS MATERIALIZED` CTE-kbe kell kiemelni, ahol a bérlő (`company_id`), dátumtartomány és anti-join **pontosan egyszer, fejléc szinten** fut le; a tételek kizárólag ezekhez csatlakozhatnak.
+       * *Részletes háttérelemzés, CTE architektúra és benchmarkok:* [ADR A-189.2](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-189-gl-rpc-performance-optimization-and-timeout-elimination.md#L139).
+    5. **⚠️ Materialized CTE & Gyermektábla Index-Pruning Csapda (`company_id` join-feltétel):**
+       * Összetett indexszel (`company_id, ...`) ellátott gyermektáblák csatolásakor a PostgreSQL nem tudja automatikusan áttolni a bérlői szűrést a belső joinba, ha a feltételből hiányzik a cégazonosító.
+       * Kötelező a bérlői szűrőt explicit megadni a JOIN `ON` ágában is a szekvenciális vizsgálat megelőzésére:
          ```sql
-         -- ❌ HIBÁS (Index kihagyás, 30s timeout):
-         FROM valid_nav_invoices n
-         JOIN public.nav_invoice_items ni ON ni.nav_invoice_id = n.id
-
-         -- ✅ HELYES (Összetett index azonnal aktiválódik, 2.7s futásidő):
+         -- ✅ HELYES (Összetett index azonnal aktiválódik):
          FROM valid_nav_invoices n
          JOIN public.nav_invoice_items ni 
            ON ni.nav_invoice_id = n.id 
           AND ni.company_id = p_company_id
          ```
+       * *Részletek:* [ADR A-189](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-189-gl-rpc-performance-optimization-and-timeout-elimination.md).
 
 ---
 
@@ -230,6 +226,7 @@ A Supabase API rétege (PostgREST) belső séma-gyorsítótárral (schema cache)
 * **Kötelező Invariáns:**
   1. **CHECK kényszer ellenőrzése:** A frontend mutációs payloadok készítésekor mindig ellenőrizni kell az adatbázis táblára vonatkozó `CHECK` kényszereket a migrációkban vagy a `pg_constraint` katalógustáblában.
   2. **Valós adatokkal való kifejezés:** Ha egy entitás részleges állapotban van (pl. részfizetett számla), azt a valós összegmezőkkel (`fizetve_osszeg > 0 AND fizetve_osszeg < brutto_osszeg`) kell kifejezni az engedélyezett enum státusz (`'feldolgozott'`) megtartása mellett, nem ad-hoc státuszstringek kitalálásával.
+* *Részletek (PostgREST lekérdezési stratégia és hibamegelőzés):* [ADR A-016](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-016-postgresql-query-strategy.md).
 
 ---
 
@@ -241,6 +238,7 @@ A Supabase API rétege (PostgREST) belső séma-gyorsítótárral (schema cache)
   * Minden olyan lekérdezésben, ahol az adathalmaz meghaladhatja az 1000 sort, kötelező:
     1. **Lapozási hurok (Loop Pagination):** Iteratív kötegelt lekérés (pl. `range(offset, offset + 999)`) mindaddig, amíg a visszaadott sorok száma eléri az 1000-et.
     2. **Explicit Védelmi Korlát:** Kisebb analitikáknál kötelező explicit `.limit(2000)` megadása és annak UI szintű jelzése, ha a limit elérte a határt.
+  * *Részletek és partner folyószámla implementáció:* [ADR A-232](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-232-gl-zero-as-value-multi-account-batching-and-partner-aging.md).
 
 ---
 
@@ -252,3 +250,5 @@ A Supabase API rétege (PostgREST) belső séma-gyorsítótárral (schema cache)
 * **RPC Tömb Pushdown (Batching Invariant):**
   * Ha a kliensnek több entitáshoz (pl. több kijelölt főkönyvi számhoz vagy partnerhez) van szüksége tételes adatokra, **szigorúan tilos N darab párhuzamos RPC hívást indítani**.
   * Az eljárásoknak kötelező támogatniuk a tömb alapú paraméterátadást (pl. `p_gl_account_ids uuid[] DEFAULT NULL`), lehetővé téve a PostgreSQL szintű egyetlen menetes szűrést és aggregációt.
+  * *Részletek:* [ADR A-232](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-232-gl-zero-as-value-multi-account-batching-and-partner-aging.md).
+

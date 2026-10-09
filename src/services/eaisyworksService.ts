@@ -86,7 +86,7 @@ export async function createEaisyWorksTicket(ticket: Ticket): Promise<SyncTicket
   // 1. Prepare clean title and text content
   const { title: summaryTitle, preview } = getTicketSummary(ticket.message);
   const typeLabel = mapTypeLabel(ticket.type);
-  const rawTitle = summaryTitle || preview || 'Ügyféli megkeresés';
+  const rawTitle = ticket.subject || summaryTitle || preview || 'Ügyféli megkeresés';
   const title = `${typeLabel}: ${rawTitle}`.slice(0, 150);
 
   const cleanDescription = stripHtml(ticket.message);

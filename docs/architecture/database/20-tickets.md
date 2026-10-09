@@ -1,7 +1,7 @@
 # 🎫 Hibajegy Rendszer
 
 > Ügyfélszolgálati hibajegy kommentek, olvasottsági állapot, események.
-> A hibajegyek szülő táblája a `feedback` (dokumentálva: `19-platform-ops.md`), amely tartalmazza a státuszt, prioritást, az opcionális `category` mezőt (`idx_feedback_category`), valamint az eaisyWorks szinkronizációs mezőket (`eaisyworks_ticket_id`, `eaisyworks_ticket_key`, `eaisyworks_synced_at`, `link_eaisyworks_ticket` RPC).
+> A hibajegyek szülő táblája a `feedback` (dokumentálva: `19-platform-ops.md`), amely tartalmazza a státuszt, prioritást, az önálló tárgyat (`subject`, `idx_feedback_subject`), az opcionális `category` mezőt (`idx_feedback_category`), valamint az eaisyWorks szinkronizációs mezőket (`eaisyworks_ticket_id`, `eaisyworks_ticket_key`, `eaisyworks_synced_at`, `link_eaisyworks_ticket` RPC).
 
 **Táblák ebben a csoportban:** 3
 
@@ -34,7 +34,7 @@
 
 ### `ticket_reads`
 
-**RLS:** ✅ | **Sorok:** ~3
+**RLS:** ✅ | **Sorok:** ~3 | **Realtime:** ✅ (`supabase_realtime`)
 
 | Oszlop | Típus | Null | Default |
 |--------|-------|------|---------|
@@ -46,6 +46,8 @@
 **FK:** `feedback_id` → `feedback.id`
 
 **Indexek:** `idx_ticket_reads_feedback_user`, `ticket_reads_feedback_id_user_id_key`
+
+**Realtime Replikáció:** A `feedback_ticket_reads` hozzáadásra került a `supabase_realtime` publikációhoz (migráció: `20261009170000_add_feedback_ticket_reads_to_realtime.sql`), így az olvasottsági állapot változása azonnal és reaktívan szinkronizálódik a kliensek között.
 
 ---
 

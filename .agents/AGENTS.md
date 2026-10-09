@@ -3,7 +3,7 @@
 ## 🎯 4 Nem-alkuképes Alapelv (Core Invariants)
 1. **Zero Silent Decisions:** Architektúrális, adatbázis- vagy üzleti logikai döntést soha ne hozz önhatalmúan; mindig vázold fel az opciókat a felhasználónak.
 2. **Evidence Before Assertions:** Soha ne állítsd, hogy egy módosítás működik vagy kész van, amíg meg nem bizonyosodtál róla (gyors oxlint ellenőrzés: `npm run lint:fast` vagy `npx oxlint <fájl>`, típusellenőrzés: `npm run build` vagy `npx tsc --noEmit`, valamint kötelező tesztek futtatása: `npm test`).
-3. **Docs & Spec Integrity:** Ha a kód struktúrája, sémája vagy üzleti logikája változik, a kapcsolódó specifikációknak és ADR-eknek szinkronban kell maradniuk.
+3. **Docs & Spec Integrity (Thin Rule + Deep Spec):** Ha a kód struktúrája, sémája vagy üzleti logikája változik, a kapcsolódó specifikációknak és ADR-eknek szinkronban kell maradniuk. A szabályok (`.agents/rules/`) kizárólag a tömör védőkorlátokat és invariánsokat rögzítik, a mély háttérmagyarázatokat és döntéseket kötelező ADR-be vagy Design specifikációba kivezetni.
 4. **Zero Workspace Clutter & Scratch Folder Discipline:** Szigorúan tilos bármilyen átmeneti segédfüggvényt, ellenőrző vagy debug szkriptet (`.js`, `.cjs`, `.ts`, `.py`), adatbázis dumpot vagy ideiglenes SQL-t (`.sql`), kinyert riportot vagy szövegfájlt a projekt gyökérkönyvtárába (`/`) létrehozni! Minden ilyen segédanyagot kötelezően és kizárólag a `scratch/` mappába (`d:\ThinkAI\Visibill\eaisybill-prod\scratch\`) kell menteni, amelyet a `.gitignore` automatikusan kezel. A projekt gyökere kizárólag a tényleges, konfigurációs és forrásfájlokat tartalmazhatja.
 
 ---

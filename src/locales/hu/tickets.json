@@ -46,7 +46,12 @@
     "assigned": "Hozzárendelt",
     "in_progress": "Folyamatban",
     "resolved": "Megoldva",
-    "waiting_for_confirmation": "Visszaigazolásra vár"
+    "waiting_for_confirmation": "Visszaigazolásra vár",
+    "new_staff_reply": "Új válasz érkezett",
+    "new_staff_reply_short": "Új válasz",
+    "staff_replied": "Support válaszolt",
+    "waiting_for_staff": "Válaszra vár",
+    "new_customer_reply": "Új ügyfél válasz"
   },
   "priority_filter": {
     "placeholder": "Prioritás"
@@ -78,11 +83,16 @@
     "col_system": "Rendszer",
     "col_subject": "Tárgy",
     "col_category": "Kategória",
-    "col_user_company": "Bejelentő & Cég",
+    "col_user": "Bejelentő",
+    "col_user_company": "Bejelentő",
     "col_assignee": "Felelős",
     "col_status": "Státusz",
     "col_priority": "Prioritás",
     "col_created_at": "Létrehozva",
+    "col_activity": "Utolsó aktivitás",
+    "created_prefix": "Létrehozva",
+    "sort_activity_desc": "Rendezés: legfrissebb aktivitás elöl",
+    "sort_activity_asc": "Rendezés: legrégebbi aktivitás elöl",
     "empty_state": "Nincs a szűrésnek megfelelő hibajegy"
   },
   "console": {
@@ -170,6 +180,8 @@
     "request_resolution_btn": "Megoldás visszaigazolás kérése",
     "no_response_needed": "Nem igényel választ",
     "mark_no_response_needed": "Nem igényel választ",
+    "staff_response_banner_title": "A support csapat válaszolt a hibajegyre",
+    "jump_to_latest_reply": "Válasz megtekintése",
     "undo": "Visszavonás",
     "undo_no_response": "Visszavonás (újra válaszra vár)",
     "copy_link_toast_title": "Link másolva!",

@@ -107,8 +107,10 @@ describe('Colleague Unread Isolation & Company Search Filter in TicketsPage', ()
     );
 
     // Both tickets are initially rendered
-    expect(screen.getByText('Sümegi és Társa Kft')).toBeInTheDocument();
-    expect(screen.getByText('Termometal Kft')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0144')).toBeInTheDocument();
+    expect(screen.getByText('Lendvai Ádám')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0145')).toBeInTheDocument();
+    expect(screen.getByText('Ván Emese')).toBeInTheDocument();
 
     // Find the company search bar
     const companySearchInput = screen.getByPlaceholderText('Szűrés cégre...');
@@ -117,13 +119,15 @@ describe('Colleague Unread Isolation & Company Search Filter in TicketsPage', ()
     // Filter by "Sümegi"
     fireEvent.change(companySearchInput, { target: { value: 'Sümegi' } });
 
-    // Sümegi remains, Termometal is filtered out
-    expect(screen.getByText('Sümegi és Társa Kft')).toBeInTheDocument();
-    expect(screen.queryByText('Termometal Kft')).not.toBeInTheDocument();
+    // Sümegi remains (#EB-0144 / Lendvai Ádám), Termometal is filtered out (#EB-0145 / Ván Emese)
+    expect(screen.getByText('#EB-0144')).toBeInTheDocument();
+    expect(screen.getByText('Lendvai Ádám')).toBeInTheDocument();
+    expect(screen.queryByText('#EB-0145')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ván Emese')).not.toBeInTheDocument();
 
     // Clear company filter
     fireEvent.change(companySearchInput, { target: { value: '' } });
-    expect(screen.getByText('Sümegi és Társa Kft')).toBeInTheDocument();
-    expect(screen.getByText('Termometal Kft')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0144')).toBeInTheDocument();
+    expect(screen.getByText('#EB-0145')).toBeInTheDocument();
   });
 });
