@@ -772,14 +772,20 @@ export function AiAssistantChat({ fullPage = false, onSidebarChange }: AiAssista
       const activeCompanyIdToUse = overrideCompanyId !== undefined ? overrideCompanyId : chatCompanyId;
       const targetCompany = companies?.find(c => c.id === activeCompanyIdToUse);
 
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vxxgvdlqvvchtlmqnrqf.supabase.co';
+      const supabaseAnonKey =
+        import.meta.env.VITE_SUPABASE_ANON_KEY ||
+        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4eGd2ZGxxdnZjaHRsbXFucnFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NzAwNTAsImV4cCI6MjA3MzU0NjA1MH0.Ec9KFcjt89cY6FF9Nq9GnW1hzlnDUhQCCJ_LhWm2evY';
+
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/accounty-ai-chat`,
+        `${supabaseUrl}/functions/v1/accounty-ai-chat`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${authSession.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'apikey': supabaseAnonKey,
             'x-client-info': 'eaisybill-web',
           },
           body: JSON.stringify({
