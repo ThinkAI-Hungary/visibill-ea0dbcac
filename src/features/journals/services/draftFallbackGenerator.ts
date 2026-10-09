@@ -88,7 +88,7 @@ export async function generateDraftsFallback(
       ? supabase.from('invoice_items').select('id, invoice_id, vat_amount, vat_rate, deductible_percentage').in('id', invoiceItemIds)
       : Promise.resolve({ data: [] }),
     navItemIds.length > 0
-      ? supabase.from('nav_invoice_items').select('id, invoice_id, vat_amount, vat_rate, deductible_percentage').in('id', navItemIds)
+      ? supabase.from('nav_invoice_items').select('id, nav_invoice_id, vat_amount, vat_rate, deductible_percentage').in('id', navItemIds)
       : Promise.resolve({ data: [] })
   ]);
 
@@ -96,7 +96,7 @@ export async function generateDraftsFallback(
     ...(invRes.data || []).map((i: any) => i.invoice_id).filter(Boolean),
   ]));
   const parentNavIds = Array.from(new Set([
-    ...(navRes.data || []).map((i: any) => i.invoice_id).filter(Boolean)
+    ...(navRes.data || []).map((i: any) => i.nav_invoice_id).filter(Boolean)
   ]));
 
   const [parentInvRes, parentNavRes] = await Promise.all([
@@ -141,7 +141,7 @@ export async function generateDraftsFallback(
   });
 
   navRes.data?.forEach((i: any) => {
-    const parent = parentNavMap.get(i.invoice_id);
+    const parent = parentNavMap.get(i.nav_invoice_id);
     vatDetailsMap.set(i.id, {
       vat_amount: Number(i.vat_amount) || 0,
       vat_rate: i.vat_rate || '',

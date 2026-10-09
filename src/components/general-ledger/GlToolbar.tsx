@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { 
   Database, Settings2, Plus, BookOpen, FileUp, UploadCloud, 
   FileText, Bot, Loader2, Download, Eye, Printer, FileSpreadsheet, 
-  Table2, Layers, Filter, ChevronDown, Copy 
+  Table2, Layers, Filter, ChevronDown, Copy, FileCode 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,7 @@ interface GlToolbarProps {
   onOpenCopyPreset?: () => void;
   onOpenAddAccount: () => void;
   onOpenManualEntry: () => void;
+  onOpenExportAuditXml?: () => void;
   onOpenUploadAuditXml: () => void;
   onOpenAuditHistory: () => void;
   onRunAI: () => void;
@@ -54,6 +55,7 @@ export function GlToolbar({
   onOpenCopyPreset,
   onOpenAddAccount,
   onOpenManualEntry,
+  onOpenExportAuditXml,
   onOpenUploadAuditXml,
   onOpenAuditHistory,
   onRunAI,
@@ -183,20 +185,35 @@ export function GlToolbar({
           </Button>
         </CustomTooltip>
 
-        {/* Egységes XML Import menü (Új importálás + Előzmények megtekintése) */}
+        {/* Egységes MKVK Audit XML menü (Exportálás + Importálás + Előzmények) */}
         <DropdownMenu>
-          <CustomTooltip content={t('accounting:general_ledger.toolbar.xml_menu_tooltip', 'Audit XML fájl importálása vagy korábbi importok ellenőrzése')} side="bottom">
+          <CustomTooltip content={t('accounting:general_ledger.toolbar.xml_menu_tooltip', 'Könyvvizsgálói Audit XML export és import műveletek')} side="bottom">
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-9 gap-1.5 font-medium text-xs">
-                <FileUp className="w-4 h-4 text-muted-foreground" />
-                <span>XML Import</span>
+                <FileCode className="w-4 h-4 text-primary" />
+                <span>Audit XML</span>
                 <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
               </Button>
             </DropdownMenuTrigger>
           </CustomTooltip>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end" className="w-64">
+            {onOpenExportAuditXml && (
+              <>
+                <DropdownMenuItem onClick={onOpenExportAuditXml} className="cursor-pointer gap-2 text-xs py-2">
+                  <Download className="w-4 h-4 text-primary shrink-0" />
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-foreground">AuditXML_FkTet_export</span>
+                      <span className="text-[9px] px-1 py-0 rounded bg-primary/10 text-primary font-mono font-bold">MKVK</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">{t('accounting:general_ledger.toolbar.xml_export_desc', 'Könyvvizsgálói audit XML export (v1.0.23.0)')}</span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem onClick={onOpenUploadAuditXml} className="cursor-pointer gap-2 text-xs py-2">
-              <UploadCloud className="w-4 h-4 text-primary shrink-0" />
+              <UploadCloud className="w-4 h-4 text-muted-foreground shrink-0" />
               <div className="flex flex-col">
                 <span className="font-medium">{t('accounting:general_ledger.toolbar.xml_import', 'XML Importálás...')}</span>
                 <span className="text-[10px] text-muted-foreground">{t('accounting:general_ledger.toolbar.xml_import_desc', 'NAV / könyvelőprogram XML auditfájl')}</span>

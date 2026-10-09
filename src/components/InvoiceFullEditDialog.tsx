@@ -67,6 +67,7 @@ interface InvoiceLineItem {
   vat_amount: number | null;
   gross_amount: number | null;
   product_code: string | null;
+  deductible_percentage?: number | null;
 }
 
 // Editable line item with tracking
@@ -126,7 +127,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoice_items')
-        .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount')
+        .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, deductible_percentage')
         .eq('invoice_id', invoice!.id)
         .order('line_number', { ascending: true });
       if (error) throw error;
@@ -333,6 +334,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
             vat_amount: i.vat_amount,
             gross_amount: i.gross_amount,
             product_code: i.product_code,
+            deductible_percentage: i.deductible_percentage != null ? Number(i.deductible_percentage) : 100,
           })));
         if (error) throw error;
       }
@@ -353,6 +355,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
               vat_amount: item.vat_amount,
               gross_amount: item.gross_amount,
               product_code: item.product_code,
+              deductible_percentage: item.deductible_percentage != null ? Number(item.deductible_percentage) : 100,
             })
             .eq('id', item.id);
           if (error) throw error;

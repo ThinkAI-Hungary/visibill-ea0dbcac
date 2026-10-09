@@ -18,6 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter, FolderTree, ListTree, FileSpreadsheet, Receipt, ListFilter, Sparkles } from 'lucide-react';
 import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
+import { ExportAuditXmlModal } from '@/components/general-ledger/ExportAuditXmlModal';
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
 import GeneralLedgerTable, { GeneralLedgerTableRef, GlViewGranularity, GlItemGroupingMode } from '@/components/general-ledger/GeneralLedgerTable';
 import { GlSearchAutocomplete } from '@/components/general-ledger/GlSearchAutocomplete';
@@ -64,6 +65,7 @@ export default function GeneralLedgerPage() {
   const [addGlAccountOpen, setAddGlAccountOpen] = useState(false);
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [auditXmlModalOpen, setAuditXmlModalOpen] = useState(false);
+  const [exportAuditXmlModalOpen, setExportAuditXmlModalOpen] = useState(false);
   const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
   const [aiProgress, setAiProgress] = useState<{ processed: number; total: number } | null>(null);
@@ -643,6 +645,7 @@ export default function GeneralLedgerPage() {
             onOpenCopyPreset={() => setCopyCoaModalOpen(true)}
             onOpenAddAccount={() => setAddGlAccountOpen(true)}
             onOpenManualEntry={() => setManualEntryOpen(true)}
+            onOpenExportAuditXml={() => setExportAuditXmlModalOpen(true)}
             onOpenUploadAuditXml={() => setAuditXmlModalOpen(true)}
             onOpenAuditHistory={() => setAuditHistoryOpen(true)}
             onRunAI={handleRunAI}
@@ -941,6 +944,13 @@ export default function GeneralLedgerPage() {
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['auditImports'] });
         }}
+      />
+
+      <ExportAuditXmlModal
+        open={exportAuditXmlModalOpen}
+        onOpenChange={setExportAuditXmlModalOpen}
+        defaultDateFrom={dateFrom}
+        defaultDateTo={dateTo}
       />
 
       <ManagePresetsModal

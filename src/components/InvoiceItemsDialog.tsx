@@ -214,8 +214,8 @@ export function InvoiceItemsDialog({
     queryFn: async () => {
       const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
       const selectFields = source === 'submitted'
-        ? 'company_id, project_id, invoice_direction, kibocsatas_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number'
-        : 'company_id, project_id, invoice_direction, invoice_issue_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched';
+        ? 'company_id, project_id, invoice_direction, kibocsatas_datuma, teljesites_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number'
+        : 'company_id, project_id, invoice_direction, invoice_issue_date, invoice_delivery_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched';
 
       const { data, error } = await supabase
         .from(table as any)
@@ -632,6 +632,39 @@ export function InvoiceItemsDialog({
     return hasTelecomName || hasPhoneItems;
   }, [supplierName, items]);
 
+  // Automatically recalculate VAT return for this invoice's period
+  const recalculateVatForInvoice = useCallback(async () => {
+    const deliveryDate = (parentInvoice as any)?.invoice_delivery_date ||
+      (parentInvoice as any)?.teljesites_datuma ||
+      invoiceDate ||
+      (parentInvoice as any)?.invoice_issue_date ||
+      (parentInvoice as any)?.kibocsatas_datuma;
+    const compId = selectedCompany?.id || (parentInvoice as any)?.company_id;
+    if (deliveryDate && compId) {
+      const d = new Date(deliveryDate);
+      if (!isNaN(d.getTime())) {
+        const yr = d.getFullYear();
+        const mo = d.getMonth() + 1;
+        try {
+          await (supabase.rpc as any)('calculate_vat_return', {
+            p_company_id: compId,
+            p_year: yr,
+            p_month: mo,
+            p_frequency: 'H',
+            p_scope: 'all'
+          });
+          queryClient.invalidateQueries({ queryKey: ['vat_return'] });
+          queryClient.invalidateQueries({ queryKey: ['vat_returns'] });
+          queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
+          queryClient.invalidateQueries({ queryKey: ['vat_return_m_lines'] });
+          queryClient.invalidateQueries({ queryKey: ['vat_row_drill'] });
+        } catch (err: any) {
+          console.error('Failed to recalculate VAT return after deductible update:', err);
+        }
+      }
+    }
+  }, [parentInvoice, invoiceDate, selectedCompany?.id, queryClient]);
+
   // Update a single item's deductible percentage
   const handleUpdateItemDeductible = useCallback(async (item: InvoiceLineItem, percentage: number) => {
     const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
@@ -675,6 +708,9 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['page-invoice-deductibility-map'] });
       queryClient.invalidateQueries({ queryKey: ['expanded-row-deductibility'] });
 
+      // Automatically recalculate VAT return for the period
+      await recalculateVatForInvoice();
+
       const isPosted = postedItemIds.has(item.id);
       if (isPosted) {
         toast({
@@ -690,7 +726,7 @@ export function InvoiceItemsDialog({
     } finally {
       setUpdatingDeductibleId(null);
     }
-  }, [source, invoiceId, queryClient, toast, findTwinItems, postedItemIds, t]);
+  }, [source, invoiceId, queryClient, toast, findTwinItems, postedItemIds, t, recalculateVatForInvoice]);
 
   // Update item VTSZ (product_code) and net weight in kg (6/B melléklet)
   const handleUpdateItemProductCodeAndWeight = useCallback(async (
@@ -799,6 +835,9 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['page-invoice-deductibility-map'] });
       queryClient.invalidateQueries({ queryKey: ['expanded-row-deductibility'] });
 
+      // Automatically recalculate VAT return for the period
+      await recalculateVatForInvoice();
+
       const hasPosted = targetItems.some(it => postedItemIds.has(it.id));
       if (hasPosted) {
         toast({
@@ -814,7 +853,7 @@ export function InvoiceItemsDialog({
     } finally {
       setIsApplying7030(false);
     }
-  }, [items, source, invoiceId, queryClient, toast, postedItemIds, t, findTwinItems]);
+  }, [items, source, invoiceId, queryClient, toast, postedItemIds, t, findTwinItems, recalculateVatForInvoice]);
 
   // Bulk update deductible percentage
   const handleBulkUpdateDeductible = useCallback(async (percentage: number) => {
@@ -848,6 +887,9 @@ export function InvoiceItemsDialog({
     queryClient.invalidateQueries({ queryKey: ['page-invoice-deductibility-map'] });
     queryClient.invalidateQueries({ queryKey: ['expanded-row-deductibility'] });
 
+    // Automatically recalculate VAT return for the period
+    await recalculateVatForInvoice();
+
     const hasPosted = ids.some(id => postedItemIds.has(id));
     if (hasPosted) {
       toast({
@@ -860,7 +902,7 @@ export function InvoiceItemsDialog({
         description: t('invoices:dialogs.items.toast_bulk_deductible_success_desc', { count: ids.length, percentage }),
       });
     }
-  }, [selectedIds, source, invoiceId, queryClient, toast, postedItemIds, t]);
+  }, [selectedIds, source, invoiceId, queryClient, toast, postedItemIds, t, recalculateVatForInvoice]);
 
   // Fetch GL accounts for the picker combobox (paginated)
   const { data: glAccounts = [] } = useQuery({
@@ -1228,34 +1270,9 @@ export function InvoiceItemsDialog({
       queryClient.invalidateQueries({ queryKey: ['vat_row_drill'] });
 
       // Automatically recalculate VAT return for this invoice's period
-      const deliveryDate = (parentInvoice as any)?.invoice_delivery_date ||
-        (parentInvoice as any)?.teljesites_datuma ||
-        (parentInvoice as any)?.invoice_issue_date ||
-        (parentInvoice as any)?.kibocsatas_datuma;
-      if (deliveryDate && selectedCompany?.id) {
-        const d = new Date(deliveryDate);
-        if (!isNaN(d.getTime())) {
-          const yr = d.getFullYear();
-          const mo = d.getMonth() + 1;
-          (supabase.rpc as any)('calculate_vat_return', {
-            p_company_id: selectedCompany.id,
-            p_year: yr,
-            p_month: mo,
-            p_frequency: 'H',
-            p_scope: 'all'
-          }).then(() => {
-            queryClient.invalidateQueries({ queryKey: ['vat_return'] });
-            queryClient.invalidateQueries({ queryKey: ['vat_returns'] });
-            queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
-            queryClient.invalidateQueries({ queryKey: ['vat_return_m_lines'] });
-            queryClient.invalidateQueries({ queryKey: ['vat_row_drill'] });
-          }).catch((err: any) => {
-            reportError({ type: 'rpc', component: 'InvoiceItemsDialog', action: 'recalculate_vat', message: 'Recalculate VAT return after code override failed', error: err });
-          });
-        }
-      }
+      await recalculateVatForInvoice();
     }
-  }, [selectedCompany?.id, session?.user.id, isSubmittingVatCode, source, isOutbound, parentInvoice, supplierName, vatCodes, activePresetId, findTwinItems, queryClient, toast]);
+  }, [selectedCompany?.id, session?.user.id, isSubmittingVatCode, source, isOutbound, parentInvoice, supplierName, vatCodes, activePresetId, findTwinItems, queryClient, toast, recalculateVatForInvoice, t]);
 
   // Sort items client-side if a sort field is active
   const sortedItems = useMemo(() => {
@@ -2027,30 +2044,35 @@ export function InvoiceItemsDialog({
                                 <DropdownMenu>
                                   <TooltipTrigger asChild>
                                     <DropdownMenuTrigger asChild>
-                                      <button
-                                        type="button"
-                                        disabled={updatingDeductibleId === item.id}
-                                        className={cn(
-                                          "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border shadow-sm",
-                                          (item.deductible_percentage === 70)
-                                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/25"
-                                            : (item.deductible_percentage === 0)
-                                            ? "bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/25"
-                                            : (item.deductible_percentage != null && item.deductible_percentage < 100)
-                                            ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/25"
-                                            : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80"
-                                        )}
-                                      >
-                                        {updatingDeductibleId === item.id ? (
-                                          <Loader2 className="h-3 w-3 animate-spin" />
-                                        ) : (
-                                          <>
-                                            <span>{item.deductible_percentage != null ? `${item.deductible_percentage}%` : '100%'}</span>
-                                            {item.deductible_percentage === 70 && <span className="text-[10px] opacity-75 font-normal">(70/30)</span>}
-                                            <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
-                                          </>
-                                        )}
-                                      </button>
+                                      {(() => {
+                                        const itemDeductible = item.deductible_percentage != null ? Number(item.deductible_percentage) : 100;
+                                        return (
+                                          <button
+                                            type="button"
+                                            disabled={updatingDeductibleId === item.id}
+                                            className={cn(
+                                              "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border shadow-sm",
+                                              (itemDeductible === 70)
+                                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/25"
+                                                : (itemDeductible === 0)
+                                                ? "bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/25"
+                                                : (itemDeductible < 100)
+                                                ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/25"
+                                                : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80"
+                                            )}
+                                          >
+                                            {updatingDeductibleId === item.id ? (
+                                              <Loader2 className="h-3 w-3 animate-spin" />
+                                            ) : (
+                                              <>
+                                                <span>{`${itemDeductible}%`}</span>
+                                                {itemDeductible === 70 && <span className="text-[10px] opacity-75 font-normal">(70/30)</span>}
+                                                <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
+                                              </>
+                                            )}
+                                          </button>
+                                        );
+                                      })()}
                                     </DropdownMenuTrigger>
                                   </TooltipTrigger>
                                   <TooltipContent side="top" className="text-xs z-[120]">
