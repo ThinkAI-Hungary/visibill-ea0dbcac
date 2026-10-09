@@ -476,6 +476,12 @@ export class NavIngestionService {
           }
         }
 
+        const hasContent = (details.lineItems && details.lineItems.length > 0) || details.supplierAddress || details.customerAddress || !!details.vatSummary;
+        if (!hasContent) {
+          console.warn(`[NavIngestionService] No details returned by NAV for ${inv.invoice_number}, skipping details_fetched mark.`);
+          continue;
+        }
+
         const invoiceUpdates: Record<string, any> = { details_fetched: true };
         if (details.supplierAddress) invoiceUpdates.supplier_address = details.supplierAddress;
         if (details.customerAddress) invoiceUpdates.customer_address = details.customerAddress;

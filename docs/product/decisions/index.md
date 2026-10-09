@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-09  
-> **Összesen:** 186 döntés (169 egyedi döntési fájl) | ✅ Decided: 182 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 192 döntés (175 egyedi döntési fájl) | ✅ Decided: 188 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -296,5 +296,11 @@
 | P-168 | Egységes Számlatükör, Cégek Közötti Másolás és Folyószámla Kényszer (EB-0255) | ✅ Decided | [P-168](./P-168-eb0255-chart-of-accounts-subledger.md) |
 | P-169 | Könyvelési Naplók Kategóriái, Szerkeszthetősége, Banki Szinkronizáció és Tételsori Partnerkezelés (EB-0257) | ✅ Decided | [P-169](./P-169-eb0257-journal-categorization-and-line-partners.md) |
 | P-170 | Könyvelési Dátum-alapértelmezés (Teljesítés), Összevont Főkönyv, Devizaárfolyam Bankválasztó és NAV Adószám Auto-kitöltés (EB-0258) | ✅ Decided | [P-170](./P-170-eb0258-default-date-gl-aggregated-view-fx-bank-and-nav-autofill.md) |
+| P-171 | Szállítói Átutalások Tömeges Rendezés, Lebegő Műveleti Sáv és Dátum-alapértelmezés UX | ✅ Decided | [P-171](./P-171-transfers-bulk-settlement-date-defaulting-and-sticky-action-bar-ux.md) |
+| P-172 | ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Felhasználói Felület (UX) | ✅ Decided | [P-172](./P-172-deferred-vat-deduction-and-questionable-invoices-ux.md) |
+| P-173 | Termékimport és Vámhatározatok Rögzítése, Módosítása és ÁFA Elszámolása UX | ✅ Decided | [P-173](./P-173-import-customs-vat-declarations-ux.md) |
+| P-174 | NAV 26TFEJLH Nyomtatvány Digitális Replika és PDF Export UX | ✅ Decided | [P-174](./P-174-nav-26tfejlh-tourism-contribution-replica-ux.md) |
+| P-175 | Hibajegy Kezelőkonzol Ergonómia, Önálló Tárgymező és Vágólapos Csatolmányok (Ctrl+V) UX | ✅ Decided | [P-175](./P-175-ticket-console-ergonomics-subject-and-clipboard-attachments-ux.md) |
+| P-176 | Könyvelési Napló RLB-Mintájú Szűkítés Modál, Pozitív Unió Irányszűrés és Reszponzív Panel UX | ✅ Decided | [P-176](./P-176-accounting-journals-rlb-pattern-filter-modal-and-direction-matching-ux.md) |
 
 

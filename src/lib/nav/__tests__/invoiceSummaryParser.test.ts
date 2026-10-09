@@ -197,7 +197,7 @@ describe('NAV Online Számla v3.0 – Hivatalos ÁFA Összesítő (<invoiceSumma
     expect(summary?.vatSummaries[0].vatRateLiteral).toContain('27%');
   });
 
-  it('populates missing line item vat from single-vatRate summary (MVM utility case, D-3)', () => {
+  it('populates missing line item vat from single-vatRate summary (MVM utility case, D-3)', async () => {
     const invoiceXml = `<?xml version="1.0" encoding="UTF-8"?>
 <QueryInvoiceDataResponse xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
   <invoiceData>
@@ -248,7 +248,7 @@ describe('NAV Online Számla v3.0 – Hivatalos ÁFA Összesítő (<invoiceSumma
   </invoiceData>
 </QueryInvoiceDataResponse>`;
 
-    const details = parseInvoiceDataXml(invoiceXml);
+    const details = await parseInvoiceDataXml(invoiceXml);
     expect(details.vatSummary).toBeDefined();
     expect(details.vatSummary?.vatSummaries.length).toBe(1);
     expect(details.lineItems).toBeDefined();
@@ -264,5 +264,48 @@ describe('NAV Online Számla v3.0 – Hivatalos ÁFA Összesítő (<invoiceSumma
     const l2 = details.lineItems![1];
     expect(l2.vatAmount).toBe(1350);
     expect(l2.grossAmount).toBe(6350);
+  });
+
+  it('correctly parses base64-encoded GZIP-compressed invoiceData (e.g. Magyar Telekom)', async () => {
+    const rawXml = `<invoiceMain><invoice><invoiceHead><supplierInfo><supplierName>Magyar Telekom Nyrt.</supplierName></supplierInfo></invoiceHead><invoiceLines><line><lineNumber>1</lineNumber><lineDescription>Gigaerős Net 2000</lineDescription><lineNetAmount>10000</lineNetAmount><lineVatAmount>500</lineVatAmount><lineGrossAmountNormal>10500</lineGrossAmountNormal><vatPercentage>0.05</vatPercentage></line></invoiceLines></invoice></invoiceMain>`;
+    const stream = new Response(rawXml).body!.pipeThrough(new CompressionStream('gzip'));
+    const gzippedBytes = new Uint8Array(await new Response(stream).arrayBuffer());
+    const base64Gzip = btoa(String.fromCharCode(...gzippedBytes));
+    const navXml = `<?xml version="1.0" encoding="UTF-8"?>
+<QueryInvoiceDataResponse xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
+  <invoiceDataResult>
+    <invoiceData>${base64Gzip}</invoiceData>
+    <compressedContentIndicator>true</compressedContentIndicator>
+  </invoiceDataResult>
+</QueryInvoiceDataResponse>`;
+
+    const details = await parseInvoiceDataXml(navXml);
+    expect(details.supplierName).toBe('Magyar Telekom Nyrt.');
+    expect(details.lineItems).toBeDefined();
+    expect(details.lineItems?.length).toBe(1);
+    expect(details.lineItems![0].lineDescription).toBe('Gigaerős Net 2000');
+    expect(details.lineItems![0].netAmount).toBe(10000);
+    expect(details.lineItems![0].vatAmount).toBe(500);
+    expect(details.lineItems![0].grossAmount).toBe(10500);
+    expect(details.lineItems![0].vatRate).toBe('0.05');
+  });
+
+  it('correctly parses base64-encoded uncompressed invoiceData', async () => {
+    const rawXml = `<invoiceMain><invoice><invoiceHead><supplierInfo><supplierName>Partner Kft.</supplierName></supplierInfo></invoiceHead><invoiceLines><line><lineNumber>1</lineNumber><lineDescription>Szolgáltatás</lineDescription><lineNetAmount>20000</lineNetAmount><lineVatAmount>5400</lineVatAmount><lineGrossAmountNormal>25400</lineGrossAmountNormal><vatPercentage>0.27</vatPercentage></line></invoiceLines></invoice></invoiceMain>`;
+    const base64Plain = Buffer.from(rawXml, 'utf-8').toString('base64');
+    const navXml = `<?xml version="1.0" encoding="UTF-8"?>
+<QueryInvoiceDataResponse xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
+  <invoiceDataResult>
+    <invoiceData>${base64Plain}</invoiceData>
+    <compressedContentIndicator>false</compressedContentIndicator>
+  </invoiceDataResult>
+</QueryInvoiceDataResponse>`;
+
+    const details = await parseInvoiceDataXml(navXml);
+    expect(details.supplierName).toBe('Partner Kft.');
+    expect(details.lineItems).toBeDefined();
+    expect(details.lineItems?.length).toBe(1);
+    expect(details.lineItems![0].lineDescription).toBe('Szolgáltatás');
+    expect(details.lineItems![0].netAmount).toBe(20000);
   });
 });

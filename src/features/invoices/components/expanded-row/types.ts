@@ -110,6 +110,8 @@ export interface ExpandedInvoiceRowProps {
   accountingExclusionType?: 'PERMANENT' | 'DEFERRED_VAT' | string | null;
   /** Reason/note for exclusion or deferral */
   deferredVatReason?: string | null;
+  /** Deferral effective date */
+  deferredVatSince?: string | null;
   /** Callback to toggle exclude from accounting */
   onToggleExclude?: () => void;
   /** Callback to open the full exclusion / deferral dialog */

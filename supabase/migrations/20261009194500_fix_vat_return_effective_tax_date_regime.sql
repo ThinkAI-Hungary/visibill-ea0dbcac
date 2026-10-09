@@ -1074,9 +1074,9 @@ BEGIN
     tax_amount,
     base_amount_rounded,
     tax_amount_rounded,
-    tax_amount_27,
-    tax_amount_18,
-    tax_amount_5,
+    tax_27_amount,
+    tax_18_amount,
+    tax_5_amount,
     invoice_details
   )
   SELECT
@@ -1088,9 +1088,9 @@ BEGIN
     ROUND(SUM(vat_amount), 2) AS tax_amount,
     ROUND(SUM(net_amount) / 1000)::int AS base_amount_rounded,
     ROUND(SUM(vat_amount) / 1000)::int AS tax_amount_rounded,
-    ROUND(SUM(tax_27), 2) AS tax_amount_27,
-    ROUND(SUM(tax_18), 2) AS tax_amount_18,
-    ROUND(SUM(tax_5), 2) AS tax_amount_5,
+    ROUND(SUM(tax_27), 2) AS tax_27_amount,
+    ROUND(SUM(tax_18), 2) AS tax_18_amount,
+    ROUND(SUM(tax_5), 2) AS tax_5_amount,
     jsonb_agg(
       jsonb_build_object(
         'invoice_id', invoice_id,

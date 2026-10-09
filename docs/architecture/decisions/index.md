@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-09  
-> **Összesen:** 232 döntés (214 egyedi döntési fájl) | ✅ Decided: 230 | ⛔ Superseded: 2
+> **Összesen:** 237 döntés (219 egyedi döntési fájl) | ✅ Decided: 235 | ⛔ Superseded: 2
 
 
 ---
@@ -270,7 +270,12 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-230 | Könyvelési Naplók Kategorizálása, Tételsori Partner Relációk és Banki Kétirányú Szinkronizáció (EB-0257) | ✅ Decided | [A-230](./A-230-journal-categorization-and-line-partners.md) |
 | A-231 | Cégprofil Számviteli Beállítások: Teljesítés Dátum, Összevont Főkönyvi Nézet és Devizaárfolyam Bankkatalógus (EB-0258) | ✅ Decided | [A-231](./A-231-company-accounting-settings-date-gl-view-fx-bank.md) |
 | A-232 | Főkönyvi Zero-as-Value Számviteli Elv, Multi-Account Kötegelt Lekérdezés, N+1 Throttling és Valós Esedékességi Partner Korosítás | ✅ Decided | [A-232](./A-232-gl-zero-as-value-multi-account-batching-and-partner-aging.md) |
+| A-233 | Tranzakció Készpénzes Kiegyenlítés Házipénztárba és GLS Kompenzáció Normalizáció | ✅ Decided | [A-233](./A-233-transfers-manual-cash-settlement-to-petty-cash-and-gls-compensation-normalization.md) |
+| A-234 | ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Architektúra | ✅ Decided | [A-234](./A-234-deferred-vat-deduction-and-questionable-invoices-architecture.md) |
+| A-235 | Termékimport és Vámhatározatok ÁFA Elszámolása és Bevallási Integráció | ✅ Decided | [A-235](./A-235-import-customs-vat-declarations-and-return-integration.md) |
 | A-236 | NAV 26TFEJLH Nyomtatvány Replika és PDF Generáló Motor | ✅ Decided | [A-236](./A-236-nav-26tfejlh-tourism-contribution-replica-and-pdf-engine.md) |
+| A-237 | NAV Online Számla v3 GZIP Kitömörítés és Többtételes Közműszámla Ingestion Architektúra | ✅ Decided | [A-237](./A-237-nav-osa-gzip-decompression-and-utility-line-items.md) |
+| A-238 | Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra | ✅ Decided | [A-238](./A-238-accounting-journals-document-grouping-and-rlb-filter-architecture.md) |
 
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -36,6 +36,7 @@ import {
   Sparkles,
   RotateCcw,
   Undo2,
+  X,
   Download,
   ExternalLink,
   Copy,
@@ -43,6 +44,8 @@ import {
   Sliders,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Layers,
   LayoutGrid,
   ChevronsLeftRight,
 } from 'lucide-react';
@@ -56,6 +59,14 @@ import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadCh
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
 import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
 import { ManageJournalsModal } from '@/components/journals/ManageJournalsModal';
+import { JournalFilterModal } from '@/components/journals/JournalFilterModal';
+import {
+  JournalFilterCriteria,
+  DEFAULT_JOURNAL_FILTER_CRITERIA,
+  getActiveFilterCount,
+  getActiveFilterChips,
+  filterJournalEntries,
+} from '@/components/journals/journalFilterUtils';
 import {
   getLocalizedJournalName,
   getNextDocumentId,
@@ -172,6 +183,108 @@ const formatCurrency = (val: number, currency: string = 'HUF') => {
   return formatCurrencyLocale(val, currency, { maximumFractionDigits: currency === 'HUF' ? 0 : 2 });
 };
 
+interface JournalLineItem {
+  key: string;
+  index: number;
+  description: string;
+  net: number;
+  vat: number;
+  gross: number;
+  foreignNet?: number;
+  foreignVat?: number;
+  foreignGross?: number;
+  lines: any[];
+}
+
+function deriveJournalItems(entry: any): JournalLineItem[] {
+  const lines = entry.lines || [];
+  if (lines.length === 0) return [];
+
+  const isForeign = Boolean(entry.currency && entry.currency !== 'HUF');
+
+  const itemMap = new Map<string, { key: string; description: string; lines: any[] }>();
+  const parentToItem = new Map<string, { key: string; description: string; lines: any[] }>();
+
+  lines.forEach((l: any) => {
+    if (l.parent_line_id) {
+      const parentGroup = parentToItem.get(l.parent_line_id);
+      if (parentGroup) {
+        parentGroup.lines.push(l);
+        return;
+      }
+    }
+
+    const baseDesc = (l.description || '').trim();
+    if (baseDesc && itemMap.has(baseDesc)) {
+      const existing = itemMap.get(baseDesc)!;
+      existing.lines.push(l);
+      if (l.id) parentToItem.set(l.id, existing);
+    } else {
+      const newItem = {
+        key: l.id || `item-${itemMap.size + 1}`,
+        description: baseDesc || `${entry.description || 'Tétel'} #${itemMap.size + 1}`,
+        lines: [l],
+      };
+      if (baseDesc) itemMap.set(baseDesc, newItem);
+      else itemMap.set(newItem.key, newItem);
+      if (l.id) parentToItem.set(l.id, newItem);
+    }
+  });
+
+  const rawItems = Array.from(new Set(Array.from(itemMap.values())));
+
+  return rawItems.map((it, idx) => {
+    let net = 0;
+    let vat = 0;
+    let gross = 0;
+    let foreignNet = 0;
+    let foreignVat = 0;
+    let foreignGross = 0;
+
+    it.lines.forEach((l: any) => {
+      const amt = Number(l.amount) || 0;
+      const fAmt = Number(l.foreign_amount) || 0;
+      const gl = l.gl_account?.gl_number || '';
+
+      const isVat = l.vat_role === 'AFA' || gl.startsWith('466') || gl.startsWith('467');
+      const isPartner = gl.startsWith('454') || gl.startsWith('311') || (l.vat_role === 'NONE' && !isVat);
+
+      if (isVat) {
+        vat += amt;
+        foreignVat += fAmt;
+      } else if (l.vat_role === 'ALAP' || (!isPartner && !isVat)) {
+        net += amt;
+        foreignNet += fAmt;
+      } else if (isPartner) {
+        gross = Math.max(gross, amt);
+        foreignGross = Math.max(foreignGross, fAmt);
+      }
+    });
+
+    if (gross === 0) {
+      gross = net + vat;
+      foreignGross = foreignNet + foreignVat;
+    }
+    if (net === 0 && gross > 0 && vat === 0) {
+      net = gross;
+      foreignNet = foreignGross;
+    }
+
+    return {
+      key: it.key,
+      index: idx + 1,
+      description: it.description,
+      net,
+      vat,
+      gross,
+      foreignNet: isForeign ? foreignNet : undefined,
+      foreignVat: isForeign ? foreignVat : undefined,
+      foreignGross: isForeign ? foreignGross : undefined,
+      lines: [...it.lines].sort((a: any, b: any) => (a.sequence_number || 0) - (b.sequence_number || 0)),
+    };
+  });
+}
+
 export default function JournalsPage() {
   const { t } = useTranslation(['accounting', 'common']);
   const { selectedCompany } = useCompany();
@@ -229,18 +342,103 @@ export default function JournalsPage() {
   const [selectedJournalId, setSelectedJournalId] = useState<string>('munkalista');
   const [search, setSearch] = useState('');
   const [stornoFilter, setStornoFilter] = useState<'all' | 'active' | 'storno'>('all');
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filterCriteria, setFilterCriteria] = useState<JournalFilterCriteria>(DEFAULT_JOURNAL_FILTER_CRITERIA);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set());
-  
+  const [expandedEntryIds, setExpandedEntryIds] = useState<Set<string>>(new Set());
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const lastRepeatTimeRef = useRef<number>(0);
+  const scrollRafRef = useRef<number | null>(null);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
 
-  // Reset page and selection when search, stornoFilter or journal changes
+  const handleResetFilters = useCallback(() => {
+    setFilterCriteria(DEFAULT_JOURNAL_FILTER_CRITERIA);
+    setSearch('');
+    setStornoFilter('all');
+    setCurrentPage(1);
+  }, []);
+
+  const handleRemoveFilterChip = useCallback((chipId: string) => {
+    setFilterCriteria(prev => {
+      switch (chipId) {
+        case 'journalScope':
+          return { ...prev, journalScope: 'CURRENT' };
+        case 'directions':
+          return { ...prev, vevoSzamlak: true, szallitoSzamlak: true, bankPenztar: true, vegyesNaplo: true };
+        case 'status':
+          return { ...prev, statusKonyvelt: true, statusPiszkozat: true, statusSztorno: false };
+        case 'csakJegyzet':
+          return { ...prev, csakJegyzet: false };
+        case 'csakPfAfa':
+          return { ...prev, csakPfAfa: false };
+        case 'naplosorszam':
+          return { ...prev, naplosorszamTol: '', naplosorszamIg: '' };
+        case 'kelt':
+          return { ...prev, keltTol: '', keltIg: '' };
+        case 'teljesites':
+          return { ...prev, teljesitesTol: '', teljesitesIg: '' };
+        case 'fokonyv':
+          return { ...prev, fokonyviSzam: '' };
+        case 'bizonylatszam':
+          return { ...prev, bizonylatszam: '' };
+        case 'partnerNev':
+          return { ...prev, partnerNev: '' };
+        case 'megjegyzes':
+          return { ...prev, megjegyzes: '' };
+        case 'munkaszam':
+          return { ...prev, munkaszam: '' };
+        case 'devizanem':
+          return { ...prev, devizanem: 'ALL' };
+        case 'fizetesiMod':
+          return { ...prev, fizetesiMod: 'ALL' };
+        case 'osszeg':
+          return { ...prev, osszegTol: '', osszegIg: '' };
+        default:
+          return prev;
+      }
+    });
+    setCurrentPage(1);
+  }, []);
+
+  const handleToggleExpand = useCallback((id: string) => {
+    setExpandedEntryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleToggleAllExpand = useCallback((entries: any[]) => {
+    const pageIds = entries.map((e: any) => e.id);
+    const allPageExpanded = pageIds.length > 0 && pageIds.every((id: string) => expandedEntryIds.has(id));
+    setExpandedEntryIds((prev) => {
+      const next = new Set(prev);
+      if (allPageExpanded) {
+        pageIds.forEach((id: string) => next.delete(id));
+      } else {
+        pageIds.forEach((id: string) => next.add(id));
+      }
+      return next;
+    });
+  }, [expandedEntryIds]);
+
+  // Reset page and selection when search, stornoFilter, filterCriteria or journal changes
   useEffect(() => {
     setCurrentPage(1);
     setSelectedEntryIds(new Set());
-  }, [search, stornoFilter, selectedJournalId]);
+    setExpandedEntryIds(new Set());
+    setLastSelectedIndex(null);
+    setFocusedIndex(null);
+  }, [search, stornoFilter, selectedJournalId, filterCriteria]);
   
   // Modals state
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
@@ -534,9 +732,13 @@ export default function JournalsPage() {
     return { locked: false };
   }, [closedPeriods, finalizedVatReturns]);
 
+  const effectiveJournalScope = filterCriteria.journalScope === 'ALL'
+    ? 'ALL'
+    : (filterCriteria.journalScope !== 'CURRENT' ? filterCriteria.journalScope : selectedJournalId);
+
   // Fetch entries
   const { data: entries = [], isLoading: loadingEntries } = useQuery({
-    queryKey: ['acc-journal-entries', selectedCompany?.id, selectedJournalId, dateFrom, dateTo],
+    queryKey: ['acc-journal-entries', selectedCompany?.id, effectiveJournalScope, dateFrom, dateTo],
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       let query = supabase
@@ -553,10 +755,12 @@ export default function JournalsPage() {
         `)
         .eq('company_id', selectedCompany.id);
 
-      if (selectedJournalId === 'munkalista') {
+      if (effectiveJournalScope === 'ALL') {
+        // Minden napló – nem szűrünk journal_id-ra
+      } else if (effectiveJournalScope === 'munkalista') {
         query = query.in('status', ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT']);
       } else {
-        query = query.eq('journal_id', selectedJournalId);
+        query = query.eq('journal_id', effectiveJournalScope);
       }
 
       if (dateFrom) query = query.gte('posting_date', dateFrom);
@@ -568,7 +772,7 @@ export default function JournalsPage() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!selectedCompany?.id && !!selectedJournalId,
+    enabled: !!selectedCompany?.id && !!effectiveJournalScope,
   });
 
   // Suggested next document ID based on the latest entry
@@ -1060,10 +1264,7 @@ export default function JournalsPage() {
 
   const handleSelectAll = (checked: boolean, pageEntries: any[]) => {
     if (checked) {
-      const draftIds = pageEntries
-        .filter((e: any) => ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status))
-        .map((e: any) => e.id);
-      setSelectedEntryIds(new Set(draftIds));
+      setSelectedEntryIds(new Set(pageEntries.map((e: any) => e.id)));
     } else {
       setSelectedEntryIds(new Set());
     }
@@ -1088,23 +1289,31 @@ export default function JournalsPage() {
     return map;
   }, [entries]);
 
-  // Filtered entries
-  const filteredEntries = entries.filter((e: any) => {
-    if (stornoFilter === 'active') {
-      if (e.status === 'SZTORNOZOTT' || e.entry_type === 'SZTORNO') return false;
-    } else if (stornoFilter === 'storno') {
-      if (e.status !== 'SZTORNOZOTT' && e.entry_type !== 'SZTORNO') return false;
-    }
+  const selectedDraftIds = React.useMemo(() => {
+    return Array.from(selectedEntryIds).filter((id) => {
+      const e = entriesById.get(id);
+      return e && ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status);
+    });
+  }, [selectedEntryIds, entriesById]);
 
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      (e.description && e.description.toLowerCase().includes(q)) ||
-      (e.document_id && e.document_id.toLowerCase().includes(q)) ||
-      (e.partner?.name && e.partner.name.toLowerCase().includes(q)) ||
-      (e.journal_number && `${e.journal?.code}/${e.journal_number}`.toLowerCase().includes(q))
-    );
-  });
+  const journalNamesById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    journals.forEach((j: any) => map.set(j.id, `${j.code} – ${j.name}`));
+    return map;
+  }, [journals]);
+
+  const activeFilterCount = React.useMemo(() => {
+    return getActiveFilterCount(filterCriteria);
+  }, [filterCriteria]);
+
+  const activeFilterChips = React.useMemo(() => {
+    return getActiveFilterChips(filterCriteria, journalNamesById);
+  }, [filterCriteria, journalNamesById]);
+
+  // Filtered entries using RLB filterJournalEntries
+  const filteredEntries = React.useMemo(() => {
+    return filterJournalEntries(entries, filterCriteria, search, stornoFilter);
+  }, [entries, filterCriteria, search, stornoFilter]);
 
   const totalItems = filteredEntries.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -1120,6 +1329,374 @@ export default function JournalsPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Shift-select and single select handler
+  const handleRowSelect = useCallback(
+    (targetId: string, index: number, isShiftKey: boolean, forcedChecked?: boolean) => {
+      setFocusedIndex(index);
+
+      setSelectedEntryIds((prev) => {
+        const next = new Set(prev);
+
+        if (
+          isShiftKey &&
+          lastSelectedIndex !== null &&
+          lastSelectedIndex >= 0 &&
+          lastSelectedIndex < paginatedEntries.length
+        ) {
+          // Range selection
+          const start = Math.min(lastSelectedIndex, index);
+          const end = Math.max(lastSelectedIndex, index);
+          const shouldSelect = forcedChecked !== undefined ? forcedChecked : true;
+
+          for (let i = start; i <= end; i++) {
+            const item = paginatedEntries[i];
+            if (item) {
+              if (shouldSelect) {
+                next.add(item.id);
+              } else {
+                next.delete(item.id);
+              }
+            }
+          }
+        } else {
+          // Single toggle
+          const shouldSelect = forcedChecked !== undefined ? forcedChecked : !prev.has(targetId);
+          if (shouldSelect) {
+            next.add(targetId);
+          } else {
+            next.delete(targetId);
+          }
+          setLastSelectedIndex(index);
+        }
+
+        return next;
+      });
+    },
+    [lastSelectedIndex, paginatedEntries]
+  );
+
+  // Stable refs for keyboard handler to avoid listener thrashing
+  const focusedIndexRef = useRef(focusedIndex);
+  const lastSelectedIndexRef = useRef(lastSelectedIndex);
+  const paginatedEntriesRef = useRef(paginatedEntries);
+
+  useEffect(() => {
+    focusedIndexRef.current = focusedIndex;
+    lastSelectedIndexRef.current = lastSelectedIndex;
+    paginatedEntriesRef.current = paginatedEntries;
+  }, [focusedIndex, lastSelectedIndex, paginatedEntries]);
+
+  // Keyboard navigation & spacebar row-by-row selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (
+        manualEntryOpen ||
+        openingWizardOpen ||
+        uploadCoaOpen ||
+        periodClosingOpen ||
+        auditEntryId ||
+        editingEntryId ||
+        selectedEntry ||
+        stornoOpen ||
+        bulkGlDialogOpen ||
+        bulkDeleteDialogOpen ||
+        singleDeleteTarget
+      ) {
+        return;
+      }
+
+      const entries = paginatedEntriesRef.current;
+      if (entries.length === 0) return;
+
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+
+        // Throttle key-repeat to 90ms (~11 rows/sec) so holding down Space never lags or starves React
+        const now = performance.now();
+        if (e.repeat && now - lastRepeatTimeRef.current < 90) {
+          return;
+        }
+        lastRepeatTimeRef.current = now;
+
+        const currentFocused = focusedIndexRef.current;
+        const currentLastSelected = lastSelectedIndexRef.current;
+        const currentIndex =
+          currentFocused !== null && currentFocused >= 0 && currentFocused < entries.length
+            ? currentFocused
+            : 0;
+
+        const currentEntry = entries[currentIndex];
+        if (currentEntry) {
+          if (e.shiftKey && currentLastSelected !== null) {
+            // Shift + Space: Range selection from lastSelectedIndex to currentIndex
+            const start = Math.min(currentLastSelected, currentIndex);
+            const end = Math.max(currentLastSelected, currentIndex);
+            setSelectedEntryIds((prev) => {
+              const next = new Set(prev);
+              for (let i = start; i <= end; i++) {
+                const item = entries[i];
+                if (item) next.add(item.id);
+              }
+              return next;
+            });
+          } else {
+            // Space: Toggle current row and set lastSelectedIndex
+            setSelectedEntryIds((prev) => {
+              const next = new Set(prev);
+              if (next.has(currentEntry.id)) {
+                next.delete(currentEntry.id);
+              } else {
+                next.add(currentEntry.id);
+              }
+              return next;
+            });
+            setLastSelectedIndex(currentIndex);
+          }
+
+          // Advance focus down to next row so successive Space presses select row after row
+          const nextIndex = Math.min(currentIndex + 1, entries.length - 1);
+          setFocusedIndex(nextIndex);
+
+          if (scrollRafRef.current !== null) {
+            cancelAnimationFrame(scrollRafRef.current);
+          }
+          scrollRafRef.current = requestAnimationFrame(() => {
+            const el = document.getElementById(`journal-row-${nextIndex}`);
+            if (el) el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+          });
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+
+        // Throttle key-repeat for arrow navigation
+        const now = performance.now();
+        if (e.repeat && now - lastRepeatTimeRef.current < 50) {
+          return;
+        }
+        lastRepeatTimeRef.current = now;
+
+        const currentFocused = focusedIndexRef.current;
+        const currentLastSelected = lastSelectedIndexRef.current;
+        const currentIndex = currentFocused !== null && currentFocused >= 0 ? currentFocused : -1;
+        const nextIndex = Math.min(currentIndex + 1, entries.length - 1);
+
+        if (e.shiftKey && currentLastSelected !== null) {
+          const start = Math.min(currentLastSelected, nextIndex);
+          const end = Math.max(currentLastSelected, nextIndex);
+          setSelectedEntryIds((prev) => {
+            const next = new Set(prev);
+            for (let i = start; i <= end; i++) {
+              const entry = entries[i];
+              if (entry) next.add(entry.id);
+            }
+            return next;
+          });
+        }
+        setFocusedIndex(nextIndex);
+
+        if (scrollRafRef.current !== null) {
+          cancelAnimationFrame(scrollRafRef.current);
+        }
+        scrollRafRef.current = requestAnimationFrame(() => {
+          const el = document.getElementById(`journal-row-${nextIndex}`);
+          if (el) el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        });
+        return;
+      }
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+
+        // Throttle key-repeat for arrow navigation
+        const now = performance.now();
+        if (e.repeat && now - lastRepeatTimeRef.current < 50) {
+          return;
+        }
+        lastRepeatTimeRef.current = now;
+
+        const currentFocused = focusedIndexRef.current;
+        const currentLastSelected = lastSelectedIndexRef.current;
+        const currentIndex = currentFocused !== null && currentFocused >= 0 ? currentFocused : 1;
+        const prevIndex = Math.max(currentIndex - 1, 0);
+
+        if (e.shiftKey && currentLastSelected !== null) {
+          const start = Math.min(currentLastSelected, prevIndex);
+          const end = Math.max(currentLastSelected, prevIndex);
+          setSelectedEntryIds((prev) => {
+            const next = new Set(prev);
+            for (let i = start; i <= end; i++) {
+              const entry = entries[i];
+              if (entry) next.add(entry.id);
+            }
+            return next;
+          });
+        }
+        setFocusedIndex(prevIndex);
+
+        if (scrollRafRef.current !== null) {
+          cancelAnimationFrame(scrollRafRef.current);
+        }
+        scrollRafRef.current = requestAnimationFrame(() => {
+          const el = document.getElementById(`journal-row-${prevIndex}`);
+          if (el) el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        });
+        return;
+      }
+
+      if (e.key === 'Home') {
+        e.preventDefault();
+        const nextIndex = 0;
+        const currentLastSelected = lastSelectedIndexRef.current;
+
+        if (e.shiftKey && currentLastSelected !== null) {
+          const start = 0;
+          const end = currentLastSelected;
+          setSelectedEntryIds((prev) => {
+            const next = new Set(prev);
+            for (let i = start; i <= end; i++) {
+              const entry = entries[i];
+              if (entry) next.add(entry.id);
+            }
+            return next;
+          });
+        }
+        setFocusedIndex(nextIndex);
+
+        if (scrollRafRef.current !== null) {
+          cancelAnimationFrame(scrollRafRef.current);
+        }
+        scrollRafRef.current = requestAnimationFrame(() => {
+          const el = document.getElementById(`journal-row-${nextIndex}`);
+          if (el) el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        });
+        return;
+      }
+
+      if (e.key === 'End') {
+        e.preventDefault();
+        const nextIndex = entries.length - 1;
+        const currentLastSelected = lastSelectedIndexRef.current;
+
+        if (e.shiftKey && currentLastSelected !== null) {
+          const start = Math.min(currentLastSelected, nextIndex);
+          const end = Math.max(currentLastSelected, nextIndex);
+          setSelectedEntryIds((prev) => {
+            const next = new Set(prev);
+            for (let i = start; i <= end; i++) {
+              const entry = entries[i];
+              if (entry) next.add(entry.id);
+            }
+            return next;
+          });
+        }
+        setFocusedIndex(nextIndex);
+
+        if (scrollRafRef.current !== null) {
+          cancelAnimationFrame(scrollRafRef.current);
+        }
+        scrollRafRef.current = requestAnimationFrame(() => {
+          const el = document.getElementById(`journal-row-${nextIndex}`);
+          if (el) el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        });
+        return;
+      }
+
+      if (e.key === 'PageDown') {
+        e.preventDefault();
+        const currentFocused = focusedIndexRef.current ?? 0;
+        const currentLastSelected = lastSelectedIndexRef.current;
+        const nextIndex = Math.min(currentFocused + 10, entries.length - 1);
+
+        if (e.shiftKey && currentLastSelected !== null) {
+          const start = Math.min(currentLastSelected, nextIndex);
+          const end = Math.max(currentLastSelected, nextIndex);
+          setSelectedEntryIds((prev) => {
+            const next = new Set(prev);
+            for (let i = start; i <= end; i++) {
+              const entry = entries[i];
+              if (entry) next.add(entry.id);
+            }
+            return next;
+          });
+        }
+        setFocusedIndex(nextIndex);
+
+        if (scrollRafRef.current !== null) {
+          cancelAnimationFrame(scrollRafRef.current);
+        }
+        scrollRafRef.current = requestAnimationFrame(() => {
+          const el = document.getElementById(`journal-row-${nextIndex}`);
+          if (el) el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        });
+        return;
+      }
+
+      if (e.key === 'PageUp') {
+        e.preventDefault();
+        const currentFocused = focusedIndexRef.current ?? 0;
+        const currentLastSelected = lastSelectedIndexRef.current;
+        const prevIndex = Math.max(currentFocused - 10, 0);
+
+        if (e.shiftKey && currentLastSelected !== null) {
+          const start = Math.min(currentLastSelected, prevIndex);
+          const end = Math.max(currentLastSelected, prevIndex);
+          setSelectedEntryIds((prev) => {
+            const next = new Set(prev);
+            for (let i = start; i <= end; i++) {
+              const entry = entries[i];
+              if (entry) next.add(entry.id);
+            }
+            return next;
+          });
+        }
+        setFocusedIndex(prevIndex);
+
+        if (scrollRafRef.current !== null) {
+          cancelAnimationFrame(scrollRafRef.current);
+        }
+        scrollRafRef.current = requestAnimationFrame(() => {
+          const el = document.getElementById(`journal-row-${prevIndex}`);
+          if (el) el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        });
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+    };
+  }, [
+    manualEntryOpen,
+    openingWizardOpen,
+    uploadCoaOpen,
+    periodClosingOpen,
+    auditEntryId,
+    editingEntryId,
+    selectedEntry,
+    stornoOpen,
+    bulkGlDialogOpen,
+    bulkDeleteDialogOpen,
+    singleDeleteTarget,
+  ]);
 
   const selectedJournal = journals.find((j: any) => j.id === selectedJournalId);
   const isNyJournal = selectedJournal?.code === 'NY';
@@ -1557,53 +2134,128 @@ export default function JournalsPage() {
             </Card>
           )}
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t('accounting:journals.filters.search_placeholder', 'Keresés (partner, bizonylatszám, megnevezés...)')}
-                value={search}
-                onChange={e => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="pl-9 bg-card border-border shadow-none"
-              />
+          {/* Filters & RLB Szűkítés */}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('accounting:journals.filters.search_placeholder', 'Keresés (partner, bizonylatszám, megnevezés...)')}
+                  value={search}
+                  onChange={e => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="pl-9 bg-card border-border shadow-none"
+                />
+              </div>
+
+              {/* RLB Szűkítés Button */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant={activeFilterCount > 0 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsFilterModalOpen(true)}
+                  className={cn(
+                    "gap-1.5 h-9 font-medium shadow-2xs transition-all",
+                    activeFilterCount > 0
+                      ? "bg-amber-600 hover:bg-amber-700 text-white border-amber-600"
+                      : "border-border text-foreground hover:bg-muted/50"
+                  )}
+                  title="RLB stílusú részletes szűkítés megnyitása"
+                >
+                  <Sliders className="w-4 h-4 text-amber-500" />
+                  <span>{t('accounting:journals.filters.narrow_down', 'Szűkítés')}</span>
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-[10px] bg-white text-amber-900 font-bold rounded-full">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+
+                {activeFilterCount > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetFilters}
+                    className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                    title="Minden szűkítés és szűrő visszaállítása"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span className="hidden md:inline">Alaphelyzet</span>
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex items-center bg-muted/40 p-1 rounded-lg border border-border shrink-0 text-xs">
+                <button
+                  type="button"
+                  onClick={() => { setStornoFilter('all'); setCurrentPage(1); }}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md transition-all text-xs font-medium",
+                    stornoFilter === 'all' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {t('accounting:journals.filters.all', 'Összes tétel')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setStornoFilter('active'); setCurrentPage(1); }}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md transition-all text-xs font-medium",
+                    stornoFilter === 'active' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {t('accounting:journals.filters.active', 'Aktív tételek')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setStornoFilter('storno'); setCurrentPage(1); }}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md transition-all text-xs font-medium flex items-center gap-1",
+                    stornoFilter === 'storno' ? "bg-background text-amber-600 dark:text-amber-400 shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+                  {t('accounting:journals.filters.storno', 'Sztornó tételek')}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center bg-muted/40 p-1 rounded-lg border border-border shrink-0 text-xs">
-              <button
-                type="button"
-                onClick={() => { setStornoFilter('all'); setCurrentPage(1); }}
-                className={cn(
-                  "px-2.5 py-1 rounded-md transition-all text-xs font-medium",
-                  stornoFilter === 'all' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {t('accounting:journals.filters.all', 'Összes tétel')}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setStornoFilter('active'); setCurrentPage(1); }}
-                className={cn(
-                  "px-2.5 py-1 rounded-md transition-all text-xs font-medium",
-                  stornoFilter === 'active' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {t('accounting:journals.filters.active', 'Aktív tételek')}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setStornoFilter('storno'); setCurrentPage(1); }}
-                className={cn(
-                  "px-2.5 py-1 rounded-md transition-all text-xs font-medium flex items-center gap-1",
-                  stornoFilter === 'storno' ? "bg-background text-amber-600 dark:text-amber-400 shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <RotateCcw className="w-3 h-3 text-amber-500" />
-                {t('accounting:journals.filters.storno', 'Sztornó tételek')}
-              </button>
-            </div>
+
+            {/* Active Filter Chips */}
+            {activeFilterChips.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 py-1 text-xs">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mr-1">
+                  Aktív szűkítések:
+                </span>
+                {activeFilterChips.map((chip) => (
+                  <Badge
+                    key={chip.id}
+                    variant="secondary"
+                    className="gap-1 pl-2 pr-1 py-0.5 text-xs bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-500/30 font-medium"
+                  >
+                    <span>{chip.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFilterChip(chip.id)}
+                      className="ml-0.5 p-0.5 rounded-full hover:bg-amber-500/20 text-muted-foreground hover:text-foreground cursor-pointer"
+                      title="Szűrő feltétel eltávolítása"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline font-medium ml-1 cursor-pointer"
+                >
+                  Összes törlése
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Guidance Banner for Pending Drafts & System Proposals */}
@@ -1681,33 +2333,47 @@ export default function JournalsPage() {
               <Table className="compact-table w-full table-fixed min-w-[1260px]">
                 <TableHeader>
                   <TableRow className="bg-muted/40 border-b border-border/40 text-muted-foreground select-none uppercase font-semibold text-[10px] tracking-wider">
-                    <TableHead className="w-[44px] text-center p-0">
-                      <div className="flex items-center justify-center">
+                    <TableHead className="w-[68px] text-center p-0">
+                      <div className="flex items-center justify-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleAllExpand(paginatedEntries)}
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          title={
+                            paginatedEntries.length > 0 && paginatedEntries.every((e: any) => expandedEntryIds.has(e.id))
+                              ? t('accounting:journals.table.collapse_all', 'Összes becsukása')
+                              : t('accounting:journals.table.expand_all', 'Összes lenyitása')
+                          }
+                        >
+                          {paginatedEntries.length > 0 && paginatedEntries.every((e: any) => expandedEntryIds.has(e.id)) ? (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
                         {(() => {
-                          const pageDrafts = paginatedEntries.filter((e: any) =>
-                            ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'].includes(e.status)
-                          );
                           const isAllSelected =
-                            pageDrafts.length > 0 &&
-                            pageDrafts.every((e: any) => selectedEntryIds.has(e.id));
+                            paginatedEntries.length > 0 &&
+                            paginatedEntries.every((e: any) => selectedEntryIds.has(e.id));
                           const isSomeSelected =
-                            pageDrafts.some((e: any) => selectedEntryIds.has(e.id));
+                            paginatedEntries.some((e: any) => selectedEntryIds.has(e.id));
 
                           return (
                             <Checkbox
                               checked={isAllSelected ? true : isSomeSelected ? 'indeterminate' : false}
-                              disabled={pageDrafts.length === 0}
+                              disabled={paginatedEntries.length === 0}
                               onCheckedChange={(checked) => handleSelectAll(!!checked, paginatedEntries)}
-                              aria-label={t('accounting:journals.table.select_all_drafts_aria', 'Összes piszkozat kijelölése ezen az oldalon')}
+                              aria-label={t('accounting:journals.table.select_all_items_aria', 'Összes tétel kijelölése ezen az oldalon')}
                             />
                           );
                         })()}
                       </div>
                     </TableHead>
                     <TableHead className="w-[95px] whitespace-nowrap">{t('accounting:journals.table.col_date', 'Dátum')}</TableHead>
-                    <TableHead className="w-[110px] whitespace-nowrap">{t('accounting:journals.table.col_journal_num', 'Naplószám')}</TableHead>
-                    <TableHead className="w-[150px] whitespace-nowrap">{t('accounting:journals.table.col_doc_num', 'Bizonylatszám')}</TableHead>
-                    <TableHead className="w-[180px] whitespace-nowrap">{t('accounting:journals.table.col_partner', 'Partner')}</TableHead>
+                    <TableHead className="w-[125px] whitespace-nowrap">{t('accounting:journals.table.col_journal_num', 'Naplószám')}</TableHead>
+                    <TableHead className="w-[160px] whitespace-nowrap">{t('accounting:journals.table.col_doc_num', 'Bizonylatszám')}</TableHead>
+                    <TableHead className="w-[170px] whitespace-nowrap">{t('accounting:journals.table.col_partner', 'Partner')}</TableHead>
                     <TableHead className="w-auto min-w-[180px]">{t('accounting:journals.table.col_description', 'Megnevezés')}</TableHead>
                     <TableHead className="w-[130px] text-center whitespace-nowrap">{t('accounting:journals.table.col_gl_accounts', 'Kontír (T / K)')}</TableHead>
                     <TableHead className="w-[140px] text-right whitespace-nowrap">{t('accounting:journals.table.col_amount', 'Összeg')}</TableHead>
@@ -1722,15 +2388,27 @@ export default function JournalsPage() {
                   ) : filteredEntries.length === 0 ? (
                     <TableEmptyState
                       colSpan={11}
-                      icon={search ? Search : FileText}
-                      title={search ? t('accounting:journals.table.empty_search_title', 'Nincs találat a megadott keresési feltételekre') : t('accounting:journals.table.empty_view_title', 'Nincsenek tételek ebben a nézetben')}
-                      description={search ? t('accounting:journals.table.empty_search_desc', 'Próbáld módosítani a keresési feltételt vagy törölni a szűrőt.') : t('accounting:journals.table.empty_view_desc', 'Ehhez a naplóhoz még nem tartoznak könyvelési tételek a megadott időszakban.')}
-                      onClearFilters={search ? () => setSearch('') : undefined}
-                      clearLabel={t('accounting:journals.table.clear_search', 'Keresés törlése')}
+                      icon={search || activeFilterCount > 0 ? Search : FileText}
+                      title={
+                        activeFilterCount > 0
+                          ? 'Nincs a szűkítési feltételeknek megfelelő naplótétel'
+                          : search
+                            ? t('accounting:journals.table.empty_search_title', 'Nincs találat a megadott keresési feltételekre')
+                            : t('accounting:journals.table.empty_view_title', 'Nincsenek tételek ebben a nézetben')
+                      }
+                      description={
+                        activeFilterCount > 0
+                          ? 'Próbáld módosítani a szűkítést, vagy állítsd vissza a szűrőket az alapértelmezettre.'
+                          : search
+                            ? t('accounting:journals.table.empty_search_desc', 'Próbáld módosítani a keresési feltételt vagy törölni a szűrőt.')
+                            : t('accounting:journals.table.empty_view_desc', 'Ehhez a naplóhoz még nem tartoznak könyvelési tételek a megadott időszakban.')
+                      }
+                      onClearFilters={search || activeFilterCount > 0 ? handleResetFilters : undefined}
+                      clearLabel={activeFilterCount > 0 ? 'Szűkítések törlése' : t('accounting:journals.table.clear_search', 'Keresés törlése')}
                     />
                   ) : (
                     <>
-                      {paginatedEntries.map((e: any) => {
+                      {paginatedEntries.map((e: any, index: number) => {
                         const isForeign = e.currency && e.currency !== 'HUF';
                         const isStornoEntry = e.entry_type === 'SZTORNO';
                         const isStornoedOriginal = e.status === 'SZTORNOZOTT';
@@ -1776,25 +2454,82 @@ export default function JournalsPage() {
                         
                         const origRefEntry = isStornoEntry ? entriesById.get(e.stornoed_entry_id || e.original_entry_id) : null;
                         const stornoRefEntry = isStornoedOriginal ? stornoMap.get(e.id) : null;
+                        const isExpanded = expandedEntryIds.has(e.id);
+                        const entryItems = deriveJournalItems(e);
+                        const totalNet = entryItems.reduce((acc, it) => acc + it.net, 0);
+                        const totalVat = entryItems.reduce((acc, it) => acc + it.vat, 0);
+                        const totalForeignNet = entryItems.reduce((acc, it) => acc + (it.foreignNet || 0), 0);
+                        const totalForeignVat = entryItems.reduce((acc, it) => acc + (it.foreignVat || 0), 0);
 
                         return (
-                          <TableRow key={e.id} className={cn("hover:bg-muted/20 transition-colors h-[45px]", isStornoEntry && "bg-amber-500/5 hover:bg-amber-500/10", isStornoedOriginal && "bg-rose-500/5 hover:bg-rose-500/10")}>
-                            <TableCell className="w-[44px] text-center p-0">
-                              {isDraft ? (
-                                <div className="flex items-center justify-center">
-                                  <Checkbox
-                                    checked={selectedEntryIds.has(e.id)}
-                                    onCheckedChange={() => toggleSelectEntry(e.id)}
-                                    aria-label={t('accounting:journals.table.select_item_aria', { id: e.document_id || e.id })}
-                                  />
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center">
-                                  {(() => {
+                          <React.Fragment key={e.id}>
+                          <TableRow
+                            key={e.id}
+                            id={`journal-row-${index}`}
+                            tabIndex={0}
+                            onClick={(ev) => {
+                              const target = ev.target as HTMLElement;
+                              if (target.closest('button') || target.closest('input') || target.closest('[data-no-row-select]')) {
+                                return;
+                              }
+                              handleRowSelect(e.id, index, ev.shiftKey);
+                            }}
+                            className={cn(
+                              "h-[45px] cursor-pointer select-none relative transition-none",
+                              isStornoEntry && "bg-amber-500/5 hover:bg-amber-500/10",
+                              isStornoedOriginal && "bg-rose-500/5 hover:bg-rose-500/10",
+                              isExpanded && "bg-muted/20 border-b-0",
+                              selectedEntryIds.has(e.id)
+                                ? "bg-sky-500/20 dark:bg-sky-500/25 font-medium"
+                                : "hover:bg-muted/20",
+                              focusedIndex === index &&
+                                "outline outline-2 outline-sky-400 dark:outline-sky-400 -outline-offset-2 bg-sky-500/[0.28] dark:bg-sky-400/[0.30] shadow-[0_0_12px_rgba(56,189,248,0.4)] z-20"
+                            )}
+                          >
+                            <TableCell className="w-[68px] text-center p-0 relative">
+                              {focusedIndex === index && (
+                                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-sky-400 dark:bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.9)] rounded-r z-30" />
+                              )}
+                              <div className="flex items-center justify-center gap-0.5">
+                                {e.lines && e.lines.length > 0 ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(ev) => {
+                                      ev.stopPropagation();
+                                      handleToggleExpand(e.id);
+                                    }}
+                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                    title={isExpanded ? t('accounting:journals.table.collapse_entry', 'Tételek becsukása') : t('accounting:journals.table.expand_entry', 'Tételek lenyitása')}
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                                    ) : (
+                                      <ChevronRight className="w-3.5 h-3.5" />
+                                    )}
+                                  </Button>
+                                ) : (
+                                  <span className="w-6 h-6 inline-block" />
+                                )}
+                                <Checkbox
+                                  checked={selectedEntryIds.has(e.id)}
+                                  onCheckedChange={(checked) => {
+                                    handleRowSelect(e.id, index, false, !!checked);
+                                  }}
+                                  onClick={(ev) => {
+                                    ev.stopPropagation();
+                                    if (ev.shiftKey) {
+                                      handleRowSelect(e.id, index, true);
+                                    }
+                                  }}
+                                  aria-label={t('accounting:journals.table.select_item_aria', { id: e.document_id || e.id })}
+                                />
+                                {!isDraft && (
+                                  (() => {
                                     if (e.status === 'SZTORNOZOTT') {
                                       return (
-                                        <CustomTooltip content={t('accounting:journals.table.lock_stornoed', 'Sztornózott tétel (lezárt, nem jelölhető ki tömeges műveletre)')}>
-                                          <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors">
+                                        <CustomTooltip content={t('accounting:journals.table.lock_stornoed', 'Sztornózott tétel (lezárt)')}>
+                                          <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors ml-0.5">
                                             <Lock className="w-3.5 h-3.5" />
                                           </span>
                                         </CustomTooltip>
@@ -1804,28 +2539,44 @@ export default function JournalsPage() {
                                     if (lock.locked) {
                                       return (
                                         <CustomTooltip content={t('accounting:journals.table.lock_closed', { reason: lock.reason, defaultValue: `Lekönyvelt zárt tétel (${lock.reason})` })}>
-                                          <span className="inline-flex items-center justify-center cursor-help text-amber-500/80 hover:text-amber-600 transition-colors">
+                                          <span className="inline-flex items-center justify-center cursor-help text-amber-500/80 hover:text-amber-600 transition-colors ml-0.5">
                                             <Lock className="w-3.5 h-3.5" />
                                           </span>
                                         </CustomTooltip>
                                       );
                                     }
                                     return (
-                                      <CustomTooltip content={t('accounting:journals.table.lock_open', 'Nyitott tétel')}>
-                                        <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors">
+                                      <CustomTooltip content={t('accounting:journals.table.lock_open', 'Nyitott könyvelt tétel')}>
+                                        <span className="inline-flex items-center justify-center cursor-help text-muted-foreground/35 hover:text-muted-foreground/60 transition-colors ml-0.5">
                                           <Lock className="w-3.5 h-3.5" />
                                         </span>
                                       </CustomTooltip>
                                     );
-                                  })()}
-                                </div>
-                              )}
+                                  })()
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="w-[95px] font-mono text-muted-foreground whitespace-nowrap">
                               {e.posting_date.replace(/-/g, '.')}
                             </TableCell>
-                            <TableCell className="w-[110px] font-semibold text-foreground whitespace-nowrap truncate">
-                              <div>{journalNum}</div>
+                            <TableCell className="w-[125px] font-semibold text-foreground whitespace-nowrap truncate">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span>{journalNum}</span>
+                                {entryItems.length > 1 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 text-[10px] font-semibold px-1.5 py-0 shrink-0 cursor-pointer"
+                                    onClick={(ev) => {
+                                      ev.stopPropagation();
+                                      handleToggleExpand(e.id);
+                                    }}
+                                    title={t('accounting:journals.table.items_count_badge', '{{count}} tétel — kattints a lenyitáshoz', { count: entryItems.length })}
+                                    data-no-row-select="true"
+                                  >
+                                    {entryItems.length} tétel
+                                  </Badge>
+                                )}
+                              </div>
                               {isStornoEntry && (
                                 <span className="text-[9px] text-amber-600 dark:text-amber-400 font-mono block leading-tight truncate">
                                   ↩ {origRefEntry ? `${origRefEntry.journal?.code}/${origRefEntry.journal_number}` : t('accounting:journals.table.storno_original_ref')}
@@ -1837,26 +2588,26 @@ export default function JournalsPage() {
                                 </span>
                               )}
                             </TableCell>
-                            <TableCell className="w-[150px] font-mono truncate">
+                            <TableCell className="w-[160px] font-mono truncate">
                               {e.document_id ? (
                                 <CopyableCell
                                   value={e.document_id}
                                   displayValue={e.document_id}
-                                  className="font-mono text-xs"
-                                  maxWidth="135px"
+                                  className="font-mono text-xs cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 font-semibold"
+                                  maxWidth="150px"
                                   ariaLabel={t('accounting:journals.table.copy_aria', { val: e.document_id })}
                                 />
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
                             </TableCell>
-                            <TableCell className="w-[180px] font-medium text-foreground truncate">
+                            <TableCell className="w-[170px] font-medium text-foreground truncate">
                               {e.partner?.name ? (
                                 <CopyableCell
                                   value={e.partner.name}
                                   displayValue={e.partner.name.length > 18 ? e.partner.name.slice(0, 18) + '…' : e.partner.name}
                                   truncate
-                                  maxWidth="165px"
+                                  maxWidth="155px"
                                   className="font-medium text-xs text-foreground"
                                   ariaLabel={t('accounting:journals.table.copy_aria', { val: e.partner.name })}
                                 />
@@ -1910,11 +2661,11 @@ export default function JournalsPage() {
                                       {isComplex && (
                                         <TooltipContent side="top" className="max-w-[320px] p-2.5 text-xs shadow-lg space-y-1.5 font-sans">
                                           <div>
-                                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">Tartozik ({tAccounts.length} számla):</span>
+                                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">Tartozik ({tAccounts.length} főkönyvi számla):</span>
                                             <p className="font-mono text-[11px] text-muted-foreground break-words">{fullT}</p>
                                           </div>
                                           <div className="border-t border-border/40 pt-1">
-                                            <span className="font-semibold text-rose-600 dark:text-rose-400">Követel ({kAccounts.length} számla):</span>
+                                            <span className="font-semibold text-rose-600 dark:text-rose-400">Követel ({kAccounts.length} főkönyvi számla):</span>
                                             <p className="font-mono text-[11px] text-muted-foreground break-words">{fullK}</p>
                                           </div>
                                         </TooltipContent>
@@ -2107,12 +2858,204 @@ export default function JournalsPage() {
                               </div>
                             </TableCell>
                           </TableRow>
+
+                          {/* Accordion Expanded Sub-Row with Detailed Invoice Items & Kontírok */}
+                          {isExpanded && (
+                            <TableRow key={`${e.id}-expanded`} className="bg-muted/20 border-b hover:bg-muted/20">
+                              <TableCell colSpan={11} className="p-4 pl-12 pr-6">
+                                <div className="rounded-xl border bg-card p-4 space-y-4 shadow-sm">
+                                  {/* Header bar of expanded row */}
+                                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b">
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                                        <Layers className="w-4 h-4" />
+                                      </div>
+                                      <div>
+                                        <div className="font-bold text-foreground text-sm flex items-center gap-2">
+                                          <span>
+                                            {entryItems.length > 1
+                                              ? t('accounting:journals.table.expanded_title_multi', 'Számla tételei ({{count}} tétel)', { count: entryItems.length })
+                                              : t('accounting:journals.table.expanded_title_single', 'Számla tételei ({{count}} könyvelési sor)', { count: e.lines?.length || 0 })}
+                                          </span>
+                                          <span className="font-mono text-xs text-muted-foreground font-normal">
+                                            — {e.document_id || journalNum}
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {t('accounting:journals.table.expanded_desc', 'A teljes bizonylathoz tartozó számlatételek és azok főkönyvi kontírozása')}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 text-xs font-mono bg-muted/50 px-3 py-1.5 rounded-lg border">
+                                      <span>
+                                        {t('accounting:journals.table.net', 'Nettó')}:{' '}
+                                        <strong className="text-foreground">
+                                          {isForeign && totalForeignNet > 0
+                                            ? `${formatCurrency(totalForeignNet, e.currency)} (${formatCurrency(totalNet, 'HUF')})`
+                                            : formatCurrency(totalNet, e.currency || 'HUF')}
+                                        </strong>
+                                      </span>
+                                      <span className="text-muted-foreground">|</span>
+                                      <span>
+                                        {t('accounting:journals.table.vat', 'ÁFA')}:{' '}
+                                        <strong className="text-indigo-600 dark:text-indigo-400">
+                                          {isForeign && totalForeignVat > 0
+                                            ? `${formatCurrency(totalForeignVat, e.currency)} (${formatCurrency(totalVat, 'HUF')})`
+                                            : formatCurrency(totalVat, e.currency || 'HUF')}
+                                        </strong>
+                                      </span>
+                                      <span className="text-muted-foreground">|</span>
+                                      <span>
+                                        {t('accounting:journals.table.gross', 'Bruttó')}:{' '}
+                                        <strong className="text-foreground">
+                                          {isForeign
+                                            ? `${formatCurrency(Math.abs(rawTotalAmount), e.currency)} (${formatCurrency(Math.abs(hufAmount), 'HUF')})`
+                                            : formatCurrency(Math.abs(totalAmount), e.currency || 'HUF')}
+                                        </strong>
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Detailed Item List: Számlatételek felsorolása */}
+                                  <div className="space-y-3">
+                                    {entryItems.map((item, itemIdx) => (
+                                      <div
+                                        key={item.key || itemIdx}
+                                        className="rounded-lg border bg-background overflow-hidden"
+                                      >
+                                        {/* Item header line if multiple items */}
+                                        {entryItems.length > 1 && (
+                                          <div className="bg-muted/40 px-3 py-2 border-b flex flex-wrap items-center justify-between gap-2 text-xs">
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[11px]">
+                                                #{itemIdx + 1}
+                                              </span>
+                                              <span className="font-semibold text-foreground">
+                                                {item.description || `Tétel #${itemIdx + 1}`}
+                                              </span>
+                                            </div>
+
+                                            <div className="flex items-center gap-3 font-mono text-[11px]">
+                                              <span className="text-muted-foreground">
+                                                {t('accounting:journals.table.net', 'Nettó')}:{' '}
+                                                <strong className="text-foreground">
+                                                  {isForeign && item.foreignNet != null
+                                                    ? `${formatCurrency(item.foreignNet, e.currency)} (${formatCurrency(item.net, 'HUF')})`
+                                                    : formatCurrency(item.net, e.currency || 'HUF')}
+                                                </strong>
+                                              </span>
+                                              <span className="text-muted-foreground">|</span>
+                                              <span className="text-muted-foreground">
+                                                {t('accounting:journals.table.vat', 'ÁFA')}:{' '}
+                                                <strong className="text-indigo-600 dark:text-indigo-400">
+                                                  {isForeign && item.foreignVat != null
+                                                    ? `${formatCurrency(item.foreignVat, e.currency)} (${formatCurrency(item.vat, 'HUF')})`
+                                                    : formatCurrency(item.vat, e.currency || 'HUF')}
+                                                </strong>
+                                              </span>
+                                              <span className="text-muted-foreground">|</span>
+                                              <span className="text-muted-foreground">
+                                                {t('accounting:journals.table.gross', 'Bruttó')}:{' '}
+                                                <strong className="text-foreground">
+                                                  {isForeign && item.foreignGross != null
+                                                    ? `${formatCurrency(item.foreignGross, e.currency)} (${formatCurrency(item.gross, 'HUF')})`
+                                                    : formatCurrency(item.gross, e.currency || 'HUF')}
+                                                </strong>
+                                              </span>
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {/* Kontírozási sorok az adott tételhez */}
+                                        <div className="p-2.5">
+                                          <div className="text-[11px] text-muted-foreground mb-1.5 font-medium px-1 flex items-center justify-between">
+                                            <span>{t('accounting:journals.table.expanded_lines_title', 'Kontírozás (Főkönyvi könyvelési sorok: T / K):')}</span>
+                                            <span className="font-mono text-[10px]">
+                                              {t('accounting:journals.table.expanded_lines_count', '{{count}} sor', { count: item.lines.length })}
+                                            </span>
+                                          </div>
+                                          <table className="w-full text-xs text-left border-collapse">
+                                            <thead>
+                                              <tr className="bg-muted/30 border-b text-muted-foreground font-semibold text-[10px]">
+                                                <th className="p-1.5 w-8 text-center">{t('accounting:journals.table.col_seq', '#')}</th>
+                                                <th className="p-1.5 w-12 text-center">{t('accounting:journals.table.col_dc', 'T/K')}</th>
+                                                <th className="p-1.5 min-w-[200px]">{t('accounting:journals.table.gl_account', 'Főkönyvi számla')}</th>
+                                                <th className="p-1.5 w-28">{t('accounting:journals.table.col_vat_role', 'ÁFA szerep')}</th>
+                                                <th className="p-1.5 text-right w-36">{t('accounting:journals.table.col_amount', 'Összeg')}</th>
+                                                <th className="p-1.5">{t('accounting:journals.table.col_desc', 'Sor leírása')}</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-border/40 text-[11px]">
+                                              {item.lines.map((l: any, lIdx: number) => (
+                                                <tr key={l.id || lIdx} className="hover:bg-muted/10 transition-colors">
+                                                  <td className="p-1.5 text-center text-muted-foreground font-mono">
+                                                    {l.sequence_number || lIdx + 1}
+                                                  </td>
+                                                  <td className="p-1.5 text-center">
+                                                    <Badge
+                                                      variant="secondary"
+                                                      className={`text-[9px] font-bold px-1 py-0 font-mono ${
+                                                        l.dc_type === 'T'
+                                                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                                                          : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                                      }`}
+                                                    >
+                                                      {l.dc_type}
+                                                    </Badge>
+                                                  </td>
+                                                  <td className="p-1.5">
+                                                    <span className="font-mono font-bold text-foreground">
+                                                      {l.gl_account?.gl_number || l.gl_number}
+                                                    </span>
+                                                    <span className="text-muted-foreground ml-1.5 font-sans text-[11px]">
+                                                      {l.gl_account?.short_name || l.gl_short_name}
+                                                    </span>
+                                                  </td>
+                                                  <td className="p-1.5 text-[10px]">
+                                                    {l.vat_role && l.vat_role !== 'NONE' ? (
+                                                      <Badge variant="outline" className="text-[9px] font-mono uppercase">
+                                                        {l.vat_role} {l.vat_code ? `(${l.vat_code})` : ''}
+                                                      </Badge>
+                                                    ) : (
+                                                      <span className="text-muted-foreground">-</span>
+                                                    )}
+                                                  </td>
+                                                  <td className="p-1.5 text-right font-mono font-bold text-foreground whitespace-nowrap">
+                                                    <div>{formatCurrency(l.amount, 'HUF')}</div>
+                                                    {isForeign && l.foreign_amount != null && (
+                                                      <div className="text-[10px] text-muted-foreground font-normal">
+                                                        ({formatCurrency(l.foreign_amount, e.currency)})
+                                                      </div>
+                                                    )}
+                                                  </td>
+                                                  <td className="p-1.5 text-muted-foreground truncate max-w-[360px]">
+                                                    <span title={l.description}>{l.description}</span>
+                                                    {l.project?.name && (
+                                                      <Badge variant="outline" className="text-[9px] ml-1.5 text-muted-foreground">
+                                                        {l.project.name}
+                                                      </Badge>
+                                                    )}
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          </React.Fragment>
                         );
                       })}
                       <TablePlaceholderRows
                         currentCount={paginatedEntries.length}
                         pageSize={itemsPerPage}
-                        columns={10}
+                        columns={11}
                       />
                     </>
                   )}
@@ -2605,15 +3548,22 @@ export default function JournalsPage() {
             <span className="bg-primary/10 px-3 py-1 rounded-full text-xs font-bold tabular-nums text-primary">
               {selectedEntryIds.size}
             </span>
-            <span>{t('accounting:journals.batch_bar.selected_count', 'tétel kijelölve a tömeges műveletekhez')}</span>
+            <span>
+              {t('accounting:journals.batch_bar.selected_count', 'tétel kijelölve')}
+              {selectedDraftIds.length < selectedEntryIds.size && (
+                <span className="text-xs text-muted-foreground font-normal ml-1">
+                  ({selectedDraftIds.length} db szerkeszthető piszkozat)
+                </span>
+              )}
+            </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button
               size="sm"
               variant="outline"
               className="h-8 text-xs gap-1.5 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
-              onClick={() => bulkPostMutation.mutate(Array.from(selectedEntryIds))}
-              disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
+              onClick={() => bulkPostMutation.mutate(selectedDraftIds)}
+              disabled={selectedDraftIds.length === 0 || bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
             >
               {bulkPostMutation.isPending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2631,7 +3581,7 @@ export default function JournalsPage() {
                 setBulkGlSearch('');
                 setBulkGlDialogOpen(true);
               }}
-              disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending || bulkReassignGlMutation.isPending}
+              disabled={selectedDraftIds.length === 0 || bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending || bulkReassignGlMutation.isPending}
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
               {t('accounting:journals.batch_bar.reassign_gl', 'Tömeges kontírozás')}
@@ -2640,8 +3590,8 @@ export default function JournalsPage() {
               size="sm"
               variant="outline"
               className="h-8 text-xs gap-1.5 border-sky-500/30 text-sky-600 hover:bg-sky-500/10 hover:text-sky-700 dark:border-sky-500/30 dark:text-sky-400 dark:hover:bg-sky-950/40 dark:hover:text-sky-300"
-              onClick={() => bulkUpdateStatusMutation.mutate({ ids: Array.from(selectedEntryIds), status: 'JOVAHAGYASRA_VAR' })}
-              disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending || bulkReassignGlMutation.isPending}
+              onClick={() => bulkUpdateStatusMutation.mutate({ ids: selectedDraftIds, status: 'JOVAHAGYASRA_VAR' })}
+              disabled={selectedDraftIds.length === 0 || bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending || bulkReassignGlMutation.isPending}
             >
               {bulkUpdateStatusMutation.isPending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2654,8 +3604,8 @@ export default function JournalsPage() {
               size="sm"
               variant="outline"
               className="h-8 text-xs gap-1.5 border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              onClick={() => bulkUpdateStatusMutation.mutate({ ids: Array.from(selectedEntryIds), status: 'ELVETVE' })}
-              disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
+              onClick={() => bulkUpdateStatusMutation.mutate({ ids: selectedDraftIds, status: 'ELVETVE' })}
+              disabled={selectedDraftIds.length === 0 || bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
             >
               {bulkUpdateStatusMutation.isPending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2672,7 +3622,7 @@ export default function JournalsPage() {
                 ev.stopPropagation();
                 setBulkDeleteDialogOpen(true);
               }}
-              disabled={bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
+              disabled={selectedDraftIds.length === 0 || bulkPostMutation.isPending || bulkUpdateStatusMutation.isPending || bulkDeleteMutation.isPending}
             >
               {bulkDeleteMutation.isPending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2748,7 +3698,7 @@ export default function JournalsPage() {
             </div>
           </AlertDialogHeader>
           <div className="py-2 text-sm text-foreground">
-            {t('accounting:journals.bulk_delete.confirm_prefix', 'Biztosan törölni szeretné a kijelölt')} <strong className="text-destructive font-semibold">{selectedEntryIds.size} db</strong> {t('accounting:journals.bulk_delete.confirm_suffix', 'piszkozatot?')}
+            {t('accounting:journals.bulk_delete.confirm_prefix', 'Biztosan törölni szeretné a kijelölt')} <strong className="text-destructive font-semibold">{selectedDraftIds.length > 0 ? selectedDraftIds.length : selectedEntryIds.size} db</strong> {t('accounting:journals.bulk_delete.confirm_suffix', 'piszkozatot?')}
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
               {t('accounting:journals.bulk_delete.note', 'A rendszerjavaslatok és kézi piszkozatok fej- és soradatai törlésre kerülnek. A már hivatalosan lekönyvelt tételeket a rendszer védelme nem engedi törölni.')}
             </p>
@@ -2760,7 +3710,7 @@ export default function JournalsPage() {
               disabled={bulkDeleteMutation.isPending}
               onClick={async (ev) => {
                 ev.preventDefault();
-                const ids = Array.from(selectedEntryIds);
+                const ids = selectedDraftIds.length > 0 ? selectedDraftIds : Array.from(selectedEntryIds);
                 setBulkDeleteDialogOpen(false);
                 if (ids.length > 0) {
                   try {
@@ -2989,6 +3939,24 @@ export default function JournalsPage() {
             setSelectedJournalId('munkalista');
           }
         }}
+      />
+
+      {/* RLB Szűkítés Modal */}
+      <JournalFilterModal
+        open={isFilterModalOpen}
+        onOpenChange={setIsFilterModalOpen}
+        criteria={filterCriteria}
+        onApplyCriteria={(newCrit) => {
+          setFilterCriteria(newCrit);
+          setCurrentPage(1);
+        }}
+        onResetCriteria={handleResetFilters}
+        journals={journals}
+        currentJournalName={
+          selectedJournalId === 'munkalista'
+            ? 'Munkalista'
+            : selectedJournal ? `${selectedJournal.code} – ${selectedJournal.name}` : 'Aktuális nézet'
+        }
       />
       </div>
     </TooltipProvider>

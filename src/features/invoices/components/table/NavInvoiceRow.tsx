@@ -547,31 +547,74 @@ function NavInvoiceRowComponent({
             )}
 
             {invoice.exclude_from_accounting && (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenExclusionDialog?.(invoice);
-                }}
-                className={cn(
-                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border whitespace-nowrap cursor-pointer transition-colors",
-                  invoice.accounting_exclusion_type === 'DEFERRED_VAT'
-                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
-                    : "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-300/40 hover:bg-rose-500/25"
-                )}
-                title={invoice.accounting_exclusion_type === 'DEFERRED_VAT' ? (invoice.deferred_vat_reason || 'ÁFA levonás elhalasztva') : 'Kizárva a könyvelésből'}
-              >
-                {invoice.accounting_exclusion_type === 'DEFERRED_VAT' ? (
-                  <>
-                    <Clock className="w-3 h-3" />
-                    {t('invoices:expanded.deferred_vat_badge', 'Kérdéses (ÁFA halasztva)')}
-                  </>
-                ) : (
-                  <>
-                    <Ban className="w-3 h-3" />
-                    {t('invoices:expanded.not_booked', 'Nem könyvelt')}
-                  </>
-                )}
-              </span>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenExclusionDialog?.(invoice);
+                      }}
+                      className={cn(
+                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border whitespace-nowrap cursor-pointer transition-colors",
+                        invoice.accounting_exclusion_type === 'DEFERRED_VAT'
+                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
+                          : "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-300/40 hover:bg-rose-500/25"
+                      )}
+                    >
+                      {invoice.accounting_exclusion_type === 'DEFERRED_VAT' ? (
+                        <>
+                          <Clock className="w-3 h-3" />
+                          <span>{t('invoices:expanded.deferred_vat_badge', 'Halasztva')}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Ban className="w-3 h-3" />
+                          <span>{t('invoices:expanded.not_booked', 'Nem könyvelt')}</span>
+                        </>
+                      )}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[320px] p-3 text-left">
+                    {invoice.accounting_exclusion_type === 'DEFERRED_VAT' ? (
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex items-center gap-1.5 font-semibold text-amber-600 dark:text-amber-400">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>ÁFA levonás elhalasztva (Kérdéses számla)</span>
+                        </div>
+                        <p className="text-muted-foreground leading-snug">
+                          {invoice.deferred_vat_reason ? (
+                            <span><strong>Indoklás:</strong> {invoice.deferred_vat_reason}</span>
+                          ) : (
+                            <span>Kérdéses számla: az ÁFA levonásba helyezése későbbre halasztva.</span>
+                          )}
+                        </p>
+                        {invoice.deferred_vat_since && (
+                          <p className="text-[11px] text-muted-foreground">
+                            Halasztás kezdete: {invoice.deferred_vat_since}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 pt-1 border-t border-border/40">
+                          Áfa tv. 153/A. §: 2 éven belül bármelyik havi bevallásba beemelhető. Kattints a módosításhoz!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1 text-xs">
+                        <div className="flex items-center gap-1.5 font-semibold text-rose-600 dark:text-rose-400">
+                          <Ban className="w-3.5 h-3.5" />
+                          <span>Kizárva a könyvelésből</span>
+                        </div>
+                        <p className="text-muted-foreground leading-snug">
+                          Ez a bizonylat ki van zárva a könyvelési exportokból és ÁFA kimutatásokból.
+                        </p>
+                        <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/40">
+                          Kattints a visszavonáshoz vagy módosításhoz!
+                        </p>
+                      </div>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
 
             {((invoice as any).is_cross_year || (
@@ -671,12 +714,12 @@ function NavInvoiceRowComponent({
                       }
                     }}
                     className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 cursor-pointer"
-                    aria-label={t('invoices:expanded.change_booked_status', 'Kikontírozva státusz változtatása')}
+                    aria-label={t('invoices:expanded.change_booked_status', 'Kontírozva státusz változtatása')}
                   />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top">
-                <p className="text-xs font-medium">{t('invoices:expanded.accountant_reviewed_tooltip', 'Kikontírozott / Könyvelve jelölés')}</p>
+                <p className="text-xs font-medium">{t('invoices:expanded.accountant_reviewed_tooltip', 'Kontírozott / Könyvelve jelölés')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -873,6 +916,7 @@ function NavInvoiceRowComponent({
           excludeFromAccounting={!!invoice.exclude_from_accounting}
           accountingExclusionType={invoice.accounting_exclusion_type}
           deferredVatReason={invoice.deferred_vat_reason}
+          deferredVatSince={invoice.deferred_vat_since}
           onToggleExclude={() => onToggleExclude(invoice.id, !!invoice.exclude_from_accounting)}
           onOpenExclusionDialog={() => onOpenExclusionDialog?.(invoice)}
           invoiceId={invoice.id}

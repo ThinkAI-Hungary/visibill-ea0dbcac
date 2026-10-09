@@ -230,7 +230,7 @@ export class NavClient {
     });
 
     const xmlResponse = await response.text();
-    return parseInvoiceDataXml(xmlResponse);
+    return await parseInvoiceDataXml(xmlResponse);
   }
 
   /**

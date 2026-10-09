@@ -103,7 +103,7 @@ describe('Accountant Reviewed (Kontírozott) Checkbox', () => {
       </QueryClientProvider>
     );
 
-    const checkbox = screen.getByRole('checkbox', { name: /kikontírozva/i });
+    const checkbox = screen.getByRole('checkbox', { name: /kontírozva/i });
     expect(checkbox).toBeInTheDocument();
     expect(checkbox).toHaveAttribute('data-state', 'unchecked');
 
@@ -150,7 +150,7 @@ describe('Accountant Reviewed (Kontírozott) Checkbox', () => {
       </QueryClientProvider>
     );
 
-    const checkbox = screen.getByRole('checkbox', { name: /kikontírozva/i });
+    const checkbox = screen.getByRole('checkbox', { name: /kontírozva/i });
     expect(checkbox).toBeInTheDocument();
     expect(checkbox).toHaveAttribute('data-state', 'unchecked');
 

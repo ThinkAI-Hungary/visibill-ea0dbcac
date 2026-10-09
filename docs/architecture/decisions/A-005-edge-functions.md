@@ -17,7 +17,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 > 📖 **Teljes, részletes katalógus:** Az Edge Function-ök részletes specifikációját, környezeti változóit és hívó rétegeit az autoritatív [Supabase Edge Functions Katalógus](../edge-functions.md) tartalmazza. Jelenleg 70-et dokumentál a 71-ből; hiányzik a `minimax-sync` (külön feladat).
 
 **Közös kód:** `_shared/` mappa:
-- `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
+- `_shared/nav/` — Központi NAV Online Számla v3 protokoll motor (`NavClient`), titkosítás (SHA-512, SHA3-512), GZIP kitömörítő stream (`DecompressionStream('gzip')`, A-237), XML borítéképítők/parszolók, és adatbázis szinkronizáció (`NavIngestionService`).
 - `_shared/client-guard.ts` — Szkript-automatizáció elleni védelmi pajzs (`checkAutomationShield`) és kibővített `corsHeaders` (lásd: [A-101](./A-101-direct-script-automation-restriction.md)).
 - `_shared/cors.ts`, `_shared/supabase.ts` — CORS headers, Supabase client és segédfüggvények.
 

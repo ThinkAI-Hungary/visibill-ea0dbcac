@@ -1,6 +1,6 @@
 # Supabase Edge Functions Katalógus
 
-> **Utoljára frissítve:** 2026-10-08  
+> **Utoljára frissítve:** 2026-10-09  
 > **Összesen:** 70 dokumentált Deno Edge Function a repó 71-éből (hiányzik: `minimax-sync`; deploy-állapot: [A-005](./decisions/A-005-edge-functions.md)) + `_shared/` közös modulok | **Runtime:** Deno (TypeScript) | **Platform:** Supabase Cloud
 
 Ez a dokumentáció az eaisybill-prod rendszer összes Supabase Edge Function-jének hivatalos, autoritatív katalógusa. Részletezi az egyes funkciók célját, jogosultsági modelljét (`verify_jwt`), meghívási kontextusát (Frontend, pg_cron, Webhook, Postgres Trigger) és környezeti változóit.
@@ -11,7 +11,7 @@ A funkciók forráskódja a [`supabase/functions/`](../../supabase/functions/) k
 ## Közös Modulok (`supabase/functions/_shared/`)
 
 Az Edge Function-ök modularitását és védelmét a központi `_shared/` könyvtár biztosítja:
-- **`_shared/nav/`** — Központi NAV Online Számla v3 protokoll motor (`NavClient`), hitelesítés és kriptográfia (SHA-512, SHA3-512), XML borítéképítők és a `NavIngestionService` adatbázis szinkronizáló réteg.
+- **`_shared/nav/`** — Központi NAV Online Számla v3 protokoll motor (`NavClient`), hitelesítés és kriptográfia (SHA-512, SHA3-512), GZIP kitömörítő stream (`DecompressionStream('gzip')`, A-237), XML borítéképítők és a `NavIngestionService` adatbázis szinkronizáló réteg.
 - **`_shared/client-guard.ts`** — Közvetlen szkript-automatizáció elleni kettős védelmi pajzs (`checkAutomationShield`) és egységesített CORS engedélyezés (lásd: [A-101](./decisions/A-101-direct-script-automation-restriction.md)).
 - **`_shared/cors.ts`** — Standard böngészős CORS fejlécek (`Access-Control-Allow-Origin`, preflight OPTIONS válaszok).
 - **`_shared/supabase.ts`** — Supabase admin és anon kliensek egységes inicializálása.
@@ -49,7 +49,7 @@ Az Edge Function-ök modularitását és védelmét a központi `_shared/` köny
 | [`nav-token`](../../supabase/functions/nav-token/index.ts) | ✅ Kötelező | Frontend (NavSettings.tsx) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | NAV technikai felhasználó és aláírókulcsok (SHA-512, SHA3-512) validációja és token-csere. |
 | [`nav-query-taxpayer`](../../supabase/functions/nav-query-taxpayer/index.ts) | ✅ Kötelező | Frontend (CompanySelector, EmptyStateDashboard, ClientDetailsStep) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | NAV v3.0 /queryTaxpayer végpont hívása 8-jegyű adószám alapján adózói név, székhelycím és ÁFA-kód kinyerésére. Be nem állított vagy új cégnél fallbackként a Think AI Kft. Vault kulcsaival írja alá a kérést (A-132, P-098). |
 | [`nav-query-outbound-invoices`](../../supabase/functions/nav-query-outbound-invoices/index.ts) | ✅ Kötelező | Frontend (InvoicesPage) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Kimenő/bejövő számlák gyors szinkronizációja (fast-path fejléc-mentés) és tételsorok háttérbe ütemezése a `nav_item_jobs` PGMQ sorba (A-193). |
-| [`nav-fetch-details`](../../supabase/functions/nav-fetch-details/index.ts) | ❌ Nyilvános / Belső (vagy JWT) | Worker (PGMQ `nav_item_jobs`) / Frontend (`InvoiceItemsDialog.tsx`) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Hiányzó számlarészletek és tételsorok kötegelt (20-as chunkok) vagy egyedi on-demand letöltése NAV-ból és atomi idempotens mentése a `save_nav_invoice_details_and_items` PostgreSQL RPC segítségével (A-193). |
+| [`nav-fetch-details`](../../supabase/functions/nav-fetch-details/index.ts) | ❌ Nyilvános / Belső (vagy JWT) | Worker (PGMQ `nav_item_jobs`) / Frontend (`InvoiceItemsDialog.tsx`) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Hiányzó számlarészletek és tételsorok kötegelt (20-as chunkok) vagy egyedi on-demand letöltése NAV-ból, GZIP tömörített többtételes közműszámlák (Telekom, Posta, E.ON, MVM) automatikus kitömörítése és atomi idempotens mentése a `save_nav_invoice_details_and_items` PostgreSQL RPC segítségével (A-193, A-237). |
 | [`query-nav-invoices`](../../supabase/functions/query-nav-invoices/index.ts) | ✅ Kötelező | Frontend (NavSearchModal) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Egyedi számlakeresés és részletek lekérdezése NAV bizonylatszám vagy tranzakcióazonosító alapján. |
 | [`nav-tax-profile-sync`](../../supabase/functions/nav-tax-profile-sync/index.ts) | ❌ Nyilvános / Belső | pg_cron / Company onboarding | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY` | Cég adózási státuszának, ÁFA csoportazonosítójának és telephelyeinek frissítése a NAV nyilvántartásból. |
 | [`nav-m2m-proxy`](../../supabase/functions/nav-m2m-proxy/index.ts) | ✅ Kötelező (vagy service_role / cron secret) | Frontend (NavUpoM2mCard) / pg_cron (`cron_sync_all`) | `SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, NAV_M2M_CLIENT_ID, NAV_M2M_CLIENT_SECRET, CRON_SECRET` | NAV ÜPO (Ügyfélportál) M2M proxy: felhasználói token igénylés, nonce beváltás, SHA-256 digitális aláírás, kapcsolat aktiválás, KOMA teszt, valamint automatikus napi EFO és munkavállalói jogviszony szinkronizáció 90 napos audit naplózással (A-154, P-114). |

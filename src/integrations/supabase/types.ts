@@ -12418,6 +12418,10 @@ export type Database = {
           customer_tax_number: string
           details_fetched: boolean
           exclude_from_accounting: boolean
+          accounting_exclusion_type: string | null
+          deferred_vat_reason: string | null
+          deferred_vat_since: string | null
+          deferred_vat_target_period: string | null
           fetched_at: string
           gl_numbers: string
           id: string
@@ -12485,6 +12489,10 @@ export type Database = {
           category_id: string
           elado_nev: string
           exclude_from_accounting: boolean
+          accounting_exclusion_type: string | null
+          deferred_vat_reason: string | null
+          deferred_vat_since: string | null
+          deferred_vat_target_period: string | null
           fizetesi_mod: string
           id: string
           image_url: string

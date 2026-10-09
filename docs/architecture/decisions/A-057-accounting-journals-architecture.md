@@ -107,17 +107,28 @@ A Postgres szintű adatintegritásra épülő, trigger- és RPC-vezérelt modul�
 - Teljes körű jogszabályi megfelelőség (Sztv.).
 - Adatbázis szinten garantált egyensúly és változtathatatlanság (még közvetlen SQL injection vagy hiba esetén sem kerülhet be hibás tétel).
 - Részletes audit trail minden könyvelési eseményhez.
+### 8. Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrés (2026-10-09 — Migráció `20261009220000`, ADR A-238)
+- **Többtételes számlák bizonylatszintű egyesítése:** Az `acc_generate_drafts_from_ledger` és a kliensoldali `draftFallbackGenerator.ts` a többtételes számlák sorait egyetlen `acc_journal_headers` bizonylatfej alá aggregálja több `acc_journal_lines` sorral és a teljes bruttó összeget képviselő szállítói/vevői ellenszámlával.
+- **RLB-Mintájú Szűkítés Modál:** A `JournalFilterModal.tsx` és `journalFilterUtils.ts` pozitív unió logikával (Szállító 454, Vevő 311, Pénztár 381, Bank 384, Vegyes) és reszponzív, görgetésmentes felülettel biztosítja a naplótételek szűrését (P-176, A-238).
+
+---
+
+## Consequences
+
+**Pozitív:**
 - Nagy adathalmazok esetén is atomi, másodpercek alatt lefutó szerveroldali kontírozás timeout és rate limit kockázatok nélkül.
 - Tökéletes összhang a Naplók és a Főkönyvi kivonat (GL) között: a nyitó és lekönyvelt tételek azonnal láthatóak a mérlegszámlákon (pl. 311, 4531, 491 = 0 Ft).
 - Nincs körkörös javaslatképzés és az analitikai egyeztetés az évközi számlakifizetések után is 100%-ban stabil marad.
 - A nyitó varázsló mindig megbízhatóan tiszta állapottal nyílik meg, a meglévő nyitások azonnali detektálása pedig megvédi a könyvelőt a véletlen egyenleg-duplikációktól.
+- 1 számla = 1 bizonylat = N tételsor a naplópiszkozatokban, és megbízható, 0-találatos hibáktól mentes RLB-stílusú szűrés.
 
 **Negatív / Kötöttségek:**
 - A lekönyvelt tételeket a felhasználó közvetlenül nem írhatja felül; a javítás mindig 2-lépéses sztornó műveletet igényel.
 
 ## Kapcsolódó
+- **ADR:** [A-238: Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrés](./A-238-accounting-journals-document-grouping-and-rlb-filter-architecture.md)
 - **BRD:** [043: Könyvelési Naplók](../../business/decisions/043-accounting-journals.md)
-- **PRD:** [P-055: Könyvelési Napló UX](../../product/decisions/P-055-accounting-journals-ux.md)
+- **PRD:** [P-055: Könyvelési Napló UX](../../product/decisions/P-055-accounting-journals-ux.md), [P-176: RLB-Mintájú Szűkítés Modál UX](../../product/decisions/P-176-accounting-journals-rlb-pattern-filter-modal-and-direction-matching-ux.md)
 - **DB Schema:** [22-accounting-journals.md](../database/22-accounting-journals.md)
 - **Design:** [11-data-display-tables.md](../../design/11-data-display-tables.md), [12-dialogs-modals.md](../../design/12-dialogs-modals.md)
 - **RPC Katalógus:** [A-016: PostgreSQL Query Stratégia](./A-016-postgresql-query-strategy.md)

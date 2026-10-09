@@ -47,6 +47,7 @@ export function ExpandedInvoiceRow({
   excludeFromAccounting = false,
   accountingExclusionType,
   deferredVatReason,
+  deferredVatSince,
   onToggleExclude,
   onOpenExclusionDialog,
   invoiceId,
@@ -498,6 +499,88 @@ export function ExpandedInvoiceRow({
                 )}
 
 
+                {/* Exclusion notice card: Clear explanation of why the invoice is excluded */}
+                {excludeFromAccounting && (
+                  <div
+                    className={cn(
+                      "flex items-start justify-between p-3.5 rounded-lg border text-xs expand-animate mb-3",
+                      accountingExclusionType === 'DEFERRED_VAT'
+                        ? "border-amber-400/50 bg-amber-500/10 dark:bg-amber-950/25 text-amber-900 dark:text-amber-200"
+                        : "border-rose-400/50 bg-rose-500/10 dark:bg-rose-950/25 text-rose-900 dark:text-rose-200"
+                    )}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      {accountingExclusionType === 'DEFERRED_VAT' ? (
+                        <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      ) : (
+                        <Ban className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                      )}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm">
+                            {accountingExclusionType === 'DEFERRED_VAT'
+                              ? t('invoices:expanded.deferred_vat_title', 'ÁFA levonás elhalasztva (Kérdéses számla)')
+                              : t('invoices:expanded.excluded_title', 'Kizárva a könyvelésből')}
+                          </span>
+                          <span
+                            className={cn(
+                              "px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",
+                              accountingExclusionType === 'DEFERRED_VAT'
+                                ? "bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-400/40"
+                                : "bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-400/40"
+                            )}
+                          >
+                            {accountingExclusionType === 'DEFERRED_VAT' ? 'Halasztva' : 'Nem könyvelt'}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          {accountingExclusionType === 'DEFERRED_VAT' ? (
+                            deferredVatReason ? (
+                              <span>
+                                <strong className="text-foreground">Megadott indoklás:</strong> {deferredVatReason}
+                              </span>
+                            ) : (
+                              <span>
+                                Kérdéses számla: az ÁFA levonás elszámolása későbbre van halasztva. Az Áfa tv. 153/A. § alapján a teljesítés hónapjától számított 2 éven belül bármelyik későbbi havi ÁFA bevallásba beemelhető.
+                              </span>
+                            )
+                          ) : (
+                            <span>
+                              Ez a számla nem kerül könyvelésre, és a rendszer kihagyja az analitikus feladásokból és ÁFA kimutatásokból.
+                            </span>
+                          )}
+                        </p>
+                        {accountingExclusionType === 'DEFERRED_VAT' && deferredVatSince && (
+                          <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80">
+                            Halasztás kezdete: {deferredVatSince}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {onOpenExclusionDialog && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenExclusionDialog();
+                        }}
+                        className={cn(
+                          "h-7 text-xs gap-1.5 shrink-0 ml-3 cursor-pointer",
+                          accountingExclusionType === 'DEFERRED_VAT'
+                            ? "border-amber-400/60 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300"
+                            : "border-rose-400/60 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300"
+                        )}
+                      >
+                        {accountingExclusionType === 'DEFERRED_VAT'
+                          ? t('invoices:expanded.manage_deferral', 'Halasztás kezelése / Beemelés')
+                          : t('invoices:expanded.manage_exclusion', 'Státusz módosítása')}
+                      </Button>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-6 pt-2">
                   {/* Section: Related Items */}
                   <div className="space-y-4">
@@ -615,7 +698,7 @@ export function ExpandedInvoiceRow({
                               accountingExclusionType === 'DEFERRED_VAT' ? (
                                 <span className="flex items-center gap-1">
                                   <Clock className="w-3 h-3" />
-                                  {t('invoices:expanded.deferred_vat', 'Kérdéses (ÁFA halasztva)')}
+                                  {t('invoices:expanded.deferred_vat_short', 'Halasztva')}
                                 </span>
                               ) : (
                                 <span className="flex items-center gap-1">

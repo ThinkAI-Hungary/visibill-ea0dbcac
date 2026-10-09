@@ -503,18 +503,36 @@ export function InvoiceItemsDialog({
   // Check if any items belong to already posted/finalized journals ('KONYVELT')
   const itemIds = useMemo(() => items.map(it => it.id), [items]);
   const { data: postedItemIds = new Set<string>() } = useQuery({
-    queryKey: ['postedJournalItems', selectedCompany?.id, itemIds],
+    queryKey: ['postedJournalItems', selectedCompany?.id, itemIds, invoiceId],
     queryFn: async () => {
-      if (!selectedCompany?.id || itemIds.length === 0) return new Set<string>();
+      if (!selectedCompany?.id || (itemIds.length === 0 && !invoiceId)) return new Set<string>();
+      const possibleKeys = [
+        ...itemIds,
+        invoiceId,
+        `NAV_${invoiceId}`,
+        `INV_${invoiceId}`,
+        `NAV_INV_${invoiceId}`
+      ].filter(Boolean) as string[];
+
       const { data } = await supabase
         .from('acc_journal_headers')
         .select('import_key')
         .eq('company_id', selectedCompany.id)
         .eq('status', 'KONYVELT')
-        .in('import_key', itemIds);
-      return new Set<string>((data || []).map(r => r.import_key).filter(Boolean) as string[]);
+        .in('import_key', possibleKeys);
+
+      const foundKeys = new Set<string>((data || []).map(r => r.import_key).filter(Boolean) as string[]);
+      const isParentPosted = foundKeys.has(invoiceId) ||
+        foundKeys.has(`NAV_${invoiceId}`) ||
+        foundKeys.has(`INV_${invoiceId}`) ||
+        foundKeys.has(`NAV_INV_${invoiceId}`);
+
+      if (isParentPosted) {
+        return new Set<string>(itemIds);
+      }
+      return foundKeys;
     },
-    enabled: open && !!selectedCompany?.id && itemIds.length > 0,
+    enabled: open && !!selectedCompany?.id && (itemIds.length > 0 || !!invoiceId),
   });
 
   // State & Handlers for Deductible Percentage

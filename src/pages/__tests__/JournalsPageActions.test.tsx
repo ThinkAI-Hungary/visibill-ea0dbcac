@@ -55,13 +55,13 @@ describe('JournalsPage Action Buttons Tooltips & Accessibility', () => {
 
   it('renders Lock icon with explanatory tooltip on closed/posted non-draft items', () => {
     expect(fileContent).toContain('Lekönyvelt zárt tétel (${lock.reason})');
-    expect(fileContent).toContain('Sztornózott tétel (lezárt, nem jelölhető ki tömeges műveletre)');
+    expect(fileContent).toContain('Sztornózott tétel (lezárt)');
     expect(fileContent).toContain('<Lock className="w-3.5 h-3.5" />');
   });
 
-  it('handles header checkbox indeterminate state and disables it when no drafts exist', () => {
+  it('handles header checkbox indeterminate state and disables it when page is empty', () => {
     expect(fileContent).toContain("checked={isAllSelected ? true : isSomeSelected ? 'indeterminate' : false}");
-    expect(fileContent).toContain('disabled={pageDrafts.length === 0}');
+    expect(fileContent).toContain('disabled={paginatedEntries.length === 0}');
   });
 });
 

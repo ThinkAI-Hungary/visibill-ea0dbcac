@@ -232,7 +232,7 @@ export function NavInvoiceTable({
                   </TableHead>
 
                   <TableHead className="font-semibold text-center whitespace-nowrap text-emerald-600 dark:text-emerald-400">
-                    {t('invoices:table.booked', { defaultValue: 'Kikontírozva' })}
+                    {t('invoices:table.booked', { defaultValue: 'Kontírozva' })}
                   </TableHead>
                   {activeTab === 'INBOUND' && (
                     <TableHead className="font-semibold text-center whitespace-nowrap">{t('invoices:columns.category', { defaultValue: 'Kategória' })}</TableHead>

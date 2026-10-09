@@ -92,26 +92,45 @@ export async function generateDraftsFallback(
       : Promise.resolve({ data: [] })
   ]);
 
-  const parentInvIds = Array.from(new Set([
-    ...(invRes.data || []).map((i: any) => i.invoice_id).filter(Boolean),
-  ]));
-  const parentNavIds = Array.from(new Set([
-    ...(navRes.data || []).map((i: any) => i.nav_invoice_id).filter(Boolean)
-  ]));
-
+  const parentInvIds = Array.from(new Set(
+    (invRes.data || []).map((i: any) => i.invoice_id).filter(Boolean)
+  ));
+  const parentNavIds = Array.from(new Set(
+    (navRes.data || []).map((i: any) => i.nav_invoice_id).filter(Boolean)
+  ));
   const [parentInvRes, parentNavRes] = await Promise.all([
     parentInvIds.length > 0
-      ? supabase.from('invoices').select('id, service_period_end, is_continuous, partner_tax_number, currency, partner_gl_number, vat_gl_number').in('id', parentInvIds)
+      ? supabase.from('invoices').select('id, bizonylatsorszam, elado_nev, vevo_nev, elado_vat_id, vevo_vat_id, penznem, partner_gl_number, vat_gl_number').in('id', parentInvIds)
       : Promise.resolve({ data: [] }),
     parentNavIds.length > 0
-      ? supabase.from('nav_invoices').select('id, service_period_end, is_continuous, seller_tax_number, buyer_tax_number, currency, partner_gl_number, vat_gl_number').in('id', parentNavIds)
+      ? supabase.from('nav_invoices').select('id, invoice_number, supplier_name, customer_name, service_period_end, is_continuous, supplier_tax_number, customer_tax_number, currency, partner_gl_number, vat_gl_number').in('id', parentNavIds)
       : Promise.resolve({ data: [] })
   ]);
 
   const parentInvMap = new Map<string, any>();
   const parentNavMap = new Map<string, any>();
   parentInvRes.data?.forEach((inv: any) => parentInvMap.set(inv.id, inv));
-  parentNavRes.data?.forEach((inv: any) => parentNavMap.set(inv.id, inv));
+  parentNavMap.data?.forEach((inv: any) => parentNavMap.set(inv.id, inv));
+
+  const itemToParentInvoiceMap = new Map<string, { parentId: string; table: 'invoices' | 'nav_invoices' }>();
+  invRes.data?.forEach((i: any) => {
+    if (i.invoice_id) itemToParentInvoiceMap.set(i.id, { parentId: i.invoice_id, table: 'invoices' });
+  });
+  navRes.data?.forEach((i: any) => {
+    if (i.nav_invoice_id) itemToParentInvoiceMap.set(i.id, { parentId: i.nav_invoice_id, table: 'nav_invoices' });
+  });
+
+  const { data: existingPosted } = await supabase
+    .from('acc_journal_headers')
+    .select('import_key, document_id')
+    .eq('company_id', companyId)
+    .in('status', ['KONYVELT', 'KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR']);
+
+  const postedKeys = new Set<string>();
+  existingPosted?.forEach(h => {
+    if (h.import_key) postedKeys.add(h.import_key);
+    if (h.document_id) postedKeys.add(h.document_id);
+  });
 
   const vatDetailsMap = new Map<string, { 
     vat_amount: number; 
@@ -131,10 +150,10 @@ export async function generateDraftsFallback(
       vat_amount: Number(i.vat_amount) || 0,
       vat_rate: i.vat_rate || '',
       deductible_percentage: i.deductible_percentage !== null && i.deductible_percentage !== undefined ? Number(i.deductible_percentage) : 100,
-      service_period_end: parent?.service_period_end || null,
-      is_continuous: !!parent?.is_continuous,
-      partner_tax_number: parent?.partner_tax_number || null,
-      currency: parent?.currency || null,
+      service_period_end: null,
+      is_continuous: false,
+      partner_tax_number: parent?.elado_vat_id || parent?.vevo_vat_id || null,
+      currency: parent?.penznem || null,
       partner_gl_number: parent?.partner_gl_number || null,
       vat_gl_number: parent?.vat_gl_number || null,
     });
@@ -148,7 +167,7 @@ export async function generateDraftsFallback(
       deductible_percentage: i.deductible_percentage !== null && i.deductible_percentage !== undefined ? Number(i.deductible_percentage) : 100,
       service_period_end: parent?.service_period_end || null,
       is_continuous: !!parent?.is_continuous,
-      partner_tax_number: parent?.seller_tax_number || parent?.buyer_tax_number || null,
+      partner_tax_number: parent?.supplier_tax_number || parent?.customer_tax_number || null,
       currency: parent?.currency || null,
       partner_gl_number: parent?.partner_gl_number || null,
       vat_gl_number: parent?.vat_gl_number || null,
@@ -173,6 +192,7 @@ export async function generateDraftsFallback(
   };
 
   let createdCount = 0;
+  const invoiceHeadersMap = new Map<string, { headerId: string; nextSeq: number }>();
 
   for (const item of validItems) {
     const itemDate = item.item_date ? item.item_date.substring(0, 10) : new Date().toISOString().substring(0, 10);
@@ -221,7 +241,12 @@ export async function generateDraftsFallback(
       }
     } else if (['invoice_items', 'nav_invoice_items'].includes(item.source_table)) {
       source = 'AUTO_SZAMLA';
-      docId = `INV-${item.item_id.substring(0, 8).toUpperCase()}`;
+      const parentInfo = itemToParentInvoiceMap.get(item.item_id);
+      const parentNav = parentInfo?.table === 'nav_invoices' ? parentNavMap.get(parentInfo.parentId) : null;
+      const parentInv = parentInfo?.table === 'invoices' ? parentInvMap.get(parentInfo.parentId) : null;
+      const invoiceNum = parentNav?.invoice_number || parentInv?.bizonylatsorszam;
+      docId = invoiceNum || `INV-${item.item_id.substring(0, 8).toUpperCase()}`;
+
       if (item.amount >= 0) {
         journalId = journals?.find(j => j.code === 'V')?.id || journalId;
       } else {
@@ -230,6 +255,9 @@ export async function generateDraftsFallback(
     }
 
     if (item.source_table === 'transactions') {
+      if (postedKeys.has(item.item_id.toString()) || postedKeys.has(docId)) {
+        continue;
+      }
       const selectedJournal = journals?.find(j => j.id === journalId);
       let glBankId: string | undefined;
 
@@ -359,37 +387,76 @@ export async function generateDraftsFallback(
         }
       }
 
+      const parentInfo = itemToParentInvoiceMap.get(item.item_id);
+      const invoiceImportKey = parentInfo
+        ? (parentInfo.table === 'nav_invoices' ? `NAV_${parentInfo.parentId}` : `INV_${parentInfo.parentId}`)
+        : item.item_id.toString();
+
+      if (
+        postedKeys.has(invoiceImportKey) ||
+        (parentInfo && (
+          postedKeys.has(`NAV_${parentInfo.parentId}`) ||
+          postedKeys.has(`INV_${parentInfo.parentId}`) ||
+          postedKeys.has(`NAV_INV_${parentInfo.parentId}`) ||
+          postedKeys.has(parentInfo.parentId)
+        )) ||
+        postedKeys.has(docId) ||
+        postedKeys.has(item.item_id.toString())
+      ) {
+        continue;
+      }
+
+      const parentNav = parentInfo?.table === 'nav_invoices' ? parentNavMap.get(parentInfo.parentId) : null;
+      const parentInv = parentInfo?.table === 'invoices' ? parentInvMap.get(parentInfo.parentId) : null;
+      const partnerName = isOutbound
+        ? (parentNav?.customer_name || parentInv?.vevo_nev || 'Vevő')
+        : (parentNav?.supplier_name || parentInv?.elado_nev || 'Szállító');
+      const invoiceDescription = `${partnerName} - ${docId}`;
+
       const hufGross = Math.round((hufNet + hufVat) * 100) / 100;
       const foreignGross = foreignNet !== null ? Math.round(((foreignNet || 0) + (foreignVat || 0)) * 100) / 100 : null;
 
-      const { data: header, error: hErr } = await supabase
-        .from('acc_journal_headers')
-        .insert({
-          company_id: companyId,
-          journal_id: journalId,
-          accounting_year: year,
-          status: 'GEPI_JAVASLAT',
-          entry_type: 'NORMAL',
-          source: source,
-          posting_date: postingDate,
-          document_date: itemDate,
-          document_id: docId,
-          description: item.description || 'Automatikus bizonylat javaslat',
-          currency: currency,
-          exchange_rate: exchangeRate,
-          exchange_rate_date: itemDate,
-          import_key: item.item_id.toString()
-        })
-        .select('id')
-        .single();
+      let headerId: string;
+      let currentSeq: number;
 
-      if (hErr) continue;
+      if (!invoiceHeadersMap.has(invoiceImportKey)) {
+        const { data: header, error: hErr } = await supabase
+          .from('acc_journal_headers')
+          .insert({
+            company_id: companyId,
+            journal_id: journalId,
+            accounting_year: year,
+            status: 'GEPI_JAVASLAT',
+            entry_type: 'NORMAL',
+            source: source,
+            posting_date: postingDate,
+            document_date: itemDate,
+            document_id: docId,
+            description: invoiceDescription,
+            currency: currency,
+            exchange_rate: exchangeRate,
+            exchange_rate_date: itemDate,
+            import_key: invoiceImportKey
+          })
+          .select('id')
+          .single();
+
+        if (hErr || !header) continue;
+        headerId = header.id;
+        currentSeq = 1;
+        invoiceHeadersMap.set(invoiceImportKey, { headerId, nextSeq: 1 });
+        createdCount++;
+      } else {
+        const entry = invoiceHeadersMap.get(invoiceImportKey)!;
+        headerId = entry.headerId;
+        currentSeq = entry.nextSeq;
+      }
 
       if (isOutbound) {
         // Outbound: Line 1 (T Vevő 3111/3112/3113 Gross), Line 2 (K Árbevétel Net ALAP), Line 3 (K ÁFA 467 AFA)
         await supabase.from('acc_journal_lines').insert({
-          header_id: header.id,
-          sequence_number: 1,
+          header_id: headerId,
+          sequence_number: currentSeq,
           gl_account_id: targetCustId,
           dc_type: 'T',
           amount: hufGross,
@@ -401,8 +468,8 @@ export async function generateDraftsFallback(
         const { data: baseLine } = await supabase
           .from('acc_journal_lines')
           .insert({
-            header_id: header.id,
-            sequence_number: 2,
+            header_id: headerId,
+            sequence_number: currentSeq + 1,
             gl_account_id: item.gl_account_id,
             dc_type: 'K',
             amount: hufNet,
@@ -414,10 +481,11 @@ export async function generateDraftsFallback(
           .select('id')
           .single();
 
+        let nextSeq = currentSeq + 2;
         if (hufVat > 0 && effectiveVatPayId && baseLine) {
           await supabase.from('acc_journal_lines').insert({
-            header_id: header.id,
-            sequence_number: 3,
+            header_id: headerId,
+            sequence_number: nextSeq,
             gl_account_id: effectiveVatPayId,
             dc_type: 'K',
             amount: hufVat,
@@ -427,7 +495,9 @@ export async function generateDraftsFallback(
             parent_line_id: baseLine.id,
             description: 'Fizetendő ÁFA'
           });
+          nextSeq++;
         }
+        invoiceHeadersMap.get(invoiceImportKey)!.nextSeq = nextSeq;
       } else {
         const deductiblePct = vatDetail?.deductible_percentage ?? 100;
         const isExpenseGross = (deductiblePct === 0 && !glVatProRataId);
@@ -438,8 +508,8 @@ export async function generateDraftsFallback(
         const { data: baseLine } = await supabase
           .from('acc_journal_lines')
           .insert({
-            header_id: header.id,
-            sequence_number: 1,
+            header_id: headerId,
+            sequence_number: currentSeq,
             gl_account_id: item.gl_account_id,
             dc_type: 'T',
             amount: hufExpense,
@@ -451,7 +521,7 @@ export async function generateDraftsFallback(
           .select('id')
           .single();
 
-        let seq = 2;
+        let seq = currentSeq + 1;
         // Pro-rata & Deductible VAT
         if (hufVat > 0 && baseLine && !isExpenseGross) {
           if (deductiblePct < 100 && deductiblePct > 0) {
@@ -460,7 +530,7 @@ export async function generateDraftsFallback(
 
             if (hufVatDed > 0 && effectiveVatDedId) {
               await supabase.from('acc_journal_lines').insert({
-                header_id: header.id,
+                header_id: headerId,
                 sequence_number: seq++,
                 gl_account_id: effectiveVatDedId,
                 dc_type: 'T',
@@ -475,7 +545,7 @@ export async function generateDraftsFallback(
 
             if (hufVatProRata > 0 && glVatProRataId) {
               await supabase.from('acc_journal_lines').insert({
-                header_id: header.id,
+                header_id: headerId,
                 sequence_number: seq++,
                 gl_account_id: glVatProRataId,
                 dc_type: 'T',
@@ -489,7 +559,7 @@ export async function generateDraftsFallback(
             }
           } else if (deductiblePct === 0 && glVatProRataId) {
             await supabase.from('acc_journal_lines').insert({
-              header_id: header.id,
+              header_id: headerId,
               sequence_number: seq++,
               gl_account_id: glVatProRataId,
               dc_type: 'T',
@@ -502,7 +572,7 @@ export async function generateDraftsFallback(
             });
           } else if (effectiveVatDedId) {
             await supabase.from('acc_journal_lines').insert({
-              header_id: header.id,
+              header_id: headerId,
               sequence_number: seq++,
               gl_account_id: effectiveVatDedId,
               dc_type: 'T',
@@ -518,8 +588,8 @@ export async function generateDraftsFallback(
 
         // Supplier Credit Line (K 4541/4542/4543 Gross)
         await supabase.from('acc_journal_lines').insert({
-          header_id: header.id,
-          sequence_number: seq,
+          header_id: headerId,
+          sequence_number: seq++,
           gl_account_id: targetSuppId,
           dc_type: 'K',
           amount: hufGross,
@@ -527,9 +597,9 @@ export async function generateDraftsFallback(
           vat_role: 'NONE',
           description: item.description
         });
-      }
 
-      createdCount++;
+        invoiceHeadersMap.get(invoiceImportKey)!.nextSeq = seq;
+      }
     }
   }
 

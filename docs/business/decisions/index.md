@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
 > **Utoljára frissítve:** 2026-10-09  
-> **Összesen:** 67 döntés | ✅ Decided: 54 | 🟡 Partially Decided: 7 | ⛔ Superseded: 1 | 🔴 Open: 5
+> **Összesen:** 68 döntés | ✅ Decided: 55 | 🟡 Partially Decided: 7 | ⛔ Superseded: 1 | 🔴 Open: 5
 
 ---
 
@@ -152,4 +152,5 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 065 | ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Üzleti Szabályzata | ✅ Decided | [065-deferred-vat-deduction-and-questionable-invoices.md](./065-deferred-vat-deduction-and-questionable-invoices.md) |
 | 066 | Termékimport és Vámhatározatok ÁFA Elszámolása | ✅ Decided | [066-import-customs-vat-declarations.md](./066-import-customs-vat-declarations.md) |
 | 067 | NAV 26TFEJLH Turizmusfejlesztési Hozzájárulás Bevallás és Nyomtatvány Replika | ✅ Decided | [067-nav-26tfejlh-tourism-development-contribution.md](./067-nav-26tfejlh-tourism-development-contribution.md) |
+| 068 | ÁFA tv. Szerinti Adófizetési Kötelezettség és Levonási Jog Keletkezése Normál vs. Pénzforgalmi Adózási Módban | ✅ Decided | [068-vat-effective-tax-date-regime-rules.md](./068-vat-effective-tax-date-regime-rules.md) |
 

@@ -51,6 +51,10 @@ export interface NavInvoice {
   category_id: string | null;
   transaction_id: string | null;
   exclude_from_accounting?: boolean;
+  accounting_exclusion_type?: 'PERMANENT' | 'DEFERRED_VAT' | string | null;
+  deferred_vat_reason?: string | null;
+  deferred_vat_since?: string | null;
+  deferred_vat_target_period?: string | null;
   gl_numbers?: string | null;
   is_continuous?: boolean;
   service_period_start?: string | null;
@@ -100,6 +104,10 @@ export interface SubmittedInvoice {
   fizetve?: boolean | null;
   invoice_type: string | null;
   exclude_from_accounting?: boolean;
+  accounting_exclusion_type?: 'PERMANENT' | 'DEFERRED_VAT' | string | null;
+  deferred_vat_reason?: string | null;
+  deferred_vat_since?: string | null;
+  deferred_vat_target_period?: string | null;
   elolegszamla_hivatkozas?: string | null;
   nav_invoice_id?: string | null;
   match_status?: string;

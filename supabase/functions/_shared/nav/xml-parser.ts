@@ -166,7 +166,7 @@ function extractAddress(infoChunk: string): string | undefined {
   return undefined;
 }
 
-export function parseInvoiceDataXml(xmlResponse: string): InvoiceDetails {
+export async function parseInvoiceDataXml(xmlResponse: string): Promise<InvoiceDetails> {
   if (xmlResponse.includes('<funcCode>ERROR</funcCode>') || xmlResponse.includes(':funcCode>ERROR<')) {
     const errorMsg = parseNavError(xmlResponse);
     throw new Error(`NAV Számla Részlet hiba: ${errorMsg}`);
@@ -180,8 +180,20 @@ export function parseInvoiceDataXml(xmlResponse: string): InvoiceDetails {
       const cleanBase64 = base64Match[1].replace(/\s+/g, '');
       const binaryString = atob(cleanBase64);
       const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0));
-      decodedXml = new TextDecoder('utf-8').decode(bytes);
-    } catch {
+
+      const isCompressed =
+        (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) ||
+        xmlResponse.includes('<compressedContentIndicator>true</compressedContentIndicator>') ||
+        xmlResponse.includes(':compressedContentIndicator>true<');
+
+      if (isCompressed && typeof DecompressionStream !== 'undefined') {
+        const stream = new Response(bytes).body!.pipeThrough(new DecompressionStream('gzip'));
+        decodedXml = await new Response(stream).text();
+      } else {
+        decodedXml = new TextDecoder('utf-8').decode(bytes);
+      }
+    } catch (decodeErr) {
+      console.warn('[parseInvoiceDataXml] Failed to decode/decompress invoiceData:', decodeErr);
       // Ha nem sikerült dekódolni, marad az eredeti XML
     }
   }
