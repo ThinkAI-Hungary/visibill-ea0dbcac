@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadTicketImage, isAllowedTicketFile, MAX_FILE_SIZE } from "@/lib/upload-ticket-image";
+import { uploadTicketImage, isAllowedTicketFile, MAX_FILE_SIZE, extractFilesFromClipboard } from "@/lib/upload-ticket-image";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +72,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   const [type, setType] = useState<string>("");
   const [priority, setPriority] = useState<string>("medium");
   const [category, setCategory] = useState<string | null>(null);
+  const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -86,6 +88,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
     setType("");
     setPriority("medium");
     setCategory(null);
+    setSubject("");
     setMessage("");
     setAttachments([]);
     setSubmitted(false);
@@ -135,7 +138,9 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
       newFiles.push(file);
     }
     setAttachments(prev => {
-      const total = [...prev, ...newFiles];
+      const existingKeys = new Set(prev.map(f => `${f.size}-${f.type}`));
+      const nonDuplicates = newFiles.filter(f => !existingKeys.has(`${f.size}-${f.type}`));
+      const total = [...prev, ...nonDuplicates];
       if (total.length > MAX_ATTACHMENTS) {
         toast({
           variant: "destructive",
@@ -173,6 +178,17 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
     }
   }, [validateAndAddFiles]);
 
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    if ((e.target as HTMLElement)?.closest('.ProseMirror')) {
+      return;
+    }
+    const files = extractFilesFromClipboard(e);
+    if (files.length > 0) {
+      e.preventDefault();
+      validateAndAddFiles(files);
+    }
+  }, [validateAndAddFiles]);
+
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       validateAndAddFiles(e.target.files);
@@ -181,9 +197,10 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   }, [validateAndAddFiles]);
 
   const selectedCompanyObj = companies.find((c) => c.id === companyId);
+  const isSubjectNotEmpty = Boolean(subject.trim().length > 0);
   const isTextNotEmpty = Boolean(message && message.replace(/<[^>]*>/g, '').trim().length > 0);
   const hasContent = isTextNotEmpty || attachments.length > 0;
-  const canSubmit = Boolean(companyId && service && type && hasContent);
+  const canSubmit = Boolean(companyId && service && type && isSubjectNotEmpty && hasContent);
 
   const handleSubmit = async () => {
     if (!canSubmit || !user) return;
@@ -209,6 +226,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         service,
         priority,
         category: category || null,
+        subject: subject.trim(),
         message: message.trim(),
         user_email: user.email || null,
         user_name: user.user_metadata?.name || null,
@@ -238,7 +256,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
+      <DialogContent onPaste={handlePaste} className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <MessageSquareText className="h-5 w-5 text-primary" />
@@ -399,6 +417,22 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               />
             </div>
 
+            {/* Subject */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="feedback-subject" className="text-sm font-medium">
+                  {t('feedback.subject_label', 'Tárgy')} <span className="text-destructive">*</span>
+                </Label>
+              </div>
+              <Input
+                id="feedback-subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder={t('feedback.subject_placeholder', 'A hiba vagy észrevétel rövid összefoglalása...')}
+                className="h-9 text-sm"
+              />
+            </div>
+
             {/* Message */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -410,6 +444,8 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 key={editorKey}
                 initialContent=""
                 onChange={(html) => setMessage(html)}
+                onPasteFiles={validateAndAddFiles}
+                onDropFiles={validateAndAddFiles}
                 placeholder={
                   type === "bug"
                     ? t('feedback.placeholder_bug')
@@ -439,7 +475,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx,.xml,text/xml,application/xml"
+                accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx,.xml,text/xml,application/xml,.md,text/markdown"
                 multiple
                 onChange={handleFileInput}
                 className="hidden"

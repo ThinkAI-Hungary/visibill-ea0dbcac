@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { computeTicketSla, type TicketSlaInfo } from "@/utils/ticketSlaUtils";
+import { toast } from "@/hooks/use-toast";
 
 export type { TicketSlaInfo };
 
@@ -33,6 +34,7 @@ export interface Ticket {
   type: string;
   category?: string | null;
   service: string | null;
+  subject?: string | null;
   message: string;
   status: string;
   priority: string | null;
@@ -63,6 +65,10 @@ export interface Ticket {
   eaisyworks_ticket_id?: string | null;
   eaisyworks_ticket_key?: string | null;
   eaisyworks_synced_at?: string | null;
+  last_activity_at?: string | null;
+  last_commenter_is_staff?: boolean;
+  last_commenter_name?: string | null;
+  has_staff_response?: boolean;
 }
 
 export interface TicketComment {
@@ -118,11 +124,96 @@ export function useIsManagementRole() {
   });
 }
 
+// Module-level deduplication set for comment toast alerts (avoids duplicate toasts if multiple listeners exist)
+const _notifiedCommentIds = new Set<string>();
+function shouldNotifyComment(id?: string): boolean {
+  if (!id) return true;
+  if (_notifiedCommentIds.has(id)) return false;
+  _notifiedCommentIds.add(id);
+  if (_notifiedCommentIds.size > 200) {
+    const first = _notifiedCommentIds.values().next().value;
+    if (first) _notifiedCommentIds.delete(first);
+  }
+  return true;
+}
+
+/** Global realtime synchronization for tickets, comments, and unread states */
+export function useTicketsRealtimeSync() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('tickets-global-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'ticket_comments',
+        },
+        (payload: any) => {
+          queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+          queryClient.invalidateQueries({ queryKey: ["tickets"] });
+          queryClient.invalidateQueries({ queryKey: ["ticket_detail"] });
+
+          const newComment = payload?.new;
+          if (newComment && newComment.user_id !== user.id && !newComment.is_internal) {
+            if (!shouldNotifyComment(newComment.id)) return;
+
+            const isStaffReply = Boolean(newComment.is_admin);
+            const commenterName = newComment.user_name || (isStaffReply ? "Support munkatárs" : "Ügyfél");
+
+            toast({
+              title: isStaffReply ? "Új válasz érkezett a supporttól!" : "Új ügyfél válasz érkezett!",
+              description: `${commenterName} hozzászólt a hibajegyhez.`,
+              duration: 7000,
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'feedback',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+          queryClient.invalidateQueries({ queryKey: ["tickets"] });
+          queryClient.invalidateQueries({ queryKey: ["ticket_detail"] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ticket_reads',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+          queryClient.invalidateQueries({ queryKey: ["tickets"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+}
+
 // ── Hook: Fetch tickets list ──────────────────────────────────
 export function useTickets(statusFilter?: TicketStatus | "all") {
   const { user } = useAuth();
   const { data: isSupportAdmin } = useIsSupportAdmin();
   const { data: isManagement } = useIsManagementRole();
+
+  useTicketsRealtimeSync();
 
   return useQuery({
     queryKey: ["tickets", user?.id, statusFilter, isSupportAdmin, isManagement],
@@ -152,14 +243,14 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
 
       const ticketIds = tickets.map((t) => t.id);
 
-      // 2. Fetch comment counts + latest OTHER-party comment time + full comment list for SLA
+      // 2. Fetch comment counts + latest OTHER-party comment time + full comment list for SLA & activity tracking
       const { data: comments } = await supabase
         .from("ticket_comments")
-        .select("feedback_id, created_at, user_id, is_admin, is_internal")
+        .select("feedback_id, created_at, user_id, user_name, is_admin, is_internal")
         .in("feedback_id", ticketIds);
 
-      // Comments grouped by feedback_id for SLA computation
-      const ticketCommentsListMap = new Map<string, Array<{ created_at?: string | null; is_admin?: boolean | null; is_internal?: boolean | null }>>();
+      // Comments grouped by feedback_id for SLA computation and responder tracking
+      const ticketCommentsListMap = new Map<string, Array<{ created_at?: string | null; user_id: string; user_name?: string | null; is_admin?: boolean | null; is_internal?: boolean | null }>>();
       (comments || []).forEach((c) => {
         const list = ticketCommentsListMap.get(c.feedback_id) || [];
         list.push(c);
@@ -238,6 +329,27 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
         }
 
         const commentsForTicket = ticketCommentsListMap.get(t.id) || [];
+        const sortedComments = [...commentsForTicket].sort((a, b) => {
+          const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return timeA - timeB;
+        });
+
+        const lastComment = sortedComments.length > 0 ? sortedComments[sortedComments.length - 1] : null;
+        const hasStaffComment = sortedComments.some((c) => Boolean(c.is_admin));
+
+        let lastActivityAt = t.created_at;
+        let lastCommenterIsStaff = isCreatedByStaff;
+        let lastCommenterName = createdByProfile?.name || t.user_name || null;
+
+        if (lastComment && lastComment.created_at) {
+          lastActivityAt = lastComment.created_at;
+          lastCommenterIsStaff = Boolean(lastComment.is_admin);
+          lastCommenterName = lastComment.user_name || (lastComment.is_admin ? "Support munkatárs" : "Ügyfél");
+        } else if (t.updated_at && t.updated_at > t.created_at) {
+          lastActivityAt = t.updated_at;
+        }
+
         const sla = computeTicketSla(
           {
             created_at: t.created_at,
@@ -256,6 +368,7 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           type: t.type,
           category: (t as any).category || null,
           service: (t as any).service || null,
+          subject: (t as any).subject || null,
           message: t.message,
           status: resolveEffectiveTicketStatus(t.status, t.assigned_to),
           priority: t.priority,
@@ -283,6 +396,10 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
           needs_staff_response: (t as any).needs_staff_response !== false,
           last_customer_message_at: (t as any).last_customer_message_at || null,
           sla,
+          last_activity_at: lastActivityAt,
+          last_commenter_is_staff: lastCommenterIsStaff,
+          last_commenter_name: lastCommenterName,
+          has_staff_response: hasStaffComment || isCreatedByStaff,
         };
       }).sort((a, b) => {
         // 1. Olvasatlan jegyek mindig legfelül
@@ -291,17 +408,22 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
 
         // 2. Olvasatlan jegyek között: legfrissebb aktivitás szerint csökkenő
         if (a.has_unread && b.has_unread) {
-          const timeA = new Date(a.latest_comment_at || a.created_at).getTime();
-          const timeB = new Date(b.latest_comment_at || b.created_at).getTime();
+          const timeA = new Date(a.last_activity_at || a.latest_comment_at || a.created_at).getTime();
+          const timeB = new Date(b.last_activity_at || b.latest_comment_at || b.created_at).getTime();
           if (timeB !== timeA) return timeB - timeA;
         }
 
-        // 3. Olvasott jegyek között: létrehozás dátuma szerint csökkenő
+        // 3. Olvasott jegyek között: legfrissebb aktivitás szerint csökkenő
+        const actA = new Date(a.last_activity_at || a.created_at).getTime();
+        const actB = new Date(b.last_activity_at || b.created_at).getTime();
+        if (actB !== actA) return actB - actA;
+
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
     },
     enabled: !!user,
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 }
@@ -309,44 +431,7 @@ export function useTickets(statusFilter?: TicketStatus | "all") {
 // ── Hook: Fetch unread count (for sidebar badge) ──────────────
 export function useUnreadTicketCount() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-
-  // Subscribe to realtime changes on ticket_comments and feedback
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('unread-ticket-count')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'ticket_comments',
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
-          queryClient.invalidateQueries({ queryKey: ["tickets"] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'feedback',
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
-          queryClient.invalidateQueries({ queryKey: ["tickets"] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, queryClient]);
+  useTicketsRealtimeSync();
 
   const { data: isSupportAdmin } = useIsSupportAdmin();
   const { data: isManagement } = useIsManagementRole();
@@ -412,6 +497,53 @@ export function useTicketEvents(feedbackId: string | null) {
 // ── Hook: Fetch single ticket detail with comments ────────────
 export function useTicketDetail(feedbackId: string | null) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Subscribe to realtime changes specifically for this ticket
+  useEffect(() => {
+    if (!feedbackId || !user) return;
+
+    const channel = supabase
+      .channel(`ticket-detail-realtime-${feedbackId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ticket_comments',
+        },
+        (payload: any) => {
+          const row = payload?.new || payload?.old;
+          if (row?.feedback_id === feedbackId) {
+            queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+            queryClient.invalidateQueries({ queryKey: ["ticket_events", feedbackId] });
+            queryClient.invalidateQueries({ queryKey: ["tickets"] });
+            queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'feedback',
+        },
+        (payload: any) => {
+          const row = payload?.new || payload?.old;
+          if (row?.id === feedbackId) {
+            queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+            queryClient.invalidateQueries({ queryKey: ["ticket_events", feedbackId] });
+            queryClient.invalidateQueries({ queryKey: ["tickets"] });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [feedbackId, user, queryClient]);
 
   return useQuery({
     queryKey: ["ticket_detail", feedbackId],
@@ -439,6 +571,22 @@ export function useTicketDetail(feedbackId: string | null) {
         ['thinkai', 'management'].includes(createdByProfile?.role)
       );
 
+      const commentList = (comments || []) as TicketComment[];
+      const lastComment = commentList.length > 0 ? commentList[commentList.length - 1] : null;
+      const hasStaffComment = commentList.some((c) => Boolean(c.is_admin));
+
+      let lastActivityAt = ticket.created_at;
+      let lastCommenterIsStaff = isCreatedByStaff;
+      let lastCommenterName = createdByProfile?.name || ticket.user_name || null;
+
+      if (lastComment && lastComment.created_at) {
+        lastActivityAt = lastComment.created_at;
+        lastCommenterIsStaff = Boolean(lastComment.is_admin);
+        lastCommenterName = lastComment.user_name || (lastComment.is_admin ? "Support munkatárs" : "Ügyfél");
+      } else if (ticket.updated_at && ticket.updated_at > ticket.created_at) {
+        lastActivityAt = ticket.updated_at;
+      }
+
       const sla = computeTicketSla(
         {
           created_at: ticket.created_at,
@@ -448,7 +596,7 @@ export function useTicketDetail(feedbackId: string | null) {
           assigned_to: ticket.assigned_to,
           needs_staff_response: (ticket as any).needs_staff_response,
         },
-        (comments || []) as TicketComment[]
+        commentList
       );
 
       return {
@@ -465,11 +613,17 @@ export function useTicketDetail(feedbackId: string | null) {
           needs_staff_response: (ticket as any).needs_staff_response !== false,
           last_customer_message_at: (ticket as any).last_customer_message_at || null,
           sla,
+          last_activity_at: lastActivityAt,
+          last_commenter_is_staff: lastCommenterIsStaff,
+          last_commenter_name: lastCommenterName,
+          has_staff_response: hasStaffComment || isCreatedByStaff,
         },
-        comments: (comments || []) as TicketComment[],
+        comments: commentList,
       };
     },
     enabled: !!feedbackId && !!user,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
@@ -773,9 +927,12 @@ export function useMarkTicketRead() {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, feedbackId) => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
       queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+      if (feedbackId) {
+        queryClient.invalidateQueries({ queryKey: ["ticket_detail", feedbackId] });
+      }
     },
   });
 }

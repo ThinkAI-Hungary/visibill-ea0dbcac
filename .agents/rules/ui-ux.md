@@ -26,6 +26,7 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
   * Minden aszinkron művelet végén kötelező visszajelzést adni a felhasználónak:
     * **Siker:** `toast({ title: "Sikeres mentés", description: "..." })`
     * **Hiba:** `toast({ variant: "destructive", title: "Nem sikerült a mentés", description: err.message })`
+  * *Részletek:* [docs/design/09-error-handling-feedback.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/09-error-handling-feedback.md).
 
 ---
 
@@ -36,6 +37,7 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
     * Összegek: magyar ezres tagolással, HUF esetén egészre kerekítve, devizáknál (EUR/USD) 2 tizedesjegy.
     * Szemantikus színek: Bevételek és jóváírások zöld (`text-emerald-500` / `text-primary`), költségek/kiadások egyértelmű negatív előjellel.
     * Dátumok: Egységes magyar formátum (`YYYY. MM. DD.`).
+  * *Részletek:* [docs/design/02-design-tokens.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/02-design-tokens.md).
 
 ---
 
@@ -58,14 +60,14 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
 ---
 
 ## 🖥️ 6. Tabok, Master-Detail és Kijelzők Stabilitása (Zero-Jitter & ClearType Védelem)
-* **GPU Transzformáció Zéró Tolerancia Tab Konténereken ([08-interactions-animations.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/08-interactions-animations.md)):**
-  * Részletező vásznon és tab konténereken **szigorúan tilos az `animate-in`**, `slide-in`, `zoom-in` vagy bármilyen CSS 3D transzformáció!
-  * Windows alatt a Chromium a GPU layeren kikapcsolja a DirectWrite LCD Subpixel ClearType élsimítást, ami homályosodást és az animáció végén 0.5–1 pixeles ugrásszerű "kiélesedést" okoz.
+* **GPU Transzformáció Zéró Tolerancia Tab Konténereken:**
+  * Részletező vásznon és tab konténereken **szigorúan tilos az `animate-in`**, `slide-in`, `zoom-in` vagy bármilyen CSS 3D transzformáció (Chromium DirectWrite ClearType élsimítás-kikapcsolás és 1px ugrás miatt)!
 * **Perzisztens DOM Renderelés (`block` / `hidden`):**
   * Tabok és Master-Detail panelek váltásakor tilos a feltételes unmountolás (`{activeTab === 'x' && <Component />}`).
   * Használj perzisztens DOM megjelenítést (`className={activeTab === id ? 'block' : 'hidden'}`). Ezzel elérhető a 0ms-os azonnali váltás, zéró Skeleton villódzás és a piszkozat-adatok (pl. űrlapok, fájlválasztások) megőrzése.
-* **Skeleton kizárólag ELSŐ betöltésre ([07-loading-patterns.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/07-loading-patterns.md)):**
+* **Skeleton kizárólag ELSŐ betöltésre:**
   * Tilos fülváltáskor Skeletonra visszaváltani! Háttérfrissítésnél a meglévő tartalom látható marad, és diszkrét spinner jelzi a lekérdezést.
+  * *Részletek és minták:* [docs/design/08-interactions-animations.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/08-interactions-animations.md) és [docs/design/07-loading-patterns.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/07-loading-patterns.md).
 
 ---
 
@@ -75,6 +77,7 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
     * Pl.: *„Mind a(z) {{count}} tétel betöltve”*
 * **Sentinel és Hiba-védelem:**
   * Ha a háttérben futó lapozás hálózati hibába ütközik, a betöltő gomb nem villoghat és nem ragadhat végtelen spinner állapotban. A lapozást azonnal le kell állítani (`hasMore = false`), és egyértelmű hibaüzenetet kell mutatni manuális *„Újrapróbálkozás”* lehetőséggel.
+  * *Részletek:* [docs/design/11-data-display-tables.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/11-data-display-tables.md).
 
 ---
 
@@ -87,6 +90,7 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
   * Enélkül az asztali böngészőkben a lenyíló lista nem reagál az egérgörgőre.
 * **Új / Egyedi elem azonnali felajánlása:**
   * Ha a beírt keresőszó nem szerepel a törzsadatok között, a lista legtetején mindig jelenjen meg egy kattintható akciógomb: *„Új [elem] használata: '{search}'”*, amivel a felhasználó azonnal rögzítheti az egyedi értéket.
+  * *Részletek:* [docs/design/12-dialogs-modals.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/12-dialogs-modals.md).
 
 ---
 
@@ -96,6 +100,7 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
   * Ezen a mezőn tilos az autocompletion, a kereső megnyitása és a törlő (`X`) gomb megjelenítése, megelőzve az elgépelést és a cégadatok felülírását.
 * **Kötelező terminológia: `(Aktív cég)`:**
   * A zárolt mező felett a címke mellett kötelezően a diszkrét **`(Aktív cég)`** megnevezést használd (nem *(Saját vállalkozás)* vagy egyéb szinonimák).
+  * *Részletek:* [ADR A-198](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-198-manual-submitted-invoice-creation-and-multi-pairing.md) és [PRD P-157](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/product/decisions/P-157-manual-submitted-invoice-creation-dialog-and-pairings-ux.md).
 
 ---
 
@@ -103,6 +108,7 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
 * **Kompakt státuszjelölők:**
   * Egyszerű státuszjelölő mezőknél (pl. *Kifizetett számla (kiegyenlítve)*) törekedj a kompakt, egyvonalas megjelenésre (`flex items-center space-x-2`).
   * Ne terheld a felületet hosszú, helyet foglaló magyarázó bekezdésekkel, kivéve ha az jogi vagy kritikus adatvesztési kockázatra hívja fel a figyelmet.
+  * *Részletek:* [docs/design/04-component-library.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/04-component-library.md) és [docs/design/02-design-tokens.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/02-design-tokens.md).
 
 ---
 
@@ -115,3 +121,4 @@ Minden adatra támaszkodó nézetben (táblázat, kártya, lista, dashboard) kö
   * Ha a lekérdezés meghiúsul:
     1. Vizuális hibaüzenet (pl. piros/figyelmeztető sáv vagy diszkrét sorszintű hiba ikon).
     2. Közvetlen, helyi **„Újrapróbálkozás” (Retry CTA)** gomb, amellyel a felhasználó anélkül próbálkozhat újra, hogy a teljes oldalt újra kellene töltenie.
+  * *Részletek és referencia implementáció:* [ADR A-232](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-232-gl-zero-as-value-multi-account-batching-and-partner-aging.md) és [docs/design/09-error-handling-feedback.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/09-error-handling-feedback.md).

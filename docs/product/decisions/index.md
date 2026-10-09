@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-09  
-> **Összesen:** 185 döntés (168 egyedi döntési fájl) | ✅ Decided: 181 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 186 döntés (169 egyedi döntési fájl) | ✅ Decided: 182 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -168,6 +168,7 @@
 | P-070 | Management Dashboard Hibajegy Létrehozás Felhasználó Nevében UX | ✅ Decided | [P-070](./P-070-management-impersonated-ticket-creation-ux.md) |
 | P-078 | eaisyBill Tudástár (Knowledge Base) és Funkciókalauz UX | ✅ Decided | [P-078](./P-078-knowledge-base-ux-and-navigation.md) |
 | P-112 | In-App Fejlesztői Napló és Patchnotes Idővonal UX | ✅ Decided | [P-112](./P-112-in-app-changelog-timeline-ux.md) |
+| P-175 | Hibajegy Kezelőkonzol Ergonómia, Tárgymező, Markdown Csatolmányok és Vágólap-Támogatás UX | ✅ Decided | [P-175](./P-175-ticket-console-ergonomics-subject-and-clipboard-attachments-ux.md) |
 
 ## 🛠️ Platform Üzemeltetés
 

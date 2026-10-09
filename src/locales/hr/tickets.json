@@ -46,7 +46,12 @@
     "assigned": "Dodijeljeno",
     "in_progress": "U tijeku",
     "resolved": "Riješeno",
-    "waiting_for_confirmation": "Čeka potvrdu"
+    "waiting_for_confirmation": "Čeka potvrdu",
+    "new_staff_reply": "Novi odgovor",
+    "new_staff_reply_short": "Novi odgovor",
+    "staff_replied": "Podrška odgovorila",
+    "waiting_for_staff": "Čeka odgovor",
+    "new_customer_reply": "Novi odgovor korisnika"
   },
   "priority_filter": {
     "placeholder": "Prioritet"
@@ -78,11 +83,16 @@
     "col_system": "Sustav",
     "col_subject": "Predmet",
     "col_category": "Kategorija",
-    "col_user_company": "Podnositelj i tvrtka",
+    "col_user": "Podnositelj",
+    "col_user_company": "Podnositelj",
     "col_assignee": "Zadužena osoba",
     "col_status": "Status",
     "col_priority": "Prioritet",
     "col_created_at": "Kreirano",
+    "col_activity": "Zadnja aktivnost",
+    "created_prefix": "Kreirano",
+    "sort_activity_desc": "Poredaj: najnovija aktivnost",
+    "sort_activity_asc": "Poredaj: najstarija aktivnost",
     "empty_state": "Nema zahtjeva koji odgovaraju filterima"
   },
   "console": {
@@ -170,6 +180,8 @@
     "request_resolution_btn": "Zatraži potvrdu rješenja",
     "no_response_needed": "Ne zahtijeva odgovor",
     "mark_no_response_needed": "Ne zahtijeva odgovor",
+    "staff_response_banner_title": "Tim za podršku je odgovorio na zahtjev",
+    "jump_to_latest_reply": "Pogledaj odgovor",
     "undo": "Poništi",
     "undo_no_response": "Poništi (ponovno čeka odgovor)",
     "copy_link_toast_title": "Poveznica kopirana!",

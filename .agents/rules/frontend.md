@@ -11,6 +11,7 @@ description: Apply when working on React components, UI styling, frontend state,
 * **Tiszta Provider Architektúra:**
   * Context Providereket csak valós, globális vagy moduláris állapotmegosztásra használj.
   * Ne tegyél feleslegesen gyakran változó adatot magas szintű Contextbe, mert az felesleges teljes alkalmazás szintű újrarajzolást (re-render) okoz.
+  * *Részletek:* [docs/design/04-component-library.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/04-component-library.md).
 
 ## 2. Teljesítmény és Renderelés (Vercel Best Practices)
 * **Re-render minimalizálás:**
@@ -26,6 +27,7 @@ description: Apply when working on React components, UI styling, frontend state,
 * **Reszponzivitás és UX:**
   * Minden felületnek reszponzívnak kell lennie (mobil/tablet/desktop töréspontok).
   * Minden aszinkron művelethez (betöltés, mentés) jeleníts meg egyértelmű visszajelzést (skeleton loader, disabled állapot, spinner, toast).
+  * *Részletek:* [docs/design/02-design-tokens.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/02-design-tokens.md) és [docs/design/07-loading-patterns.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/07-loading-patterns.md).
 
 ## 4. TypeScript és Típusbiztonság
 * **Szigorú típusok:**
@@ -37,6 +39,7 @@ description: Apply when working on React components, UI styling, frontend state,
   * Tilos olyan feltételezett kapcsolat-kulcsokat beszúrni (pl. `nav_invoice_id`, `invoice_id`), amelyek nem részei a cél tábla sémájának.
 * **Aggregáló / Banner Lekérdezések Rezilienciája (PGRST205 Védelem):**
   * Új vagy kiegészítő modulok adatainak lekérésekor (pl. fejléc számlálók, dashboard widgetek) mindig alkalmazz hibavédelmet és `staleTime`-ot a TanStack Query-ben, hogy egy még le nem futott migráció vagy schema cache frissülés ne rántsa magával a teljes oldal betöltését.
+  * *Részletek (PostgREST lekérdezési és TanStack Query cache stratégia):* [ADR A-014](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-014-react-query-cache.md) és [ADR A-016](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-016-postgresql-query-strategy.md).
 
 ## 5. Gyors Kódminőség és Hook Ellenőrzés (Oxlint)
 * **Aktív és kötelező használat frontend módosítások után:**
@@ -61,6 +64,7 @@ description: Apply when working on React components, UI styling, frontend state,
   * Ha a szűrés csak kliensoldalon történik, a PostgREST `count` értéke mesterségesen magasabb lesz mint a valós elemek száma, ami hamis `items.length < totalCount` állapotot és túlcsorduló, 416-os hibát kiváltó lapozást generál.
 * **Végtelen Ciklus Megszakítása Hibánál (Break-on-Error):**
   * `IntersectionObserver` alapú görgetésnél ha a `handleLoadMore` hívás bármilyen hibára fut (`catch (err)`), **kötelező lekapcsolni a lapozást (`setHasMore(false)`)**! Ellenkező esetben a képernyőn maradó sentinel másodpercenként többször újratriggereli a hibát, lefagyasztva a böngészőt.
+  * *Részletek és komponens minta:* [docs/design/11-data-display-tables.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/11-data-display-tables.md).
 
 ## 7. i18next Dinamikus Objektum és Tömb Lekérések (Tömb-Fallback Invariáns)
 * **A naiv `t(...) || DEFAULT_ARRAY` csapda (`TypeError: b.map is not a function`):**
@@ -77,6 +81,7 @@ description: Apply when working on React components, UI styling, frontend state,
   const rawMonths = t('hr:calendar.months', { returnObjects: true });
   const months = Array.isArray(rawMonths) ? (rawMonths as string[]) : DEFAULT_MONTHS;
   ```
+  * *Részletek és nyelvi moduláris névterek:* [ADR A-109](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md).
 
 ## 8. Pénzügyi Előjelek & Keresztmoduláris Cache Érvénytelenítés
 * **Jóváíró / Helyesbítő Számlák Abszolútérték-Szabálya (`Math.abs`):**
@@ -94,6 +99,7 @@ description: Apply when working on React components, UI styling, frontend state,
     queryClient.invalidateQueries({ queryKey: ['general_ledger'] });
     queryClient.invalidateQueries({ queryKey: ['glBalances'] });
     ```
+  * *Részletek:* [ADR A-014](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-014-react-query-cache.md), [ADR A-016](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-016-postgresql-query-strategy.md) és [ADR A-175](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-175-subledger-and-open-items-architecture.md).
 
 ## 9. Böngésző Párhuzamosság & Burst Lekérdezés Védelem (TCP Socket & 504 Timeout)
 * **A naiv `Promise.all(batches.map(...))` csapda:**
@@ -110,6 +116,7 @@ description: Apply when working on React components, UI styling, frontend state,
     await Promise.all(chunk.map(batch => fetchBatch(batch)));
   }
   ```
+  * *Részletek:* [ADR A-232](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-232-gl-zero-as-value-multi-account-batching-and-partner-aging.md).
 
 ## 10. Pénzügyi Korosítás Dátum-Invariánsa (Történeti Cutoff vs. Mai Nap)
 * **A `new Date()` korosítási torzulás:**
@@ -121,3 +128,4 @@ description: Apply when working on React components, UI styling, frontend state,
   const cutoff = dateTo ? new Date(dateTo) : new Date();
   const diffDays = Math.floor((cutoff.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
   ```
+  * *Részletek:* [ADR A-232](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-232-gl-zero-as-value-multi-account-batching-and-partner-aging.md).

@@ -1,7 +1,7 @@
 # A-018: Hibajegy Rendszer Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12 (utolsó frissítés: 2026-10-03 — EaisyWorks integráció)
+**Date:** 2025-12 (utolsó frissítés: 2026-10-09 — Tárgymező, Realtime Olvasottság és Vágólap/Markdown Csatolmányok)
 
 ## Context
 
@@ -21,6 +21,7 @@ feedback (fő tábla)
 ├── company_name: text (denormalizált — gyors listázás)
 ├── type: text ('bug' | 'feedback' | 'question')
 ├── service: text ('eaisybill' | 'accounty')
+├── subject: text (opcionális önálló tárgy, indexelt: idx_feedback_subject)
 ├── message: text
 ├── status: text ('created' | 'in_progress' | 'resolved')
 ├── priority: text ('low' | 'medium' | 'high' | 'critical')
@@ -174,10 +175,17 @@ supabase
   }, () => {
     queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
   })
+  .on('postgres_changes', {
+    event: '*',
+    schema: 'public',
+    table: 'ticket_reads',
+  }, () => {
+    queryClient.invalidateQueries({ queryKey: ["unread_ticket_count"] });
+  })
   .subscribe();
 ```
 
-Minden új komment és minden feedback módosítás (pl. visszaigazolás kérése vagy megerősítése) azonnali cache invalidationt vált ki, azonnal frissítve az olvasatlan jelvényeket és a listát.
+Minden új komment, feedback módosítás és a `feedback_ticket_reads` táblához adott Realtime publikáció (`supabase_realtime`) révén az olvasottsági állapot változása is azonnali cache invalidationt vált ki, szinkronban tartva az olvasatlan jelvényeket és a jegylistát az összes csatlakoztatott kliensen.
 
 ### Idővonal (Timeline) Folyamatos Vonal Architektúra
 
@@ -188,14 +196,22 @@ Az új felépítésben minden egyes idővonal-elem (`TicketTimelineItem`) saját
 ```
 A vonal az adott elem ikonjától a következőig fut le, és automatikusan rejtve van az utolsó elemnél (`!isLast`). Ez szavatolja, hogy a vonal 100%-ban folytonos marad bármilyen DOM újrarajzolás, dinamikus magasság vagy görgetés esetén is.
 
-### Storage
+### Storage & Csatolmányok
 
 - **Bucket:** `ticket-attachments` (public bucket)
 - **Path:** `{ticketId}/{userId}/{filename}`
-- **Engedélyezett típusok:** JPEG, PNG, GIF, WebP, PDF, CSV, XLS, XLSX, XML (`application/xml`, `text/xml`)
+- **Engedélyezett típusok:** JPEG, PNG, GIF, WebP, PDF, CSV, XLS, XLSX, XML (`application/xml`, `text/xml`), Markdown (`text/markdown`, `.md`)
 - **Limit:** max 5 fájl / komment, max 10MB / fájl
 - **Policy:** Public read (link-el elérhető), authenticated insert
-- **Feltöltési védelem:** Kiterjesztés-alapú tartalék ellenőrzés (.xml) és explicit `contentType` továbbítás a Supabase Storage felé
+- **Feltöltési védelem:** Kiterjesztés-alapú tartalék ellenőrzés (.xml, .md) és explicit `contentType` továbbítás a Supabase Storage felé
+
+### Vágólap (Ctrl+V) & Drag-and-Drop Csatolmányok és 4-szintű Duplikáció-védelem (2026-10)
+
+A közvetlen képbeillesztés és fogd-és-vidd fájlfeltöltés mind a hibajegy beküldési modálban (`FeedbackDialog`, `ManagementCreateTicketDialog`), mind a válaszadó/megjegyzés felületen (`TicketDetailView`) támogatott. A vágólapról történő kétszeres csatolódás (double paste) ellen egy 4-szintű védelmi mechanizmus lép életbe:
+1. **Belső vágólap-szintű szűrés (`upload-ticket-image.ts`):** Az `extractFilesFromClipboard` feldolgozó méret és típus szerint azonnal szűri az ugyanazon esemény során többszörösen felkínált fájlokat (`file.size` + `file.type`).
+2. **ProseMirror esemény-terjedés megállítása (`RichTextEditor`):** A TipTap `handlePaste` és `handleDrop` horgokban meghívásra kerül az `event.stopPropagation()` és `stopImmediatePropagation?.()`, így a natív paste nem jut el a befoglaló React elemekhez.
+3. **Szülő modál fókusz-védelem:** A modál szintű globális paste figyelők figyelmen kívül hagyják a `.ProseMirror` szerkesztőből származó eseményeket (`if ((e.target as HTMLElement)?.closest('.ProseMirror')) return;`).
+4. **Állapot-szintű idempotens dedup:** A csatolmányok állapotfrissítője (`setAttachments`, `addCommentFiles`) egy létező kulcshalmaz segítségével garantálja, hogy egyazon fájl nem kerülhet be duplán a felületre.
 
 ### Slack Integráció
 
@@ -209,6 +225,8 @@ A vonal az adott elem ikonjától a következőig fut le, és automatikusan rejt
 idx_feedback_user_id           ON feedback(user_id)
 idx_feedback_company_id        ON feedback(company_id)
 idx_feedback_status            ON feedback(status)
+idx_feedback_category          ON feedback(category)
+idx_feedback_subject           ON feedback(subject)
 idx_ticket_comments_feedback_id ON ticket_comments(feedback_id)
 idx_ticket_events_feedback_id   ON ticket_events(feedback_id)
 idx_ticket_reads_feedback_user  ON ticket_reads(feedback_id, user_id)

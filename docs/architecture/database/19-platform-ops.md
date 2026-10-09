@@ -102,6 +102,7 @@
 | company_id | uuid | ✓ |  |
 | company_name | text | ✓ |  |
 | type | text | — |  |
+| subject | text | ✓ |  |
 | message | text | — |  |
 | user_email | text | ✓ |  |
 | user_name | text | ✓ |  |
@@ -123,7 +124,10 @@
 
 **FK:** `company_id` → `companies.id`, `user_id` → `auth.users.id`, `assigned_to` → `auth.users.id`
 
-**Indexek:** `idx_feedback_company_id`, `idx_feedback_status`, `idx_feedback_user_id`, `idx_feedback_category`
+**Indexek:** `idx_feedback_company_id`, `idx_feedback_status`, `idx_feedback_user_id`, `idx_feedback_category`, `idx_feedback_subject`
+
+**Tárgy (`subject`):**
+Opcionális szöveges tárgymező (`text`, default NULL), amely a hibajegy egyértelmű, egy sorban megjeleníthető címét tárolja az üzenetből történő kivágás helyett (migráció: `20261009180000_add_subject_to_feedback.sql`).
 
 **Státuszok (`feedback_status_check`):**
 - `'created'` / `'new'` / `'open'`: Nyitott

@@ -272,6 +272,7 @@ export interface CreateTicketOnBehalfPayload {
   type: string; // 'bug' | 'feedback' | 'question'
   category?: string | null;
   priority?: string; // 'low' | 'medium' | 'high' | 'critical'
+  subject?: string | null;
   message: string;
   attachments?: string[];
   assignedTo?: string | null;

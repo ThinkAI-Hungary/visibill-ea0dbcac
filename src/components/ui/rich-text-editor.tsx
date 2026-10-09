@@ -19,6 +19,7 @@ import {
   Variable,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { extractFilesFromClipboard } from '@/lib/upload-ticket-image';
 
 export interface RichTextEditorProps {
   /** Initial content (plain text or HTML). Only read on mount or when key changes. */
@@ -43,6 +44,10 @@ export interface RichTextEditorProps {
   toolbarVariant?: 'full' | 'compact' | 'ticket';
   /** Hide toolbar completely */
   hideToolbar?: boolean;
+  /** Optional callback when files or images are pasted into the editor (e.g. Ctrl+V screenshot) */
+  onPasteFiles?: (files: File[]) => void;
+  /** Optional callback when files are dropped directly onto the editor area */
+  onDropFiles?: (files: File[]) => void;
 }
 
 function VariableDropdown({ editor, variables }: { editor: any; variables: { key: string; label: string }[] }) {
@@ -321,6 +326,8 @@ export function RichTextEditor({
   onSubmit,
   toolbarVariant = 'ticket',
   hideToolbar = false,
+  onPasteFiles,
+  onDropFiles,
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -385,6 +392,32 @@ export function RichTextEditor({
         }
         return false;
       },
+      handlePaste: (_, event) => {
+        if (onPasteFiles && event.clipboardData) {
+          const files = extractFilesFromClipboard(event);
+          if (files.length > 0) {
+            event.preventDefault();
+            event.stopPropagation();
+            (event as any).stopImmediatePropagation?.();
+            onPasteFiles(files);
+            return true;
+          }
+        }
+        return false;
+      },
+      handleDrop: (_, event) => {
+        if (onDropFiles && event.dataTransfer && event.dataTransfer.files.length > 0) {
+          const files = Array.from(event.dataTransfer.files);
+          if (files.length > 0) {
+            event.preventDefault();
+            event.stopPropagation();
+            (event as any).stopImmediatePropagation?.();
+            onDropFiles(files);
+            return true;
+          }
+        }
+        return false;
+      },
     },
   });
 
@@ -397,6 +430,16 @@ export function RichTextEditor({
 
   return (
     <div
+      onPaste={(e) => {
+        if (onPasteFiles) {
+          e.stopPropagation();
+        }
+      }}
+      onDrop={(e) => {
+        if (onDropFiles) {
+          e.stopPropagation();
+        }
+      }}
       className={cn(
         'border border-border/60 rounded-lg overflow-hidden bg-background transition-colors focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20',
         disabled && 'opacity-60 bg-muted/20 cursor-not-allowed',

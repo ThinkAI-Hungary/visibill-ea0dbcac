@@ -8,6 +8,7 @@ export interface CreateTicketPayload {
   type: string;
   category?: string | null;
   priority?: string;
+  subject?: string;
   message: string;
   attachments?: string[];
   assignedTo?: string | null;
@@ -32,6 +33,7 @@ export async function createTicketOnBehalf(
     type = "feedback",
     category,
     priority = "medium",
+    subject,
     message,
     attachments = [],
     assignedTo,
@@ -110,13 +112,14 @@ export async function createTicketOnBehalf(
       type,
       category: category || null,
       priority,
+      subject: (subject || "").trim() || null,
       message: cleanMessage,
       page_url: pageUrl || "/management?view=tickets",
       attachments: attachments && attachments.length > 0 ? attachments : null,
       assigned_to: assignedTo || null,
       status: assignedTo ? "assigned" : "created",
     })
-    .select("id, ticket_number, status, priority, type, category, service, created_at, user_id, user_email, user_name, company_name, created_by")
+    .select("id, ticket_number, subject, status, priority, type, category, service, created_at, user_id, user_email, user_name, company_name, created_by")
     .single();
 
   if (insertError) {

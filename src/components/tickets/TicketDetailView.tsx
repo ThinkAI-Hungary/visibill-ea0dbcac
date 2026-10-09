@@ -51,7 +51,7 @@ import {
   Sparkles,
   Tag,
 } from "lucide-react";
-import { uploadTicketImage, isAllowedTicketFile } from "@/lib/upload-ticket-image";
+import { uploadTicketImage, isAllowedTicketFile, extractFilesFromClipboard } from "@/lib/upload-ticket-image";
 import { TicketStatusBadge } from "./TicketStatusBadge";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { ThinkAiBadge, ThinkAiIcon } from "./ThinkAiBadge";
@@ -202,14 +202,16 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
     ? "/eaisybooks/tickets" 
     : (isStandalone ? "/tickets" : `${eaisybillBasePath}/tickets`);
 
-  // Mark as read only once per ticket ID when loaded
+  // Mark as read only once per ticket ID when loaded, or when new comments/activity arrive
   const markedReadRef = useRef<string | null>(null);
+  const commentCount = comments.length;
   useEffect(() => {
-    if (ticket?.id && markedReadRef.current !== ticket.id) {
-      markedReadRef.current = ticket.id;
+    const markKey = ticket?.id ? `${ticket.id}-${ticket.last_activity_at || ticket.updated_at || commentCount}` : null;
+    if (ticket?.id && markKey && markedReadRef.current !== markKey) {
+      markedReadRef.current = markKey;
       markRead(ticket.id);
     }
-  }, [ticket?.id, markRead]);
+  }, [ticket?.id, ticket?.last_activity_at, ticket?.updated_at, commentCount, markRead]);
 
   // Track whether to auto-scroll (only after user sends a comment)
   const shouldScrollRef = useRef(false);
@@ -340,8 +342,20 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
   const addCommentFiles = (files: FileList | File[]) => {
     const MAX = 5;
     const MAX_SIZE = 10 * 1024 * 1024;
-    const validFiles = Array.from(files).filter(f => isAllowedTicketFile(f) && f.size <= MAX_SIZE);
-    setCommentFiles(prev => [...prev, ...validFiles].slice(0, MAX));
+    const allFiles = Array.from(files);
+    const validFiles = allFiles.filter(f => isAllowedTicketFile(f) && f.size <= MAX_SIZE);
+    if (validFiles.length < allFiles.length) {
+      toast({
+        variant: "destructive",
+        title: "Nem támogatott vagy túl nagy fájl",
+        description: "Csak kép, PDF, CSV, Excel, XML és Markdown (.md) fájlok engedélyezettek (max 10MB).",
+      });
+    }
+    setCommentFiles(prev => {
+      const existingKeys = new Set(prev.map(f => `${f.size}-${f.type}`));
+      const nonDuplicates = validFiles.filter(f => !existingKeys.has(`${f.size}-${f.type}`));
+      return [...prev, ...nonDuplicates].slice(0, MAX);
+    });
   };
 
   const removeCommentFile = (index: number) => {
@@ -639,6 +653,11 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
               <Lightbulb className="h-5 w-5 text-amber-500 shrink-0" />
             )}
             <h1 className="text-xl font-bold tracking-tight">{ticket.ticket_number || "—"}</h1>
+            {ticket.subject && (
+              <span className="text-base font-medium text-foreground/90 truncate max-w-[420px]" title={ticket.subject}>
+                — {ticket.subject}
+              </span>
+            )}
             <TicketPriorityBadge priority={ticket.priority} />
             <TicketStatusBadge status={ticket.status} waitingForConfirmation={ticket.waiting_for_user_confirmation} />
             {ticket.category && <TicketCategoryBadge category={ticket.category} />}
@@ -752,6 +771,35 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
               />
             )}
 
+            {/* Client-facing alert banner when support has replied */}
+            {!canManage && ticket.status !== "resolved" && !ticket.waiting_for_user_confirmation && ticket.last_commenter_is_staff && (
+              <div className="flex items-center justify-between gap-3 p-3.5 rounded-lg border border-violet-500/30 bg-violet-500/10 text-violet-900 dark:text-violet-200">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="h-8 w-8 rounded-full bg-violet-500/20 flex items-center justify-center shrink-0">
+                    <Headset className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <div className="text-xs">
+                    <p className="font-semibold text-violet-950 dark:text-violet-100">
+                      {t('detail.staff_response_banner_title', 'A support csapat válaszolt a hibajegyre')}
+                    </p>
+                    <p className="text-violet-700 dark:text-violet-300 truncate">
+                      {ticket.last_commenter_name ? `${ticket.last_commenter_name} ` : ''}
+                      {ticket.last_activity_at ? `(${formatDate(ticket.last_activity_at)})` : ''}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 h-8 text-xs border-violet-500/40 text-violet-700 dark:text-violet-300 hover:bg-violet-500/20"
+                  onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+                >
+                  <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                  {t('detail.jump_to_latest_reply', 'Válasz megtekintése')}
+                </Button>
+              </div>
+            )}
+
             {/* Original message */}
             <Card className={`rounded-none shadow-none ${isStaffInitiated ? "border-primary/20 bg-primary/[0.02]" : ""}`}>
               <CardContent className="pt-6">
@@ -775,10 +823,24 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                     </p>
                   </div>
                 </div>
+                {ticket.subject && (
+                  <h3 className="text-base font-semibold text-foreground mb-2.5">
+                    {ticket.subject}
+                  </h3>
+                )}
                 <RichTextContent content={ticket.message} />
 
                 {/* Ticket attachments */}
-                <div className="mt-4 pt-3 border-t border-border/40 space-y-2">
+                <div
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                      handleAddTicketAttachments(e.dataTransfer.files);
+                    }
+                  }}
+                  className="mt-4 pt-3 border-t border-border/40 space-y-2"
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
                       <Paperclip className="h-3.5 w-3.5" />
@@ -788,7 +850,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                       <input
                         ref={ticketAttachmentInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx,.xml,text/xml,application/xml"
+                        accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx,.xml,text/xml,application/xml,.md,text/markdown"
                         multiple
                         className="hidden"
                         onChange={(e) => {
@@ -1103,6 +1165,8 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                         initialContent=""
                         onChange={(html) => setComment(html)}
                         onSubmit={handleSubmit}
+                        onPasteFiles={addCommentFiles}
+                        onDropFiles={addCommentFiles}
                         disabled={!ticket?.assigned_to}
                         minHeight="80px"
                         toolbarVariant="ticket"
@@ -1207,7 +1271,7 @@ export function TicketDetailView({ feedbackId, onBack, onDeleted }: TicketDetail
                         <input
                           ref={commentFileInputRef}
                           type="file"
-                          accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx,.xml,text/xml,application/xml"
+                          accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.csv,.xls,.xlsx,.xml,text/xml,application/xml,.md,text/markdown"
                           multiple
                           className="hidden"
                           onChange={(e) => { if (e.target.files) addCommentFiles(e.target.files); e.target.value = ''; }}
