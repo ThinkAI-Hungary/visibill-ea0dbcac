@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-10  
-> **Összesen:** 239 döntés (221 egyedi döntési fájl) | ✅ Decided: 237 | ⛔ Superseded: 2
+> **Összesen:** 240 döntés (222 egyedi döntési fájl) | ✅ Decided: 238 | ⛔ Superseded: 2
 
 
 ---
@@ -278,6 +278,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-238 | Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra | ✅ Decided | [A-238](./A-238-accounting-journals-document-grouping-and-rlb-filter-architecture.md) |
 | A-239 | PROCONT Főkönyvi Kivonat Export, Hierarchikus Számla-aggregáció és Mérleg-Eredmény Egyezőség-számítás Architektúra | ✅ Decided | [A-239](./A-239-procont-general-ledger-export-and-reconciliation-architecture.md) |
 | A-240 | ÁFA Számítási Regresszióvédelmi Kapu: Golden Master Szerződésteszt és Élő Adatbázis Snapshot Guard Architektúra | ✅ Decided | [A-240](./A-240-vat-regression-taxology-golden-master-and-snapshot-guard-architecture.md) |
+| A-241 | 19. Könyvvizsgálói Adatszolgáltatás, 20-oszlopos Karton, ISA 560 Utólagos Rendezések és SHA-256 Integritás Architektúra | ✅ Decided | [A-241](./A-241-auditor-export-and-subsequent-settlements-architecture.md) |
 
 
 

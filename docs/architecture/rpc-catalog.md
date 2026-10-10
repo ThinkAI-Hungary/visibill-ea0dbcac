@@ -1,7 +1,7 @@
 # PostgreSQL RPC és Függvény Katalógus
 
-> **Utoljára frissítve:** 2026-10-09  
-> **Összesen:** 146 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
+> **Utoljára frissítve:** 2026-10-10  
+> **Összesen:** 149 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
 > **Tesztelési Követelmények:** Lásd a [PostgreSQL RPC Tesztelési Stratégia és Blueprint](./rpc-testing-blueprint.md) dokumentumot.
 
 Ez a dokumentáció az eaisybill-prod és eaisyBooks rendszerekben használt összes PostgreSQL tárolt eljárást és RPC (Remote Procedure Call) függvényt tartalmazza. Részletezi a függvény szignatúráját, biztonsági környezetét (`SECURITY DEFINER` vs `INVOKER`), hívó komponensét és funkcionális szerepét.
@@ -11,7 +11,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 
 ## Tartalomjegyzék
 
-1. [📊 Frontend Lekérdező és Aggregációs RPC-k (29 db)](#1--frontend-lekérdező-és-aggregációs-rpc-k)
+1. [📊 Frontend Lekérdező és Aggregációs RPC-k (32 db)](#1--frontend-lekérdező-és-aggregációs-rpc-k)
 2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (32 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
 3. [📄 Kettős Könyvviteli Naplók (acc_*) és Folyószámla RPC-k (15 db)](#3--kettős-könyvviteli-naplók-acc_-rpc-k)
 4. [📘 eaisyBooks és EV Modul RPC-k (8 db)](#4--eaisybooks-és-ev-modul-rpc-k)
@@ -27,6 +27,10 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 
 | RPC Függvény és Paraméterek | Biztonság | Visszatérési érték | Hívó | Cél és Működés |
 |---|:---:|---|---|---|
+| `get_auditor_gl_journal_export(p_company_id uuid, p_date_from date, p_date_to date, p_include_opening boolean, p_include_closing boolean)` | `DEFINER` | `jsonb` | AuditorExportWorkspace.tsx | 20-oszlopos standardizált könyvvizsgálói főkönyvi kivonat és karton aggregáció (MKVK, Alteryx, IDEA, CaseWare, Excel) kettős könyvviteli egyezőség-ellenőrzéssel (A-241). |
+| `get_subsequent_settlements_report(p_company_id uuid, p_fiscal_year integer, p_cutoff_date date)` | `DEFINER` | `jsonb` | SubsequentSettlementsCard.tsx | ISA 560 mérlegfordulónap utáni pénzügyi rendezések kimutatása (december 31-i nyitott vevők/szállítók április 30-ig befolyt összegei és rendezési rátája) (A-241). |
+| `check_audit_export_staleness(p_company_id uuid, p_fiscal_year integer)` | `DEFINER` | `jsonb` | StalenessWarningBanner.tsx | Könyvvizsgálói export elavulás- és integritás-ellenőrzés (utolsó audit pillanatkép utáni naplómódosítások detektálása) (A-241). |
+| `get_mkvk_audit_xml_data(p_company_id uuid, p_date_from date, p_date_to date, p_include_opening boolean, p_include_closing boolean)` | `DEFINER` (STABLE) | `jsonb` | ExportAuditXmlModal.tsx, GlJournalExportCard.tsx | MKVK AuditXML v1.0.23.0 törvényi kamarai könyvvizsgálói adatexport aggregáció (KONYVELT, KEZI_PISZKOZAT és GEPI_JAVASLAT bizonylatok, T-K párosítási algoritmus, bizonylatok és tételek XML generáláshoz) (20261010210000, A-241). |
 | `get_active_imap_accounts(—)` | `DEFINER` | `TABLE(account_id uuid, company_id uuid, user_id uuid, name text, imap_host text, imap_port integer, imap_username text, imap_password text, imap_encryption text, imap_status text)` | Worker / IMAP Listener | Aktív IMAP fiókok lekérdezése a háttérben futó email-feldolgozó számára. |
 | `get_audit_gl_balances(p_import_id uuid, p_date_from date, p_date_to date)` | `INVOKER` | `TABLE(account_code text, account_name text, debit_total numeric, credit_total numeric, balance numeric)` | Belső / PostgREST | Adatbázis eljárás. |
 | `get_bs_report(p_company_id uuid, p_preset_id uuid, p_date_to date, p_fiscal_year integer, p_exchange_rates jsonb)` | `DEFINER` | `TABLE(bs_structure_id uuid, row_code text, name text, section text, type text, order_num integer, parent_id uuid, is_pnl_bridge boolean, current_balance numeric, prior_year_balance numeric, prior_year_adjustment numeric, gl_accounts jsonb)` | BalanceSheet.tsx | Mérleg aggregáció (eszközök, források, saját tőke) bázis- és tárgyévi adatokkal, devizakonverzióval. |

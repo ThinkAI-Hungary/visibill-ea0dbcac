@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-10  
-> **Összesen:** 193 döntés (176 egyedi döntési fájl) | ✅ Decided: 189 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 194 döntés (177 egyedi döntési fájl) | ✅ Decided: 190 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -303,5 +303,6 @@
 | P-175 | Hibajegy Kezelőkonzol Ergonómia, Önálló Tárgymező és Vágólapos Csatolmányok (Ctrl+V) UX | ✅ Decided | [P-175](./P-175-ticket-console-ergonomics-subject-and-clipboard-attachments-ux.md) |
 | P-176 | Könyvelési Napló RLB-Mintájú Szűkítés Modál, Pozitív Unió Irányszűrés és Reszponzív Panel UX | ✅ Decided | [P-176](./P-176-accounting-journals-rlb-pattern-filter-modal-and-direction-matching-ux.md) |
 | P-177 | PROCONT Főkönyvi Kivonat A4 PDF és Excel Export, Kétoldalas Egyezőség-számítás és Hibátlan Többoldalas Layout UX | ✅ Decided | [P-177](./P-177-procont-general-ledger-export-and-reconciliation-ux.md) |
+| P-178 | Könyvvizsgálói Export és Adatszolgáltatás, 20-Oszlopos Karton, 15 Analitikai Csomag és Éves Zárlati Ellenőrzőlista UX | ✅ Decided | [P-178](./P-178-auditor-export-and-data-provision.md) |
 
 
