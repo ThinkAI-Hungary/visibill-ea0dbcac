@@ -88,3 +88,21 @@ npm run lint:fast
 # 2. TypeScript típusellenőrzés:
 npx tsc --noEmit
 ```
+
+---
+
+## 🎫 6. Hibajegyek (Tickets) és Error Hunter Munkafolyamat (Develop-First Bugfixing)
+
+Amikor support hibajegy (`/ticket-support`) megoldása vagy rendszerhiba-vadászat (`/visibill-error-hunter`) zajlik:
+
+1. **Feltárás:** A hiba körülményeit és naplóit (`app_error_logs`, `feedback`, `nav_sync_logs`) a termelési adatbázisból szabad vizsgálni (`SELECT` only).
+2. **Javítás a `develop` ágon:**
+   * Kódmódosítás, RPC-javítás vagy sémaváltoztatás esetén kötelező azonnal átváltani a `develop` ágra (`git checkout develop`).
+   * A javítás és tesztelés kizárólag a **Dev Supabase adatbázisban** (`qhvcdqkqpgpdxogqqvyr`) és a helyi dev szerveren futhat.
+3. **Validáció:**
+   * Build és típusellenőrzés: `npm run lint:fast`, `npx tsc --noEmit`.
+   * Szükség esetén automatizált tesztek (`npm test`).
+4. **Prod Promóció és Ügyfélválasz:**
+   * Csak a dev környezetben bizonyított javítás után kerülhet sor a `main` ágra merge-elésre és az éles környezetbe juttatásra a felhasználó explicit jóváhagyásával.
+   * Az ügyfélszolgálati válasz megfogalmazása és lezárása mindig a sikeres élesítést követi.
+

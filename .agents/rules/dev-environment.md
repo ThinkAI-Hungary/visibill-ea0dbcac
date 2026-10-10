@@ -36,3 +36,29 @@ Amikor a fejlesztő vagy az AI agent a **`develop` ágon** dolgozik, vagy a fela
 ## 🛡️ 4. Konfigurációs Integritás és Merge Védelem
 * A `develop` ág-specifikus beállítások (mint a [`supabase/config.toml`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/config.toml) `project_id = "qhvcdqkqpgpdxogqqvyr"`, vagy a lokális [`.env.local`](file:///d:/ThinkAI/Visibill/eaisybill-prod/.env.local) kulcsok) soha nem kerülhetnek át akaratlanul a `main` ágra.
 * Pull Request vagy `main` ágba történő merge előtt kötelező ellenőrizni a konfigurációk éles állapotának megőrzését.
+
+---
+
+## 🎫 5. Hibajegyek (Tickets) és Error Hunter Szabályzat: Develop-First Protokoll
+
+Amikor ügyfél hibajegy megoldása (`/ticket-support`, `/visibill-ticket-support`), vagy rendszerhiba elhárítása (`/visibill-error-hunter`) zajlik:
+
+1. **Diagnózis és Adatgyűjtés (Strict Read-Only):**
+   * A bejelentett hiba feltárásához a termelési adatbázis naplóit és adatait (`app_error_logs`, `nav_sync_logs`, `feedback`, `ticket_comments`, érintett cég rekordjai) szabad és szükséges lekérdezni (`supabase-visibill`), de **KIZÁRÓLAG olvasási műveletekkel (`SELECT`)**.
+   * Szigorúan tilos a feltárás során bármilyen módosító műveletet végezni az éles rendszeren.
+2. **Javítás Elsődleges Helyszíne (Develop Branch & Dev DB First):**
+   * Bármilyen forráskód módosítás (frontend komponens, router, Edge Function), tárolt eljárás (RPC), migrációs szkript vagy sémaváltoztatás esetén **KÖTELEZŐ a `develop` ágra váltani (`git checkout develop`)**!
+   * A javítást a `develop` ágon kell kidolgozni.
+   * Minden SQL tesztet, migráció-próbát és backend ellenőrzést **KIZÁRÓLAG a Dev Supabase adatbázisban (`qhvcdqkqpgpdxogqqvyr`, MCP: `supabase-visibill-dev`)** szabad végrehajtani.
+3. **Kötelező Helyi és Dev Tesztelés (Verification Gate):**
+   * A javítás működését a `develop` ágon, a helyi fejlesztői környezetben (`npm run dev`) vagy a dev droplet felületén (`dev.visibill.hu`) kell igazolni.
+   * Kötelező ellenőrzési lépések:
+     * `npm run lint:fast` (Oxlint ellenőrzés)
+     * `npx tsc --noEmit` vagy `npm run build` (Típushelyesség)
+     * Releváns Vitest tesztek futtatása (`npx vitest run ...`)
+4. **Élesítés / Prod Promóció (Merge & Hotfix Kapu):**
+   * Az éles `main` ágra való merge és deploy **CSAK AZUTÁN** történhet meg, hogy a `develop` ágon és a Dev DB-ben a javítás bizonyítottan sikeres volt, és a felhasználó explicit jóváhagyta azt.
+   * Ha a hiba elhárítása egyetlen konkrét éles ügyfél rekordjának korrekcióját (pl. beragadt státusz átállítása `UPDATE`-tel) igényli az éles DB-ben, azt a felhasználónak előre be kell mutatni, és csak kifejezett jóváhagyás után szabad lefuttatni az éles adatbázison.
+5. **Ügyfélválasz Időzítése (Fix First, Response Last):**
+   * Ügyfélválasz tervezet (`ticket_comments`) rögzítése vagy kiküldése szigorúan tilos mindaddig, amíg a javítás fizikailag el nem készült és a tesztek nem igazolták a működését.
+
