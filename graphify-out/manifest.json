@@ -1420,7 +1420,7 @@
     "semantic_hash": ""
   },
   "src/pages/AnnualReportPage.tsx": {
-    "mtime": 1791665935.8677006,
+    "mtime": 1791666870.9385245,
     "ast_hash": "688f75aa6dd9c8d5faf8de91bb0b94bd",
     "semantic_hash": ""
   },
@@ -2985,7 +2985,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791665935.7710931,
+    "mtime": 1791666870.8438766,
     "ast_hash": "26419066075a15cedbac5769290aa7c1",
     "semantic_hash": ""
   },
@@ -3215,7 +3215,7 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1791665935.7726,
+    "mtime": 1791666870.845889,
     "ast_hash": "e6d322acfb5148f8583aa7a153ddaed0",
     "semantic_hash": ""
   },
@@ -3460,12 +3460,12 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1791665935.7745981,
+    "mtime": 1791666870.8488917,
     "ast_hash": "d29f1da0079dcccdff51939c36db7fb3",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1791665935.7755995,
+    "mtime": 1791666870.8498902,
     "ast_hash": "fb329d1a6e09ef7b8fbf440ff27f2188",
     "semantic_hash": ""
   },
@@ -4870,8 +4870,8 @@
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
-    "mtime": 1791638400.2010636,
-    "ast_hash": "2e945895ef4bff040d7bb8889733507a",
+    "mtime": 1791668415.042617,
+    "ast_hash": "902d82c49ed0f76789f6967b77946c50",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-dev/SKILL.md": {
@@ -4890,7 +4890,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/database-schema.md": {
-    "mtime": 1791665935.7690935,
+    "mtime": 1791666870.839877,
     "ast_hash": "6111e51eec7b2b28a5a6f017e82e8746",
     "semantic_hash": ""
   },
@@ -4950,7 +4950,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/12-annual-reports.md": {
-    "mtime": 1791665935.7695932,
+    "mtime": 1791666870.8403778,
     "ast_hash": "c64e31c5c8bfca946f9d90e339747caa",
     "semantic_hash": ""
   },
@@ -7695,7 +7695,7 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnContainer.tsx": {
-    "mtime": 1791665935.8636923,
+    "mtime": 1791666870.933517,
     "ast_hash": "04fe9e080de9840d9082a60f02c9d554",
     "semantic_hash": ""
   },
@@ -8055,7 +8055,7 @@
     "semantic_hash": ""
   },
   "src/features/journals/services/draftFallbackGenerator.ts": {
-    "mtime": 1791665935.8621914,
+    "mtime": 1791666870.9315133,
     "ast_hash": "5eb14ad17cac23d5e393c7e035138395",
     "semantic_hash": ""
   },
@@ -8575,7 +8575,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1791665935.7720957,
+    "mtime": 1791666870.8448834,
     "ast_hash": "4eebfc30d0a0c057c432294108b4fc2d",
     "semantic_hash": ""
   },
@@ -9980,8 +9980,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/database.md": {
-    "mtime": 1791600727.1262367,
-    "ast_hash": "a087d71d58393865423f78b6ea9fee11",
+    "mtime": 1791668415.0431173,
+    "ast_hash": "420d5d2ccf60531770d2f3dc68e99aa1",
     "semantic_hash": ""
   },
   ".agents/rules/documentation.md": {
@@ -10665,12 +10665,12 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatSteelProductsSection.tsx": {
-    "mtime": 1791665935.8641913,
+    "mtime": 1791666870.934521,
     "ast_hash": "df3b8fc28cdd17d4e3140ff9edceb873",
     "semantic_hash": ""
   },
   "src/features/vat/hooks/useSteelProductsData.ts": {
-    "mtime": 1791665935.8656907,
+    "mtime": 1791666870.935526,
     "ast_hash": "bd66abebd377d23f3b1f8b7f3e5bab94",
     "semantic_hash": ""
   },
@@ -11615,7 +11615,7 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GlToolbar.tsx": {
-    "mtime": 1791665935.8616915,
+    "mtime": 1791666870.9305127,
     "ast_hash": "d480a9dcc275ef64580a7c42b2e7bd98",
     "semantic_hash": ""
   },
@@ -11700,7 +11700,7 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatTourismTaxSection.tsx": {
-    "mtime": 1791665935.864691,
+    "mtime": 1791666870.9350257,
     "ast_hash": "392c6e6164367d15113978556252d05a",
     "semantic_hash": ""
   },
@@ -15338,8 +15338,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/dev-environment.md": {
-    "mtime": 1791638400.2015734,
-    "ast_hash": "4a312a4f33e111f5cceba3075f6b3f6f",
+    "mtime": 1791668415.043615,
+    "ast_hash": "5ae397acaebcb08303a426fc5ac7f8f7",
     "semantic_hash": ""
   },
   "docs/DEV/ARCHITECTURE.md": {
@@ -15353,8 +15353,8 @@
     "semantic_hash": ""
   },
   "docs/DEV/DEVELOPMENT_WORKFLOW.md": {
-    "mtime": 1791640355.0074499,
-    "ast_hash": "daac79c5d79554f77f8d62f527eadea3",
+    "mtime": 1791668415.044115,
+    "ast_hash": "46464affa1308290d472156a44d8d672",
     "semantic_hash": ""
   },
   "docs/DEV/README.md": {
@@ -15388,7 +15388,7 @@
     "semantic_hash": ""
   },
   "scripts/vat-snapshot-guard.mjs": {
-    "mtime": 1791665998.2753313,
+    "mtime": 1791666870.9240017,
     "ast_hash": "3e19a339e69ceb9fba0537bd9fe90acb",
     "semantic_hash": ""
   },
@@ -15408,12 +15408,12 @@
     "semantic_hash": ""
   },
   "src/lib/procontGlExcel.ts": {
-    "mtime": 1791665935.866695,
+    "mtime": 1791666870.9370286,
     "ast_hash": "5cf6ec68f45bad17fd0d317edca042a0",
     "semantic_hash": ""
   },
   "src/lib/procontGlPdf.ts": {
-    "mtime": 1791665935.8672006,
+    "mtime": 1791666870.9375257,
     "ast_hash": "cfb08fab1a0ec91ee6983b189c424a6d",
     "semantic_hash": ""
   },
@@ -15423,12 +15423,12 @@
     "semantic_hash": ""
   },
   "src/test/vat/vatRegressionTaxology.test.ts": {
-    "mtime": 1791665935.8686998,
+    "mtime": 1791666870.9400253,
     "ast_hash": "c0686ecded7a5d43fc9b2aa3d997d52d",
     "semantic_hash": ""
   },
   "tests/fixtures/vat_snapshot_taxology_2026_07.json": {
-    "mtime": 1791665935.8732152,
+    "mtime": 1791666870.9445286,
     "ast_hash": "1831310351bd4d8ddfc1684b261908b7",
     "semantic_hash": ""
   },
@@ -15448,7 +15448,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-239-procont-general-ledger-export-and-reconciliation-architecture.md": {
-    "mtime": 1791665935.7700937,
+    "mtime": 1791666870.8408768,
     "ast_hash": "f835a051bcc366cf945f92ad689b5a63",
     "semantic_hash": ""
   },
@@ -15458,7 +15458,7 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-177-procont-general-ledger-export-and-reconciliation-ux.md": {
-    "mtime": 1791665935.7730985,
+    "mtime": 1791666870.8463876,
     "ast_hash": "41b19ba842a6224a505ce9f42bc253b9",
     "semantic_hash": ""
   },
@@ -15468,178 +15468,183 @@
     "semantic_hash": ""
   },
   "src/components/accounty/audit-export/AnalyticalPackagesCard.tsx": {
-    "mtime": 1791665935.8576827,
+    "mtime": 1791666870.9270132,
     "ast_hash": "acc2d587d040a2cbb63f42ec21ac7208",
     "semantic_hash": ""
   },
   "src/components/accounty/audit-export/AuditorExportWorkspace.tsx": {
-    "mtime": 1791665935.8581834,
+    "mtime": 1791666870.927514,
     "ast_hash": "b4fef4a715997caabdb816976f113777",
     "semantic_hash": ""
   },
   "src/components/accounty/audit-export/ExportSnapshotsHistoryCard.tsx": {
-    "mtime": 1791665935.8586836,
+    "mtime": 1791666870.927514,
     "ast_hash": "c53b3031482b7406544a1c1317194893",
     "semantic_hash": ""
   },
   "src/components/accounty/audit-export/GlJournalExportCard.tsx": {
-    "mtime": 1791665935.8596876,
+    "mtime": 1791666870.928513,
     "ast_hash": "978d5f4ddcd3072a9b2bb2328b29e4bb",
     "semantic_hash": ""
   },
   "src/components/accounty/audit-export/StalenessWarningBanner.tsx": {
-    "mtime": 1791665935.8606913,
+    "mtime": 1791666870.9290135,
     "ast_hash": "2af6a5df714a13da9b500f87fa87998c",
     "semantic_hash": ""
   },
   "src/components/accounty/audit-export/SubsequentSettlementsCard.tsx": {
-    "mtime": 1791665935.8606913,
+    "mtime": 1791666870.9295123,
     "ast_hash": "dc94d38885f7ee9a1dabf87ef290464d",
     "semantic_hash": ""
   },
   "src/components/accounty/audit-export/YearEndClosingChecklist.tsx": {
-    "mtime": 1791665935.8611903,
+    "mtime": 1791666870.9300125,
     "ast_hash": "55d039f5af66045343e44fedc3a281c0",
     "semantic_hash": ""
   },
   "src/services/auditorExportService.ts": {
-    "mtime": 1791665935.8682,
+    "mtime": 1791666870.939025,
     "ast_hash": "fa4a3c9f84f57ba1e876bb73078d68e8",
     "semantic_hash": ""
   },
   "src/test/accountyAuditExport.test.ts": {
-    "mtime": 1791665935.8682,
+    "mtime": 1791666870.9395244,
     "ast_hash": "366b8a70bfee90c175d6d89187ba84bc",
     "semantic_hash": ""
   },
   "src/test/vat/vatPerformanceAndTimeout.test.ts": {
-    "mtime": 1791666649.8837104,
+    "mtime": 1791666870.9395244,
     "ast_hash": "993ffc4464ff06dd90b05323727619b9",
     "semantic_hash": ""
   },
   "supabase/migrations/20261010200000_accounty_audit_exports_schema.sql": {
-    "mtime": 1791665935.8702073,
+    "mtime": 1791666870.9410243,
     "ast_hash": "864e3e58a1249044c7eaaa8aa454ed5a",
     "semantic_hash": ""
   },
   "supabase/migrations/20261010203000_accounty_audit_export_rpcs.sql": {
-    "mtime": 1791665935.8707075,
+    "mtime": 1791666870.941524,
     "ast_hash": "8f3e49016e08929827790701800ccc83",
     "semantic_hash": ""
   },
   "supabase/migrations/20261010210000_fix_mkvk_audit_xml_status_filter.sql": {
-    "mtime": 1791665935.8707075,
+    "mtime": 1791666870.942024,
     "ast_hash": "252a86fd37f90e5a4b34a1e5d4a66b5d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-241-auditor-export-and-subsequent-settlements-architecture.md": {
-    "mtime": 1791665935.7700937,
+    "mtime": 1791666870.8417468,
     "ast_hash": "fc69e84267fc5433e42e13055c97ebbb",
     "semantic_hash": ""
   },
   "docs/business/decisions/069-auditor-data-provision-and-statutory-closing-policy.md": {
-    "mtime": 1791665935.7726,
+    "mtime": 1791666870.8453884,
     "ast_hash": "7e7933d53f4161e754514783a344d1b5",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-178-auditor-export-and-data-provision.md": {
-    "mtime": 1791665935.7735987,
+    "mtime": 1791666870.846891,
     "ast_hash": "aa2974ce3992aefd27fc13b96a2d2eb7",
     "semantic_hash": ""
   },
   "session-summary/\u00c1ron/2026-10-10/summary-200800-auditor-gl-export-mkvk-xml-isa560-settlements-and-closing-checklist.md": {
-    "mtime": 1791665935.8571825,
+    "mtime": 1791666870.92551,
     "ast_hash": "79ca2c76b302e19718e079dea168a428",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatAmendmentsWorkspace.tsx": {
-    "mtime": 1791665935.8626914,
+    "mtime": 1791666870.9320138,
     "ast_hash": "0dde03822da8785f6794b3462bef0a34",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatOsaThreeWayReconciliation.tsx": {
-    "mtime": 1791665935.8631916,
+    "mtime": 1791666870.9325187,
     "ast_hash": "cf761d6620875e539a4a21486b28a5d8",
     "semantic_hash": ""
   },
   "src/features/vat/components/VatReturnVersionHeader.tsx": {
-    "mtime": 1791665935.8636923,
+    "mtime": 1791666870.933517,
     "ast_hash": "6c4c3bb8c2d6922facd381aef91a5c61",
     "semantic_hash": ""
   },
   "src/features/vat/services/vatSnapshotService.ts": {
-    "mtime": 1791665935.8656907,
+    "mtime": 1791666870.9360263,
     "ast_hash": "fb82d159f39b9c6d0305e97af48f882f",
     "semantic_hash": ""
   },
   "src/features/vat/utils/penaltyCalculator.ts": {
-    "mtime": 1791665935.8656907,
+    "mtime": 1791666870.936526,
     "ast_hash": "7d6c89e4ee8e86a145c86642fe8eda48",
     "semantic_hash": ""
   },
   "src/test/vat/vatSnapshotAndPenalty.test.ts": {
-    "mtime": 1791665935.869703,
+    "mtime": 1791666870.9405272,
     "ast_hash": "baef39eaf2d5e22c0f49acd60537f0c0",
     "semantic_hash": ""
   },
   "supabase/migrations/20261010220000_vat_snapshots_and_steel_schema.sql": {
-    "mtime": 1791665935.8712075,
+    "mtime": 1791666870.9425244,
     "ast_hash": "bcdf18ef05c627bd31240fe708301aa6",
     "semantic_hash": ""
   },
   "supabase/migrations/20261010223000_vat_osa_three_way_reconciliation_rpc.sql": {
-    "mtime": 1791665935.8712075,
+    "mtime": 1791666870.9430244,
     "ast_hash": "ea4b0c940ec800451d42a7e3ba850cff",
     "semantic_hash": ""
   },
   "supabase/migrations/20261010224500_include_foreign_inbound_invoices_in_vat_return.sql": {
-    "mtime": 1791665935.8712075,
+    "mtime": 1791666870.9435248,
     "ast_hash": "f43ba19295b7da75f2425c7e9c84954f",
     "semantic_hash": ""
   },
   "supabase/migrations/20261010230000_optimize_hungarian_vat_return_performance.sql": {
-    "mtime": 1791666550.0544145,
-    "ast_hash": "52a2f987b93539cfa1874473a81c24e0",
+    "mtime": 1791666870.9435248,
+    "ast_hash": "e146fcc07f73cd8274ca02b2fb0b44f5",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-242-vat-return-snapshots-and-self-revision-penalty-architecture.md": {
-    "mtime": 1791665935.7705934,
+    "mtime": 1791666870.8417468,
     "ast_hash": "1c800ddcde16a34b9d3634300a7c0067",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-243-nav-osa-three-way-reconciliation-and-steel-products-architecture.md": {
-    "mtime": 1791665935.7705934,
+    "mtime": 1791666870.8423793,
     "ast_hash": "0f0bfce86742b87373f6c9fb2a9d1fb0",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-244-foreign-inbound-invoices-vat-return-integration.md": {
-    "mtime": 1791665935.7710931,
+    "mtime": 1791666870.8428764,
     "ast_hash": "4a0c77bfe7dffd6a19755a64d2a241d5",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-245-calculate-hungarian-vat-return-cursor-bounding-and-exchange-rate-optimization.md": {
-    "mtime": 1791665935.7710931,
+    "mtime": 1791666870.8433764,
     "ast_hash": "2bf1754bc574235db6500ef5a32fab5c",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-179-vat-return-snapshots-and-amendments-workspace-ux.md": {
-    "mtime": 1791665935.7735987,
+    "mtime": 1791666870.8473914,
     "ast_hash": "a48073bf38d0df4457429883fc3d9feb",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-180-nav-osa-three-way-reconciliation-and-steel-products-ux.md": {
-    "mtime": 1791665935.7741005,
+    "mtime": 1791666870.8478906,
     "ast_hash": "f94c79544c0b9a528be08a24f48f04e1",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-181-prc-general-ledger-export-naming-ux.md": {
-    "mtime": 1791665935.7741005,
+    "mtime": 1791666870.8483913,
     "ast_hash": "b5612bbd9d460bb851a6a5ed65740786",
     "semantic_hash": ""
   },
   "session-summary/\u00c1ron/2026-10-10/summary-220500-vat-return-enhancements-foreign-inbound-invoices-and-rlb-baseline.md": {
-    "mtime": 1791665935.8571825,
+    "mtime": 1791666870.92601,
     "ast_hash": "1e2f8308d9c34e12541db4ddffaac884",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-246-worker-invoice-upsert-23505-precheck-collision-prevention.md": {
+    "mtime": 1791669612.7512188,
+    "ast_hash": "230502894522c5d5efdc45c72b552992",
     "semantic_hash": ""
   }
 }
