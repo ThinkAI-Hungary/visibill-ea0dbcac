@@ -1,4 +1,4 @@
-# A-117: Hivatalos Ügyfél REST API v2.2.2 (Customer API), Többcéges API Kulcs Kezelés és Auditált M2M Átjáró
+# A-117: Hivatalos Ügyfél REST API v2.2.3 (Customer API), Többcéges API Kulcs Kezelés és Auditált M2M Átjáró
 
 **Status:** Decided  
 **Date:** 2026-09-16  
@@ -156,6 +156,21 @@ A probléma végleges elhárítására és a felhasználói felelősség nyomonk
    - `ticket_comments.user_id`
    - `ticket_events.actor_id`
    - `api_request_logs.user_id` (így a REST audit naplóban is pontosan látható, hogy mely fiókhoz kapcsolódott a kérés).
+---
+
+## Addendum (2026-10-10) — Customer REST API v2.2.3 (Számlakép Feltöltés Adatbázis Check Constraint Megfelelőség)
+
+A 2026-10-10-i éjszakai hibavadászat során feltártuk, hogy a `POST /v1/invoices/upload` végpont minden számlakép-feltöltésnél adatbázishibát (`23514 new row for relation "invoices" violates check constraint "invoices_nav_status_check"`) eredményezett.
+
+1. **A Hiba Oka:**
+   - A `customer-api/index.ts` a kezdeti, worker feldolgozás előtti rekordbeszúráskor korábban a `nav_status: "pending_match"` értéket adta át.
+   - Az `invoices` táblán szigorú adatbázisszintű CHECK kényszer van érvényben:  
+     `CHECK (nav_status = ANY (ARRAY['verified'::text, 'missing_nav'::text, 'not_applicable'::text]))`
+   - Mivel a `"pending_match"` státusz nem szerepel az engedélyezett halmazban, a tranzakció azonnal meghiúsult.
+
+2. **Javítás és Architektúrális Illeszkedés:**
+   - A `customer-api` beszúrási logikáját átállítottuk a domain alapszabványnak megfelelő `nav_status: "missing_nav"` értékre, amely szinkronban van a tábla sémadefiniált alapértelmezett értékével (`DEFAULT 'missing_nav'::text`).
+   - A feltöltött számla a `missing_nav` állapotban várja a háttér-worker OCR feldolgozását vagy a NAV számlapárral való összerendelést, amely sikeres egyezéskor `verified` státuszra lépteti.
 
 ---
 

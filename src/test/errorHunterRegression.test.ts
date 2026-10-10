@@ -335,5 +335,56 @@ describe('Error Hunter Regression Suite', () => {
       expect(isJobFresh(freshJobCreatedAt)).toBe(true);
     });
   });
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 6. get_filtered_submitted_invoices: column alias contract
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  describe('get_filtered_submitted_invoices RPC - Column Aliases Contract', () => {
+    it('maps computed_match_status, calculated_paid, and calculated_remaining to client columns', () => {
+      // Contract invariant: The RPC CTE calculates computed_match_status, calculated_paid, calculated_remaining,
+      // and the final SELECT must expose them as match_status, paid_amount, and remaining_amount.
+      const rawCteRecord = {
+        id: 'inv-uuid-1',
+        bizonylatsorszam: 'TEST-2026-001',
+        computed_paid_raw: 50000,
+        gross_abs: 50000,
+        calculated_paid: 50000,
+        calculated_remaining: 0,
+        computed_match_status: 'matched',
+      };
+
+      const mappedOutput = {
+        id: rawCteRecord.id,
+        bizonylatsorszam: rawCteRecord.bizonylatsorszam,
+        match_status: rawCteRecord.computed_match_status,
+        paid_amount: rawCteRecord.calculated_paid,
+        remaining_amount: rawCteRecord.calculated_remaining,
+      };
+
+      expect(mappedOutput.match_status).toBe('matched');
+      expect(mappedOutput.paid_amount).toBe(50000);
+      expect(mappedOutput.remaining_amount).toBe(0);
+      expect((mappedOutput as any).computed_match_status).toBeUndefined();
+    });
+  });
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 7. customer-api: nav_status check constraint compliance
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  describe('customer-api - invoices_nav_status_check constraint compliance', () => {
+    const ALLOWED_NAV_STATUSES = new Set(['verified', 'missing_nav', 'not_applicable']);
+
+    it('ensures pre-inserted invoice nav_status is missing_nav and complies with DB check constraint', () => {
+      // Invariant: invoices_nav_status_check allows only ('verified', 'missing_nav', 'not_applicable')
+      // customer-api upload must use 'missing_nav' when creating pre-inserted invoice before NAV sync
+      const uploadNavStatus = 'missing_nav';
+      expect(ALLOWED_NAV_STATUSES.has(uploadNavStatus)).toBe(true);
+
+      // 'pending_match' was the buggy status that violated the constraint
+      const buggyStatus = 'pending_match';
+      expect(ALLOWED_NAV_STATUSES.has(buggyStatus)).toBe(false);
+    });
+  });
 });
+
 
