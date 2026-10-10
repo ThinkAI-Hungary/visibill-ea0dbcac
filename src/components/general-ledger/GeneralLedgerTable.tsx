@@ -10,6 +10,8 @@ import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Ed
 import { Badge } from "@/components/ui/badge";
 import { EditGlAccountModal } from '@/components/general-ledger/EditGlAccountModal';
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
+import { downloadProcontGlPdf } from '@/lib/procontGlPdf';
+import { exportProcontGlExcel } from '@/lib/procontGlExcel';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, fetchAllGlAccountsByPreset, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
 import type { GlAccountType, SubledgerType, GlAccountRecord } from '@/types/accounting';
 import { GlItemGroupingMode, enrichGlItemsWithInvoiceMeta, groupLedgerItemsByInvoice } from '@/lib/glInvoiceGrouping';
@@ -136,6 +138,8 @@ export interface GeneralLedgerTableRef {
   expandAllAndPrint: () => void;
   exportExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
   exportAnalyticalExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>; // F6
+  exportProcontPdf: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
+  exportProcontExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
   getStats: () => { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number };
   expandAll: () => void;
   collapseAll: () => void;
@@ -1512,6 +1516,26 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         ? processedRows.filter(r => Math.abs(r.balance || 0) > 0.001)
         : processedRows;
       await exportGlExcel(rows, companyName, classicTotals, dateBasis, dateFrom, dateTo, { excludeZeroRows: shouldExcludeZero });
+    },
+    exportProcontPdf: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
+      const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
+      const accounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+      downloadProcontGlPdf(accounts, {
+        companyName: companyName || selectedCompany?.name || 'Vállalkozás',
+        dateFrom,
+        dateTo,
+        excludeZeroRows: shouldExcludeZero,
+      });
+    },
+    exportProcontExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
+      const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
+      const accounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+      await exportProcontGlExcel(accounts, {
+        companyName: companyName || selectedCompany?.name || 'Vállalkozás',
+        dateFrom,
+        dateTo,
+        excludeZeroRows: shouldExcludeZero,
+      });
     },
     exportAnalyticalExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
       if (!selectedCompany?.id || !presetId || !dbData) return;

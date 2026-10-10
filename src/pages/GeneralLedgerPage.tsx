@@ -653,6 +653,8 @@ export default function GeneralLedgerPage() {
             onPrint={handlePrint}
             onExportExcel={(opts) => tableRef.current?.exportExcel(selectedCompany?.name, opts)}
             onExportAnalyticalExcel={(opts) => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name, opts)}
+            onExportProcontPdf={(opts) => tableRef.current?.exportProcontPdf(selectedCompany?.name, opts)}
+            onExportProcontExcel={(opts) => tableRef.current?.exportProcontExcel(selectedCompany?.name, opts)}
           />
 
           {isAIRunning && (

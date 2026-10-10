@@ -45,12 +45,18 @@ A rendszer önálló, kliensoldali vektoros PDF generátort kapott:
 - Teljes adózói adatok, bevallási időszak, kalkulált adóalapok és adóösszegek kitöltve.
 - Hivatalos lábléc hitelesítési záradékkal.
 
+### 4. Hivatalos NAV AbevJava v3.0 XML Export (`tfejlhXml.ts`)
+A rendszer közvetlen, ÁNYK-ba importálható XML állományt generál:
+- Hivatalos adóhatósági séma szerinti mezőkialakítás (`26TFEJLH.xml` minta alapján).
+- Megszünteti a kézi adatbevitelt az ÁNYK keretprogramban, közvetlen fájlbetöltéssel támogatja a hatósági benyújtást.
+
 ---
 
 ## 📈 Racionálé és Haszon
 - **Könyvelői hibamentesség:** Megszűnik az adóalapok kézi összeadogatása és kalkulációja; az 5%-os tételek azonnal beemelésre kerülnek.
 - **Azonnali ellenőrizhetőség:** A könyvelő a NAV ÁNYK vagy ONYA beküldés előtt a pontos replikán látja a kitöltendő adatokat.
 - **Ügyfélbizalom:** Az adózó vállalkozás számára nyomtatható, professzionális PDF bizonylat adható át a fizetendő turizmusfejlesztési hozzájárulás összegéről.
+- **Automatizált Hatósági Benyújtás:** Az ÁNYK XML közvetlenül beküldhető az ÁNYK keretprogrammal vagy feltölthető az ONYA felületére.
 
 ---
 
