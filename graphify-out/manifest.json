@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   "src/components/ErrorBoundary.tsx": {
-    "mtime": 1791583293.0369098,
-    "ast_hash": "b711f27a399227394e37c1a7c657f1a3",
+    "mtime": 1791639323.2569282,
+    "ast_hash": "71ae47a21c0aa286ac7205ce1c17308e",
     "semantic_hash": ""
   },
   "src/components/ExpandedInvoiceRow.tsx": {
@@ -1050,9 +1050,9 @@
     "semantic_hash": ""
   },
   "src/lib/constants.ts": {
-    "mtime": 1780695606.4009519,
-    "ast_hash": "8633b85cf24e3983c5f7ba3fed3887a6",
-    "semantic_hash": "8633b85cf24e3983c5f7ba3fed3887a6"
+    "mtime": 1791639316.3418143,
+    "ast_hash": "e0c368e65ccfac5d48cf860b6446f037",
+    "semantic_hash": ""
   },
   "src/lib/dateUtils.test.ts": {
     "mtime": 1774313164.9208052,
@@ -1425,8 +1425,8 @@
     "semantic_hash": ""
   },
   "src/pages/Auth.tsx": {
-    "mtime": 1791583293.3348346,
-    "ast_hash": "ab6731b3aa9a029803d43dc0d0bf3d8e",
+    "mtime": 1791639239.6848462,
+    "ast_hash": "236c2c47d5607f992d6c13c7439d6cd1",
     "semantic_hash": ""
   },
   "src/pages/AuthCallback.tsx": {
@@ -4615,8 +4615,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvDepreciationPage.tsx": {
-    "mtime": 1791583293.3016121,
-    "ast_hash": "2f2f1ad313e26c5e67d237ca0b709720",
+    "mtime": 1791639274.1729183,
+    "ast_hash": "c5345ed0c0cbf7d9a4b544e7208b2798",
     "semantic_hash": ""
   },
   "src/pages/Accounty/Ev/EvEntrepreneurialBasePage.tsx": {
@@ -4780,8 +4780,8 @@
     "semantic_hash": ""
   },
   "src/pages/Accounty/missing-invoices/InvoiceDetailModal.tsx": {
-    "mtime": 1791583293.3285482,
-    "ast_hash": "3efafc07b19837d413eda9968e1e140d",
+    "mtime": 1791639248.9381826,
+    "ast_hash": "0a99b14cf5c777b78a5fed7c5ec14271",
     "semantic_hash": ""
   },
   "src/pages/Accounty/missing-invoices/badges.tsx": {
@@ -4870,8 +4870,8 @@
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
-    "mtime": 1791600727.1262367,
-    "ast_hash": "1186db73909207d54a78bad64968a3f5",
+    "mtime": 1791638400.2010636,
+    "ast_hash": "2e945895ef4bff040d7bb8889733507a",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-dev/SKILL.md": {
@@ -5210,8 +5210,8 @@
     "semantic_hash": ""
   },
   "src/components/ev/TenyImportModal.tsx": {
-    "mtime": 1791583293.0674236,
-    "ast_hash": "09a46a8125e5324020042a48818b5e9b",
+    "mtime": 1791639282.9796944,
+    "ast_hash": "04263b47fc2a066bfffe634151ce9c07",
     "semantic_hash": ""
   },
   "src/components/invoices/ManualPaymentDialog.tsx": {
@@ -6370,8 +6370,8 @@
     "semantic_hash": ""
   },
   "src/components/pnl/PnlAiAssistant.tsx": {
-    "mtime": 1791583293.1272938,
-    "ast_hash": "5d457c1e6133e8348b393f633eb42111",
+    "mtime": 1791639294.2765224,
+    "ast_hash": "d96a373a4bf5d462950e4bcda21bbff5",
     "semantic_hash": ""
   },
   "src/components/pnl/PnlSankeyChart.tsx": {
@@ -6910,7 +6910,7 @@
     "semantic_hash": ""
   },
   "src/features/management/components/errors/ErrorControlPanel.tsx": {
-    "mtime": 1791637390.8060863,
+    "mtime": 1791638231.2292225,
     "ast_hash": "4c9f4e410b79d829d0fb6e43c2576507",
     "semantic_hash": ""
   },
@@ -7780,7 +7780,7 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/errorsHandler.ts": {
-    "mtime": 1791638063.1583338,
+    "mtime": 1791638231.2302234,
     "ast_hash": "fd14d39c0591a9dd7a8e10613d23de84",
     "semantic_hash": ""
   },
@@ -7795,7 +7795,7 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/overviewHandler.ts": {
-    "mtime": 1791637985.1449022,
+    "mtime": 1791638231.2302234,
     "ast_hash": "d79f9cc584d43953d8b3189f7f91a166",
     "semantic_hash": ""
   },
@@ -7830,7 +7830,7 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/utils/multiProject.ts": {
-    "mtime": 1791637330.1709578,
+    "mtime": 1791638231.2302234,
     "ast_hash": "4b3cadf221e27a1e48429fdf35bad98b",
     "semantic_hash": ""
   },
@@ -8765,8 +8765,8 @@
     "semantic_hash": ""
   },
   "src/components/ai/AiAssistantChat.tsx": {
-    "mtime": 1791583293.0582223,
-    "ast_hash": "344d1943456772cdda348f30b2adc147",
+    "mtime": 1791639307.5909357,
+    "ast_hash": "cabf335cc0bc5cf2898c3bca3b4cfba7",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-knowledge-base-update/scripts/verify_kb_rag.mjs": {
@@ -10445,8 +10445,8 @@
     "semantic_hash": ""
   },
   "src/components/settings/ApiDocsExplorer.tsx": {
-    "mtime": 1791583293.130407,
-    "ast_hash": "f4188895e1ff751898faf58f5049982e",
+    "mtime": 1791639263.3937368,
+    "ast_hash": "c07a19430bbbac058ac65ab3d75db35b",
     "semantic_hash": ""
   },
   "src/components/vat/InvoiceVatCodeSelector.tsx": {
@@ -15338,8 +15338,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/dev-environment.md": {
-    "mtime": 1791600727.1267612,
-    "ast_hash": "5ee6379bd0e23fa6992903bc3a534f09",
+    "mtime": 1791638400.2015734,
+    "ast_hash": "4a312a4f33e111f5cceba3075f6b3f6f",
     "semantic_hash": ""
   },
   "docs/DEV/ARCHITECTURE.md": {
@@ -15348,8 +15348,8 @@
     "semantic_hash": ""
   },
   "docs/DEV/DATA_MIGRATION_AND_SYNC.md": {
-    "mtime": 1791634999.0618412,
-    "ast_hash": "b59a89252ee45fc54a47aef450dc0bdc",
+    "mtime": 1791638920.952769,
+    "ast_hash": "2c82b7255f9ef0f4f387428049d5bd30",
     "semantic_hash": ""
   },
   "docs/DEV/DEVELOPMENT_WORKFLOW.md": {
@@ -15438,8 +15438,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/deploy-dev.yml": {
-    "mtime": 1791597482.2497637,
-    "ast_hash": "13455657c22da83c437cef77239585ee",
+    "mtime": 1791639334.79134,
+    "ast_hash": "cd121dbb5e302911d3d4eaa288845061",
     "semantic_hash": ""
   },
   "docs/DEV/WORKER_ARCHITECTURE.md": {
