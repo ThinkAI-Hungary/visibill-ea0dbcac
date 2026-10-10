@@ -58,3 +58,7 @@ docs/*.xml
 __pycache__/
 *.py[cod]
 
+# Supabase CLI local temporary files
+supabase/.temp/
+
+

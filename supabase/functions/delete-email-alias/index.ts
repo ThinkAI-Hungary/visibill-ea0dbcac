@@ -50,8 +50,12 @@ serve(async (req) => {
       throw new Error('Alias not found');
     }
 
-    // Delete Mailgun route if it exists (EU region)
-    if (alias.mailgun_route_id) {
+    // Check environment
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const isDev = supabaseUrl.includes('qhvcdqkqpgpdxogqqvyr') || Deno.env.get('ENVIRONMENT') === 'dev';
+
+    // Delete Mailgun route if it exists (EU region) - ONLY on PROD
+    if (alias.mailgun_route_id && !isDev && alias.mailgun_route_id !== 'dev_mock_route') {
       const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
       if (mailgunApiKey) {
         const deleteResponse = await fetch(

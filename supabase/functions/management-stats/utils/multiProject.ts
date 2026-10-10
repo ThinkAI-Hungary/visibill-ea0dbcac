@@ -3,13 +3,48 @@ import { ProjectClient } from "../types.ts";
 
 let _cachedProjectClients: ProjectClient[] | null = null;
 
+export function getMonitoringAdmin(admin: ReturnType<typeof createClient>): ReturnType<typeof createClient> {
+  const prodUrl = Deno.env.get("PROD_SUPABASE_URL");
+  const prodKey = Deno.env.get("PROD_SERVICE_ROLE_KEY") || Deno.env.get("PROD_SUPABASE_SERVICE_ROLE_KEY");
+  if (prodUrl && prodKey) {
+    return createClient(prodUrl, prodKey);
+  }
+  return admin;
+}
+
 export function getProjectClients(admin: ReturnType<typeof createClient>): ProjectClient[] {
   if (_cachedProjectClients) {
     return _cachedProjectClients;
   }
-  const clients: ProjectClient[] = [
-    { name: "PROD", client: admin },
-  ];
+  const currentUrl = Deno.env.get("SUPABASE_URL") || "";
+  const isDev = currentUrl.includes("qhvcdqkqpgpdxogqqvyr");
+
+  const clients: ProjectClient[] = [];
+
+  const prodUrl = Deno.env.get("PROD_SUPABASE_URL");
+  const prodKey = Deno.env.get("PROD_SERVICE_ROLE_KEY") || Deno.env.get("PROD_SUPABASE_SERVICE_ROLE_KEY");
+
+  if (isDev) {
+    if (prodUrl && prodKey) {
+      try {
+        clients.push({ name: "PROD", client: createClient(prodUrl, prodKey) });
+      } catch (e) {
+        console.warn("[project-clients] PROD client creation failed:", e);
+      }
+    }
+    clients.push({ name: "DEV", client: admin });
+  } else {
+    clients.push({ name: "PROD", client: admin });
+    const devUrl = Deno.env.get("DEV_SUPABASE_URL");
+    const devKey = Deno.env.get("DEV_SERVICE_ROLE_KEY") || Deno.env.get("DEV_SUPABASE_SERVICE_ROLE_KEY");
+    if (devUrl && devKey) {
+      try {
+        clients.push({ name: "DEV", client: createClient(devUrl, devKey) });
+      } catch (e) {
+        console.warn("[project-clients] DEV client creation failed:", e);
+      }
+    }
+  }
 
   const vswebUrl = Deno.env.get("VSWEB_SUPABASE_URL");
   const vswebKey = Deno.env.get("VSWEB_SERVICE_ROLE_KEY");

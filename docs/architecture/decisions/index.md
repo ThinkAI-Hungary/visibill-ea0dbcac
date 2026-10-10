@@ -1,6 +1,6 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-09  
+> **Utoljára frissítve:** 2026-10-10  
 > **Összesen:** 237 döntés (219 egyedi döntési fájl) | ✅ Decided: 235 | ⛔ Superseded: 2
 
 
@@ -310,7 +310,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-075 | Management Overview Null-Safety in SQL JSON Aggregations | ✅ Decided | [A-075](./A-075-management-overview-null-safety-in-rpc-aggregations.md) |
 | A-077 | Management Stats Edge Function & Telemetry Decomposition | ✅ Decided | [A-077](./A-077-management-stats-edge-function-and-telemetry-decomposition.md) |
 | A-088 | Management Dashboard Adatkonzisztencia, Dedublikáció és Worker Fallback Ciklusvédelem | ✅ Decided | [A-088](./A-088-management-dashboard-dedup-and-worker-fallback-loop-prevention.md) |
-| A-117 | Hivatalos Ügyfél REST API v2.2.2 (Customer API), OpenAPI 3, Hibajegyek és M2M Átjáró | ✅ Decided | [A-117](./A-117-customer-rest-api-and-multi-company-keys.md) |
+| A-117 | Hivatalos Ügyfél REST API v2.2.3 (Customer API), OpenAPI 3, Hibajegyek és M2M Átjáró | ✅ Decided | [A-117](./A-117-customer-rest-api-and-multi-company-keys.md) |
 | A-126 | Műveleti Napló E-mail Metaadatok Megőrzése és Retrospektív Számla-Összekapcsolás | ✅ Decided | [A-126](./A-126-audit-trail-email-ingestion-and-invoice-linking.md) |
 | A-149 | In-App Fejlesztői Napló (Patchnotes) Rendszer és Publikációs Pipeline | ✅ Decided | [A-149](./A-149-in-app-changelog-and-patchnotes-system.md) |
 | A-171 | Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció | ✅ Decided | [A-171](./A-171-croatian-minimax-api-invoice-intermediary-sync.md) |

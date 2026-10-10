@@ -252,3 +252,28 @@ A Supabase API rétege (PostgREST) belső séma-gyorsítótárral (schema cache)
   * Az eljárásoknak kötelező támogatniuk a tömb alapú paraméterátadást (pl. `p_gl_account_ids uuid[] DEFAULT NULL`), lehetővé téve a PostgreSQL szintű egyetlen menetes szűrést és aggregációt.
   * *Részletek:* [ADR A-232](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-232-gl-zero-as-value-multi-account-batching-and-partner-aging.md).
 
+---
+
+## 🚀 11. Main Merge & Kötelező Éles Migráció Futtatás (Production Migration on Merge Guard)
+
+Minden alkalommal, amikor kód kerül beolvasztásra a `main` ágba (akár Pull Request útján, akár közvetlen `git merge develop` paranccsal):
+
+1. **Migrációs Diff Ellenőrzés (Pre-Merge Diff Check):**
+   * A merge előtt kötelező ellenőrizni, hogy a beolvasztandó commitok tartalmaznak-e új vagy módosított migrációs fájlt:
+     ```powershell
+     git diff main...develop --name-only -- supabase/migrations/
+     ```
+2. **Kötelező Éles Végrehajtás (Mandatory Execution on Prod DB):**
+   * Ha a diffben új vagy módosított migráció szerepel:
+     * **SZIGORÚAN KÖTELEZŐ elvégezni az adatbázis-migrációt az éles (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`)!**
+     * Sosem szabad a `main` ágat úgy hagyni, hogy a kód már feltételez egy új táblát, mezőt, RPC-t vagy RLS szabályt, de az éles adatbázis még a régi sémán fut.
+3. **Alkalmazási Módok és Verifikáció:**
+   * **Automatikus GitHub Integráció:** Ha a `main` ágra történő push után a Supabase automatikus integrációja fut le, az agent köteles lekérdezni a Prod DB `supabase_migrations.schema_migrations` tábláját, és ellenőrizni, hogy a migráció verziója sikeresen regisztrálásra került.
+   * **Közvetlen migráció futtatás (Direct Apply):** Ha a migráció nem fut le automatikusan, az agent köteles a jóváhagyott migrációs SQL-t a Prod DB-n végrehajtani (`execute_sql` vagy `apply_migration`), majd kiadni a schema reload parancsot:
+     ```sql
+     NOTIFY pgrst, 'reload schema';
+     ```
+4. **Bizonyítás (Evidence Gate):**
+   * A feladat nem tekinthető befejezettnek mindaddig, amíg nincs fizikai bizonyíték arról, hogy az éles adatbázis sémája naprakész a `main` ágon lévő kóddal.
+
+

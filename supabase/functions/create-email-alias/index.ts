@@ -65,11 +65,15 @@ serve(async (req) => {
     // If alias record exists but alias_email is empty, we'll update it
     const existingAliasId = existingAlias?.id;
 
+    // Check environment
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const isDev = supabaseUrl.includes('qhvcdqkqpgpdxogqqvyr') || Deno.env.get('ENVIRONMENT') === 'dev';
+
     // Get Mailgun credentials
     const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
-    const mailgunDomain = Deno.env.get('MAILGUN_DOMAIN');
+    const mailgunDomain = Deno.env.get('MAILGUN_DOMAIN') || 'in.visibill.hu';
 
-    if (!mailgunApiKey || !mailgunDomain) {
+    if (!isDev && (!mailgunApiKey || !mailgunDomain)) {
       throw new Error('Mailgun not configured');
     }
 
@@ -148,55 +152,62 @@ serve(async (req) => {
 
         console.log(`Attempt ${attempt}: Creating alias "${aliasEmail}"`);
 
-        // Create Mailgun route (EU region)
-        const routeUrl = `https://api.eu.mailgun.net/v3/routes`;
-        const forwardUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/process-mailgun-webhook`;
-        
-        const routeResponse = await fetch(routeUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Basic ${btoa(`api:${mailgunApiKey}`)}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            priority: '0',
-            description: `Invoice forwarding for ${company_name}`,
-            expression: `match_recipient("${aliasEmail}")`,
-            action: `forward("${forwardUrl}")`,
-          }),
-        });
+        let mailgunRouteId = 'dev_mock_route';
 
-        if (!routeResponse.ok) {
-          const errorText = await routeResponse.text();
-          console.error('Mailgun route creation failed:', errorText);
+        if (!isDev) {
+          // Create Mailgun route (EU region) - ONLY on PROD
+          const routeUrl = `https://api.eu.mailgun.net/v3/routes`;
+          const forwardUrl = `${supabaseUrl}/functions/v1/process-mailgun-webhook`;
           
-          let errorMessage = 'Failed to create Mailgun route';
-          try {
-            const errorJson = JSON.parse(errorText);
-            if (errorJson.message && errorJson.message.includes('quota')) {
-              errorMessage = 'Mailgun route limit reached. Please upgrade your Mailgun plan or delete existing routes.';
-            } else {
-              errorMessage = errorJson.message || errorMessage;
-            }
-          } catch {
-            errorMessage = errorText || routeResponse.statusText;
-          }
-          
-          // Log before throwing
-          await logError(serviceClient, {
-            error_type: 'mailgun',
-            component: 'create-email-alias',
-            action: 'create_route',
-            message: `Mailgun route creation failed: ${errorMessage}`,
-            user_id: user.id,
-            company_id,
-            context: { aliasEmail, attempt, statusCode: routeResponse.status },
+          const routeResponse = await fetch(routeUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${btoa(`api:${mailgunApiKey}`)}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              priority: '0',
+              description: `Invoice forwarding for ${company_name}`,
+              expression: `match_recipient("${aliasEmail}")`,
+              action: `forward("${forwardUrl}")`,
+            }),
           });
-          throw new Error(errorMessage);
-        }
 
-        const routeData = await routeResponse.json();
-        console.log('Mailgun route created:', routeData);
+          if (!routeResponse.ok) {
+            const errorText = await routeResponse.text();
+            console.error('Mailgun route creation failed:', errorText);
+            
+            let errorMessage = 'Failed to create Mailgun route';
+            try {
+              const errorJson = JSON.parse(errorText);
+              if (errorJson.message && errorJson.message.includes('quota')) {
+                errorMessage = 'Mailgun route limit reached. Please upgrade your Mailgun plan or delete existing routes.';
+              } else {
+                errorMessage = errorJson.message || errorMessage;
+              }
+            } catch {
+              errorMessage = errorText || routeResponse.statusText;
+            }
+            
+            // Log before throwing
+            await logError(serviceClient, {
+              error_type: 'mailgun',
+              component: 'create-email-alias',
+              action: 'create_route',
+              message: `Mailgun route creation failed: ${errorMessage}`,
+              user_id: user.id,
+              company_id,
+              context: { aliasEmail, attempt, statusCode: routeResponse.status },
+            });
+            throw new Error(errorMessage);
+          }
+
+          const routeData = await routeResponse.json();
+          console.log('Mailgun route created:', routeData);
+          mailgunRouteId = routeData.route?.id;
+        } else {
+          console.log(`[create-email-alias] DEV environment detected — skipping external Mailgun route creation for ${aliasEmail}`);
+        }
 
         // Store in database (update if exists with empty alias, otherwise insert)
         let dbResult;
@@ -209,7 +220,7 @@ serve(async (req) => {
               alias_email: aliasEmail,
               company_name,
               status: 'active',
-              mailgun_route_id: routeData.route?.id,
+              mailgun_route_id: mailgunRouteId,
               verified_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
@@ -226,7 +237,7 @@ serve(async (req) => {
               company_name,
               company_id,
               status: 'active',
-              mailgun_route_id: routeData.route?.id,
+              mailgun_route_id: mailgunRouteId,
               verified_at: new Date().toISOString(),
             })
             .select()

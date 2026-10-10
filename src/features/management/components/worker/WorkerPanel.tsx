@@ -326,7 +326,12 @@ export function WorkerPanel() {
                       }`}
                     >
                       <CircleDot className={`h-2.5 w-2.5 ${c.is_healthy ? 'text-emerald-500' : 'text-red-500'}`} />
-                      <span className="truncate flex-1 text-left">{c.container_name}</span>
+                      <span className="truncate text-left">{c.container_name}</span>
+                      {c.supabase_project && (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-muted/60 font-mono text-muted-foreground uppercase">
+                          {c.supabase_project}
+                        </span>
+                      )}
                       <div className="flex items-center gap-1.5 ml-auto text-[10px] opacity-60 font-mono">
                         {c.is_healthy && c.cpu_usage !== undefined && c.cpu_usage > 0 && (
                           <span
@@ -401,7 +406,7 @@ export function WorkerPanel() {
                           }`}
                         />
                         <span className="truncate flex-1 text-left">
-                          {q.queue_name.replace(/_jobs$/, '').replace(/^(PROD|VSWEB|THINKERMAN):/, '')}
+                          {q.queue_name.replace(/_jobs$/, '').replace(/^(PROD|DEV|VSWEB|THINKERMAN):/, '')}
                         </span>
                         <Badge
                           variant="secondary"

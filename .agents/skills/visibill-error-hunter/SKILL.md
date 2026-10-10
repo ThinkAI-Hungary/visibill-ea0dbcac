@@ -236,27 +236,38 @@ Tedd fel a kérdést a felhasználónak:
 
 Miután a felhasználó jóváhagyta a tervet, aktiváld a megfelelő Visibill szakági skilleket:
 
+0. **Develop Ágra Váltás és Környezet Izoláció (KÖTELEZŐ LÉPÉS):**
+   * A hibák feltárása (1. fázis) történhet az éles naplótáblákból (`supabase-visibill`), de **a hibajavítás KÖTELEZŐEN a `develop` ágon indul!**
+   * Ellenőrizd és válts át a `develop` ágra: `git checkout develop`.
+   * Minden SQL migrációt, RPC javítást, Edge Function tesztet és felületi próbát **KIZÁRÓLAG a Dev Supabase adatbázisban (`qhvcdqkqpgpdxogqqvyr`, MCP: `supabase-visibill-dev`)** és a lokális környezetben (`http://localhost:8080`) végezz el!
+   * Szigorúan tilos az éles adatbázist vagy a `main` ágat tesztelés céljából piszkálni.
+
 1. **Specifikáció és Tervezés:**
-   - Hívd meg a [visibill-spec-lookup](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-spec-lookup/SKILL.md) skillt a vonatkozó ADR-ek és PRD-k ellenőrzésére.
-   - Komplex (3+ fájlt vagy üzleti logikát érintő) feladatnál készíts `implementation_plan.md`-t.
+   * Hívd meg a [visibill-spec-lookup](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-spec-lookup/SKILL.md) skillt a vonatkozó ADR-ek és PRD-k ellenőrzésére.
+   * Komplex (3+ fájlt vagy üzleti logikát érintő) feladatnál készíts `implementation_plan.md`-t.
 
 2. **Adatbázis / SQL / RPC hibák:**
-   - KÖTELEZŐ betartani a [visibill-db-checklist](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-db-checklist/SKILL.md) előírásait (`SECURITY DEFINER`, `search_path = public`, explicit GRANT-ok).
-   - Hozz létre verziózott migrációs fájlt a `supabase/migrations/` mappában.
+   * KÖTELEZŐ betartani a [visibill-db-checklist](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-db-checklist/SKILL.md) előírásait (`SECURITY DEFINER`, `search_path = public`, explicit GRANT-ok).
+   * Hozz létre verziózott migrációs fájlt a `supabase/migrations/` mappában, és kizárólag a Dev DB-n (`supabase-visibill-dev`) teszteld.
 
 3. **Frontend / TypeScript hibák:**
-   - Tartsd be a [visibill-dev](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-dev/SKILL.md) és a [rules/frontend.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/frontend.md) szabályokat.
+   * Tartsd be a [visibill-dev](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-dev/SKILL.md) és a [rules/frontend.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/rules/frontend.md) szabályokat a `develop` ágon.
 
-4. **Kötelező Verifikáció (Pre-Completion Quality Gate):**
-   - Futtasd le és igazolódj meg a hibamentességről:
+4. **Kötelező Verifikáció a Develop Ágon (Pre-Completion Quality Gate):**
+   * Futtasd le és győződj meg a hibamentességről:
      ```powershell
+     npm run lint:fast
      npm run build
      # vagy
      npx tsc --noEmit
      ```
-   - Futtasd le a kapcsolódó teszteket (`npx vitest run ...`).
-   - SOHA ne állítsd, hogy a javítás kész van fizikai build kimenet nélkül!
+   * Futtasd le a kapcsolódó teszteket (`npx vitest run ...`).
+   * SOHA ne állítsd, hogy a javítás kész van fizikai build és teszt kimenet nélkül!
 
-5. **Dokumentáció & Grafikon Frissítés:**
-   - Szinkronizáld a módosításokat a [visibill-doc-sync](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-doc-sync/SKILL.md) segítségével.
-   - Frissítsd a kódbázis tudásgráfot: `graphify update .`.
+5. **Élesítés / Prod Promóció (Main Merge):**
+   * Miután a hiba elhárítása a `develop` ágon és a Dev DB-ben bizonyítottan működik, mutasd be az eredményt a felhasználónak.
+   * Kérj jóváhagyást a `main` ágba történő merge-elésre és az éles környezetbe juttatásra (Zero Silent Decisions).
+
+6. **Dokumentáció & Grafikon Frissítés:**
+   * Szinkronizáld a módosításokat a [visibill-doc-sync](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-doc-sync/SKILL.md) segítségével.
+   * Frissítsd a kódbázis tudásgráfot: `graphify update .`.
