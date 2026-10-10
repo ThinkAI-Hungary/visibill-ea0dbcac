@@ -10,8 +10,8 @@
     "semantic_hash": "bc484741cdf3591af5da7d9f3da3a647"
   },
   "package.json": {
-    "mtime": 1791583292.9827778,
-    "ast_hash": "2f9c101b7c760629efb66c3474e17a23",
+    "mtime": 1791632903.4424884,
+    "ast_hash": "e63ea1f3d304fe825ef28e0d1fcb0eb6",
     "semantic_hash": ""
   },
   "playwright.config.ts": {
@@ -350,8 +350,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GeneralLedgerTable.tsx": {
-    "mtime": 1791583293.0794227,
-    "ast_hash": "c93aa5c4cc26d0aed40f8cf82512756b",
+    "mtime": 1791632903.4444857,
+    "ast_hash": "95bf80b4ccf9f9beaa94481d8c93cea8",
     "semantic_hash": ""
   },
   "src/components/general-ledger/ManagePresetsModal.tsx": {
@@ -1455,8 +1455,8 @@
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
-    "mtime": 1791583293.3379698,
-    "ast_hash": "59c10b29c863e512ba8e404a2495e075",
+    "mtime": 1791632903.448996,
+    "ast_hash": "c6605390973a144c414e8804f6a625bc",
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
@@ -1640,13 +1640,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/create-email-alias/index.ts": {
-    "mtime": 1791583293.4071963,
-    "ast_hash": "365cf30a857bb3c745ec5985ddaab1b4",
+    "mtime": 1791597482.2529247,
+    "ast_hash": "e6798f0d9ca3a11378569f8b9a5f6c7d",
     "semantic_hash": ""
   },
   "supabase/functions/delete-email-alias/index.ts": {
-    "mtime": 1791583293.409174,
-    "ast_hash": "960030543e13cefc5008ecb2241ebb19",
+    "mtime": 1791597482.2534351,
+    "ast_hash": "72776b554f365a67886322c14b40ba37",
     "semantic_hash": ""
   },
   "supabase/functions/delete-nav-credentials/index.ts": {
@@ -1720,8 +1720,8 @@
     "semantic_hash": "2ed9bed8400139c714d50da0c2ae1269"
   },
   "supabase/functions/process-mailgun-webhook/index.ts": {
-    "mtime": 1791583293.4195938,
-    "ast_hash": "337802538cea30a2e597bc9c2ee725e8",
+    "mtime": 1791597482.254971,
+    "ast_hash": "ac842ba32659daba93d8ff510f6d7c8e",
     "semantic_hash": ""
   },
   "supabase/functions/query-nav-invoices/index.ts": {
@@ -2985,8 +2985,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791593574.2621572,
-    "ast_hash": "cd47157767579008ff44f3adc5abbb94",
+    "mtime": 1791632903.44048,
+    "ast_hash": "90be6e5ea70b87c104994bcb36812110",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3120,8 +3120,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/021-general-ledger.md": {
-    "mtime": 1791583291.0321374,
-    "ast_hash": "606816affc0da7d2a4298ba7473a3c18",
+    "mtime": 1791632903.44048,
+    "ast_hash": "33e31d38502978828eabbcb775553f88",
     "semantic_hash": ""
   },
   "docs/business/decisions/022-annual-reporting.md": {
@@ -3460,13 +3460,13 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1791583291.1013012,
-    "ast_hash": "6cfc80916ee334f0da4e1f4299eab1c0",
+    "mtime": 1791632903.4414887,
+    "ast_hash": "0af14d4e4c5fece2bff8f695d730c17c",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
-    "mtime": 1791583291.102301,
-    "ast_hash": "551b2aa3e6d158d69a02ad28000e59dc",
+    "mtime": 1791632903.4424884,
+    "ast_hash": "30ad666f9a8b78b7940f92013f16952d",
     "semantic_hash": ""
   },
   "docs/product/prd.md": {
@@ -4870,8 +4870,8 @@
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
-    "mtime": 1791592627.5297213,
-    "ast_hash": "ac2ffa7136a422f0d9c9a2fcd3b35acd",
+    "mtime": 1791600727.1262367,
+    "ast_hash": "1186db73909207d54a78bad64968a3f5",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-dev/SKILL.md": {
@@ -6920,8 +6920,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/llm/LLMCostPanel.tsx": {
-    "mtime": 1791583293.1878483,
-    "ast_hash": "0972b99a89bd3766615deb8f6fe6930e",
+    "mtime": 1791597482.2513366,
+    "ast_hash": "0055281141c66833f1365cb7b8f98831",
     "semantic_hash": ""
   },
   "src/features/management/components/overview/ManagementOverview.tsx": {
@@ -6965,8 +6965,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/worker/WorkerPanel.tsx": {
-    "mtime": 1791583293.1914742,
-    "ast_hash": "d20e18e146e77725430cedc69cf30e2c",
+    "mtime": 1791597482.2524068,
+    "ast_hash": "78fe7f60f9c4c40b595d0edda95125ab",
     "semantic_hash": ""
   },
   "src/routes/__tests__/routes.test.tsx": {
@@ -7755,8 +7755,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/worker/ContainerMetricsCard.tsx": {
-    "mtime": 1791583293.1904397,
-    "ast_hash": "10079e8c1ea385f2bf4fa2c2a5056668",
+    "mtime": 1791597482.2518487,
+    "ast_hash": "90e73e694acd94f4e0e353a4c9049334",
     "semantic_hash": ""
   },
   "src/features/management/components/worker/PipelineStatusList.tsx": {
@@ -7765,8 +7765,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/worker/QueueMonitorGrid.tsx": {
-    "mtime": 1791583293.1909566,
-    "ast_hash": "f2da86fb41c480be69eda416469acffa",
+    "mtime": 1791597482.2524068,
+    "ast_hash": "02f1948d6cc17118d0c3c7a44761d1a5",
     "semantic_hash": ""
   },
   "src/features/management/components/worker/TaskErrorRetryTable.tsx": {
@@ -7810,13 +7810,13 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/workerHandler.ts": {
-    "mtime": 1791583293.4138768,
-    "ast_hash": "6f9115b94c291975e4035f40ed7092c9",
+    "mtime": 1791597482.253943,
+    "ast_hash": "a63714a18eb2697ed662355143a9ccc5",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/middleware/auth.ts": {
-    "mtime": 1791583293.4138768,
-    "ast_hash": "580b4454152b7d0edfa04a5b23ec2ddf",
+    "mtime": 1791597482.253943,
+    "ast_hash": "9562d4430ef1923752e854faf0e05172",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/types.ts": {
@@ -7830,8 +7830,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/utils/multiProject.ts": {
-    "mtime": 1791583293.414403,
-    "ast_hash": "a21cad7d2e14d8ce8599cd16057fbf39",
+    "mtime": 1791597482.2544575,
+    "ast_hash": "3dbdf14dea1d1aaff19ca6211edf354b",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-077-management-stats-edge-function-and-telemetry-decomposition.md": {
@@ -7950,8 +7950,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/visibill-ticket-support/SKILL.md": {
-    "mtime": 1791583290.885075,
-    "ast_hash": "1d45dd4014f65c8120537343b7cf692c",
+    "mtime": 1791599812.387369,
+    "ast_hash": "8bbff8e6715bbe6ffc8669d209b00110",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-081-nav-08-payroll-reconstruction-and-bulk-import.md": {
@@ -8570,12 +8570,12 @@
     "semantic_hash": ""
   },
   "docs/architecture/edge-functions.md": {
-    "mtime": 1791593580.333447,
+    "mtime": 1791593847.4138837,
     "ast_hash": "bdfdf13a1d256336f18424502d1c2d7e",
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1791593341.9353578,
+    "mtime": 1791593847.4144013,
     "ast_hash": "f92ce39018f9ac4502bdc877c5bee55b",
     "semantic_hash": ""
   },
@@ -9980,8 +9980,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/database.md": {
-    "mtime": 1791583290.8678274,
-    "ast_hash": "f4191314a8601b370ae9ca3644b9eb9b",
+    "mtime": 1791600727.1262367,
+    "ast_hash": "a087d71d58393865423f78b6ea9fee11",
     "semantic_hash": ""
   },
   ".agents/rules/documentation.md": {
@@ -10005,8 +10005,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/verification.md": {
-    "mtime": 1791583290.8698854,
-    "ast_hash": "6028699248f6fbe9aaaa3cda2f6a2d2a",
+    "mtime": 1791632903.4389076,
+    "ast_hash": "038d6228909322edf6494644faf1f790",
     "semantic_hash": ""
   },
   "src/components/transactions/BulkBookTransactionsDialog.tsx": {
@@ -10130,7 +10130,7 @@
     "semantic_hash": ""
   },
   "supabase/functions/customer-api/index.ts": {
-    "mtime": 1791593258.4141133,
+    "mtime": 1791593847.4777327,
     "ast_hash": "f115ac9c8622db0d46273689a568f714",
     "semantic_hash": ""
   },
@@ -10140,7 +10140,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-117-customer-rest-api-and-multi-company-keys.md": {
-    "mtime": 1791593563.2935634,
+    "mtime": 1791593847.4133663,
     "ast_hash": "5e531ca9fb8fafe2b18119dc81b2c040",
     "semantic_hash": ""
   },
@@ -10205,8 +10205,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/visibill-error-hunter/SKILL.md": {
-    "mtime": 1791583290.8800704,
-    "ast_hash": "b415847c583a3d0f8e1b7f8dc9dfc0ea",
+    "mtime": 1791599812.38685,
+    "ast_hash": "d303f08aabc78ba6c1a8f0f09e30c363",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-error-hunter/references/error-queries.md": {
@@ -11615,8 +11615,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GlToolbar.tsx": {
-    "mtime": 1791583293.082422,
-    "ast_hash": "7525ed2713721988da75798dc5a045be",
+    "mtime": 1791632903.4454849,
+    "ast_hash": "913b62670c464bbc267b0f67ad821191",
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/GlFilterBar.test.tsx": {
@@ -11630,8 +11630,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/GlToolbar.test.tsx": {
-    "mtime": 1791583293.0865977,
-    "ast_hash": "0daa5c4c36ea1152e811df5ad99e826d",
+    "mtime": 1791632903.4454849,
+    "ast_hash": "e9b59b475820370d023145ef87532930",
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/invoiceRowHighlightAndStatusColors.test.tsx": {
@@ -11700,8 +11700,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/VatTourismTaxSection.tsx": {
-    "mtime": 1791583293.2053998,
-    "ast_hash": "8d0fc291e24f5ae9e85aaa1434e0ce5a",
+    "mtime": 1791632903.4454849,
+    "ast_hash": "2037678f89177de64a31480c3ada4e8f",
     "semantic_hash": ""
   },
   "src/features/vat/hooks/useVatScope.ts": {
@@ -13128,7 +13128,7 @@
     "semantic_hash": ""
   },
   "src/test/errorHunterRegression.test.ts": {
-    "mtime": 1791593312.2436244,
+    "mtime": 1791593847.476732,
     "ast_hash": "1446054dd878c75998e02a90aceef469",
     "semantic_hash": ""
   },
@@ -15103,8 +15103,8 @@
     "semantic_hash": ""
   },
   "src/features/vat/components/replica/Nav26TfejlhReplicaContainer.tsx": {
-    "mtime": 1791583293.212682,
-    "ast_hash": "2b2db906e36e802f293617faa7887615",
+    "mtime": 1791632903.4469905,
+    "ast_hash": "734adb598801b12480d4b1b579fe78a5",
     "semantic_hash": ""
   },
   "src/features/vat/components/replica/Nav26TfejlhSheetFolap.tsx": {
@@ -15198,8 +15198,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-236-nav-26tfejlh-tourism-contribution-replica-and-pdf-engine.md": {
-    "mtime": 1791583290.9602757,
-    "ast_hash": "25f7250164b26fc9b973e7050fde5b99",
+    "mtime": 1791632903.4394321,
+    "ast_hash": "6421470b2d9c39f6fa78e89fa536af02",
     "semantic_hash": ""
   },
   "docs/business/decisions/065-deferred-vat-deduction-and-questionable-invoices.md": {
@@ -15213,8 +15213,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/067-nav-26tfejlh-tourism-development-contribution.md": {
-    "mtime": 1791583291.0387516,
-    "ast_hash": "b15c2549c516c35dfa41606ac6ca9443",
+    "mtime": 1791632903.44048,
+    "ast_hash": "a2ff58daa4e6bccc3e4097b3e03f228d",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-172-deferred-vat-deduction-and-questionable-invoices-ux.md": {
@@ -15228,8 +15228,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-174-nav-26tfejlh-tourism-contribution-replica-ux.md": {
-    "mtime": 1791583291.1013012,
-    "ast_hash": "637d5c4900b563160d1e461b2a9e5bae",
+    "mtime": 1791632903.4414887,
+    "ast_hash": "8995a3c84952f9f4fc9e173c9f760b99",
     "semantic_hash": ""
   },
   "session-summary/\u00c1ron/2026-10-09/summary-131500-nav-m2m-sanitize-tfejlh-replica-import-vat-and-deferred-vat-e2e.md": {
@@ -15333,33 +15333,33 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20261010030000_fix_get_filtered_submitted_invoices_aliases.sql": {
-    "mtime": 1791593226.5933294,
-    "ast_hash": "da72c7f4d8c573ce4ec1bee164f209e5",
+    "mtime": 1791593847.4787326,
+    "ast_hash": "08744d1cdfd8c5bfec559c70b5a8bd61",
     "semantic_hash": ""
   },
   ".agents/rules/dev-environment.md": {
-    "mtime": 1791592627.5302308,
-    "ast_hash": "97ef7271918468f8a904755f5fec422b",
+    "mtime": 1791600727.1267612,
+    "ast_hash": "5ee6379bd0e23fa6992903bc3a534f09",
     "semantic_hash": ""
   },
   "docs/DEV/ARCHITECTURE.md": {
-    "mtime": 1791592487.5362332,
-    "ast_hash": "9fa12053d7a2710cee8cbeac8af25f12",
+    "mtime": 1791597482.2502875,
+    "ast_hash": "8c1c2b7141e9459d233e75c04a48146e",
     "semantic_hash": ""
   },
   "docs/DEV/DATA_MIGRATION_AND_SYNC.md": {
-    "mtime": 1791592487.5367563,
-    "ast_hash": "5a2221d45203607aff17d097b24ada59",
+    "mtime": 1791598969.5370104,
+    "ast_hash": "bd28d4af5069aba65194eafa2a540d51",
     "semantic_hash": ""
   },
   "docs/DEV/DEVELOPMENT_WORKFLOW.md": {
-    "mtime": 1791592487.5367563,
-    "ast_hash": "99cff866d9f09ade4826878a074a3087",
+    "mtime": 1791600727.127291,
+    "ast_hash": "b56aad1c1f14f8ca81da88fd444f9611",
     "semantic_hash": ""
   },
   "docs/DEV/README.md": {
-    "mtime": 1791592487.5372732,
-    "ast_hash": "cfd500470e8d60fa07ff5583b5005931",
+    "mtime": 1791597482.2508123,
+    "ast_hash": "97efcb70c92fb9397e3bdb89422c558d",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-237-nav-osa-gzip-decompression-and-utility-line-items.md": {
@@ -15385,6 +15385,86 @@
   "session-summary/\u00c1ron/2026-10-09/summary-224200-journal-filter-fixes-and-nav-gzip-decompression.md": {
     "mtime": 1791583293.0312212,
     "ast_hash": "bf7a2d77f68b84a0f5bc1ba0931771fd",
+    "semantic_hash": ""
+  },
+  "scripts/vat-snapshot-guard.mjs": {
+    "mtime": 1791632903.4434896,
+    "ast_hash": "3a9dfce1bacb9b67f9a371cc4140510e",
+    "semantic_hash": ""
+  },
+  "src/lib/__tests__/procontGlData.test.ts": {
+    "mtime": 1791632903.4469905,
+    "ast_hash": "b4747cd3c35a376d0086c4d1de46ec85",
+    "semantic_hash": ""
+  },
+  "src/lib/__tests__/tfejlhXml.test.ts": {
+    "mtime": 1791632903.4469905,
+    "ast_hash": "712bd2e8700823b083446839447c73a7",
+    "semantic_hash": ""
+  },
+  "src/lib/procontGlData.ts": {
+    "mtime": 1791632903.4479952,
+    "ast_hash": "dd4ab1cd3050498207321064afe67dad",
+    "semantic_hash": ""
+  },
+  "src/lib/procontGlExcel.ts": {
+    "mtime": 1791632903.4479952,
+    "ast_hash": "2d7ff2fad15ab8de33dc3f5c541208fa",
+    "semantic_hash": ""
+  },
+  "src/lib/procontGlPdf.ts": {
+    "mtime": 1791632903.4479952,
+    "ast_hash": "4f4faca30e5503c50f5e2ed72ba7a0ca",
+    "semantic_hash": ""
+  },
+  "src/lib/tfejlhXml.ts": {
+    "mtime": 1791632903.4479952,
+    "ast_hash": "b8a20e17ab1b3e79b10040cd25e61555",
+    "semantic_hash": ""
+  },
+  "src/test/vat/vatRegressionTaxology.test.ts": {
+    "mtime": 1791632903.448996,
+    "ast_hash": "ac27fc3b858806372cd0626540751333",
+    "semantic_hash": ""
+  },
+  "tests/fixtures/vat_snapshot_taxology_2026_07.json": {
+    "mtime": 1791632903.4499948,
+    "ast_hash": "e09fcdda8dd31d6d3f69aea561424e8f",
+    "semantic_hash": ""
+  },
+  ".agents/rules/vat-safety.md": {
+    "mtime": 1791632903.4389076,
+    "ast_hash": "e1090427b6500797f64e58b510baa573",
+    "semantic_hash": ""
+  },
+  ".github/workflows/deploy-dev.yml": {
+    "mtime": 1791597482.2497637,
+    "ast_hash": "13455657c22da83c437cef77239585ee",
+    "semantic_hash": ""
+  },
+  "docs/DEV/WORKER_ARCHITECTURE.md": {
+    "mtime": 1791597482.2513366,
+    "ast_hash": "7cf7e223a405b6d24c0dff624d18a5d8",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-239-procont-general-ledger-export-and-reconciliation-architecture.md": {
+    "mtime": 1791632903.4399443,
+    "ast_hash": "773200314e029a16eccddf4113b96321",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-240-vat-regression-taxology-golden-master-and-snapshot-guard-architecture.md": {
+    "mtime": 1791632903.4399443,
+    "ast_hash": "9f20b7c220d692343f99f84309ad5c3b",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-177-procont-general-ledger-export-and-reconciliation-ux.md": {
+    "mtime": 1791632903.4414887,
+    "ast_hash": "e9ecb3e6299eaf8b50bed6de3215aaf8",
+    "semantic_hash": ""
+  },
+  "session-summary/\u00c1ron/2026-10-10/summary-115500-procont-gl-export-26tfejlh-anyk-xml-and-vat-regression-guard.md": {
+    "mtime": 1791632903.4434896,
+    "ast_hash": "286405ee9b2e97148f2b93f6f23d8d0a",
     "semantic_hash": ""
   }
 }
