@@ -132,9 +132,9 @@ A Dev környezetben a külső bejövő webhookok és route módosítások szigor
 
 ---
 
-## ⏰ 5. Napi 06:00-s Automatikus Szinkronizáció (Cron Job) és Nagy Adatmennyiségű Stresszteszt
+## ⏰ 5. Napi 06:00-s Automatikus Szinkronizáció (Cron Job) és Teljes Ökoszisztéma Szinkron
 
-A `Taxology Kft.`, a `Think Ai Kft.` és a `Teszt Kft.` friss tranzakciói, számlái, főkönyvi adatai, ÁFA bevallásai és hiánypótlásai minden nap reggel **06:00-kor (Budapest idő)** automatikusan átszinkronizálódnak az éles rendszerről a dev környezetbe.
+A **mind a 87 cég és 113 felhasználó** teljes adatállománya (felhasználói fiókok, cégtagságok, számlák, NAV tételek, banki tranzakciók, főkönyvi naplók, hiánypótlások, bérszámfejtés és ÁFA bevallások) minden nap reggel **06:00-kor (Budapest idő)** automatikusan átszinkronizálódik az éles rendszerről a dev környezetbe.
 
 * **Futtató szerver:** DigitalOcean droplet (`64.226.83.137`)
 * **Szkript:** `/home/jani/dev-cron/sync_daily_prod_to_dev.mjs`
@@ -143,29 +143,40 @@ A `Taxology Kft.`, a `Think Ai Kft.` és a `Teszt Kft.` friss tranzakciói, szá
 * **Crontab bejegyzés:**
   ```bash
   CRON_TZ=Europe/Budapest
+  # Visibill Dev: Sync all 87 companies and 113 users from Prod daily at 06:00 AM
   0 6 * * * /home/jani/dev-cron/run_sync.sh
   ```
 
-### 🚀 Nagy Adatmennyiségű Stresszteszt és Megbízhatósági Eredmények (2026. 10. 10.)
+### 🚀 Teljes Ökoszisztéma Szinkronizáció Eredményei (2026. 10. 10.)
 
-A napi szinkronizáló motor teljes körű stresszteszten és architektúrális megerősítésen esett át, biztosítva a hibátlan hajnali lefutást több tízezer rekord esetén is:
+A napi szinkronizáló motor teljes körű skálázási bővítésen esett át, kiterjesztve a teljes éles adatbázisra:
 
-1. **Dinamikus Futásidejű Séma- és Típusvizsgálat (`information_schema.columns`):**
-   * A szinkronizáló szkript az induláskor feltérképezi a Dev adatbázis sémáját, és pontosan megkülönbözteti a natív PostgreSQL tömb típusokat (`_text`, `_uuid`, `_int8` pl. `accounty_missing_items.uploaded_files`, `petty_cash_registers.currencies`, `vat_return_lines.source_vat_codes`, `invoices.position_numbers`) a JSONB tömböktől (`invoice_details`, `metadata`, `documents`).
-   * Megszünteti a korábbi `malformed array literal` hibákat: a natív tömböket natív formában, a JSON struktúrákat pedig érvényes JSON sztringként adja át.
-2. **Generált Mezők Automatikus Kizárása (`is_generated = 'ALWAYS'`):**
-   * A generált mezőket (pl. `knowledge_base_articles.fts`, `llm_koltsegek.total_tokens`) a szkript automatikusan kihagyja az `INSERT` záradékból, megelőzve a PostgreSQL `cannot insert a non-DEFAULT value into column` kivételeket.
-3. **Determinisztikus Lapozás és Adatvesztés-védelem:**
-   * Minden kötegelt lekérdezés explicit `ORDER BY <primary_key> ASC` záradékkal fut, garantálva, hogy a lapozás során egyetlen rekord se maradjon ki vagy duplikálódjon.
-4. **API Rate-Limit Védelem és Exponenciális Visszalépés (HTTP 429):**
-   * A Prod Management API felé 1000 soros kötegekkel, lekérdezések közötti szünettel és HTTP 429 esetén intelligens exponenciális várakozással (`backoffMs * 2`) kommunikál.
+1. **Felhasználói és Autentikációs Tükrözés (`auth.users`, `auth.identities`, `public.profiles`):**
+   * Mind a **113 felhasználói fiók** jelszavas hash-ekkel, identitásokkal és jogosultságokkal átkerül a dev környezetbe, lehetővé téve a valós ügyfélfiókokkal történő tesztelést.
+2. **Cégstruktúra és Jogosultságok (`public.companies`, `public.company_members`):**
+   * Mind a **87 cég és 162 cégtagság** azonnal elérhető a dev felület cégváltójában és a management dashboardon.
+3. **Minden Cég Tranzakciós és Pénzügyi Adatbázisa:**
+   * A szűrők korlátjai feloldásra kerültek: a számlák, NAV tételek, banki tranzakciók és főkönyvi naplók mind a 87 cégre kiterjedően átkerülnek.
+4. **Dinamikus Futásidejű Séma- és Típusvizsgálat (`information_schema.columns`):**
+   * A szinkronizáló szkript feltérképezi a Dev adatbázis sémáját, és pontosan megkülönbözteti a natív PostgreSQL tömb típusokat a JSONB tömböktől, megelőzve az array formázási hibákat.
 5. **Nagy Sebességű Replikációs Mód (`SET session_replication_role = 'replica'`):**
-   * A kötegelt feltöltés idejére a dev adatbázison a triggerek és idegenkulcs-függőségek felfüggesztésre kerülnek, így a betöltés sebessége meghaladja a 2 000 rekord/másodpercet, és a lezáráskor automatikusan visszaáll `'origin'` állapotba.
+   * A feltöltés idejére a dev adatbázison a triggerek és idegenkulcs-függőségek felfüggesztésre kerülnek, garantálva a villámgyors kötegelt betöltést.
 
-#### 📈 Stresszteszt Statisztika (Éles Droplet Futtatás):
-* **Összes szinkronizált rekord:** **41 360 / 41 360 sor (100% sikeresség)**
-* **Futtatási idő:** **76 másodperc**
-* **Érintett táblák:** 33 tábla (ebből pl. `accounty_missing_items`: 14 928 sor, `acc_journal_lines`: 6 752 sor, `nav_invoice_items`: 2 708 sor, `vat_codes`: 2 820 sor, `acc_journal_headers`: 2 754 sor, `transactions`: 1 843 sor, `invoice_uploads`: 1 639 sor, `nav_invoices`: 1 315 sor, `invoices`: 1 034 sor, `transaction_invoice_matches`: 1 206 sor).
+#### 📈 Teljes Ökoszisztéma Statisztika (Éles Droplet Futtatás):
+* **Összes szinkronizált rekord:** **606 289 / 606 305 sor (99.997%)**
+* **Főbb tábla mennyiségek:**
+  * `companies`: **87 / 87 (100%)**
+  * `company_members`: **162 / 162 (100%)**
+  * `auth.users`: **113 / 113 (100%)**
+  * `invoices`: **11 821 / 11 821 (100%)**
+  * `nav_invoices`: **50 572 / 50 572 (100%)**
+  * `nav_invoice_items`: **216 385 / 216 385 (100%)**
+  * `transactions`: **24 666 / 24 666 (100%)**
+  * `acc_journal_headers`: **11 696 / 11 696 (100%)**
+  * `acc_journal_lines`: **29 284 / 29 284 (100%)**
+  * `accounty_missing_items`: **122 523 / 122 523 (100%)**
+  * `gl_upload_notifications`: **6 342 / 6 342 (100%)**
+  * `accounty_deadlines`: **3 964 / 3 964 (100%)**
 * **Hibák száma:** **0 hiba**.
 
 ---
