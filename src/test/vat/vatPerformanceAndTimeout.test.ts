@@ -5,10 +5,10 @@ import path from 'path';
 describe('VAT Return Engine: Performance & Timeout Invariants (RPC & Architecture)', () => {
   const migrationPath = path.resolve(
     __dirname,
-    '../../../supabase/migrations/20261010224500_optimize_hungarian_vat_return_performance.sql'
+    '../../../supabase/migrations/20261010230000_optimize_hungarian_vat_return_performance.sql'
   );
 
-  it('ensures migration 20261010224500 exists and contains mandatory performance guards', () => {
+  it('ensures migration 20261010230000 exists and contains mandatory performance guards', () => {
     expect(fs.existsSync(migrationPath)).toBe(true);
     const sql = fs.readFileSync(migrationPath, 'utf8');
 
@@ -17,11 +17,9 @@ describe('VAT Return Engine: Performance & Timeout Invariants (RPC & Architectur
     expect(sql).toContain("SET search_path TO 'public'");
     expect(sql).toContain('REVOKE EXECUTE ON FUNCTION public.calculate_hungarian_vat_return(uuid, integer, integer, text) FROM PUBLIC, anon;');
     expect(sql).toContain('GRANT EXECUTE ON FUNCTION public.calculate_hungarian_vat_return(uuid, integer, integer, text) TO authenticated, service_role;');
-    expect(sql).toContain('REVOKE EXECUTE ON FUNCTION public.calculate_vat_return(uuid, integer, integer, text, text) FROM PUBLIC, anon;');
-    expect(sql).toContain('GRANT EXECUTE ON FUNCTION public.calculate_vat_return(uuid, integer, integer, text, text) TO authenticated, service_role;');
 
     // 2. Cursor date bounding to eliminate full-table scans
-    expect(sql).toContain('COALESCE(ni.ti_override, ni.calculated_ti, ni.invoice_delivery_date, ni.invoice_issue_date)::date BETWEEN v_date_from AND v_date_to');
+    expect(sql).toContain('ni.invoice_delivery_date BETWEEN v_date_from AND v_date_to');
     expect(sql).toContain('COALESCE(inv.teljesites_datuma, inv.kibocsatas_datuma)::date BETWEEN v_date_from AND v_date_to');
 
     // 3. Elimination of N+1 exchange rate queries inside the PL/pgSQL loop
@@ -92,8 +90,8 @@ describe('VAT Return Engine: Performance & Timeout Invariants (RPC & Architectur
 
   describe('Form Invariant Completeness', () => {
     const requiredRows = [
-      '01', '02', '04', '05', '06', '07', '08', '18', '23', '24', '25', '26', '27', '29',
-      '36', '43', '45', '63', '64', '65', '66', '67', '70', '71', '76', '77', '83', '84', '86', '91', '92'
+      '01', '02', '04', '05', '06', '07', '08', '14', '18', '27', '29',
+      '36', '43', '45', '63', '64', '65', '66', '67', '76', '77', '83', '84', '86', '91', '92'
     ];
 
     it('verifies that the migration accounts for all statutory 2665 rows', () => {

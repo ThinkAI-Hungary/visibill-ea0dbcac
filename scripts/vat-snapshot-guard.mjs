@@ -48,6 +48,22 @@ const targetScope = 'all';
 const baselineFile = path.join(projectRoot, 'tests', 'fixtures', 'vat_snapshot_taxology_2026_07.json');
 
 async function fetchCalculationData() {
+  if (!serviceKeyMatch) {
+    const testEmailMatch = env.match(/PLAYWRIGHT_TEST_EMAIL="?([^"\r\n]+)"?/);
+    const testPassMatch = env.match(/PLAYWRIGHT_TEST_PASSWORD="?([^"\r\n]+)"?/);
+    if (testEmailMatch && testPassMatch) {
+      const { error: authErr } = await supabase.auth.signInWithPassword({
+        email: testEmailMatch[1],
+        password: testPassMatch[1]
+      });
+      if (authErr) {
+        console.warn('⚠️ [VAT GUARD] Test user auth warning:', authErr.message);
+      } else {
+        console.log('🔑 [VAT GUARD] Authenticated as test user successfully.');
+      }
+    }
+  }
+
   console.log(`📡 [VAT GUARD] Calling calculate_vat_return(company=${targetCompanyId}, ${targetYear}-${targetMonth}, freq=${targetFreq}, scope=${targetScope})...`);
   
   const rpcRes = await supabase.rpc('calculate_vat_return', {
