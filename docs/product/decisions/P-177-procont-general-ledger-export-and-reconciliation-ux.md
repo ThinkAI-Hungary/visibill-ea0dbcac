@@ -69,5 +69,6 @@ A PROCONT rendszerből érkező könyvelők számára a megszokott elrendezés �
 
 ## 🔗 Kapcsolódó
 - **ADR:** [A-239: PROCONT Főkönyvi Kivonat Export, Hierarchikus Számla-aggregáció és Mérleg-Eredmény Egyezőség-számítás Architektúra](../../architecture/decisions/A-239-procont-general-ledger-export-and-reconciliation-architecture.md)
+- **PRD:** [P-181: PRC Főkönyvi Kivonat Export Elnevezési Konvenció és Letisztult Megjelenítés UX](./P-181-prc-general-ledger-export-naming-ux.md)
 - **BDR:** [021: Főkönyvi Rendszer (General Ledger)](../../business/decisions/021-general-ledger.md)
 - **PRD:** [P-105: Főkönyvi Kivonat Eszköztár és Hierarchikus Kibontás UX](./P-105-general-ledger-toolbar-and-expand-collapse-ux.md)

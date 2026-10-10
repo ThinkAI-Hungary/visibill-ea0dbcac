@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-10  
-> **Összesen:** 239 döntés (221 egyedi döntési fájl) | ✅ Decided: 237 | ⛔ Superseded: 2
+> **Összesen:** 244 döntés (226 egyedi döntési fájl) | ✅ Decided: 242 | ⛔ Superseded: 2
 
 
 ---
@@ -278,6 +278,11 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-238 | Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra | ✅ Decided | [A-238](./A-238-accounting-journals-document-grouping-and-rlb-filter-architecture.md) |
 | A-239 | PROCONT Főkönyvi Kivonat Export, Hierarchikus Számla-aggregáció és Mérleg-Eredmény Egyezőség-számítás Architektúra | ✅ Decided | [A-239](./A-239-procont-general-ledger-export-and-reconciliation-architecture.md) |
 | A-240 | ÁFA Számítási Regresszióvédelmi Kapu: Golden Master Szerződésteszt és Élő Adatbázis Snapshot Guard Architektúra | ✅ Decided | [A-240](./A-240-vat-regression-taxology-golden-master-and-snapshot-guard-architecture.md) |
+| A-241 | 19. Könyvvizsgálói Adatszolgáltatás, 20-oszlopos Karton, ISA 560 Utólagos Rendezések és SHA-256 Integritás Architektúra | ✅ Decided | [A-241](./A-241-auditor-export-and-subsequent-settlements-architecture.md) |
+| A-242 | ÁFA Bevallás Változásvédelem, Kriptográfiai Pillanatkép és Art. 211. § Önellenőrzési Pótlék Számítási Architektúra | ✅ Decided | [A-242](./A-242-vat-return-snapshots-and-self-revision-penalty-architecture.md) |
+| A-243 | NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZ/SZJ Detektálás Architektúra | ✅ Decided | [A-243](./A-243-nav-osa-three-way-reconciliation-and-steel-products-architecture.md) |
+| A-244 | Külföldi és Devizás Bejövő Számlák Integrálása az ÁFA Bevallásba és Taxology Baseline Igazítás | ✅ Decided | [A-244](./A-244-foreign-inbound-invoices-vat-return-integration.md) |
+| A-245 | calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése) | ✅ Decided | [A-245](./A-245-calculate-hungarian-vat-return-cursor-bounding-and-exchange-rate-optimization.md) |
 
 
 

@@ -3,17 +3,18 @@
     "company_id": "acc22ca9-e9ff-4f9f-9495-ca7612b2e5e2",
     "company_name": "Taxology Kft.",
     "tax_number": "14160877-2-43",
+    "source_document": "tests/docs/eb0148/07.hó ÁFA lista.pdf",
     "period_year": 2026,
     "period_month": 7,
     "frequency": "H",
     "scope": "all",
-    "generated_at": "2026-10-10T08:56:20.558Z",
+    "generated_at": "2026-10-10T19:44:13.720Z",
     "vat_return_id": "ead55d5e-991b-4a61-8786-cda105089a36"
   },
   "header": {
-    "total_payable_tax": 1007921,
-    "total_deductible_tax": 1259510.81,
-    "net_balance": -251589.81
+    "total_payable_tax": 1016649.77,
+    "total_deductible_tax": 659917.69,
+    "net_balance": 356732.08
   },
   "lines": [
     {
@@ -24,25 +25,32 @@
       "tax_amount_rounded": 999
     },
     {
-      "row_number": "29",
-      "base_amount": 31300.6277,
-      "tax_amount": 8451,
+      "row_number": "14",
+      "base_amount": 25799,
+      "tax_amount": 6965.73,
+      "base_amount_rounded": 26,
+      "tax_amount_rounded": 7
+    },
+    {
+      "row_number": "18",
+      "base_amount": 31300.63,
+      "tax_amount": 8451.17,
       "base_amount_rounded": 31,
       "tax_amount_rounded": 8
     },
     {
-      "row_number": "36",
-      "base_amount": 3733040.6277,
-      "tax_amount": 1007921,
-      "base_amount_rounded": 3733,
-      "tax_amount_rounded": 1008
+      "row_number": "27",
+      "base_amount": 6529.14,
+      "tax_amount": 1762.87,
+      "base_amount_rounded": 7,
+      "tax_amount_rounded": 2
     },
     {
-      "row_number": "63",
-      "base_amount": 243391.14,
-      "tax_amount": 0,
-      "base_amount_rounded": 243,
-      "tax_amount_rounded": 0
+      "row_number": "36",
+      "base_amount": 3765368.77,
+      "tax_amount": 1016649.77,
+      "base_amount_rounded": 3765,
+      "tax_amount_rounded": 1017
     },
     {
       "row_number": "64",
@@ -53,31 +61,38 @@
     },
     {
       "row_number": "66",
-      "base_amount": 4653857.59,
-      "tax_amount": 1258492.21,
-      "base_amount_rounded": 4654,
-      "tax_amount_rounded": 1258
+      "base_amount": 2402532.63,
+      "tax_amount": 648685.05,
+      "base_amount_rounded": 2403,
+      "tax_amount_rounded": 649
+    },
+    {
+      "row_number": "67",
+      "base_amount": 37829.77,
+      "tax_amount": 10214.04,
+      "base_amount_rounded": 38,
+      "tax_amount_rounded": 10
     },
     {
       "row_number": "76",
-      "base_amount": 4917620.73,
-      "tax_amount": 1259510.81,
-      "base_amount_rounded": 4918,
-      "tax_amount_rounded": 1260
+      "base_amount": 2460734.4,
+      "tax_amount": 659917.69,
+      "base_amount_rounded": 2461,
+      "tax_amount_rounded": 660
     },
     {
       "row_number": "83",
       "base_amount": 0,
-      "tax_amount": -251589.81,
+      "tax_amount": 356732.08,
       "base_amount_rounded": 0,
-      "tax_amount_rounded": -252
+      "tax_amount_rounded": 357
     },
     {
-      "row_number": "86",
+      "row_number": "84",
       "base_amount": 0,
-      "tax_amount": 251589.81,
+      "tax_amount": 356732.08,
       "base_amount_rounded": 0,
-      "tax_amount_rounded": 252
+      "tax_amount_rounded": 357
     }
   ],
   "m_lines_count": 10,
@@ -119,15 +134,6 @@
       "tax_amount_rounded": 11
     },
     {
-      "partner_tax_number": "25566552",
-      "partner_name": "SBA GROUP ZRT.",
-      "invoice_count": 2,
-      "base_amount": 33400,
-      "tax_amount": 9018,
-      "base_amount_rounded": 33,
-      "tax_amount_rounded": 9
-    },
-    {
       "partner_tax_number": "11981309",
       "partner_name": "Printer Service Kft.",
       "invoice_count": 1,
@@ -140,10 +146,19 @@
       "partner_tax_number": "10773381",
       "partner_name": "Magyar Telekom Nyrt.",
       "invoice_count": 2,
-      "base_amount": 26596.82,
-      "tax_amount": 2699.3,
-      "base_amount_rounded": 27,
-      "tax_amount_rounded": 3
+      "base_amount": 25351.86,
+      "tax_amount": 2363.14,
+      "base_amount_rounded": 25,
+      "tax_amount_rounded": 2
+    },
+    {
+      "partner_tax_number": "25566552",
+      "partner_name": "SBA Group Zrt.",
+      "invoice_count": 1,
+      "base_amount": 16700,
+      "tax_amount": 4509,
+      "base_amount_rounded": 17,
+      "tax_amount_rounded": 5
     },
     {
       "partner_tax_number": "13049081",

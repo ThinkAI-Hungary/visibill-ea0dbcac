@@ -223,7 +223,7 @@ export async function exportProcontGlExcel(
   const safeComp = (data.companyName || 'Ceg').replace(/[^a-zA-Z0-9]/g, '_');
   const period = data.formattedPeriod.replace(/[^a-zA-Z0-9]/g, '_') || 'idoszak';
   const zeroSuffix = options.excludeZeroRows ? '_0_nelkul' : '';
-  const filename = `Procont_Fokonyvi_Kivonat_${safeComp}_${period}${zeroSuffix}.xlsx`;
+  const filename = `PRC_Fokonyvi_Kivonat_${safeComp}_${period}${zeroSuffix}.xlsx`;
 
   const link = document.createElement('a');
   link.href = url;

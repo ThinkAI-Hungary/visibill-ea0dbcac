@@ -313,7 +313,7 @@ export function GlToolbar({
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger className="cursor-pointer text-xs">
                     <FileText className="h-4 w-4 mr-2 text-primary" />
-                    <span className="font-semibold text-foreground">PROCONT kivonat (PDF)</span>
+                    <span className="font-semibold text-foreground">PRC kivonat (PDF)</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-52">
                     <DropdownMenuItem onClick={() => onExportProcontPdf({ excludeZeroRows: false })} className="cursor-pointer text-xs">
@@ -332,7 +332,7 @@ export function GlToolbar({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer text-xs">
                   <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400" />
-                  <span className="font-semibold text-foreground">PROCONT kivonat (Excel)</span>
+                  <span className="font-semibold text-foreground">PRC kivonat (Excel)</span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="w-52">
                   <DropdownMenuItem onClick={() => onExportProcontExcel({ excludeZeroRows: false })} className="cursor-pointer text-xs">

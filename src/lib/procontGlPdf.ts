@@ -254,7 +254,7 @@ export function downloadProcontGlPdf(
   const safeComp = (data.companyName || 'Ceg').replace(/[^a-zA-Z0-9]/g, '_');
   const period = data.formattedPeriod.replace(/[^a-zA-Z0-9]/g, '_') || 'idoszak';
   const zeroSuffix = options.excludeZeroRows ? '_0_nelkul' : '';
-  const filename = `Procont_Fokonyvi_Kivonat_${safeComp}_${period}${zeroSuffix}.pdf`;
+  const filename = `PRC_Fokonyvi_Kivonat_${safeComp}_${period}${zeroSuffix}.pdf`;
 
   doc.save(filename);
 }

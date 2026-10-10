@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-10-06  
-> **Összesen:** 195 aktív alkalmazás-tábla (196 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-10-10  
+> **Összesen:** 197 aktív alkalmazás-tábla (198 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -22,7 +22,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [🏦 Házipénztár & OPG](./database/09-petty-cash.md) — 8 tábla, ~1380 sor
 - [📦 Tárgyi Eszközök](./database/10-assets.md) — 4 tábla, ~35 sor
 - [🚚 Szállítmányozás](./database/11-shipping.md) — 4 tábla, ~0 sor
-- [📋 Éves Beszámoló & ÁFA](./database/12-annual-reports.md) — 11 tábla, ~1934 sor
+- [📋 Éves Beszámoló & ÁFA](./database/12-annual-reports.md) — 13 tábla, ~1934 sor
 - [📘 eaisyBooks — Alap](./database/13-eaisybooks-core.md) — 16 tábla, ~26176 sor
 - [📘 eaisyBooks — Bérszámfejtés](./database/14-eaisybooks-payroll.md) — 14 tábla, ~174 sor
 - [📘 eaisyBooks — Adó & Jogi](./database/15-eaisybooks-tax-legal.md) — 10 tábla, ~11 sor
@@ -35,7 +35,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [📄 Könyvelési Naplók](./database/22-accounting-journals.md) — 7 tábla, ~58704 sor
 
 **Kiegészítő katalógusok:**
-- [⚡ PostgreSQL RPC Katalógus (134 RPC + 74 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
+- [⚡ PostgreSQL RPC Katalógus (138 RPC + 74 Trigger)](./rpc-catalog.md) — Teljes tárolt eljárás és aggregációs motor katalógus
 - [🌐 Supabase Edge Functions Katalógus (64 Deno EF)](./edge-functions.md) — NAV szinkron, email, AI, Open Banking és webhook szervermentes funkciók
 
 ---
@@ -54,6 +54,8 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `accounty_ai_chat_messages` | 📘 eaisyBooks — AI Chat | 116 | Individual messages within an AI chat session. Ordered by created_at. |
 | `accounty_ai_chat_sessions` | 📘 eaisyBooks — AI Chat | 8 | AI Assistant chat sessions per user. |
 | `accounty_assignments` | 📘 eaisyBooks — Alap | 93 | Könyvelő-felhasználó ↔ ügyfélcég hozzárendelés. |
+| `accounty_audit_export_diffs` | 📋 Éves Beszámoló & ÁFA | 0 | A lezárt könyvvizsgálói pillanatkép utáni utólagos módosítások és audit trail naplója (A-241) |
+| `accounty_audit_exports` | 📋 Éves Beszámoló & ÁFA | 0 | Könyvvizsgálói exportállományok verziózott adatszolgáltatási csomagjai és SHA-256 integritási nyilvántartása (A-241, P-178) |
 | `accounty_audit_log` | 📘 eaisyBooks — Alap | 0 | Iroda szintű műveleti napló. |
 | `accounty_cafeteria` | 📘 eaisyBooks — Bérszámfejtés | 2 | Cafeteria-elszámolás: SZÉP-kártya, lakhatás, ajándék. |
 | `accounty_cegkapu_settings` | 📘 eaisyBooks — Adó & Jogi | 1 | Cégkapu / KÜNY tárhely integráció. |

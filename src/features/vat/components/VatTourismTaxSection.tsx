@@ -250,7 +250,7 @@ export function VatTourismTaxSection({
           </Button>
 
           <Button
-            onClick={handleExportXml}
+            onClick={() => handleExportXml()}
             disabled={totalBase === 0}
             size="sm"
             variant={viewMode === 'replica' ? 'outline' : 'default'}

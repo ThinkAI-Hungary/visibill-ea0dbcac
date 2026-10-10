@@ -2,7 +2,7 @@
 
 > Éves zárlat, mérleg/eredménykimutatás struktúra, ÁFA bevallások.
 
-**Táblák ebben a csoportban:** 11
+**Táblák ebben a csoportban:** 13
 
 ---
 
@@ -274,4 +274,64 @@
 | sort_order | integer | — | `0` |
 
 ---
+
+### `accounty_audit_exports`
+
+**RLS:** ✅ | **Sorok:** dinamikus (audit export pillanatképek)
+
+> Könyvvizsgálói exportállományok verziózott adatszolgáltatási csomagjai és SHA-256 integritási nyilvántartása (A-241, P-178).
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| fiscal_year | integer | — | |
+| period_from | date | — | |
+| period_to | date | — | |
+| version_label | character varying(64) | — | |
+| export_format | character varying(16) | — | |
+| package_type | character varying(64) | — | `'ALL_MODULES'::character varying` |
+| file_name | character varying(255) | — | |
+| storage_url | text | ✓ | |
+| file_hash_sha256 | character varying(64) | — | |
+| total_lines | integer | — | `0` |
+| total_debit | numeric(18,2) | — | `0` |
+| total_credit | numeric(18,2) | — | `0` |
+| metadata | jsonb | ✓ | `'{}'::jsonb` |
+| is_stale | boolean | — | `false` |
+| stale_detected_at | timestamp with time zone | ✓ | |
+| exported_by | uuid | ✓ | |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`, `exported_by` → `auth.users.id`
+
+**Indexek:** `idx_accounty_audit_exports_company_id`, `idx_accounty_audit_exports_year`, `idx_accounty_audit_exports_stale`, `idx_accounty_audit_exports_created`
+
+---
+
+### `accounty_audit_export_diffs`
+
+**RLS:** ✅ | **Sorok:** dinamikus (utólagos módosítások és audit trail)
+
+> A lezárt könyvvizsgálói pillanatkép utáni utólagos módosítások (INSERT, UPDATE, DELETE) és könyvelési differenciák naplója (A-241).
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | uuid | — | `gen_random_uuid()` |
+| company_id | uuid | — | |
+| export_id | uuid | — | |
+| previous_export_id | uuid | ✓ | |
+| change_type | character varying(32) | — | |
+| entity_type | character varying(64) | — | |
+| entity_id | text | — | |
+| document_number | character varying(128) | ✓ | |
+| diff_summary | text | — | |
+| old_values | jsonb | ✓ | |
+| new_values | jsonb | ✓ | |
+| detected_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`, `export_id` → `accounty_audit_exports.id`, `previous_export_id` → `accounty_audit_exports.id`
+
+**Indexek:** `idx_accounty_audit_export_diffs_export_id`, `idx_accounty_audit_export_diffs_company_id`, `idx_accounty_audit_export_diffs_detected`
 
