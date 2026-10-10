@@ -55,9 +55,10 @@ VITE_SUPABASE_URL="https://qhvcdqkqpgpdxogqqvyr.supabase.co"
    * A migráció Dev adatbázisra futtatása:
      * **AI asszisztenssel:** A `supabase-visibill-dev` MCP eszköz közvetlenül a dev adatbázison hajtja végre.
      * **CLI-vel:** `npx supabase db push` (a beállított `qhvcdqkqpgpdxogqqvyr` projektre küldi).
-2. **Átvezetés a Termelési (Prod) Környezetbe (Kötelező Teljes Backend & DB Paritás):**
-   * Amikor a funkció tesztelt és működik a `dev.visibill.hu` oldalon, a `develop` ágról PR vagy merge készül a `main` ágra.
-   * **KÖTELEZŐ ÉLES SZINKRONIZÁCIÓ:** A `main` ágra történő merge-eléskor KÖTELEZŐ minden olyan adatbázis-módosítást (migrációk, sémák, RPC függvények, RLS szabályok, szükséges seed/konfigurációs adatok) és Edge Function telepítést elvégezni az éles (Prod) környezetben is, amelyek a devről jövő funkciók éles működéséhez szükségesek a feladat lezárása előtt!
+2. **Átvezetés a Termelési (Prod) Környezetbe (Divergencia Ellenőrzés & Éles Paritás):**
+   * Amikor a funkció tesztelt és működik a `dev.visibill.hu` oldalon, a `main` ágra történő élesítés előtt **kötelező a divergencia-audit** (`git log --oneline main..develop`).
+   * **Más fejlesztők munkájának szűrése & Kérdezési kapu:** Ha a `develop` ágon egyéb, még nem élesítendő funkciók vagy más fejlesztők commitjai/migrációi is szerepelnek, az AI agent köteles megállni és rákérdezni a felhasználónál (`ask_question`), hogy teljes merge vagy célzott hotfix promóció (`git cherry-pick`) szükséges-e.
+   * **KÖTELEZŐ ÉLES SZINKRONIZÁCIÓ A JÓVÁHAGYOTT KÖRRE:** A jóváhagyott élesítés során KÖTELEZŐ minden olyan adatbázis-módosítást (migrációk, sémák, RPC függvények, RLS szabályok, szükséges seed/konfigurációs adatok) és Edge Function telepítést elvégezni az éles (Prod) környezetben is, amelyek a `main`-re kerülő funkciók éles működéséhez szükségesek a feladat lezárása előtt!
    * Az éles adatbázisra a módosításokat a `supabase-visibill` MCP-vel (`execute_sql` vagy `apply_migration`) kell érvényesíteni, bejegyezni a `supabase_migrations.schema_migrations` táblába, és kiadni a `NOTIFY pgrst, 'reload schema';` parancsot a séma-gyorsítótár frissítésére. A feladat nem tekinthető késznek a szükséges éles backend elemek jelenléte nélkül.
 
 ---

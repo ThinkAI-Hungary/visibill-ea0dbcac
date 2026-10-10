@@ -37,13 +37,28 @@ Amikor a fejlesztő vagy az AI agent bármilyen okból a **`develop` ágra vált
 ## 🛡️ 4. Konfigurációs Integritás, Merge Védelem és Kötelező Éles Adatbázis- és Backend-szinkronizáció
 * A `develop` ág-specifikus beállítások (mint a [`supabase/config.toml`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/config.toml) `project_id = "qhvcdqkqpgpdxogqqvyr"`, vagy a lokális [`.env.local`](file:///d:/ThinkAI/Visibill/eaisybill-prod/.env.local) kulcsok) soha nem kerülhetnek át akaratlanul a `main` ágra.
 * Pull Request vagy `main` ágba történő merge előtt kötelező ellenőrizni a konfigurációk éles állapotának megőrzését (`project_id = "vxxgvdlqvvchtlmqnrqf"` a `main` ágon).
+* **Divergencia Ellenőrzés és Szelektív Hotfix Kapu (Selective Hotfix vs Full Develop Merge):**
+  * Mielőtt bármilyen kód vagy módosítás a `main` ágba kerülne, az agent KÖTELES ellenőrizni a `main` és `develop` ágak közötti tényleges eltérést:
+    ```powershell
+    git log --oneline main..develop
+    git diff --stat main..develop
+    git diff --name-only main..develop -- supabase/migrations/
+    ```
+  * **Kiterjedés és Más Fejlesztők Munkájának Vizsgálata (Scope Boundary Audit):**
+    * Az agent köteles megvizsgálni, hogy a `develop` ágon felhalmozódott commitok és migrációk KIZÁRÓLAG a jelenlegi feladathoz/hibajegyhez tartoznak-e, vagy **egyéb fájlokat, modulokat, befejezetlen fejlesztéseket vagy más fejlesztők munkáját is tartalmazzák**.
+  * **KÖTELEZŐ RÁKÉRDEZÉS (`ask_question`):**
+    * Amennyiben a `develop` ágon a jelenlegi feladaton felüli egyéb commitok, migrációk vagy forrásfájlok is találhatók, az agent **SZIGORÚAN KÖTELES MEGÁLLNI ÉS RÁKÉRDEZNI A FELHASZNÁLÓNÁL**, hogy mi a szándéka:
+      1. **(Opció 1) Teljes Develop Release (Full Merge):** A `develop` teljes tartalmának összefésülése a `main`-be (`git merge develop`), ÉS az összes új dev migráció és backend elem érvényesítése a Prod DB-n. *(Csak akkor alkalmazható, ha a felhasználó kifejezetten megerősíti, hogy a többi fejlesztő munkája is élesítésre kész és tesztelt).*
+      2. **(Opció 2) Célzott Hotfix Promóció (Cherry-Pick / Selective Hotfix):** A `main` ágra KIZÁRÓLAG a jelenlegi hibajavításhoz/feladathoz tartozó commit(ok) kerülnek át (`git cherry-pick <commit_hash>`), és az éles Prod DB-re KIZÁRÓLAG az adott feladathoz tartozó adatbázis-migráció(k) futnak le. Így a `develop` ágon mások által párhuzamosan végzett fejlesztések véletlenül sem kerülnek ki az éles (Production) környezetbe.
+  * **Tilos a vak `git merge develop`:** Szigorúan tilos előzetes felmérés és felhasználói jóváhagyás nélkül teljes merge-et végezni, ha a `develop` ág divergens vagy idegen fejlesztéseket tartalmaz!
+
 * **Kötelező Éles Adatbázis- és Backend-szinkron Main Merge Során (Full Production Parity):**
-  * A `main` ágra történő merge-eléskor **NEM ELÉG kizárólag a formális migrációs fájlokat (`supabase/migrations/`) átvinni**!
-  * **SZIGORÚAN KÖTELEZŐ az összes olyan adatbázis-módosítást és backend elemet érvényesíteni a termelési (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`), amelyek szükségesek ahhoz, hogy a `develop`-ról érkező új vagy módosított funkciók élesben is hibátlanul működjenek:**
+  * A `main` ágra történő merge-eléskor vagy hotfix promóciókor **NEM ELÉG kizárólag a formális migrációs fájlokat (`supabase/migrations/`) átvinni**!
+  * **SZIGORÚAN KÖTELEZŐ az összes olyan adatbázis-módosítást és backend elemet érvényesíteni a termelési (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`), amelyek szükségesek ahhoz, hogy a `main`-re kikerülő új vagy módosított funkciók élesben is hibátlanul működjenek:**
     1. **Adatbázis sémamódosítások & migrációk:** Új táblák, oszlopok, indexek, enum típusok és idegen kulcsok átvezetése.
     2. **Tárolt eljárások (RPC / SQL függvények):** Bármilyen új vagy módosított `CREATE OR REPLACE FUNCTION` eljárás és trigger függvény élesítése a Prod DB-ben.
     3. **RLS szabályok és biztonsági jogosultságok:** Új táblákhoz és műveletekhez tartozó `CREATE POLICY`, `ENABLE ROW LEVEL SECURITY`, valamint `GRANT / REVOKE` jogosultságok átvezetése.
-    4. **Konfigurációs, Seed és Rendszeradatok:** Bármilyen rendszerbeállítási rekord, funkciókapcsoló (feature flag), alapértelmezett kategória/mapping, státuszkód vagy PGMQ queue regisztráció, amely a dev fejlesztés során létrejött és a kód futásához elengedhetetlen.
+    4. **Konfigurációs, Seed és Rendszeradatok:** Bármilyen rendszerbeállítási rekord, funkciókapcsoló (feature flag), alapértelmezett kategória/mapping, státuszkód vagy PGMQ queue regisztráció, amely a fejlesztés során létrejött és a kód futásához elengedhetetlen.
     5. **Edge Functions éles telepítése:** Amennyiben a feladat Supabase Edge Function-t (`supabase/functions/`) érintett, azt kötelező letelepíteni a Prod projektre is (`npx supabase functions deploy <fn> --project-ref vxxgvdlqvvchtlmqnrqf`).
     6. **PostgREST Schema Cache Reload:** Az adatbázis-módosítások után KÖTELEZŐ lefuttatni a `NOTIFY pgrst, 'reload schema';` parancsot a Prod DB-n, hogy a REST/PostgREST API azonnal érzékelje az új sémát.
   * Szigorúan tilos úgy befejezettnek nyilvánítani a merge-et vagy feladatot, hogy a `main` ági forráskód már igényli a módosításokat, miközben az éles adatbázis vagy backend még a korábbi állapotban van!
@@ -68,7 +83,8 @@ Amikor ügyfél hibajegy megoldása (`/ticket-support`, `/visibill-ticket-suppor
      * `npx tsc --noEmit` vagy `npm run build` (Típushelyesség)
      * Releváns Vitest tesztek futtatása (`npx vitest run ...`)
 4. **Élesítés / Prod Promóció (Merge & Hotfix Kapu):**
-   * Az éles `main` ágra való merge és deploy **CSAK AZUTÁN** történhet meg, hogy a `develop` ágon és a Dev DB-ben a javítás bizonyítottan sikeres volt, és a felhasználó explicit jóváhagyta azt.
+   * Az éles `main` ágra való bekerülés **CSAK AZUTÁN** történhet meg, hogy a `develop` ágon és a Dev DB-ben a javítás bizonyítottan sikeres volt, és a felhasználó explicit jóváhagyta azt.
+   * **Divergencia-szűrés:** Ha a `develop` ág más fejlesztők munkáit is tartalmazza, kötelező a felajánlás: **Teljes merge** vs **Célzott cherry-pick hotfix**. Célzott javításnál kizárólag a hiba commitjai és migrációi kerülhetnek ki élesbe!
    * Ha a hiba elhárítása egyetlen konkrét éles ügyfél rekordjának korrekcióját (pl. beragadt státusz átállítása `UPDATE`-tel) igényli az éles DB-ben, azt a felhasználónak előre be kell mutatni, és csak kifejezett jóváhagyás után szabad lefuttatni az éles adatbázison.
 5. **Ügyfélválasz Időzítése (Fix First, Response Last):**
    * Ügyfélválasz tervezet (`ticket_comments`) rögzítése vagy kiküldése szigorúan tilos mindaddig, amíg a javítás fizikailag el nem készült és a tesztek nem igazolták a működését.

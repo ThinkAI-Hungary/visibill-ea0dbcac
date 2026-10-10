@@ -258,14 +258,19 @@ A Supabase API rétege (PostgREST) belső séma-gyorsítótárral (schema cache)
 
 Minden alkalommal, amikor kód kerül beolvasztásra a `main` ágba (akár Pull Request útján, akár közvetlen `git merge develop` paranccsal):
 
-1. **Migrációs Diff Ellenőrzés (Pre-Merge Diff Check):**
-   * A merge előtt kötelező ellenőrizni, hogy a beolvasztandó commitok tartalmaznak-e új vagy módosított migrációs fájlt:
+1. **Migrációs Diff és Divergencia Ellenőrzés (Pre-Merge Scope & Diff Check):**
+   * A merge előtt kötelező ellenőrizni, hogy a `develop` ág milyen commitokat és új migrációkat tartalmaz a `main`-hez képest:
      ```powershell
-     git diff main...develop --name-only -- supabase/migrations/
+     git log --oneline main..develop
+     git diff main..develop --name-only -- supabase/migrations/
      ```
-2. **Kötelező Éles Végrehajtás (Mandatory Execution on Prod DB):**
-   * Ha a diffben új vagy módosított migráció szerepel:
-     * **SZIGORÚAN KÖTELEZŐ elvégezni az adatbázis-migrációt az éles (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`)!**
+   * **Más Fejlesztők Munkájának Szűrése & Kérdezési Kapu:**
+     * Amennyiben a diffben a jelenlegi feladaton felüli egyéb migrációk vagy forrásfájlok is találhatók (más fejlesztők vagy korábbi, még nem élesítendő feladatok munkái), az agent **KÖTELES MEGÁLLNI ÉS RÁKÉRDEZNI A FELHASZNÁLÓNÁL (`ask_question`)**:
+       - **Teljes Merge:** Minden dev migráció lefut az éles Prod DB-n (ha a többi fejlesztő munkája is élesítésre alkalmas és jóváhagyott).
+       - **Célzott Hotfix (Cherry-Pick):** Csak a hibajavítás commitja kerül a `main`-re, és **KIZÁRÓLAG az adott feladathoz tartozó migráció** fut le az éles Prod DB-n!
+2. **Kötelező Éles Végrehajtás a Jóváhagyott Körre (Execution on Prod DB):**
+   * A jóváhagyott hatókörben (teljes merge vagy szelektív hotfix) szereplő migráció(ka)t:
+     * **SZIGORÚAN KÖTELEZŐ elvégezni az éles (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`)!**
      * Sosem szabad a `main` ágat úgy hagyni, hogy a kód már feltételez egy új táblát, mezőt, RPC-t vagy RLS szabályt, de az éles adatbázis még a régi sémán fut.
 3. **Alkalmazási Módok és Verifikáció:**
    * **Automatikus GitHub Integráció:** Ha a `main` ágra történő push után a Supabase automatikus integrációja fut le, az agent köteles lekérdezni a Prod DB `supabase_migrations.schema_migrations` tábláját, és ellenőrizni, hogy a migráció verziója sikeresen regisztrálásra került.
