@@ -1,4 +1,4 @@
-project_id = "qhvcdqkqpgpdxogqqvyr"
+project_id = "vxxgvdlqvvchtlmqnrqf"
 
 [functions.send-weekly-summary]
 verify_jwt = false
