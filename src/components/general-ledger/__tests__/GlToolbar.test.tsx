@@ -35,7 +35,7 @@ describe('GlToolbar', () => {
     expect(screen.getByText('Aktív Számlatükör:')).toBeInTheDocument();
     expect(screen.getByText('Vegyes bizonylat')).toBeInTheDocument();
     expect(screen.getByText('Új főkönyvi szám')).toBeInTheDocument();
-    expect(screen.getByText('XML Import')).toBeInTheDocument();
+    expect(screen.getByText('Audit XML')).toBeInTheDocument();
     expect(screen.getByText('AI Besorolás')).toBeInTheDocument();
     expect(screen.getByText('Export')).toBeInTheDocument();
   });

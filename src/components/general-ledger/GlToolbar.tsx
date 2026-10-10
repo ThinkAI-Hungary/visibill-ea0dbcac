@@ -38,6 +38,8 @@ interface GlToolbarProps {
   onPrint: () => void;
   onExportExcel: (options?: { excludeZeroRows?: boolean }) => void;
   onExportAnalyticalExcel: (options?: { excludeZeroRows?: boolean }) => void;
+  onExportProcontPdf?: (options?: { excludeZeroRows?: boolean }) => void;
+  onExportProcontExcel?: (options?: { excludeZeroRows?: boolean }) => void;
 }
 
 export function GlToolbar({
@@ -63,6 +65,8 @@ export function GlToolbar({
   onPrint,
   onExportExcel,
   onExportAnalyticalExcel,
+  onExportProcontPdf,
+  onExportProcontExcel,
 }: GlToolbarProps) {
   const { t } = useTranslation(['accounting', 'common']);
 
@@ -303,6 +307,45 @@ export function GlToolbar({
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
+            {onExportProcontPdf && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="cursor-pointer text-xs">
+                    <FileText className="h-4 w-4 mr-2 text-primary" />
+                    <span className="font-semibold text-foreground">PROCONT kivonat (PDF)</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-52">
+                    <DropdownMenuItem onClick={() => onExportProcontPdf({ excludeZeroRows: false })} className="cursor-pointer text-xs">
+                      <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>Teljes kivonat (PDF)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onExportProcontPdf({ excludeZeroRows: true })} className="cursor-pointer text-xs">
+                      <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>0-ás sorok nélkül</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </>
+            )}
+            {onExportProcontExcel && (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer text-xs">
+                  <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-semibold text-foreground">PROCONT kivonat (Excel)</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-52">
+                  <DropdownMenuItem onClick={() => onExportProcontExcel({ excludeZeroRows: false })} className="cursor-pointer text-xs">
+                    <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>Teljes kivonat (Excel)</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onExportProcontExcel({ excludeZeroRows: true })} className="cursor-pointer text-xs">
+                    <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>0-ás sorok nélkül</span>
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

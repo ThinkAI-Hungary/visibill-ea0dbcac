@@ -42,6 +42,12 @@ A replika felső műveleti sávjában elhelyezett `[ 📄 Hivatalos PDF Letölt�
 - Vektoros keretezés, hivatalos betűtípusok, margók és cellák.
 - Fájlnév konvenció: `26TFEJLH_[Cégnév]_[Időszak].pdf`.
 
+### 3. Hivatalos ÁNYK XML Export Gomb és Letöltés (`tfejlhXml.ts`)
+Mind a Turizmusfejlesztési hozzájárulás fülön (`VatTourismTaxSection.tsx`), mind pedig a replika konténer fejlécében (`Nav26TfejlhReplicaContainer.tsx`) elérhető az `[ 📥 ÁNYK XML letöltése (.xml) ]` műveleti gomb:
+- **Közvetlen Letöltés:** Egyetlen kattintással előállítja és letölti az AbevJava v3.0 formátumú XML állományt.
+- **Fájlnév Szabvány:** `26TFEJLH_[Adószám]_[Időszak].xml`.
+- **Felhasználói Visszajelzés:** Letöltéskor `toast.success` értesíti a könyvelőt, hogy az állomány azonnal betölthető a NAV ÁNYK programba.
+
 ---
 
 ## 🔍 Current Implementation
@@ -49,11 +55,13 @@ A replika felső műveleti sávjában elhelyezett `[ 📄 Hivatalos PDF Letölt�
 - `src/features/vat/components/replica/Nav26TfejlhSheetFolap.tsx`
 - `src/features/vat/components/VatTourismTaxSection.tsx`
 - `src/lib/tfejlhPdf.ts`
+- `src/lib/tfejlhXml.ts`
+- `src/lib/__tests__/tfejlhXml.test.ts`
 
 ---
 
 ## 📈 Rationale
-A könyvelők és adószakértők a hivatalos nyomtatvány struktúráját ismerik leginkább. A nyomtatvány replika kizárja az ÁNYK-ba történő kézi átmásolás során felmerülő sor-elcsúszásokat, az azonnali PDF export pedig lehetővé teszi, hogy az ügyfél egy hitelesnek látszó adóelszámolást kapjon a könyvelőjétől a befizetéshez.
+A könyvelők és adószakértők a hivatalos nyomtatvány struktúráját ismerik leginkább. A nyomtatvány replika kizárja az ÁNYK-ba történő kézi átmásolás során felmerülő sor-elcsúszásokat, a közvetlen ÁNYK XML export pedig másodpercekre rövidíti le a hivatalos NAV benyújtás előkészítését.
 
 ---
 

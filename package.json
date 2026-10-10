@@ -17,7 +17,9 @@
     "test:e2e": "playwright test",
     "gen-db-docs": "node scripts/gen-db-docs.js",
     "kb:sync": "node scripts/syncKnowledgeBase.cjs",
-    "verify:migrations": "node scripts/verify-migrations.mjs"
+    "verify:migrations": "node scripts/verify-migrations.mjs",
+    "vat:guard": "node scripts/vat-snapshot-guard.mjs verify",
+    "vat:snapshot": "node scripts/vat-snapshot-guard.mjs save"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

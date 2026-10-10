@@ -43,17 +43,31 @@ A PDF generálás kizárólag a kliens böngészőjében fut `jsPDF` segítség�
 - `VatTourismTaxSection.tsx`: A kimenő számlák 5%-os áfa tartalmú tételeit reaktívan szűri és aggregálja.
 - A replika azonnal, valós időben tükrözi a bejövő és kimenő számlák változásait, így a könyvelő azonnal látja az adóhatóságnak küldendő számokat.
 
+### 4. Hivatalos NAV AbevJava v3.0 ÁNYK XML Generáló Motor (`src/lib/tfejlhXml.ts`)
+A PDF megjelenítés mellett elengedhetetlen a hatósági elektronikus bevallási formátum támogatása:
+- **Formátum és Séma:** NAV ÁNYK (AbevJava v3.0) XML hierarchia (`<nyomtatvanyok>`, `<nyomtatvany>`, `<mezo>` struktúra) a hivatalos minta (`tests/docs/eb0148/26TFEJLH.xml`) alapján.
+- **Mezőleképezések:**
+  - Adózó törzsadatok: adószám szétbontása (8 jegyű törzsszám `adoszam_1`, 1 jegyű áfakód `adoszam_2`, 2 jegyű megyekód `adoszam_3`), adózó neve, székhelye, elszámolási időszak (`YYYY.MM.DD` és `YYYYMMDD`).
+  - 01-es lap turizmusfejlesztési hozzájárulás mezői:
+    - `01_0001A` / `01_0001B`: Vendéglátás 5%-os étel- és helyben készített italforgalom nettó adóalapja és a 4%-os számított adó.
+    - `01_0002A` / `01_0002B`: Kereskedelmi szálláshely-szolgáltatás nettó adóalapja és a 4%-os számított adó.
+    - `01_0003A` / `01_0003B`: Összesített hozzájárulási alap és kötelezettség.
+    - `01_0006A`: Fizetendő hozzájárulás összege (kerekítve).
+- **Megbízhatóság és Kódolás:** Teljes körű XML entitás escaping (`&`, `<`, `>`, `"`, `'`), tiszta UTF-8 kódolás BOM nélkül, szigorú numerikus validáció.
+- **Tesztek:** Automatizált Vitest egységtesztek (`src/lib/__tests__/tfejlhXml.test.ts`), amelyek lefedik a mezőgenerálást, az üres állapotokat és a kerekítéseket.
+
 ---
 
 ## ⚡ Consequences
 
 ### Pozitív
 - **Azonnali vizuális kontroll:** A könyvelő a NAV nyomtatvány megszokott formátumában látja az adatokat, kizárva az ÁNYK kitöltési félreértéseket.
-- **Nulla szerverterhelés:** A 100%-ban kliensoldali vektoros PDF generálás azonnali letöltést biztosít hálózati késleltetés és szerverköltség nélkül.
+- **Közvetlen ÁNYK Import:** Az XML fájl egyetlen kattintással betölthető az ÁNYK keretprogramba, megszűnik a kézi gépelés és elgépelés veszélye.
+- **Nulla szerverterhelés:** A 100%-ban kliensoldali vektoros PDF és XML generálás azonnali letöltést biztosít hálózati késleltetés és szerverköltség nélkül.
 - **Ügyfélbarát elszámolás:** A vállalkozó számára azonnal átadható, professzionális bizonylat készül a fizetendő hozzájárulásról.
 
 ### Negatív & Kockázatok
-- NAV űrlapváltozás esetén (éves nyomtatványváltás, pl. 27TFEJLH) a komponens layoutját és a PDF koordinátákat frissíteni kell.
+- NAV űrlapváltozás esetén (éves nyomtatványváltás, pl. 27TFEJLH) a komponens layoutját, az XML mezőazonosítókat és a PDF koordinátákat frissíteni kell.
 
 ---
 

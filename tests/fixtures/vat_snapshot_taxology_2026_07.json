@@ -1,0 +1,176 @@
+{
+  "metadata": {
+    "company_id": "acc22ca9-e9ff-4f9f-9495-ca7612b2e5e2",
+    "company_name": "Taxology Kft.",
+    "tax_number": "14160877-2-43",
+    "period_year": 2026,
+    "period_month": 7,
+    "frequency": "H",
+    "scope": "all",
+    "generated_at": "2026-10-10T08:56:20.558Z",
+    "vat_return_id": "ead55d5e-991b-4a61-8786-cda105089a36"
+  },
+  "header": {
+    "total_payable_tax": 1007921,
+    "total_deductible_tax": 1259510.81,
+    "net_balance": -251589.81
+  },
+  "lines": [
+    {
+      "row_number": "07",
+      "base_amount": 3701740,
+      "tax_amount": 999470,
+      "base_amount_rounded": 3702,
+      "tax_amount_rounded": 999
+    },
+    {
+      "row_number": "29",
+      "base_amount": 31300.6277,
+      "tax_amount": 8451,
+      "base_amount_rounded": 31,
+      "tax_amount_rounded": 8
+    },
+    {
+      "row_number": "36",
+      "base_amount": 3733040.6277,
+      "tax_amount": 1007921,
+      "base_amount_rounded": 3733,
+      "tax_amount_rounded": 1008
+    },
+    {
+      "row_number": "63",
+      "base_amount": 243391.14,
+      "tax_amount": 0,
+      "base_amount_rounded": 243,
+      "tax_amount_rounded": 0
+    },
+    {
+      "row_number": "64",
+      "base_amount": 20372,
+      "tax_amount": 1018.6,
+      "base_amount_rounded": 20,
+      "tax_amount_rounded": 1
+    },
+    {
+      "row_number": "66",
+      "base_amount": 4653857.59,
+      "tax_amount": 1258492.21,
+      "base_amount_rounded": 4654,
+      "tax_amount_rounded": 1258
+    },
+    {
+      "row_number": "76",
+      "base_amount": 4917620.73,
+      "tax_amount": 1259510.81,
+      "base_amount_rounded": 4918,
+      "tax_amount_rounded": 1260
+    },
+    {
+      "row_number": "83",
+      "base_amount": 0,
+      "tax_amount": -251589.81,
+      "base_amount_rounded": 0,
+      "tax_amount_rounded": -252
+    },
+    {
+      "row_number": "86",
+      "base_amount": 0,
+      "tax_amount": 251589.81,
+      "base_amount_rounded": 0,
+      "tax_amount_rounded": 252
+    }
+  ],
+  "m_lines_count": 10,
+  "m_lines": [
+    {
+      "partner_tax_number": "32478620",
+      "partner_name": "Think AI Korlátolt Felelősségű Társaság",
+      "invoice_count": 2,
+      "base_amount": 2219200,
+      "tax_amount": 599184,
+      "base_amount_rounded": 2219,
+      "tax_amount_rounded": 599
+    },
+    {
+      "partner_tax_number": "26383738",
+      "partner_name": "Adriana Automatik Kft",
+      "invoice_count": 1,
+      "base_amount": 50370,
+      "tax_amount": 13599.9,
+      "base_amount_rounded": 50,
+      "tax_amount_rounded": 14
+    },
+    {
+      "partner_tax_number": "13322142",
+      "partner_name": "E.ON Energiamegoldások Kft.",
+      "invoice_count": 2,
+      "base_amount": 47061,
+      "tax_amount": 8403,
+      "base_amount_rounded": 47,
+      "tax_amount_rounded": 8
+    },
+    {
+      "partner_tax_number": "14825624",
+      "partner_name": "ICON TECHNOLOGY Kft.",
+      "invoice_count": 1,
+      "base_amount": 40820.77,
+      "tax_amount": 11021.61,
+      "base_amount_rounded": 41,
+      "tax_amount_rounded": 11
+    },
+    {
+      "partner_tax_number": "25566552",
+      "partner_name": "SBA GROUP ZRT.",
+      "invoice_count": 2,
+      "base_amount": 33400,
+      "tax_amount": 9018,
+      "base_amount_rounded": 33,
+      "tax_amount_rounded": 9
+    },
+    {
+      "partner_tax_number": "11981309",
+      "partner_name": "Printer Service Kft.",
+      "invoice_count": 1,
+      "base_amount": 28800,
+      "tax_amount": 7776,
+      "base_amount_rounded": 29,
+      "tax_amount_rounded": 8
+    },
+    {
+      "partner_tax_number": "10773381",
+      "partner_name": "Magyar Telekom Nyrt.",
+      "invoice_count": 2,
+      "base_amount": 26596.82,
+      "tax_amount": 2699.3,
+      "base_amount_rounded": 27,
+      "tax_amount_rounded": 3
+    },
+    {
+      "partner_tax_number": "13049081",
+      "partner_name": "Integrated e-Solutions 2000 Kft.",
+      "invoice_count": 1,
+      "base_amount": 5039,
+      "tax_amount": 1361,
+      "base_amount_rounded": 5,
+      "tax_amount_rounded": 1
+    },
+    {
+      "partner_tax_number": "10893850",
+      "partner_name": "Fővárosi Csatornázási Művek Zrt.",
+      "invoice_count": 1,
+      "base_amount": 3520,
+      "tax_amount": 951,
+      "base_amount_rounded": 4,
+      "tax_amount_rounded": 1
+    },
+    {
+      "partner_tax_number": "10898824",
+      "partner_name": "Fővárosi Vízművek Zártkörűen Működő Részvénytársaság",
+      "invoice_count": 1,
+      "base_amount": 1981,
+      "tax_amount": 535,
+      "base_amount_rounded": 2,
+      "tax_amount_rounded": 1
+    }
+  ]
+}

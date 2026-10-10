@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-10  
-> **Összesen:** 237 döntés (219 egyedi döntési fájl) | ✅ Decided: 235 | ⛔ Superseded: 2
+> **Összesen:** 239 döntés (221 egyedi döntési fájl) | ✅ Decided: 237 | ⛔ Superseded: 2
 
 
 ---
@@ -276,6 +276,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-236 | NAV 26TFEJLH Nyomtatvány Replika és PDF Generáló Motor | ✅ Decided | [A-236](./A-236-nav-26tfejlh-tourism-contribution-replica-and-pdf-engine.md) |
 | A-237 | NAV Online Számla v3 GZIP Kitömörítés és Többtételes Közműszámla Ingestion Architektúra | ✅ Decided | [A-237](./A-237-nav-osa-gzip-decompression-and-utility-line-items.md) |
 | A-238 | Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra | ✅ Decided | [A-238](./A-238-accounting-journals-document-grouping-and-rlb-filter-architecture.md) |
+| A-239 | PROCONT Főkönyvi Kivonat Export, Hierarchikus Számla-aggregáció és Mérleg-Eredmény Egyezőség-számítás Architektúra | ✅ Decided | [A-239](./A-239-procont-general-ledger-export-and-reconciliation-architecture.md) |
+| A-240 | ÁFA Számítási Regresszióvédelmi Kapu: Golden Master Szerződésteszt és Élő Adatbázis Snapshot Guard Architektúra | ✅ Decided | [A-240](./A-240-vat-regression-taxology-golden-master-and-snapshot-guard-architecture.md) |
 
 
 

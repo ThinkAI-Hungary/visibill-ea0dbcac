@@ -29,6 +29,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Nav2665PageFrame } from './Nav2665PageFrame';
 import { Nav26TfejlhSheetFolap } from './Nav26TfejlhSheetFolap';
 import { generateTfejlhPdf } from '@/lib/tfejlhPdf';
+import { downloadTfejlhXml, TfejlhXmlData } from '@/lib/tfejlhXml';
 
 export interface Nav26TfejlhReplicaContainerProps {
   selectedCompany?: any;
@@ -41,7 +42,7 @@ export interface Nav26TfejlhReplicaContainerProps {
   baseBusz: number;
   initialAgentName?: string;
   initialAgentPhone?: string;
-  onExportXml?: () => void;
+  onExportXml?: (extraData?: Partial<TfejlhXmlData>) => void;
 }
 
 export function Nav26TfejlhReplicaContainer({
@@ -118,6 +119,47 @@ export function Nav26TfejlhReplicaContainer({
         description: e.message,
         variant: 'destructive',
       });
+    }
+  };
+
+  // Handle standalone or forwarded ÁNYK XML export
+  const handleDownloadXml = () => {
+    const extra: Partial<TfejlhXmlData> = {
+      agentName,
+      agentPhone,
+      isSelfRevision,
+      isRepeatedSelfRevision,
+      selfRevisionTaxDiff,
+      selfRevisionSurcharge,
+    };
+
+    if (onExportXml) {
+      onExportXml(extra);
+    } else {
+      try {
+        downloadTfejlhXml({
+          companyName: selectedCompany?.name || 'Vállalkozás',
+          companyTaxNumber: selectedCompany?.tax_number || '',
+          year,
+          month,
+          frequency,
+          baseEtkezohely,
+          baseEtterem,
+          baseSzallas,
+          baseBusz,
+          ...extra,
+        });
+        toast({
+          title: '26TFEJLH ÁNYK XML letöltve',
+          description: 'A bevallási állomány sikeresen exportálva lett (v3.0 AbevJava formátum).',
+        });
+      } catch (e: any) {
+        toast({
+          title: 'Hiba az XML exportálás során',
+          description: e instanceof Error ? e.message : 'Ismeretlen hiba történt.',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -319,17 +361,15 @@ export function Nav26TfejlhReplicaContainer({
               </Button>
 
               {/* ÁNYK XML Export */}
-              {onExportXml && (
-                <Button
-                  size="sm"
-                  onClick={onExportXml}
-                  className="h-8 text-xs gap-1.5 font-semibold bg-primary"
-                  title="26TFEJLH ÁNYK XML letöltése"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  ÁNYK XML
-                </Button>
-              )}
+              <Button
+                size="sm"
+                onClick={handleDownloadXml}
+                className="h-8 text-xs gap-1.5 font-semibold bg-primary"
+                title="26TFEJLH ÁNYK XML letöltése"
+              >
+                <Download className="w-3.5 h-3.5" />
+                ÁNYK XML
+              </Button>
             </div>
           </div>
         </CardHeader>

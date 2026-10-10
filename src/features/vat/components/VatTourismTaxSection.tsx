@@ -25,6 +25,7 @@ import {
 import { formatCurrency } from '@/lib/utils';
 import { VatFrequency } from '../types';
 import { Nav26TfejlhReplicaContainer } from './replica/Nav26TfejlhReplicaContainer';
+import { downloadTfejlhXml, TfejlhXmlData } from '@/lib/tfejlhXml';
 
 interface VatTourismTaxSectionProps {
   companyId: string;
@@ -157,49 +158,32 @@ export function VatTourismTaxSection({
   const taxPayable = Math.round(totalBase * 0.04); // 4% törvényi kulcs
 
   // Export 26TFEJLH XML for ÁNYK
-  const handleExportXml = () => {
-    const taxNum = selectedCompany?.tax_number || '';
-    const compName = selectedCompany?.name || '';
+  const handleExportXml = (extraData?: Partial<TfejlhXmlData>) => {
+    try {
+      downloadTfejlhXml({
+        companyName: selectedCompany?.name || '',
+        companyTaxNumber: selectedCompany?.tax_number || '',
+        year,
+        month,
+        frequency: frequency || 'H',
+        baseEtkezohely,
+        baseEtterem,
+        baseSzallas,
+        baseBusz,
+        ...extraData,
+      });
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<nyomtatvanyok xmlns="http://www.nav.gov.hu/ABEV/bekuldes">
-  <nyomtatvany>
-    <nyomtatvanyazonosito>${year % 100}TFEJLH</nyomtatvanyazonosito>
-    <nyomtatvanyverzio>1.0</nyomtatvanyverzio>
-    <fejlec>
-      <idoszak>
-        <tol>${dateFrom.replace(/-/g, '')}</tol>
-        <ig>${dateTo.replace(/-/g, '')}</ig>
-      </idoszak>
-      <adozo>
-        <adoszam>${taxNum.replace(/-/g, '')}</adoszam>
-        <nev>${compName}</nev>
-      </adozo>
-    </fejlec>
-    <mezok>
-      <mezo nev="01_ALAP">${baseEtkezohely}</mezo>
-      <mezo nev="02_ALAP">${baseEtterem}</mezo>
-      <mezo nev="03_ALAP">${baseSzallas}</mezo>
-      <mezo nev="04_ALAP">${baseBusz}</mezo>
-      <mezo nev="OSSZES_ALAP">${totalBase}</mezo>
-      <mezo nev="FIZETENDO_ADO_4SZAZALEK">${taxPayable}</mezo>
-    </mezok>
-  </nyomtatvany>
-</nyomtatvanyok>`;
-
-    const blob = new Blob([xml], { type: 'application/xml;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${year % 100}TFEJLH_${taxNum}_${year}_${month}.xml`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast({
-      title: '26TFEJLH ÁNYK XML letöltve',
-      description: 'A bevallási állomány sikeresen exportálva lett.',
-    });
+      toast({
+        title: '26TFEJLH ÁNYK XML letöltve',
+        description: 'A bevallási állomány sikeresen exportálva lett (v3.0 AbevJava formátum).',
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Hiba az XML exportálás során',
+        description: e instanceof Error ? e.message : 'Ismeretlen hiba történt.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
