@@ -110,7 +110,7 @@ export async function generateDraftsFallback(
   const parentInvMap = new Map<string, any>();
   const parentNavMap = new Map<string, any>();
   parentInvRes.data?.forEach((inv: any) => parentInvMap.set(inv.id, inv));
-  parentNavMap.data?.forEach((inv: any) => parentNavMap.set(inv.id, inv));
+  parentNavRes.data?.forEach((inv: any) => parentNavMap.set(inv.id, inv));
 
   const itemToParentInvoiceMap = new Map<string, { parentId: string; table: 'invoices' | 'nav_invoices' }>();
   invRes.data?.forEach((i: any) => {

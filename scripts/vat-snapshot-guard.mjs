@@ -8,30 +8,40 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 
-// Read environment
-const envPath = path.join(projectRoot, '.env.local');
+// Read environment (Default to .env.prod.local if available because the Taxology 2026/07 Golden Master dataset resides on PROD; allow --dev for DEV DB)
+const isDevExplicit = process.argv.includes('--dev');
+const envPath = !isDevExplicit && fs.existsSync(path.join(projectRoot, '.env.prod.local'))
+  ? path.join(projectRoot, '.env.prod.local')
+  : path.join(projectRoot, '.env.local');
+
 if (!fs.existsSync(envPath)) {
-  console.error('❌ [VAT GUARD] .env.local not found at:', envPath);
+  console.error('❌ [VAT GUARD] Environment file not found at:', envPath);
   process.exit(1);
 }
 
 const env = fs.readFileSync(envPath, 'utf8');
-const urlMatch = env.match(/SUPABASE_URL="([^"]+)"/);
-const keyMatch = env.match(/SUPABASE_SERVICE_KEY="([^"]+)"/);
+const urlMatch = env.match(/(?:SUPABASE_URL|VITE_SUPABASE_URL)="([^"]+)"/);
+const serviceKeyMatch = env.match(/(?:SUPABASE_SERVICE_KEY|VITE_SUPABASE_SERVICE_KEY)="([^"]+)"/);
+const anonKeyMatch = env.match(/(?:VITE_SUPABASE_ANON_KEY|SUPABASE_ANON_KEY)="([^"]+)"/);
+const apiKey = serviceKeyMatch ? serviceKeyMatch[1] : (anonKeyMatch ? anonKeyMatch[1] : null);
 
-if (!urlMatch || !keyMatch) {
-  console.error('❌ [VAT GUARD] SUPABASE_URL or SUPABASE_SERVICE_KEY missing in .env.local');
+if (!urlMatch || !apiKey) {
+  console.error('❌ [VAT GUARD] SUPABASE_URL or API key missing in environment file:', envPath);
   process.exit(1);
 }
 
-const supabase = createClient(urlMatch[1], keyMatch[1]);
+const isProd = envPath.includes('.env.prod.local');
+console.log(`🔌 [VAT GUARD] Csatlakozás: ${urlMatch[1]} (${isProd ? 'PROD' : 'DEV'}) [${serviceKeyMatch ? 'SERVICE_ROLE' : 'ANON'}]`);
+
+const supabase = createClient(urlMatch[1], apiKey);
 
 // CLI arguments
 const args = process.argv.slice(2);
-const command = args[0] || 'verify'; // 'verify' or 'save'
-const targetCompanyId = args[1] || 'acc22ca9-e9ff-4f9f-9495-ca7612b2e5e2'; // Taxology Kft.
-const targetYear = parseInt(args[2] || '2026', 10);
-const targetMonth = parseInt(args[3] || '7', 10);
+const positionalArgs = args.filter(a => !a.startsWith('--'));
+const command = positionalArgs[0] || 'verify'; // 'verify' or 'save'
+const targetCompanyId = positionalArgs[1] || 'acc22ca9-e9ff-4f9f-9495-ca7612b2e5e2'; // Taxology Kft.
+const targetYear = parseInt(positionalArgs[2] || '2026', 10);
+const targetMonth = parseInt(positionalArgs[3] || '7', 10);
 const targetFreq = 'H';
 const targetScope = 'all';
 
@@ -85,6 +95,8 @@ async function fetchCalculationData() {
     metadata: {
       company_id: targetCompanyId,
       company_name: 'Taxology Kft.',
+      tax_number: '14160877-2-43',
+      source_document: 'tests/docs/eb0148/07.hó ÁFA lista.pdf',
       period_year: targetYear,
       period_month: targetMonth,
       frequency: targetFreq,
@@ -92,6 +104,7 @@ async function fetchCalculationData() {
       generated_at: new Date().toISOString(),
       vat_return_id: vatReturnId
     },
+
     header: {
       total_payable_tax: Number(vr.total_payable_tax),
       total_deductible_tax: Number(vr.total_deductible_tax),

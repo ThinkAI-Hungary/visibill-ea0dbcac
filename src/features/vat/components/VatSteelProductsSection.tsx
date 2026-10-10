@@ -15,6 +15,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Filter,
+  Sparkles,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,7 @@ export function VatSteelProductsSection({
   const queryClient = useQueryClient();
 
   const [directionFilter, setDirectionFilter] = useState<'ALL' | 'INBOUND' | 'OUTBOUND'>('ALL');
-  const [completenessFilter, setCompletenessFilter] = useState<'ALL' | 'INCOMPLETE' | 'COMPLETE'>('ALL');
+  const [completenessFilter, setCompletenessFilter] = useState<'ALL' | 'ANOMALY' | 'INCOMPLETE' | 'COMPLETE'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   const {
@@ -72,6 +73,7 @@ export function VatSteelProductsSection({
       const isComplete = isSteelItemComplete(item);
       if (completenessFilter === 'COMPLETE' && !isComplete) return false;
       if (completenessFilter === 'INCOMPLETE' && isComplete) return false;
+      if (completenessFilter === 'ANOMALY' && !item.isPriceAnomaly && !item.isMissingWeight) return false;
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
@@ -94,16 +96,18 @@ export function VatSteelProductsSection({
     let totalNetAmount = 0;
     let missingVtszCount = 0;
     let missingWeightCount = 0;
+    let anomalyCount = 0;
 
     filteredItems.forEach(item => {
       totalCount += 1;
       totalWeightKg += item.netWeightKg || 0;
       totalNetAmount += item.netAmount || 0;
       if (!item.productCode || item.productCode.trim() === '') missingVtszCount += 1;
-      if (item.netWeightKg == null || item.netWeightKg <= 0) missingWeightCount += 1;
+      if (item.isMissingWeight) missingWeightCount += 1;
+      if (item.isPriceAnomaly || item.isMissingWeight) anomalyCount += 1;
     });
 
-    const isFullyComplete = totalCount > 0 && missingVtszCount === 0 && missingWeightCount === 0;
+    const isFullyComplete = totalCount > 0 && missingVtszCount === 0 && missingWeightCount === 0 && anomalyCount === 0;
 
     return {
       totalCount,
@@ -113,6 +117,7 @@ export function VatSteelProductsSection({
       totalNetEft: Math.round(totalNetAmount / 1000),
       missingVtszCount,
       missingWeightCount,
+      anomalyCount,
       isFullyComplete,
     };
   }, [filteredItems]);
@@ -304,6 +309,37 @@ export function VatSteelProductsSection({
         </CardContent>
       </Card>
 
+      {/* AI Anomaly Alert Banner */}
+      {metrics.anomalyCount > 0 && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-xs text-amber-900 dark:text-amber-100">
+                  AI Súly- és Áranomália Riasztás ({metrics.anomalyCount} tétel vizsgálatot igényel)
+                </h4>
+                <Badge variant="outline" className="text-[10px] bg-amber-500/20 border-amber-500/40 text-amber-900 dark:text-amber-200 font-mono">
+                  Áfa tv. 6/B.
+                </Badge>
+              </div>
+              <p className="text-xs text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+                Az AI detektor hiányzó kilogramm-súlyt vagy a szokásos piaci sávon (200 – 1200 Ft/kg) kívül eső irreális fajlagos egységárat azonosított. A 2665-07/08 nyomtatvány beküldése előtt ellenőrizze az adatokat!
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setCompletenessFilter(completenessFilter === 'ANOMALY' ? 'ALL' : 'ANOMALY')}
+            className="shrink-0 h-7 text-xs border-amber-500/40 bg-background/80 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 font-medium"
+          >
+            {completenessFilter === 'ANOMALY' ? 'Összes tétel' : `Csak anomáliák (${metrics.anomalyCount})`}
+          </Button>
+        </div>
+      )}
+
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-3 rounded-xl border border-border shadow-xs">
         <div className="flex flex-wrap items-center gap-2">
@@ -365,6 +401,18 @@ export function VatSteelProductsSection({
             </button>
             <button
               type="button"
+              onClick={() => setCompletenessFilter('ANOMALY')}
+              className={cn(
+                'px-2.5 py-1 text-xs font-medium rounded-md transition-all text-amber-700 dark:text-amber-400',
+                completenessFilter === 'ANOMALY'
+                  ? 'bg-background shadow-xs font-bold text-amber-900 dark:text-amber-200'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              ⚠️ Anomáliák ({metrics.anomalyCount})
+            </button>
+            <button
+              type="button"
               onClick={() => setCompletenessFilter('INCOMPLETE')}
               className={cn(
                 'px-2.5 py-1 text-xs font-medium rounded-md transition-all text-amber-700 dark:text-amber-400',
@@ -373,7 +421,7 @@ export function VatSteelProductsSection({
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              Csak hiányos tételek
+              Hiányos ({metrics.missingVtszCount + metrics.missingWeightCount})
             </button>
             <button
               type="button"
@@ -385,7 +433,7 @@ export function VatSteelProductsSection({
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              Csak kész
+              Kész
             </button>
           </div>
         </div>
@@ -433,6 +481,7 @@ export function VatSteelProductsSection({
                   <TableHead className="text-right w-24">Mennyiség</TableHead>
                   <TableHead className="text-right w-28">Nettó összeg</TableHead>
                   <TableHead className="text-right w-28">Nettó tömeg</TableHead>
+                  <TableHead className="text-right w-32">Fajlagos ár (Ft/kg)</TableHead>
                   <TableHead className="w-24 text-center">Státusz</TableHead>
                 </TableRow>
               </TableHeader>
@@ -441,7 +490,7 @@ export function VatSteelProductsSection({
                   const isOut = item.direction === 'OUTBOUND';
                   const hasVtsz = Boolean(item.productCode && item.productCode.trim() !== '');
                   const hasWeight = Boolean(item.netWeightKg != null && item.netWeightKg > 0);
-                  const isItemComplete = hasVtsz && hasWeight;
+                  const isItemComplete = hasVtsz && hasWeight && !item.isPriceAnomaly;
 
                   return (
                     <TableRow
@@ -528,13 +577,52 @@ export function VatSteelProductsSection({
                       {/* Net weight (kg) */}
                       <TableCell className="text-right font-mono whitespace-nowrap">
                         {hasWeight ? (
-                          <span className="font-bold text-amber-600 dark:text-amber-400">
-                            {formatThousands(item.netWeightKg)} kg
-                          </span>
+                          <div className="flex flex-col items-end">
+                            <span className="font-bold text-amber-600 dark:text-amber-400">
+                              {formatThousands(item.netWeightKg)} kg
+                            </span>
+                            {item.autoResolvedWeight != null && item.autoResolvedWeight === item.netWeightKg && (
+                              <span className="inline-flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-sans" title="Az AI automatikusan megbecsülte a tétel megnevezéséből">
+                                <Sparkles className="w-2.5 h-2.5" />
+                                AI becsült
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <span className="text-[11px] text-amber-600 dark:text-amber-400 italic bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                            Hiányzik!
-                          </span>
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-[11px] text-amber-600 dark:text-amber-400 italic bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                              Hiányzik!
+                            </span>
+                            {item.autoResolvedWeight != null && (
+                              <span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground font-sans" title="AI becsült javaslat">
+                                💡 ~{formatThousands(item.autoResolvedWeight)} kg
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </TableCell>
+
+                      {/* Fajlagos ár (Ft/kg) */}
+                      <TableCell className="text-right font-mono whitespace-nowrap">
+                        {item.unitPricePerKg != null ? (
+                          <div className="flex flex-col items-end">
+                            <span className={cn(
+                              "font-semibold",
+                              item.isPriceAnomaly ? "text-amber-600 dark:text-amber-400 font-bold" : "text-foreground"
+                            )}>
+                              {formatThousands(Math.round(item.unitPricePerKg))} Ft/kg
+                            </span>
+                            {item.isPriceAnomaly && (
+                              <span
+                                className="text-[10px] text-amber-700 dark:text-amber-400 font-sans cursor-help max-w-[130px] truncate"
+                                title={item.priceAnomalyMessage}
+                              >
+                                ⚠️ {item.priceAnomalyMessage}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
 
@@ -544,6 +632,11 @@ export function VatSteelProductsSection({
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Kész
+                          </span>
+                        ) : item.isPriceAnomaly ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400" title={item.priceAnomalyMessage}>
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            Anomália
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400" title="Kattints a VTSZ mezőre a hiányzó adatok pótlásához!">
@@ -635,6 +728,16 @@ function SteelItemDetailPopover({
               placeholder="1250"
               className="h-7 text-xs font-mono"
             />
+            {item.autoResolvedWeight != null && (
+              <button
+                type="button"
+                onClick={() => setWeightKg(String(item.autoResolvedWeight))}
+                className="inline-flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 hover:underline pt-0.5"
+              >
+                <Sparkles className="w-2.5 h-2.5" />
+                AI becsült súly átvétele ({formatThousands(item.autoResolvedWeight)} kg)
+              </button>
+            )}
             <p className="text-[10px] text-muted-foreground">
               A NAV 2665-07/08 nyilatkozat egész kg-ban kéri az adatot (a rendszer exportkor kerekíti).
             </p>

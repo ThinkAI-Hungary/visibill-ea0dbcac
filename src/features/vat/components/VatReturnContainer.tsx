@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   Sliders,
   PackageCheck,
+  ShieldAlert,
+  Network,
 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { cn } from '@/lib/utils';
@@ -34,6 +36,9 @@ import { VatItemizedJournalView } from './VatItemizedJournalView';
 import { VatTourismTaxSection } from './VatTourismTaxSection';
 import { VatImportCustomsSection } from './VatImportCustomsSection';
 import { VatScopeRadioGroup } from './VatScopeRadioGroup';
+import { VatReturnVersionHeader } from './VatReturnVersionHeader';
+import { VatOsaThreeWayReconciliation } from './VatOsaThreeWayReconciliation';
+import { VatAmendmentsWorkspace } from './VatAmendmentsWorkspace';
 import { useVatScope } from '../hooks/useVatScope';
 import type { VatScope } from '../types';
 import { useVatReturnData } from '../hooks/useVatReturnData';
@@ -87,7 +92,7 @@ export function VatReturnContainer() {
   const rawTab = searchParams.get('tab') || pathTab || 'return';
   const currentTab = rawTab === 'replica' ? 'return' : rawTab;
   const a60SubView = (searchParams.get('a60View') as 'table' | 'replica') || 'table';
-  const mSubView = (searchParams.get('mView') as 'table' | 'replica') || 'table';
+  const mSubView = (searchParams.get('mView') as 'table' | 'osa_reconcile' | 'replica') || 'table';
 
   const setA60SubView = useCallback(
     (view: 'table' | 'replica') => {
@@ -108,7 +113,7 @@ export function VatReturnContainer() {
   );
 
   const setMSubView = useCallback(
-    (view: 'table' | 'replica') => {
+    (view: 'table' | 'osa_reconcile' | 'replica') => {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -261,6 +266,20 @@ export function VatReturnContainer() {
         }}
       />
 
+      {/* VAT Version, Lock Seal, and Revision Alert Header */}
+      {!isCroatia && (
+        <VatReturnVersionHeader
+          selectedCompany={selectedCompany}
+          year={year}
+          month={month}
+          frequency={frequency}
+          vatCalculationResult={vatData.vatReturn}
+          taxPayable={vatData.vatReturn?.total_payable_tax !== undefined ? Number(vatData.vatReturn.total_payable_tax) : (vatData.getVal('36', 'tax') * 1000)}
+          taxDeductible={vatData.vatReturn?.total_deductible_tax !== undefined ? Number(vatData.vatReturn.total_deductible_tax) : (vatData.getVal('76', 'tax') * 1000)}
+          onJumpToAmendments={() => handleTabChange('amendments')}
+        />
+      )}
+
       <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-3 print:space-y-0">
         {/* Navigation Tabs Bar */}
         <TabsList className="print:hidden bg-muted/60 p-1 flex flex-wrap lg:flex-nowrap overflow-x-auto justify-start h-auto gap-1 border border-border/60 rounded-xl scrollbar-none shadow-sm">
@@ -290,6 +309,17 @@ export function VatReturnContainer() {
             >
               <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               Tételes M-lap
+            </TabsTrigger>
+          )}
+
+          {/* 4. Változásvédelem & Önellenőrzés */}
+          {!isCroatia && (
+            <TabsTrigger
+              value="amendments"
+              className="gap-1.5 text-xs py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg whitespace-nowrap"
+            >
+              <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              Változásvédelem & Önell.
             </TabsTrigger>
           )}
 
@@ -390,7 +420,7 @@ export function VatReturnContainer() {
           <TabsContent value="teteles_m" className="mt-0">
             <VatReturnErrorBoundary>
               <div className="space-y-4">
-                {/* Sub-view switcher: Table vs Replica (identical to A60 pattern) */}
+                {/* Sub-view switcher: Table vs OSA Reconcile vs Replica */}
                 <div className="flex items-center justify-between bg-muted/40 p-1.5 rounded-xl border border-border/60 print:hidden">
                   <div className="flex items-center gap-1.5">
                     <Button
@@ -406,6 +436,20 @@ export function VatReturnContainer() {
                     >
                       <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>Keresztellenőrzés & Számlák</span>
+                    </Button>
+                    <Button
+                      variant={mSubView === 'osa_reconcile' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setMSubView('osa_reconcile')}
+                      className={cn(
+                        'h-8 text-xs font-medium gap-1.5',
+                        mSubView === 'osa_reconcile'
+                          ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Network className="w-3.5 h-3.5" />
+                      <span>3-oldalú NAV OSA Egyeztető</span>
                     </Button>
                     <Button
                       variant={mSubView === 'replica' ? 'default' : 'ghost'}
@@ -426,6 +470,8 @@ export function VatReturnContainer() {
                   <span className="text-[11px] text-muted-foreground pr-2 hidden sm:inline">
                     {mSubView === 'replica'
                       ? 'ÁNYK hivatalos 2665M nyomtatvány A4 lapszimuláció (Főlap, 02, 02-K)'
+                      : mSubView === 'osa_reconcile'
+                      ? 'NAV Online Számla (OSA) ↔ Tételes ÁFA analitika ↔ Főkönyvi karton (466/467)'
                       : 'Belföldi partnerek számlaszintű tételes ellenőrzése'}
                   </span>
                 </div>
@@ -442,6 +488,13 @@ export function VatReturnContainer() {
                     }}
                     isRecalculating={calculate.isPending}
                   />
+                ) : mSubView === 'osa_reconcile' ? (
+                  <VatOsaThreeWayReconciliation
+                    selectedCompany={selectedCompany}
+                    year={year}
+                    month={month}
+                    frequency={frequency}
+                  />
                 ) : (
                   <VatMLineMasterDetail
                     mLines={mLines}
@@ -454,6 +507,23 @@ export function VatReturnContainer() {
                   />
                 )}
               </div>
+            </VatReturnErrorBoundary>
+          </TabsContent>
+        )}
+
+        {/* Tab: Változásvédelem & Önellenőrzési munkaterület */}
+        {!isCroatia && (
+          <TabsContent value="amendments" className="mt-0">
+            <VatReturnErrorBoundary>
+              <VatAmendmentsWorkspace
+                selectedCompany={selectedCompany}
+                year={year}
+                month={month}
+                frequency={frequency}
+                lines={vatData.lines}
+                mLines={mLines}
+                vatCalculationResult={vatData.vatReturn}
+              />
             </VatReturnErrorBoundary>
           </TabsContent>
         )}

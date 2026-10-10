@@ -90,6 +90,7 @@ A generálás a kliens böngészőjében fut `jspdf` és `jspdf-autotable` haszn
 
 ## 🔗 Kapcsolódó
 - **PRD:** [P-177: PROCONT Főkönyvi Kivonat A4 PDF és Excel Export, Kétoldalas Egyezőség-számítás és Hibátlan Többoldalas Layout UX](../../product/decisions/P-177-procont-general-ledger-export-and-reconciliation-ux.md)
+- **PRD:** [P-181: PRC Főkönyvi Kivonat Export Elnevezési Konvenció és Letisztult Megjelenítés UX](../../product/decisions/P-181-prc-general-ledger-export-naming-ux.md)
 - **BDR:** [021: Főkönyvi Rendszer (General Ledger)](../../business/decisions/021-general-ledger.md)
 - **ADR:** [A-163: Főkönyv UI/UX Modularizáció és Zajcsökkentés](./A-163-general-ledger-ui-ux-restructuring-and-clutter-reduction.md)
 - **Referencia Bizonylat:** `tests/docs/eb0148/PRCNT FŐKÖNYV.pdf`

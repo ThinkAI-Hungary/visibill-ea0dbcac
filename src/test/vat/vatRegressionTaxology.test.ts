@@ -33,83 +33,113 @@ describe('VAT Regression Gate: Taxology Kft. 2026-07 Golden Master Benchmark', (
       expect(row07).toBeDefined();
       expect(row07.base_amount_rounded).toBe(3702); // 3 702 eFt
       expect(row07.tax_amount_rounded).toBe(999);   // 999 eFt (27%)
-      expect(row07.base_amount).toBe(3701740);
-      expect(row07.tax_amount).toBe(999470);
+      expect(Math.round(row07.base_amount)).toBe(3701740);
+      expect(Math.round(row07.tax_amount)).toBe(999470);
       // Math consistency: 3701740 * 0.27 = 999469.8 -> rounds to 999470
-      expect(Math.round(row07.base_amount * 0.27)).toBe(row07.tax_amount);
+      expect(Math.round(row07.base_amount * 0.27)).toBe(Math.round(row07.tax_amount));
     });
 
-    it('validates 29. row (Egyéb fizetendő / külföldi teljesítés)', () => {
-      const row29 = lineMap.get('29');
-      expect(row29).toBeDefined();
-      expect(row29.base_amount_rounded).toBe(31);
-      expect(row29.tax_amount_rounded).toBe(8);
+    it('validates 14. row (Közösségen belülről történő termékbeszerzés fizetendő ÁFA)', () => {
+      const row14 = lineMap.get('14');
+      expect(row14).toBeDefined();
+      expect(row14.base_amount_rounded).toBe(26); // 26 eFt
+      expect(row14.tax_amount_rounded).toBe(7);   // 7 eFt
+      expect(Math.round(row14.base_amount)).toBe(25799);
+      expect(Math.round(row14.tax_amount)).toBe(6966);
     });
 
-    it('validates 36. row (Összes fizetendő adóalap és adó)', () => {
+    it('validates 18. row (Közösségi szolgáltatás igénybevétel fizetendő ÁFA - Google Cloud)', () => {
+      const row18 = lineMap.get('18');
+      expect(row18).toBeDefined();
+      expect(row18.base_amount_rounded).toBe(31); // 31 eFt
+      expect(row18.tax_amount_rounded).toBe(8);   // 8 eFt
+      expect(Math.round(row18.base_amount)).toBe(31301);
+      expect(Math.round(row18.tax_amount)).toBe(8451);
+    });
+
+    it('validates 27. row (Harmadik országbeli szolgáltatás fizetendő ÁFA - Anthropic)', () => {
+      const row27 = lineMap.get('27');
+      expect(row27).toBeDefined();
+      expect(row27.base_amount_rounded).toBe(7); // 7 eFt
+      expect(row27.tax_amount_rounded).toBe(2); // 2 eFt
+      expect(Math.round(row27.base_amount)).toBe(6529);
+      expect(Math.round(row27.tax_amount)).toBe(1763);
+    });
+
+    it('validates 36. row (Összes fizetendő adóalap és adó = 07 + 14 + 18 + 27)', () => {
       const row36 = lineMap.get('36');
       expect(row36).toBeDefined();
-      expect(row36.base_amount_rounded).toBe(3733); // 3 702 + 31 eFt
-      expect(row36.tax_amount_rounded).toBe(1008);   // 999 + 8 eFt (kerekítve 1008)
-      expect(row36.tax_amount).toBe(snapshot.header.total_payable_tax);
-      expect(snapshot.header.total_payable_tax).toBe(1007921);
+      expect(row36.base_amount_rounded).toBe(3765); // 3 765 eFt
+      expect(row36.tax_amount_rounded).toBe(1017);   // 1 017 eFt
+      expect(Math.round(row36.base_amount)).toBe(3765369);
+      expect(Math.round(row36.tax_amount)).toBe(1016650);
+      expect(Math.round(row36.tax_amount)).toBe(Math.round(snapshot.header.total_payable_tax));
+      expect(Math.round(snapshot.header.total_payable_tax)).toBe(1016650);
     });
 
-    it('validates 63. row (Adómentes / AAM / TAM beszerzések)', () => {
-      const row63 = lineMap.get('63');
-      expect(row63).toBeDefined();
-      expect(row63.base_amount_rounded).toBe(243);
-      expect(row63.tax_amount_rounded).toBe(0);
-    });
-
-    it('validates 64. row (5% kedvezményes kulcsú beszerzések)', () => {
+    it('validates 64. row (5% kedvezményes kulcsú beszerzések levonható ÁFA)', () => {
       const row64 = lineMap.get('64');
       expect(row64).toBeDefined();
       expect(row64.base_amount_rounded).toBe(20);
       expect(row64.tax_amount_rounded).toBe(1);
+      expect(Math.round(row64.base_amount)).toBe(20372);
+      expect(row64.tax_amount).toBeCloseTo(1018.6, 1);
     });
 
-    it('validates 66. row (27% levonható általános forgalmi adó)', () => {
+    it('validates 66. row (27% belföldi levonható általános forgalmi adó - duplikációmentes)', () => {
       const row66 = lineMap.get('66');
       expect(row66).toBeDefined();
-      expect(row66.base_amount_rounded).toBe(4654);
-      expect(row66.tax_amount_rounded).toBe(1258);
-      expect(row66.base_amount).toBe(4653857.59);
-      expect(row66.tax_amount).toBe(1258492.21);
+      expect(row66.base_amount_rounded).toBe(2403);
+      expect(row66.tax_amount_rounded).toBe(649);
+      expect(Math.round(row66.base_amount)).toBe(2402533);
+      expect(Math.round(row66.tax_amount)).toBe(648685);
     });
 
-    it('validates 76. row (Összes levonható adóalap és adó)', () => {
+    it('validates 67. row (Közösségi és harmadik orsz. szolgáltatás levonható ÁFA = 18 + 27 sorok)', () => {
+      const row67 = lineMap.get('67');
+      expect(row67).toBeDefined();
+      expect(row67.base_amount_rounded).toBe(38);
+      expect(row67.tax_amount_rounded).toBe(10);
+      expect(Math.round(row67.base_amount)).toBe(37830);
+      expect(Math.round(row67.tax_amount)).toBe(10214);
+    });
+
+    it('validates 76. row (Összes levonható adóalap és adó = 64 + 66 + 67)', () => {
       const row76 = lineMap.get('76');
       expect(row76).toBeDefined();
-      expect(row76.base_amount_rounded).toBe(4918);
-      expect(row76.tax_amount_rounded).toBe(1260);
-      expect(row76.tax_amount).toBe(snapshot.header.total_deductible_tax);
-      expect(snapshot.header.total_deductible_tax).toBe(1259510.81);
+      expect(row76.base_amount_rounded).toBe(2461);
+      expect(row76.tax_amount_rounded).toBe(660);
+      expect(Math.round(row76.base_amount)).toBe(2460734);
+      expect(Math.round(row76.tax_amount)).toBe(659918);
+      expect(Math.round(row76.tax_amount)).toBe(Math.round(snapshot.header.total_deductible_tax));
+      expect(Math.round(snapshot.header.total_deductible_tax)).toBe(659918);
     });
 
-    it('validates 83. and 86. row (Különbözet és Visszaigényelhető ÁFA)', () => {
+    it('validates 83. and 84. row (Különbözet és Befizetendő ÁFA egyenleg)', () => {
       const row83 = lineMap.get('83');
-      const row86 = lineMap.get('86');
+      const row84 = lineMap.get('84');
       expect(row83).toBeDefined();
-      expect(row86).toBeDefined();
+      expect(row84).toBeDefined();
 
-      // Net balance math: Payable - Deductible = Net
+      // Net balance math: Payable - Deductible = Net (1 016 650 - 659 918 = +356 732 Ft)
       const diff = snapshot.header.total_payable_tax - snapshot.header.total_deductible_tax;
       expect(diff).toBeCloseTo(snapshot.header.net_balance, 2);
-      expect(snapshot.header.net_balance).toBe(-251589.81);
+      expect(Math.round(snapshot.header.net_balance)).toBe(356732);
 
-      expect(row83.tax_amount_rounded).toBe(-252);
-      expect(row86.tax_amount_rounded).toBe(252);
+      expect(row83.tax_amount_rounded).toBe(357);
+      expect(row84.tax_amount_rounded).toBe(357);
+      expect(Math.round(row83.tax_amount)).toBe(356732);
+      expect(Math.round(row84.tax_amount)).toBe(356732);
 
-      // Core engine calculation check
+      // Core engine calculation check: positive balance means toPay84
       const engineRes = calculateVatBalances(
-        snapshot.header.total_payable_tax,
-        snapshot.header.total_deductible_tax,
+        Math.round(snapshot.header.total_payable_tax),
+        Math.round(snapshot.header.total_deductible_tax),
         0
       );
-      expect(engineRes.net83).toBeCloseTo(-251589.81, 1);
-      expect(engineRes.reclaimable85).toBeCloseTo(251589.81, 1);
-      expect(engineRes.toPay84).toBe(0);
+      expect(engineRes.net83).toBe(356732);
+      expect(engineRes.toPay84).toBe(356732);
+      expect(engineRes.reclaimable85).toBe(0);
     });
   });
 
@@ -135,7 +165,7 @@ describe('VAT Regression Gate: Taxology Kft. 2026-07 Golden Master Benchmark', (
       }
     });
 
-    it('validates top M-line partners match expected amounts', () => {
+    it('validates top M-line partners match expected amounts from official accounting list', () => {
       const thinkAi = snapshot.m_lines.find((m: any) => m.partner_tax_number === '32478620');
       expect(thinkAi).toBeDefined();
       expect(thinkAi.partner_name).toBe('Think AI Korlátolt Felelősségű Társaság');
@@ -147,8 +177,15 @@ describe('VAT Regression Gate: Taxology Kft. 2026-07 Golden Master Benchmark', (
       expect(telekom).toBeDefined();
       expect(telekom.partner_name).toBe('Magyar Telekom Nyrt.');
       expect(telekom.invoice_count).toBe(2);
-      expect(telekom.base_amount_rounded).toBe(27); // 70% deductible portion rounded to eFt
-      expect(telekom.tax_amount_rounded).toBe(3);
+      expect(telekom.base_amount_rounded).toBe(25);
+      expect(telekom.tax_amount_rounded).toBe(2);
+
+      const eon = snapshot.m_lines.find((m: any) => m.partner_tax_number === '13322142');
+      expect(eon).toBeDefined();
+      expect(eon.partner_name).toBe('E.ON Energiamegoldások Kft.');
+      expect(eon.invoice_count).toBe(2);
+      expect(eon.base_amount_rounded).toBe(47);
+      expect(eon.tax_amount_rounded).toBe(8);
     });
   });
 

@@ -23,6 +23,11 @@ export interface SteelItemRecord {
   netWeightKg: number | null;
   productName?: string;
   vtsz?: string;
+  isMissingWeight: boolean;
+  unitPricePerKg: number | null;
+  isPriceAnomaly: boolean;
+  priceAnomalyMessage?: string;
+  autoResolvedWeight?: number | null;
 }
 
 export function isSteelCandidate(item: {
@@ -126,12 +131,87 @@ export function isSteelCandidate(item: {
   return false;
 }
 
+export function resolveSteelAutoWeight(
+  description: string,
+  quantity: number | null,
+  unitOfMeasure: string | null
+): number | null {
+  if (!quantity || quantity <= 0) return null;
+  const unit = (unitOfMeasure || '').toLowerCase().trim();
+  const desc = description.toLowerCase();
+
+  // 1. Direct kg
+  if (unit === 'kg' || unit === 'kilogramm') return quantity;
+  // 2. Metric tons
+  if (unit === 't' || unit === 'to' || unit === 'tonna') return Math.round(quantity * 1000);
+
+  // 3. Known profile specific weights (kg/m)
+  let kgPerMeter: number | null = null;
+  if (/betonacél|b500/i.test(desc)) {
+    if (/\b(d\s*=?\s*6|6\s*mm)\b/i.test(desc)) kgPerMeter = 0.222;
+    else if (/\b(d\s*=?\s*8|8\s*mm)\b/i.test(desc)) kgPerMeter = 0.395;
+    else if (/\b(d\s*=?\s*10|10\s*mm)\b/i.test(desc)) kgPerMeter = 0.617;
+    else if (/\b(d\s*=?\s*12|12\s*mm)\b/i.test(desc)) kgPerMeter = 0.888;
+    else if (/\b(d\s*=?\s*14|14\s*mm)\b/i.test(desc)) kgPerMeter = 1.21;
+    else if (/\b(d\s*=?\s*16|16\s*mm)\b/i.test(desc)) kgPerMeter = 1.58;
+    else if (/\b(d\s*=?\s*20|20\s*mm)\b/i.test(desc)) kgPerMeter = 2.47;
+  } else if (/zártszelvény/i.test(desc)) {
+    if (/40\s*x\s*40\s*x\s*2/i.test(desc)) kgPerMeter = 2.31;
+    else if (/50\s*x\s*50\s*x\s*2/i.test(desc)) kgPerMeter = 2.93;
+    else if (/60\s*x\s*40\s*x\s*2/i.test(desc)) kgPerMeter = 2.93;
+    else if (/30\s*x\s*30\s*x\s*2/i.test(desc)) kgPerMeter = 1.68;
+    else if (/20\s*x\s*20\s*x\s*2/i.test(desc)) kgPerMeter = 1.05;
+  }
+
+  if (kgPerMeter != null && (unit === 'm' || unit === 'fm' || unit === 'méter' || unit === 'szál')) {
+    const totalMeters = unit === 'szál' ? quantity * 6 : quantity;
+    return Math.round(totalMeters * kgPerMeter);
+  }
+
+  return null;
+}
+
+export function detectSteelPriceAnomaly(
+  netAmount: number,
+  netWeightKg: number | null
+): { isAnomaly: boolean; unitPricePerKg: number | null; message?: string } {
+  if (netWeightKg == null || netWeightKg <= 0) {
+    return {
+      isAnomaly: true,
+      unitPricePerKg: null,
+      message: 'Hiányzó súly (NAV 07/08 lap kötelezően kilogrammot vár)!',
+    };
+  }
+
+  const pricePerKg = Math.round(netAmount / netWeightKg);
+  if (pricePerKg < 200) {
+    return {
+      isAnomaly: true,
+      unitPricePerKg: pricePerKg,
+      message: `Feltűnően alacsony fajlagos ár: ${pricePerKg} Ft/kg (< 200 Ft/kg)!`,
+    };
+  }
+  if (pricePerKg > 1200) {
+    return {
+      isAnomaly: true,
+      unitPricePerKg: pricePerKg,
+      message: `Feltűnően magas fajlagos ár: ${pricePerKg} Ft/kg (> 1200 Ft/kg)!`,
+    };
+  }
+
+  return {
+    isAnomaly: false,
+    unitPricePerKg: pricePerKg,
+  };
+}
+
 export function isSteelItemComplete(item: SteelItemRecord): boolean {
   return Boolean(
     item.productCode &&
     item.productCode.trim() !== '' &&
     item.netWeightKg != null &&
-    item.netWeightKg > 0
+    item.netWeightKg > 0 &&
+    !item.isPriceAnomaly
   );
 }
 
@@ -213,6 +293,14 @@ export function useSteelProductsData(
         if (isSteelCandidate(it)) {
           const inv = navMap.get(it.nav_invoice_id);
           const isOut = (inv?.invoice_direction || 'INBOUND').toUpperCase() === 'OUTBOUND';
+          const rawWeight = it.net_weight_kg != null ? Number(it.net_weight_kg) : null;
+          const autoWeight = rawWeight == null || rawWeight <= 0
+            ? resolveSteelAutoWeight(it.line_description || '', it.quantity ? Number(it.quantity) : null, it.unit_of_measure)
+            : null;
+          const effectiveWeight = rawWeight != null && rawWeight > 0 ? rawWeight : autoWeight;
+          const netAmt = Number(it.net_amount) || 0;
+          const anomaly = detectSteelPriceAnomaly(netAmt, effectiveWeight);
+
           records.push({
             id: `nav_${it.id}`,
             sourceTable: 'nav_invoice_items',
@@ -227,9 +315,14 @@ export function useSteelProductsData(
             productCode: it.product_code || null,
             quantity: it.quantity ? Number(it.quantity) : null,
             unitOfMeasure: it.unit_of_measure || null,
-            netAmount: Number(it.net_amount) || 0,
+            netAmount: netAmt,
             vatRate: it.vat_rate || null,
-            netWeightKg: it.net_weight_kg != null ? Number(it.net_weight_kg) : null,
+            netWeightKg: effectiveWeight,
+            autoResolvedWeight: autoWeight,
+            isMissingWeight: effectiveWeight == null || effectiveWeight <= 0,
+            unitPricePerKg: anomaly.unitPricePerKg,
+            isPriceAnomaly: anomaly.isAnomaly,
+            priceAnomalyMessage: anomaly.message,
           });
         }
       });
@@ -242,6 +335,14 @@ export function useSteelProductsData(
             r => r.invoiceNumber === inv?.bizonylatsorszam && r.lineNumber === it.line_number
           );
           if (!alreadyExists) {
+            const rawWeight = it.net_weight_kg != null ? Number(it.net_weight_kg) : null;
+            const autoWeight = rawWeight == null || rawWeight <= 0
+              ? resolveSteelAutoWeight(it.line_description || '', it.quantity ? Number(it.quantity) : null, it.unit_of_measure)
+              : null;
+            const effectiveWeight = rawWeight != null && rawWeight > 0 ? rawWeight : autoWeight;
+            const netAmt = Number(it.net_amount) || 0;
+            const anomaly = detectSteelPriceAnomaly(netAmt, effectiveWeight);
+
             records.push({
               id: `sub_${it.id}`,
               sourceTable: 'invoice_items',
@@ -256,9 +357,14 @@ export function useSteelProductsData(
               productCode: it.product_code || null,
               quantity: it.quantity ? Number(it.quantity) : null,
               unitOfMeasure: it.unit_of_measure || null,
-              netAmount: Number(it.net_amount) || 0,
+              netAmount: netAmt,
               vatRate: it.vat_rate || null,
-              netWeightKg: it.net_weight_kg != null ? Number(it.net_weight_kg) : null,
+              netWeightKg: effectiveWeight,
+              autoResolvedWeight: autoWeight,
+              isMissingWeight: effectiveWeight == null || effectiveWeight <= 0,
+              unitPricePerKg: anomaly.unitPricePerKg,
+              isPriceAnomaly: anomaly.isAnomaly,
+              priceAnomalyMessage: anomaly.message,
             });
           }
         }

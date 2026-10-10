@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-10  
-> **Összesen:** 194 döntés (177 egyedi döntési fájl) | ✅ Decided: 190 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 197 döntés (180 egyedi döntési fájl) | ✅ Decided: 193 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -304,5 +304,8 @@
 | P-176 | Könyvelési Napló RLB-Mintájú Szűkítés Modál, Pozitív Unió Irányszűrés és Reszponzív Panel UX | ✅ Decided | [P-176](./P-176-accounting-journals-rlb-pattern-filter-modal-and-direction-matching-ux.md) |
 | P-177 | PROCONT Főkönyvi Kivonat A4 PDF és Excel Export, Kétoldalas Egyezőség-számítás és Hibátlan Többoldalas Layout UX | ✅ Decided | [P-177](./P-177-procont-general-ledger-export-and-reconciliation-ux.md) |
 | P-178 | Könyvvizsgálói Export és Adatszolgáltatás, 20-Oszlopos Karton, 15 Analitikai Csomag és Éves Zárlati Ellenőrzőlista UX | ✅ Decided | [P-178](./P-178-auditor-export-and-data-provision.md) |
+| P-179 | ÁFA Bevallás Változásvédelem, Kriptográfiai Pecsét & Önellenőrzési Munkaterület UX | ✅ Decided | [P-179](./P-179-vat-return-snapshots-and-amendments-workspace-ux.md) |
+| P-180 | NAV OSA Háromirányú Egyeztetés (Three-Way Reconciliation) és Fordított ÁFA Acéltermékek UX | ✅ Decided | [P-180](./P-180-nav-osa-three-way-reconciliation-and-steel-products-ux.md) |
+| P-181 | PRC Főkönyvi Kivonat Export Elnevezési Konvenció és Letisztult Megjelenítés UX | ✅ Decided | [P-181](./P-181-prc-general-ledger-export-naming-ux.md) |
 
 
