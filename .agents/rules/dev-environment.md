@@ -4,9 +4,10 @@ Ez a szabályzat garantálja a termelési (Prod) és a fejlesztői (Dev) környe
 
 ---
 
-## 🎯 1. Kötelező Dokumentáció-olvasás (Mandatory Context Check)
-Amikor a fejlesztő vagy az AI agent a **`develop` ágon** dolgozik, vagy a feladat bármilyen tekintetben az **eaisybill-dev** környezetet (`dev.visibill.hu`, Supabase projekt: `qhvcdqkqpgpdxogqqvyr`) érinti:
-* **Köteles először áttekinteni a [`docs/DEV/`](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/) mappa dokumentációit:**
+## 🎯 1. Kötelező Frissítés és Dokumentáció-olvasás (Git Pull & Context Check)
+Amikor a fejlesztő vagy az AI agent bármilyen okból a **`develop` ágra vált** (`git checkout develop`), vagy a feladat bármilyen tekintetben az **eaisybill-dev** környezetet (`dev.visibill.hu`, Supabase projekt: `qhvcdqkqpgpdxogqqvyr`) érinti:
+* **KÖTELEZŐEN `git pull`-lal KELL KEZDENI (`git checkout develop ; git pull origin develop`):** Mielőtt bármilyen fájl vizsgálatába, kódolásba vagy hibakeresésbe kezdene, az agent köteles azonnal lehúzni a távoli ág legfrissebb állapotát. Ezzel elkerülhetők a párhuzamos módosításokból adódó merge konfliktusok, és garantálható, hogy a legfrissebb élesített állapotból indul a munka.
+* **Köteles áttekinteni a [`docs/DEV/`](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/) mappa dokumentációit:**
   * [`docs/DEV/README.md`](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/README.md) - Alapvető áttekintés, elérési utak, környezeti változók és invariánsok.
   * [`docs/DEV/ARCHITECTURE.md`](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/ARCHITECTURE.md) - Caddy webszerver, Droplet webroot (`/home/jani/dev-visibill/dist`), Dev Supabase projekt, IPv4 session pooler és 71 Edge Function.
   * [`docs/DEV/DATA_MIGRATION_AND_SYNC.md`](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/DATA_MIGRATION_AND_SYNC.md) - A 3 kezelt cég (`Think Ai Kft`, `Teszt Kft`, `Taxology Kft.`), a reggeli 06:00-s automatikus cron szinkron és az inaktív A8/NAV háttérműveletek.
@@ -47,8 +48,8 @@ Amikor ügyfél hibajegy megoldása (`/ticket-support`, `/visibill-ticket-suppor
    * A bejelentett hiba feltárásához a termelési adatbázis naplóit és adatait (`app_error_logs`, `nav_sync_logs`, `feedback`, `ticket_comments`, érintett cég rekordjai) szabad és szükséges lekérdezni (`supabase-visibill`), de **KIZÁRÓLAG olvasási műveletekkel (`SELECT`)**.
    * Szigorúan tilos a feltárás során bármilyen módosító műveletet végezni az éles rendszeren.
 2. **Javítás Elsődleges Helyszíne (Develop Branch & Dev DB First):**
-   * Bármilyen forráskód módosítás (frontend komponens, router, Edge Function), tárolt eljárás (RPC), migrációs szkript vagy sémaváltoztatás esetén **KÖTELEZŐ a `develop` ágra váltani (`git checkout develop`)**!
-   * A javítást a `develop` ágon kell kidolgozni.
+   * Bármilyen forráskód módosítás (frontend komponens, router, Edge Function), tárolt eljárás (RPC), migrációs szkript vagy sémaváltoztatás esetén **KÖTELEZŐ a `develop` ágra váltani és azonnal `git pull`-t futtatni (`git checkout develop ; git pull origin develop`)**!
+   * A javítást a `develop` ágon kell kidolgozni a legfrissebb távoli állapot alapján.
    * Minden SQL tesztet, migráció-próbát és backend ellenőrzést **KIZÁRÓLAG a Dev Supabase adatbázisban (`qhvcdqkqpgpdxogqqvyr`, MCP: `supabase-visibill-dev`)** szabad végrehajtani.
 3. **Kötelező Helyi és Dev Tesztelés (Verification Gate):**
    * A javítás működését a `develop` ágon, a helyi fejlesztői környezetben (`npm run dev`) vagy a dev droplet felületén (`dev.visibill.hu`) kell igazolni.

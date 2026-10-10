@@ -14,6 +14,7 @@ Ez a dokumentum a VisiBill fejlesztői munkafolyamatát, a lokális futtatást, 
   * Élesítés: Droplet weboldal (**[https://dev.visibill.hu](https://dev.visibill.hu)**).
   * Adatbázis: Dev Supabase (`qhvcdqkqpgpdxogqqvyr`).
   * Automatikus CI/CD: Minden `develop` ágra pusholt commit automatikusan lefordul és frissíti a dev weboldalt.
+  * **Kötelező ág-frissítés:** Amikor az AI agent vagy a fejlesztő a `develop` ágra vált (`git checkout develop`), **KÖTELEZŐ azonnal egy `git pull` parancsot futtatni** a legfrissebb állapot lehúzásához és a konfliktusok megelőzéséhez!
 
 ---
 
