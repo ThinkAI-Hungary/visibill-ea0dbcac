@@ -149,7 +149,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onSendToApprovalQ
                       </div>
                       <div className="flex items-center gap-2">
                         <a
-                          href={`https://vxxgvdlqvvchtlmqnrqf.supabase.co/storage/v1/object/public/accounty_uploads/${filePath}`}
+                          href={supabase.storage.from('accounty_uploads').getPublicUrl(filePath).data.publicUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-semibold rounded-full hover:bg-primary/20 transition-colors"

@@ -14,6 +14,7 @@ import { useAiChatSessions, useAiChatMessages, AiChatSession } from '@/hooks/use
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { MessageFeedbackWidget } from '@/components/ai/MessageFeedbackWidget';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 
 export interface Message {
   id: string;
@@ -772,11 +773,8 @@ export function AiAssistantChat({ fullPage = false, onSidebarChange }: AiAssista
       const activeCompanyIdToUse = overrideCompanyId !== undefined ? overrideCompanyId : chatCompanyId;
       const targetCompany = companies?.find(c => c.id === activeCompanyIdToUse);
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vxxgvdlqvvchtlmqnrqf.supabase.co';
-      const supabaseAnonKey =
-        import.meta.env.VITE_SUPABASE_ANON_KEY ||
-        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4eGd2ZGxxdnZjaHRsbXFucnFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NzAwNTAsImV4cCI6MjA3MzU0NjA1MH0.Ec9KFcjt89cY6FF9Nq9GnW1hzlnDUhQCCJ_LhWm2evY';
+      const supabaseUrl = SUPABASE_URL;
+      const supabaseAnonKey = SUPABASE_ANON_KEY;
 
       const response = await fetch(
         `${supabaseUrl}/functions/v1/accounty-ai-chat`,

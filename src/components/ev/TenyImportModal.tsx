@@ -10,6 +10,7 @@ import {
 } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 
 // ─── Suggested SZJA depreciation rates by asset category ────────────────────
 const SZJA_RATE_SUGGESTIONS: Record<string, number> = {
@@ -108,7 +109,7 @@ export default function TenyImportModal({ isOpen, onClose, companyId, taxYear }:
     setIsAiLoading(true);
     setImportError(null);
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vxxgvdlqvvchtlmqnrqf.supabase.co';
+      const supabaseUrl = SUPABASE_URL;
       
       const assetsList = targetAssets.map(a => ({
         id: a.id,

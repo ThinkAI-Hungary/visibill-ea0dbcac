@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +48,7 @@ export interface EndpointDef {
   sampleResponse: string;
 }
 
-export const BASE_URL = 'https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/customer-api';
+export const BASE_URL = `${SUPABASE_URL}/functions/v1/customer-api`;
 
 export const ENDPOINTS: EndpointDef[] = [
   // ── INVOICES ──
@@ -235,7 +236,7 @@ export const ENDPOINTS: EndpointDef[] = [
       data: {
         invoice_id: "a79a5eb7-e683-4c8c-be76-b9afef3f50e1",
         invoice_number: "FBADS-070-105702620",
-        image_url: "https://vxxgvdlqvvchtlmqnrqf.supabase.co/storage/v1/object/sign/invoice-uploads/sample.pdf?token=...",
+        image_url: `${SUPABASE_URL}/storage/v1/object/sign/invoice-uploads/sample.pdf?token=...`,
         expires_in_seconds: 3600
       }
     }, null, 2)
@@ -279,12 +280,12 @@ export const ENDPOINTS: EndpointDef[] = [
     curlExample: `curl -X POST -H "Authorization: Bearer <API_KEY>" -H "Content-Type: application/json" \\
      -d '{
        "invoice_number": "FBADS-070-105702620",
-       "attachment_url": "https://vxxgvdlqvvchtlmqnrqf.supabase.co/storage/v1/object/public/invoice-uploads/sample.pdf"
+       "attachment_url": "${SUPABASE_URL}/storage/v1/object/public/invoice-uploads/sample.pdf"
      }' \\
      "${BASE_URL}/v1/invoices/link"`,
     sampleBody: JSON.stringify({
       invoice_number: "FBADS-070-105702620",
-      attachment_url: "https://vxxgvdlqvvchtlmqnrqf.supabase.co/storage/v1/object/public/invoice-uploads/sample.pdf"
+      attachment_url: `${SUPABASE_URL}/storage/v1/object/public/invoice-uploads/sample.pdf`
     }, null, 2),
     sampleResponse: JSON.stringify({
       success: true,

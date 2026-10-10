@@ -91,6 +91,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       // Clear security keys
       const keysToDelete = [
         'sb-vxxgvdlqvvchtlmqnrqf-auth-token',
+        'sb-qhvcdqkqpgpdxogqqvyr-auth-token',
         'visibill_last_active'
       ];
       

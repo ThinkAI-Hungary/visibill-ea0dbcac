@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Sun, Moon, Mail, Lock, User, TrendingUp, PieChart, BarChart3, ArrowUpRight, ArrowDownRight, FileText, CheckCircle2, Clock, AlertTriangle, Users, Wallet, Landmark, ArrowLeftRight, KeyRound } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
@@ -469,7 +469,7 @@ const Auth = () => {
       try {
         // Raw fetch since verify-email reads token from URL query params (no JWT needed)
         const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL || 'https://vxxgvdlqvvchtlmqnrqf.supabase.co'}/functions/v1/verify-email?token=${verifyTokenParam}`
+          `${SUPABASE_URL}/functions/v1/verify-email?token=${verifyTokenParam}`
         );
         const data = await res.json();
 
@@ -512,8 +512,6 @@ const Auth = () => {
     if (!user) return;
     setResending(true);
     try {
-      const SUPABASE_URL = 'https://vxxgvdlqvvchtlmqnrqf.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4eGd2ZGxxdnZjaHRsbXFucnFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NzAwNTAsImV4cCI6MjA3MzU0NjA1MH0.Ec9KFcjt89cY6FF9Nq9GnW1hzlnDUhQCCJ_LhWm2evY';
       const res = await fetch(`${SUPABASE_URL}/functions/v1/send-welcome-email`, {
         method: 'POST',
         headers: {
