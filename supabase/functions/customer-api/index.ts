@@ -841,7 +841,7 @@ serve(async (req: Request) => {
                           user_id: effectiveUserId,
                           invoice_direction: direction,
                           statusz: "feldolgozas_alatt",
-                          nav_status: "pending_match",
+                          nav_status: "missing_nav",
                           melleklet_url: publicUrl,
                           bizonylatsorszam: navInvoiceNumber,
                           elado_nev: "Ismeretlen eladó",
