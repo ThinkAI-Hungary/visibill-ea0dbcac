@@ -47,7 +47,18 @@ Mielőtt bármilyen kódolási feladatot befejezettnek jelentesz a felhasználó
      npx vitest run src/test/rpcPerformanceAndResilience.test.ts
      ```
    * Szigorúan tilos késznek nyilvánítani a feladatot a tesztek fizikai lefutása és zöld státusza nélkül!
-4. **RPC és Adatbázis Katalógus Ellenőrzés (Élő DB):**
+4. **Kötelező ÁFA Regresszióvédelmi Kapu (VAT Safety Gate):**
+   * Ha a feladat bármilyen ÁFA logikát érint (`src/features/vat/`, `VatReturnPage.tsx`, `calculate_vat_return` RPC, ÁFA migrációk vagy áfakód szűrések):
+     1. Futtasd le a Vitest Taxology regressziós tesztet (<150ms):
+        ```powershell
+        npx vitest run src/test/vat/vatRegressionTaxology.test.ts
+        ```
+     2. Futtasd le az élő adatbázis összehasonlítást (<10s):
+        ```powershell
+        npm run vat:guard
+        ```
+     * **Szigorúan tilos késznek nyilvánítani a feladatot**, ha a Taxology baseline-hoz képest elmozdulás történt, vagy a tesztek nem futottak le 100%-os egyezéssel!
+5. **RPC és Adatbázis Katalógus Ellenőrzés (Élő DB):**
    * Ha RPC-t módosítottál, a katalógus lekérdezéssel (`pg_proc`) igazolni kell a volatilitást (`provolatile = 's'`) és a jogosultság-megvonást (`anon_can_execute = false`), valamint teszthívást kell futtatni egy valós adathalmazon.
 5. **Konzol- és Kódtisztaság:**
    * Ellenőrizd, hogy nem hagytál hátra elfelejtett `console.log` debug sorokat, fel nem használt importokat vagy szintaktikai hibákat.
