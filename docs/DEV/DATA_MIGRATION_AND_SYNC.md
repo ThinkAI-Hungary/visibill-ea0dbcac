@@ -120,11 +120,8 @@ A Dev környezetben a külső bejövő webhookok és route módosítások szigor
   * `accounty_missing_items`: 763 sor
   * `accounty_uploads`: 1 sor, `bank_statement_uploads`: 1 sor, `report_uploads`: 10 sor
   * `accounty_upo_credentials`: 2 sor, `user_nav_credentials`: 3 sor
-* **Ügyfélszolgálat és Hibajegyek (Tickets):**
-  * `feedback`: 9 sor
-  * `ticket_comments`: 18 sor
-  * `ticket_events`: 84 sor
-  * `ticket_reads`: 35 sor
+* **Ügyfélszolgálat és Hibajegyek (Tickets - Szándékosan Nem Szinkronizált):**
+  * *Megjegyzés:* A hibajegyek (`feedback`, `ticket_comments`, `ticket_events`, `ticket_reads`) szándékosan ki vannak zárva a napi hajnali szinkronizációból. A ticketek vizsgálata szigorúan read-only módon a Prod DB-n történik a `/ticket-support` és `/visibill-error-hunter` folyamatokban, így az éles ügyfélkérések és ticket-állapotok nem kerülnek át a Dev környezetbe.
   * `accounty_ai_chat_sessions`: 8 sor, `accounty_ai_chat_messages`: 47 sor
 * **Társasági Adó és Éves Beszámolók:**
   * `annual_reports`: 4 sor (fagyasztott mérleggel, eredménykimutatással és ellenőrzési eredményekkel)
