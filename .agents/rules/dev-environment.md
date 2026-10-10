@@ -34,9 +34,13 @@ Amikor a fejlesztő vagy az AI agent bármilyen okból a **`develop` ágra vált
 
 ---
 
-## 🛡️ 4. Konfigurációs Integritás és Merge Védelem
+## 🛡️ 4. Konfigurációs Integritás, Merge Védelem és Kötelező Éles Migrációk
 * A `develop` ág-specifikus beállítások (mint a [`supabase/config.toml`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/config.toml) `project_id = "qhvcdqkqpgpdxogqqvyr"`, vagy a lokális [`.env.local`](file:///d:/ThinkAI/Visibill/eaisybill-prod/.env.local) kulcsok) soha nem kerülhetnek át akaratlanul a `main` ágra.
-* Pull Request vagy `main` ágba történő merge előtt kötelező ellenőrizni a konfigurációk éles állapotának megőrzését.
+* Pull Request vagy `main` ágba történő merge előtt kötelező ellenőrizni a konfigurációk éles állapotának megőrzését (`project_id = "vxxgvdlqvvchtlmqnrqf"` a `main` ágon).
+* **Kötelező Éles Adatbázis Migráció Main Merge Során:**
+  * Amennyiben a `develop` ágon új vagy módosított adatbázis-migrációk (`supabase/migrations/`) keletkeztek, a `main` ágra történő merge-eléskor **SZIGORÚAN KÖTELEZŐ érvényesíteni az adatbázis-migrációkat a termelési (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`) is**!
+  * Szigorúan tilos úgy befejezettnek nyilvánítani a merge-et, hogy a `main` ági forráskód már az új sémát, mezőt, RPC-t vagy táblát igényli, miközben az éles adatbázisban a migráció még nem futott le.
+  * A merge után kötelező ellenőrizni a Prod `supabase_migrations.schema_migrations` bejegyzést, és szükség esetén kiadni a `NOTIFY pgrst, 'reload schema';` parancsot.
 
 ---
 
