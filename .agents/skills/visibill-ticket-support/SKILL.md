@@ -33,6 +33,10 @@ Két működési móddal rendelkezik a meghívás módjától függően:
    * Felhasználóink felkészült, gyakorló könyvelők, bérszámfejtők és gazdasági szakemberek. A Számviteli törvényt (Sztv.), az áfa- és társasági adószabályokat, a kettős könyvelés logikáját vagy az időbeli elhatárolások elméletét nálunk jobban ismerik!
    * ⛔ **SZIGORÚAN TILOS elméleti számviteli kiselőadást tartani** (pl. *„a számviteli törvény összemérés elve alapján az elhatárolás célja az, hogy...”*). Ez lekezelő, redundáns és feleslegesen növeli az olvasási terhet.
    * 👉 **KIZÁRÓLAG a szoftver működésére és az automatizmusra fókuszálunk:** Hol található a gomb/menüpont, mit számol vagy ajánl fel automatikusan a rendszer, és hogyan tudja az ügyfél 1 kattintással végrehajtani, a Naplófőkönyvben ellenőrizni, vagy szükség esetén stornózni.
+6. **Develop-First Hibaelhárítás & Tesztelés (Környezet és Ág Izoláció):**
+   * Ha a support kérés kódjavítást (frontend, router, Edge Function), sémamódosítást vagy tárolt eljárás (RPC) javítást igényel:
+   * **KÖTELEZŐ átváltani a `develop` ágra (`git checkout develop`), és a Dev Supabase adatbázist (`qhvcdqkqpgpdxogqqvyr`, MCP: `supabase-visibill-dev`) használni a fejlesztéshez és teszteléshez!**
+   * Szigorúan tilos a `main` ágon vagy az éles adatbázison kísérletezni. Csak a `develop` ágon sikeresen verifikált és a felhasználó által jóváhagyott javítás kerülhet promótálásra a termelési rendszerbe (`main`).
 
 ---
 
@@ -319,9 +323,15 @@ UPDATE ... / DELETE ...;
 ## 5. LÉPÉS: Végrehajtás, Fejlesztés & Validáció (Jóváhagyás Után)
 
 1. **Jóváhagyás megvárása:** Az agent NEM nyúlhat az éles adatokhoz vagy a kódbázishoz, amíg a felhasználó nem hagyta jóvá a tervet a chatben.
-2. **Kivitelezés:**
-   * **Ha adatbázis javítás:** A jóváhagyott SQL futtatása `execute_sql`-lel (`supabase-visibill`).
-   * **Ha kódjavítás / új funkció:** A `visibill-dev` szabályok szerint a kód módosítása, komponens javítás, új tesztek írása (`vitest`), valamint `npm run build` / `npx tsc --noEmit` lefuttatása.
+2. **Kivitelezés és Környezet (Develop-First Protokoll):**
+   * **Kódjavítás / Edge Function / Új funkció / Migráció esetén (KÖTELEZŐ Develop-First):**
+     * Válts át a `develop` ágra: `git checkout develop`.
+     * A kódmódosítást a `develop` ágon végezd el a `visibill-dev` és `rules/frontend.md` szabályok szerint.
+     * Minden adatbázis tesztet és migrációt **KIZÁRÓLAG a Dev Supabase adatbázison (`qhvcdqkqpgpdxogqqvyr`, MCP: `supabase-visibill-dev`)** és helyi dev szerveren (`http://localhost:8080`) tesztelj le.
+     * Futtasd le a verifikációt: `npm run lint:fast`, `npm run build` vagy `npx tsc --noEmit`, valamint az érintett Vitest teszteket.
+     * Csak a sikeres dev tesztek után kérj engedélyt a felhasználótól a `main` merge-re és az éles promócióra.
+   * **Adatjavítás (ha az éles ügyfél egyedi rekordját kell javítani a Prod DB-ben):**
+     * A korábban jóváhagyott, célzott SQL futtatása `execute_sql`-lel a termelési adatbázison (`supabase-visibill`).
 3. **Evidence Gate (Kötelező bizonyítás):**
    * Adatbázis esetén: Azonnal ellenőrző `SELECT` lekérdezéssel bizonyítani, hogy a rekord megváltozott és hibátlan.
    * Kód esetén: A tesztek (`vitest`) és a build parancs sikeres lefutásának bemutatása.
