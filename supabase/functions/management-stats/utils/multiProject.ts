@@ -70,8 +70,30 @@ export function getProjectClients(admin: ReturnType<typeof createClient>): Proje
   return clients;
 }
 
-export function getClientForProject(admin: ReturnType<typeof createClient>, projectName: string): ReturnType<typeof createClient> {
+export function getCurrentProjectName(): string {
+  const currentUrl = Deno.env.get("SUPABASE_URL") || "";
+  return currentUrl.includes("qhvcdqkqpgpdxogqqvyr") ? "DEV" : "PROD";
+}
+
+export function getClientForProject(
+  admin: ReturnType<typeof createClient>,
+  projectName?: string
+): ReturnType<typeof createClient> {
+  const currentProject = getCurrentProjectName();
+  const isDev = currentProject === "DEV";
+
+  // CRITICAL DEV ISOLATION: When running in the DEV environment,
+  // mutations must NEVER route to PROD.
+  if (isDev) {
+    return admin;
+  }
+
+  if (!projectName || projectName.toUpperCase() === currentProject) {
+    return admin;
+  }
+
   const clients = getProjectClients(admin);
   const pc = clients.find(p => p.name.toUpperCase() === projectName.toUpperCase());
   return pc?.client || admin;
 }
+
