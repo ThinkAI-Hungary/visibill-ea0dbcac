@@ -82,26 +82,18 @@ A Dev Supabase projektre az éles rendszer mind a **71 aktív Edge Function**-je
 
 ---
 
-## 🔒 4. Hitelesítés és Jogosultságok a Dev Környezetben
+## 🔒 4. Hitelesítés, Jogosultságok és Menedzsment Izoláció a Dev Környezetben
 
-A Dev környezet saját `auth.users` nyilvántartással rendelkezik. A következő felhasználók aktívak:
+A Dev környezet saját `auth.users` nyilvántartással rendelkezik, amely mind a **113 termelési felhasználót** tükrözi jelszóhash-ekkel és jogosultságokkal együtt:
 
 ### Menedzsment Felhasználók (Platform Adminisztrátorok)
 * `role: thinkai` attribútummal ellátva a `user_roles` táblában.
 * Teljes hozzáférés a Management Dashboardhoz (`/management`) és az összes funkcióhoz.
-* Felhasználók:
-  1. `management@thinkai.hu`
-  2. `aron@thinkai.hu`
-  3. `notbyalongway@thinkai.hu`
-  4. `ati@thinkai.hu`
-  5. `balage@thinkai.hu`
+* **Menedzsment Adatbázis Izoláció:** A dev felületen megnyitott Management Dashboard alapértelmezetten a Dev DB-n operál (hibák törlése, áttekintő számlálók, ügyfelek és cégek állapota). Egyetlen kivétel a *Worker Monitoring*, amely szándékoltan a központi droplet éles heartbeatjeit követi read-only módon.
 
-### Kliens Felhasználó
-* `notbyalongway@gmail.com`
-* Hozzáférése van mindhárom átemelt céghez (`owner` tagsággal):
-  * **Think Ai Kft**
-  * **Teszt Kft**
-  * **Taxology Kft.**
+### Kliens Felhasználók és Cégek
+* Mind a **87 cég és 162 cégtagság** aktív a Dev DB-ben.
+* Bármelyik valós felhasználói fiókkal (pl. `notbyalongway@gmail.com`) be lehet lépni és tesztelni a kapcsolódó cégeket anélkül, hogy a műveletek érintenék az éles adatbázist.
 
 ---
 

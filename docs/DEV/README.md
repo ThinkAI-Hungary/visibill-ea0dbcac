@@ -21,7 +21,7 @@ Dokumentációs központ a VisiBill dedikált fejlesztői és tesztelési körny
 | Dokumentum | Leírás |
 | :--- | :--- |
 | [ARCHITECTURE.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/ARCHITECTURE.md) | A fejlesztői infrastruktúra, Caddy webszerver, Supabase Dev DB, Edge Functions és hálózati kapcsolatok. |
-| [DATA_MIGRATION_AND_SYNC.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/DATA_MIGRATION_AND_SYNC.md) | A 3 szinkronizált cég adatai, migrációs audit, napi 06:00-s cron job és az A8/NAV háttérműveletek kikapcsolása. |
+| [DATA_MIGRATION_AND_SYNC.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/DATA_MIGRATION_AND_SYNC.md) | Mind a 87 cég és 113 felhasználó teljes ökoszisztéma-szinkronja, napi 06:00-s cron job, hibajegyek kizárása és az A8/NAV háttérműveletek védelme. |
 | [DEVELOPMENT_WORKFLOW.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/DEVELOPMENT_WORKFLOW.md) | Fejlesztői útmutató a `develop` ághoz, helyi `.env.local`, Supabase CLI, CI/CD deploy és migrációs szabályok. |
 | [WORKER_ARCHITECTURE.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/WORKER_ARCHITECTURE.md) | Aszinkron Worker infrastruktúra, dedikált `worker-dev` replika és többprojektes Worker Monitor. |
 
@@ -38,4 +38,4 @@ Dokumentációs központ a VisiBill dedikált fejlesztői és tesztelési körny
 3. **Automatikus Frontend CI/CD:**
    * Minden `develop` ágra küldött commit automatikusan lefut (Oxlint, TypeScript ellenőrzés, Vite build), és Rsync-kel frissíti a `https://dev.visibill.hu` oldalt ~1,5 perc alatt.
 4. **Napi Hajnali Szinkronizáció:**
-   * A dropleten futó ütemezett job minden reggel 06:00-kor szinkronizálja a `Think Ai Kft` és `Taxology Kft.` friss számláit és tranzakcióit az élesről a dev adatbázisba.
+   * A dropleten futó ütemezett job minden reggel 06:00-kor szinkronizálja **mind a 87 cég és 113 felhasználó** teljes relációs adathalmazát (számlák, tételek, banki tranzakciók, főkönyv, bérszámfejtés, hiánypótlás). A hibajegyek (`feedback`, `ticket_*`) szándékosan ki vannak zárva a szinkronból, a dev-en zéró jegy található.
