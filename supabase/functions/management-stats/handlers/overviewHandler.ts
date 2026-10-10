@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { CompanyMemberRow, CompanyRow, ProfileRow } from "../types.ts";
 import { roleLabel, startOfMonthIso, listAllAuthUsers } from "../utils/common.ts";
-import { getProjectClients } from "../utils/multiProject.ts";
+import { getProjectClients, getCurrentProjectName } from "../utils/multiProject.ts";
 import { collectDeduplicatedErrors } from "./errorsHandler.ts";
 
 export async function fetchMultiProjectMonthlyLlm(admin: ReturnType<typeof createClient>, monthStart: string) {
@@ -252,33 +252,49 @@ export async function buildCompanyDetail(admin: ReturnType<typeof createClient>,
   const dateFrom = url.searchParams.get("dateFrom") || "";
   const dateTo = url.searchParams.get("dateTo") || "";
 
-  const projectClients = getProjectClients(admin);
+  const currentProject = getCurrentProjectName();
   let activeClient = admin;
-  let detectedProject = "PROD";
+  let detectedProject = currentProject;
 
-  const checks = await Promise.all(
-    projectClients.map(async (pc) => {
-      try {
-        const { data, error } = await pc.client
-          .from("companies")
-          .select("id")
-          .eq("id", companyId)
-          .maybeSingle();
-        if (data && !error) {
-          return { name: pc.name, client: pc.client };
-        }
-      } catch (_) {}
-      return null;
-    })
-  );
+  // 1. Check local database first!
+  const { data: localComp } = await admin
+    .from("companies")
+    .select("id")
+    .eq("id", companyId)
+    .maybeSingle();
 
-  const found = checks.find(Boolean);
-  if (found) {
-    activeClient = found.client;
-    detectedProject = found.name;
-    console.log(`[buildCompanyDetail] Detected project for companyId ${companyId}: ${detectedProject}`);
+  if (localComp) {
+    activeClient = admin;
+    detectedProject = currentProject;
+    console.log(`[buildCompanyDetail] Using local database (${detectedProject}) for companyId ${companyId}`);
   } else {
-    console.warn(`[buildCompanyDetail] CompanyId ${companyId} not found in any project database, defaulting to PROD`);
+    const projectClients = getProjectClients(admin);
+    const checks = await Promise.all(
+      projectClients
+        .filter(pc => pc.name.toUpperCase() !== currentProject.toUpperCase())
+        .map(async (pc) => {
+          try {
+            const { data, error } = await pc.client
+              .from("companies")
+              .select("id")
+              .eq("id", companyId)
+              .maybeSingle();
+            if (data && !error) {
+              return { name: pc.name, client: pc.client };
+            }
+          } catch (_) {}
+          return null;
+        })
+    );
+
+    const found = checks.find(Boolean);
+    if (found) {
+      activeClient = found.client;
+      detectedProject = found.name;
+      console.log(`[buildCompanyDetail] Detected external project for companyId ${companyId}: ${detectedProject}`);
+    } else {
+      console.warn(`[buildCompanyDetail] CompanyId ${companyId} not found in any project database, defaulting to ${currentProject}`);
+    }
   }
 
   // Phase 1: Fetch non-LLM base data in parallel using activeClient

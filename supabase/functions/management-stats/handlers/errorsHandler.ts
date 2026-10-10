@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { getClientForProject } from "../utils/multiProject.ts";
+import { getClientForProject, getCurrentProjectName } from "../utils/multiProject.ts";
 import { listAllAuthUsers } from "../utils/common.ts";
 
 export function categorizeError(msg: string | null): string {
@@ -104,6 +104,7 @@ export type ErrorRow = {
     source: string;
     error_message: string | null;
     timestamp: string;
+    project?: string;
   }>;
 };
 
@@ -123,8 +124,8 @@ export interface ErrorSummary {
 export async function collectDeduplicatedErrors(
   admin: ReturnType<typeof createClient>,
   preloaded?: {
-    companies?: Array<{ id: string; name: string }>;
-    profiles?: Array<{ user_id: string; name: string }>;
+    companies?: Array<{ id: string; name: string | null }>;
+    profiles?: Array<{ user_id: string; name: string | null }>;
     emailByUserId?: Map<string, string>;
   }
 ): Promise<ErrorSummary> {
@@ -175,6 +176,7 @@ export async function collectDeduplicatedErrors(
     "app_error_logs",
   ];
 
+  const currentProject = getCurrentProjectName();
   let allErrors: ErrorRow[] = [];
   for (let i = 0; i < sourceNames.length; i++) {
     const res = errorResults[i];
@@ -228,6 +230,7 @@ export async function collectDeduplicatedErrors(
         context: isAppLog ? (row.context || null) : null,
         stack_trace: isAppLog ? (row.stack_trace || null) : null,
         url: isAppLog ? (row.url || null) : null,
+        project: currentProject,
       });
     }
   }
@@ -263,6 +266,7 @@ export async function collectDeduplicatedErrors(
         source: g.source,
         error_message: g.error_message,
         timestamp: g.error_timestamp,
+        project: g.project || currentProject,
       }));
     }
     deduplicatedErrors.push(primary);
@@ -414,10 +418,11 @@ export async function deleteErrors(
     return { deleted: 0, error: null };
   }
 
+  const defaultProject = getCurrentProjectName();
   const byProjectAndSource = new Map<string, Map<string, string[]>>();
   for (const item of body.ids) {
     if (!item.source || !item.id) continue;
-    const project = item.project || "PROD";
+    const project = item.project || defaultProject;
     if (!byProjectAndSource.has(project)) {
       byProjectAndSource.set(project, new Map<string, string[]>());
     }
@@ -450,7 +455,7 @@ export async function deleteErrors(
       if (source === "app_error_logs") {
         const { error, count } = await projectClient
           .from("app_error_logs")
-          .delete()
+          .delete({ count: "exact" })
           .in("id", ids);
 
         if (error) {
@@ -465,7 +470,7 @@ export async function deleteErrors(
           .update({
             [statusField]: "dismissed",
             error_message: null,
-          } as any)
+          } as any, { count: "exact" })
           .in("id", ids)
           .eq(statusField, "error");
 
@@ -492,7 +497,7 @@ export async function deleteAllErrors(
 
   const { error: appErr, count: appCount } = await admin
     .from("app_error_logs")
-    .delete()
+    .delete({ count: "exact" })
     .neq("id", "00000000-0000-0000-0000-000000000000");
   if (appErr) errors.push(`app_error_logs: ${appErr.message}`);
   else totalDeleted += appCount || 0;
@@ -509,7 +514,7 @@ export async function deleteAllErrors(
   for (const { table, statusField } of uploadTables) {
     const { error, count } = await admin
       .from(table)
-      .update({ [statusField]: "dismissed", error_message: null } as any)
+      .update({ [statusField]: "dismissed", error_message: null } as any, { count: "exact" })
       .eq(statusField, "error");
     if (error) errors.push(`${table}: ${error.message}`);
     else totalDeleted += count || 0;
@@ -660,10 +665,11 @@ export async function retryErrors(
     ? body.targetQueue
     : null;
 
+  const defaultProject = getCurrentProjectName();
   const byProjectAndSource = new Map<string, Map<string, string[]>>();
   for (const item of body.ids) {
     if (!item.source || !item.id) continue;
-    const project = item.project || "PROD";
+    const project = item.project || defaultProject;
     if (!byProjectAndSource.has(project)) {
       byProjectAndSource.set(project, new Map<string, string[]>());
     }

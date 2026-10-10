@@ -6910,8 +6910,8 @@
     "semantic_hash": ""
   },
   "src/features/management/components/errors/ErrorControlPanel.tsx": {
-    "mtime": 1791583293.1873298,
-    "ast_hash": "1443dfdbb556a779578c5c7cb30e39ef",
+    "mtime": 1791637390.8060863,
+    "ast_hash": "4c9f4e410b79d829d0fb6e43c2576507",
     "semantic_hash": ""
   },
   "src/features/management/components/files/FilesPanel.tsx": {
@@ -7780,8 +7780,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/errorsHandler.ts": {
-    "mtime": 1791583293.4112606,
-    "ast_hash": "67e02579ddeadb60fe18c1f757761059",
+    "mtime": 1791638063.1583338,
+    "ast_hash": "fd14d39c0591a9dd7a8e10613d23de84",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/filesHandler.ts": {
@@ -7795,8 +7795,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/overviewHandler.ts": {
-    "mtime": 1791583293.41284,
-    "ast_hash": "5dba14bc7f37edd93e75185076e04578",
+    "mtime": 1791637985.1449022,
+    "ast_hash": "d79f9cc584d43953d8b3189f7f91a166",
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/handlers/permissionsHandler.ts": {
@@ -7830,8 +7830,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/management-stats/utils/multiProject.ts": {
-    "mtime": 1791597482.2544575,
-    "ast_hash": "3dbdf14dea1d1aaff19ca6211edf354b",
+    "mtime": 1791637330.1709578,
+    "ast_hash": "4b3cadf221e27a1e48429fdf35bad98b",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-077-management-stats-edge-function-and-telemetry-decomposition.md": {
@@ -15348,8 +15348,8 @@
     "semantic_hash": ""
   },
   "docs/DEV/DATA_MIGRATION_AND_SYNC.md": {
-    "mtime": 1791598969.5370104,
-    "ast_hash": "bd28d4af5069aba65194eafa2a540d51",
+    "mtime": 1791634999.0618412,
+    "ast_hash": "b59a89252ee45fc54a47aef450dc0bdc",
     "semantic_hash": ""
   },
   "docs/DEV/DEVELOPMENT_WORKFLOW.md": {

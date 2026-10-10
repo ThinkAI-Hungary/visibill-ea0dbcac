@@ -222,13 +222,20 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
     if (deleteTargets.length === 0) return;
     setDeleting(true);
     try {
-      await postManagementData('delete-errors', { ids: deleteTargets });
-      toast({ title: 'Hibák törölve', description: `${deleteTargets.length} hiba sikeresen törölve.` });
+      const res = await postManagementData('delete-errors', { ids: deleteTargets });
+      if (res?.error) {
+        toast({ title: 'Részleges törlés', description: res.error, variant: 'destructive' });
+      } else {
+        const count = typeof res?.deleted === 'number' ? res.deleted : deleteTargets.length;
+        toast({ title: 'Hibák törölve', description: `${count} hiba sikeresen törölve.` });
+      }
       setSelected(new Set());
-      queryClient.invalidateQueries({ queryKey: ['management-errors'] });
-      queryClient.invalidateQueries({ queryKey: ['management-overview'] });
-      queryClient.invalidateQueries({ queryKey: ['management-files'] });
-      queryClient.invalidateQueries({ queryKey: ['worker-telemetry'] });
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['management-errors'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['management-overview'], type: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['management-files'] }),
+        queryClient.invalidateQueries({ queryKey: ['worker-telemetry'] }),
+      ]);
     } catch (e) {
       reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Delete errors failed:', error: e });
       toast({ title: 'Törlés sikertelen', description: 'Hiba történt a törlés során.', variant: 'destructive' });
@@ -244,7 +251,8 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
       const lastColon = key.lastIndexOf(':');
       const source = key.substring(0, lastColon);
       const id = key.substring(lastColon + 1);
-      return { source, id };
+      const row = errRows.find(r => r.id === id);
+      return { source, id, project: row?.project };
     });
     handleDelete(ids);
   };
@@ -354,7 +362,8 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
       const lastColon = key.lastIndexOf(':');
       const source = key.substring(0, lastColon);
       const id = key.substring(lastColon + 1);
-      return { source, id };
+      const row = errRows.find(r => r.id === id);
+      return { source, id, project: row?.project };
     });
     openRetryModal(ids);
   };
@@ -1339,11 +1348,20 @@ export function ErrorControlPanel({ onOpenCompany: _onOpenCompany, allUsers = []
                   onClick={async () => {
                     setDeletingAll(true);
                     try {
-                      await postManagementData('delete-all-errors', {});
-                      toast({ title: 'Összes hiba törölve', description: 'Minden hiba sikeresen törölve.' });
+                      const res = await postManagementData('delete-all-errors', {});
+                      if (res?.error) {
+                        toast({ title: 'Részleges törlés', description: res.error, variant: 'destructive' });
+                      } else {
+                        const count = typeof res?.deleted === 'number' ? `${res.deleted} hiba` : 'Minden hiba';
+                        toast({ title: 'Összes hiba törölve', description: `${count} sikeresen törölve.` });
+                      }
                       setSelected(new Set());
-                      queryClient.invalidateQueries({ queryKey: ['management-errors'] });
-                      queryClient.invalidateQueries({ queryKey: ['management-overview'] });
+                      await Promise.all([
+                        queryClient.refetchQueries({ queryKey: ['management-errors'], type: 'active' }),
+                        queryClient.refetchQueries({ queryKey: ['management-overview'], type: 'active' }),
+                        queryClient.invalidateQueries({ queryKey: ['management-files'] }),
+                        queryClient.invalidateQueries({ queryKey: ['worker-telemetry'] }),
+                      ]);
                     } catch (e) {
                       reportError({ type: 'db_query', component: 'ManagementDashboard', action: 'error', message: 'Delete all errors failed:', error: e });
                       toast({ title: 'Törlés sikertelen', description: 'Hiba történt az összes hiba törlése során.', variant: 'destructive' });
