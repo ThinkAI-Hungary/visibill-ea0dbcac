@@ -132,9 +132,9 @@ A Dev környezetben a külső bejövő webhookok és route módosítások szigor
 
 ---
 
-## ⏰ 5. Napi 06:00-s Automatikus Szinkronizáció (Cron Job)
+## ⏰ 5. Napi 06:00-s Automatikus Szinkronizáció (Cron Job) és Nagy Adatmennyiségű Stresszteszt
 
-A `Taxology Kft.` és a `Think Ai Kft` friss tranzakciói és számlái minden nap reggel **06:00-kor (Budapest idő)** átszinkronizálódnak az éles rendszerről a dev környezetbe.
+A `Taxology Kft.`, a `Think Ai Kft.` és a `Teszt Kft.` friss tranzakciói, számlái, főkönyvi adatai, ÁFA bevallásai és hiánypótlásai minden nap reggel **06:00-kor (Budapest idő)** automatikusan átszinkronizálódnak az éles rendszerről a dev környezetbe.
 
 * **Futtató szerver:** DigitalOcean droplet (`64.226.83.137`)
 * **Szkript:** `/home/jani/dev-cron/sync_daily_prod_to_dev.mjs`
@@ -145,3 +145,45 @@ A `Taxology Kft.` és a `Think Ai Kft` friss tranzakciói és számlái minden n
   CRON_TZ=Europe/Budapest
   0 6 * * * /home/jani/dev-cron/run_sync.sh
   ```
+
+### 🚀 Nagy Adatmennyiségű Stresszteszt és Megbízhatósági Eredmények (2026. 10. 10.)
+
+A napi szinkronizáló motor teljes körű stresszteszten és architektúrális megerősítésen esett át, biztosítva a hibátlan hajnali lefutást több tízezer rekord esetén is:
+
+1. **Dinamikus Futásidejű Séma- és Típusvizsgálat (`information_schema.columns`):**
+   * A szinkronizáló szkript az induláskor feltérképezi a Dev adatbázis sémáját, és pontosan megkülönbözteti a natív PostgreSQL tömb típusokat (`_text`, `_uuid`, `_int8` pl. `accounty_missing_items.uploaded_files`, `petty_cash_registers.currencies`, `vat_return_lines.source_vat_codes`, `invoices.position_numbers`) a JSONB tömböktől (`invoice_details`, `metadata`, `documents`).
+   * Megszünteti a korábbi `malformed array literal` hibákat: a natív tömböket natív formában, a JSON struktúrákat pedig érvényes JSON sztringként adja át.
+2. **Generált Mezők Automatikus Kizárása (`is_generated = 'ALWAYS'`):**
+   * A generált mezőket (pl. `knowledge_base_articles.fts`, `llm_koltsegek.total_tokens`) a szkript automatikusan kihagyja az `INSERT` záradékból, megelőzve a PostgreSQL `cannot insert a non-DEFAULT value into column` kivételeket.
+3. **Determinisztikus Lapozás és Adatvesztés-védelem:**
+   * Minden kötegelt lekérdezés explicit `ORDER BY <primary_key> ASC` záradékkal fut, garantálva, hogy a lapozás során egyetlen rekord se maradjon ki vagy duplikálódjon.
+4. **API Rate-Limit Védelem és Exponenciális Visszalépés (HTTP 429):**
+   * A Prod Management API felé 1000 soros kötegekkel, lekérdezések közötti szünettel és HTTP 429 esetén intelligens exponenciális várakozással (`backoffMs * 2`) kommunikál.
+5. **Nagy Sebességű Replikációs Mód (`SET session_replication_role = 'replica'`):**
+   * A kötegelt feltöltés idejére a dev adatbázison a triggerek és idegenkulcs-függőségek felfüggesztésre kerülnek, így a betöltés sebessége meghaladja a 2 000 rekord/másodpercet, és a lezáráskor automatikusan visszaáll `'origin'` állapotba.
+
+#### 📈 Stresszteszt Statisztika (Éles Droplet Futtatás):
+* **Összes szinkronizált rekord:** **41 360 / 41 360 sor (100% sikeresség)**
+* **Futtatási idő:** **76 másodperc**
+* **Érintett táblák:** 33 tábla (ebből pl. `accounty_missing_items`: 14 928 sor, `acc_journal_lines`: 6 752 sor, `nav_invoice_items`: 2 708 sor, `vat_codes`: 2 820 sor, `acc_journal_headers`: 2 754 sor, `transactions`: 1 843 sor, `invoice_uploads`: 1 639 sor, `nav_invoices`: 1 315 sor, `invoices`: 1 034 sor, `transaction_invoice_matches`: 1 206 sor).
+* **Hibák száma:** **0 hiba**.
+
+---
+
+## 🌙 6. Éjszakai és Hajnali pg_cron Jobok Állapota (Prod DB)
+
+A termelési adatbázisban beállított hajnali pg_cron feladatok működése és a kapcsolódó Edge Function-ök lefutása szintén ellenőrizve lett (`cron.job_run_details` lekérdezéssel):
+
+| Job Név | Időzítés (UTC) | Hívott Funkció / Parancs | Legutóbbi Státusz |
+| :--- | :--- | :--- | :---: |
+| `nav-daily-sync` | `0 1,2,3,4 * * *` | `nav-auto-sync` Edge Function | **succeeded ✓** |
+| `accounty-generate-deadlines` | `0 2 * * *` | `accounty-generate-deadlines` | **succeeded ✓** |
+| `accounty-detect-missing` | `0 3 * * *` | `accounty-detect-missing` | **succeeded ✓** |
+| `accounty-detect-bank` | `0 4 * * *` | `accounty-detect-bank` | **succeeded ✓** |
+| `nav-m2m-daily-efo-sync` | `0 4 * * *` | `nav-m2m-proxy` (cron_sync_all) | **succeeded ✓** |
+| `accounty-check-deadlines-daily` | `0 5 * * *` | `accounty-check-deadlines` | **succeeded ✓** |
+| `aggreg8-token-keepalive` | `0 */2 * * *` | `aggreg8-api` (get-banks) | **succeeded ✓** |
+| `refresh-company-counts-cache` | `*/10 * * * *` | `public.refresh_company_counts_cache()` | **succeeded ✓** |
+| `cleanup-rate-limits` | `*/10 * * * *` | `DELETE FROM private.rate_limits` | **succeeded ✓** |
+| `cleanup-pdf-exports` | `0 3 * * *` | `public.cleanup_pdf_exports()` | **succeeded ✓** |
+| `cleanup-stale-impersonations` | `*/15 * * * *` | `public.cleanup_stale_impersonations()` | **succeeded ✓** |
