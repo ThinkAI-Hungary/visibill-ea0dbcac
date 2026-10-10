@@ -58,6 +58,11 @@ Kizárólag a helyi adatbázis integritását és tisztaságát őrző karbantar
 
 *(Külső szinkronizáló cronok, mint a NAV auto-sync vagy az Aggreg8 banki lekérdezés szigorúan tiltottak a Dev DB-n!)*
 
+### C. Külső Integrációk és Webhook Védelem (Mailgun)
+A Dev környezetben a külső bejövő webhookok és route módosítások szigorúan le vannak választva:
+1. **`process-mailgun-webhook`:** A Dev Supabase-en a webhook azonnali csendes jóváhagyással (`HTTP 200 { disabled: true, environment: 'DEV' }`) leáll, nem hoz létre rekordokat és nem fogyaszt erőforrást. Minden bejövő számla és email az éles (Prod) rendszeren fut le, és a napi 06:00-s szinkronizációval kerül át a Dev DB-be.
+2. **`create-email-alias` & `delete-email-alias`:** Dev környezetben az alias műveletek csak a helyi Dev adatbázist kezelik (`mailgun_route_id: 'dev_mock_route'`), és nem hívják meg a Mailgun EU API-t, így a fejlesztői tesztek soha nem tudják felülírni vagy törölni az éles Mailgun továbbítási útvonalakat.
+
 ---
 
 ## 📊 4. Átemelt Adathalmazok Részletes Bontása
