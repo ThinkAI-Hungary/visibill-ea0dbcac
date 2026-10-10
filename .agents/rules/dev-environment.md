@@ -49,7 +49,31 @@ Amikor a fejlesztő vagy az AI agent bármilyen okból a **`develop` ágra vált
   * **KÖTELEZŐ RÁKÉRDEZÉS (`ask_question`):**
     * Amennyiben a `develop` ágon a jelenlegi feladaton felüli egyéb commitok, migrációk vagy forrásfájlok is találhatók, az agent **SZIGORÚAN KÖTELES MEGÁLLNI ÉS RÁKÉRDEZNI A FELHASZNÁLÓNÁL**, hogy mi a szándéka:
       1. **(Opció 1) Teljes Develop Release (Full Merge):** A `develop` teljes tartalmának összefésülése a `main`-be (`git merge develop`), ÉS az összes új dev migráció és backend elem érvényesítése a Prod DB-n. *(Csak akkor alkalmazható, ha a felhasználó kifejezetten megerősíti, hogy a többi fejlesztő munkája is élesítésre kész és tesztelt).*
-      2. **(Opció 2) Célzott Hotfix Promóció (Cherry-Pick / Selective Hotfix):** A `main` ágra KIZÁRÓLAG a jelenlegi hibajavításhoz/feladathoz tartozó commit(ok) kerülnek át (`git cherry-pick <commit_hash>`), és az éles Prod DB-re KIZÁRÓLAG az adott feladathoz tartozó adatbázis-migráció(k) futnak le. Így a `develop` ágon mások által párhuzamosan végzett fejlesztések véletlenül sem kerülnek ki az éles (Production) környezetbe.
+      2. **(Opció 2 - Ajánlott) Szelektív Hotfix Ág a `main`-ből (`hotfix/<nev>`):**
+         * **Szigorú Szabály:** Tilos a hotfix ágat a `develop`-ból indítani, mert az magával vinné a többi fejlesztő félkész commitjait! A hotfix ágat **KIZÁRÓLAG a tiszta `main`-ből szabad indítani**.
+         * **A szelektív élesítés szabványos lépéssora:**
+           ```powershell
+           # 1. Tiszta állapot biztosítása és hotfix ág indítása a main-ből:
+           git checkout main ; git pull origin main
+           git checkout -b hotfix/<feladat-neve> main
+
+           # 2. Kizárólag a jelenlegi feladat commitjának/commitjainak átemelése:
+           git cherry-pick <commit_hash>
+
+           # 3. Kódminőség és típusellenőrzés a tiszta hotfix ágon:
+           npm run lint:fast ; npx tsc --noEmit
+
+           # 4. Merge a main-be és éles push:
+           git checkout main ; git merge hotfix/<feladat-neve> ; git push origin main
+
+           # 5. Célzott Prod DB migráció futtatása KIZÁRÓLAG a feladathoz tartozó SQL-re:
+           # (execute_sql / apply_migration + NOTIFY pgrst, 'reload schema';)
+
+           # 6. Helyi hotfix ág takarítása és visszatérés a develop-ra:
+           git branch -d hotfix/<feladat-neve>
+           git checkout develop
+           ```
+         * Így a `develop` ágon mások által párhuzamosan végzett fejlesztések 100%-os biztonsággal elszigetelve maradnak, és soha nem kerülnek ki véletlenül az éles (Production) környezetbe.
   * **Tilos a vak `git merge develop`:** Szigorúan tilos előzetes felmérés és felhasználói jóváhagyás nélkül teljes merge-et végezni, ha a `develop` ág divergens vagy idegen fejlesztéseket tartalmaz!
 
 * **Kötelező Éles Adatbázis- és Backend-szinkron Main Merge Során (Full Production Parity):**

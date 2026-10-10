@@ -267,7 +267,7 @@ Minden alkalommal, amikor kód kerül beolvasztásra a `main` ágba (akár Pull 
    * **Más Fejlesztők Munkájának Szűrése & Kérdezési Kapu:**
      * Amennyiben a diffben a jelenlegi feladaton felüli egyéb migrációk vagy forrásfájlok is találhatók (más fejlesztők vagy korábbi, még nem élesítendő feladatok munkái), az agent **KÖTELES MEGÁLLNI ÉS RÁKÉRDEZNI A FELHASZNÁLÓNÁL (`ask_question`)**:
        - **Teljes Merge:** Minden dev migráció lefut az éles Prod DB-n (ha a többi fejlesztő munkája is élesítésre alkalmas és jóváhagyott).
-       - **Célzott Hotfix (Cherry-Pick):** Csak a hibajavítás commitja kerül a `main`-re, és **KIZÁRÓLAG az adott feladathoz tartozó migráció** fut le az éles Prod DB-n!
+       - **Célzott Hotfix Ág a `main`-ből (`hotfix/<nev>`):** Tiszta ágat indítunk a `main`-ből (`git checkout -b hotfix/<nev> main`), cherry-pickkel átemeljük a javítást, bemergeled a `main`-be, és **KIZÁRÓLAG az adott feladathoz tartozó migráció** fut le az éles Prod DB-n!
 2. **Kötelező Éles Végrehajtás a Jóváhagyott Körre (Execution on Prod DB):**
    * A jóváhagyott hatókörben (teljes merge vagy szelektív hotfix) szereplő migráció(ka)t:
      * **SZIGORÚAN KÖTELEZŐ elvégezni az éles (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`)!**
