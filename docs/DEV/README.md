@@ -23,6 +23,7 @@ Dokumentációs központ a VisiBill dedikált fejlesztői és tesztelési körny
 | [ARCHITECTURE.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/ARCHITECTURE.md) | A fejlesztői infrastruktúra, Caddy webszerver, Supabase Dev DB, Edge Functions és hálózati kapcsolatok. |
 | [DATA_MIGRATION_AND_SYNC.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/DATA_MIGRATION_AND_SYNC.md) | A 3 szinkronizált cég adatai, migrációs audit, napi 06:00-s cron job és az A8/NAV háttérműveletek kikapcsolása. |
 | [DEVELOPMENT_WORKFLOW.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/DEVELOPMENT_WORKFLOW.md) | Fejlesztői útmutató a `develop` ághoz, helyi `.env.local`, Supabase CLI, CI/CD deploy és migrációs szabályok. |
+| [WORKER_ARCHITECTURE.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/DEV/WORKER_ARCHITECTURE.md) | Aszinkron Worker infrastruktúra, dedikált `worker-dev` replika és többprojektes Worker Monitor. |
 
 ---
 

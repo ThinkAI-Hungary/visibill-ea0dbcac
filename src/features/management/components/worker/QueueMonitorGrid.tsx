@@ -100,7 +100,7 @@ export function QueueMonitorGrid({
               const items = queueData.pending_items || [];
               const queueDisplayName = queueData.queue_name
                 .replace(/_jobs$/, '')
-                .replace(/^(PROD|VSWEB|THINKERMAN):/, '');
+                .replace(/^(PROD|DEV|VSWEB|THINKERMAN):/, '');
               const queueKey = `${queueData.project}:${queueData.queue_name}`;
 
               return (
@@ -201,7 +201,7 @@ export function QueueMonitorGrid({
         const items = queueData.pending_items || [];
         const queueDisplayName = queueData.queue_name
           .replace(/_jobs$/, '')
-          .replace(/^(PROD|VSWEB|THINKERMAN):/, '');
+          .replace(/^(PROD|DEV|VSWEB|THINKERMAN):/, '');
 
         return (
           <Card key={queueData.queue_name} className="border-amber-500/30 bg-amber-500/5">

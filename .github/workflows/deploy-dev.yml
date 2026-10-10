@@ -1,0 +1,50 @@
+name: Deploy Dev (dev.visibill.hu)
+
+on:
+  push:
+    branches:
+      - develop
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Run Linter (Oxlint)
+        run: npx oxlint src/
+
+      - name: Run TypeScript Check
+        run: npx tsc --noEmit
+
+      - name: Build Web Application (Dev Supabase)
+        env:
+          VITE_SUPABASE_URL: "https://qhvcdqkqpgpdxogqqvyr.supabase.co"
+          VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_-q9BrS7Z50wqPzlEJnLosg_uk8KJ6-R"
+        run: npm run build
+
+      - name: Deploy to Droplet via Rsync
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | awk 'NF' > ~/.ssh/id_ed25519
+          printf '\n' >> ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keygen -l -f ~/.ssh/id_ed25519
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 jani@64.226.83.137 "echo 'SSH connection to dev droplet verified!'"
+          rsync -avz --delete -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes" dist/ jani@64.226.83.137:/home/jani/dev-visibill/dist/

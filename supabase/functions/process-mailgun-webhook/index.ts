@@ -835,6 +835,36 @@ async function processBillingoAndSzamlazzLinks(
 }
 
 serve(async (req) => {
+  // CORS & OPTIONS support
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      },
+    });
+  }
+
+  // Disable on DEV environment — incoming emails are processed on PROD and synced
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const isDev = supabaseUrl.includes('qhvcdqkqpgpdxogqqvyr') || Deno.env.get('ENVIRONMENT') === 'dev';
+
+  if (isDev) {
+    console.warn('[process-mailgun-webhook] Webhook is disabled in DEV environment (qhvcdqkqpgpdxogqqvyr). Incoming emails are processed on PROD and synchronized to DEV.');
+    return new Response(
+      JSON.stringify({
+        success: false,
+        disabled: true,
+        environment: 'DEV',
+        message: 'Mailgun webhook is intentionally disabled on the DEV environment. Data synchronizes from PROD.',
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
   try {
     console.log('=== Mailgun Webhook Received ===');
     

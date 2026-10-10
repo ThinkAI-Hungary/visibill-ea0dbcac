@@ -11,6 +11,7 @@ interface ContainerMetricsCardProps {
     version?: string;
     uptime_seconds: number;
     host_ip?: string;
+    supabase_project?: string;
     jobs_24h: number;
     avg_duration_ms: number;
     total_cost_24h: number;
@@ -34,6 +35,11 @@ export function ContainerMetricsCard({ containerData }: ContainerMetricsCardProp
             <Badge variant={containerData.is_healthy ? 'secondary' : 'destructive'} className="text-[10px] px-1.5 py-0">
               {containerData.is_healthy ? 'Healthy' : 'Unhealthy'}
             </Badge>
+            {containerData.supabase_project && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono font-semibold">
+                {containerData.supabase_project}
+              </Badge>
+            )}
             {containerData.version && (
               <span className="text-[10px] text-muted-foreground font-mono">{containerData.version}</span>
             )}
