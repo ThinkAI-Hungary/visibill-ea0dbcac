@@ -102,3 +102,29 @@ A Dev környezet saját `auth.users` nyilvántartással rendelkezik. A következ
   * **Think Ai Kft**
   * **Teszt Kft**
   * **Taxology Kft.**
+
+---
+
+## 🤖 5. Dedikált AI Worker Replikáció (`worker-dev`)
+
+A DigitalOcean dropleten (`64.226.83.137`) a termelési workerek mellett elindításra került egy önálló, dedikált fejlesztői worker konténer (`visibill-worker-worker-dev-1`), amely kizárólag a Dev Supabase adatbázis PGMQ sorait figyeli és dolgozza fel.
+
+* **Konténer név:** `visibill-worker-worker-dev-1`
+* **Docker Compose szolgáltatás:** `worker-dev`
+* **Docker Image:** `ghcr.io/morfizor/visibill-worker:latest`
+* **Konfiguráció:** `/home/jani/visibill-worker/.env.dev` (jogok: `600`)
+* **Cél Supabase Adatbázis:** `https://qhvcdqkqpgpdxogqqvyr.supabase.co` (`qhvcdqkqpgpdxogqqvyr`)
+* **Figyelt PGMQ Sorok (7 darab):**
+  1. `invoice_jobs` (Számlafeldolgozás és OCR)
+  2. `transaction_jobs` (Banki tranzakciók kategorizálása)
+  3. `gl_classification_jobs` (Főkönyvi AI számlatétel-osztályozás)
+  4. `report_jobs` (Riport és kimutatás feldolgozás)
+  5. `shipment_matching_jobs` (Szállítmánypárosítás)
+  6. `pdf_export_jobs` (PDF háttérexport)
+  7. `nav_item_jobs` (NAV tételszinkronizáció)
+* **Erőforrás-korlátok:**
+  * Memória: limit 1 GB, foglalás 256 MB
+  * CPU: limit 1.0 mag, foglalás 0.2 mag
+* **Egészségellenőrzés (Healthcheck):** `/proc/1/cmdline` alapú processzfigyelés (`cat /proc/1/cmdline | tr '\0' ' ' | grep -q 'python worker.py'`).
+* **Központi Monitorozás:** Kereszt-projekt heartbeat küldés a Prod `worker_heartbeats` táblájába (`supabase_project = 'DEV'`).
+
