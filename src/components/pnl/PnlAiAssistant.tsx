@@ -3,7 +3,7 @@ import { Bot, Loader2, RefreshCw, Send, HelpCircle, AlertCircle } from 'lucide-r
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 import { getActiveLocale } from '@/lib/locale/formatters';
 
@@ -73,7 +73,7 @@ Az elemzés legyen tagolt, tömör, és tartalmazzon 3 konkrét adóoptimalizál
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vxxgvdlqvvchtlmqnrqf.supabase.co';
+      const supabaseUrl = SUPABASE_URL;
       const response = await fetch(
         `${supabaseUrl}/functions/v1/accounty-ai-chat`,
         {
@@ -152,7 +152,7 @@ Az elemzés legyen tagolt, tömör, és tartalmazzon 3 konkrét adóoptimalizál
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vxxgvdlqvvchtlmqnrqf.supabase.co';
+      const supabaseUrl = SUPABASE_URL;
       const response = await fetch(
         `${supabaseUrl}/functions/v1/accounty-ai-chat`,
         {

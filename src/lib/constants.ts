@@ -1,3 +1,7 @@
+import { SUPABASE_URL } from '@/integrations/supabase/client';
+
+const projectRef = SUPABASE_URL.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'vxxgvdlqvvchtlmqnrqf';
+
 /**
  * Centralized storage key constants.
  * Every localStorage/cookie key used in the app should be defined here.
@@ -5,7 +9,7 @@
 export const STORAGE_KEYS = {
   // ── Security-sensitive (DELETED on sign-out) ──
   SELECTED_COMPANY_ID: 'selectedCompanyId',
-  AUTH_TOKEN: 'sb-vxxgvdlqvvchtlmqnrqf-auth-token',
+  AUTH_TOKEN: `sb-${projectRef}-auth-token`,
   AUTH_TOKEN_LEGACY: 'supabase.auth.token',
 
   // ── UX preferences (KEPT on sign-out) ──
@@ -24,6 +28,8 @@ export const STORAGE_KEYS = {
  */
 export const SIGNOUT_DELETE_KEYS: string[] = [
   STORAGE_KEYS.AUTH_TOKEN,
+  'sb-vxxgvdlqvvchtlmqnrqf-auth-token',
+  'sb-qhvcdqkqpgpdxogqqvyr-auth-token',
   STORAGE_KEYS.AUTH_TOKEN_LEGACY,
   STORAGE_KEYS.SELECTED_COMPANY_ID,
 ];

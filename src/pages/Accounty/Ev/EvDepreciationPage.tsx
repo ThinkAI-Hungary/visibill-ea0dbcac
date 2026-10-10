@@ -19,6 +19,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 
 // ─── Method labels mapping ──────────────────────────────────────────────────
 
@@ -163,7 +164,7 @@ function AssetFormModal({ isOpen, onClose, onSave, initialValues, saving }: Asse
     setIsAiLoading(true);
     setAiExplanation('');
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vxxgvdlqvvchtlmqnrqf.supabase.co';
+      const supabaseUrl = SUPABASE_URL;
       
       const assetData = {
         name: form.asset_name,

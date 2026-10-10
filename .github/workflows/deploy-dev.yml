@@ -35,6 +35,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: "https://qhvcdqkqpgpdxogqqvyr.supabase.co"
           VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_-q9BrS7Z50wqPzlEJnLosg_uk8KJ6-R"
+          VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFodmNkcWtxcGdwZHhvZ3FxdnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1ODA0NDEsImV4cCI6MjEwNzE1NjQ0MX0.GHWA6crY1EQ5V7_A7v1VX054eu6qElJOZUXeUbP99CQ"
         run: npm run build
 
       - name: Deploy to Droplet via Rsync
