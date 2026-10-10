@@ -46,7 +46,7 @@ export function formatDuration(ms: number): string {
 }
 
 export const PIE_COLORS = ['#a78bfa', '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#6b7280'];
-export const PROJECT_COLORS: Record<string, string> = { PROD: '#10b981', VSWEB: '#3b82f6', THINKERMAN: '#f59e0b' };
+export const PROJECT_COLORS: Record<string, string> = { PROD: '#10b981', DEV: '#8b5cf6', VSWEB: '#3b82f6', THINKERMAN: '#f59e0b' };
 
 export function CSSPieChart({ data, centerLabel, centerSub, size = 140 }: {
   data: { label: string; value: number; color: string }[];

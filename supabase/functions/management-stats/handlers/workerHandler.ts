@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { isCompletedMessage } from "../utils/common.ts";
-import { getProjectClients } from "../utils/multiProject.ts";
+import { getProjectClients, getMonitoringAdmin } from "../utils/multiProject.ts";
 
 export async function getActiveErrors(pc: any, periodSince?: string | null) {
   let invQ = pc.client
@@ -43,8 +43,9 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
 
   const projectClients = getProjectClients(admin);
 
-  // 1. Container heartbeats (always from PROD)
-  const { data: heartbeats } = await admin
+  // 1. Container heartbeats (always from PROD monitoring DB where all workers report)
+  const monitoringAdmin = getMonitoringAdmin(admin);
+  const { data: heartbeats } = await monitoringAdmin
     .from("worker_heartbeats")
     .select("*")
     .gt("last_heartbeat", new Date(now.getTime() - 3 * 60 * 1000).toISOString())
@@ -74,6 +75,7 @@ export async function buildWorkerStatus(admin: ReturnType<typeof createClient>, 
 
   const expectedReplicas: Record<string, { count: number, project: string }> = {
     "worker-prod": { count: 4, project: "PROD" },
+    "worker-dev": { count: 1, project: "DEV" },
     "worker-vsweb": { count: 1, project: "VSWEB" },
     "worker-thinkerman": { count: 1, project: "THINKERMAN" },
   };
