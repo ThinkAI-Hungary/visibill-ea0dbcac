@@ -34,13 +34,19 @@ Amikor a fejlesztő vagy az AI agent bármilyen okból a **`develop` ágra vált
 
 ---
 
-## 🛡️ 4. Konfigurációs Integritás, Merge Védelem és Kötelező Éles Migrációk
+## 🛡️ 4. Konfigurációs Integritás, Merge Védelem és Kötelező Éles Adatbázis- és Backend-szinkronizáció
 * A `develop` ág-specifikus beállítások (mint a [`supabase/config.toml`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/config.toml) `project_id = "qhvcdqkqpgpdxogqqvyr"`, vagy a lokális [`.env.local`](file:///d:/ThinkAI/Visibill/eaisybill-prod/.env.local) kulcsok) soha nem kerülhetnek át akaratlanul a `main` ágra.
 * Pull Request vagy `main` ágba történő merge előtt kötelező ellenőrizni a konfigurációk éles állapotának megőrzését (`project_id = "vxxgvdlqvvchtlmqnrqf"` a `main` ágon).
-* **Kötelező Éles Adatbázis Migráció Main Merge Során:**
-  * Amennyiben a `develop` ágon új vagy módosított adatbázis-migrációk (`supabase/migrations/`) keletkeztek, a `main` ágra történő merge-eléskor **SZIGORÚAN KÖTELEZŐ érvényesíteni az adatbázis-migrációkat a termelési (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`) is**!
-  * Szigorúan tilos úgy befejezettnek nyilvánítani a merge-et, hogy a `main` ági forráskód már az új sémát, mezőt, RPC-t vagy táblát igényli, miközben az éles adatbázisban a migráció még nem futott le.
-  * A merge után kötelező ellenőrizni a Prod `supabase_migrations.schema_migrations` bejegyzést, és szükség esetén kiadni a `NOTIFY pgrst, 'reload schema';` parancsot.
+* **Kötelező Éles Adatbázis- és Backend-szinkron Main Merge Során (Full Production Parity):**
+  * A `main` ágra történő merge-eléskor **NEM ELÉG kizárólag a formális migrációs fájlokat (`supabase/migrations/`) átvinni**!
+  * **SZIGORÚAN KÖTELEZŐ az összes olyan adatbázis-módosítást és backend elemet érvényesíteni a termelési (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`), amelyek szükségesek ahhoz, hogy a `develop`-ról érkező új vagy módosított funkciók élesben is hibátlanul működjenek:**
+    1. **Adatbázis sémamódosítások & migrációk:** Új táblák, oszlopok, indexek, enum típusok és idegen kulcsok átvezetése.
+    2. **Tárolt eljárások (RPC / SQL függvények):** Bármilyen új vagy módosított `CREATE OR REPLACE FUNCTION` eljárás és trigger függvény élesítése a Prod DB-ben.
+    3. **RLS szabályok és biztonsági jogosultságok:** Új táblákhoz és műveletekhez tartozó `CREATE POLICY`, `ENABLE ROW LEVEL SECURITY`, valamint `GRANT / REVOKE` jogosultságok átvezetése.
+    4. **Konfigurációs, Seed és Rendszeradatok:** Bármilyen rendszerbeállítási rekord, funkciókapcsoló (feature flag), alapértelmezett kategória/mapping, státuszkód vagy PGMQ queue regisztráció, amely a dev fejlesztés során létrejött és a kód futásához elengedhetetlen.
+    5. **Edge Functions éles telepítése:** Amennyiben a feladat Supabase Edge Function-t (`supabase/functions/`) érintett, azt kötelező letelepíteni a Prod projektre is (`npx supabase functions deploy <fn> --project-ref vxxgvdlqvvchtlmqnrqf`).
+    6. **PostgREST Schema Cache Reload:** Az adatbázis-módosítások után KÖTELEZŐ lefuttatni a `NOTIFY pgrst, 'reload schema';` parancsot a Prod DB-n, hogy a REST/PostgREST API azonnal érzékelje az új sémát.
+  * Szigorúan tilos úgy befejezettnek nyilvánítani a merge-et vagy feladatot, hogy a `main` ági forráskód már igényli a módosításokat, miközben az éles adatbázis vagy backend még a korábbi állapotban van!
 
 ---
 
