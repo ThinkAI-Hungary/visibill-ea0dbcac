@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-10  
-> **Összesen:** 244 döntés (226 egyedi döntési fájl) | ✅ Decided: 242 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-11  
+> **Összesen:** 245 döntés (227 egyedi döntési fájl) | ✅ Decided: 243 | ⛔ Superseded: 2
 
 
 ---
@@ -323,6 +323,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-149 | In-App Fejlesztői Napló (Patchnotes) Rendszer és Publikációs Pipeline | ✅ Decided | [A-149](./A-149-in-app-changelog-and-patchnotes-system.md) |
 | A-171 | Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció | ✅ Decided | [A-171](./A-171-croatian-minimax-api-invoice-intermediary-sync.md) |
 | A-190 | Menedzsment Dashboard Összesítő Gyorsítótárazás és Python Worker Vault Tehermentesítés (P2 Skálázhatósági Fejlesztés) | ✅ Decided | [A-190](./A-190-management-dashboard-counts-caching-and-worker-vault-offloading.md) |
+| A-248 | Agora / Novitax Formátumhű Pénzügyi Kimutatások (Főkönyvi Kivonat és Eredménykimutatás) Export Architektúra | ✅ Decided | [A-248](./A-248-agora-statutory-financial-reports-export-architecture.md) |
 
 
 

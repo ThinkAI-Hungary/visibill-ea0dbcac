@@ -2,7 +2,7 @@
 
 > Éves zárlat, mérleg/eredménykimutatás struktúra, ÁFA bevallások.
 
-**Táblák ebben a csoportban:** 13
+**Táblák ebben a csoportban:** 14
 
 ---
 
@@ -334,4 +334,32 @@
 **FK:** `company_id` → `companies.id`, `export_id` → `accounty_audit_exports.id`, `previous_export_id` → `accounty_audit_exports.id`
 
 **Indexek:** `idx_accounty_audit_export_diffs_export_id`, `idx_accounty_audit_export_diffs_company_id`, `idx_accounty_audit_export_diffs_detected`
+
+---
+
+### `vat_view_templates`
+
+**RLS:** ✅ | **Sorok:** dinamikus
+
+> ÁFA analitika nézetválasztó, egyedi oszlopkonfigurációk és sablonkezelés könyvelőirodai megosztással.
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | text | — | `gen_random_uuid()::text` |
+| company_id | uuid | ✓ | |
+| accounting_firm_id | uuid | ✓ | |
+| name | text | — | |
+| template_type | text | — | `'custom'` |
+| description | text | ✓ | |
+| columns | jsonb | — | `'[]'::jsonb` |
+| source_file_name | text | ✓ | |
+| created_by | uuid | ✓ | |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`, `accounting_firm_id` → `companies.id`, `created_by` → `auth.users.id`
+
+**Indexek:** `idx_vat_view_templates_company_id`, `idx_vat_view_templates_type`
+
+---
 

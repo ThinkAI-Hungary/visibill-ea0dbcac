@@ -1,7 +1,7 @@
 # PostgreSQL RPC és Függvény Katalógus
 
-> **Utoljára frissítve:** 2026-10-10  
-> **Összesen:** 149 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
+> **Utoljára frissítve:** 2026-10-11  
+> **Összesen:** 150 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
 > **Tesztelési Követelmények:** Lásd a [PostgreSQL RPC Tesztelési Stratégia és Blueprint](./rpc-testing-blueprint.md) dokumentumot.
 
 Ez a dokumentáció az eaisybill-prod és eaisyBooks rendszerekben használt összes PostgreSQL tárolt eljárást és RPC (Remote Procedure Call) függvényt tartalmazza. Részletezi a függvény szignatúráját, biztonsági környezetét (`SECURITY DEFINER` vs `INVOKER`), hívó komponensét és funkcionális szerepét.
@@ -12,7 +12,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 ## Tartalomjegyzék
 
 1. [📊 Frontend Lekérdező és Aggregációs RPC-k (32 db)](#1--frontend-lekérdező-és-aggregációs-rpc-k)
-2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (32 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
+2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (33 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
 3. [📄 Kettős Könyvviteli Naplók (acc_*) és Folyószámla RPC-k (15 db)](#3--kettős-könyvviteli-naplók-acc_-rpc-k)
 4. [📘 eaisyBooks és EV Modul RPC-k (8 db)](#4--eaisybooks-és-ev-modul-rpc-k)
 5. [🔐 Jogosultságkezelés és RLS Segédfüggvények (15 db)](#5--jogosultságkezelés-és-rls-segédfüggvények)
@@ -98,6 +98,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `save_pnl_mappings(p_company_id uuid, p_preset_id uuid, p_mappings jsonb)` | `DEFINER` | `void` | ProfitAndLossMapping.tsx | Eredménykimutatás sorok és főkönyvi számok összerendelésének mentése (biztonságos UUID regex validációval, üres string szűréssel, company_members bérlői jogosultság-ellenőrzéssel és ON CONFLICT DO UPDATE idempotens beszúrással). |
 | `seed_default_vat_codes(p_company_id uuid)` | `INVOKER` | `void` | Settings / MasterData | Alapértelmezett NAV ÁFA kódok feltöltése egy céghez. |
 | `seed_fad_vat_codes(p_company_id uuid)` | `INVOKER` | `void` | Settings / MasterData | Fordított adózású (FAD) ÁFA kódok inicializálása. |
+| `set_active_gl_view_template(p_company_id uuid, p_template_id text)` | `DEFINER` | `jsonb` | GlViewSelectorModal.tsx / GeneralLedgerTable.tsx | Aktív főkönyvi nézetsablon beállítása a céghez (`company_settings.active_gl_view_template_id`), beépített és egyedi sablon validációval és könyvelői jogosultság-ellenőrzéssel (A-248). |
 | `sync_petty_cash_entries(p_company_id uuid)` | `DEFINER` | `TABLE(inserted_count integer, skipped_count integer)` | PettyCashTab.tsx | Készpénzes számlák és kézi készpénzes kifizetések automatikus szinkronizálása a házipénztár naplóba a nyitó dátum védelmével (A-233). |
 | `toggle_invoice_continuous(p_invoice_id uuid, p_is_continuous boolean, p_service_period_start date, p_service_period_end date, p_ti_override date)` | `DEFINER` | `json` | ContinuousServiceToggle | Folyamatos teljesítésű státusz és elszámolási időszak állítása a számlán. |
 | `unmark_storno_group_settled(p_storno_nav_id uuid)` | `DEFINER` | `jsonb` | StornoGroupDetailModal | Sztornó csoport lezárásának feloldása. |

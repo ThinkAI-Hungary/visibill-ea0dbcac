@@ -31,9 +31,13 @@ import {
   X,
   RefreshCw,
   BookOpen,
+  TableProperties,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { cn, formatCurrency, isReverseChargeVatRate } from '@/lib/utils';
+import { useVatViewTemplates } from '@/hooks/useVatViewTemplates';
+import { VatViewSelectorModal } from './templates/VatViewSelectorModal';
+import { exportVatJournalExcel, exportVatJournalCsv } from '@/lib/vatExport';
 import { VatFrequency, VatScope, isProformaInvoice } from '../types';
 
 interface VatItemizedJournalViewProps {
@@ -78,8 +82,12 @@ export function VatItemizedJournalView({
   const [negativeExpenses, setNegativeExpenses] = useState(true);
   const [journalFilter, setJournalFilter] = useState<'ALL' | 'szállító' | 'vevő' | 'pénztár' | 'vegyes'>('ALL');
   const [search, setSearch] = useState('');
+  const [viewSelectorOpen, setViewSelectorOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [searchParams] = useSearchParams();
   const effectiveScope: VatScope = vatScope || (searchParams.get('vat_scope') as VatScope) || 'all';
+
+  const { activeTemplate } = useVatViewTemplates();
 
   // Compute period dates
   const { dateFrom, dateTo, periodLabel } = useMemo(() => {
@@ -389,60 +397,30 @@ export function VatItemizedJournalView({
     });
   }, [journalItems, journalFilter, search]);
 
-  // CSV Export
-  const handleExportCsv = () => {
+  // Export handler supporting active template
+  const handleExport = async () => {
     if (filteredItems.length === 0) return;
-
-    const headers = [
-      'Sorszám',
-      'Napló',
-      'ÁFA esedékesség',
-      'Bizonylatszám',
-      'Part.kód',
-      'Partner neve',
-      'Megjegyzés',
-      'ÁFA%',
-      'Nettó',
-      'Nettó fsz.',
-      'ÁFA',
-      'ÁFA fsz.',
-      'Bruttó',
-      'Bruttó fsz.',
-      'Bev.sor',
-    ];
-
-    const rows = filteredItems.map((it) => {
-      const isExpense = it.journalType === 'szállító' || it.journalType === 'pénztár';
-      const sign = negativeExpenses && isExpense ? -1 : 1;
-
-      return [
-        it.entryNumber,
-        it.journalType,
-        it.vatDueDate,
-        `"${it.invoiceNumber}"`,
-        `"${it.partnerCode}"`,
-        `"${it.partnerName.replace(/"/g, '""')}"`,
-        `"${it.description}"`,
-        it.vatRateLabel,
-        it.netAmount * sign,
-        it.netGlAccount,
-        it.vatAmount * sign,
-        it.vatGlAccount,
-        it.grossAmount * sign,
-        it.grossGlAccount,
-        it.taxReturnRow,
-      ];
-    });
-
-    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `afa_analitikus_naplo_${year}_${month}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setIsExporting(true);
+    try {
+      await exportVatJournalExcel(
+        filteredItems,
+        selectedCompany?.name || 'Vállalkozás',
+        activeTemplate,
+        periodLabel,
+        negativeExpenses
+      );
+    } catch (e) {
+      console.warn('Excel export error, falling back to CSV:', e);
+      exportVatJournalCsv(
+        filteredItems,
+        selectedCompany?.name || 'Vállalkozás',
+        activeTemplate,
+        periodLabel,
+        negativeExpenses
+      );
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const getJournalBadge = (type: JournalItem['journalType']) => {
@@ -455,6 +433,126 @@ export function VatItemizedJournalView({
         return <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-[10px] px-1.5 py-0">pénztár</Badge>;
       case 'vegyes':
         return <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30 text-[10px] px-1.5 py-0">vegyes</Badge>;
+    }
+  };
+
+  const renderDynamicCell = (item: JournalItem, colField: string, sign: number) => {
+    switch (colField) {
+      case 'entryNumber':
+        return <span className="font-mono font-medium whitespace-nowrap">{item.entryNumber}</span>;
+      case 'journalType':
+        return <span className="whitespace-nowrap">{getJournalBadge(item.journalType)}</span>;
+      case 'vatDueDate':
+        return <span className="text-center font-mono text-muted-foreground whitespace-nowrap">{item.vatDueDate}</span>;
+      case 'invoiceNumber':
+        return <span className="font-mono font-medium whitespace-nowrap">{item.invoiceNumber}</span>;
+      case 'partnerCode':
+        return <span className="font-mono text-muted-foreground whitespace-nowrap">{item.partnerCode}</span>;
+      case 'partnerName':
+        return (
+          <span className="font-medium truncate max-w-[200px] whitespace-nowrap block" title={item.partnerName}>
+            {item.partnerName}
+          </span>
+        );
+      case 'description':
+        return (
+          <span className="text-muted-foreground truncate max-w-[200px] whitespace-nowrap block" title={item.description}>
+            {item.description}
+          </span>
+        );
+      case 'vatRateLabel':
+        return <span className="text-muted-foreground whitespace-nowrap font-mono text-xs">{item.vatRateLabel}</span>;
+      case 'netAmount':
+        return (
+          <span className="font-mono tabular-nums whitespace-nowrap">
+            {formatCurrency(item.netAmount * sign)}
+          </span>
+        );
+      case 'netGlAccount':
+        return (
+          <span className="font-mono text-[11px] text-muted-foreground whitespace-nowrap text-center block">
+            {item.netGlAccount || '—'}
+          </span>
+        );
+      case 'vatAmount':
+        return (
+          <span className="font-mono tabular-nums font-semibold text-foreground whitespace-nowrap">
+            {formatCurrency(item.vatAmount * sign)}
+          </span>
+        );
+      case 'vatGlAccount':
+        return (
+          <span className="font-mono text-[11px] text-muted-foreground whitespace-nowrap text-center block">
+            {item.vatGlAccount || '—'}
+          </span>
+        );
+      case 'grossAmount':
+        return (
+          <span className="font-mono tabular-nums text-muted-foreground whitespace-nowrap">
+            {formatCurrency(item.grossAmount * sign)}
+          </span>
+        );
+      case 'grossGlAccount':
+        return (
+          <span className="font-mono text-[11px] text-muted-foreground whitespace-nowrap text-center block">
+            {item.grossGlAccount || '—'}
+          </span>
+        );
+      case 'returnRowCode':
+        return (
+          <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-mono text-primary border-primary/30">
+            {item.returnRowCode || item.taxReturnRow || '-'}
+          </Badge>
+        );
+      case 'payableNetAmount': {
+        const isOutbound = item.journalType === 'vevő';
+        if (!isOutbound) return <span className="text-muted-foreground">—</span>;
+        return <span className="font-mono tabular-nums whitespace-nowrap">{formatCurrency(item.netAmount)}</span>;
+      }
+      case 'payableVatAmount': {
+        const isOutbound = item.journalType === 'vevő';
+        if (!isOutbound) return <span className="text-muted-foreground">—</span>;
+        return (
+          <span className={cn(
+            "font-mono tabular-nums whitespace-nowrap",
+            item.vatAmount > 0 ? "text-rose-600 dark:text-rose-400 font-semibold" : "text-muted-foreground"
+          )}>
+            {formatCurrency(item.vatAmount)}
+          </span>
+        );
+      }
+      case 'deductibleNetAmount': {
+        const isInbound = item.journalType === 'szállító' || item.journalType === 'pénztár';
+        if (!isInbound) return <span className="text-muted-foreground">—</span>;
+        return <span className="font-mono tabular-nums whitespace-nowrap">{formatCurrency(item.netAmount)}</span>;
+      }
+      case 'deductibleVatAmount': {
+        const isInbound = item.journalType === 'szállító' || item.journalType === 'pénztár';
+        if (!isInbound) return <span className="text-muted-foreground">—</span>;
+        return (
+          <span className={cn(
+            "font-mono tabular-nums whitespace-nowrap",
+            item.vatAmount > 0 ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-muted-foreground"
+          )}>
+            {formatCurrency(item.vatAmount)}
+          </span>
+        );
+      }
+      case 'netVatPosition': {
+        const isOutbound = item.journalType === 'vevő';
+        const isInbound = item.journalType === 'szállító' || item.journalType === 'pénztár';
+        const val = isOutbound ? item.vatAmount : isInbound ? -item.vatAmount : 0;
+        return (
+          <span className={cn(
+            "font-mono tabular-nums font-semibold whitespace-nowrap",
+            val > 0 ? "text-rose-600 dark:text-rose-400" : val < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+          )}>
+            {formatCurrency(val)}
+          </span>
+        );
+      }
+      default:
+        return <span className="text-muted-foreground">—</span>;
     }
   };
 
@@ -496,6 +594,23 @@ export function VatItemizedJournalView({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* ÁFA Nézetválasztó gomb */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setViewSelectorOpen(true)}
+            className="h-9 text-xs gap-1.5 border-primary/30 hover:border-primary/60 hover:bg-primary/5 text-foreground shadow-2xs font-medium max-w-[280px] sm:max-w-none"
+            title={activeTemplate ? `Aktív sablon: ${activeTemplate.name}` : undefined}
+          >
+            <TableProperties className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="hidden sm:inline">Nézet:</span>
+            {activeTemplate && (
+              <Badge variant="secondary" className="text-[11px] px-2 py-0.5 h-auto font-normal ml-0.5 max-w-[170px] sm:max-w-[260px] truncate inline-block">
+                {activeTemplate.name}
+              </Badge>
+            )}
+          </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -509,12 +624,12 @@ export function VatItemizedJournalView({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleExportCsv}
-            disabled={filteredItems.length === 0}
+            onClick={handleExport}
+            disabled={filteredItems.length === 0 || isExporting}
             className="h-9 text-xs gap-1.5"
           >
-            <Download className="w-3.5 h-3.5" />
-            Excel / CSV
+            {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" /> : <Download className="w-3.5 h-3.5" />}
+            <span>{isExporting ? 'Exportálás...' : 'Excel / CSV'}</span>
           </Button>
         </div>
       </div>
@@ -560,7 +675,7 @@ export function VatItemizedJournalView({
         </div>
       </div>
 
-      {/* Master Journal Table */}
+      {/* Master Journal Table — Driven dynamically by activeTemplate.columns */}
       <Card className="border border-border/80 shadow-sm overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-auto max-h-[65vh]">
@@ -574,24 +689,21 @@ export function VatItemizedJournalView({
                 Nincs rögzített analitikus tétel a megadott szűrési feltételekre.
               </div>
             ) : (
-              <Table className="text-xs border-collapse min-w-[1250px]">
+              <Table className="text-xs border-collapse min-w-[1100px]">
                 <TableHeader className="bg-muted/70 sticky top-0 z-10 border-b border-border/80">
                   <TableRow>
-                    <TableHead className="w-28 font-mono whitespace-nowrap">Sorszám</TableHead>
-                    <TableHead className="w-20 whitespace-nowrap">Napló</TableHead>
-                    <TableHead className="w-24 text-center font-mono whitespace-nowrap">ÁFA esed.</TableHead>
-                    <TableHead className="w-32 font-mono whitespace-nowrap">Bizonylatszám</TableHead>
-                    <TableHead className="w-20 font-mono whitespace-nowrap">Part.kód</TableHead>
-                    <TableHead className="min-w-[160px] whitespace-nowrap">Partner neve</TableHead>
-                    <TableHead className="min-w-[160px] whitespace-nowrap">Megjegyzés</TableHead>
-                    <TableHead className="w-20 whitespace-nowrap">ÁFA%</TableHead>
-                    <TableHead className="w-28 text-right whitespace-nowrap">Nettó</TableHead>
-                    <TableHead className="w-16 font-mono text-center whitespace-nowrap">Nettó fsz</TableHead>
-                    <TableHead className="w-24 text-right font-medium whitespace-nowrap">ÁFA</TableHead>
-                    <TableHead className="w-16 font-mono text-center whitespace-nowrap">ÁFA fsz</TableHead>
-                    <TableHead className="w-28 text-right whitespace-nowrap">Bruttó</TableHead>
-                    <TableHead className="w-16 font-mono text-center whitespace-nowrap">Bruttó fsz</TableHead>
-                    <TableHead className="w-16 text-center font-bold text-primary whitespace-nowrap">Bev.sor</TableHead>
+                    {activeTemplate.columns.map((col) => (
+                      <TableHead
+                        key={col.id || col.key}
+                        className={cn(
+                          "whitespace-nowrap font-semibold text-xs py-2.5 px-3 border-r border-border/40 last:border-r-0",
+                          col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
+                        )}
+                        style={{ width: col.width || 'auto' }}
+                      >
+                        {col.label}
+                      </TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/30">
@@ -601,41 +713,17 @@ export function VatItemizedJournalView({
 
                     return (
                       <TableRow key={item.id} className="hover:bg-muted/30 font-normal">
-                        <TableCell className="font-mono font-medium whitespace-nowrap">{item.entryNumber}</TableCell>
-                        <TableCell className="whitespace-nowrap">{getJournalBadge(item.journalType)}</TableCell>
-                        <TableCell className="text-center font-mono text-muted-foreground whitespace-nowrap">{item.vatDueDate}</TableCell>
-                        <TableCell className="font-mono font-medium whitespace-nowrap">{item.invoiceNumber}</TableCell>
-                        <TableCell className="font-mono text-muted-foreground whitespace-nowrap">{item.partnerCode}</TableCell>
-                        <TableCell className="font-medium truncate max-w-[180px] whitespace-nowrap" title={item.partnerName}>
-                          {item.partnerName}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground truncate max-w-[180px] whitespace-nowrap" title={item.description}>
-                          {item.description}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground whitespace-nowrap">{item.vatRateLabel}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">
-                          {formatCurrency(item.netAmount * sign)}
-                        </TableCell>
-                        <TableCell className="text-center font-mono text-[11px] text-muted-foreground whitespace-nowrap">
-                          {item.netGlAccount}
-                        </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums font-semibold text-foreground whitespace-nowrap">
-                          {formatCurrency(item.vatAmount * sign)}
-                        </TableCell>
-                        <TableCell className="text-center font-mono text-[11px] text-muted-foreground whitespace-nowrap">
-                          {item.vatGlAccount}
-                        </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
-                          {formatCurrency(item.grossAmount * sign)}
-                        </TableCell>
-                        <TableCell className="text-center font-mono text-[11px] text-muted-foreground whitespace-nowrap">
-                          {item.grossGlAccount}
-                        </TableCell>
-                        <TableCell className="text-center font-mono font-bold text-primary whitespace-nowrap">
-                          <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-mono">
-                            {item.returnRowCode || item.taxReturnRow || '-'}
-                          </Badge>
-                        </TableCell>
+                        {activeTemplate.columns.map((col) => (
+                          <TableCell
+                            key={col.id || col.key}
+                            className={cn(
+                              "py-2 px-3 border-r border-border/30 last:border-r-0 whitespace-nowrap",
+                              col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
+                            )}
+                          >
+                            {renderDynamicCell(item, col.field, sign)}
+                          </TableCell>
+                        ))}
                       </TableRow>
                     );
                   })}
@@ -645,6 +733,12 @@ export function VatItemizedJournalView({
           </div>
         </CardContent>
       </Card>
+
+      {/* ÁFA Nézetválasztó Modális */}
+      <VatViewSelectorModal
+        open={viewSelectorOpen}
+        onOpenChange={setViewSelectorOpen}
+      />
     </div>
   );
 }

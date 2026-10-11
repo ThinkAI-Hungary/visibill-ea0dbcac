@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-10-10  
-> **Összesen:** 197 aktív alkalmazás-tábla (198 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-10-11  
+> **Összesen:** 199 aktív alkalmazás-tábla (200 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -17,12 +17,12 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 
 - [🏛️ NAV Integráció](./database/05-nav.md) — 3 tábla, ~164208 sor
 - [💳 Tranzakciók & Bank](./database/06-transactions-bank.md) — 13 tábla, ~7945 sor
-- [📊 Főkönyv (General Ledger)](./database/07-general-ledger.md) — 9 tábla, ~30771 sor
+- [📊 Főkönyv (General Ledger)](./database/07-general-ledger.md) — 10 tábla, ~30771 sor
 - [💰 Bér & Munkaidő](./database/08-salary-hr.md) — 5 tábla, ~341 sor
 - [🏦 Házipénztár & OPG](./database/09-petty-cash.md) — 8 tábla, ~1380 sor
 - [📦 Tárgyi Eszközök](./database/10-assets.md) — 4 tábla, ~35 sor
 - [🚚 Szállítmányozás](./database/11-shipping.md) — 4 tábla, ~0 sor
-- [📋 Éves Beszámoló & ÁFA](./database/12-annual-reports.md) — 13 tábla, ~1934 sor
+- [📋 Éves Beszámoló & ÁFA](./database/12-annual-reports.md) — 14 tábla, ~1934 sor
 - [📘 eaisyBooks — Alap](./database/13-eaisybooks-core.md) — 16 tábla, ~26176 sor
 - [📘 eaisyBooks — Bérszámfejtés](./database/14-eaisybooks-payroll.md) — 14 tábla, ~174 sor
 - [📘 eaisyBooks — Adó & Jogi](./database/15-eaisybooks-tax-legal.md) — 10 tábla, ~11 sor
@@ -179,6 +179,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `gl_journal_entries` | 📊 Főkönyv | 4805 | Főkönyvi tételek analitikája. |
 | `gl_overrides_log` | 📊 Főkönyv | 350 | Kézi GL besorolás felülbírálási napló. |
 | `gl_upload_notifications` | 📊 Főkönyv | 2950 | Főkönyvi import értesítések. |
+| `gl_view_templates` | 📊 Főkönyv | 0 | Főkönyvi nézetválasztó sablonok és egyedi oszlopkonfigurációk (A-248, P-182) |
 | `hp_settings` | 🏦 Házipénztár | 0 | Házipénztár beállítások és határértékek. |
 | `invoice_items` | 📄 Számlák | 17473 | Feltöltött számlák tételsorai (ÁFA, GL, projekt, jegyzet). |
 | `invoice_uploads` | 📄 Számlák | 7186 | Számlafeltöltési kötegek és fájlok. |
@@ -243,6 +244,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `vat_return_lines` | 📋 Éves Beszámoló & ÁFA | 661 | Számított ÁFA bevallás sorai. |
 | `vat_return_m_lines` | 📋 Éves Beszámoló & ÁFA | 242 | ÁFA M-lapos partnerenkénti összesítők. |
 | `vat_returns` | 📋 Éves Beszámoló & ÁFA | 54 | Havi/negyedéves/éves ÁFA bevallások állapota. |
+| `vat_view_templates` | 📋 Éves Beszámoló & ÁFA | 0 | ÁFA analitika nézetsablonok és könyvelőirodai megosztás (A-248, P-182) |
 | `vegszamla_backup` | 📄 Számlák | 0 | Backup tábla. |
 | `worker_heartbeats` | 🛠️ Platform & Üzemeltetés | 1310 | Python worker healthcheck és pipeline liveness heartbeat telemetria. |
 

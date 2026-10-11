@@ -12,10 +12,14 @@ import { EditGlAccountModal } from '@/components/general-ledger/EditGlAccountMod
 import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
 import { downloadProcontGlPdf } from '@/lib/procontGlPdf';
 import { exportProcontGlExcel } from '@/lib/procontGlExcel';
+import { downloadAgoraGlPdf } from '@/lib/agoraGlPdf';
+import { exportAgoraGlExcel } from '@/lib/agoraGlExcel';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, fetchAllGlAccountsByPreset, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
 import type { GlAccountType, SubledgerType, GlAccountRecord } from '@/types/accounting';
 import { GlItemGroupingMode, enrichGlItemsWithInvoiceMeta, groupLedgerItemsByInvoice } from '@/lib/glInvoiceGrouping';
 export type { GlItemGroupingMode };
+import type { GlViewTemplate, GlTemplateColumn } from '@/types/glTemplate';
+import { BUILTIN_TEMPLATES_FALLBACK } from '@/hooks/useGlViewTemplates';
 import { useGlInvoiceDocumentResolver } from '@/hooks/useGlInvoiceDocumentResolver';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
@@ -136,10 +140,12 @@ const cleanId = cleanIdVal;
 
 export interface GeneralLedgerTableRef {
   expandAllAndPrint: () => void;
-  exportExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
+  exportExcel: (companyName?: string, options?: { excludeZeroRows?: boolean; template?: GlViewTemplate }) => Promise<void>;
   exportAnalyticalExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>; // F6
   exportProcontPdf: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
   exportProcontExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
+  exportAgoraPdf: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
+  exportAgoraExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
   getStats: () => { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number };
   expandAll: () => void;
   collapseAll: () => void;
@@ -166,6 +172,7 @@ interface GeneralLedgerTableProps {
   viewGranularity?: GlViewGranularity;
   itemGrouping?: GlItemGroupingMode;
   defaultViewMode?: 'osszevont' | 'teteles';
+  activeTemplate?: GlViewTemplate;
 }
 
 interface LoadMoreSentinelRowProps {
@@ -173,11 +180,11 @@ interface LoadMoreSentinelRowProps {
   hiddenClass: string;
   indentPadding: string;
   onLoadMore: (cid: string) => void;
-  viewLayout?: 'summary' | 'classic';
-  gridColsClass?: string;
+  gridTemplateColumns?: string;
+  totalCols?: number;
 }
 
-function LoadMoreSentinelRow({ row, hiddenClass, indentPadding, onLoadMore, viewLayout = 'summary', gridColsClass = 'grid-cols-12' }: LoadMoreSentinelRowProps) {
+function LoadMoreSentinelRow({ row, hiddenClass, indentPadding, onLoadMore, gridTemplateColumns, totalCols = 3 }: LoadMoreSentinelRowProps) {
   const { t } = useTranslation(['accounting', 'common']);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const targetCid = row.targetCid!;
@@ -206,21 +213,27 @@ function LoadMoreSentinelRow({ row, hiddenClass, indentPadding, onLoadMore, view
       onClick={() => !isLoadingMore && onLoadMore(targetCid)}
       className={cn(
         "grid divide-x divide-border/10 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer py-2.5 items-center select-none border-b border-border/20",
-        gridColsClass,
         hiddenClass
       )}
+      style={{ gridTemplateColumns }}
     >
-      <div className={cn(viewLayout === 'classic' ? "p-2" : "col-span-2 p-2", "flex items-center justify-center")}>
+      <div className="p-2 flex items-center justify-center">
         {isLoadingMore ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
         ) : (
           <ChevronDown className="w-3.5 h-3.5 text-primary" />
         )}
       </div>
-      <div className={cn(viewLayout === 'classic' ? "col-span-3 py-1 pr-3" : "col-span-7 py-1 pr-3", "text-xs flex items-center gap-2 font-medium text-primary")} style={{ paddingLeft: indentPadding }}>
+      <div
+        className="py-1 pr-3 text-xs flex items-center gap-2 font-medium text-primary"
+        style={{ paddingLeft: indentPadding, gridColumn: `2 / ${totalCols}` }}
+      >
         <span>{isLoadingMore ? t('accounting:general_ledger.load_more.loading_more', 'Következő 100 tétel betöltése...') : row.name}</span>
       </div>
-      <div className={cn(viewLayout === 'classic' ? "col-span-2 p-2" : "col-span-3 p-2", "flex justify-end items-center text-[11px] text-muted-foreground pr-4 font-mono")}>
+      <div
+        className="p-2 flex justify-end items-center text-[11px] text-muted-foreground pr-4 font-mono"
+        style={{ gridColumn: `${totalCols} / ${totalCols + 1}` }}
+      >
         {isLoadingMore ? t('accounting:general_ledger.load_more.loading', 'Betöltés...') : t('accounting:general_ledger.load_more.scroll_or_click', 'Görgess vagy kattints')}
       </div>
     </div>
@@ -257,6 +270,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     viewGranularity = 'kontirok',
     itemGrouping = 'by_invoice',
     defaultViewMode = 'osszevont',
+    activeTemplate,
   } = props;
   const { selectedCompany } = useCompany();
   const { isCroatia, defaultCurrency } = useCompanyJurisdiction();
@@ -1510,12 +1524,15 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         setIsPrinting(false);
       }, 300);
     },
-    exportExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
+    exportExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean; template?: GlViewTemplate }) => {
       const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
       const rows = shouldExcludeZero
         ? processedRows.filter(r => Math.abs(r.balance || 0) > 0.001)
         : processedRows;
-      await exportGlExcel(rows, companyName, classicTotals, dateBasis, dateFrom, dateTo, { excludeZeroRows: shouldExcludeZero });
+      await exportGlExcel(rows, companyName, classicTotals, dateBasis, dateFrom, dateTo, {
+        excludeZeroRows: shouldExcludeZero,
+        template: options?.template || activeTemplate,
+      });
     },
     exportProcontPdf: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
       const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
@@ -1535,6 +1552,32 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         dateFrom,
         dateTo,
         excludeZeroRows: shouldExcludeZero,
+      });
+    },
+    exportAgoraPdf: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
+      const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
+      const accounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+      downloadAgoraGlPdf(accounts, {
+        companyName: companyName || selectedCompany?.name || 'Vállalkozás',
+        taxNumber: selectedCompany?.tax_number,
+        currency: defaultCurrency || 'HUF',
+        dateFrom,
+        dateTo,
+        excludeZeroRows: shouldExcludeZero,
+        branding: 'EaisyBill',
+      });
+    },
+    exportAgoraExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
+      const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
+      const accounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+      await exportAgoraGlExcel(accounts, {
+        companyName: companyName || selectedCompany?.name || 'Vállalkozás',
+        taxNumber: selectedCompany?.tax_number,
+        currency: defaultCurrency || 'HUF',
+        dateFrom,
+        dateTo,
+        excludeZeroRows: shouldExcludeZero,
+        branding: 'EaisyBill',
       });
     },
     exportAnalyticalExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
@@ -2198,97 +2241,374 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       .reduce((sum, item) => sum + (item.balance || 0), 0);
   }, [tableData, selectedItemIds]);
 
-  const gridColsClass = viewLayout === 'classic'
-    ? "grid-cols-[90px_minmax(220px,1fr)_165px_165px_165px_190px]"
-    : "grid-cols-12";
+  const effectiveTemplate = useMemo(() => {
+    if (activeTemplate?.columns && activeTemplate.columns.length > 0) {
+      return activeTemplate;
+    }
+    return viewLayout === 'classic' ? BUILTIN_TEMPLATES_FALLBACK[1] : BUILTIN_TEMPLATES_FALLBACK[0];
+  }, [activeTemplate, viewLayout]);
+
+  const templateColumns: GlTemplateColumn[] = useMemo(() => effectiveTemplate.columns, [effectiveTemplate]);
+
+  const gridTemplateColumns = useMemo(() => {
+    return templateColumns.map(col => {
+      const w = col.width || (col.field === 'name' ? '1fr' : '150px');
+      if (w.includes('fr')) {
+        return `minmax(200px, ${w})`;
+      }
+      return w;
+    }).join(' ');
+  }, [templateColumns]);
+
+  const tableMinWidth = useMemo(() => {
+    const totalPx = templateColumns.reduce((acc, col) => {
+      const w = col.width || '150px';
+      if (w.includes('px')) {
+        return acc + (parseInt(w, 10) || 120);
+      }
+      return acc + 220;
+    }, 0);
+    return Math.max(760, totalPx);
+  }, [templateColumns]);
+
+  const renderDynamicCell = useCallback((row: LedgerItem, col: GlTemplateColumn, isLast: boolean) => {
+    let cellContent: React.ReactNode = null;
+
+    switch (col.field) {
+      case 'partner':
+        cellContent = (
+          <div className="py-3 px-2.5 text-xs text-muted-foreground flex items-center overflow-hidden flex-1">
+            {row.isItem ? (
+              <span className="truncate text-foreground/80" title={row.partner || undefined}>{row.partner || '—'}</span>
+            ) : (
+              <span className="text-muted-foreground/40">—</span>
+            )}
+          </div>
+        );
+        break;
+
+      case 'invoiceNumber':
+        cellContent = (
+          <div className="py-3 px-2.5 text-xs font-mono text-muted-foreground flex items-center overflow-hidden flex-1">
+            {row.isItem ? (
+              <span className="truncate text-foreground/80" title={row.invoiceNumber || undefined}>{row.invoiceNumber || '—'}</span>
+            ) : (
+              <span className="text-muted-foreground/40">—</span>
+            )}
+          </div>
+        );
+        break;
+
+      case 'date':
+        cellContent = (
+          <div className="py-3 px-2 text-center text-xs font-mono text-muted-foreground flex items-center justify-center overflow-hidden flex-1">
+            {row.isItem ? (
+              <span className="whitespace-nowrap">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : '—'}</span>
+            ) : (
+              <span className="text-muted-foreground/40">—</span>
+            )}
+          </div>
+        );
+        break;
+
+      case 'debitTurnover':
+        cellContent = (
+          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono flex items-center justify-end overflow-hidden flex-1">
+            {row.isItem ? (
+              row.balance > 0 ? (
+                <span className={cn("whitespace-nowrap", row.isTemporary ? "text-orange-500 dark:text-orange-400 font-medium" : "text-emerald-600 dark:text-emerald-400 font-medium")}>
+                  {formatCurrency(row.balance)}
+                </span>
+              ) : (
+                <span className="text-muted-foreground/40">—</span>
+              )
+            ) : (
+              (row.debitTurnover || 0) > 0 ? (
+                <span className="font-semibold text-foreground whitespace-nowrap">
+                  {formatCurrency(row.debitTurnover || 0)}
+                </span>
+              ) : (
+                <span className="text-muted-foreground/40">—</span>
+              )
+            )}
+          </div>
+        );
+        break;
+
+      case 'creditTurnover':
+        cellContent = (
+          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono flex items-center justify-end overflow-hidden flex-1">
+            {row.isItem ? (
+              row.balance < 0 ? (
+                <span className={cn("whitespace-nowrap", row.isTemporary ? "text-orange-500 dark:text-orange-400 font-medium" : "text-rose-600 dark:text-rose-400 font-medium")}>
+                  {formatCurrency(Math.abs(row.balance))}
+                </span>
+              ) : (
+                <span className="text-muted-foreground/40">—</span>
+              )
+            ) : (
+              (row.creditTurnover || 0) > 0 ? (
+                <span className="font-semibold text-foreground whitespace-nowrap">
+                  {formatCurrency(row.creditTurnover || 0)}
+                </span>
+              ) : (
+                <span className="text-muted-foreground/40">—</span>
+              )
+            )}
+          </div>
+        );
+        break;
+
+      case 'balanceDebit':
+        cellContent = (
+          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end overflow-hidden flex-1">
+            {row.balance > 0 ? (
+              <span className={cn(
+                "font-semibold whitespace-nowrap",
+                row.isItem && row.isTemporary ? "text-orange-500 dark:text-orange-400" : "text-emerald-600 dark:text-emerald-400"
+              )}>
+                {formatCurrency(row.balance)}
+              </span>
+            ) : (
+              <span className="text-muted-foreground/40">—</span>
+            )}
+          </div>
+        );
+        break;
+
+      case 'balanceCredit':
+        cellContent = (
+          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end overflow-hidden flex-1">
+            {row.balance < 0 ? (
+              <span className={cn(
+                "font-semibold whitespace-nowrap",
+                row.isItem && row.isTemporary ? "text-orange-500 dark:text-orange-400" : "text-rose-600 dark:text-rose-400"
+              )}>
+                {formatCurrency(Math.abs(row.balance))}
+              </span>
+            ) : (
+              <span className="text-muted-foreground/40">—</span>
+            )}
+          </div>
+        );
+        break;
+
+      case 'balance':
+        cellContent = (
+          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono flex items-center justify-end overflow-hidden flex-1">
+            <div className="flex flex-col items-end">
+              {row.isItem ? (
+                row.isTemporary ? (
+                  <span className="text-orange-500 dark:text-orange-400 font-semibold">
+                    {row.balance !== 0 ? formatCurrency(row.balance) : "0,00"}
+                  </span>
+                ) : (
+                  <span className={cn(
+                    "font-semibold",
+                    row.balance > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                  )}>
+                    {row.balance !== 0 ? formatCurrency(row.balance) : "0,00"}
+                  </span>
+                )
+              ) : (
+                <div className="flex flex-col items-end gap-0.5">
+                  {row.finalBalance !== 0 && (
+                    <CustomTooltip content={t('accounting:general_ledger.tooltips.final_balance', 'Végleges egyenleg')} side="top">
+                      <span 
+                        className={cn(
+                          "font-semibold",
+                          row.finalBalance > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                        )} 
+                      >
+                        {formatCurrency(row.finalBalance || 0)}
+                      </span>
+                    </CustomTooltip>
+                  )}
+                  {row.tempBalance !== 0 && (
+                    <CustomTooltip content={t('accounting:general_ledger.tooltips.temp_balance', 'Ideiglenes egyenleg')} side="top">
+                      <span className="text-orange-500 dark:text-orange-400 font-semibold text-xs">
+                        {formatCurrency(row.tempBalance || 0)} <span className="text-[10px] opacity-80">{t('accounting:general_ledger.status.temp_badge', '(Ideigl.)')}</span>
+                      </span>
+                    </CustomTooltip>
+                  )}
+                  {(!row.finalBalance || row.finalBalance === 0) && (!row.tempBalance || row.tempBalance === 0) && (
+                    <span className={cn(
+                      "font-semibold",
+                      row.balance > 0 ? "text-emerald-600 dark:text-emerald-400" : row.balance < 0 ? "text-rose-600 dark:text-rose-400" : "text-foreground"
+                    )}>
+                      {formatCurrency(row.balance)}
+                    </span>
+                  )}
+                </div>
+              )}
+              {row.originalCurrency && row.originalCurrency !== 'HUF' && (
+                <span className="text-[10px] text-muted-foreground font-normal leading-tight">
+                  ({formatCurrency(row.originalAmount || 0).replace(',00', '')} {row.originalCurrency})
+                </span>
+              )}
+            </div>
+          </div>
+        );
+        break;
+
+      default:
+        cellContent = (
+          <div className="py-3 px-2.5 text-xs text-muted-foreground flex items-center justify-center flex-1">
+            —
+          </div>
+        );
+        break;
+    }
+
+    return (
+      <div
+        key={col.id || col.key}
+        className={cn(
+          "flex items-center overflow-hidden",
+          col.align === 'center' ? "justify-center" : col.align === 'right' ? "justify-end" : "justify-start",
+          (col.field === 'balanceDebit' || col.field === 'balanceCredit') && "bg-indigo-500/5"
+        )}
+      >
+        {cellContent}
+        {isLast && (
+          row.isItem && row.sourceTable !== 'acc_journal_lines' && row.sourceTable !== 'journal_entry' ? (
+            <CustomTooltip content={t('accounting:general_ledger.tooltips.edit_gl', 'Főkönyvi szám módosítása')} side="left">
+              <Button
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 rounded-md opacity-40 hover:opacity-100 group-hover:opacity-100 transition-opacity print:hidden shrink-0 text-muted-foreground hover:text-primary hover:bg-muted/60 ml-1 mr-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingItem(row);
+                  setSelectedNewGL(row.originalGlId || 'UNCLASSIFIED');
+                  setDialogSearchQuery('');
+                  setIsEditOpen(true);
+                }}
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </Button>
+            </CustomTooltip>
+          ) : !row.isItem && isCustomPreset ? (
+            <CustomTooltip content={t('accounting:general_ledger.tooltips.edit_account', 'Számlaszám és beállítások szerkesztése')} side="left">
+              <Button
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 rounded-md opacity-40 hover:opacity-100 group-hover:opacity-100 transition-opacity print:hidden shrink-0 text-muted-foreground hover:text-primary hover:bg-muted/60 ml-1 mr-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenEditAccount(row);
+                }}
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+              </Button>
+            </CustomTooltip>
+          ) : (
+            <div className="w-6 h-6 shrink-0 print:hidden mr-2" />
+          )
+        )}
+      </div>
+    );
+  }, [t, isCustomPreset, handleOpenEditAccount]);
 
   if (isDataLoading) {
     return (
       <div className="w-full flex flex-col h-[65vh] max-h-[800px] bg-card overflow-hidden rounded-md border border-border">
         {/* Header */}
-        <div className="bg-muted/80 border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none">
-          {viewLayout === 'classic' ? (
-            <div className={cn("grid divide-x divide-border/50", gridColsClass)}>
-              <div className="py-3 px-2 text-center text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
-              <div className="py-3 px-3 text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.name', 'Megnevezés')}</div>
-              <div className="py-3 px-2.5 text-right text-xs uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.turnover_debit', 'Forgalom T')}</div>
-              <div className="py-3 px-2.5 text-right text-xs uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.turnover_credit', 'Forgalom K')}</div>
-              <div className="py-3 px-2.5 text-right text-xs bg-indigo-500/5 uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.balance_debit', 'Egyenleg T')}</div>
-              <div className="py-3 px-2.5 text-right text-xs bg-indigo-500/5 uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.balance_credit', 'Egyenleg K')}</div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-12 divide-x divide-border/50">
-              <div className="col-span-2 p-3 text-center text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
-              <div className="col-span-8 p-3 text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.name', 'Megnevezés')}</div>
-              <div className="col-span-2 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.total_balance', 'Összesített Egyenleg')}</div>
-            </div>
-          )}
+        <div className="bg-muted/80 border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none overflow-x-hidden">
+          <div className="grid divide-x divide-border/50" style={{ gridTemplateColumns, minWidth: `${tableMinWidth}px` }}>
+            {templateColumns.map((col) => (
+              <div
+                key={col.id || col.key}
+                className={cn(
+                  "py-3 px-2.5 text-xs text-foreground uppercase tracking-wider whitespace-nowrap",
+                  col.field === 'id' && "text-center",
+                  col.align === 'center' ? "text-center" : col.align === 'right' ? "text-right" : "text-left",
+                  (col.field === 'balanceDebit' || col.field === 'balanceCredit') && "bg-indigo-500/5"
+                )}
+              >
+                {col.label}
+              </div>
+            ))}
+          </div>
         </div>
         {/* Skeleton Body */}
         <div className="flex-1 divide-y divide-border/30 overflow-hidden">
           {Array.from({ length: 12 }).map((_, i) => {
             const depth = i % 3 === 0 ? 0 : i % 3 === 1 ? 1 : 2;
             const indentPadding = `${0.75 + (depth * 1.5)}rem`;
-            return viewLayout === 'classic' ? (
-              <div key={i} className={cn("grid divide-x divide-border/10 p-3 items-center animate-pulse", gridColsClass)}>
-                <div className="flex items-center justify-center">
-                  <Skeleton className="h-4 w-12 bg-muted/50 rounded" />
-                </div>
-                <div className="flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
-                  <div className="w-4 h-4 shrink-0" />
-                  <Skeleton className={cn("h-4 bg-muted/50 rounded", depth === 0 ? 'w-48' : depth === 1 ? 'w-36' : 'w-24')} />
-                </div>
-                <div className="flex justify-end">
-                  <Skeleton className="h-4 w-16 bg-muted/50 rounded" />
-                </div>
-                <div className="flex justify-end">
-                  <Skeleton className="h-4 w-16 bg-muted/50 rounded" />
-                </div>
-                <div className="flex justify-end">
-                  <Skeleton className="h-4 w-16 bg-muted/50 rounded" />
-                </div>
-                <div className="flex justify-end">
-                  <Skeleton className="h-4 w-16 bg-muted/50 rounded" />
-                </div>
-              </div>
-            ) : (
-              <div key={i} className="grid grid-cols-12 divide-x divide-border/10 p-3 items-center animate-pulse">
-                <div className="col-span-2 flex items-center justify-center">
-                  <Skeleton className="h-4 w-12 bg-muted/50 rounded" />
-                </div>
-                <div className="col-span-8 flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
-                  <div className="w-4 h-4 shrink-0" />
-                  <Skeleton className={cn("h-4 bg-muted/50 rounded", depth === 0 ? 'w-48' : depth === 1 ? 'w-36' : 'w-24')} />
-                </div>
-                <div className="col-span-2 flex justify-end">
-                  <Skeleton className="h-4 w-24 bg-muted/50 rounded" />
-                </div>
+            return (
+              <div
+                key={i}
+                className="grid divide-x divide-border/10 p-3 items-center animate-pulse"
+                style={{ gridTemplateColumns, minWidth: `${tableMinWidth}px` }}
+              >
+                {templateColumns.map((col, colIdx) => {
+                  if (col.field === 'id') {
+                    return (
+                      <div key={col.id || colIdx} className="flex items-center justify-center">
+                        <Skeleton className="h-4 w-12 bg-muted/50 rounded" />
+                      </div>
+                    );
+                  }
+                  if (col.field === 'name') {
+                    return (
+                      <div key={col.id || colIdx} className="flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
+                        <div className="w-4 h-4 shrink-0" />
+                        <Skeleton className={cn("h-4 bg-muted/50 rounded", depth === 0 ? 'w-48' : depth === 1 ? 'w-36' : 'w-24')} />
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      key={col.id || colIdx}
+                      className={cn(
+                        "flex",
+                        col.align === 'center' ? "justify-center" : col.align === 'right' ? "justify-end" : "justify-start"
+                      )}
+                    >
+                      <Skeleton className="h-4 w-16 bg-muted/50 rounded" />
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
         </div>
         {/* Skeleton Footer */}
-        {viewLayout === 'classic' ? (
-          <div className={cn("shrink-0 grid border-t border-border/60 bg-muted/95 backdrop-blur font-bold text-xs sm:text-sm divide-x divide-border/40", gridColsClass)}>
-            <div className="p-3 text-center uppercase tracking-wider text-muted-foreground">Σ</div>
-            <div className="p-3 text-right uppercase tracking-wider text-muted-foreground">{t('accounting:general_ledger.table.total', 'Összesen:')}</div>
-            <div className="p-3 flex justify-end"><Skeleton className="h-4 w-16 bg-muted/50 rounded" /></div>
-            <div className="p-3 flex justify-end"><Skeleton className="h-4 w-16 bg-muted/50 rounded" /></div>
-            <div className="p-3 flex justify-end"><Skeleton className="h-4 w-16 bg-muted/50 rounded" /></div>
-            <div className="p-3 flex items-center justify-end gap-2 pr-2">
-              <Skeleton className="h-4 w-16 bg-muted/50 rounded" />
-              <Skeleton className="h-6 w-6 rounded-full bg-muted/50" />
-            </div>
-          </div>
-        ) : (
-          <div className="shrink-0 grid grid-cols-12 border-t border-border/60 bg-muted/95 backdrop-blur font-bold text-sm">
-            <div className="col-span-10 p-3 text-right uppercase tracking-wider text-muted-foreground text-xs">{t('accounting:general_ledger.table.total', 'Összesen:')}</div>
-            <div className="col-span-2 p-3 flex items-center justify-end gap-2 pr-4">
-              <Skeleton className="h-4 w-24 bg-muted/50 rounded" />
-              <Skeleton className="h-6 w-6 rounded-full bg-muted/50" />
-            </div>
-          </div>
-        )}
+        <div
+          className="shrink-0 grid border-t border-border/60 bg-muted/95 backdrop-blur font-bold text-xs sm:text-sm divide-x divide-border/40"
+          style={{ gridTemplateColumns, minWidth: `${tableMinWidth}px` }}
+        >
+          {templateColumns.map((col, colIdx) => {
+            if (colIdx === 0) {
+              return (
+                <div key={col.id || colIdx} className="p-3 text-center uppercase tracking-wider text-muted-foreground font-mono">
+                  Σ
+                </div>
+              );
+            }
+            if (colIdx === 1) {
+              return (
+                <div key={col.id || colIdx} className="p-3 text-right uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+                  {t('accounting:general_ledger.table.total', 'Összesen:')}
+                </div>
+              );
+            }
+            const isLast = colIdx === templateColumns.length - 1;
+            return (
+              <div
+                key={col.id || colIdx}
+                className={cn(
+                  "p-3 flex items-center",
+                  col.align === 'center' ? "justify-center" : col.align === 'right' ? "justify-end" : "justify-start"
+                )}
+              >
+                <Skeleton className="h-4 w-16 bg-muted/50 rounded" />
+                {isLast && <Skeleton className="h-6 w-6 rounded-full bg-muted/50 ml-1.5 shrink-0" />}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
@@ -2330,26 +2650,25 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             </div>
           )}
           <div className="flex-1 overflow-auto print:overflow-visible w-full relative">
-            <div className={cn("w-full flex flex-col min-h-full pb-2 print:pb-0", viewLayout === 'classic' && "min-w-[1020px]")}>
+            <div className="w-full flex flex-col min-h-full pb-2 print:pb-0" style={{ minWidth: `${tableMinWidth}px` }}>
               
               {/* Header */}
               <div className="bg-muted/80 backdrop-blur-md border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none shadow-sm">
-                {viewLayout === 'classic' ? (
-                  <div className={cn("grid divide-x divide-border/50", gridColsClass)}>
-                    <div className="py-3 px-2 text-center text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
-                    <div className="py-3 px-3 text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.name', 'Megnevezés')}</div>
-                    <div className="py-3 px-2.5 text-right text-xs uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.turnover_debit', 'Forgalom T')}</div>
-                    <div className="py-3 px-2.5 text-right text-xs uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.turnover_credit', 'Forgalom K')}</div>
-                    <div className="py-3 px-2.5 text-right text-xs bg-indigo-500/5 uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.balance_debit', 'Egyenleg T')}</div>
-                    <div className="py-3 px-2.5 text-right text-xs bg-indigo-500/5 uppercase tracking-wider whitespace-nowrap">{t('accounting:general_ledger.table.balance_credit', 'Egyenleg K')}</div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-12 divide-x divide-border/50">
-                    <div className="col-span-2 p-3 text-center text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.gl_account', 'Fők. szám')}</div>
-                    <div className="col-span-8 p-3 text-xs text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.name', 'Megnevezés')}</div>
-                    <div className="col-span-2 p-3 text-right text-xs bg-indigo-500/5 text-foreground uppercase tracking-wider">{t('accounting:general_ledger.table.total_balance', 'Összesített Egyenleg')}</div>
-                  </div>
-                )}
+                <div className="grid divide-x divide-border/50" style={{ gridTemplateColumns }}>
+                  {templateColumns.map((col) => (
+                    <div
+                      key={col.id || col.key}
+                      className={cn(
+                        "py-3 text-xs uppercase tracking-wider text-foreground whitespace-nowrap select-none",
+                        col.field === 'id' ? "px-2 text-center" : "px-2.5",
+                        col.align === 'center' ? "text-center" : col.align === 'right' ? "text-right" : "text-left",
+                        (col.field === 'balanceDebit' || col.field === 'balanceCredit') && "bg-indigo-500/5"
+                      )}
+                    >
+                      {col.label}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Body */}
@@ -2434,28 +2753,21 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                         key={row.rowKey || row.id}
                         className={cn(
                           "grid divide-x divide-border/10 bg-muted/20 animate-pulse items-center",
-                          gridColsClass,
                           hiddenClass
                         )}
+                        style={{ gridTemplateColumns }}
                       >
-                        <div className={cn(viewLayout === 'classic' ? "p-3" : "col-span-2 p-3", "flex items-center justify-center")}>
+                        <div className="p-3 flex items-center justify-center">
                           <Loader2 className="w-4 h-4 animate-spin text-primary" />
                         </div>
-                        <div className={cn(viewLayout === 'classic' ? "py-3 pr-3" : "col-span-8 py-3 pr-3", "text-sm flex items-center gap-2")} style={{ paddingLeft: indentPadding }}>
+                        <div className="py-3 pr-3 text-sm flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
                           <span className="text-xs text-muted-foreground italic flex items-center gap-2">
                             {row.name}
                           </span>
                         </div>
-                        {viewLayout === 'classic' ? (
-                          <>
-                            <div className="p-3" />
-                            <div className="p-3" />
-                            <div className="p-3" />
-                            <div className="p-3" />
-                          </>
-                        ) : (
-                          <div className="col-span-2 p-3 flex justify-end items-center" />
-                        )}
+                        {Array.from({ length: Math.max(0, templateColumns.length - 2) }).map((_, idx) => (
+                          <div key={idx} className="p-3" />
+                        ))}
                       </div>
                     );
                   }
@@ -2466,14 +2778,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                         key={row.rowKey || row.id}
                         className={cn(
                           "grid divide-x divide-border/10 bg-destructive/5 items-center",
-                          gridColsClass,
                           hiddenClass
                         )}
+                        style={{ gridTemplateColumns }}
                       >
-                        <div className={cn(viewLayout === 'classic' ? "p-3" : "col-span-2 p-3", "flex items-center justify-center")}>
+                        <div className="p-3 flex items-center justify-center">
                           <AlertCircle className="w-4 h-4 text-destructive" />
                         </div>
-                        <div className={cn(viewLayout === 'classic' ? "py-3 pr-3" : "col-span-8 py-3 pr-3", "text-sm flex items-center justify-between gap-2")} style={{ paddingLeft: indentPadding }}>
+                        <div className="py-3 pr-3 text-sm flex items-center justify-between gap-2" style={{ paddingLeft: indentPadding }}>
                           <span className="text-xs text-destructive font-medium flex items-center gap-1.5">
                             {row.name}
                           </span>
@@ -2492,16 +2804,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             Újrapróbálkozás
                           </Button>
                         </div>
-                        {viewLayout === 'classic' ? (
-                          <>
-                            <div className="p-3" />
-                            <div className="p-3" />
-                            <div className="p-3" />
-                            <div className="p-3" />
-                          </>
-                        ) : (
-                          <div className="col-span-2 p-3 flex justify-end items-center" />
-                        )}
+                        {Array.from({ length: Math.max(0, templateColumns.length - 2) }).map((_, idx) => (
+                          <div key={idx} className="p-3" />
+                        ))}
                       </div>
                     );
                   }
@@ -2514,8 +2819,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                         hiddenClass={hiddenClass}
                         indentPadding={indentPadding}
                         onLoadMore={fetchMoreAccountItems}
-                        viewLayout={viewLayout}
-                        gridColsClass={gridColsClass}
+                        gridTemplateColumns={gridTemplateColumns}
+                        totalCols={templateColumns.length}
                       />
                     );
                   }
@@ -2525,18 +2830,17 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                       key={row.rowKey || row.id} 
                       id={`row_${row.id}`}
                       className={cn(
-                        "group divide-x divide-border/10 transition-colors hover:bg-muted/40",
-                        gridColsClass,
+                        "grid group divide-x divide-border/10 transition-colors hover:bg-muted/40",
                         hiddenClass,
                         isRoot && "border-t border-border/50 bg-muted/10 font-medium",
                         row.hasChildren ? "cursor-pointer" : "",
                         highlightedRowId === row.id && "ring-2 ring-primary/80 bg-primary/10 transition-all duration-700 shadow-md"
                       )}
+                      style={{ gridTemplateColumns }}
                       onClick={() => toggleRow(row.id, row.hasChildren)}
                     >
                       <div className={cn(
                         "p-3 text-sm flex items-center justify-center font-mono text-muted-foreground border-r border-border/20 gap-3",
-                        viewLayout !== 'classic' && "col-span-2",
                         classBorderColor
                       )}>
                         {row.isItem ? (
@@ -2599,7 +2903,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                            )
                         )}
                       </div>
-                      <div className={cn("py-3 pr-3 text-sm flex items-center gap-2 min-w-0", viewLayout !== 'classic' && "col-span-8")} style={{ paddingLeft: indentPadding }}>
+                      <div className="py-3 pr-3 text-sm flex items-center gap-2 min-w-0" style={{ paddingLeft: indentPadding }}>
                         <div className="w-4 h-4 shrink-0 flex items-center justify-center print:hidden">
                           {row.hasChildren && (
                             <div className="text-muted-foreground/70 hover:text-foreground hover:bg-muted p-0.5 rounded-sm transition-colors">
@@ -2712,203 +3016,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                         )}
                       </div>
                       
-                      {viewLayout === 'classic' ? (
-                        <>
-                          {/* Forgalom Tartozik */}
-                          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono flex items-center justify-end overflow-hidden">
-                            {row.isItem ? (
-                              row.balance > 0 ? (
-                                <span className={cn("whitespace-nowrap", row.isTemporary ? "text-orange-500 dark:text-orange-400 font-medium" : "text-emerald-600 dark:text-emerald-400 font-medium")}>
-                                  {formatCurrency(row.balance)}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground/40">—</span>
-                              )
-                            ) : (
-                              (row.debitTurnover || 0) > 0 ? (
-                                <span className="font-semibold text-foreground whitespace-nowrap">
-                                  {formatCurrency(row.debitTurnover || 0)}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground/40">—</span>
-                              )
-                            )}
-                          </div>
-
-                          {/* Forgalom Követel */}
-                          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono flex items-center justify-end overflow-hidden">
-                            {row.isItem ? (
-                              row.balance < 0 ? (
-                                <span className={cn("whitespace-nowrap", row.isTemporary ? "text-orange-500 dark:text-orange-400 font-medium" : "text-rose-600 dark:text-rose-400 font-medium")}>
-                                  {formatCurrency(Math.abs(row.balance))}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground/40">—</span>
-                              )
-                            ) : (
-                              (row.creditTurnover || 0) > 0 ? (
-                                <span className="font-semibold text-foreground whitespace-nowrap">
-                                  {formatCurrency(row.creditTurnover || 0)}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground/40">—</span>
-                              )
-                            )}
-                          </div>
-
-                          {/* Egyenleg Tartozik */}
-                          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end overflow-hidden">
-                            {row.balance > 0 ? (
-                              <span className={cn(
-                                "font-semibold whitespace-nowrap",
-                                row.isItem && row.isTemporary ? "text-orange-500 dark:text-orange-400" : "text-emerald-600 dark:text-emerald-400"
-                              )}>
-                                {formatCurrency(row.balance)}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground/40">—</span>
-                            )}
-                          </div>
-
-                          {/* Egyenleg Követel + Edit button */}
-                          <div className="py-3 px-2.5 text-right text-xs sm:text-sm tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end gap-1.5 pr-2 overflow-hidden">
-                            {row.balance < 0 ? (
-                              <span className={cn(
-                                "font-semibold whitespace-nowrap",
-                                row.isItem && row.isTemporary ? "text-orange-500 dark:text-orange-400" : "text-rose-600 dark:text-rose-400"
-                              )}>
-                                {formatCurrency(Math.abs(row.balance))}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground/40">—</span>
-                            )}
-                            {row.isItem && row.sourceTable !== 'acc_journal_lines' && row.sourceTable !== 'journal_entry' ? (
-                              <CustomTooltip content={t('accounting:general_ledger.tooltips.edit_gl', 'Főkönyvi szám módosítása')} side="left">
-                                <Button
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-6 w-6 rounded-md opacity-40 hover:opacity-100 group-hover:opacity-100 transition-opacity print:hidden shrink-0 text-muted-foreground hover:text-primary hover:bg-muted/60"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingItem(row);
-                                    setSelectedNewGL(row.originalGlId || 'UNCLASSIFIED');
-                                    setDialogSearchQuery('');
-                                    setIsEditOpen(true);
-                                  }}
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </Button>
-                              </CustomTooltip>
-                            ) : !row.isItem && isCustomPreset ? (
-                              <CustomTooltip content={t('accounting:general_ledger.tooltips.edit_account', 'Számlaszám és beállítások szerkesztése')} side="left">
-                                <Button
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-6 w-6 rounded-md opacity-40 hover:opacity-100 group-hover:opacity-100 transition-opacity print:hidden shrink-0 text-muted-foreground hover:text-primary hover:bg-muted/60"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenEditAccount(row);
-                                  }}
-                                >
-                                  <Settings2 className="w-3.5 h-3.5" />
-                                </Button>
-                              </CustomTooltip>
-                            ) : (
-                              <div className="w-6 h-6 shrink-0 print:hidden" />
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <div className={cn("col-span-2 p-3 flex justify-end items-center gap-4 text-sm tabular-nums font-medium")}>
-                           <div className="flex flex-col items-end">
-                             {row.isItem ? (
-                               row.isTemporary ? (
-                                 <span className="text-orange-500 dark:text-orange-400 font-semibold">
-                                   {row.balance !== 0 ? formatCurrency(row.balance) : ""}
-                                 </span>
-                               ) : (
-                                 <span className={cn(
-                                   "font-semibold",
-                                   row.balance > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                                 )}>
-                                   {row.balance !== 0 ? formatCurrency(row.balance) : ""}
-                                 </span>
-                               )
-                             ) : (
-                               <div className="flex flex-col items-end gap-0.5">
-                                 {row.finalBalance !== 0 && (
-                                   <CustomTooltip content={t('accounting:general_ledger.tooltips.final_balance', 'Végleges egyenleg')} side="top">
-                                     <span 
-                                       className={cn(
-                                         "font-semibold",
-                                         row.finalBalance > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                                       )} 
-                                     >
-                                       {formatCurrency(row.finalBalance || 0)}
-                                     </span>
-                                   </CustomTooltip>
-                                 )}
-                                 {row.tempBalance !== 0 && (
-                                   <CustomTooltip content={t('accounting:general_ledger.tooltips.temp_balance', 'Ideiglenes egyenleg')} side="top">
-                                     <span className="text-orange-500 dark:text-orange-400 font-semibold text-xs">
-                                       {formatCurrency(row.tempBalance || 0)} <span className="text-[10px] opacity-80">{t('accounting:general_ledger.status.temp_badge', '(Ideigl.)')}</span>
-                                     </span>
-                                   </CustomTooltip>
-                                 )}
-                                 {(!row.finalBalance || row.finalBalance === 0) && (!row.tempBalance || row.tempBalance === 0) && row.balance !== 0 && (
-                                   <span className={cn(
-                                     "font-semibold",
-                                     row.balance > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                                   )}>
-                                     {formatCurrency(row.balance)}
-                                   </span>
-                                 )}
-                               </div>
-                             )}
-                            {row.originalCurrency && row.originalCurrency !== 'HUF' && (
-                              <span className="text-[10px] text-muted-foreground font-normal leading-tight">
-                                ({formatCurrency(row.originalAmount || 0).replace(',00', '')} {row.originalCurrency})
-                              </span>
-                            )}
-                          </div>
-                          {row.isItem && row.sourceTable !== 'acc_journal_lines' && row.sourceTable !== 'journal_entry' ? (
-                            <CustomTooltip content={t('accounting:general_ledger.tooltips.edit_gl', 'Főkönyvi szám módosítása')} side="left">
-                              <Button
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6 rounded-md opacity-40 hover:opacity-100 group-hover:opacity-100 transition-opacity print:hidden shrink-0 text-muted-foreground hover:text-primary hover:bg-muted/60"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingItem(row);
-                                  // We use originalGlId to pre-fill the form, or UNCLASSIFIED if not mapped
-                                  setSelectedNewGL(row.originalGlId || 'UNCLASSIFIED');
-                                  setDialogSearchQuery('');
-                                  setIsEditOpen(true);
-                                }}
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </CustomTooltip>
-                          ) : !row.isItem && isCustomPreset ? (
-                            <CustomTooltip content={t('accounting:general_ledger.tooltips.edit_account', 'Számlaszám és beállítások szerkesztése')} side="left">
-                              <Button
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6 rounded-md opacity-40 hover:opacity-100 group-hover:opacity-100 transition-opacity print:hidden shrink-0 text-muted-foreground hover:text-primary hover:bg-muted/60"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenEditAccount(row);
-                                }}
-                              >
-                                <Settings2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </CustomTooltip>
-                          ) : (
-                            // Placeholder to keep spacing identical even when there's no edit button
-                            <div className="w-6 h-6 shrink-0 print:hidden" />
-                          )}
-                        </div>
-                      )}
+                      {templateColumns.slice(2).map((col, idx) => {
+                        const colIndex = idx + 2;
+                        const isLast = colIndex === templateColumns.length - 1;
+                        return renderDynamicCell(row, col, isLast);
+                      })}
                     </div>
                   );
                 })}
@@ -2959,59 +3071,60 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               )}
 
               {/* Sticky Footer at the bottom of the table card */}
-              {viewLayout === 'classic' ? (
-                <div className={cn("sticky bottom-0 shrink-0 grid border-t border-border/60 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bg-muted/95 backdrop-blur font-bold text-xs sm:text-sm divide-x divide-border/40 z-20 print:border-t-2 mt-auto select-none", gridColsClass)}>
-                  <div className="py-3 px-2 text-center uppercase tracking-wider text-muted-foreground font-mono">Σ</div>
-                  <div className="py-3 px-3 text-right uppercase tracking-wider text-muted-foreground whitespace-nowrap">{t('accounting:general_ledger.table.total', 'Összesen:')}</div>
-                  <div className="py-3 px-2.5 text-right tabular-nums font-mono whitespace-nowrap overflow-hidden">
-                    {formatCurrency(classicTotals.turnoverDebit)}
-                  </div>
-                  <div className="py-3 px-2.5 text-right tabular-nums font-mono whitespace-nowrap overflow-hidden">
-                    {formatCurrency(classicTotals.turnoverCredit)}
-                  </div>
-                  <div className="py-3 px-2.5 text-right tabular-nums font-mono bg-indigo-500/5 whitespace-nowrap overflow-hidden">
-                    {formatCurrency(classicTotals.balanceDebit)}
-                  </div>
-                  <div className="py-3 px-2.5 text-right tabular-nums font-mono bg-indigo-500/5 flex items-center justify-end gap-1.5 pr-2 overflow-hidden">
-                    <span className="whitespace-nowrap">{formatCurrency(classicTotals.balanceCredit)}</span>
-                    <CustomTooltip content={t('accounting:general_ledger.tooltips.refresh', 'Adatok frissítése')} side="top">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={handleRefetchAll} 
-                        disabled={isFetching}
-                        className="h-6 w-6 rounded-full shrink-0"
-                      >
-                        <RefreshCw className={cn("h-3 w-3", isFetching ? "animate-spin" : "")} />
-                      </Button>
-                    </CustomTooltip>
-                  </div>
-                </div>
-              ) : (
-                <div className="sticky bottom-0 shrink-0 grid grid-cols-12 border-t border-border/60 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bg-muted/95 backdrop-blur font-bold text-sm z-20 print:border-t-2 mt-auto">
-                   <div className="col-span-10 p-3 text-right uppercase tracking-wider text-muted-foreground">{t('accounting:general_ledger.table.total', 'Összesen:')}</div>
-                   <div className="col-span-2 p-3 text-right tabular-nums text-foreground flex items-center justify-end gap-2 pr-4">
-                      {isDataLoading ? (
-                        <div className="h-4 w-20 animate-pulse bg-muted rounded" />
-                      ) : (
-                        <>
-                          {formatCurrency(footerTotals)}
-                          <CustomTooltip content={t('accounting:general_ledger.tooltips.refresh', 'Adatok frissítése')} side="top">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={handleRefetchAll} 
-                              disabled={isFetching}
-                              className="h-6 w-6 rounded-full"
-                            >
-                              <RefreshCw className={cn("h-3 w-3", isFetching ? "animate-spin" : "")} />
-                            </Button>
-                          </CustomTooltip>
-                        </>
+              <div
+                className="sticky bottom-0 shrink-0 grid border-t border-border/60 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bg-muted/95 backdrop-blur font-bold text-xs sm:text-sm divide-x divide-border/40 z-20 print:border-t-2 mt-auto select-none"
+                style={{ gridTemplateColumns }}
+              >
+                {templateColumns.map((col, colIndex) => {
+                  const isLast = colIndex === templateColumns.length - 1;
+                  if (colIndex === 0) {
+                    return (
+                      <div key={col.id || col.key} className="py-3 px-2 text-center uppercase tracking-wider text-muted-foreground font-mono">
+                        Σ
+                      </div>
+                    );
+                  }
+                  if (colIndex === 1) {
+                    return (
+                      <div key={col.id || col.key} className="py-3 px-3 text-right uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+                        {t('accounting:general_ledger.table.total', 'Összesen:')}
+                      </div>
+                    );
+                  }
+                  let content: React.ReactNode = null;
+                  if (col.field === 'debitTurnover') content = formatCurrency(classicTotals.turnoverDebit);
+                  else if (col.field === 'creditTurnover') content = formatCurrency(classicTotals.turnoverCredit);
+                  else if (col.field === 'balanceDebit') content = formatCurrency(classicTotals.balanceDebit);
+                  else if (col.field === 'balanceCredit') content = formatCurrency(classicTotals.balanceCredit);
+                  else if (col.field === 'balance') content = formatCurrency(footerTotals);
+
+                  return (
+                    <div
+                      key={col.id || col.key}
+                      className={cn(
+                        "py-3 px-2.5 tabular-nums font-mono whitespace-nowrap overflow-hidden flex items-center",
+                        col.align === 'center' ? "justify-center" : col.align === 'right' ? "justify-end" : "justify-start",
+                        (col.field === 'balanceDebit' || col.field === 'balanceCredit') && "bg-indigo-500/5"
                       )}
-                   </div>
-                </div>
-              )}
+                    >
+                      {content ? <span>{content}</span> : <div />}
+                      {isLast && (
+                        <CustomTooltip content={t('accounting:general_ledger.tooltips.refresh', 'Adatok frissítése')} side="top">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleRefetchAll} 
+                            disabled={isFetching}
+                            className="h-6 w-6 rounded-full shrink-0 ml-1.5"
+                          >
+                            <RefreshCw className={cn("h-3 w-3", isFetching ? "animate-spin" : "")} />
+                          </Button>
+                        </CustomTooltip>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

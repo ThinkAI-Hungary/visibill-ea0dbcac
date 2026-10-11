@@ -33,6 +33,8 @@ import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsMod
 import JournalView from '@/components/general-ledger/JournalView'; // F7
 import { AddManualJournalEntryModal } from '@/components/general-ledger/AddManualJournalEntryModal';
 import { GeneralLedgerComparisonTable } from '@/components/general-ledger/GeneralLedgerComparisonTable';
+import { GlViewSelectorModal } from '@/components/general-ledger/GlViewSelectorModal';
+import { useGlViewTemplates } from '@/hooks/useGlViewTemplates';
 import { Settings2 } from 'lucide-react';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -72,14 +74,47 @@ export default function GeneralLedgerPage() {
   const [activeViewTab, setActiveViewTab] = useState<'extract' | 'cards' | 'journal' | 'comparison'>('extract');
   const [cardSubTab, setCardSubTab] = useState<'account' | 'partner' | 'reconciliation'>('account');
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
-  const [printLayoutMode, setPrintLayoutMode] = useState<'synthetic' | 'analytical'>('analytical');
   const [glStats, setGlStats] = useState<{ accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number } | null>(null);
   const [isTableLoading, setIsTableLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [glSearchQuery, setGlSearchQuery] = useState('');
   const [glSearchResults, setGlSearchResults] = useState<GlSearchResult[]>([]);
+  const [glViewSelectorOpen, setGlViewSelectorOpen] = useState(false);
+  const {
+    activeTemplate: activeGlViewTemplate,
+    applyTemplate: applyGlTemplate,
+  } = useGlViewTemplates(selectedCompany?.id);
   const tableRef = useRef<GeneralLedgerTableRef>(null);
   const handleStatsChange = useCallback((stats: typeof glStats) => setGlStats(stats), []);
   const handleLoadingChange = useCallback((loading: boolean) => setIsTableLoading(loading), []);
+
+  const handleExportAction = useCallback(async (
+    actionName: string,
+    exportFn: () => Promise<void> | void
+  ) => {
+    if (isExporting) return;
+    setIsExporting(true);
+    toast({
+      title: 'Exportálás folyamatban...',
+      description: `${actionName} előállítása és letöltése.`,
+    });
+    try {
+      await Promise.resolve(exportFn());
+      toast({
+        title: 'Export sikeres',
+        description: 'A fájl letöltése megkezdődött.',
+      });
+    } catch (err: any) {
+      console.error('Export error:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Hiba az exportálás során',
+        description: err?.message || 'Nem sikerült létrehozni az exportfájlt.',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [isExporting, toast]);
 
   // ── P4: Audit imports — conditional polling ──
   const { data: auditImports } = useQuery({
@@ -133,6 +168,28 @@ export default function GeneralLedgerPage() {
   });
 
   const [viewLayout, setViewLayout] = useState<'summary' | 'classic'>('summary');
+
+  // Synchronize viewLayout with active GL view template
+  useEffect(() => {
+    if (activeGlViewTemplate) {
+      if (activeGlViewTemplate.columns && activeGlViewTemplate.columns.length <= 3) {
+        setViewLayout('summary');
+      } else {
+        setViewLayout('classic');
+      }
+    }
+  }, [activeGlViewTemplate]);
+
+  const handleViewLayoutChange = useCallback((layout: 'summary' | 'classic') => {
+    setViewLayout(layout);
+    if (layout === 'summary') {
+      applyGlTemplate('standard_3col');
+    } else {
+      if (activeGlViewTemplate?.columns && activeGlViewTemplate.columns.length <= 3) {
+        applyGlTemplate('classic_6col');
+      }
+    }
+  }, [applyGlTemplate, activeGlViewTemplate]);
 
   const urlGranularity = searchParams.get('granularity') as GlViewGranularity | null;
   const [viewGranularity, setViewGranularity] = useState<GlViewGranularity>(() => {
@@ -639,6 +696,9 @@ export default function GeneralLedgerPage() {
             selectedCompanyName={selectedCompany?.name}
             isAIRunning={isAIRunning}
             aiProgress={aiProgress}
+            activeViewTemplateName={activeGlViewTemplate?.name}
+            activeViewTemplateType={activeGlViewTemplate?.template_type}
+            onOpenViewSelector={() => setGlViewSelectorOpen(true)}
             onSelectPreset={handleSelectPreset}
             onOpenManagePresets={handleOpenManage}
             onOpenUploadPreset={handleOpenUpload}
@@ -651,10 +711,13 @@ export default function GeneralLedgerPage() {
             onRunAI={handleRunAI}
             onShowPrintPreview={() => setShowPrintPreview(true)}
             onPrint={handlePrint}
-            onExportExcel={(opts) => tableRef.current?.exportExcel(selectedCompany?.name, opts)}
-            onExportAnalyticalExcel={(opts) => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name, opts)}
-            onExportProcontPdf={(opts) => tableRef.current?.exportProcontPdf(selectedCompany?.name, opts)}
-            onExportProcontExcel={(opts) => tableRef.current?.exportProcontExcel(selectedCompany?.name, opts)}
+            isExporting={isExporting}
+            onExportExcel={(opts) => handleExportAction('Excel munkafüzet', () => tableRef.current?.exportExcel(selectedCompany?.name, { ...opts, template: activeGlViewTemplate }))}
+            onExportAnalyticalExcel={(opts) => handleExportAction('Részletező analitika', () => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name, opts))}
+            onExportProcontPdf={(opts) => handleExportAction('Procont PDF', () => tableRef.current?.exportProcontPdf(selectedCompany?.name, opts))}
+            onExportProcontExcel={(opts) => handleExportAction('Procont Excel', () => tableRef.current?.exportProcontExcel(selectedCompany?.name, opts))}
+            onExportAgoraPdf={(opts) => handleExportAction('Agora PDF kivonat', () => tableRef.current?.exportAgoraPdf(selectedCompany?.name, opts))}
+            onExportAgoraExcel={(opts) => handleExportAction('Agora Excel kivonat', () => tableRef.current?.exportAgoraExcel(selectedCompany?.name, opts))}
           />
 
           {isAIRunning && (
@@ -747,7 +810,7 @@ export default function GeneralLedgerPage() {
               onDateBasisChange={handleDateBasisChange}
               onPostingStatusChange={handlePostingStatusChange}
               onHideZeroChange={handleHideZeroChange}
-              onViewLayoutChange={setViewLayout}
+              onViewLayoutChange={handleViewLayoutChange}
               onGranularityChange={handleGranularityChange}
               onItemGroupingChange={handleItemGroupingChange}
               onToggleExpandAll={handleToggleExpandAll}
@@ -780,6 +843,7 @@ export default function GeneralLedgerPage() {
               searchResults={glSearchResults}
               isPolling={isAIRunning}
               defaultViewMode={effectiveSettings?.gl_default_view_mode || 'osszevont'}
+              activeTemplate={activeGlViewTemplate}
               onStatsChange={handleStatsChange}
               onLoadingChange={handleLoadingChange}
             />
@@ -990,6 +1054,13 @@ export default function GeneralLedgerPage() {
         onSuccess={(newPresetId) => {
           handleSelectPreset(newPresetId);
         }}
+      />
+
+      {/* Főkönyvi nézetválasztó és egyedi sablonkészítő modal */}
+      <GlViewSelectorModal
+        open={glViewSelectorOpen}
+        onOpenChange={setGlViewSelectorOpen}
+        companyId={selectedCompany?.id}
       />
 
       {/* F5: Print Preview Dialog */}
