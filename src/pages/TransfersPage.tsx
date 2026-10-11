@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -143,6 +144,8 @@ export default function TransfersPage() {
   const { toast } = useToast();
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
+  // Spec: viewer / assistant are read-only on payments; only owner/admin/finance_lead may initiate transfers.
+  const { canManagePayments } = useCompanyCapabilities();
 
   const [search, setSearch] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'overdue' | 'due_today' | 'future' | 'skonto'>('all');
@@ -170,6 +173,7 @@ export default function TransfersPage() {
   };
 
   const handleToggleSkonto = async (itemKey: string, invoiceId: string, source: 'manual' | 'nav' | 'purchase_voucher', newSelected: boolean) => {
+    if (!canManagePayments) return;
     if (source === 'purchase_voucher') return;
     setSkontoOverrides(prev => ({ ...prev, [itemKey]: newSelected, [invoiceId]: newSelected }));
     const targetTable = source === 'nav' ? 'nav_invoices' : 'invoices';
@@ -918,14 +922,16 @@ export default function TransfersPage() {
             // Find matched transaction ID
             const txId = itemInvoiceIds.map((id: string) => invoiceIdToTxIdMap.get(id)).find(Boolean) || null;
 
-            // Update database asynchronously
-            supabase
-              .from('payment_transfers')
-              .update({ status: 'matched', matched_transaction_id: txId })
-              .eq('id', item.id)
-              .then(({ error: updateErr }) => {
-                if (updateErr) console.error("Error updating payment transfer status:", updateErr);
-              });
+            // Update database asynchronously (read-only roles cannot write; skip the repair silently)
+            if (canManagePayments) {
+              supabase
+                .from('payment_transfers')
+                .update({ status: 'matched', matched_transaction_id: txId })
+                .eq('id', item.id)
+                .then(({ error: updateErr }) => {
+                  if (updateErr) console.error("Error updating payment transfer status:", updateErr);
+                });
+            }
 
             return {
               ...item,
@@ -956,6 +962,7 @@ export default function TransfersPage() {
   };
 
   const handleBankBlur = async (id: string, invoice: TransferInvoice) => {
+    if (!canManagePayments) return;
     const value = editingBankAccounts[id]?.trim();
     if (value === undefined || value === invoice.partner_bank_account) return;
 
@@ -1024,6 +1031,7 @@ export default function TransfersPage() {
   };
 
   const handleConfirmSettle = async () => {
+    if (!canManagePayments) return;
     if (!settleItem || settleItem.original_invoices.length === 0) return;
     try {
       setSettling(true);
@@ -1090,6 +1098,7 @@ export default function TransfersPage() {
 
 
   const handleDeleteTransfer = async (id: string) => {
+    if (!canManagePayments) return;
     try {
       const { error } = await supabase
         .from('payment_transfers')
@@ -1115,6 +1124,7 @@ export default function TransfersPage() {
   };
 
   const handleBulkDeleteTransfers = async () => {
+    if (!canManagePayments) return;
     if (selectedHistoryIds.length === 0) return;
     try {
       const { error } = await supabase
@@ -1286,6 +1296,7 @@ export default function TransfersPage() {
   }, [selectedTransferItems]);
 
   const handleConfirmBulkSettle = async () => {
+    if (!canManagePayments) return;
     if (selectedTransferItems.length === 0 || !selectedCompany) return;
     try {
       setBulkSettling(true);
@@ -1425,12 +1436,14 @@ export default function TransfersPage() {
   }, [invoices, displayItems, selectedIds]);
 
   const handleSelectRow = (key: string) => {
+    if (!canManagePayments) return;
     setSelectedIds(prev =>
       prev.includes(key) ? prev.filter(id => id !== key) : [...prev, key]
     );
   };
 
   const handleSelectAll = (checked: boolean) => {
+    if (!canManagePayments) return;
     if (checked) {
       setSelectedIds(displayItems.map(item => item.key));
     } else {
@@ -1445,6 +1458,7 @@ export default function TransfersPage() {
 
   // 6. Bank transfer file export helper
   const triggerFileExport = () => {
+    if (!canManagePayments) return;
     if (selectedIds.length === 0) return;
     if (hasMissingBankAccounts) {
       toast({
@@ -1481,6 +1495,7 @@ export default function TransfersPage() {
   };
 
   const handleGenerateFile = async (overrideSenderId?: string, overrideFormat?: string) => {
+    if (!canManagePayments) return;
     const activeSenderId = overrideSenderId || senderAccountId;
     let activeFormat = overrideFormat || exportFormat;
 
@@ -1764,6 +1779,22 @@ export default function TransfersPage() {
         </div>
       </div>
 
+      {!canManagePayments && (
+        <div
+          role="status"
+          data-testid="transfers-readonly-banner"
+          className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground"
+        >
+          <Info className="h-4 w-4 shrink-0 text-primary" />
+          <span>
+            {t(
+              'transfers:readonly_notice',
+              'Csak olvasható nézet: utalási csomagot a cégvezető vagy a pénzügyi vezető készíthet.'
+            )}
+          </span>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className={cn("grid grid-cols-1 gap-6", stats.skontoCount > 0 ? "md:grid-cols-4" : "md:grid-cols-3")}>
         <Card className="border-border/60 bg-gradient-to-br from-card to-destructive/5 hover:shadow-md transition-all duration-300">
@@ -1968,6 +1999,7 @@ export default function TransfersPage() {
                             <Checkbox
                               checked={displayItems.length > 0 && selectedIds.length === displayItems.length}
                               onCheckedChange={handleSelectAll}
+                              disabled={!canManagePayments}
                             />
                           </TableHead>
                           <TableHead>{t('transfers:table.partner', 'Partner')}</TableHead>
@@ -1993,6 +2025,7 @@ export default function TransfersPage() {
                                 <Checkbox
                                   checked={isSelected}
                                   onCheckedChange={() => handleSelectRow(item.key)}
+                                  disabled={!canManagePayments}
                                 />
                               </TableCell>
                               <TableCell className="!align-top pt-3">
@@ -2146,9 +2179,10 @@ export default function TransfersPage() {
                                                e.stopPropagation();
                                                handleToggleSkonto(item.key, inv.id, inv.source, true);
                                              }}
+                                             disabled={!canManagePayments}
                                              title={isExpired ? 'A skontó határidő lejárt, de kézzel még kiválasztható' : `Skontó kedvezmény: -${percent}% (-${savedFt.toLocaleString('hu-HU')} Ft)`}
                                              className={cn(
-                                               "px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-all flex items-center gap-1 cursor-pointer",
+                                               "px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-all flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
                                                active
                                                  ? "bg-emerald-600 text-white shadow-sm"
                                                  : "text-muted-foreground hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10"
@@ -2164,9 +2198,10 @@ export default function TransfersPage() {
                                                e.stopPropagation();
                                                handleToggleSkonto(item.key, inv.id, inv.source, false);
                                              }}
+                                             disabled={!canManagePayments}
                                              title="Normál bruttó összeg fizetése kedvezmény nélkül"
                                              className={cn(
-                                               "px-2.5 py-1 rounded-md text-xs font-mono transition-all cursor-pointer",
+                                               "px-2.5 py-1 rounded-md text-xs font-mono transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
                                                !active
                                                  ? "bg-background text-foreground shadow-xs font-bold"
                                                  : "text-muted-foreground hover:text-foreground hover:bg-background/50 font-medium"
@@ -2220,6 +2255,7 @@ export default function TransfersPage() {
                                       value={editingBankAccounts[item.key] !== undefined ? editingBankAccounts[item.key] : item.partner_bank_account}
                                       onChange={e => handleBankChange(item.key, e.target.value)}
                                       onBlur={() => handleBankBlur(item.key, item.original_invoices[0])}
+                                      readOnly={!canManagePayments}
                                       placeholder="Pl: 11773000-00000000"
                                       className={`h-8 font-mono text-xs pl-2.5 pr-8 rounded w-full ${getAccountError(editingBankAccounts[item.key] !== undefined ? editingBankAccounts[item.key] : item.partner_bank_account) ? 'border-destructive/40 bg-destructive/5 focus-visible:ring-destructive' : 'bg-background'}`}
                                     />
@@ -2246,6 +2282,7 @@ export default function TransfersPage() {
                                         <Button
                                           variant="outline"
                                           size="sm"
+                                          disabled={!canManagePayments}
                                           className="h-8 px-2.5 text-xs gap-1.5 border-emerald-600/30 hover:border-emerald-600 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium transition-all"
                                           onClick={() => {
                                             setSettleItem(item);
@@ -2398,6 +2435,7 @@ export default function TransfersPage() {
                         setActiveTab('list');
                         toast({ title: t('transfers:toasts.items_selected_title', 'Tételek kijelölve!'), description: t('transfers:toasts.items_selected_desc', '{{count}} tétel hozzáadva az utalandókhoz.', { count: keys.length }) });
                       }}
+                      disabled={!canManagePayments}
                       className="h-8 text-xs font-semibold"
                     >
                       {t('transfers:calendar.select_all', 'Összes kijelölése utalásra')}
@@ -2487,6 +2525,7 @@ export default function TransfersPage() {
                       <TableHead className="w-12 text-center">
                         <Checkbox
                           checked={transferHistory.length > 0 && selectedHistoryIds.length === transferHistory.length}
+                          disabled={!canManagePayments}
                           onCheckedChange={(checked) => {
                             if (checked) {
                               setSelectedHistoryIds(transferHistory.map((item: any) => item.id));
@@ -2532,6 +2571,7 @@ export default function TransfersPage() {
                           <TableCell className="text-center">
                             <Checkbox
                               checked={isSelected}
+                              disabled={!canManagePayments}
                               onCheckedChange={() => {
                                 setSelectedHistoryIds(prev =>
                                   prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]
@@ -2572,6 +2612,7 @@ export default function TransfersPage() {
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                               onClick={() => handleDeleteTransfer(item.id)}
+                              disabled={!canManagePayments}
                               title={t('transfers:history.delete', 'Törlés')}
                             >
                               <Trash2 className="h-4 w-4" />

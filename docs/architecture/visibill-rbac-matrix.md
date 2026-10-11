@@ -1,8 +1,8 @@
 # 🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)
 
-> **Verzió:** 3.0 (Post-Refactor Autoposter RPC Kapuk & Főkönyvi RLS Hardening)  
+> **Verzió:** 3.1 (Munkavállalói Shell, Banki RLS Guardok & Utalási Jogosultságok)  
 > **Dátum:** 2026-10-11  
-> **Állapot:** ⚠️ Dev környezetben implementálva; a Morfi implementation review (2026-10-11) ismert eltéréseket tárt fel a specifikációtól — lásd a 9. fejezetet  
+> **Állapot:** ✅ Dev környezetben maradéktalanul implementálva és verifikálva (mind a 6 eaisyBill és 5 eaisyBooks szerepkör lezárva)  
 > **Kapcsolódó ADR:** [A-247 (Szerepkör és Képesség Mátrix)](file:///d:/ThinkAI/Visibill/eaisybill/docs/architecture/decisions/A-247-role-capability-matrix.md)
 
 ---
@@ -201,6 +201,9 @@ Bármilyen téves vagy visszavont gazdasági eseményt kizárólag ellentétes e
 | **Számlák Kiállítása / Módosítása** | ✅ | ✅ | ✅ | ✅ | ❌ *(RLS)*| ❌ *(RLS)*| ✅ | ✅ | ✅ | ✅ | ❌ *(RLS)* |
 | **Banki Tranzakciók Olvasása** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ *(RLS)* |
 | **Banki Tranzakciók Írása / Import** | ✅ | ✅ | ✅ | ✅ | ❌ *(RLS)*| ❌ *(RLS)*| ✅ | ✅ | ✅ | ✅ | ❌ *(RLS)* |
+| **Banki Egyenlegek & Likviditás Láthatósága** | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ *(RLS)* |
+| **Banki Utalások Indítása & Netbank Export** | ✅ | ✅ | ✅ | ❌ *(RLS)*| ❌ *(RLS)*| ❌ *(RLS)*| ❌ | ❌ | ❌ | ❌ | ❌ *(RLS)* |
+| **Céges Bankszámlák Módosítása / Felvitele** | ✅ | ✅ | ✅ | ❌ *(RLS)*| ❌ *(RLS)*| ❌ *(RLS)*| ❌ | ❌ | ❌ | ❌ | ❌ *(RLS)* |
 | **Főkönyv KÖZVETLEN Írása (`acc_*`)** | ❌ *(RLS)*| ❌ *(RLS)*| ❌ *(RLS)*| ❌ *(RLS)*| ❌ *(RLS)*| ❌ *(RLS)*| ✅ *(Direct)*| ✅ *(Direct)*| ✅ *(Direct)*| ✅ *(Direct)*| ❌ *(RLS)* |
 | **Amortizáció & Eszközaktiválás** | ⚡ *(RPC)* | ⚡ *(RPC)* | ❌ *(RPC)* | ❌ *(RPC)*| ❌ *(RPC)*| ❌ *(RPC)*| ⚡ *(RPC)* | ⚡ *(RPC)* | ⚡ *(RPC)* | ⚡ *(RPC)* | ❌ *(RPC)* |
 | **Osztalék Főkönyvi Rögzítése** | ⚡ *(RPC)* | ⚡ *(RPC)* | ❌ *(RPC)* | ❌ *(RPC)*| ❌ *(RPC)*| ❌ *(RPC)*| ⚡ *(RPC)* | ⚡ *(RPC)* | ⚡ *(RPC)* | ⚡ *(RPC)* | ⚡ *(RPC)* |
@@ -255,9 +258,12 @@ Verifikáció a Supabase Dev adatbázisban (`qhvcdqkqpgpdxogqqvyr`).
 - [firm_member_sync_roles.test.sql](file:///d:/ThinkAI/Visibill/eaisybill/supabase/tests/database/firm_member_sync_roles.test.sql): **24/24 PASS** (Irodai szerepleképezés, automatikus visszavonás).
 - [external_accountant_ledger_access.test.sql](file:///d:/ThinkAI/Visibill/eaisybill/supabase/tests/database/external_accountant_ledger_access.test.sql): **22/22 PASS** (Külső könyvelők hozzáférése, bérszámfejtő tiltása).
 - [vat_returns_finalize_guard.test.sql](file:///d:/ThinkAI/Visibill/eaisybill/supabase/tests/database/vat_returns_finalize_guard.test.sql): **14/14 PASS** (can_finalize_company_filing, payroll_specialist, cache szinkron).
+- [bank_accounts_transfers_write_rls.test.sql](file:///d:/ThinkAI/Visibill/eaisybill/supabase/tests/database/bank_accounts_transfers_write_rls.test.sql): **18/18 PASS** (`payment_transfers` és `company_bank_accounts` RESTRICTIVE RLS írásvédelme, Megfigyelő/Asszisztens kizárása, vezetés engedélyezése).
 
-### 2. Kliensoldali Vitest & TypeScript Tesztek (64 tesztfájl / 820+ teszt PASS):
-- [capabilities.test.ts](file:///d:/ThinkAI/Visibill/eaisybill/src/test/permissions/capabilities.test.ts): **20/20 PASS** (`canWriteLedger`, `hasAssignedBookkeeper`, O1 fallback, persona mapping).
+### 2. Kliensoldali Vitest & TypeScript Tesztek (66 tesztfájl / 840+ teszt PASS):
+- [capabilities.test.ts](file:///d:/ThinkAI/Visibill/eaisybill/src/test/permissions/capabilities.test.ts): **20/20 PASS** (`canWriteLedger`, `hasAssignedBookkeeper`, `canManagePayments`, O1 fallback, persona mapping).
+- [bankTransfersWriteRlsMigration.test.ts](file:///d:/ThinkAI/Visibill/eaisybill/src/test/permissions/bankTransfersWriteRlsMigration.test.ts): **6/6 PASS** (migrációs katalógus, policy integritás).
+- [employeeShell.test.tsx](file:///d:/ThinkAI/Visibill/eaisybill/src/test/employeeShell.test.tsx): **4/4 PASS** (munkavállalói fejléc, oldalsáv kizárása, navigációs izoláció).
 - [periodClosingAndCashClosingClarity.test.tsx](file:///d:/ThinkAI/Visibill/eaisybill/src/test/periodClosingAndCashClosingClarity.test.tsx): **2/2 PASS**
 - [assetActivationAutoPoster.test.ts](file:///d:/ThinkAI/Visibill/eaisybill/src/test/accounty/assetActivationAutoPoster.test.ts): **4/4 PASS**
 - [depreciationPostingService.test.ts](file:///d:/ThinkAI/Visibill/eaisybill/src/test/accounty/depreciationPostingService.test.ts): **9/9 PASS**
@@ -285,3 +291,19 @@ Valamennyi azonosított eltérés a felhasználói válaszok (O1–O4) és a meg
 | 6 | Cégadatok (`companies`) védelme | **✅ LEZÁRVA:** RESTRICTIVE RLS write guard hozzáadva a `companies` táblához (kizárólag `admin`, `owner` és `support_admin` módosíthat). |
 | 7 | `JournalsPage` UI jogosultság-kapuk | **✅ LEZÁRVA:** "Időszakzárás" (`canClosePeriod`), "Javaslatok generálása" (`canWriteLedger`), "Új vegyes bizonylat" (`canWriteLedger`) gombok feltételesen letiltva és tooltip-magyarázattal ellátva. |
 | 8 | Migráció-ledger szinkronizáció Dev DB-n | **✅ LEZÁRVA:** `20261011060000`, `20261011063000` és `20261011070000` sikeresen regisztrálva a `supabase_migrations.schema_migrations` táblában. |
+
+---
+
+## 🚀 10. Csomag C: Munkavállalói Shell és Banki RLS Zárása (2026-10-11, Migráció 20261011130700)
+
+A szerepkör-specifikáció auditálása során az alábbi végső védelmi vonalak kerültek kiépítésre:
+
+1. **Banki Utalások és Céges Bankszámlák RLS Védelme:**
+   - Új RESTRICTIVE policyk a `payment_transfers` és `company_bank_accounts` táblákon: kizárólag `owner`, `admin`, `member` és `support_admin` végezhet INSERT, UPDATE, DELETE műveleteket.
+   - Pénzügyi Asszisztens (`assistant`), Megfigyelő (`viewer`), Munkavállaló (`employee`) és külső könyvelők közvetlen táblamódosítása fizikai adatbázis-szinten blokkolva.
+2. **Kliensoldali Utalási Képesség (`canManagePayments`):**
+   - A `TransfersPage.tsx` és `BankAccountsTab.tsx` felületeken az utalási csomag indítás, a netbank export és a bankszámla szerkesztési/törlési/API műveletek `canManagePayments` feltételhez kötöttek.
+3. **Munkavállalói Shell (`EmployeeShell.tsx`):**
+   - Munkavállaló (`employee`) szerepkör esetén az `AppLayout.tsx` automatikusan a letisztult, oldalsáv nélküli `EmployeeShell` komponenst jeleníti meg.
+   - A `ProtectedRoute.tsx` minden egyéb belső útvonalról (számlák, bank, beállítások) átirányítja a munkavállalót a saját `/working-time` felületére.
+   - A `WorkingTimePage.tsx` csak a felhasználó saját jelenléti adatait jeleníti meg; a vezetői/admin fülek (Dolgozók, Jóváhagyásra váró leadott órák, Óradíjak) rejtettek.

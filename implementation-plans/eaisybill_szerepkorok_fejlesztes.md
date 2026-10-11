@@ -171,3 +171,36 @@ asszisztens
 Könyvelői Asszisztens
 Bizonylat-előkészítés, OCR, bankpárosítás
 Korlátozott Adatrögzítés (Zárás nélkül)
+
+---
+
+## 🏁 IV. RÉSZ: Megvalósítási Audit & Státusz (2026-10-11)
+
+A tervben leírt jogosultsági architektúra implementációja és auditálása megtörtént a `develop` ágon és az `eaisybill-dev` Supabase adatbázisban.
+
+### 1. Megvalósult Rendszerelemek
+- **eaisyBill 6 Szerepkör:**
+  - `owner`: Abszolút vétójog, kizárólagos cégtörlés (RLS + UI), kontrolling betekintés.
+  - `admin`: Operatív jogok (számlák, utalások, csapat), kontrolling betekintés; könyveléstechnika (`/subledger`, `/journals`) rejtve és tiltva; lezárt időszakban nem könyvelhet.
+  - `member` (`finance_lead`): Pénzügyi Vezető alias, utalások és számlák kezelése, kontrolling látható, csapatkezelés tiltva, bér modul zárolva.
+  - `assistant`: Számlázás, iktatás, kintlévőség; könyvelés és kontrolling rejtve, banki egyenlegek és likviditás elrejtve a műszerfalon és tranzakcióknál; utalásindítás tiltva.
+  - `viewer`: Globális Read-Only, kontrolling látható, minden módosító és utalási gomb inaktív, adatbázis RLS védi az illetéktelen írást.
+  - `employee`: Kizárólag munkaidő és jelenlét; oldalsáv és dátumválasztó nélkül, dedikált `EmployeeShell` minimalista fejléccel; útvonalvédelem automatikusan visszairányít a `/working-time`-ra; RLS szigorúan `user_id = auth.uid()`-ra szűkít.
+- **eaisyBooks 5 Szerepkör:**
+  - `iroda_admin`: Teljes irodai cégportfólió, kizárólagos ügyfélallokáció és adminisztrációs modulok (`admin/*`).
+  - `senior_könyvelő`: Zárási és ÁNYK XML export jogkör, TAO/KIVA, ellenőrző modulok (`reports`, `approval_queue`, `alerts`, `nav_deadlines`), számlatükör karbantartás.
+  - `könyvelő`: Hozzárendelt cégek napi könyvvezetése (`directCompanyIds`); időszakzárás és ÁNYK XML letiltva.
+  - `asszisztens`: Operatív előkészítés (OCR, bank, számlák); TAO modul tiltva, számlatükör és zárás tiltva.
+  - `payroll_specialist`: Dedikált bérszámfejtő szerepkör; kizárólag a bérhez és 08-as bevalláshoz fér hozzá, minden egyéb zárolva.
+- **Képességalapú Védelem:** `CompanyCapabilities` mátrix 10 diszkrét joggal, `useCompanyCapabilities` hook, szerveroldali `SECURITY DEFINER` RPC kapuk (`assert_company_role_tier`, `check_user_can_auto_post_gl`), valamint RLS immutabilitási és RESTRICTIVE guardok.
+
+### 2. Nyitott Üzleti Logikai Döntések (Termék- és Roadmap Pontok)
+Az alábbi kényelmi és bővítési funkciók részletei a specifikációban érintőlegesen említésre kerültek, de megvalósításuk későbbi döntést/mérföldkövet igényel:
+1. **Cégtulajdonos (owner) — Tulajdonjog Átadás és Csomagkezelés:** A cég törlésének védelme aktív, de a felületen még nincs önkiszolgáló "Tulajdonjog átruházása egy másik tagra" dialógus és automatizált előfizetési csomagváltó modul.
+2. **Pénzügyi Vezető (finance_lead) — Mezőszintű Bér-titkosítás:** A bér modul a legszigorúbb védelemmel jelenleg teljes egészében el van zárva a Pénzügyi Vezető elől. Döntendő, hogy a jövőben szükséges-e olyan finomhangolt nézet, ahol a munkavállalók bérét látja, de az ügyvezetői/tulajdonosi bérek maszkozva (`*** Ft`) jelennek meg.
+3. **Munkavállaló (employee) — SMS Magic Link & Automata Meghívó:** A letisztult mobil-first felület és az adatizoláció működik, de SMS-küldő gateway (pl. Twilio) még nincs bekötve; a meghívás e-mailen / Supabase Auth fiókon át zajlik.
+4. **Munkavállaló (employee) — Zseb-bérlap Elérése:** Az eaisyBooks oldalon létezik az e-bérlap portál, de az eaisyBill munkavállalói nézetében jelenleg még nincs beágyazott "Bérlapjaim" letöltő fül.
+
+> 📚 **Kapcsolódó Részletes Dokumentáció:**  
+> - Teljes architektúrális RBAC leírás: [docs/architecture/visibill-rbac-matrix.md](file:///d:/ThinkAI/Visibill/eaisybill/docs/architecture/visibill-rbac-matrix.md)  
+> - Döntési nyilvántartás (ADR): [docs/architecture/decisions/A-247-role-capability-matrix.md](file:///d:/ThinkAI/Visibill/eaisybill/docs/architecture/decisions/A-247-role-capability-matrix.md)  

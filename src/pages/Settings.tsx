@@ -26,6 +26,7 @@ import { InviteUserDialog } from '@/components/settings/InviteUserDialog';
 import { EaisybillPermissionPanel } from '@/components/settings/EaisybillPermissionPanel';
 import { BankAccountsTab } from '@/components/settings/BankAccountsTab';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import { reportError } from '@/lib/errorReporter';
 import { useUrlTab } from '@/lib/navigation';
 
@@ -519,6 +520,7 @@ export default function Settings() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { isAdmin, role: userRole } = useUserRole();
+  const { canManageTeam } = useCompanyCapabilities();
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading: companiesLoading } = useCompany();
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -896,9 +898,9 @@ export default function Settings() {
               <CompanyAccessCard companyId={selectedCompany.id} toast={toast} />
             )}
             {selectedCompany && (
-              <CompanyMembersCard companyId={selectedCompany.id} companyName={selectedCompany.name} ownerId={selectedCompany.owner_id} isOwnerOrAdmin={isAdmin} toast={toast} />
+              <CompanyMembersCard companyId={selectedCompany.id} companyName={selectedCompany.name} ownerId={selectedCompany.owner_id} isOwnerOrAdmin={canManageTeam} toast={toast} />
             )}
-            {selectedCompany && isAdmin && (
+            {selectedCompany && canManageTeam && (
               <EaisybillPermissionPanel companyId={selectedCompany.id} toast={toast} />
             )}
             {selectedCompany && (

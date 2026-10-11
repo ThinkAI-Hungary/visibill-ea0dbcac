@@ -47,6 +47,7 @@ interface LazyRowSelectProps {
   placeholder?: string;
   items: Array<{ id: string; name: string }>;
   onChange: (value: string) => void;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -56,6 +57,7 @@ const LazyRowSelect = React.memo(function LazyRowSelect({
   items,
   onChange,
   className,
+  disabled = false,
 }: LazyRowSelectProps) {
   const [open, setOpen] = useState(false);
   const selectedItem = useMemo(() => items.find((i) => i.id === value), [items, value]);
@@ -72,6 +74,7 @@ const LazyRowSelect = React.memo(function LazyRowSelect({
       onValueChange={onChange}
       open={open}
       onOpenChange={setOpen}
+      disabled={disabled}
     >
       <SelectTrigger
         className={cn(
@@ -140,6 +143,7 @@ function NavInvoiceRowComponent({
     lastViewedInvoiceId,
     setLastViewedInvoiceId,
     toggleRowExpanded,
+    writable,
   } = useInvoiceContext();
 
   const navKey = useMemo(() => normalizeInvoiceNumber(invoice.invoice_number), [invoice.invoice_number]);
@@ -463,6 +467,7 @@ function NavInvoiceRowComponent({
                 currentVatRowOverride={invoice.vat_row_override}
                 direction={(invoice.invoice_direction?.toUpperCase() as 'INBOUND' | 'OUTBOUND') || (activeTab === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND')}
                 onUpdated={invalidateInvoiceData}
+                disabled={!writable}
               />
             </div>
           </div>
@@ -553,7 +558,7 @@ function NavInvoiceRowComponent({
                     <span
                       onClick={(e) => {
                         e.stopPropagation();
-                        onOpenExclusionDialog?.(invoice);
+                        if (writable) onOpenExclusionDialog?.(invoice);
                       }}
                       className={cn(
                         "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border whitespace-nowrap cursor-pointer transition-colors",
@@ -694,6 +699,7 @@ function NavInvoiceRowComponent({
                 <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center justify-center p-1">
                   <Checkbox
                     checked={isReviewed}
+                    disabled={!writable}
                     onCheckedChange={async (checked) => {
                       const nextVal = !!checked;
                       setIsOptimisticReviewed(nextVal);
@@ -731,6 +737,7 @@ function NavInvoiceRowComponent({
               value={effectiveCategoryId}
               items={categories}
               onChange={(value) => handleCategoryChange(invoice.id, value, invoice.invoice_number)}
+              disabled={!writable}
             />
           </TableCell>
         )}
@@ -740,6 +747,7 @@ function NavInvoiceRowComponent({
             value={effectiveProjectId}
             items={projects}
             onChange={(value) => handleProjectChange(invoice.id, value)}
+            disabled={!writable}
           />
         </TableCell>
 
@@ -917,8 +925,9 @@ function NavInvoiceRowComponent({
           accountingExclusionType={invoice.accounting_exclusion_type}
           deferredVatReason={invoice.deferred_vat_reason}
           deferredVatSince={invoice.deferred_vat_since}
-          onToggleExclude={() => onToggleExclude(invoice.id, !!invoice.exclude_from_accounting)}
-          onOpenExclusionDialog={() => onOpenExclusionDialog?.(invoice)}
+          onToggleExclude={writable ? () => onToggleExclude(invoice.id, !!invoice.exclude_from_accounting) : undefined}
+          onOpenExclusionDialog={writable ? () => onOpenExclusionDialog?.(invoice) : undefined}
+          readOnly={!writable}
           invoiceId={invoice.id}
           invoiceAmount={invoice.invoice_gross_amount || 0}
           invoiceCurrency={invoice.currency || 'HUF'}

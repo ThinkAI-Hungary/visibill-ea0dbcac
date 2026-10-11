@@ -446,6 +446,7 @@ export function SubmittedInvoiceRow({
                 currentVatRowOverride={invoice.vat_row_override}
                 direction={activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND'}
                 onUpdated={invalidateInvoiceData}
+                disabled={!writable}
               />
             </div>
           </div>
@@ -497,6 +498,7 @@ export function SubmittedInvoiceRow({
                 <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center justify-center p-1">
                   <Checkbox
                     checked={isReviewed}
+                    disabled={!writable}
                     onCheckedChange={async (checked) => {
                       const nextVal = !!checked;
                       setIsOptimisticReviewed(nextVal);
@@ -540,7 +542,7 @@ export function SubmittedInvoiceRow({
                     <span
                       onClick={(e) => {
                         e.stopPropagation();
-                        onOpenExclusionDialog?.(invoice);
+                        if (writable) onOpenExclusionDialog?.(invoice);
                       }}
                       className={cn(
                         "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border whitespace-nowrap cursor-pointer transition-colors",
@@ -731,8 +733,9 @@ export function SubmittedInvoiceRow({
           accountingExclusionType={(invoice as any).accounting_exclusion_type}
           deferredVatReason={(invoice as any).deferred_vat_reason}
           deferredVatSince={(invoice as any).deferred_vat_since}
-          onToggleExclude={() => onToggleExclude(invoice.id, !!invoice.exclude_from_accounting)}
-          onOpenExclusionDialog={() => onOpenExclusionDialog?.(invoice)}
+          onToggleExclude={writable ? () => onToggleExclude(invoice.id, !!invoice.exclude_from_accounting) : undefined}
+          onOpenExclusionDialog={writable ? () => onOpenExclusionDialog?.(invoice) : undefined}
+          readOnly={!writable}
           invoiceId={invoice.id}
           invoiceAmount={invoice.brutto_vegosszeg || 0}
           invoiceCurrency={invoice.penznem || 'HUF'}

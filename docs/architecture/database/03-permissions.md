@@ -59,6 +59,8 @@
 > **Könyvelőirodai Tag-Szinkronizáció (`20261011050500`):** `sync_company_member_to_eaisybooks()` szigorított szerepleképezéssel: `owner`/`admin` → `iroda_admin`, `member` → `könyvelő`, `assistant` → `asszisztens`, `viewer`/`employee` → NINCS könyvelési hozzárendelés. Trigger események: INSERT és UPDATE (szerepvisszavonás követése). `sync_eaisybill_accountant_removal()` törli a szinkronizált rekordot minden eltávolított irodai tag esetén.
 >
 > **Külső Könyvelői Főkönyvi Hozzáférés (`20261011052000`):** PERMISSIVE `accounty_bookkeeping_access` ALL szabályzat `acc_journals`, `acc_journal_headers`, `acc_journal_lines`, `acc_open_item_matches` táblákon az `accounty_assignments` alapján (`rls_accounty_bookkeeping_company_ids()` segédfüggvénnyel). Az `acc_accounting_periods` és `invoice_items` SELECT-only hozzáférést kapott. Bérszámfejtő kizárva.
+>
+> **Banki Utalások és Céges Bankszámlák RLS Védelme (`20261011130700`):** RESTRICTIVE write policyk (`payment_transfers_write_guard`, `company_bank_accounts_write_guard`) a `payment_transfers` és `company_bank_accounts` táblákon az INSERT, UPDATE és DELETE műveletekre. Kizárólag a cégvezetés és pénzügyi irányítás (`owner`, `admin`, `member`, `support_admin`) jogosult írásra. Megfigyelő (`viewer`), asszisztens (`assistant`), munkavállaló (`employee`), valamint külső könyvelők közvetlen táblamódosítása blokkolt.
 
 ---
 

@@ -31,6 +31,7 @@ import { Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { reportError } from '@/lib/errorReporter';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import { useScopedNavigate } from '@/lib/navigation';
 import { toast } from '@/hooks/use-toast';
 import { getTransactionTypeLabel } from '@/lib/transactionUtils';
@@ -67,6 +68,7 @@ const TransactionsPage = () => {
   const localeCode = isHr ? 'hr-HR' : 'hu-HU';
   const dateLocale = isHr ? hr : hu;
   const { dateFrom, dateTo } = useDateRange();
+  const { canViewBankBalances } = useCompanyCapabilities();
 
   const [zoomFrom, setZoomFrom] = useState<Date | null>(null);
   const [zoomTo, setZoomTo] = useState<Date | null>(null);
@@ -645,6 +647,8 @@ const TransactionsPage = () => {
               <div className="bg-blue-500/10 text-blue-500 p-2 rounded-lg"><Settings className="w-4 h-4" /></div>
               <div><div className="text-lg font-bold tabular-nums text-blue-500">{safeKpis.autoSettled}</div><div className="text-[11px] text-muted-foreground">{t('transactions:kpis.auto_settled', 'Rendezett (nincs számla)')}</div></div>
             </div>
+            {canViewBankBalances && (
+            <>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg"><ArrowUpRight className="w-4 h-4" /></div>
               <div><div className="text-lg font-bold tabular-nums text-emerald-600">{formatCurrency(safeKpis.inflow)}</div><div className="text-[11px] text-muted-foreground">{t('transactions:kpis.inflow', 'Bevétel')}</div></div>
@@ -653,6 +657,8 @@ const TransactionsPage = () => {
               <div className="bg-red-500/10 text-red-500 p-2 rounded-lg"><ArrowDownRight className="w-4 h-4" /></div>
               <div><div className="text-lg font-bold tabular-nums text-red-500">{formatCurrency(safeKpis.outflow)}</div><div className="text-[11px] text-muted-foreground">{t('transactions:kpis.outflow', 'Kiadás')}</div></div>
             </div>
+            </>
+            )}
           </div>
           )}
 
@@ -1108,6 +1114,7 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
   const isHr = i18n.language === 'hr';
   const localeCode = isHr ? 'hr-HR' : 'hu-HU';
   const { data: exchangeRates } = useExchangeRates();
+  const { canViewBankBalances } = useCompanyCapabilities();
   const scopedNavigate = useScopedNavigate();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -1272,6 +1279,8 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
               <div className="text-[11px] text-muted-foreground">{t('transactions:kpis.single_transaction', 'Tranzakció')}</div>
             </div>
           </div>
+          {canViewBankBalances && (
+          <>
           <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
             <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg"><TrendingUp className="w-4 h-4" /></div>
             <div>
@@ -1286,6 +1295,8 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
               <div className="text-[11px] text-muted-foreground">{t('transactions:kpis.outflow', 'Kiadás')}</div>
             </div>
           </div>
+          </>
+          )}
         </div>
       )}
 

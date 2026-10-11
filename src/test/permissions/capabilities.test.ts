@@ -68,6 +68,25 @@ describe('capabilities — eaisyBill company roles', () => {
     expect(c.canExportOfficialTaxReturn).toBe(false);
   });
 
+  it('Csomag A: canManagePayments only for owner / admin / finance_lead (member) / support_admin', () => {
+    expect(getEaisybillCapabilities('owner').canManagePayments).toBe(true);
+    expect(getEaisybillCapabilities('admin').canManagePayments).toBe(true);
+    expect(getEaisybillCapabilities('member').canManagePayments).toBe(true);
+    expect(getEaisybillCapabilities('support_admin').canManagePayments).toBe(true);
+    expect(getEaisybillCapabilities('assistant').canManagePayments).toBe(false);
+    expect(getEaisybillCapabilities('viewer').canManagePayments).toBe(false);
+    expect(getEaisybillCapabilities('employee').canManagePayments).toBe(false);
+    expect(getEaisybillCapabilities('hacker').canManagePayments).toBe(false);
+  });
+
+  it('Csomag A: accounting-firm assignment roles never manage the client company payments', () => {
+    for (const role of ACCOUNTY_ASSIGNMENT_ROLES) {
+      expect(getAccountyCapabilities(role).canManagePayments).toBe(false);
+    }
+    expect(resolveCapabilities({ memberRole: 'assistant' }).canManagePayments).toBe(false);
+    expect(resolveCapabilities({ memberRole: 'member' }).canManagePayments).toBe(true);
+  });
+
   it('employee and unknown roles have no capabilities (fail closed)', () => {
     expect(getEaisybillCapabilities('employee')).toEqual(NO_CAPABILITIES);
     expect(getEaisybillCapabilities(undefined)).toEqual(NO_CAPABILITIES);

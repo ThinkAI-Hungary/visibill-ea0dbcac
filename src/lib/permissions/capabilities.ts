@@ -133,6 +133,8 @@ export interface CompanyCapabilities {
   canExportOfficialTaxReturn: boolean;
   /** Create / modify journal entries, manual vouchers, daily auto-posting, settle open items. */
   canWriteLedger: boolean;
+  /** Generate / download bank transfer packages (Utalások) and manage the company's own bank accounts. */
+  canManagePayments: boolean;
 }
 
 export type CapabilityKey = keyof CompanyCapabilities;
@@ -146,6 +148,7 @@ export const NO_CAPABILITIES: CompanyCapabilities = {
   canManageTeam: false,
   canExportOfficialTaxReturn: false,
   canWriteLedger: false,
+  canManagePayments: false,
 };
 
 const ALL_CAPABILITIES: CompanyCapabilities = {
@@ -157,6 +160,7 @@ const ALL_CAPABILITIES: CompanyCapabilities = {
   canManageTeam: true,
   canExportOfficialTaxReturn: true,
   canWriteLedger: true,
+  canManagePayments: true,
 };
 
 /** eaisyBill capability matrix, keyed by persona (member is `finance_lead`). */
@@ -168,7 +172,7 @@ const EAISYBILL_CAPABILITIES: Record<EaisybillPersona, CompanyCapabilities> = {
   // Pénzügyi Vezető / Belső Főkönyvelő: controlling read-only, no team management.
   finance_lead: { ...ALL_CAPABILITIES, canManageTeam: false },
   // Pénzügyi Asszisztens: data entry only — no books, no bank balances (D-3).
-  assistant: { ...NO_CAPABILITIES, canManageInvoices: true },
+  assistant: { ...NO_CAPABILITIES, canManageInvoices: true }, // read-only on payments (no canManagePayments)
   // Megfigyelő: global read-only.
   viewer: { ...NO_CAPABILITIES, canViewControlling: true, canViewBankBalances: true },
   employee: NO_CAPABILITIES,
@@ -176,15 +180,19 @@ const EAISYBILL_CAPABILITIES: Record<EaisybillPersona, CompanyCapabilities> = {
   payroll_specialist: NO_CAPABILITIES,
 };
 
-/** eaisyBooks capability matrix. Close + official XML export: senior and iroda_admin only (D-4). */
+/**
+ * eaisyBooks capability matrix. Close + official XML export: senior and iroda_admin only (D-4).
+ * External accountants never initiate the client's bank transfers (canManagePayments: false).
+ */
 const ACCOUNTY_CAPABILITIES: Record<AccountyRole, CompanyCapabilities> = {
-  iroda_admin: ALL_CAPABILITIES,
-  'senior_könyvelő': { ...ALL_CAPABILITIES, canManageTeam: false },
+  iroda_admin: { ...ALL_CAPABILITIES, canManagePayments: false },
+  'senior_könyvelő': { ...ALL_CAPABILITIES, canManageTeam: false, canManagePayments: false },
   'könyvelő': {
     ...ALL_CAPABILITIES,
     canManageTeam: false,
     canClosePeriod: false,
     canExportOfficialTaxReturn: false,
+    canManagePayments: false,
   },
   asszisztens: {
     ...ALL_CAPABILITIES,
@@ -192,6 +200,7 @@ const ACCOUNTY_CAPABILITIES: Record<AccountyRole, CompanyCapabilities> = {
     canManageAccountingTech: false,
     canClosePeriod: false,
     canExportOfficialTaxReturn: false,
+    canManagePayments: false,
   },
   // Bérszámfejtő: payroll + 08 filing only; no bank, no ledger, no invoices (D-5).
   payroll_specialist: NO_CAPABILITIES,

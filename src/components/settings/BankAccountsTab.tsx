@@ -14,6 +14,7 @@ import { reportError } from '@/lib/errorReporter';
 import { useTranslation, Trans } from 'react-i18next';
 import { useAggreg8 } from '@/hooks/useAggreg8';
 import { useActivePreset } from '@/hooks/useActivePreset';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { CreateJournalModal } from '@/components/journals/CreateJournalModal';
@@ -197,6 +198,8 @@ export function BankAccountsTab({ companyId }: Props) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { consents = [] } = useAggreg8(companyId);
+  // Bankszámla írás: csak owner/admin/pénzügyi vezető (asszisztens/megtekintő csak olvas)
+  const { canManagePayments } = useCompanyCapabilities();
   const { activePresetId } = useActivePreset(companyId);
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -393,7 +396,7 @@ export function BankAccountsTab({ companyId }: Props) {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingAccount) return;
+    if (!editingAccount || !canManagePayments) return;
     setEditSaving(true);
     try {
       const { error } = await supabase
@@ -428,6 +431,7 @@ export function BankAccountsTab({ companyId }: Props) {
 
   const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManagePayments) return;
 
     const validation = validateAccountNumber(accountNumber);
     if (!validation.valid) {
@@ -484,6 +488,7 @@ export function BankAccountsTab({ companyId }: Props) {
   };
 
   const handleDeleteAccount = async (id: string) => {
+    if (!canManagePayments) return;
     if (!confirm(t('bank_accounts.delete_confirm', 'Biztosan törölni szeretnéd ezt a bankszámlát?'))) return;
 
     try {
@@ -576,7 +581,7 @@ export function BankAccountsTab({ companyId }: Props) {
               {t('bank_accounts.subtitle', 'Regisztráld a cég saját bankszámláit a kimenő utalási listák generálásához és a könyvelési összerendeléshez.')}
             </CardDescription>
           </div>
-          {!showAddForm && (
+          {!showAddForm && canManagePayments && (
             <Button size="sm" onClick={() => setShowAddForm(true)} className="gap-1.5 shadow-md">
               <Plus className="h-4 w-4" />
               {t('bank_accounts.new_account', 'Új bankszámla')}
@@ -584,7 +589,7 @@ export function BankAccountsTab({ companyId }: Props) {
           )}
         </CardHeader>
         <CardContent>
-          {showAddForm && (
+          {showAddForm && canManagePayments && (
             <form onSubmit={handleAddAccount} className="p-5 border border-primary/20 bg-primary/5 rounded-xl mb-6 space-y-4 animate-in fade-in slide-in-from-top-3 duration-200">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-sm flex items-center gap-2">
@@ -810,6 +815,7 @@ export function BankAccountsTab({ companyId }: Props) {
                         </p>
                       </div>
 
+                      {canManagePayments && (
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
@@ -830,6 +836,7 @@ export function BankAccountsTab({ companyId }: Props) {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
+                      )}
                     </div>
 
                     <div className="mt-2 z-10">
@@ -870,6 +877,7 @@ export function BankAccountsTab({ companyId }: Props) {
                           );
                         })()}
                       </div>
+                      {canManagePayments && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -878,6 +886,7 @@ export function BankAccountsTab({ companyId }: Props) {
                       >
                         {t('bank_accounts.btn_configure', 'Beállítás')}
                       </Button>
+                      )}
                     </div>
                   </div>
                 );

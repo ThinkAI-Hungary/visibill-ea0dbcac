@@ -17,8 +17,8 @@ A szerepkörök (`owner / admin / member / assistant / viewer / employee` az eai
 | ID | Döntés |
 | :--- | :--- |
 | **D-1** | **Hibrid alias.** A DB-ben `company_members.role = 'member'` marad; a UI-ban `finance_lead` személyként ("Pénzügyi Vezető") jelenik meg. Nincs DB-szintű átnevezés → nincs migrációs kockázat. |
-| **D-2** | Központi `useCompanyCapabilities` hook + tiszta `capabilities.ts` mátrix (`canViewControlling`, `canViewBankBalances`, `canManageInvoices`, `canManageAccountingTech`, `canClosePeriod`, `canManageTeam`, `canExportOfficialTaxReturn`). |
-| **D-3** | Asszisztens: nincs Könyvelés csoport, nincs banki egyenleg/likviditás. Cégvezető (`admin`): `/subledger` és `/journals` rejtett, a kontrolling látható. Cégtulajdonos: minden. Pénzügyi Vezető: kontrolling, csapatkezelés nélkül. **Megfigyelő** (`viewer`): globális read-only, a kontrollingot is látja, semmit nem módosíthat. Munkavállaló: kizárólag munkaidő. |
+| **D-2** | Központi `useCompanyCapabilities` hook + tiszta `capabilities.ts` mátrix (`canViewControlling`, `canViewBankBalances`, `canManageInvoices`, `canManageAccountingTech`, `canClosePeriod`, `canManageTeam`, `canExportOfficialTaxReturn`, `canWriteLedger`, `canManagePayments`). |
+| **D-3** | Asszisztens: nincs Könyvelés csoport, nincs banki egyenleg/likviditás. Cégvezető (`admin`): `/subledger` és `/journals` rejtett, a kontrolling látható. Cégtulajdonos: minden. Pénzügyi Vezető: kontrolling, csapatkezelés nélkül. **Megfigyelő** (`viewer`): globális read-only, a kontrollingot is látja, semmit nem módosíthat. Munkavállaló (`employee`): kizárólag munkaidő és jelenlét, dedikált `EmployeeShell` oldalsáv nélkül. |
 | **D-4** | ÁFA-időszak zárolása (`vat_returns.status = 'finalized'`) és hivatalos ÁNYK XML export: eaisyBooksban kizárólag `senior_könyvelő` és `iroda_admin`. UI-védelem **és** backend védelem (`ACCESS_DENIED`, ERRCODE 42501). |
 | **D-5** | **Hibrid Bérszámfejtő.** Új eaisyBooks szerepkör: `payroll_specialist`. Alapértelmezetten csak bérszámfejtés (rw) + olvasható portfólió/adónaptár + hibajegy/AI/profil. Nincs ügyfél-könyvelés, főkönyv, számla, TAO. A jogai azonban a `accounty_module_permissions` táblán keresztül **állíthatók** (DB override mindig felülírja az alapértelmezést). |
 
@@ -27,11 +27,13 @@ A `viewer` UI-neve mindenhol **"Megfigyelő"** (nem "Csendestárs"/"Betekintő")
 ## 3. Megvalósítás
 
 ### 3.1 Frontend
-- `src/lib/permissions/capabilities.ts`: szerepkör-címkék, alias (`toEaisybillPersona`), képességmátrixok (eaisyBill + eaisyBooks), `resolveCapabilities` (tag + hozzárendelés esetén engedékeny egyesítés).
+- `src/lib/permissions/capabilities.ts`: szerepkör-címkék, alias (`toEaisybillPersona`), képességmátrixok (eaisyBill + eaisyBooks), `resolveCapabilities` (tag + hozzárendelés esetén engedékeny egyesítés). Új `canManagePayments` képesség az átutalási csomagok indítására és céges bankszámlák szerkesztésére (csak cégvezetés és pénzügyi vezető).
 - `src/lib/permissions/accountyDefaults.ts`: **egyetlen forrás** az eaisyBooks modul-alapértelmezésekhez (futásidejű hook és a mátrix-oldal ugyanazt használja).
 - `useEaisybillPermissions`: új modulok `subledger`, `accounting_rules`; admin alapból nem látja a `subledger`/`journals` modulokat; viewer olvashatja a kontrolling modulokat (P&L, mérleg, főkönyv, éves beszámoló, ÁFA), írási jog nélkül; `settings` írás csak owner/admin.
 - `useAccountyPermissions` + `ProtectedAccountyRoute` (`requiredModule`, `AccountyModuleLayout`): az ügyfél-szintű bérszámfejtés, számla/főkönyv/EV és TAO útvonalak modul-szintű védelmet kaptak.
-- Műszerfal: a "Operatív eredmény" és "Házipénztár" kártya csak `canViewBankBalances` esetén jelenik meg.
+- Műszerfal & Tranzakciók: az operatív egyenleg, készpénzkártya és a tranzakciós KPI összegzők csak `canViewBankBalances` esetén jelennek meg (asszisztens elől elrejtve).
+- Utalások & Bankszámlák: a `TransfersPage.tsx` indítási és export gombjai, valamint a `BankAccountsTab.tsx` módosítási funkciói `canManagePayments` kaput kaptak.
+- Munkavállalói Shell (`src/components/EmployeeShell.tsx`): Munkavállaló szerepkör esetén nincs oldalsáv és dátumválasztó; letisztult mobil-first fejléc jelenik meg, egyéb útvonalakról a `ProtectedRoute` automatikusan visszairányít a `/working-time`-ra.
 - ÁFA UI: a Véglegesítés/Újranyitás gomb `canClosePeriod`-hoz, az ÁNYK/ePorezna/A60 export és az XML modal `canExportOfficialTaxReturn`-hoz kötött.
 - `PermissionMatrixPage`, `AccountantManagementPage`, `TeamSettingsTab`, `ProfileSettingsPage`, `InviteUserDialog`, `Settings.tsx`: `payroll_specialist` választható; az alapértelmezés-váltó a szerepkör alapértékéből indul (a tiltott alapértelmezésű modul engedélyezése így tényleg működik).
 
@@ -211,3 +213,21 @@ A felhasználó jóváhagyásával és válaszaival (O1–O4) valamennyi azonos�
    - 159/159 pgTAP teszt PASS (`legacy_gl_rpc_authz.test.sql`: 23/23, `rls_role_write_guards.test.sql`: 44/44, `autoposter_rpc_functions.test.sql`: 32/32, `firm_member_sync_roles.test.sql`: 24/24, `external_accountant_ledger_access.test.sql`: 22/22, `vat_returns_finalize_guard.test.sql`: 14/14).
    - 64 Vitest tesztfájl / 820+ teszt PASS (Taxology ÁFA regresszió 16/16 PASS, élő Dev DB `npm run vat:guard` 100% egyezés).
    - TypeScript `npx tsc --noEmit` 0 hiba, Oxlint 0 hiba.
+
+### 8.10 Csomag C Addendum: Banki Utalások & Bankszámlák RLS Védelme és Munkavállalói Shell (`20261011130700_restrict_bank_accounts_and_transfers_write_rls.sql`)
+
+1. **Banki Utalások és Céges Bankszámlák Írási Védelme (RLS):**
+   - A `payment_transfers` és `company_bank_accounts` táblák korábban nyitottabb írási joggal rendelkeztek.
+   - Új RESTRICTIVE policyk (`payment_transfers_write_guard` és `company_bank_accounts_write_guard`): kizárólag a cégvezetés és pénzügyi irányítás (`owner`, `admin`, `member`, `support_admin`) jogosult INSERT, UPDATE, DELETE műveletekre.
+   - Megfigyelő (`viewer`), asszisztens (`assistant`), munkavállaló (`employee`), valamint külső könyvelők közvetlen táblamódosítása blokkolva van.
+2. **Kliensoldali Fizetési Képesség (`canManagePayments`):**
+   - Új `canManagePayments: boolean` képesség a `capabilities.ts`-ben.
+   - `TransfersPage.tsx`: átutalási csomag generálás és banki netbank-export gombok letiltva jogosultság hiányában.
+   - `BankAccountsTab.tsx`: új bankszámla rögzítése, meglévő módosítása, törlése és API szinkronizáció inaktív jogosultság hiányában.
+3. **Munkavállalói Shell (`EmployeeShell.tsx`):**
+   - Az `employee` szerepkör számára az `AppLayout.tsx` nem tölti be az oldalsávot és a globális dátumválasztót.
+   - Helyette a dedikált, mobil-first `EmployeeShell` renderelődik, amely csak a cégnevet, nyelvváltót, sötét módot és kijelentkezést tartalmazza.
+   - A `ProtectedRoute.tsx` minden egyéb belső útvonalról automatikusan átirányít a `/working-time` modulra.
+4. **Verifikáció:**
+   - pgTAP: `bank_accounts_transfers_write_rls.test.sql` (katalógus és RLS viselkedés tesztek).
+   - Vitest: `src/test/permissions/bankTransfersWriteRlsMigration.test.ts`, `src/test/employeeShell.test.tsx`.

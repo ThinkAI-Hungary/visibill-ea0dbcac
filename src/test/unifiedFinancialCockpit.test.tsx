@@ -24,6 +24,11 @@ vi.mock('@/contexts/DateRangeContext', () => ({
   }),
 }));
 
+const mockCapabilities = { canViewBankBalances: true };
+vi.mock('@/hooks/useCompanyCapabilities', () => ({
+  useCompanyCapabilities: () => mockCapabilities,
+}));
+
 vi.mock('@/components/InvoiceItemsDialog', () => ({
   InvoiceItemsDialog: ({ open, invoiceNumber, onOpenChange }: any) => {
     if (!open) return null;
@@ -218,6 +223,31 @@ function createTestQueryClient() {
 describe('UnifiedFinancialCockpit - Option 2 Action Hub', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
+    mockCapabilities.canViewBankBalances = true;
+  });
+
+  it('RBAC Csomag A: assistant (no canViewBankBalances) gets no bank tile and the other 3 tiles stay', async () => {
+    mockCapabilities.canViewBankBalances = false;
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <UnifiedFinancialCockpit />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    expect(screen.queryByTestId('cockpit-tile-bank')).not.toBeInTheDocument();
+    expect(screen.queryByText('Párosítatlan bank')).not.toBeInTheDocument();
+    expect(screen.getByTestId('cockpit-tile-missing')).toBeInTheDocument();
+    expect(screen.getByTestId('cockpit-tile-payable')).toBeInTheDocument();
+    expect(screen.getByTestId('cockpit-tile-receivables')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('INV-2026-MISSING')).toBeInTheDocument();
+    });
+    expect(queryClient.getQueryCache().findAll({ queryKey: ['cockpitBankTransactions'] })[0]?.state.fetchStatus ?? 'idle').toBe('idle');
+    expect(queryClient.getQueryCache().findAll({ queryKey: ['cockpitBankTransactions'] })[0]?.state.data).toBeUndefined();
   });
 
   it('renders all 4 top KPI switcher tiles with values and status tags', async () => {

@@ -20,13 +20,14 @@ import { useSzamlazzStatus } from '@/hooks/useSzamlazzSync';
 import { SzamlazzSyncModal } from '@/components/invoices/SzamlazzSyncModal';
 
 export function InvoiceHeader() {
-  const { companyId, selectedCompany, setFilesDialogOpen, setInvoiceParam, openDataExportDialog, setCreateDialogOpen } = useInvoiceContext();
+  const { companyId, selectedCompany, setFilesDialogOpen, setInvoiceParam, openDataExportDialog, setCreateDialogOpen, writable } = useInvoiceContext();
   const { t } = useTranslation(['invoices', 'common']);
   const { hasNavIntegration } = useCompanyJurisdiction();
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
   const [szamlazzModalOpen, setSzamlazzModalOpen] = useState(false);
   const { data: szamlazzStatus } = useSzamlazzStatus(companyId);
   const hasSzamlazzKey = Boolean(szamlazzStatus?.hasAgentKey);
+  const canSyncSzamlazz = hasSzamlazzKey && writable;
 
   const handleOpenFiles = () => {
     setFilesDialogOpen(true);
@@ -65,8 +66,8 @@ export function InvoiceHeader() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => hasSzamlazzKey && setSzamlazzModalOpen(true)}
-                      disabled={!hasSzamlazzKey}
+                      onClick={() => canSyncSzamlazz && setSzamlazzModalOpen(true)}
+                      disabled={!canSyncSzamlazz}
                       className="relative disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <DownloadCloud className={`h-4 w-4 mr-2 ${hasSzamlazzKey ? 'text-blue-500' : 'text-muted-foreground'}`} />
@@ -92,7 +93,7 @@ export function InvoiceHeader() {
               </Tooltip>
             </TooltipProvider>
 
-            <Button variant="outline" size="sm" onClick={() => setRulesDialogOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setRulesDialogOpen(true)} disabled={!writable}>
               <Sliders className="h-4 w-4 mr-2" />
               {t('invoices:actions.accounting_rules', { defaultValue: 'Könyvelési szabályok' })}
             </Button>
@@ -135,6 +136,7 @@ export function InvoiceHeader() {
               variant="default"
               size="sm"
               onClick={() => setCreateDialogOpen(true)}
+              disabled={!writable}
               className="gap-1.5 shadow-sm font-medium"
             >
               <Plus className="h-4 w-4" />

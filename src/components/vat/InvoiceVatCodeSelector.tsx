@@ -43,6 +43,8 @@ interface InvoiceVatCodeSelectorProps {
   className?: string;
   onChanged?: (newVatCodeId: string | null, newRowOverride: string | null) => void;
   onUpdated?: () => void;
+  /** Read-only mode (e.g. Megfigyelő): the selector is rendered but cannot be opened. */
+  disabled?: boolean;
 }
 
 export function InvoiceVatCodeSelector({
@@ -58,6 +60,7 @@ export function InvoiceVatCodeSelector({
   className,
   onChanged,
   onUpdated,
+  disabled = false,
 }: InvoiceVatCodeSelectorProps) {
   const { toast } = useToast();
   const { t } = useTranslation(['invoices', 'common']);
@@ -281,13 +284,14 @@ export function InvoiceVatCodeSelector({
 
   return (
     <div className={cn("inline-flex items-center", className)} onClick={(e) => e.stopPropagation()}>
-      <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenu open={open && !disabled} onOpenChange={(next) => { if (!disabled) setOpen(next); }}>
         <DropdownMenuTrigger asChild>
           {activeSelection ? (
             <Badge
               variant="outline"
               className={cn(
                 "font-mono font-medium gap-1 cursor-pointer transition-all border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 hover:border-amber-500/60 shadow-xs",
+                disabled && 'cursor-default opacity-70 pointer-events-none',
                 size === 'sm' ? 'text-[10px] px-1.5 py-0.5 h-5' : 'text-xs px-2 py-1'
               )}
               title={t('invoices:vat_selector.edit_title', 'ÁFA kód és bevallási sor módosítása')}
@@ -305,6 +309,7 @@ export function InvoiceVatCodeSelector({
             <Button
               variant="ghost"
               size="sm"
+              disabled={disabled}
               className={cn(
                 "h-5 text-[10px] px-1.5 text-muted-foreground/60 hover:text-foreground border border-dashed border-border/50 hover:border-primary/40 rounded gap-1",
                 size === 'sm' ? 'h-5 text-[10px] px-1.5' : 'h-7 text-xs px-2'

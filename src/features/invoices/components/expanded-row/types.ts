@@ -159,6 +159,8 @@ export interface ExpandedInvoiceRowProps {
   approvedAt?: string | null;
   approvalNote?: string | null;
   onOpenApprovalDialog?: () => void;
+  /** Read-only mode (Megfigyelő): hides/disables all mutating controls. */
+  readOnly?: boolean;
   // ── Manual VAT code & 2665 declaration row override ──
   vatCodeId?: string | null;
   vatRowOverride?: string | null;

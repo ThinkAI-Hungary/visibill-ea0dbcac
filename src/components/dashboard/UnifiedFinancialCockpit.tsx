@@ -19,6 +19,7 @@ import {
 
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import { useScopedNavigate } from '@/lib/navigation';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -323,6 +324,8 @@ export default function UnifiedFinancialCockpit() {
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const companyId = selectedCompany?.id || '';
+  // Asszisztens szerepkör nem láthat bankegyenleget / banki egyeztetési csempét (spec 2.2)
+  const { canViewBankBalances } = useCompanyCapabilities();
 
   const [activeTab, setActiveTab] = useState<CockpitTab>('missing');
   const [searchQuery, setSearchQuery] = useState('');
@@ -410,7 +413,7 @@ export default function UnifiedFinancialCockpit() {
     queryKey: ['cockpitBankTransactions', companyId, dateFromFormatted, dateToFormatted],
     queryFn: () =>
       fetchUnmatchedTransactionsBatch(companyId, dateFromFormatted, dateToFormatted, 0, PAGE_SIZE - 1),
-    enabled: !!companyId,
+    enabled: !!companyId && canViewBankBalances,
   });
 
   // 4. Initial Outbound (Receivables) query (page 1: 50 items)
@@ -908,7 +911,7 @@ export default function UnifiedFinancialCockpit() {
   return (
     <div className="space-y-4">
       {/* 4 Interactive KPI Switcher Tiles */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className={cn("grid grid-cols-2 gap-3", canViewBankBalances ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
         {/* 1. Missing Vouchers (Urgent Action) */}
         <button
           type="button"
@@ -996,6 +999,7 @@ export default function UnifiedFinancialCockpit() {
         </button>
 
         {/* 3. Unmatched Bank Movements (Reconciliation) */}
+        {canViewBankBalances && (
         <button
           type="button"
           data-testid="cockpit-tile-bank"
@@ -1034,6 +1038,7 @@ export default function UnifiedFinancialCockpit() {
             {t('dashboard:cockpit.bank_sub', 'Kivonaton szerepel, nincs számlapár')}
           </div>
         </button>
+        )}
 
         {/* 4. Receivables (Claims / Outbound Unpaid) */}
         <button
