@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useAccountyRole, AccountyRole } from '@/pages/Accounty/AccountyRoleContext';
+import { useAccountyRole } from '@/pages/Accounty/AccountyRoleContext';
+import { getAccountyRoleDefault } from '@/lib/permissions/accountyDefaults';
 
 /**
  * Module names that can be permission-gated in Accounty.
@@ -16,6 +17,7 @@ export type AccountyModule =
   | 'alerts'            // Riasztások
   | 'nav_deadlines'     // NAV határidők
   | 'payroll'           // Bérszámfejtés
+  | 'client_bookkeeping' // Ügyfél könyvelés: számlák, riportok, E.V., promptok
   | 'onboarding'        // Onboarding (ügyfél felvétel)
   | 'tao'               // TAO / KIVA
   | 'settings'          // Beállítások
@@ -49,39 +51,12 @@ interface DbModulePermission {
   can_write: boolean;
 }
 
-/**
- * Default permissions per role (static config).
- * These are used when there is NO DB override for a specific module.
- */
-const ADMIN_ONLY_MODULES: AccountyModule[] = [
-  'admin_audit',
-  'admin_gdpr',
-  'admin_templates',
-  'admin_job_codes',
-  'admin_tax_params',
-  'admin_legal',
-  'admin_office',
-  'admin_permissions',
-  'admin_accountants',
-  'onboarding',
-];
-
-const SENIOR_AND_ADMIN_MODULES: AccountyModule[] = [
-  'reports',
-  'approval_queue',
-  'alerts',
-  'nav_deadlines',
-  'settings',
-];
-
-const ALWAYS_ACCESSIBLE: AccountyModule[] = [
-  'portfolio', 'missing_invoices', 'tax_calendar', 'payroll',
-  'tao', 'tickets', 'ai_assistant', 'help', 'profile',
-];
+// Role-based static defaults live in `@/lib/permissions/accountyDefaults`
+// (shared with the PermissionMatrixPage so the two cannot drift apart).
 
 const ALL_MODULES: AccountyModule[] = [
   'portfolio', 'missing_invoices', 'tax_calendar', 'reports',
-  'approval_queue', 'alerts', 'nav_deadlines', 'payroll',
+  'approval_queue', 'alerts', 'nav_deadlines', 'payroll', 'client_bookkeeping',
   'onboarding', 'tao', 'settings', 'tickets', 'ai_assistant',
   'help', 'profile', 'admin_audit', 'admin_gdpr', 'admin_templates',
   'admin_job_codes', 'admin_tax_params', 'admin_legal', 'admin_office',
@@ -143,17 +118,12 @@ export function useAccountyPermissions() {
   const permissions = useMemo(() => {
     /** Static default: can the user access this module based on role? */
     function staticCanAccess(module: AccountyModule): boolean {
-      if (ALWAYS_ACCESSIBLE.includes(module)) return true;
-      if (ADMIN_ONLY_MODULES.includes(module)) return isAdmin;
-      if (SENIOR_AND_ADMIN_MODULES.includes(module)) return isSenior;
-      return true;
+      return getAccountyRoleDefault(role, module).canRead;
     }
 
     /** Static default: can the user write to this module based on role? */
     function staticCanWrite(module: AccountyModule): boolean {
-      if (isAdmin) return true;
-      if (isSenior) return !ADMIN_ONLY_MODULES.includes(module);
-      return staticCanAccess(module) && !ADMIN_ONLY_MODULES.includes(module) && !SENIOR_AND_ADMIN_MODULES.includes(module);
+      return getAccountyRoleDefault(role, module).canWrite;
     }
 
     /** Check if the user can access a given module (DB override > static) */
@@ -214,6 +184,7 @@ export const PATH_TO_MODULE: Record<string, AccountyModule> = {
   '/eaisybooks/payroll-portfolio': 'payroll',
   '/eaisybooks/onboarding': 'onboarding',
   '/eaisybooks/tao': 'tao',
+  '/eaisybooks/ev': 'client_bookkeeping',
   '/eaisybooks/settings': 'settings',
   '/eaisybooks/tickets': 'tickets',
   '/eaisybooks/ai-assistant': 'ai_assistant',

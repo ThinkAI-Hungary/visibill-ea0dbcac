@@ -99,29 +99,14 @@ export async function resolveDividendGlAccounts(companyId: string) {
 export async function postDividendToLedger(
   dividend: DividendRecord,
   companyId: string,
-  userId?: string
+  _userId?: string
 ): Promise<DividendPostingResult> {
   try {
     if (!dividend || dividend.gross_amount <= 0) {
       return { success: false, message: 'Érvénytelen osztalék összeg.' };
     }
 
-    // 1. Find VE (Vegyes) journal for company
-    const { data: journals = [] } = await supabase
-      .from('acc_journals')
-      .select('id, code, name')
-      .eq('company_id', companyId);
-
-    let veJournal = journals.find((j: any) => j.code === 'VE' || j.code === 'BÉR');
-    if (!veJournal && journals.length > 0) {
-      veJournal = journals.find((j: any) => j.code !== 'NY') || journals[0];
-    }
-
-    if (!veJournal) {
-      return { success: false, message: 'Nem található Vegyes könyvelési napló (VE) a cégnél. Kérjük hozzon létre egyet a /journals oldalon.' };
-    }
-
-    // 2. Resolve GL Accounts
+    // 1. Resolve GL Accounts
     const { gl413, gl4791, gl462, gl463 } = await resolveDividendGlAccounts(companyId);
 
     if (!gl413 || !gl4791) {
@@ -133,167 +118,37 @@ export async function postDividendToLedger(
 
     const postingDate = dividend.payout_date || dividend.declaration_date || new Date().toISOString().slice(0, 10);
     const documentDate = dividend.declaration_date || postingDate;
-    const year = parseInt(postingDate.slice(0, 4), 10) || new Date().getFullYear();
-    const cleanResolution = (dividend.resolution_number || '1').replace(/[^a-zA-Z0-9-]/g, '_');
-    const documentId = `OSZT-${cleanResolution}-${year}`;
-    const description = `Osztalék előírása és levonásai — ${dividend.member_name} (${dividend.resolution_number || 'Határozat'})`;
 
-    // Check if already posted under this document_id to avoid duplicate headers
-    const { data: existingHeaders } = await supabase
-      .from('acc_journal_headers')
-      .select('id')
-      .eq('company_id', companyId)
-      .eq('document_id', documentId)
-      .maybeSingle();
+    // 2. Feladás tranzakcionális SECURITY DEFINER RPC-n keresztül
+    const { data, error } = await supabase.rpc('post_dividend_to_gl', {
+      p_company_id: companyId,
+      p_dividend_id: dividend.id,
+      p_gross_amount: dividend.gross_amount,
+      p_szja_amount: dividend.szja_amount || 0,
+      p_szocho_amount: dividend.szocho_amount || 0,
+      p_member_name: dividend.member_name || 'Tag',
+      p_resolution_number: dividend.resolution_number || '1',
+      p_posting_date: postingDate,
+      p_document_date: documentDate,
+      p_gl_413_id: gl413,
+      p_gl_4791_id: gl4791,
+      p_gl_462_id: gl462 || null,
+      p_gl_463_id: gl463 || null,
+    });
 
-    let headerId = existingHeaders?.id;
-
-    if (!headerId) {
-      // 3. Create Header in TERVEZET status first so lines can be inserted
-      const headerData = {
-        company_id: companyId,
-        journal_id: veJournal.id,
-        accounting_year: year,
-        status: 'KEZI_PISZKOZAT',
-        posting_date: postingDate,
-        document_date: documentDate,
-        document_id: documentId,
-        description,
-        justification: `Osztalék elszámolás: ${dividend.member_name}, Bruttó: ${dividend.gross_amount.toLocaleString('hu-HU')} Ft`,
-        created_by: userId || null,
-        posted_by: userId || null,
-        posted_at: new Date().toISOString(),
+    if (error) {
+      return {
+        success: false,
+        message: `Hiba a könyvelés során: ${error.message}`
       };
-
-      const { data: newHeader, error: headerErr } = await supabase
-        .from('acc_journal_headers')
-        .insert(headerData)
-        .select('id')
-        .single();
-
-      if (headerErr || !newHeader) {
-        console.error('Error creating dividend journal header:', headerErr);
-        return { success: false, message: `Bizonylat fejléc hiba: ${headerErr?.message}` };
-      }
-      headerId = newHeader.id;
-    } else {
-      // If re-posting an existing entry, unpost it first to allow line modifications
-      try {
-        await supabase.rpc('acc_unpost_journal_entry', {
-          p_header_id: headerId,
-          p_user_id: userId,
-          p_reason: 'Osztalék újrakönyvelése',
-        });
-      } catch (e) {
-        console.warn('Unpost attempt on existing header:', e);
-      }
-      // Clean existing lines if re-posting
-      await supabase.from('acc_journal_lines').delete().eq('header_id', headerId);
     }
 
-    // 4. Build Double-Entry Journal Lines
-    const linesToInsert: any[] = [];
-    let seq = 1;
-
-    // Line 1: T 413/493 Bruttó osztalék előírása (Eredménytartalék terhére)
-    linesToInsert.push({
-      header_id: headerId,
-      sequence_number: seq++,
-      gl_account_id: gl413,
-      dc_type: 'T',
-      amount: dividend.gross_amount,
-      description: `Bruttó jóváhagyott osztalék (${dividend.member_name})`,
-    });
-
-    // Line 2: K 4791/4792 Taggal szembeni bruttó kötelezettség
-    linesToInsert.push({
-      header_id: headerId,
-      sequence_number: seq++,
-      gl_account_id: gl4791,
-      dc_type: 'K',
-      amount: dividend.gross_amount,
-      description: `Taggal szembeni kötelezettség előírása (${dividend.member_name})`,
-    });
-
-    // Line 3 & 4: Levont SZJA (15%)
-    if (dividend.szja_amount > 0 && gl462) {
-      linesToInsert.push({
-        header_id: headerId,
-        sequence_number: seq++,
-        gl_account_id: gl4791,
-        dc_type: 'T',
-        amount: dividend.szja_amount,
-        description: `Levont 15% SZJA elszámolása (${dividend.member_name})`,
-      });
-
-      linesToInsert.push({
-        header_id: headerId,
-        sequence_number: seq++,
-        gl_account_id: gl462,
-        dc_type: 'K',
-        amount: dividend.szja_amount,
-        description: `Levont 15% SZJA fizetési kötelezettség`,
-      });
-    }
-
-    // Line 5 & 6: Levont SZOCHO (13%)
-    if (dividend.szocho_amount > 0 && gl463) {
-      linesToInsert.push({
-        header_id: headerId,
-        sequence_number: seq++,
-        gl_account_id: gl4791,
-        dc_type: 'T',
-        amount: dividend.szocho_amount,
-        description: `Levont 13% SZOCHO elszámolása (${dividend.member_name})`,
-      });
-
-      linesToInsert.push({
-        header_id: headerId,
-        sequence_number: seq++,
-        gl_account_id: gl463,
-        dc_type: 'K',
-        amount: dividend.szocho_amount,
-        description: `Levont 13% SZOCHO fizetési kötelezettség`,
-      });
-    }
-
-    const { error: linesErr } = await supabase
-      .from('acc_journal_lines')
-      .insert(linesToInsert);
-
-    if (linesErr) {
-      console.error('Error inserting dividend journal lines:', linesErr);
-      return { success: false, message: `Bizonylat sorok hiba: ${linesErr.message}` };
-    }
-
-    // 5. Post the entry
-    let postSuccess = false;
-    if (userId) {
-      try {
-        const { error: postErr } = await supabase.rpc('acc_post_journal_entry', {
-          p_header_id: headerId,
-          p_user_id: userId,
-        });
-        if (!postErr) postSuccess = true;
-      } catch (err) {
-        console.warn('acc_post_journal_entry failed, trying direct status update:', err);
-      }
-    }
-    if (!postSuccess) {
-      await supabase.from('acc_journal_headers').update({ status: 'KONYVELT' }).eq('id', headerId);
-    }
-
-    // 6. Update dividend record with journal_entry_id & status
-    await supabase.from('accounty_dividends').update({
-      status: 'posted',
-      journal_entry_id: headerId,
-    }).eq('id', dividend.id);
-
+    const res = data as any;
     return {
-      success: true,
-      headerId,
-      journalNumber: documentId,
-      message: `Osztalék sikeresen lekönyvelve a Vegyes naplóba (${documentId})! Megtekinthető a Főkönyvben és a Naplókban.`
+      success: res?.success ?? true,
+      headerId: res?.header_id,
+      journalNumber: res?.journal_number ? String(res.journal_number) : undefined,
+      message: res?.message || 'Osztalék sikeresen lekönyvelve a Vegyes naplóba!',
     };
   } catch (err: any) {
     console.error('Exception in postDividendToLedger:', err);

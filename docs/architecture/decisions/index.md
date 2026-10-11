@@ -283,6 +283,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-243 | NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZ/SZJ Detektálás Architektúra | ✅ Decided | [A-243](./A-243-nav-osa-three-way-reconciliation-and-steel-products-architecture.md) |
 | A-244 | Külföldi és Devizás Bejövő Számlák Integrálása az ÁFA Bevallásba és Taxology Baseline Igazítás | ✅ Decided | [A-244](./A-244-foreign-inbound-invoices-vat-return-integration.md) |
 | A-245 | calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése) | ✅ Decided | [A-245](./A-245-calculate-hungarian-vat-return-cursor-bounding-and-exchange-rate-optimization.md) |
+| A-247 | Szerepkör-képesség mátrix (Capability Matrix), Bérszámfejtő (payroll_specialist) szerepkör és ÁFA-zárolás backend védelme | ✅ Decided | [A-247](./A-247-role-capability-matrix.md) |
 
 
 

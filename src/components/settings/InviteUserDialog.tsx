@@ -711,6 +711,7 @@ export function InviteUserDialog({
                           <SelectItem value="senior_könyvelő">{t('settings:invite_dialog.roles.senior_könyvelő')}</SelectItem>
                           <SelectItem value="könyvelő">{t('settings:invite_dialog.roles.könyvelő')}</SelectItem>
                           <SelectItem value="asszisztens">{t('settings:invite_dialog.roles.asszisztens')}</SelectItem>
+                          <SelectItem value="payroll_specialist">{t('settings:invite_dialog.roles.payroll_specialist')}</SelectItem>
                         </>
                       ) : (
                         <>
@@ -730,6 +731,7 @@ export function InviteUserDialog({
                         {role === 'senior_könyvelő' && t('settings:invite_dialog.role_descriptions.senior_könyvelő')}
                         {role === 'könyvelő' && t('settings:invite_dialog.role_descriptions.könyvelő')}
                         {role === 'asszisztens' && t('settings:invite_dialog.role_descriptions.asszisztens')}
+                        {role === 'payroll_specialist' && t('settings:invite_dialog.role_descriptions.payroll_specialist')}
                       </>
                     ) : (
                       <>

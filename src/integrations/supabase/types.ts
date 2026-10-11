@@ -11887,6 +11887,19 @@ export type Database = {
       }
     }
     Functions: {
+      company_has_assigned_bookkeeper: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
+      set_accounting_period_closed: {
+        Args: {
+          p_company_id: string
+          p_year: number
+          p_month: number
+          p_closed: boolean
+        }
+        Returns: boolean
+      }
       acc_check_opening_subledger_reconciliation: {
         Args: { p_company_id: string; p_year: number }
         Returns: Json
@@ -11992,6 +12005,10 @@ export type Database = {
           p_scope?: string
         }
         Returns: string
+      }
+      can_finalize_company_filing: {
+        Args: { p_company_id: string }
+        Returns: boolean
       }
       check_chart_of_accounts_preset_usage: {
         Args: { p_preset_id: string }
@@ -13098,6 +13115,10 @@ export type Database = {
           routed_by: string
         }[]
       }
+      resolve_accounting_firm_id_for_company: {
+        Args: { p_company_id: string }
+        Returns: string
+      }
       respond_to_ticket_resolution: {
         Args: {
           p_comment?: string
@@ -13108,6 +13129,19 @@ export type Database = {
       }
       reverse_accrual_entry: { Args: { p_accrual_id: string }; Returns: Json }
       revoke_api_key: { Args: { p_key_id: string }; Returns: Json }
+      firm_member_accounting_role: {
+        Args: { p_member_role: string }
+        Returns: string
+      }
+      rls_accounty_bookkeeping_company_ids: { Args: never; Returns: string[] }
+      rls_payroll_blocked_company_ids: {
+        Args: { p_modules: string[] }
+        Returns: string[]
+      }
+      rls_write_denied_company_ids: {
+        Args: { p_level: string; p_modules: string[] }
+        Returns: string[]
+      }
       save_bs_mappings: {
         Args: { p_company_id: string; p_mappings: Json; p_preset_id: string }
         Returns: undefined

@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import { generateVatReturnXml, formatAnykPhoneNumber } from '@/lib/vatReturnXml';
 import { generateVatA60Xml, formatA60PhoneNumber } from '@/lib/vatA60Xml';
 import type { A60Line } from '../types';
@@ -60,6 +61,8 @@ export function VatXmlExportModal({
   const { toast } = useToast();
   const { refreshCompanies } = useCompany();
   const { user } = useAuth();
+  // D-4: official XML export is limited to senior_könyvelő / iroda_admin (eaisyBooks) and company owner/admin/Pénzügyi Vezető
+  const { canExportOfficialTaxReturn } = useCompanyCapabilities();
 
   const [contactOptions, setContactOptions] = useState<ContactOption[]>([]);
   const [selectedContactId, setSelectedContactId] = useState<string>('custom');
@@ -196,6 +199,10 @@ export function VatXmlExportModal({
   const handleDownload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCompany) return;
+    if (!canExportOfficialTaxReturn) {
+      setErrorMessage('Nincs jogosultságod hivatalos ÁNYK XML exportálásához (csak senior könyvelő vagy iroda admin).');
+      return;
+    }
 
     const trimmedName = representativeName.trim();
     const formattedPhone = isA60 ? formatA60PhoneNumber(phone) : formatAnykPhoneNumber(phone);
@@ -485,6 +492,19 @@ export function VatXmlExportModal({
             </div>
           </div>
 
+          {!canExportOfficialTaxReturn && (
+            <div
+              id="vat-xml-export-permission-warning"
+              role="alert"
+              className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span>
+                A hivatalos ÁNYK XML exportálás csak senior könyvelő vagy iroda admin számára engedélyezett.
+              </span>
+            </div>
+          )}
+
           <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-border/60">
             <Button
               type="button"
@@ -499,7 +519,7 @@ export function VatXmlExportModal({
             <Button
               type="submit"
               size="sm"
-              disabled={isSubmitting || !representativeName.trim() || !phone.trim() || (isA60 && frequency === 'E')}
+              disabled={isSubmitting || !canExportOfficialTaxReturn || !representativeName.trim() || !phone.trim() || (isA60 && frequency === 'E')}
               className="text-xs h-8 gap-1.5"
             >
               {isSubmitting ? (

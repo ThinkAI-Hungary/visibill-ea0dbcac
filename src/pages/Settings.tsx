@@ -154,10 +154,10 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
   });
 
   const EAISYBILL_ROLES = [
-    { value: 'admin', label: 'Admin', desc: 'Teljes hozzáférés, beállítások', color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
-    { value: 'member', label: 'Pénzügyes', desc: 'Pénzügyi modulok olvasás/írás', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
-    { value: 'assistant', label: 'Pénzügyi asszisztens', desc: 'Számlák, tranzakciók kezelése', color: 'bg-teal-500/15 text-teal-600 dark:text-teal-400' },
-    { value: 'viewer', label: 'Betekintő', desc: 'Csak olvasás', color: 'bg-slate-500/15 text-slate-600 dark:text-slate-400' },
+    { value: 'admin', label: 'Cégvezető / Ügyvezető', desc: 'Teljes hozzáférés, beállítások (könyvelés-technikai modulok nélkül)', color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
+    { value: 'member', label: 'Pénzügyi Vezető', desc: 'Pénzügyi modulok olvasás/írás, controlling', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
+    { value: 'assistant', label: 'Pénzügyi Asszisztens', desc: 'Számlák, tranzakciók kezelése (nincs bankegyenleg, könyvelés)', color: 'bg-teal-500/15 text-teal-600 dark:text-teal-400' },
+    { value: 'viewer', label: 'Megfigyelő', desc: 'Csak olvasás (megfigyelői hozzáférés)', color: 'bg-slate-500/15 text-slate-600 dark:text-slate-400' },
     { value: 'employee', label: 'Munkavállaló', desc: 'Csak munkaidő', color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
   ];
 
@@ -611,15 +611,16 @@ export default function Settings() {
     senior_könyvelő: 'Senior Könyvelő',
     könyvelő: 'Könyvelő',
     asszisztens: 'Asszisztens',
+    payroll_specialist: 'Bérszámfejtő',
   };
 
   /** Human-readable labels for eaisybill roles (company_members) */
   const EAISYBILL_ROLE_LABELS: Record<string, string> = {
     owner: 'Tulajdonos',
-    admin: 'Admin',
-    member: 'Pénzügyes',
-    assistant: 'Pénzügyi asszisztens',
-    viewer: 'Betekintő',
+    admin: 'Cégvezető / Ügyvezető',
+    member: 'Pénzügyi Vezető',
+    assistant: 'Pénzügyi Asszisztens',
+    viewer: 'Megfigyelő',
     employee: 'Munkavállaló',
   };
 

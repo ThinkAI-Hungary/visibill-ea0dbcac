@@ -25,6 +25,7 @@ export const ACCOUNTY_ROLE = {
   ADMIN: 'iroda_admin',
   SENIOR: 'senior_könyvelő',
   JUNIOR: 'könyvelő',
+  PAYROLL_SPECIALIST: 'payroll_specialist',
 } as const;
 
 export type AccountyRole = (typeof ACCOUNTY_ROLE)[keyof typeof ACCOUNTY_ROLE];

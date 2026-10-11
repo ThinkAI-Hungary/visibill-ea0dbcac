@@ -109,6 +109,20 @@ describe('Asset Activation Auto Poster', () => {
       };
     });
 
+    (supabase.rpc as any).mockImplementation((fn: string, args: any) => {
+      if (fn === 'post_asset_activation_to_gl') {
+        return Promise.resolve({
+          data: {
+            success: true,
+            header_id: 'hdr-existing',
+            message: 'Az eszköz aktiválása már korábban le lett könyvelve (JK-E-PRIME-2026-6772 - 2609 - 0001).',
+          },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
     const result = await postAssetActivationToLedger({
       companyId: 'comp-1',
       assetId: 'asset-1',
@@ -122,5 +136,26 @@ describe('Asset Activation Auto Poster', () => {
     expect(result.success).toBe(true);
     expect(result.headerId).toBe('hdr-existing');
     expect(result.message).toContain('már korábban le lett könyvelve');
+    expect(supabase.rpc).toHaveBeenCalledWith('post_asset_activation_to_gl', expect.objectContaining({
+      p_company_id: 'comp-1',
+      p_asset_id: 'asset-1',
+      p_asset_name: 'Samsung S26',
+      p_acquisition_value: 205496,
+    }));
+  });
+
+  it('removes asset activation posting via remove_asset_activation_from_gl RPC', async () => {
+    (supabase.rpc as any).mockResolvedValue({
+      data: { success: true, message: 'Aktiválás sikeresen sztornózva.' },
+      error: null,
+    });
+
+    const result = await removeAssetActivationPosting('comp-1', 'INV-001');
+
+    expect(result.success).toBe(true);
+    expect(supabase.rpc).toHaveBeenCalledWith('remove_asset_activation_from_gl', {
+      p_company_id: 'comp-1',
+      p_inventory_number: 'INV-001',
+    });
   });
 });

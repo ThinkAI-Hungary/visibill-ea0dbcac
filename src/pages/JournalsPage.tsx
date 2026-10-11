@@ -57,6 +57,7 @@ import AddManualJournalEntryModal from '@/components/journals/AddManualJournalEn
 import OpeningJournalWizardModal from '@/components/journals/OpeningJournalWizardModal';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
 import { ManageJournalsModal } from '@/components/journals/ManageJournalsModal';
 import { JournalFilterModal } from '@/components/journals/JournalFilterModal';
@@ -291,6 +292,7 @@ export default function JournalsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { dateFromFormatted: dateFrom, dateToFormatted: dateTo } = useDateRange();
+  const { canClosePeriod, canWriteLedger } = useCompanyCapabilities();
 
   const { activePresetId } = useActivePreset(selectedCompany?.id);
 
@@ -1740,15 +1742,31 @@ export default function JournalsPage() {
             </Tooltip>
             <Tooltip delayDuration={200}>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPeriodClosingOpen(true)}>
-                  <Lock className="w-4 h-4" /> {t('accounting:journals.period_closing', 'Időszakzárás')}
-                </Button>
+                <span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    disabled={!canClosePeriod}
+                    onClick={() => setPeriodClosingOpen(true)}
+                  >
+                    <Lock className="w-4 h-4" /> {t('accounting:journals.period_closing', 'Időszakzárás')}
+                  </Button>
+                </span>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs text-xs">
-                <p className="font-semibold">{t('accounting:journals.period_closing_tooltip_title', 'Naptári időszakok zárolása (év / hónap)')}</p>
-                <p className="text-muted-foreground text-[11px] mt-0.5">
-                  {t('accounting:journals.period_closing_tooltip_desc', 'A könyvelési hónapok végleges zárolása. Megakadályozza az új tételek rögzítését a zárt időszakba. Egyedi bizonylatok véglegesítéséhez használd a lekönyvelést.')}
-                </p>
+                {!canClosePeriod ? (
+                  <p className="text-amber-500 font-medium">
+                    {t('accounting:journals.period_closing_no_perm', 'Időszakzárást kizárólag kijelölt könyvelő (Senior könyvelő / Iroda admin), illetve könyvelő nélküli cégnél a vezetőség végezhet.')}
+                  </p>
+                ) : (
+                  <>
+                    <p className="font-semibold">{t('accounting:journals.period_closing_tooltip_title', 'Naptári időszakok zárolása (év / hónap)')}</p>
+                    <p className="text-muted-foreground text-[11px] mt-0.5">
+                      {t('accounting:journals.period_closing_tooltip_desc', 'A könyvelési hónapok végleges zárolása. Megakadályozza az új tételek rögzítését a zárt időszakba. Egyedi bizonylatok véglegesítéséhez használd a lekönyvelést.')}
+                    </p>
+                  </>
+                )}
               </TooltipContent>
             </Tooltip>
             <Button
@@ -1761,27 +1779,38 @@ export default function JournalsPage() {
               <span>{t('accounting:journals.accounting_rules', { defaultValue: 'Könyvelési szabályok' })}</span>
             </Button>
             <AccountingRulesDialog open={rulesDialogOpen} onOpenChange={setRulesDialogOpen} />
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 border-indigo-500/30 text-indigo-600 hover:bg-indigo-500/10 hover:text-indigo-700 dark:border-indigo-500/30 dark:text-indigo-400 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-300"
-              onClick={() => generateDraftsMutation.mutate()}
-              disabled={generateDraftsMutation.isPending || !activePresetId}
-            >
-              {generateDraftsMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Bot className="w-4 h-4" />
+            <Tooltip delayDuration={200}>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-indigo-500/30 text-indigo-600 hover:bg-indigo-500/10 hover:text-indigo-700 dark:border-indigo-500/30 dark:text-indigo-400 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-300"
+                    onClick={() => generateDraftsMutation.mutate()}
+                    disabled={generateDraftsMutation.isPending || !activePresetId || !canWriteLedger}
+                  >
+                    {generateDraftsMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Bot className="w-4 h-4" />
+                    )}
+                    {t('accounting:journals.generate_drafts', 'Javaslatok generálása')}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!canWriteLedger && (
+                <TooltipContent side="bottom" className="text-xs">
+                  Könyvelési javaslatok generálásához főkönyvi jogosultság szükséges.
+                </TooltipContent>
               )}
-              {t('accounting:journals.generate_drafts', 'Javaslatok generálása')}
-            </Button>
+            </Tooltip>
             <Tooltip delayDuration={200}>
               <TooltipTrigger asChild>
                 <span>
                   <Button
                     size="sm"
                     className="gap-1.5 shadow-sm"
-                    disabled={isSystemLocked}
+                    disabled={isSystemLocked || !canWriteLedger}
                     onClick={() => { setEditingEntryId(null); setCloneData(null); setManualEntryOpen(true); }}
                   >
                     <Plus className="w-4 h-4" /> {t('accounting:journals.new_manual_entry', 'Új vegyes bizonylat')}
@@ -1789,9 +1818,11 @@ export default function JournalsPage() {
                   </Button>
                 </span>
               </TooltipTrigger>
-              {isSystemLocked && (
+              {(isSystemLocked || !canWriteLedger) && (
                 <TooltipContent side="bottom" className="text-xs">
-                  A(z) {selectedJournal?.code} egy zárt automatikus rendszer-napló, ide kézi bizonylat nem rögzíthető.
+                  {!canWriteLedger
+                    ? 'Főkönyvi bizonylat rögzítéséhez főkönyvi jogosultság szükséges.'
+                    : `A(z) ${selectedJournal?.code} egy zárt automatikus rendszer-napló, ide kézi bizonylat nem rögzíthető.`}
                 </TooltipContent>
               )}
             </Tooltip>

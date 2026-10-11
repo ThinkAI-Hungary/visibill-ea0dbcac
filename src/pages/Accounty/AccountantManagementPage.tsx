@@ -33,6 +33,7 @@ const ROLE_LABELS: Record<string, string> = {
   'senior_könyvelő': 'Senior Könyvelő',
   'könyvelő': 'Könyvelő',
   'asszisztens': 'Asszisztens',
+  'payroll_specialist': 'Bérszámfejtő',
 };
 
 const ROLE_COLORS: Record<string, string> = {
@@ -40,6 +41,7 @@ const ROLE_COLORS: Record<string, string> = {
   'senior_könyvelő': 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
   'könyvelő': 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
   'asszisztens': 'bg-muted-foreground/15 text-muted-foreground',
+  'payroll_specialist': 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
 };
 
 // ── Data hooks ──

@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccountyRole } from './AccountyRoleContext';
 import { AccountyModule } from '@/hooks/useAccountyPermissions';
+import { ACCOUNTY_ASSIGNMENT_ROLES, ACCOUNTY_ROLE_LABELS, type AccountyRole } from '@/lib/permissions/capabilities';
+import { getAccountyRoleDefault } from '@/lib/permissions/accountyDefaults';
 import {
   Building2, Users, Shield, ChevronDown, Search, Check, X, Loader2,
   Eye, Pencil, ToggleLeft, ToggleRight, Layers,
@@ -42,19 +44,15 @@ interface ModulePermRow {
   canWrite: boolean;
 }
 
-type RoleOption = 'iroda_admin' | 'senior_könyvelő' | 'könyvelő' | 'asszisztens';
-const ROLE_OPTIONS: RoleOption[] = ['iroda_admin', 'senior_könyvelő', 'könyvelő', 'asszisztens'];
-const ROLE_LABELS: Record<RoleOption, string> = {
-  'iroda_admin': 'Iroda Admin',
-  'senior_könyvelő': 'Senior Könyvelő',
-  'könyvelő': 'Könyvelő',
-  'asszisztens': 'Asszisztens',
-};
+type RoleOption = AccountyRole;
+const ROLE_OPTIONS: RoleOption[] = ACCOUNTY_ASSIGNMENT_ROLES;
+const ROLE_LABELS: Record<RoleOption, string> = ACCOUNTY_ROLE_LABELS;
 const ROLE_COLORS: Record<RoleOption, string> = {
   'iroda_admin': 'bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/20',
   'senior_könyvelő': 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20',
   'könyvelő': 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
   'asszisztens': 'bg-muted-foreground/15 text-muted-foreground border-muted-foreground/20',
+  'payroll_specialist': 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20',
 };
 
 // Modules that can be configured by admin
@@ -68,6 +66,7 @@ const CONFIGURABLE_MODULES: { key: AccountyModule; label: string }[] = [
   { key: 'nav_deadlines', label: 'NAV határidők' },
   { key: 'payroll', label: 'Bérszámfejtés' },
   { key: 'tao', label: 'TAO / KIVA' },
+  { key: 'client_bookkeeping', label: 'Ügyfél könyvelés (számlák, főkönyv, EV)' },
   { key: 'settings', label: 'Beállítások' },
   { key: 'tickets', label: 'Hibajegyek' },
   { key: 'ai_assistant', label: 'AI Asszisztens' },
@@ -444,10 +443,11 @@ export default function PermissionMatrixPage() {
     if (userAssignments.length === 0) return 'könyvelő';
 
     const ROLE_PRIORITY: Record<RoleOption, number> = {
-      'iroda_admin': 4,
-      'senior_könyvelő': 3,
-      'könyvelő': 2,
-      'asszisztens': 1,
+      'iroda_admin': 5,
+      'senior_könyvelő': 4,
+      'könyvelő': 3,
+      'asszisztens': 2,
+      'payroll_specialist': 1,
     };
 
     const roles = userAssignments.map(a => a.role as RoleOption);
@@ -459,33 +459,8 @@ export default function PermissionMatrixPage() {
   }, [data?.assignments]);
 
   const getRoleDefaultPermission = useCallback((role: RoleOption, moduleKey: string) => {
-    const isAdmin = role === 'iroda_admin';
-    const isSenior = role === 'senior_könyvelő' || role === 'iroda_admin';
-
-    const ALWAYS_ACCESSIBLE = [
-      'portfolio', 'missing_invoices', 'tax_calendar', 'payroll',
-      'tao', 'tickets', 'ai_assistant', 'help', 'profile',
-    ];
-    
-    const ADMIN_ONLY_MODULES = [
-      'admin_audit', 'admin_gdpr', 'admin_templates', 'admin_job_codes',
-      'admin_tax_params', 'admin_legal', 'admin_office', 'admin_permissions',
-      'admin_accountants', 'onboarding',
-    ];
-    
-    const SENIOR_AND_ADMIN_MODULES = [
-      'reports', 'approval_queue', 'alerts', 'nav_deadlines', 'settings',
-    ];
-
-    const canRead = ALWAYS_ACCESSIBLE.includes(moduleKey) || 
-                    (ADMIN_ONLY_MODULES.includes(moduleKey) && isAdmin) || 
-                    (SENIOR_AND_ADMIN_MODULES.includes(moduleKey) && isSenior);
-
-    const canWrite = isAdmin || 
-                     (isSenior && !ADMIN_ONLY_MODULES.includes(moduleKey)) ||
-                     (canRead && !ADMIN_ONLY_MODULES.includes(moduleKey) && !SENIOR_AND_ADMIN_MODULES.includes(moduleKey));
-
-    return { canRead, canWrite };
+    // Single source of truth shared with useAccountyPermissions (runtime)
+    return getAccountyRoleDefault(role, moduleKey);
   }, []);
 
   const getModulePerm = useCallback((userId: string, moduleName: string): ModulePermRow | undefined => {
@@ -495,30 +470,32 @@ export default function PermissionMatrixPage() {
   const handleToggleRead = useCallback((userId: string, moduleName: string) => {
     if (!data?.firmId) return;
     const existing = getModulePerm(userId, moduleName);
-    const currentRead = existing?.canRead ?? true;
+    const roleDefault = getRoleDefaultPermission(getUserRole(userId), moduleName);
+    const currentRead = existing?.canRead ?? roleDefault.canRead;
     togglePerm.mutate({
       firmId: data.firmId,
       userId,
       moduleName,
       canRead: !currentRead,
-      canWrite: existing?.canWrite ?? false,
+      canWrite: existing?.canWrite ?? roleDefault.canWrite,
       existingId: existing?.id,
     });
-  }, [data?.firmId, getModulePerm, togglePerm]);
+  }, [data?.firmId, getModulePerm, getRoleDefaultPermission, getUserRole, togglePerm]);
 
   const handleToggleWrite = useCallback((userId: string, moduleName: string) => {
     if (!data?.firmId) return;
     const existing = getModulePerm(userId, moduleName);
-    const currentWrite = existing?.canWrite ?? false;
+    const roleDefault = getRoleDefaultPermission(getUserRole(userId), moduleName);
+    const currentWrite = existing?.canWrite ?? roleDefault.canWrite;
     togglePerm.mutate({
       firmId: data.firmId,
       userId,
       moduleName,
-      canRead: existing?.canRead ?? true,
+      canRead: existing?.canRead ?? roleDefault.canRead,
       canWrite: !currentWrite,
       existingId: existing?.id,
     });
-  }, [data?.firmId, getModulePerm, togglePerm]);
+  }, [data?.firmId, getModulePerm, getRoleDefaultPermission, getUserRole, togglePerm]);
 
   if (!isAdmin) {
     return (

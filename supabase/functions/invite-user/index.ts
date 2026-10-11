@@ -61,7 +61,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const validRoles = ["member", "admin", "assistant", "viewer", "employee", "könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"];
+    // eaisyBooks (accounting-firm) roles — stored in accounty_assignments (payroll_specialist = Bérszámfejtő)
+    const ACCOUNTANT_ROLES = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin", "payroll_specialist"];
+    const validRoles = ["member", "admin", "assistant", "viewer", "employee", ...ACCOUNTANT_ROLES];
     const assignRole = role && validRoles.includes(role) ? role : "member";
 
     // Service role client (bypasses RLS, can create auth users)
@@ -72,7 +74,7 @@ Deno.serve(async (req) => {
     // ── 3. If company_id provided, verify caller is owner/admin ──
     if (company_id) {
       // Check if caller is an accountant firm admin/senior in accounty_assignments
-      const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
+      const isAccountantRole = ACCOUNTANT_ROLES.includes(role);
       let isAuthorized = false;
 
       if (isAccountantRole) {
@@ -133,7 +135,7 @@ Deno.serve(async (req) => {
 
     if (existingUser) {
       // User already exists — just add to company if requested
-        const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
+        const isAccountantRole = ACCOUNTANT_ROLES.includes(role);
         if (isAccountantRole) {
           // Grant eaisybooks_access in profile
           await adminClient
@@ -251,7 +253,7 @@ Deno.serve(async (req) => {
     console.log("[INVITE-USER] User created:", newUserId, emailLower);
 
     // ── 6. Create profile (if trigger doesn't exist) ──
-    const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
+    const isAccountantRole = ACCOUNTANT_ROLES.includes(role);
     const { data: existingProfile } = await adminClient
       .from("profiles")
       .select("id")

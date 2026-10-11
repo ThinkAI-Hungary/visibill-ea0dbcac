@@ -559,191 +559,55 @@ export async function postDepreciationRunToLedger(
       };
     }
 
-    // 3. Keresünk Vegyes naplót a cégnél
-    const { data: journals = [] } = await supabase
-      .from('acc_journals')
-      .select('id, code, name')
-      .eq('company_id', companyId)
-      .eq('is_active', true);
-
-    const veJournal =
-      journals?.find(j => j.code?.toUpperCase() === 'VE' || j.code?.toUpperCase() === 'VEG') ||
-      journals?.find(j => j.name?.toLowerCase().includes('vegyes')) ||
-      journals?.[0];
-
-    if (!veJournal) {
-      return {
-        success: false,
-        message: 'Nem található aktív Vegyes könyvelési napló a cégnél.',
-      };
-    }
-
-    const year = parseInt(preview.postingDate.slice(0, 4), 10) || new Date().getFullYear();
-    const currency = params.currency || 'HUF';
-
-    // 4. Napló fejléc létrehozása (PISZKOZAT státusszal indul)
-    const { data: newHeader, error: headerErr } = await supabase
-      .from('acc_journal_headers')
-      .insert({
-        company_id: companyId,
-        journal_id: veJournal.id,
-        accounting_year: year,
-        status: 'PISZKOZAT',
-        entry_type: 'NORMAL',
-        source: 'AUTOMATIKUS',
-        currency,
-        posting_date: preview.postingDate,
-        document_date: preview.dateTo,
-        document_id: preview.documentId,
-        description: preview.description,
-        justification: `Tárgyi eszköz analitika szerinti időszaki értékcsökkenés (${preview.eligibleCount} eszköz, összesen: ${preview.totalAmount.toLocaleString('hu-HU')} ${currency})`,
-        created_by: userId || null,
-        posted_by: userId || null,
-      })
-      .select('id')
-      .single();
-
-    if (headerErr || !newHeader) {
-      return {
-        success: false,
-        message: `Napló fejléc hiba: ${headerErr?.message || 'Nem sikerült menteni a napló fejlécet'}`,
-      };
-    }
-
-    const headerId = newHeader.id;
-
-    // 5. Napló sorok összeállítása
-    // Minden amortizálandó eszközhöz egy pár könyvelési sor készül:
-    // T 5711 (Terv szerinti ÉCS költség)
-    // K 139xx (Halmozott ÉCS)
-    const lines: Array<{
-      header_id: string;
-      sequence_number: number;
-      gl_account_id: string;
-      dc_type: 'T' | 'K';
-      amount: number;
-      description: string;
-    }> = [];
-
+    // 3. Értékcsökkenés feladása tranzakcionális SECURITY DEFINER RPC-n keresztül
     const eligibleItems = preview.items.filter(it => it.status === 'ready' && it.periodAmount > 0);
-    let seq = 1;
-
-    for (const item of eligibleItems) {
-      if (!item.debitGlAccountId || !item.creditGlAccountId) continue;
-
-      // Tartozik oldal: 5711
-      lines.push({
-        header_id: headerId,
-        sequence_number: seq++,
-        gl_account_id: item.debitGlAccountId,
-        dc_type: 'T',
-        amount: item.periodAmount,
-        description: `Terv szerinti ÉCS (${item.activeMonths} hó) — ${item.assetName} (${item.inventoryNumber})`,
-      });
-
-      // Követel oldal: 139xx
-      lines.push({
-        header_id: headerId,
-        sequence_number: seq++,
-        gl_account_id: item.creditGlAccountId,
-        dc_type: 'K',
-        amount: item.periodAmount,
-        description: `Halmozott ÉCS elszámolása — ${item.assetName} (${item.inventoryNumber})`,
-      });
-    }
-
-    if (lines.length === 0) {
-      // Ha nem tudtunk érvényes sort generálni, töröljük a fejlécet
-      await supabase.from('acc_journal_headers').delete().eq('id', headerId);
+    if (eligibleItems.length === 0) {
       return {
         success: false,
-        message: 'A számlatükör hiányosságai miatt nem sikerült könyvelési sorokat generálni.',
+        message: 'A számlatükör hiányosságai vagy 0 összeg miatt nem található könyvelhető tétel.',
       };
     }
 
-    const { error: linesErr } = await supabase.from('acc_journal_lines').insert(lines);
-    if (linesErr) {
-      await supabase.from('acc_journal_headers').delete().eq('id', headerId);
+    const itemsPayload = eligibleItems.map(item => ({
+      asset_id: item.assetId,
+      asset_name: item.assetName,
+      inventory_number: item.inventoryNumber,
+      acquisition_value: item.acquisitionValue,
+      period_amount: item.periodAmount,
+      accumulated_before: item.accumulatedBefore,
+      remaining_book_value: item.remainingBookValue,
+      active_months: item.activeMonths,
+      debit_gl_account_id: item.debitGlAccountId,
+      credit_gl_account_id: item.creditGlAccountId,
+    }));
+
+    const { data, error } = await supabase.rpc('post_depreciation_run_to_gl', {
+      p_company_id: companyId,
+      p_period_type: preview.periodType,
+      p_date_from: preview.dateFrom,
+      p_date_to: preview.dateTo,
+      p_posting_date: preview.postingDate,
+      p_document_id: preview.documentId,
+      p_description: preview.description,
+      p_currency: params.currency || 'HUF',
+      p_items: itemsPayload as any,
+    });
+
+    if (error) {
       return {
         success: false,
-        message: `Napló sorok mentési hiba: ${linesErr.message}`,
+        message: `Értékcsökkenés könyvelési hiba: ${error.message}`,
       };
     }
 
-    // 6. Véglegesítés és sorszámozás az acc_post_journal_entry RPC-n keresztül
-    let journalNumber: number | string | null = null;
-    try {
-      const { error: rpcErr } = await supabase.rpc('acc_post_journal_entry', {
-        p_header_id: headerId,
-        p_user_id: userId || null,
-      });
-
-      if (rpcErr) {
-        console.warn('acc_post_journal_entry RPC warning, falling back to direct update:', rpcErr);
-        await supabase
-          .from('acc_journal_headers')
-          .update({
-            status: 'KONYVELT',
-            posted_at: new Date().toISOString(),
-            posted_by: userId || null,
-          })
-          .eq('id', headerId);
-      }
-    } catch {
-      await supabase
-        .from('acc_journal_headers')
-        .update({
-          status: 'KONYVELT',
-          posted_at: new Date().toISOString(),
-          posted_by: userId || null,
-        })
-        .eq('id', headerId);
-    }
-
-    // Lekérjük a véglegesített napló sorszámát
-    const { data: updatedHeader } = await supabase
-      .from('acc_journal_headers')
-      .select('journal_number')
-      .eq('id', headerId)
-      .maybeSingle();
-
-    journalNumber = updatedHeader?.journal_number || null;
-
-    // 7. Események (AssetEvent) rögzítése a tárgyi eszköz analitikában
-    try {
-      const eventDate = preview.postingDate;
-      const eventRows = eligibleItems.map(item => ({
-        asset_id: item.assetId,
-        company_id: companyId,
-        user_id: userId || null,
-        event_type: 'value_change',
-        event_date: eventDate,
-        description: `ÉCS elszámolás (${preview.documentId}): ${item.periodAmount.toLocaleString('hu-HU')} Ft (maradvány: ${item.remainingBookValue.toLocaleString('hu-HU')} Ft)`,
-        old_values: {
-          accumulated_before: item.accumulatedBefore,
-          book_value_before: item.acquisitionValue - item.accumulatedBefore,
-        },
-        new_values: {
-          period_amount: item.periodAmount,
-          accumulated_after: item.accumulatedBefore + item.periodAmount,
-          book_value_after: item.remainingBookValue,
-          document_id: preview.documentId,
-          journal_number: journalNumber,
-        },
-      }));
-
-      await supabase.from('asset_events').insert(eventRows);
-    } catch (evErr) {
-      console.warn('Nem kritikus: Hiba az asset_events rögzítésekor:', evErr);
-    }
-
+    const res = data as any;
     return {
-      success: true,
-      headerId,
-      journalNumber,
-      totalAmount: preview.totalAmount,
-      assetCount: preview.eligibleCount,
-      message: `Sikeres könyvelés! Bizonylatszám: ${preview.documentId}${journalNumber ? ` (Napló sorszám: ${journalNumber})` : ''}`,
+      success: res?.success ?? true,
+      headerId: res?.header_id,
+      journalNumber: res?.journal_number,
+      totalAmount: res?.total_amount ?? preview.totalAmount,
+      assetCount: res?.asset_count ?? preview.eligibleCount,
+      message: res?.message || `Sikeres könyvelés! Bizonylatszám: ${preview.documentId}${res?.journal_number ? ` (Napló sorszám: ${res.journal_number})` : ''}`,
     };
   } catch (err: any) {
     console.error('postDepreciationRunToLedger error:', err);

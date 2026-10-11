@@ -32,10 +32,10 @@ interface EaisybillPermissionPanelProps {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  admin: 'Admin',
-  member: 'Pénzügyes',
-  assistant: 'P. Asszisztens',
-  viewer: 'Betekintő',
+  admin: 'Cégvezető',
+  member: 'Pénzügyi Vezető',
+  assistant: 'Pénzügyi Asszisztens',
+  viewer: 'Megfigyelő',
   employee: 'Munkavállaló',
 };
 

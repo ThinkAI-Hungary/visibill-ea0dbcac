@@ -237,10 +237,11 @@
       "senior_könyvelő": "Senior Könyvelő",
       "könyvelő": "Könyvelő",
       "asszisztens": "Asszisztens",
-      "admin": "Admin",
-      "member": "Pénzügyes",
-      "assistant": "Pénzügyi asszisztens",
-      "viewer": "Betekintő",
+      "payroll_specialist": "Bérszámfejtő",
+      "admin": "Cégvezető / Ügyvezető",
+      "member": "Pénzügyi Vezető",
+      "assistant": "Pénzügyi Asszisztens",
+      "viewer": "Megfigyelő",
       "employee": "Munkavállaló"
     },
     "role_descriptions": {
@@ -248,10 +249,11 @@
       "senior_könyvelő": "Könyvelési feladatok és felügyelet.",
       "könyvelő": "Könyvelési feladatok ellátása.",
       "asszisztens": "Adminisztrációs feladatok.",
+      "payroll_specialist": "Csak bérszámfejtés és a 08-as bevallás. Jogai a jogosultsági mátrixban módosíthatók.",
       "admin": "Teljes hozzáférés a céghez, felhasználókat is kezelhet.",
       "member": "Pénzügyi adatok olvasás/írás, könyvelési hozzáférés.",
       "assistant": "Számlák, tranzakciók, kintlévőségek kezelése. Nem lát béreket, könyvelést.",
-      "viewer": "Csak olvasási hozzáférés a pénzügyi adatokhoz.",
+      "viewer": "Csak olvasási hozzáférés (megfigyelő).",
       "employee": "Csak a saját munkaidő-nyilvántartásához fér hozzá."
     },
     "cancel": "Mégse",

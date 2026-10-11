@@ -142,7 +142,7 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
         .eq('accounting_firm_id', companyId);
       if (data && data.length > 0) {
         // Deduplicate by user — each user should appear only once
-        const ROLE_PRIORITY: Record<string, number> = { iroda_admin: 0, senior_könyvelő: 1, könyvelő: 2, asszisztens: 3 };
+        const ROLE_PRIORITY: Record<string, number> = { iroda_admin: 0, senior_könyvelő: 1, könyvelő: 2, asszisztens: 3, payroll_specialist: 4 };
         const userMap = new Map<string, any>();
         for (const m of data as any[]) {
           const existing = userMap.get(m.accountant_user_id);
@@ -172,6 +172,7 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
     { value: 'senior_könyvelő', label: 'Senior Könyvelő', desc: 'Könyvelés, felügyelet', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
     { value: 'könyvelő', label: 'Könyvelő', desc: 'Könyvelési feladatok', color: 'bg-teal-500/15 text-teal-600 dark:text-teal-400' },
     { value: 'asszisztens', label: 'Asszisztens', desc: 'Adminisztrációs feladatok', color: 'bg-muted-foreground/15 text-muted-foreground' },
+    { value: 'payroll_specialist', label: 'Bérszámfejtő', desc: 'Csak bérszámfejtés és 08-as bevallás (jogai a mátrixban állíthatók)', color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
   ];
 
   const getRoleBadge = (role: string) => {
@@ -351,6 +352,7 @@ export default function ProfileSettingsPage() {
     senior_könyvelő: 'Senior Könyvelő',
     könyvelő: 'Könyvelő',
     asszisztens: 'Asszisztens',
+    payroll_specialist: 'Bérszámfejtő',
   };
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);

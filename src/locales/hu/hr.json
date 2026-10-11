@@ -173,7 +173,7 @@
       "roles": {
         "admin": "Admin",
         "member": "Tag",
-        "viewer": "Betekintő",
+        "viewer": "Megfigyelő",
         "employee": "Munkavállaló",
         "owner": "Tulajdonos"
       }
