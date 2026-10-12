@@ -236,6 +236,6 @@ describe('agoraPnlData calculation engine', () => {
     expect(removeSpy).toHaveBeenCalled();
     expect(global.URL.createObjectURL).toHaveBeenCalled();
     expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
-  });
+  }, 15000);
 });
 

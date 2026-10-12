@@ -7,7 +7,7 @@
 **Decision:** Kliensoldali (jsPDF és ExcelJS) azonnali generáló motorok integrálása az eszköztár "Export" legördülő menüjébe, debounce védelemmel (`isExporting`) és a hivatalos beszámolói szabványok (Ezer HUF mértékegység, 2 oldalas kötött elrendezés, cégfejléc mérlegfordulónappal és vezetői aláírási blokk) 1:1 arányú vizuális megvalósításával.  
 **Current Implementation:**
 - A Főkönyv oldalon (`GeneralLedgerPage.tsx`, `GlToolbar.tsx`, `GeneralLedgerTable.tsx`) az Export menüből közvetlenül indítható az Agora formátumú PDF és Excel export 0-egyenlegű szűréssel és multi-currency védelemmel.
-- Az Eredménykimutatás oldalon (`ProfitAndLoss.tsx`) az Export gomb legördülő menüjében megjelent az "Eredménykimutatás PDF (Hivatalos Agora / Novitax „A” változat)", az "Eredménykimutatás Excel (Hivatalos Agora / Novitax formátum)", a "Részletes P&L Excel" és a "Nyomtatási nézet".
+- Az Eredménykimutatás oldalon (`ProfitAndLoss.tsx`) az Export gomb legördülő menüjében megjelent az "Eredménykimutatás PDF (Hivatalos „A” változat)", az "Eredménykimutatás Excel (Hivatalos „A” változat)", a "Részletes P&L Excel" és a "Nyomtatási nézet".
 - A fájlletöltés a háttérben azonnal elindul, toast értesítéssel kísérve.
 **Rationale:** A magyar könyvelők és könyvvizsgálók a Novitax/Agora rendszerekből ismert 2 oldalas tagolást és elrendezést keresik; a kliensoldali vektoros renderelés azonnali (<100ms) visszajelzést ad, elkerülve a szerveroldali PDF queue várakozást és a memóriaszivárgást.
 

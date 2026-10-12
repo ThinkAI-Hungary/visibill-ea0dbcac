@@ -932,7 +932,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     try {
       toast({
         title: t('common:status.loading', 'Betöltés...'),
-        description: t('accounting:profit_and_loss.toasts.exporting_agora_pdf', 'Hivatalos Agora Eredménykimutatás PDF készítése...'),
+        description: t('accounting:profit_and_loss.toasts.exporting_agora_pdf', 'Hivatalos „A” változat Eredménykimutatás PDF készítése...'),
       });
       downloadAgoraPnlPdf({
         company: {
@@ -971,7 +971,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     try {
       toast({
         title: t('common:status.loading', 'Betöltés...'),
-        description: t('accounting:profit_and_loss.toasts.exporting_agora_excel', 'Hivatalos Agora Eredménykimutatás Excel készítése...'),
+        description: t('accounting:profit_and_loss.toasts.exporting_agora_excel', 'Hivatalos „A” változat Eredménykimutatás Excel készítése...'),
       });
       await exportAgoraPnlExcel({
         company: {
@@ -1309,14 +1309,14 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                 <FileText className="h-4 w-4 mr-2 text-rose-500 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold text-xs">Eredménykimutatás PDF</span>
-                  <span className="text-[10px] text-muted-foreground">Hivatalos Agora / Novitax „A” változat</span>
+                  <span className="text-[10px] text-muted-foreground">Hivatalos „A” változat</span>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleAgoraExcelExport} className="cursor-pointer py-2">
                 <FileText className="h-4 w-4 mr-2 text-emerald-600 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold text-xs">Eredménykimutatás Excel</span>
-                  <span className="text-[10px] text-muted-foreground">Hivatalos Agora / Novitax formátum</span>
+                  <span className="text-[10px] text-muted-foreground">Hivatalos „A” változat</span>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExport} className="cursor-pointer py-2">

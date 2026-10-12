@@ -210,7 +210,7 @@ export async function exportAgoraPnlExcel(
 
   const safeComp = (data.company.name || 'Ceg').replace(/[^a-zA-Z0-9]/g, '_');
   const unitSuffix = data.inThousands ? '_ezer_huf' : '_huf';
-  const filename = `Eredmenykimutatas_Agora_${safeComp}_${data.generatedDate.replace(/\./g, '')}${unitSuffix}.xlsx`;
+  const filename = `Eredmenykimutatas_A_valtozat_${safeComp}_${data.generatedDate.replace(/\./g, '')}${unitSuffix}.xlsx`;
 
   const link = document.createElement('a');
   link.href = url;

@@ -309,7 +309,7 @@ export function downloadAgoraPnlPdf(options: BuildAgoraPnlOptions): void {
 
   const safeComp = (data.company.name || 'Ceg').replace(/[^a-zA-Z0-9]/g, '_');
   const unitSuffix = data.inThousands ? '_ezer_huf' : '_huf';
-  const filename = `Eredmenykimutatas_Agora_${safeComp}_${data.generatedDate.replace(/\./g, '')}${unitSuffix}.pdf`;
+  const filename = `Eredmenykimutatas_A_valtozat_${safeComp}_${data.generatedDate.replace(/\./g, '')}${unitSuffix}.pdf`;
 
   doc.save(filename);
 }
