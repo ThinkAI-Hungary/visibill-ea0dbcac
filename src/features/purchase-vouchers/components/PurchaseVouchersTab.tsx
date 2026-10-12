@@ -143,36 +143,48 @@ export const PurchaseVouchersTab: React.FC = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Keresés bizonylatra, őstermelőre..."
-              className="h-8.5 text-xs pl-8 bg-background focus:border-primary"
+              className="h-8 text-xs pl-8 bg-background focus:border-primary"
             />
           </div>
 
           {/* Státusz Szűrő Gombok */}
-          <div className="flex items-center gap-1 bg-background p-0.5 rounded-lg border border-border/60 text-xs">
-            <Button
-              size="sm"
-              variant={statusFilter === 'all' ? 'secondary' : 'ghost'}
+          <div className="flex items-center gap-1 bg-muted/80 p-0.5 rounded-lg border border-border/60 text-xs">
+            <button
+              type="button"
               onClick={() => setStatusFilter('all')}
-              className="h-7 px-2.5 text-xs font-medium"
+              className={cn(
+                "h-7 px-2.5 rounded-md text-xs font-medium transition-all",
+                statusFilter === 'all'
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+              )}
             >
               Mind ({vouchers.length})
-            </Button>
-            <Button
-              size="sm"
-              variant={statusFilter === 'unpaid' ? 'secondary' : 'ghost'}
+            </button>
+            <button
+              type="button"
               onClick={() => setStatusFilter('unpaid')}
-              className={cn("h-7 px-2.5 text-xs font-medium", statusFilter === 'unpaid' && "text-amber-600 dark:text-amber-400 font-bold")}
+              className={cn(
+                "h-7 px-2.5 rounded-md text-xs font-medium transition-all",
+                statusFilter === 'unpaid'
+                  ? "bg-background text-amber-600 dark:text-amber-400 shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+              )}
             >
               Kifizetésre vár
-            </Button>
-            <Button
-              size="sm"
-              variant={statusFilter === 'paid' ? 'secondary' : 'ghost'}
+            </button>
+            <button
+              type="button"
               onClick={() => setStatusFilter('paid')}
-              className={cn("h-7 px-2.5 text-xs font-medium", statusFilter === 'paid' && "text-emerald-600 dark:text-emerald-400 font-bold")}
+              className={cn(
+                "h-7 px-2.5 rounded-md text-xs font-medium transition-all",
+                statusFilter === 'paid'
+                  ? "bg-background text-emerald-600 dark:text-emerald-400 shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+              )}
             >
               Kifizetve
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -196,12 +208,12 @@ export const PurchaseVouchersTab: React.FC = () => {
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadVouchersMutation.isPending}
-            className="h-8.5 text-xs gap-1.5 font-medium hover:text-foreground border-border/80"
+            className="h-8 text-xs gap-1.5 font-medium hover:text-foreground"
           >
             {uploadVouchersMutation.isPending ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
             ) : (
-              <Upload className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <Upload className="w-3.5 h-3.5 text-muted-foreground" />
             )}
             <span>Felvásárlási jegy feltöltése</span>
           </Button>
@@ -209,16 +221,18 @@ export const PurchaseVouchersTab: React.FC = () => {
             size="sm"
             variant="outline"
             onClick={handleDownloadSampleCsv}
-            className="h-8.5 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+            className="h-8 text-xs gap-1.5 font-medium text-muted-foreground hover:text-foreground"
           >
-            <Download className="w-3.5 h-3.5" /> Minta CSV
+            <Download className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Minta CSV</span>
           </Button>
           <Button
             size="sm"
             onClick={handleOpenAdd}
-            className="h-8.5 text-xs gap-1.5 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+            className="h-8 text-xs gap-1.5 font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
           >
-            <Plus className="w-4 h-4" /> Új felvásárlási jegy
+            <Plus className="w-4 h-4" />
+            <span>Új felvásárlási jegy</span>
           </Button>
         </div>
       </div>
@@ -255,7 +269,7 @@ export const PurchaseVouchersTab: React.FC = () => {
                     <Wheat className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
                     <p className="font-semibold text-foreground">Nincs felvásárlási jegy a kiválasztott időszakban</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Rögzíts új felvásárlási jegyet a fenti zöld gombbal.
+                      Rögzíts új felvásárlási jegyet a fenti „+ Új felvásárlási jegy” gombbal.
                     </p>
                   </td>
                 </tr>
