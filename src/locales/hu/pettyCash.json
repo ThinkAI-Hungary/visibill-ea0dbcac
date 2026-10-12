@@ -307,9 +307,19 @@
     "transfer_counterpart": "Átvezetés ellenláb:",
     "transfer_name": "Pénztárközi átvezetés",
     "view_preview": "Bizonylat előnézete",
-    "open_new_tab": "Megnyitás új lapon"
+    "open_new_tab": "Megnyitás új lapon",
+    "attach_invoice": "Számla hozzárendelése",
+    "unlink_invoice": "Számla leválasztása",
+    "unlink_confirm_title": "Számla leválasztása",
+    "unlink_confirm_desc": "Biztosan leválasztod ezt a számlát a pénztári tételről? A számla újra kifizetetlen nyitott státuszba kerül.",
+    "attach_dialog_title": "Számla hozzárendelése pénztári tételhez",
+    "attach_dialog_desc": "Válaszd ki azt a nyitott számlát, amelyhez ezt a készpénzes tételt hozzá szeretnéd rendelni."
   },
   "toasts": {
+    "attach_success_title": "Számla sikeresen hozzárendelve!",
+    "attach_success_desc": "A {{invoice}} számla össze lett kapcsolva ezzel a pénztári tétellel.",
+    "unlink_success_title": "Számla sikeresen leválasztva!",
+    "unlink_success_desc": "A számla újra kifizetetlen nyitott státuszba került.",
     "warning_title": "Figyelem",
     "error_title": "Hiba",
     "approved_title": "Bizonylat jóváhagyva!",

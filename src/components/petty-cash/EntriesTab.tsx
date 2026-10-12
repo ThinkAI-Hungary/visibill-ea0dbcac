@@ -18,8 +18,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import {
   Save, Plus, ArrowRightLeft, Loader2, Filter, AlertTriangle, BookOpen, FileDown,
-  ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check, Eye, Search, ExternalLink, X, HelpCircle
+  ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check, Eye, Search, ExternalLink, X, HelpCircle,
+  Unlink, AlertCircle
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { AttachInvoiceDialog } from './AttachInvoiceDialog';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
@@ -439,7 +451,7 @@ export default function EntriesTab() {
       if (aIsOpening !== bIsOpening) return aIsOpening - bIsOpening;
       return (b.created_at || '').localeCompare(a.created_at || '');
     });
-  }, [entries, virtualOpeningEntries, pendingInvoices, companyId, registers]);
+  }, [entries, virtualOpeningEntries, pendingInvoices, companyId, registers, t]);
 
   // F5: Receipt numbering — B-001 (income) / K-001 (expense), sequential within the date range
   const receiptNumbers = useMemo(() => {
@@ -1238,10 +1250,14 @@ export default function EntriesTab() {
 
 function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: number }) {
   const { t } = useTranslation(['pettyCash', 'common']);
+  const qc = useQueryClient();
   const sourceTable = entry.source_table;
   const sourceId = entry.source_id;
 
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [unlinkConfirmOpen, setUnlinkConfirmOpen] = useState(false);
+
   const { data: sourceData, isLoading, error } = useQuery({
     queryKey: ['petty-cash-entry-source', sourceTable, sourceId],
     queryFn: async () => {
@@ -1257,13 +1273,89 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
     enabled: !!sourceTable && !!sourceId,
   });
 
+  const unlinkMutation = useMutation({
+    mutationFn: async () => {
+      const { error: rpcError } = await (supabase.rpc as any)('unlink_petty_cash_entry', {
+        p_company_id: entry.company_id,
+        p_entry_id: entry.id,
+      });
+
+      if (rpcError) {
+        console.warn('RPC unlink_petty_cash_entry fallback:', rpcError);
+        const { error: entryErr } = await (supabase as any)
+          .from('petty_cash_entries')
+          .update({ source_table: null, source_id: null })
+          .eq('id', entry.id)
+          .eq('company_id', entry.company_id);
+        if (entryErr) throw entryErr;
+
+        if (sourceTable === 'invoices' && sourceId) {
+          const { error: invErr } = await (supabase as any)
+            .from('invoices')
+            .update({
+              fizetve: false,
+              is_manual_payment: false,
+              manual_payment_date: null,
+              manual_payment_type: null,
+              manual_payment_note: null,
+            })
+            .eq('id', sourceId)
+            .eq('company_id', entry.company_id);
+          if (invErr) throw invErr;
+        }
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(entry.company_id) });
+      qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(entry.company_id) });
+      qc.invalidateQueries({ queryKey: ['petty-cash-entry-source'] });
+      qc.invalidateQueries({ queryKey: ['open-settlement-invoices', entry.company_id] });
+      qc.invalidateQueries({ queryKey: ['invoices'] });
+      setUnlinkConfirmOpen(false);
+      toast({
+        title: t('pettyCash:toasts.unlink_success_title', 'Számla sikeresen leválasztva!'),
+        description: t('pettyCash:toasts.unlink_success_desc', 'A számla újra kifizetetlen nyitott státuszba került.'),
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: t('common:error', 'Hiba'),
+        description: err.message || 'Nem sikerült a számla leválasztása.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   if (!sourceTable || !sourceId) {
     return (
-      <TableRow className="bg-muted/10 hover:bg-muted/10 border-none">
-        <TableCell colSpan={colSpan} className="py-3 px-8 text-xs text-muted-foreground italic">
-          {t('pettyCash:details.manual_standalone')}
-        </TableCell>
-      </TableRow>
+      <>
+        <TableRow className="bg-muted/10 hover:bg-muted/10 border-t border-b border-border/30">
+          <TableCell colSpan={colSpan} className="py-3 px-8">
+            <div className="flex flex-wrap items-center justify-between gap-3 max-w-2xl bg-card border border-border/50 p-3 rounded-lg shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
+                <AlertCircle className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
+                <span>{t('pettyCash:details.manual_standalone')}</span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setAttachOpen(true)}
+                className="h-7 text-xs gap-1.5 border-dashed border-blue-400 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40 shrink-0"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                {t('pettyCash:details.attach_invoice', 'Számla hozzárendelése')}
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+        {attachOpen && (
+          <AttachInvoiceDialog
+            open={attachOpen}
+            onOpenChange={setAttachOpen}
+            entry={entry}
+          />
+        )}
+      </>
     );
   }
 
@@ -1276,12 +1368,32 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
     : t('pettyCash:details.header_bank');
 
   return (
-    <TableRow className="bg-muted/10 hover:bg-muted/10 border-t border-b border-border/30">
+    <>
+      <TableRow className="bg-muted/10 hover:bg-muted/10 border-t border-b border-border/30">
       <TableCell colSpan={colSpan} className="py-4 px-8">
         <div className="max-w-2xl bg-card border border-border/40 p-4 rounded-lg shadow-sm space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            <ArrowRightLeft className="h-3.5 w-3.5 text-primary" />
-            {t('pettyCash:details.title_with_type', { type: sourceTypeLabel })}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <ArrowRightLeft className="h-3.5 w-3.5 text-primary" />
+              {t('pettyCash:details.title_with_type', { type: sourceTypeLabel })}
+            </div>
+            {sourceTable === 'invoices' && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setUnlinkConfirmOpen(true)}
+                disabled={unlinkMutation.isPending}
+                className="h-6 px-2 text-[11px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1"
+                title={t('pettyCash:details.unlink_invoice', 'Számla leválasztása')}
+              >
+                {unlinkMutation.isPending ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Unlink className="w-3 h-3" />
+                )}
+                {t('pettyCash:details.unlink_invoice', 'Leválasztás')}
+              </Button>
+            )}
           </div>
 
           {isLoading ? (
@@ -1417,6 +1529,36 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
         </div>
       </TableCell>
     </TableRow>
+
+    {unlinkConfirmOpen && (
+      <AlertDialog open={unlinkConfirmOpen} onOpenChange={setUnlinkConfirmOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold flex items-center gap-2">
+              <Unlink className="w-4 h-4 text-destructive" />
+              {t('pettyCash:details.unlink_confirm_title', 'Számla leválasztása')}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              {t('pettyCash:details.unlink_confirm_desc', 'Biztosan leválasztod ezt a számlát a pénztári tételről? A számla újra kifizetetlen nyitott státuszba kerül.')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel disabled={unlinkMutation.isPending}>
+              {t('common:cancel', 'Mégse')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => unlinkMutation.mutate()}
+              disabled={unlinkMutation.isPending}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5"
+            >
+              {unlinkMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
+              {t('pettyCash:details.unlink_invoice', 'Leválasztás')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )}
+  </>
   );
 }
 
@@ -1802,7 +1944,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     }
 
     save.mutate();
-  }, [save, invoiceMode, selectedInvoiceIds.size, form.amount, form.description, form.register_id, t, toast]);
+  }, [save, invoiceMode, selectedInvoiceIds.size, form.amount, form.description, form.register_id, t]);
 
   // Keyboard shortcuts: B = Bevétel, K = Kiadás, Enter = Mentés / Validáció
   useEffect(() => {
