@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-10  
-> **Összesen:** 244 döntés (226 egyedi döntési fájl) | ✅ Decided: 242 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-12  
+> **Összesen:** 245 döntés (227 egyedi döntési fájl) | ✅ Decided: 243 | ⛔ Superseded: 2
 
 
 ---
@@ -283,6 +283,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-243 | NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZ/SZJ Detektálás Architektúra | ✅ Decided | [A-243](./A-243-nav-osa-three-way-reconciliation-and-steel-products-architecture.md) |
 | A-244 | Külföldi és Devizás Bejövő Számlák Integrálása az ÁFA Bevallásba és Taxology Baseline Igazítás | ✅ Decided | [A-244](./A-244-foreign-inbound-invoices-vat-return-integration.md) |
 | A-245 | calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése) | ✅ Decided | [A-245](./A-245-calculate-hungarian-vat-return-cursor-bounding-and-exchange-rate-optimization.md) |
+| A-246 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra | ✅ Decided | [A-246](./A-246-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md) |
 
 
 
