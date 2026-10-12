@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-12  
-> **Összesen:** 199 döntés (182 egyedi döntési fájl) | ✅ Decided: 195 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 200 döntés (183 egyedi döntési fájl) | ✅ Decided: 196 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -309,5 +309,6 @@
 | P-180 | NAV OSA Háromirányú Egyeztetés (Three-Way Reconciliation) és Fordított ÁFA Acéltermékek UX | ✅ Decided | [P-180](./P-180-nav-osa-three-way-reconciliation-and-steel-products-ux.md) |
 | P-181 | PRC Főkönyvi Kivonat Export Elnevezési Konvenció és Letisztult Megjelenítés UX | ✅ Decided | [P-181](./P-181-prc-general-ledger-export-naming-ux.md) |
 | P-182 | Agora és Novitax Formátumhű Főkönyvi Kivonat és Eredménykimutatás („A” változat) PDF és Excel Export UX | ✅ Decided | [P-182](./P-182-agora-financial-reports-and-income-statement-export-ux.md) |
+| P-184 | Bérszámfejtési Irányítópult Tabosítás, Bérkontroll és Letisztult Menükezelés UX | ✅ Decided | [P-184](./P-184-payroll-dashboard-tabs-and-reconciliation-ux.md) |
 
 

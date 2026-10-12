@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-12  
-> **Összesen:** 249 döntés (234 egyedi döntési fájl) | ✅ Decided: 247 | ⛔ Superseded: 2
+> **Összesen:** 250 döntés (235 egyedi döntési fájl) | ✅ Decided: 248 | ⛔ Superseded: 2
 
 
 ---
@@ -286,6 +286,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-245 | calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése) | ✅ Decided | [A-245](./A-245-calculate-hungarian-vat-return-cursor-bounding-and-exchange-rate-optimization.md) |
 | A-247 | Szerepkör-képesség mátrix (Capability Matrix), Bérszámfejtő (payroll_specialist) szerepkör és ÁFA-zárolás backend védelme | ✅ Decided | [A-247](./A-247-role-capability-matrix.md) |
 | A-249 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra | ✅ Decided | [A-249](./A-249-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md) |
+| A-250 | 14. Bérszámfejtés és Főkönyvi Bérfeladás Modul Architektúra, GIRO Motor és Tab Konszolidáció | ✅ Decided | [A-250](./A-250-payroll-module-14-reconciliation-giro-and-tab-architecture.md) |
 
 
 
