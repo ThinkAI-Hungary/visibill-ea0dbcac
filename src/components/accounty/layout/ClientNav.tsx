@@ -14,7 +14,8 @@ import {
   Brain, 
   Settings, 
   Building2,
-  Wrench
+  Wrench,
+  Scale
 } from 'lucide-react';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -86,6 +87,11 @@ export default function ClientNav() {
       path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, 
       name: t('nav.items.payroll', 'Bérszámfejtés'), 
       icon: Calculator 
+    },
+    { 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/reconciliation`, 
+      name: t('nav.items.payroll_reconciliation', '471 Bérkontroll & Bank'), 
+      icon: Scale 
     },
     { 
       path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/filings`, 

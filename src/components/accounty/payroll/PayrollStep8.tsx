@@ -1,5 +1,6 @@
 import React from 'react';
-import { Play, Printer, Loader2, CheckCircle2, RotateCcw, Clock, Search, X, ArrowUpDown } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Play, Printer, Loader2, CheckCircle2, RotateCcw, Clock, Search, X, ArrowUpDown, Scale, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -7,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { resolveCompanyGlAccounts, saveCompanyPayrollGlMapping, type PayrollGlMapping } from '@/lib/payroll/payrollAutoPoster';
 import { fetchAllGlAccountsByPreset, type GlAccountRow } from '@/lib/glData';
 import { PayrollGlAccountSelector } from './PayrollGlAccountSelector';
+import { usePayroll471Reconciliation } from '@/lib/payroll/payrollBankMatcher';
 
 export interface PayrollStep8Props {
   calculations: any[];
@@ -45,6 +47,13 @@ export default function PayrollStep8({
   const [searchQuery, setSearchQuery] = React.useState('');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const cafeteriaItems = propCafeteriaItems ?? localCafeteriaItems;
+
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const prefix = pathname.startsWith('/hr') ? '/hr' : '';
+  const cycleYear = cycle?.year ?? 2026;
+  const cycleMonth = cycle?.month ?? 1;
+  const { data: recData } = usePayroll471Reconciliation(companyId, cycleYear, cycleMonth);
 
   const sortedAndFilteredCalculations = React.useMemo(() => {
     let list = [...calculations];
@@ -95,7 +104,7 @@ export default function PayrollStep8({
         console.error('Error resolving company GL mapping:', err);
         setIsLoadingGl(false);
       });
-  }, [companyId]);
+  }, [companyId, onGlMappingChange]);
 
   const handleSelectGlAccount = (field: keyof PayrollGlMapping, value: string) => {
     setGlMapping(prev => {
@@ -841,6 +850,82 @@ export default function PayrollStep8({
               </div>
             );
           })()}
+
+          {/* 471 Payroll & Bank Reconciliation Validation Widget */}
+          <div className="bg-card text-card-foreground rounded-lg p-5 border border-border space-y-4 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full font-semibold uppercase flex items-center gap-1">
+                  <Scale className="w-3.5 h-3.5" />
+                  Sztv. 471. Kontroll
+                </span>
+                <h3 className="text-base font-bold text-foreground">Bérkontroll & Kifizetés Validáció</h3>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => {
+                  navigate(`${prefix}/eaisybooks/${companyId}/2026-01-01_2026-12-31/payroll/reconciliation`);
+                }}
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                471-es Részletes Egyeztető Megnyitása
+              </Button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-1">
+                <span className="text-xs text-muted-foreground font-medium">Béranalitika Összesen</span>
+                <div className="text-lg font-bold font-mono text-foreground">
+                  {((recData?.payroll_summary?.total_net || 0) + (recData?.payroll_summary?.total_commute || 0)).toLocaleString('hu-HU')} Ft
+                </div>
+                <p className="text-[11px] text-muted-foreground">{recData?.payroll_summary?.employee_count || 0} dolgozó jóváhagyott nettó bére</p>
+              </div>
+
+              <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-1">
+                <span className="text-xs text-muted-foreground font-medium">Bankon Kifizetve</span>
+                <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                  {(recData?.payout_stats?.total_paid || 0).toLocaleString('hu-HU')} Ft
+                </div>
+                <p className="text-[11px] text-muted-foreground">{recData?.payout_stats?.paid_count || 0} tétel párosítva ({recData?.payout_stats?.payout_ratio || 0}%)</p>
+              </div>
+
+              <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-1">
+                <span className="text-xs text-muted-foreground font-medium">471. Főkönyvi Egyenleg</span>
+                <div className={cn(
+                  "text-lg font-bold font-mono",
+                  recData?.reconciliation?.closing_balance === 0
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-amber-600 dark:text-amber-400"
+                )}>
+                  {(recData?.reconciliation?.closing_balance || 0).toLocaleString('hu-HU')} Ft
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {recData?.reconciliation?.is_balanced
+                    ? '✓ Egyensúlyban, zárható'
+                    : 'Függő kifizetés vagy banki eltérés'}
+                </p>
+              </div>
+            </div>
+
+            {recData && recData.discrepancies && recData.discrepancies.length > 0 && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900 dark:text-amber-200">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span>Cikluszárás előtti figyelmeztetés ({recData.discrepancies.length} db nyitott tétel):</span>
+                </div>
+                <div className="space-y-1 text-xs">
+                  {recData.discrepancies.map((d, i) => (
+                    <div key={i} className="flex justify-between items-center text-muted-foreground">
+                      <span>• {d.title}: {d.message}</span>
+                      <span className="font-mono font-medium text-foreground">{d.diff_amount.toLocaleString('hu-HU')} Ft</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </>
       ) : (
         <div className="space-y-4">
