@@ -79,20 +79,21 @@ export default function TechnicalAccountingPage() {
       <PageHeader
         title="Technikai Műveletek & Elemzések"
         description="Főkönyvi tételek auditbiztos tömeges átsorolása, Partner 360° likviditási mátrix és mesterséges intelligencia által támogatott anomália-ellenőrzés."
-      >
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="font-mono text-xs gap-1 py-1 px-2.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20">
-            <Wrench className="h-3.5 w-3.5" />
-            Modul 22 · Sztv. 165–169. §
-          </Badge>
-          {anomalyCount > 0 && (
-            <Badge variant="destructive" className="gap-1 py-1 px-2.5 animate-pulse text-xs">
-              <ShieldAlert className="h-3.5 w-3.5" />
-              {anomalyCount} db anomália
+        actions={
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="font-mono text-xs gap-1 py-1 px-2.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20">
+              <Wrench className="h-3.5 w-3.5" />
+              Modul 22 · Sztv. 165–169. §
             </Badge>
-          )}
-        </div>
-      </PageHeader>
+            {anomalyCount > 0 && (
+              <Badge variant="destructive" className="gap-1 py-1 px-2.5 animate-pulse text-xs">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                {anomalyCount} db anomália
+              </Badge>
+            )}
+          </div>
+        }
+      />
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <div className="border-b border-border/60 pb-px">
