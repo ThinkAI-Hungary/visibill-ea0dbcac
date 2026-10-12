@@ -63,5 +63,20 @@ describe('JournalsPage Action Buttons Tooltips & Accessibility', () => {
     expect(fileContent).toContain("checked={isAllSelected ? true : isSomeSelected ? 'indeterminate' : false}");
     expect(fileContent).toContain('disabled={paginatedEntries.length === 0}');
   });
+
+  it('supports interactive table header sorting on all core columns', () => {
+    expect(fileContent).toContain("onClick={() => handleSort('date')}");
+    expect(fileContent).toContain("onClick={() => handleSort('journal_num')}");
+    expect(fileContent).toContain("onClick={() => handleSort('doc_num')}");
+    expect(fileContent).toContain("onClick={() => handleSort('partner')}");
+    expect(fileContent).toContain("onClick={() => handleSort('description')}");
+    expect(fileContent).toContain("onClick={() => handleSort('gl_accounts')}");
+    expect(fileContent).toContain("onClick={() => handleSort('amount')}");
+    expect(fileContent).toContain("onClick={() => handleSort('type')}");
+    expect(fileContent).toContain("onClick={() => handleSort('status')}");
+    expect(fileContent).toContain('sortedEntries');
+    expect(fileContent).toContain('ArrowUpDown');
+  });
 });
+
 

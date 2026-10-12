@@ -214,8 +214,8 @@ export function InvoiceItemsDialog({
     queryFn: async () => {
       const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
       const selectFields = source === 'submitted'
-        ? 'company_id, project_id, invoice_direction, kibocsatas_datuma, teljesites_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number'
-        : 'company_id, project_id, invoice_direction, invoice_issue_date, invoice_delivery_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched';
+        ? 'company_id, project_id, invoice_direction, kibocsatas_datuma, teljesites_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number, gl_account_id, gl_classifications'
+        : 'company_id, project_id, invoice_direction, invoice_issue_date, invoice_delivery_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched, gl_account_id, gl_classifications';
 
       const { data, error } = await supabase
         .from(table as any)
@@ -271,6 +271,8 @@ export function InvoiceItemsDialog({
         is_reverse_charge: isRc,
         partner_gl_number: (data as any)?.partner_gl_number || null,
         vat_gl_number: (data as any)?.vat_gl_number || null,
+        gl_account_id: (data as any)?.gl_account_id || null,
+        gl_classifications: (data as any)?.gl_classifications || null,
         invoice_number: (data as any)?.invoice_number || (data as any)?.bizonylatsorszam || null,
         details_fetched: (data as any)?.details_fetched ?? null,
       } as {
@@ -290,6 +292,8 @@ export function InvoiceItemsDialog({
         customer_name?: string | null;
         partner_gl_number?: string | null;
         vat_gl_number?: string | null;
+        gl_account_id?: string | null;
+        gl_classifications?: any;
         bizonylatsorszam?: string | null;
         invoice_number?: string | null;
         details_fetched?: boolean | null;
@@ -938,14 +942,24 @@ export function InvoiceItemsDialog({
   const openGlEdit = useCallback((item: InvoiceLineItem) => {
     const classification = (activePresetId && item.gl_classifications?.[activePresetId])
       ? item.gl_classifications[activePresetId]
-      : null;
+      : (item.gl_classifications && Object.keys(item.gl_classifications).length > 0
+          ? Object.values(item.gl_classifications)[0]
+          : null);
+
+    const headerClassification = (activePresetId && parentInvoice?.gl_classifications?.[activePresetId])
+      ? parentInvoice.gl_classifications[activePresetId]
+      : (parentInvoice?.gl_classifications && Object.keys(parentInvoice.gl_classifications).length > 0
+          ? Object.values(parentInvoice.gl_classifications)[0]
+          : null);
+
+    const initialItemGl = classification?.gl_account_id || parentInvoice?.gl_account_id || '';
     const isNegative = (item.net_amount ?? 0) < 0 || (item.gross_amount ?? 0) < 0;
-    const isSwapped = Boolean(classification?.tk_swapped);
-    const initialPartnerGl = classification?.partner_gl_number || parentInvoice?.partner_gl_number || (isOutbound ? '311' : '4541');
+    const isSwapped = Boolean(classification?.tk_swapped ?? headerClassification?.tk_swapped);
+    const initialPartnerGl = classification?.partner_gl_number || headerClassification?.partner_gl_number || parentInvoice?.partner_gl_number || (isOutbound ? '311' : '4541');
 
     setGlEditItem(item);
     setIsBulkGlEdit(false);
-    setSelectedNewGL(classification?.gl_account_id || '');
+    setSelectedNewGL(initialItemGl);
     setEditIsSwapped(isSwapped);
     setSelectedPartnerGl(initialPartnerGl);
     setCustomPartnerGlInput(initialPartnerGl);
@@ -956,7 +970,7 @@ export function InvoiceItemsDialog({
     setActiveEditSide(effectiveItemSide);
     setGlSearchQuery('');
     setGlEditOpen(true);
-  }, [activePresetId, parentInvoice?.partner_gl_number, isOutbound]);
+  }, [activePresetId, parentInvoice?.partner_gl_number, parentInvoice?.gl_account_id, parentInvoice?.gl_classifications, isOutbound]);
 
   // Open GL edit dialog in bulk mode for all selected items
   const openBulkGlEdit = useCallback(() => {
@@ -2136,16 +2150,26 @@ export function InvoiceItemsDialog({
                         </TableCell>
                         <TableCell className="text-center px-1 whitespace-nowrap">
                           {(() => {
-                            // Try the active preset first, otherwise fallback to the first available classification key
+                            // Try the active preset first, otherwise fallback to the first available classification key on the item
                             const classification = (activePresetId && item.gl_classifications?.[activePresetId])
                               ? item.gl_classifications[activePresetId]
                               : (item.gl_classifications && Object.keys(item.gl_classifications).length > 0 
                                   ? Object.values(item.gl_classifications)[0] 
                                   : null);
-                            
-                            const netGl = classification?.gl_number;
-                            const partnerGl = classification?.partner_gl_number || effectivePartnerGl;
-                            const isSwapped = Boolean(classification?.tk_swapped);
+
+                            // Fallback to parent invoice header classification or gl_account_id if item has no classification
+                            const headerClassification = (activePresetId && parentInvoice?.gl_classifications?.[activePresetId])
+                              ? parentInvoice.gl_classifications[activePresetId]
+                              : (parentInvoice?.gl_classifications && Object.keys(parentInvoice.gl_classifications).length > 0
+                                  ? Object.values(parentInvoice.gl_classifications)[0]
+                                  : null);
+
+                            const headerGlNumber = headerClassification?.gl_number || 
+                              (parentInvoice?.gl_account_id ? glAccounts.find(g => g.id === parentInvoice.gl_account_id)?.gl_number : null);
+
+                            const netGl = classification?.gl_number || headerGlNumber || null;
+                            const partnerGl = classification?.partner_gl_number || headerClassification?.partner_gl_number || effectivePartnerGl;
+                            const isSwapped = Boolean(classification?.tk_swapped ?? headerClassification?.tk_swapped);
 
                             const sides = computeLineItemDebitCreditSides({
                               item,
@@ -2154,6 +2178,9 @@ export function InvoiceItemsDialog({
                               partnerGl,
                               isSwapped,
                             });
+
+                            const hasMissingDebit = sides.debitGl === '-';
+                            const hasMissingCredit = sides.creditGl === '-';
 
                             return (
                               <Tooltip>
@@ -2165,23 +2192,31 @@ export function InvoiceItemsDialog({
                                       "group/gl inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium transition-colors cursor-pointer border",
                                       sides.isNegative 
                                         ? "bg-amber-500/10 text-amber-900 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20" 
-                                        : netGl
-                                          ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                                          : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80"
+                                        : (hasMissingDebit || hasMissingCredit)
+                                          ? "bg-amber-500/5 text-amber-800 dark:text-amber-300 border-amber-500/40 border-dashed hover:bg-amber-500/15"
+                                          : netGl
+                                            ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                                            : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80"
                                     )}
                                   >
                                     <span 
-                                      className={cn(sides.debitIsItem ? "font-bold underline decoration-dotted underline-offset-2" : "text-[11px] opacity-70 font-normal")} 
+                                      className={cn(
+                                        sides.debitIsItem ? "font-bold underline decoration-dotted underline-offset-2" : "text-[11px] opacity-70 font-normal",
+                                        hasMissingDebit && "text-amber-700 dark:text-amber-300 font-sans italic text-[10px]"
+                                      )} 
                                       title={`Tartozik (T) ${sides.debitRole}`}
                                     >
-                                      {sides.debitGl}
+                                      {hasMissingDebit ? t('invoices:dialogs.items.no_debit_gl', 'Nincs Tartozik') : sides.debitGl}
                                     </span>
                                     <span className="opacity-40">→</span>
                                     <span 
-                                      className={cn(sides.creditIsItem ? "font-bold underline decoration-dotted underline-offset-2" : "text-[11px] opacity-70 font-normal")} 
+                                      className={cn(
+                                        sides.creditIsItem ? "font-bold underline decoration-dotted underline-offset-2" : "text-[11px] opacity-70 font-normal",
+                                        hasMissingCredit && "text-amber-700 dark:text-amber-300 font-sans italic text-[10px]"
+                                      )} 
                                       title={`Követel (K) ${sides.creditRole}`}
                                     >
-                                      {sides.creditGl}
+                                      {hasMissingCredit ? t('invoices:dialogs.items.no_credit_gl', 'Nincs Követel') : sides.creditGl}
                                     </span>
                                     {sides.isNegative && (
                                       <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-sans font-semibold">
@@ -2204,10 +2239,14 @@ export function InvoiceItemsDialog({
                                       </div>
                                     )}
                                     <p className="font-semibold font-mono">
-                                      T: {sides.debitGl} ({sides.debitRole}) → K: {sides.creditGl} ({sides.creditRole})
+                                      T: {hasMissingDebit ? t('invoices:dialogs.items.missing', 'Hiányzik') : sides.debitGl} ({sides.debitRole}) → K: {hasMissingCredit ? t('invoices:dialogs.items.missing', 'Hiányzik') : sides.creditGl} ({sides.creditRole})
                                     </p>
                                     <p className="text-muted-foreground text-[11px]">
-                                      {netGl ? t('invoices:dialogs.items.click_to_modify_gl') : t('invoices:dialogs.items.click_to_classify_gl')} (Tartozik és Követel oldal külön szerkeszthető)
+                                      {hasMissingDebit
+                                        ? t('invoices:dialogs.items.click_to_add_debit', 'A tételhez még hiányzik a Tartozik (T) költségnem. Kattints ide a főkönyvi szám kiválasztásához!')
+                                        : hasMissingCredit
+                                          ? t('invoices:dialogs.items.click_to_add_credit', 'A tételhez még hiányzik a Követel (K) partner számla. Kattints a beállításhoz!')
+                                          : (netGl ? t('invoices:dialogs.items.click_to_modify_gl') : t('invoices:dialogs.items.click_to_classify_gl'))}
                                     </p>
                                   </div>
                                 </TooltipContent>
@@ -2465,11 +2504,20 @@ export function InvoiceItemsDialog({
               ? null
               : glAccounts.find(g => g.id === selectedNewGL);
             
+            const headerClassification = (activePresetId && parentInvoice?.gl_classifications?.[activePresetId])
+              ? parentInvoice.gl_classifications[activePresetId]
+              : (parentInvoice?.gl_classifications && Object.keys(parentInvoice.gl_classifications).length > 0
+                  ? Object.values(parentInvoice.gl_classifications)[0]
+                  : null);
+
+            const headerGlNumber = headerClassification?.gl_number || 
+              (parentInvoice?.gl_account_id ? glAccounts.find(g => g.id === parentInvoice.gl_account_id)?.gl_number : null);
+
             const currentItemGlNumber = selectedNewGL === 'UNCLASSIFIED' 
               ? '' 
-              : (selectedGlAccount?.gl_number || currentClassification?.gl_number || '');
+              : (selectedGlAccount?.gl_number || currentClassification?.gl_number || headerGlNumber || '');
 
-            const currentPartnerGl = selectedPartnerGl || parentInvoice?.partner_gl_number || (isOutbound ? '311' : '4541');
+            const currentPartnerGl = selectedPartnerGl || currentClassification?.partner_gl_number || headerClassification?.partner_gl_number || parentInvoice?.partner_gl_number || (isOutbound ? '311' : '4541');
 
             // Calculate current sides based on editIsSwapped
             const sides = computeLineItemDebitCreditSides({
