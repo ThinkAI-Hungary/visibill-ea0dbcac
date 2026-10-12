@@ -74,6 +74,7 @@ export default function GeneralLedgerPage() {
   const [activeViewTab, setActiveViewTab] = useState<'extract' | 'cards' | 'journal' | 'comparison'>('extract');
   const [cardSubTab, setCardSubTab] = useState<'account' | 'partner' | 'reconciliation'>('account');
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
+  const [printLayoutMode, setPrintLayoutMode] = useState<'synthetic' | 'analytical'>('analytical');
   const [glStats, setGlStats] = useState<{ accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number } | null>(null);
   const [isTableLoading, setIsTableLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
