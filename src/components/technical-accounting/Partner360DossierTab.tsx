@@ -22,9 +22,11 @@ import {
   CreditCard,
   Download,
   AlertTriangle,
+  AlertCircle,
   Scale
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface Partner360DossierTabProps {
   companyId?: string;
@@ -45,6 +47,7 @@ export const Partner360DossierTab: React.FC<Partner360DossierTabProps> = ({
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>(initialPartnerId || '');
   const [prevInitialId, setPrevInitialId] = useState(initialPartnerId);
   const [partnerSearch, setPartnerSearch] = useState<string>('');
+  const [includeDrafts, setIncludeDrafts] = useState<boolean>(true);
 
   if (initialPartnerId !== prevInitialId) {
     setPrevInitialId(initialPartnerId);
@@ -79,7 +82,8 @@ export const Partner360DossierTab: React.FC<Partner360DossierTabProps> = ({
     companyId,
     selectedPartnerId || undefined,
     startDateStr,
-    endDateStr
+    endDateStr,
+    includeDrafts
   );
 
   // Kompenzációs jegyzőkönyv generálása (Letöltés/Nyomtatás)
@@ -275,6 +279,95 @@ ${currentCompany?.name}                         ${partner.name}
         </div>
       ) : (
         <>
+          {/* Főkönyvi Számviteli Státusz Szűrő Sáv */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-muted/40 p-2.5 rounded-lg border border-border/60">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Könyvelési Szűrés:</span>
+              <div className="inline-flex items-center p-0.5 bg-background rounded-md border border-input shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setIncludeDrafts(true)}
+                  className={cn(
+                    "px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1.5",
+                    includeDrafts
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <span>Összes (Könyvelt + Javaslat)</span>
+                  {Boolean(matrixData.summary.drafts_count) && (
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "text-[9px] px-1 py-0 h-4 leading-none font-bold",
+                        includeDrafts ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted-foreground/20 text-muted-foreground"
+                      )}
+                    >
+                      +{matrixData.summary.drafts_count} javaslat
+                    </Badge>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIncludeDrafts(false)}
+                  className={cn(
+                    "px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1.5",
+                    !includeDrafts
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <span>Csak véglegesen könyvelt</span>
+                  {Boolean(matrixData.summary.posted_count) && (
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "text-[9px] px-1 py-0 h-4 leading-none font-bold",
+                        !includeDrafts ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted-foreground/20 text-muted-foreground"
+                      )}
+                    >
+                      {matrixData.summary.posted_count} könyvelt
+                    </Badge>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+              {includeDrafts ? (
+                <span className="text-primary font-medium flex items-center gap-1">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Javaslatok és lekönyvelt tételek konszolidálva
+                </span>
+              ) : (
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <Scale className="h-3.5 w-3.5" />
+                  Szigorúan csak véglegesen könyvelt főkönyvi tételek
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Tájékoztató sáv le nem könyvelt javaslatok esetén, ha a felhasználó könyvelt nézetben van */}
+          {!includeDrafts && matrixData.summary.has_drafts && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-700 dark:text-amber-400">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
+                <span>
+                  A partnerhez <strong>{matrixData.summary.drafts_count} db</strong> gépi javaslat (GEPI_JAVASLAT) található, amelyek még nincsenek véglegesen lekönyvelve a Naplóban.
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 self-start sm:self-auto shrink-0"
+                onClick={() => setIncludeDrafts(true)}
+              >
+                Javaslatok bevonása a 360° képbe
+              </Button>
+            </div>
+          )}
+
           {/* Konszolidált Likvid Pozíció Kártyák */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Card className="p-3 bg-muted/20 border-l-4 border-l-emerald-500">

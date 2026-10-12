@@ -26,11 +26,12 @@ export function usePartner360(
   companyId?: string,
   partnerId?: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  includeDrafts: boolean = true
 ) {
   return useQuery<Partner360Data>({
-    queryKey: ['partner-360', companyId, partnerId, startDate, endDate],
-    queryFn: () => getPartner360Matrix(companyId!, partnerId!, startDate, endDate),
+    queryKey: ['partner-360', companyId, partnerId, startDate, endDate, includeDrafts],
+    queryFn: () => getPartner360Matrix(companyId!, partnerId!, startDate, endDate, includeDrafts),
     enabled: !!companyId && !!partnerId,
     staleTime: 60 * 1000,
   });
@@ -41,11 +42,12 @@ export function useOmniPartnerLedger(
   glAccountId?: string,
   accountCodePrefix?: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  includeDrafts: boolean = true
 ) {
   return useQuery<OmniPartnerLedgerItem[]>({
-    queryKey: ['omni-partner-ledger', companyId, glAccountId, accountCodePrefix, startDate, endDate],
-    queryFn: () => getOmniPartnerLedger(companyId!, glAccountId, accountCodePrefix, startDate, endDate),
+    queryKey: ['omni-partner-ledger', companyId, glAccountId, accountCodePrefix, startDate, endDate, includeDrafts],
+    queryFn: () => getOmniPartnerLedger(companyId!, glAccountId, accountCodePrefix, startDate, endDate, includeDrafts),
     enabled: !!companyId,
     placeholderData: (previousData) => previousData,
     staleTime: 60 * 1000,

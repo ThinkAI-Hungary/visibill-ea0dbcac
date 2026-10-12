@@ -103,9 +103,11 @@ test.describe('Module 22 - Technical Accounting & Analytics E2E Tests', () => {
     await partnerSelect.selectOption({ index: 1 });
     await page.waitForTimeout(1500);
 
-    // Verify matrix / dossier details
+    // Verify matrix / dossier details and accounting filter toggle
     await expect(page.locator('text=Nettó Likvid Pozíció')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('text=Kapcsolódó Főkönyvi Számlák és Jogcímek')).toBeVisible();
+    await expect(page.locator('button:has-text("Összes (Könyvelt + Javaslat)")')).toBeVisible();
+    await expect(page.locator('button:has-text("Csak véglegesen könyvelt")')).toBeVisible();
 
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'tc2_tab2_partner360.png'), fullPage: false });
 

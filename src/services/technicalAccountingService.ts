@@ -37,6 +37,10 @@ export interface Partner360Data {
     position_type: 'NET_RECEIVABLE' | 'NET_PAYABLE' | 'BALANCED';
     can_compensate: boolean;
     compensable_amount: number;
+    include_drafts?: boolean;
+    has_drafts?: boolean;
+    drafts_count?: number;
+    posted_count?: number;
   };
 }
 
@@ -137,13 +141,15 @@ export async function getPartner360Matrix(
   companyId: string,
   partnerId: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  includeDrafts: boolean = true
 ): Promise<Partner360Data> {
   const { data, error } = await supabase.rpc('get_partner_360_matrix', {
     p_company_id: companyId,
     p_partner_id: partnerId,
     p_start_date: startDate || null,
     p_end_date: endDate || null,
+    p_include_drafts: includeDrafts,
   });
 
   if (error) throw error;
@@ -158,7 +164,8 @@ export async function getOmniPartnerLedger(
   glAccountId?: string,
   accountCodePrefix?: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  includeDrafts: boolean = true
 ): Promise<OmniPartnerLedgerItem[]> {
   const { data, error } = await supabase.rpc('get_omni_partner_ledger', {
     p_company_id: companyId,
@@ -166,6 +173,7 @@ export async function getOmniPartnerLedger(
     p_account_code_prefix: accountCodePrefix || null,
     p_start_date: startDate || null,
     p_end_date: endDate || null,
+    p_include_drafts: includeDrafts,
   });
 
   if (error) throw error;

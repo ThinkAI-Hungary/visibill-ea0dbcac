@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrencyLocale, formatNumberLocale } from '@/lib/locale/formatters';
 import { Search, Users, ExternalLink, Filter, Layers } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface OmniPartnerLedgerTabProps {
   companyId?: string;
@@ -27,6 +28,7 @@ export const OmniPartnerLedgerTab: React.FC<OmniPartnerLedgerTabProps> = ({
   const [inputPrefix, setInputPrefix] = useState<string>('5');
   const [debouncedPrefix, setDebouncedPrefix] = useState<string>('5');
   const [partnerFilter, setPartnerFilter] = useState<string>('');
+  const [includeDrafts, setIncludeDrafts] = useState<boolean>(true);
 
   // Debounce inputPrefix to prevent refetching and UI reloading on every keystroke
   React.useEffect(() => {
@@ -44,7 +46,8 @@ export const OmniPartnerLedgerTab: React.FC<OmniPartnerLedgerTabProps> = ({
     undefined,
     debouncedPrefix || undefined,
     startDateStr,
-    endDateStr
+    endDateStr,
+    includeDrafts
   );
 
   const filteredItems = useMemo(() => {
@@ -97,22 +100,52 @@ export const OmniPartnerLedgerTab: React.FC<OmniPartnerLedgerTabProps> = ({
                 Bontsd meg a költségeket, kötelezettségeket vagy egyéb főkönyvi számlákat partnerenként
               </CardDescription>
             </div>
-            {/* Gyors számlaosztály választó */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {quickPrefixes.map((p) => (
-                <Button
-                  key={p.prefix}
-                  size="sm"
-                  variant={inputPrefix === p.prefix ? 'default' : 'outline'}
-                  onClick={() => {
-                    setInputPrefix(p.prefix);
-                    setDebouncedPrefix(p.prefix);
-                  }}
-                  className="text-xs h-8"
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5">
+              {/* Könyvelési státusz választó */}
+              <div className="inline-flex items-center p-0.5 bg-background rounded-md border border-input shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setIncludeDrafts(true)}
+                  className={cn(
+                    "px-2.5 py-1 rounded text-xs font-medium transition-colors",
+                    includeDrafts
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
                 >
-                  {p.label}
-                </Button>
-              ))}
+                  Összes (+ Javaslat)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIncludeDrafts(false)}
+                  className={cn(
+                    "px-2.5 py-1 rounded text-xs font-medium transition-colors",
+                    !includeDrafts
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Csak könyvelt
+                </button>
+              </div>
+
+              {/* Gyors számlaosztály választó */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {quickPrefixes.map((p) => (
+                  <Button
+                    key={p.prefix}
+                    size="sm"
+                    variant={inputPrefix === p.prefix ? 'default' : 'outline'}
+                    onClick={() => {
+                      setInputPrefix(p.prefix);
+                      setDebouncedPrefix(p.prefix);
+                    }}
+                    className="text-xs h-8"
+                  >
+                    {p.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </CardHeader>
