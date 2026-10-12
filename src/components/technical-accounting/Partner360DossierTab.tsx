@@ -166,19 +166,34 @@ ${currentCompany?.name}                         ${partner.name}
 
   return (
     <div className="space-y-6">
-      {/* Partner választó fejléc */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            Omni-Partner Karton & Pénzügyi Háló (360° Dosszié)
-          </CardTitle>
-          <CardDescription>
-            Konszolidált kép a partner összes számlán átívelő vevői, szállítói, előleg és költség pozíciójáról
-          </CardDescription>
+      {/* Partner választó & Adatlap Fejléc (egybeépítve a vertikális helytakarékosságért) */}
+      <Card className="border-primary/20 shadow-xs">
+        <CardHeader className="pb-3 pt-4 px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Omni-Partner Karton & Pénzügyi Háló (360° Dosszié)
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Konszolidált kép a partner összes számlán átívelő vevői, szállítói, előleg és költség pozíciójáról
+              </CardDescription>
+            </div>
+            {matrixData?.summary?.can_compensate && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 text-xs h-8"
+                onClick={handleDownloadCompensationProtocol}
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Kompenzációs Jegyzőkönyv</span>
+              </Button>
+            )}
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="px-4 sm:px-6 pb-4 pt-0 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
                 Partner Keresése és Kiválasztása
@@ -189,7 +204,7 @@ ${currentCompany?.name}                         ${partner.name}
                   placeholder="Partner neve vagy adószáma..."
                   value={partnerSearch}
                   onChange={(e) => setPartnerSearch(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 h-9 text-xs"
                 />
               </div>
             </div>
@@ -199,7 +214,7 @@ ${currentCompany?.name}                         ${partner.name}
               </label>
               <select
                 aria-label="Kiválasztott partner listája"
-                className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-9 px-3 py-1.5 text-xs bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                 value={selectedPartnerId}
                 onChange={(e) => setSelectedPartnerId(e.target.value)}
               >
@@ -212,99 +227,81 @@ ${currentCompany?.name}                         ${partner.name}
               </select>
             </div>
           </div>
+
+          {/* Partner gyorstájékoztató sáv a kiválasztott partnerhez */}
+          {matrixData && (
+            <div className="pt-2 border-t border-border/40 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-foreground text-sm">{matrixData.partner.name}</span>
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5">{matrixData.partner.partner_type || 'partner'}</Badge>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-muted-foreground font-mono text-[11px]">
+                {matrixData.partner.tax_number && (
+                  <span className="flex items-center gap-1">
+                    <strong>Adószám:</strong> {matrixData.partner.tax_number}
+                  </span>
+                )}
+                {matrixData.partner.email && (
+                  <span className="flex items-center gap-1">
+                    <Mail className="h-3 w-3" /> {matrixData.partner.email}
+                  </span>
+                )}
+                {matrixData.partner.bank_account_number && (
+                  <span className="flex items-center gap-1">
+                    <CreditCard className="h-3 w-3" /> {matrixData.partner.bank_account_number}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {!selectedPartnerId ? (
-        <Card className="py-16 text-center border-dashed">
-          <Building className="h-12 w-12 mx-auto text-muted-foreground/40 mb-3" />
-          <p className="font-medium text-muted-foreground">Kérlek válassz ki egy partnert a fenti listából!</p>
-          <p className="text-xs text-muted-foreground mt-1">
+        <Card className="py-14 text-center border-dashed">
+          <Building className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+          <p className="font-medium text-muted-foreground text-sm">Kérlek válassz ki egy partnert a fenti listából!</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
             A rendszer megjeleníti a partnerhez tartozó összes vevői, szállítói és egyéb főkönyvi számlát egyetlen konszolidált mátrixban.
           </p>
         </Card>
       ) : isLoading ? (
-        <div className="py-16 text-center">
+        <div className="py-14 text-center">
           <LoadingSpinner message="Partner 360° adatok összesítése..." />
         </div>
       ) : !matrixData ? (
-        <div className="py-12 text-center text-muted-foreground">
+        <div className="py-12 text-center text-muted-foreground text-sm">
           Nem sikerült betölteni a partner adatait.
         </div>
       ) : (
         <>
-          {/* Partner Adatlap Fejléc */}
-          <Card className="bg-card border-primary/20">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold text-foreground">{matrixData.partner.name}</h3>
-                    <Badge variant="outline">{matrixData.partner.partner_type || 'partner'}</Badge>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground mt-1.5 font-mono">
-                    {matrixData.partner.tax_number && (
-                      <span className="flex items-center gap-1">
-                        <strong>Adószám:</strong> {matrixData.partner.tax_number}
-                      </span>
-                    )}
-                    {matrixData.partner.email && (
-                      <span className="flex items-center gap-1">
-                        <Mail className="h-3 w-3" /> {matrixData.partner.email}
-                      </span>
-                    )}
-                    {matrixData.partner.bank_account_number && (
-                      <span className="flex items-center gap-1">
-                        <CreditCard className="h-3 w-3" /> {matrixData.partner.bank_account_number}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {matrixData.summary.can_compensate && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
-                      onClick={handleDownloadCompensationProtocol}
-                    >
-                      <Download className="h-4 w-4" />
-                      <span>Kompenzációs Jegyzőkönyv</span>
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Konszolidált Likvid Pozíció Kártyák */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="p-4 bg-muted/20 border-l-4 border-l-emerald-500">
-              <div className="text-xs text-muted-foreground font-medium">Összes Követelés (Vevő + Előleg)</div>
-              <div className="text-2xl font-bold mt-1 text-emerald-600 dark:text-emerald-400 font-mono">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Card className="p-3 bg-muted/20 border-l-4 border-l-emerald-500">
+              <div className="text-[11px] text-muted-foreground font-medium">Összes Követelés (Vevő + Előleg)</div>
+              <div className="text-xl font-bold mt-1 text-emerald-600 dark:text-emerald-400 font-mono">
                 {formatCurrencyLocale(matrixData.summary.total_receivables, 'HUF')}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">Cég felé fennálló követelés</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">Cég felé fennálló követelés</div>
             </Card>
 
-            <Card className="p-4 bg-muted/20 border-l-4 border-l-amber-500">
-              <div className="text-xs text-muted-foreground font-medium">Összes Kötelezettség (Szállító)</div>
-              <div className="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400 font-mono">
+            <Card className="p-3 bg-muted/20 border-l-4 border-l-amber-500">
+              <div className="text-[11px] text-muted-foreground font-medium">Összes Kötelezettség (Szállító)</div>
+              <div className="text-xl font-bold mt-1 text-amber-600 dark:text-amber-400 font-mono">
                 {formatCurrencyLocale(matrixData.summary.total_payables, 'HUF')}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">Partner felé fennálló tartozás</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">Partner felé fennálló tartozás</div>
             </Card>
 
-            <Card className="p-4 bg-muted/20 border-l-4 border-l-primary">
-              <div className="text-xs text-muted-foreground font-medium">Nettó Likvid Pozíció</div>
-              <div className="text-2xl font-bold mt-1 font-mono">
+            <Card className="p-3 bg-muted/20 border-l-4 border-l-primary">
+              <div className="text-[11px] text-muted-foreground font-medium">Nettó Likvid Pozíció</div>
+              <div className="text-xl font-bold mt-1 font-mono">
                 {formatCurrencyLocale(Math.abs(matrixData.summary.net_position), 'HUF')}
               </div>
-              <div className="mt-1">
+              <div className="mt-0.5">
                 <Badge
                   variant={matrixData.summary.position_type === 'NET_RECEIVABLE' ? 'default' : 'secondary'}
-                  className="text-[10px]"
+                  className="text-[9px] py-0 px-1.5"
                 >
                   {matrixData.summary.position_type === 'NET_RECEIVABLE'
                     ? 'Nettó Követelés (Partner tartozik)'
@@ -315,12 +312,12 @@ ${currentCompany?.name}                         ${partner.name}
               </div>
             </Card>
 
-            <Card className="p-4 bg-muted/20 border-l-4 border-l-purple-500">
-              <div className="text-xs text-muted-foreground font-medium">Ptk. Kompenzálható Keret</div>
-              <div className="text-2xl font-bold mt-1 text-purple-600 dark:text-purple-400 font-mono">
+            <Card className="p-3 bg-muted/20 border-l-4 border-l-purple-500">
+              <div className="text-[11px] text-muted-foreground font-medium">Ptk. Kompenzálható Keret</div>
+              <div className="text-xl font-bold mt-1 text-purple-600 dark:text-purple-400 font-mono">
                 {formatCurrencyLocale(matrixData.summary.compensable_amount, 'HUF')}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">
+              <div className="text-[10px] text-muted-foreground mt-0.5">
                 {matrixData.summary.can_compensate ? 'Azonnal beszámítható' : 'Nincs átfedő egyenleg'}
               </div>
             </Card>
@@ -329,19 +326,19 @@ ${currentCompany?.name}                         ${partner.name}
           {/* Automatikus Ptk. Kompenzációs Ajánlás Banner */}
           {matrixData.summary.can_compensate && (
             <Card className="bg-purple-500/5 border-purple-500/30">
-              <CardContent className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-purple-500/10 rounded-lg text-purple-600 mt-0.5">
-                    <Scale className="h-5 w-5" />
+              <CardContent className="p-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="p-1.5 bg-purple-500/10 rounded-lg text-purple-600 mt-0.5">
+                    <Scale className="h-4 w-4" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
+                    <h4 className="font-semibold text-xs sm:text-sm text-foreground flex items-center gap-2">
                       Automatikus Ptk. Kompenzációs Ajánlás
                       <Badge variant="outline" className="border-purple-500 text-purple-600 text-[10px]">
                         {formatCurrencyLocale(matrixData.summary.compensable_amount, 'HUF')}
                       </Badge>
                     </h4>
-                    <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
+                    <p className="text-[11px] text-muted-foreground mt-0.5 max-w-2xl">
                       A partnerrel szemben egyidejűleg áll fenn követelés (311) és kötelezettség (454).
                       A Ptk. 6:49. § alapján az egyenleg banki utalási illeték nélkül, beszámítással lekönyvelhető (T 4541 → K 3111).
                     </p>
@@ -351,10 +348,10 @@ ${currentCompany?.name}                         ${partner.name}
                 <div className="flex items-center gap-2 shrink-0">
                   <Button
                     size="sm"
-                    className="gap-1.5 bg-purple-600 hover:bg-purple-700 text-white"
+                    className="gap-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs h-8"
                     onClick={handleDownloadCompensationProtocol}
                   >
-                    <FileCheck className="h-4 w-4" />
+                    <FileCheck className="h-3.5 w-3.5" />
                     <span>Jegyzőkönyv Készítése</span>
                   </Button>
                 </div>
@@ -363,38 +360,43 @@ ${currentCompany?.name}                         ${partner.name}
           )}
 
           {/* Tételes Főkönyvi Számlák Mátrixa */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ArrowRightLeft className="h-4 w-4 text-primary" />
-                Kapcsolódó Főkönyvi Számlák és Jogcímek
-              </CardTitle>
+          <Card className="shadow-xs border-border/60">
+            <CardHeader className="py-3 px-4 sm:px-6 border-b border-border/40">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <ArrowRightLeft className="h-4 w-4 text-primary" />
+                  Kapcsolódó Főkönyvi Számlák és Jogcímek
+                </CardTitle>
+                <Badge variant="outline" className="font-mono text-[10px]">
+                  {matrixData.accounts.length} számla érintett
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
+              <div className="overflow-x-auto max-h-[460px] overflow-y-auto">
+                <Table className="relative">
+                  <TableHeader className="sticky top-0 bg-card z-10 shadow-xs border-b">
                     <TableRow>
-                      <TableHead>Főkönyvi Szám</TableHead>
-                      <TableHead>Számla Megnevezése</TableHead>
-                      <TableHead>Gazdasági Jelleg</TableHead>
-                      <TableHead className="text-right">Tartozik (T) Forgalom</TableHead>
-                      <TableHead className="text-right">Követel (K) Forgalom</TableHead>
-                      <TableHead className="text-right">Fennálló Egyenleg</TableHead>
-                      <TableHead className="text-center">Tételek</TableHead>
-                      <TableHead>Utolsó Mozgás</TableHead>
+                      <TableHead className="w-24 font-semibold text-xs">Főkönyvi Szám</TableHead>
+                      <TableHead className="min-w-[180px] font-semibold text-xs">Számla Megnevezése</TableHead>
+                      <TableHead className="min-w-[140px] font-semibold text-xs">Gazdasági Jelleg</TableHead>
+                      <TableHead className="text-right whitespace-nowrap font-semibold text-xs">Tartozik (T) Forgalom</TableHead>
+                      <TableHead className="text-right whitespace-nowrap font-semibold text-xs">Követel (K) Forgalom</TableHead>
+                      <TableHead className="text-right whitespace-nowrap font-semibold text-xs">Fennálló Egyenleg</TableHead>
+                      <TableHead className="text-center w-20 font-semibold text-xs">Tételek</TableHead>
+                      <TableHead className="text-center w-28 whitespace-nowrap font-semibold text-xs">Utolsó Mozgás</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {matrixData.accounts.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-xs">
                           A megadott időszakban nincs főkönyvi mozgás a partnerhez kapcsolódóan.
                         </TableCell>
                       </TableRow>
                     ) : (
                       matrixData.accounts.map((acc) => (
-                        <TableRow key={acc.gl_account_id} className="hover:bg-muted/50">
+                        <TableRow key={acc.gl_account_id} className="hover:bg-muted/50 text-xs">
                           <TableCell className="font-mono font-bold text-foreground">
                             {acc.gl_number}
                           </TableCell>
@@ -404,13 +406,13 @@ ${currentCompany?.name}                         ${partner.name}
                           <TableCell>
                             {getNatureBadge(acc.account_nature)}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-emerald-600 dark:text-emerald-400">
+                          <TableCell className="text-right font-mono text-xs text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                             {formatCurrencyLocale(acc.total_debit, 'HUF')}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-amber-600 dark:text-amber-400">
+                          <TableCell className="text-right font-mono text-xs text-amber-600 dark:text-amber-400 whitespace-nowrap">
                             {formatCurrencyLocale(acc.total_credit, 'HUF')}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs font-bold">
+                          <TableCell className="text-right font-mono text-xs font-bold whitespace-nowrap">
                             <span className={acc.balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
                               {formatCurrencyLocale(acc.balance, 'HUF')}
                             </span>
@@ -420,7 +422,7 @@ ${currentCompany?.name}                         ${partner.name}
                               {formatNumberLocale(acc.entries_count)} db
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground font-mono">
+                          <TableCell className="text-center text-xs text-muted-foreground font-mono whitespace-nowrap">
                             {acc.last_posting_date ? acc.last_posting_date.split('T')[0] : '—'}
                           </TableCell>
                         </TableRow>

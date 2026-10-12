@@ -75,7 +75,7 @@ export default function TechnicalAccountingPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6 max-w-7xl animate-in fade-in duration-300">
+    <div className="container mx-auto px-4 pt-4 pb-32 space-y-6 max-w-7xl animate-in fade-in duration-300">
       <PageHeader
         title="Technikai Műveletek & Elemzések"
         description="Főkönyvi tételek auditbiztos tömeges átsorolása, Partner 360° likviditási mátrix és mesterséges intelligencia által támogatott anomália-ellenőrzés."

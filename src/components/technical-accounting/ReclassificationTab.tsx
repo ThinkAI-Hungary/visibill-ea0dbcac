@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useSimulateReclassification, useExecuteReclassification } from '@/hooks/useTechnicalAccounting';
+import { useActivePreset } from '@/hooks/useActivePreset';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,8 @@ export const ReclassificationTab: React.FC<ReclassificationTabProps> = ({
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const companyId = propCompanyId || selectedCompany?.id;
 
+  const { activePresetId } = useActivePreset(companyId);
+
   const [sourceGlId, setSourceGlId] = useState<string>('');
   const [targetGlId, setTargetGlId] = useState<string>('');
   const [clearingGlId, setClearingGlId] = useState<string>('');
@@ -59,14 +62,24 @@ export const ReclassificationTab: React.FC<ReclassificationTabProps> = ({
   const [selectedLineIds, setSelectedLineIds] = useState<string[]>([]);
   const [lineSearch, setLineSearch] = useState<string>('');
 
-  // Főkönyvi számlák listája
+  // Főkönyvi számlák listája szűrve a cég aktív számlatükör presetjére
   const { data: glAccounts } = useQuery({
-    queryKey: ['company-gl-accounts', companyId],
+    queryKey: ['company-gl-accounts', companyId, activePresetId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!companyId) return [];
+      let query = supabase
         .from('gl_accounts')
         .select('id, gl_number, short_name')
         .order('gl_number');
+
+      if (activePresetId) {
+        query = query.eq('preset_id', activePresetId);
+      } else {
+        // Fallback: alapesetben a beépített magyar számlatükör
+        query = query.eq('preset_id', 'a6c46c77-52b7-499e-bb12-419aa94349af');
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },

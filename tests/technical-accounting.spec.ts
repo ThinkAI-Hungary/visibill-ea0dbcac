@@ -32,15 +32,18 @@ test.describe('Module 22 - Technical Accounting & Analytics E2E Tests', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Expand Könyvelés group in sidebar
+    // Ensure Könyvelés group in sidebar is expanded
     const konyvelesBtn = page.locator('button:has-text("Könyvelés")').first();
-    if (await konyvelesBtn.isVisible()) {
+    await konyvelesBtn.scrollIntoViewIfNeeded();
+    const dataState = await konyvelesBtn.getAttribute('data-state');
+    const ariaExpanded = await konyvelesBtn.getAttribute('aria-expanded');
+    if (dataState === 'closed' || ariaExpanded === 'false' || (!dataState && !ariaExpanded)) {
       await konyvelesBtn.click();
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(600);
     }
 
-    // Locate Technikai műveletek link and click
     const techAccountingLink = page.locator('a[href*="technical-accounting"]').first();
+    await techAccountingLink.scrollIntoViewIfNeeded();
     await expect(techAccountingLink).toBeVisible({ timeout: 10_000 });
     await techAccountingLink.click();
 

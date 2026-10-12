@@ -47,6 +47,7 @@ export function useOmniPartnerLedger(
     queryKey: ['omni-partner-ledger', companyId, glAccountId, accountCodePrefix, startDate, endDate],
     queryFn: () => getOmniPartnerLedger(companyId!, glAccountId, accountCodePrefix, startDate, endDate),
     enabled: !!companyId,
+    placeholderData: (previousData) => previousData,
     staleTime: 60 * 1000,
   });
 }

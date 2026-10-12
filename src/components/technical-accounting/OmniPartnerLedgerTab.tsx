@@ -24,16 +24,25 @@ export const OmniPartnerLedgerTab: React.FC<OmniPartnerLedgerTabProps> = ({
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const companyId = propCompanyId || selectedCompany?.id;
 
-  const [accountCodePrefix, setAccountCodePrefix] = useState<string>('5');
+  const [inputPrefix, setInputPrefix] = useState<string>('5');
+  const [debouncedPrefix, setDebouncedPrefix] = useState<string>('5');
   const [partnerFilter, setPartnerFilter] = useState<string>('');
+
+  // Debounce inputPrefix to prevent refetching and UI reloading on every keystroke
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedPrefix(inputPrefix);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [inputPrefix]);
 
   const startDateStr = dateFromFormatted || undefined;
   const endDateStr = dateToFormatted || undefined;
 
-  const { data: ledgerItems, isLoading } = useOmniPartnerLedger(
+  const { data: ledgerItems, isLoading, isFetching } = useOmniPartnerLedger(
     companyId,
     undefined,
-    accountCodePrefix || undefined,
+    debouncedPrefix || undefined,
     startDateStr,
     endDateStr
   );
@@ -94,8 +103,11 @@ export const OmniPartnerLedgerTab: React.FC<OmniPartnerLedgerTabProps> = ({
                 <Button
                   key={p.prefix}
                   size="sm"
-                  variant={accountCodePrefix === p.prefix ? 'default' : 'outline'}
-                  onClick={() => setAccountCodePrefix(p.prefix)}
+                  variant={inputPrefix === p.prefix ? 'default' : 'outline'}
+                  onClick={() => {
+                    setInputPrefix(p.prefix);
+                    setDebouncedPrefix(p.prefix);
+                  }}
                   className="text-xs h-8"
                 >
                   {p.label}
@@ -107,15 +119,18 @@ export const OmniPartnerLedgerTab: React.FC<OmniPartnerLedgerTabProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Főkönyvi számlaszám előtag (pl. 52, 521, 4541, 311)
+              <label className="text-xs font-medium text-muted-foreground mb-1 block flex items-center justify-between">
+                <span>Főkönyvi számlaszám előtag (pl. 52, 521, 4541, 311)</span>
+                {isFetching && !isLoading && (
+                  <span className="text-[10px] text-primary animate-pulse font-mono">Keresés...</span>
+                )}
               </label>
               <div className="relative">
                 <Filter className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Számlaszám kezdete (pl. 523)..."
-                  value={accountCodePrefix}
-                  onChange={(e) => setAccountCodePrefix(e.target.value)}
+                  value={inputPrefix}
+                  onChange={(e) => setInputPrefix(e.target.value)}
                   className="pl-9"
                 />
               </div>
@@ -167,7 +182,7 @@ export const OmniPartnerLedgerTab: React.FC<OmniPartnerLedgerTabProps> = ({
       {/* Táblázat */}
       <Card>
         <CardContent className="p-0">
-          {isLoading ? (
+          {isLoading && !ledgerItems ? (
             <div className="py-16 text-center">
               <LoadingSpinner message="Partner szerinti főkönyvi adatok betöltése..." />
             </div>
