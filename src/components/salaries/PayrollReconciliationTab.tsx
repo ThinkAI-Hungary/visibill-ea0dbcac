@@ -67,7 +67,7 @@ export const PayrollReconciliationTab: React.FC<PayrollReconciliationTabProps> =
   const isPastDeadline = todayStr > deadlineDate;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       {/* Header and Controls */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

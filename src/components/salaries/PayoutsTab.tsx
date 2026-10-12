@@ -178,7 +178,7 @@ export const PayoutsTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       {/* 1. Összefoglaló és Gyorsműveletek Kártya */}
       <Card className="border-primary/20 shadow-xs">
         <CardHeader className="pb-3">

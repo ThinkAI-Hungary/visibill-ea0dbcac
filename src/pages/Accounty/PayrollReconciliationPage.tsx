@@ -237,7 +237,7 @@ export default function PayrollReconciliationPage() {
   });
 
   return (
-    <div className="space-y-6 p-4 md:p-6 page-animate">
+    <div className="space-y-6 p-4 md:p-6 pb-32 page-animate">
       {/* Page Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>

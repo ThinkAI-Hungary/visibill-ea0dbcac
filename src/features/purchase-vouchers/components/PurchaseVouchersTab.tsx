@@ -129,7 +129,7 @@ export const PurchaseVouchersTab: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20">
       {/* 1. KPI Összesítő Kártyák */}
       <PurchaseVoucherKpiCards summary={summary} />
 
