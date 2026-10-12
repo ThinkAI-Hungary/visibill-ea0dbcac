@@ -82,6 +82,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
+import { compareGlAccountNumbers } from '@/lib/procontGlData';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import {
@@ -3832,65 +3833,149 @@ export default function JournalsPage() {
 
       {/* Tömeges kontírozás modál */}
       <Dialog open={bulkGlDialogOpen} onOpenChange={(open) => { if (!open) setBulkGlDialogOpen(false); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-indigo-500" />
-              {t('accounting:journals.bulk_gl.title', 'Tömeges főkönyvi szám módosítás')}
-            </DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-lg w-[calc(100vw-2rem)] max-h-[88vh] flex flex-col p-0 overflow-hidden shadow-2xl rounded-2xl border-border/60">
+          <DialogHeader className="px-6 py-4 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-xs">
+            <div className="flex items-center justify-between gap-3">
+              <DialogTitle className="flex items-center gap-2.5 text-base font-semibold">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <FileSpreadsheet className="w-4 h-4" />
+                </div>
+                <span>{t('accounting:journals.bulk_gl.title', 'Tömeges főkönyvi szám módosítás')}</span>
+              </DialogTitle>
+              <Badge variant="outline" className="font-mono text-xs px-2.5 py-0.5 border-primary/30 text-primary bg-primary/5 shrink-0">
+                {selectedDraftIds.length > 0 ? selectedDraftIds.length : selectedEntryIds.size} db tétel
+              </Badge>
+            </div>
+            <DialogDescription className="text-xs text-muted-foreground mt-1">
               {t('accounting:journals.bulk_gl.desc', 'A kijelölt tételek Tartozik vagy Követel oldali főkönyvi számának tömeges módosítása.')}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 text-xs">
             <div>
-              <Label className="text-xs font-semibold">{t('accounting:journals.bulk_gl.side_label', 'Módosítandó oldal')}</Label>
-              <div className="grid grid-cols-2 gap-2 mt-1.5">
-                <Button
+              <Label className="text-xs font-semibold text-foreground mb-1.5 block">
+                {t('accounting:journals.bulk_gl.side_label', 'Módosítandó oldal')}
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
                   type="button"
-                  size="sm"
-                  variant={bulkGlSide === 'T' ? 'default' : 'outline'}
-                  className={cn("text-xs gap-1.5", bulkGlSide === 'T' ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "")}
                   onClick={() => setBulkGlSide('T')}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer",
+                    bulkGlSide === 'T'
+                      ? "bg-emerald-500/10 border-emerald-500 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20 shadow-xs"
+                      : "border-border/60 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+                  )}
                 >
-                  {t('accounting:journals.bulk_gl.side_debit', 'T (Tartozik / Költség)')}
-                </Button>
-                <Button
+                  <div className={cn(
+                    "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm font-mono shrink-0 shadow-xs",
+                    bulkGlSide === 'T' ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground"
+                  )}>
+                    T
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-semibold text-xs text-foreground">Tartozik oldal</span>
+                    <span className="text-[11px] text-muted-foreground truncate">Költség / Eszköz forgalom</span>
+                  </div>
+                </button>
+
+                <button
                   type="button"
-                  size="sm"
-                  variant={bulkGlSide === 'K' ? 'default' : 'outline'}
-                  className={cn("text-xs gap-1.5", bulkGlSide === 'K' ? "bg-rose-600 hover:bg-rose-700 text-white" : "")}
                   onClick={() => setBulkGlSide('K')}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer",
+                    bulkGlSide === 'K'
+                      ? "bg-rose-500/10 border-rose-500 text-rose-950 dark:text-rose-100 ring-2 ring-rose-500/20 shadow-xs"
+                      : "border-border/60 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+                  )}
                 >
-                  {t('accounting:journals.bulk_gl.side_credit', 'K (Követel / Pénzforgalom)')}
-                </Button>
+                  <div className={cn(
+                    "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm font-mono shrink-0 shadow-xs",
+                    bulkGlSide === 'K' ? "bg-rose-600 text-white" : "bg-muted text-muted-foreground"
+                  )}>
+                    K
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-semibold text-xs text-foreground">Követel oldal</span>
+                    <span className="text-[11px] text-muted-foreground truncate">Bevétel / Pénzforgalom</span>
+                  </div>
+                </button>
               </div>
             </div>
 
+            {selectedTargetGlId && (() => {
+              const acc = glAccounts.find((a: any) => a.id === selectedTargetGlId);
+              if (!acc) return null;
+              return (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 shadow-2xs animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span className="px-2 py-0.5 rounded bg-indigo-600 text-white font-mono font-bold text-xs shrink-0">
+                      {acc.gl_number}
+                    </span>
+                    <span className="text-xs font-semibold text-foreground truncate">
+                      {acc.description || acc.name || acc.short_name}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0 rounded-full ml-2"
+                    onClick={() => setSelectedTargetGlId('')}
+                    title="Kijelölés törlése"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              );
+            })()}
+
             <div className="space-y-2">
-              <Label className="text-xs font-semibold">{t('accounting:journals.bulk_gl.account_label', 'Új főkönyvi szám kiválasztása')}</Label>
+              <Label className="text-xs font-semibold text-foreground">
+                {t('accounting:journals.bulk_gl.account_label', 'Új főkönyvi szám kiválasztása')}
+              </Label>
               <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder={t('accounting:journals.bulk_gl.search_placeholder', 'Keresés számlaszámra vagy névre (pl. 526, 4541)...')}
                   value={bulkGlSearch}
                   onChange={(e) => setBulkGlSearch(e.target.value)}
-                  className="pl-8 h-8 text-xs"
+                  className="pl-9 pr-8 h-9 text-xs rounded-lg"
                 />
+                {bulkGlSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setBulkGlSearch('')}
+                    className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
-              <div className="max-h-56 overflow-y-auto rounded-lg border border-border/60 divide-y divide-border/40 bg-muted/20">
-                {glAccounts
-                  .filter((acc: any) => {
-                    if (!bulkGlSearch.trim()) return true;
-                    const q = bulkGlSearch.toLowerCase().trim();
-                    const num = String(acc.gl_number || '').toLowerCase();
-                    const name = String(acc.description || acc.name || acc.short_name || '').toLowerCase();
-                    return num.includes(q) || name.includes(q);
-                  })
-                  .slice(0, 30)
-                  .map((acc: any) => {
+              <div className="max-h-52 overflow-y-auto rounded-xl border border-border/60 divide-y divide-border/30 bg-muted/10 shadow-2xs">
+                {(() => {
+                  const filtered = glAccounts
+                    .filter((acc: any) => {
+                      if (!bulkGlSearch.trim()) return true;
+                      const q = bulkGlSearch.toLowerCase().trim();
+                      const num = String(acc.gl_number || '').toLowerCase();
+                      const name = String(acc.description || acc.name || acc.short_name || '').toLowerCase();
+                      return num.includes(q) || name.includes(q);
+                    })
+                    .sort((a: any, b: any) => compareGlAccountNumbers(String(a.gl_number || ''), String(b.gl_number || '')))
+                    .slice(0, 50);
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center justify-center gap-1.5">
+                        <AlertCircle className="w-5 h-5 text-muted-foreground/60" />
+                        <span>{bulkGlSearch.trim() ? 'Nincs a keresésnek megfelelő számlaszám' : 'Nincsenek elérhető számlaszámok'}</span>
+                      </div>
+                    );
+                  }
+
+                  return filtered.map((acc: any) => {
                     const isSelected = selectedTargetGlId === acc.id;
                     return (
                       <button
@@ -3898,35 +3983,51 @@ export default function JournalsPage() {
                         type="button"
                         onClick={() => setSelectedTargetGlId(acc.id)}
                         className={cn(
-                          "w-full px-3 py-2 text-left flex items-center justify-between text-xs transition-colors",
-                          isSelected ? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-semibold" : "hover:bg-muted/60"
+                          "w-full px-3 py-2.5 text-left flex items-center justify-between gap-3 text-xs transition-colors cursor-pointer",
+                          isSelected
+                            ? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-semibold"
+                            : "hover:bg-muted/60 text-foreground"
                         )}
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-mono font-bold text-foreground shrink-0">{acc.gl_number}</span>
-                          <span className="truncate text-muted-foreground">{acc.description || acc.name || acc.short_name}</span>
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <span className="font-mono font-bold shrink-0 px-2 py-0.5 rounded bg-muted/70 text-foreground text-xs">
+                            {acc.gl_number}
+                          </span>
+                          <span className="truncate text-muted-foreground text-xs font-normal">
+                            {acc.description || acc.name || acc.short_name}
+                          </span>
                         </div>
-                        {isSelected && <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />}
+                        {isSelected && <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />}
                       </button>
                     );
-                  })}
+                  });
+                })()}
               </div>
             </div>
 
-            <div className="p-3 bg-muted/40 rounded-lg border border-border/40 text-xs text-muted-foreground leading-relaxed">
-              {t('accounting:journals.bulk_gl.summary_info', {
-                count: selectedEntryIds.size,
-                side: bulkGlSide === 'T' ? 'T' : 'K',
-                defaultValue: `Kijelölt tételek: ${selectedEntryIds.size} db. A jóváhagyás után az összes kijelölt tétel ${bulkGlSide === 'T' ? 'Tartozik (T)' : 'Követel (K)'} oldali sora frissül a kiválasztott számlaszámra.`
-              })}
+            <div className="p-3.5 bg-muted/40 rounded-xl border border-border/50 text-xs text-muted-foreground leading-relaxed flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-semibold text-foreground block">
+                  {selectedDraftIds.length > 0 ? selectedDraftIds.length : selectedEntryIds.size} db tétel frissítése
+                </span>
+                <p className="text-[11px] text-muted-foreground leading-normal">
+                  A jóváhagyás után a kijelölt tételek{' '}
+                  <strong className={bulkGlSide === 'T' ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-600 dark:text-rose-400 font-semibold'}>
+                    {bulkGlSide === 'T' ? 'Tartozik (T)' : 'Követel (K)'}
+                  </strong>{' '}
+                  oldali főkönyvi száma módosul a kiválasztott tételre.
+                </p>
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="px-6 py-3.5 border-t border-border/40 bg-muted/15 shrink-0 flex items-center justify-end gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
+              className="h-8 text-xs px-4"
               onClick={() => setBulkGlDialogOpen(false)}
               disabled={bulkReassignGlMutation.isPending}
             >
@@ -3935,12 +4036,13 @@ export default function JournalsPage() {
             <Button
               type="button"
               size="sm"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5"
+              className="h-8 text-xs px-4 bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 shadow-xs"
               disabled={!selectedTargetGlId || bulkReassignGlMutation.isPending}
               onClick={() => {
-                if (selectedTargetGlId && selectedEntryIds.size > 0) {
+                const targetIds = selectedDraftIds.length > 0 ? selectedDraftIds : Array.from(selectedEntryIds);
+                if (selectedTargetGlId && targetIds.length > 0) {
                   bulkReassignGlMutation.mutate({
-                    headerIds: Array.from(selectedEntryIds),
+                    headerIds: targetIds,
                     side: bulkGlSide,
                     targetGlId: selectedTargetGlId
                   });
