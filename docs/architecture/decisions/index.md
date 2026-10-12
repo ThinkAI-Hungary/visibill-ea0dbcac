@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-11  
-> **Összesen:** 245 döntés (227 egyedi döntési fájl) | ✅ Decided: 243 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-12  
+> **Összesen:** 249 döntés (234 egyedi döntési fájl) | ✅ Decided: 247 | ⛔ Superseded: 2
 
 
 ---
@@ -66,6 +66,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-147 | Kétirányú Számlaláncolat (Invoice Chaining), Dinamikus Kapcsolt Bizonylat Feloldás és Előnézeti Dokumentum-lapozás | ✅ Decided | [A-147](./A-147-bidirectional-invoice-chaining-and-preview-tabs.md) |
 | A-179 | Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra | ✅ Decided | [A-179](./A-179-aggreg8-psd2-cross-import-deduplication.md) |
 | A-225 | Duplex PDF Darabolás Robusztusítás, Táblázatfejléc Védelem és Számlaszám Fuzzy NAV Párosítás | ✅ Decided | [A-225](./A-225-duplex-pdf-splitting-header-blacklist-and-fuzzy-nav-matching.md) |
+| A-246 | Worker Invoice Upsert Idempotencia és Postgres 23505 Pre-Check Ütközésvédelem | ✅ Decided | [A-246](./A-246-worker-invoice-upsert-23505-precheck-collision-prevention.md) |
 
 
 ## 🔒 Biztonság & Auth
@@ -284,6 +285,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-244 | Külföldi és Devizás Bejövő Számlák Integrálása az ÁFA Bevallásba és Taxology Baseline Igazítás | ✅ Decided | [A-244](./A-244-foreign-inbound-invoices-vat-return-integration.md) |
 | A-245 | calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése) | ✅ Decided | [A-245](./A-245-calculate-hungarian-vat-return-cursor-bounding-and-exchange-rate-optimization.md) |
 | A-247 | Szerepkör-képesség mátrix (Capability Matrix), Bérszámfejtő (payroll_specialist) szerepkör és ÁFA-zárolás backend védelme | ✅ Decided | [A-247](./A-247-role-capability-matrix.md) |
+| A-249 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra | ✅ Decided | [A-249](./A-249-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md) |
 
 
 
