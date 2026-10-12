@@ -181,6 +181,9 @@ export default function SalariesPage() {
 
           {/* NAV Summary Table */}
           <NavSummaryTable navItems={navItems} onEdit={openEditModal} isSingleMonth={isSingleMonth} periodLabel={periodLabel} />
+          
+          {/* Bottom spacing to ensure content clears floating bars when scrolled */}
+          <div className="h-28 w-full shrink-0" aria-hidden="true" />
         </TabsContent>
 
         <TabsContent value="payouts" className="mt-0">

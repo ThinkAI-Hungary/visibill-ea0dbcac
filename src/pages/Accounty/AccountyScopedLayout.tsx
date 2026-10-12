@@ -200,7 +200,7 @@ export default function AccountyScopedLayout() {
 
   return (
     <div 
-      className="h-full flex flex-col flex-1 min-h-0"
+      className="min-h-full flex flex-col flex-1"
       style={isSyncing ? { opacity: 0, pointerEvents: 'none', minHeight: '50vh' } : undefined}
     >
       <Outlet />

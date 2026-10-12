@@ -38,6 +38,8 @@ export const PayrollReconciliationTab: React.FC<PayrollReconciliationTabProps> =
   const year = dateFrom.getFullYear();
   const month = dateFrom.getMonth() + 1;
 
+  const [todayStr] = React.useState(() => new Date().toISOString().split('T')[0]);
+
   const { data: recData, isLoading, refetch, isFetching } = usePayroll471Reconciliation(
     companyId,
     year,
@@ -62,7 +64,6 @@ export const PayrollReconciliationTab: React.FC<PayrollReconciliationTabProps> =
   const remainingLiability = Math.max(0, totalPayable - totalPaid);
   const payoutRatio = Math.min(100, Math.round(stats?.payout_ratio || 0));
 
-  const [todayStr] = React.useState(() => new Date().toISOString().split('T')[0]);
   const deadlineDate = recData?.cycle?.payout_deadline || `${year}-${String(month + 1).padStart(2, '0')}-10`;
   const isPastDeadline = todayStr > deadlineDate;
 
