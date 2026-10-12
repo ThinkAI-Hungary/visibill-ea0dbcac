@@ -307,9 +307,19 @@
     "transfer_counterpart": "Protu-strana prijenosa:",
     "transfer_name": "Međublagajnički prijenos",
     "view_preview": "Pregled dokumenta",
-    "open_new_tab": "Otvori u novoj kartici"
+    "open_new_tab": "Otvori u novoj kartici",
+    "attach_invoice": "Poveži račun",
+    "unlink_invoice": "Odvoji račun",
+    "unlink_confirm_title": "Odvoji račun",
+    "unlink_confirm_desc": "Jeste li sigurni da želite odvojiti ovaj račun od blagajničke stavke? Račun će ponovno postati neplaćen.",
+    "attach_dialog_title": "Povezivanje računa s blagajničkom stavkom",
+    "attach_dialog_desc": "Odaberite otvoreni račun koji želite podmiriti ovom gotovinskom stavkom."
   },
   "toasts": {
+    "attach_success_title": "Račun uspješno povezan!",
+    "attach_success_desc": "Račun {{invoice}} je povezan s ovom blagajničkom stavkom.",
+    "unlink_success_title": "Račun uspješno odvojen!",
+    "unlink_success_desc": "Račun je ponovno u statusu neplaćeno.",
     "warning_title": "Pažnja",
     "error_title": "Greška",
     "approved_title": "Dokument odobren!",
