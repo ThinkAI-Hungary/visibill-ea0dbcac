@@ -29,6 +29,7 @@ const CegkapuSettingsPage = lazy(() => import("@/pages/Accounty/CegkapuSettingsP
 const RepresentationPage = lazy(() => import("@/pages/Accounty/RepresentationPage"));
 const DataRetentionPage = lazy(() => import("@/pages/Accounty/DataRetentionPage"));
 const CompanyStructurePage = lazy(() => import("@/pages/Accounty/CompanyStructurePage"));
+const TechnicalAccountingPage = lazy(() => import("@/pages/Accounty/TechnicalAccountingPage"));
 
 // Payroll module
 const PayrollDashboardPage = lazy(() => import("@/pages/Accounty/PayrollDashboardPage"));
@@ -306,6 +307,8 @@ function renderAccountyChildRoutes() {
         <Route path="representation" element={<Suspense fallback={<AccountyPageSkeleton />}><RepresentationPage /></Suspense>} />
         <Route path="data-retention" element={<Suspense fallback={<AccountyPageSkeleton />}><DataRetentionPage /></Suspense>} />
         <Route path="structure" element={<Suspense fallback={<AccountyPageSkeleton />}><CompanyStructurePage /></Suspense>} />
+        <Route path="technical-accounting/:tab?" element={<Suspense fallback={<AccountyPageSkeleton />}><TechnicalAccountingPage /></Suspense>} />
+        <Route path="gl-tools/:tab?" element={<Suspense fallback={<AccountyPageSkeleton />}><TechnicalAccountingPage /></Suspense>} />
 
         {/* TAO client-level (module: tao) */}
         <Route element={<AccountyModuleLayout module="tao" />}>

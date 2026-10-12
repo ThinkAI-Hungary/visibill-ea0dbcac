@@ -13,8 +13,10 @@ import {
   ClipboardList, 
   Brain, 
   Settings, 
-  Building2 
+  Building2,
+  Wrench
 } from 'lucide-react';
+
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useAccountyShell } from '@/pages/Accounty/AccountyShellContext';
@@ -96,11 +98,17 @@ export default function ClientNav() {
       icon: Brain 
     },
     { 
+      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/technical-accounting`, 
+      name: t('nav.items.technical_accounting', 'Technikai műveletek'), 
+      icon: Wrench 
+    },
+    { 
       path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, 
       name: t('nav.items.cegkapu_settings', 'Beállítások / Cégkapu'), 
       icon: Settings 
     },
   ];
+
 
   if (isCollapsed) {
     return (

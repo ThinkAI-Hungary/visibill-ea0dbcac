@@ -134,7 +134,9 @@ const navigationGroups: NavGroup[] = [
       { title: "ÁFA Bevallás", url: "/vat-return", icon: FileSpreadsheet, tourId: "vat-return", moduleKey: 'vat_return' },
       { title: "Napló", url: "/journals", icon: BookOpen, tourId: "journals", moduleKey: 'journals' },
       { title: "Könyvelési szabályok", url: "/accounting-rules", icon: Sliders, tourId: "accounting-rules", moduleKey: 'accounting_rules' },
+      { title: "Technikai műveletek", url: "/technical-accounting", icon: Wrench, tourId: "technical-accounting", moduleKey: 'accounting_rules' },
     ],
+
   },
   {
     key: 'hr',
@@ -190,6 +192,8 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/journals": () => import("@/pages/JournalsPage"),
   "/accounting-rules": () => import("@/pages/AccountingRulesPage"),
   "/auto-accounting-rules": () => import("@/pages/AccountingRulesPage"),
+  "/technical-accounting": () => import("@/pages/TechnicalAccountingPage"),
+
   "/upload": () => import("@/pages/ManualUpload"),
   "/salaries": () => import("@/pages/SalariesPage"),
   "/working-time": () => import("@/pages/WorkingTimePage"),
