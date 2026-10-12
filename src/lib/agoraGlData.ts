@@ -11,6 +11,7 @@ import {
   HUNGARIAN_GL_CLASSES,
   HUNGARIAN_GL_GROUPS,
   cleanAccountNumber,
+  compareGlAccountNumbers,
   type ProcontAccountInput,
 } from './procontGlData';
 
@@ -272,8 +273,8 @@ export function buildAgoraGlData(
     }
   });
 
-  // Sort account numbers strictly numerically/alphabetically
-  finalNumbers.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  // Sort account numbers hierarchically (1, 11, 113, ..., 2, 3, ...)
+  finalNumbers.sort(compareGlAccountNumbers);
 
   // 4. Build AgoraGlRows with Net balances
   const allRows: AgoraGlRow[] = [];

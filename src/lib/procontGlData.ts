@@ -135,6 +135,37 @@ export function getAccountLevel(accNum: string): ProcontRowLevel {
 }
 
 /**
+ * Hierarchical sorting for Chart of Accounts (Számlatükör / Főkönyvi kivonat).
+ * Ensures that parent accounts (e.g. "1") immediately precede their child groups (e.g. "13"),
+ * which precede their subgroups (e.g. "131"), which precede leaves (e.g. "1311").
+ *
+ * Fixes the issue where { numeric: true } sorts "1", "2", ... "9", "13" ... (by integer value).
+ * When sub-accounts with delimiters exist (e.g. "381/1", "381/2", "381/10"), the sub-account
+ * portions are sorted naturally.
+ */
+export function compareGlAccountNumbers(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a) return -1;
+  if (!b) return 1;
+
+  // If one is a prefix of the other, the shorter prefix (parent) always comes first
+  if (b.startsWith(a)) return -1;
+  if (a.startsWith(b)) return 1;
+
+  const segA = a.split(/[/\\-]/);
+  const segB = b.split(/[/\\-]/);
+
+  // If the root segment is different, standard hierarchical string sort
+  if (segA[0] !== segB[0]) {
+    return segA[0].localeCompare(segB[0]);
+  }
+
+  // If they share the same root segment (e.g. "381/1" vs "381/2" vs "381/10"),
+  // use natural numeric sorting for the sub-account portion
+  return a.localeCompare(b, undefined, { numeric: true });
+}
+
+/**
  * Formats dates for the Procont PDF/Excel header (e.g. "2026.01.01. - 2026.09.30.")
  */
 export function formatProcontPeriod(dateFrom?: string, dateTo?: string): string {
@@ -323,10 +354,8 @@ export function buildProcontGlData(
     });
   }
 
-  // 6. Natural account sorting (1, 16, 161, 1610, 3, 31, 3110, ...)
-  filteredRows.sort((a, b) => {
-    return a.accountNumber.localeCompare(b.accountNumber, undefined, { numeric: true });
-  });
+  // 6. Hierarchical account sorting (1, 13, 131, 1311, ..., 2, 3, 31, ...)
+  filteredRows.sort((a, b) => compareGlAccountNumbers(a.accountNumber, b.accountNumber));
 
   // 7. Calculate Grand Totals (Sum of 1-digit classes)
   const classRows = allRows.filter(r => r.level === 'class');
