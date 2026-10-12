@@ -153,7 +153,7 @@ export default function SalariesPage() {
           </TabsTrigger>
           <TabsTrigger value="reconciliation" className="gap-2">
             <Scale className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            Bérkontroll & 471
+            Bérkontroll
           </TabsTrigger>
           <TabsTrigger value="purchase_vouchers" className="gap-2">
             <Wheat className="h-4 w-4 text-amber-600 dark:text-amber-400" />

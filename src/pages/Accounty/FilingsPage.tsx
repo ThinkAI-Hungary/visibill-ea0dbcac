@@ -48,7 +48,11 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: React.Ele
 
 const MONTHS = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'Aug', 'Szep', 'Okt', 'Nov', 'Dec'];
 
-export default function FilingsPage() {
+interface FilingsPageProps {
+  embedded?: boolean;
+}
+
+export default function FilingsPage({ embedded = false }: FilingsPageProps = {}) {
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -58,8 +62,8 @@ export default function FilingsPage() {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [generating, setGenerating] = useState(false);
-  const [genYear, setGenYear] = useState(new Date().getFullYear());
-  const [genMonth, setGenMonth] = useState(new Date().getMonth() + 1);
+  const [genYear, setGenYear] = useState(() => new Date().getFullYear());
+  const [genMonth, setGenMonth] = useState(() => new Date().getMonth() + 1);
   const [showGenPanel, setShowGenPanel] = useState(false);
 
   const { data: filings = [], isLoading, isError: filingsError, refetch: refetchFilings } = usePayrollFilings(companyId || '');
@@ -251,7 +255,7 @@ export default function FilingsPage() {
   }
 
   return (
-    <div className="w-full space-y-6 page-animate">
+    <div className={cn("w-full space-y-6 page-animate", embedded ? "pb-20" : "pb-32")}>
       {/* Header */}
       <PageHeader
         title="NAV Bevallások"

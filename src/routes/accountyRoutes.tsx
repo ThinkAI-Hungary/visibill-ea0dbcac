@@ -38,9 +38,7 @@ const PayrollEmployeeWizardPage = lazy(() => import("@/pages/Accounty/EmployeeWi
 const PayrollEmployeeDetailsPage = lazy(() => import("@/pages/Accounty/EmployeeDetailsPage"));
 const PayrollCyclePage = lazy(() => import("@/pages/Accounty/PayrollCyclePage"));
 const PayrollTaxParametersPage = lazy(() => import("@/pages/Accounty/TaxParametersPage"));
-const PayrollFilingsPage = lazy(() => import("@/pages/Accounty/FilingsPage"));
 const PayrollReportsPage = lazy(() => import("@/pages/Accounty/PayrollReportsPage"));
-const PayrollReconciliationPage = lazy(() => import("@/pages/Accounty/PayrollReconciliationPage"));
 const CompanyPayrollSettingsPage = lazy(() => import("@/pages/Accounty/CompanyPayrollSettingsPage"));
 const EmployeeImportPage = lazy(() => import("@/pages/Accounty/EmployeeImportPage"));
 const JobModificationPage = lazy(() => import("@/pages/Accounty/JobModificationPage"));
@@ -250,8 +248,8 @@ function renderAccountyChildRoutes() {
         <Route path="payroll/employees/:empId" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollEmployeeDetailsPage /></Suspense>} />
         <Route path="payroll/cycle/new" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollCyclePage /></Suspense>} />
         <Route path="payroll/cycle/:cycleId" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollCyclePage /></Suspense>} />
-        <Route path="payroll/filings" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollFilingsPage /></Suspense>} />
-        <Route path="payroll/reconciliation" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollReconciliationPage /></Suspense>} />
+        <Route path="payroll/filings" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollDashboardPage defaultTab="filings" /></Suspense>} />
+        <Route path="payroll/reconciliation" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollDashboardPage defaultTab="reconciliation" /></Suspense>} />
         <Route path="payroll/reports" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollReportsPage /></Suspense>} />
         <Route path="payroll/portal" element={<Suspense fallback={<AccountyPageSkeleton />}><ClientPortalPage /></Suspense>} />
         <Route path="payroll/tax-params" element={<Suspense fallback={<AccountyPageSkeleton />}><PayrollTaxParametersPage /></Suspense>} />

@@ -46,7 +46,11 @@ const MONTH_NAMES = [
   'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December',
 ];
 
-export default function PayrollReconciliationPage() {
+interface PayrollReconciliationPageProps {
+  embedded?: boolean;
+}
+
+export default function PayrollReconciliationPage({ embedded = false }: PayrollReconciliationPageProps = {}) {
   const { companyId } = useParams<{ companyId: string }>();
   const { selectedCompany } = useCompany();
   const { dateFrom } = useDateRange();
@@ -237,13 +241,13 @@ export default function PayrollReconciliationPage() {
   });
 
   return (
-    <div className="space-y-6 p-4 md:p-6 pb-32 page-animate">
+    <div className={cn("space-y-6 page-animate", embedded ? "pb-20" : "p-4 md:p-6 pb-32")}>
       {/* Page Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              471. Bérkontroll & Főkönyvi Egyeztető
+            <h1 className={cn("font-bold tracking-tight text-foreground", embedded ? "text-xl" : "text-2xl")}>
+              Bérkontroll & Banki Egyeztető
             </h1>
             {reconciliation?.is_balanced ? (
               <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 gap-1.5">
@@ -253,12 +257,12 @@ export default function PayrollReconciliationPage() {
             ) : (
               <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5" />
-                Záróegyenleg: {formatCurrencyLocale(reconciliation?.closing_balance || 0, 'HUF')}
+                471 Záróegyenleg: {formatCurrencyLocale(reconciliation?.closing_balance || 0, 'HUF')}
               </Badge>
             )}
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Béranalitika ↔ 471. Jövedelemelszámolási Főkönyv ↔ Banki/Pénztári kifizetések automatikus egyeztetése és kifizetés-audit
+            Béranalitika ↔ Sztv. 471 Jövedelemelszámolási Főkönyv ↔ Banki/Pénztári kifizetések automatikus egyeztetése és kifizetés-audit
           </p>
         </div>
 
