@@ -12,6 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "./components/ui/toaster";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { SupportModeBanner } from "./components/SupportModeBanner";
+import { EnvironmentBadge } from "./components/EnvironmentBadge";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { ProtectedLayout } from "./components/ProtectedLayout";
@@ -51,6 +52,7 @@ const App = () => (
               <Toaster />
               <OfflineBanner />
               <SupportModeBanner />
+              <EnvironmentBadge />
               <ErrorBoundary>
                 <BrowserRouter future={{ v7_relativeSplatPath: true }}>
                   <LanguageRouteSync />
