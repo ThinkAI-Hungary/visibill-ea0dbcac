@@ -49,12 +49,11 @@ export function TypelessTransactionsBanner({
         <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
           <Button
             variant="outline"
-            size="sm"
             onClick={onOpenApproval}
-            className="gap-1.5 border-amber-500/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 dark:hover:text-amber-200 bg-amber-500/10 dark:bg-amber-500/15 font-semibold text-xs shadow-2xs h-8.5 px-3.5 cursor-pointer transition-colors"
+            className="h-9 px-3.5 gap-2 border-amber-500/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 dark:hover:text-amber-200 bg-amber-500/10 dark:bg-amber-500/15 font-medium text-xs shadow-xs shrink-0 cursor-pointer transition-colors"
           >
             <span>Tételek felülvizsgálata és jóváhagyása ({count})</span>
-            <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+            <ArrowRight className="w-4 h-4 ml-0.5" />
           </Button>
         </div>
       </CardContent>
