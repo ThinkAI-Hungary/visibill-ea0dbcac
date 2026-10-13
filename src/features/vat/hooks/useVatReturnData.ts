@@ -1058,7 +1058,7 @@ export function useVatReturnData() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['vat_return'] });
-      toast({ title: 'Bevallás visszanyitva piszkozatba' });
+      toast({ title: 'Véglegesítés feloldva — a számítás újra elérhető' });
     },
     onError: (e: any) =>
       toast({ title: 'Visszanyitás hiba', description: e.message, variant: 'destructive' }),

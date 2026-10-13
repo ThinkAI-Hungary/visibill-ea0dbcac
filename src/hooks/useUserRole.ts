@@ -67,20 +67,29 @@ export function useUserRole(): {
         .eq('user_id', user!.id)
         .maybeSingle();
 
-      if (!error && data) {
-        return { role: data.role as UserRole, assignmentRole: null, assignmentOnly: false };
-      }
+      const memberRole = (!error && data) ? (data.role as UserRole) : null;
 
-      // Fallback: check if user is an accountant assigned to this company in accounty_assignments
-      const { data: assignData, error: assignError } = await supabase
+      // Check if user is also an accountant assigned to this company in accounty_assignments
+      const { data: assignData } = await supabase
         .from('accounty_assignments')
         .select('role')
         .eq('company_id', companyId!)
         .eq('accountant_user_id', user!.id)
         .maybeSingle();
 
-      if (!assignError && assignData) {
-        const assignmentRole = normalizeAccountyRole(assignData.role) ?? assignData.role;
+      const assignmentRole = assignData?.role
+        ? (normalizeAccountyRole(assignData.role) ?? assignData.role)
+        : null;
+
+      if (memberRole) {
+        return {
+          role: memberRole,
+          assignmentRole,
+          assignmentOnly: false,
+        };
+      }
+
+      if (assignmentRole) {
         // payroll_specialist must NOT inherit the broad `member` view of the client's books (D-5)
         return {
           role: assignmentRole === 'payroll_specialist' ? 'payroll_specialist' : 'member',
