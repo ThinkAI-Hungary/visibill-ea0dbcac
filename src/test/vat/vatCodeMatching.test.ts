@@ -174,6 +174,36 @@ describe('Dual VAT Code System & F.AFA Recognition', () => {
       expect(match.code).toBe('BE_5_LEV');
       expect(match.legacy_code).toBe('05');
     });
+
+    it('mixed invoices: keeps 27% normal items as BE_27_LEV even when invoice has isReverseCharge = true', () => {
+      // Normal electrical supplies item on a mixed invoice (e.g. PVT 3075)
+      const normalItemMatch = matchItemToVatCode({
+        vatRate: '27%',
+        direction: 'INBOUND',
+        vatCodes: sampleCompanyVatCodes,
+        isReverseCharge: true, // Parent invoice has reverse charge flag due to another item
+        lineDescription: 'PVT 3075 Fm K U CSP24.E124',
+      });
+
+      expect(normalItemMatch.code).toBe('BE_27_LEV');
+      expect(normalItemMatch.legacy_code).toBe('25');
+      expect(normalItemMatch.is_reverse_charge).toBeFalsy();
+    });
+
+    it('mixed invoices: classifies steel item as BE_FORD_ACEL even when raw vatRate was 27%', () => {
+      // Steel product (e.g. 8mm KORACÉL)
+      const steelItemMatch = matchItemToVatCode({
+        vatRate: '27%', // OCR erroneously read 27%
+        direction: 'INBOUND',
+        vatCodes: sampleCompanyVatCodes,
+        isReverseCharge: true,
+        lineDescription: '8mm KORACÉL 6M/SZAL',
+      });
+
+      expect(steelItemMatch.code).toBe('BE_FORD_ACEL');
+      expect(steelItemMatch.legacy_code).toBe('FAD');
+      expect(steelItemMatch.is_reverse_charge).toBe(true);
+    });
   });
 
   describe('getVatCodeBadgeData & Tooltip resolution', () => {
