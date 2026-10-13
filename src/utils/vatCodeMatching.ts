@@ -87,15 +87,34 @@ export function matchItemToVatCode({
   const normDir = direction === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
   const dirCodes = (vatCodes || []).filter(c => c.direction === normDir);
 
-  const isFad = isReverseCharge === true || isReverseChargeVatRate(vatRate);
+  const desc = (lineDescription || '').toLowerCase();
+  const isSteelOrScrap =
+    desc.includes('acél') ||
+    desc.includes('köracél') ||
+    desc.includes('koracél') ||
+    desc.includes('betonacél') ||
+    desc.includes('vaslemez') ||
+    desc.includes('fémhulladék') ||
+    desc.includes('7214');
+
+  const isExplicitRc = isReverseChargeVatRate(vatRate);
+  const explicitPct = normalizeVatRatePercent(vatRate);
+  const hasPositiveStandardRate = explicitPct !== null && explicitPct > 0;
+
+  // A line item is reverse charge (FAD) if:
+  // 1. Its VAT rate explicitly indicates reverse charge (e.g. 'FAD', 'FORD', '0%_FAD'), OR
+  // 2. Its product description indicates steel or scrap metal (mandatory domestic reverse charge by law under Áfa tv. 142. §), OR
+  // 3. The parent invoice is reverse charge AND the line item does NOT have an explicit positive standard rate (e.g. 27%, 18%, 5%).
+  // Mixed invoices: If parent invoice has isReverseCharge === true, but this specific line item has a standard rate (e.g. 27%)
+  // and is NOT steel/scrap, it is a standard rated item (BE_27_LEV / KIM_27), NOT reverse charge!
+  const isFad = isExplicitRc || isSteelOrScrap || (isReverseCharge === true && !hasPositiveStandardRate);
 
   // 1. Reverse Charge (Fordított adózás: FAD, F.AFA, etc.)
   if (isFad) {
     const fadCodes = dirCodes.filter(c => c.is_reverse_charge);
     if (fadCodes.length > 0) {
       if (lineDescription) {
-        const desc = lineDescription.toLowerCase();
-        if (desc.includes('acél') || desc.includes('vas') || desc.includes('betonacél') || desc.includes('cső')) {
+        if (desc.includes('acél') || desc.includes('köracél') || desc.includes('koracél') || desc.includes('vas') || desc.includes('betonacél') || desc.includes('cső') || desc.includes('7214')) {
           const steelCode = fadCodes.find(c => c.code.includes('ACEL') || c.fad_category === 'steel');
           if (steelCode) return steelCode;
         }
