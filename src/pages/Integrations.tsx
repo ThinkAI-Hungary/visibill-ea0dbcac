@@ -292,47 +292,6 @@ const Integrations = () => {
     staleTime: 2 * 60 * 1000,
   });
 
-  if (companyLoading) {
-    return <ContentSkeleton />;
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"><CheckCircle className="w-3 h-3 mr-1" />Sikeres</Badge>;
-      case 'failed':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Sikertelen</Badge>;
-      case 'running':
-        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Futó</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('hu-HU');
-  };
-
-  const LogsSkeleton = () => (
-    <div className="space-y-2">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-5 w-20" />
-            </div>
-            <Skeleton className="h-4 w-16" />
-          </div>
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-3 w-32" />
-            <Skeleton className="h-3 w-8" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   // Master-Detail Navigációs csoportok és elemek (jurisdiction-tudatos)
   const INTEGRATION_NAV = useMemo(() => {
     const rawNav = [
@@ -442,6 +401,47 @@ const Integrations = () => {
     ];
     return rawNav.filter(group => group.items.length > 0);
   }, [hasNavIntegration, hasMinimaxIntegration, consents.length, syncLogs.length, minimaxCreds, t]);
+
+  if (companyLoading) {
+    return <ContentSkeleton />;
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"><CheckCircle className="w-3 h-3 mr-1" />Sikeres</Badge>;
+      case 'failed':
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Sikertelen</Badge>;
+      case 'running':
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Futó</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString('hu-HU');
+  };
+
+  const LogsSkeleton = () => (
+    <div className="space-y-2">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-20" />
+            </div>
+            <Skeleton className="h-4 w-16" />
+          </div>
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-3 w-8" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <TooltipProvider delayDuration={300}>
