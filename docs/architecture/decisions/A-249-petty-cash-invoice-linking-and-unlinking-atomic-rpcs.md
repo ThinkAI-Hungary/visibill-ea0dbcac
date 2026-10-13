@@ -1,4 +1,4 @@
-# A-246: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra
+# A-249: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra
 
 **Status:** Decided  
 **Date:** 2026-10-12  
@@ -50,7 +50,7 @@ A frontend komponens ([AttachInvoiceDialog.tsx](file:///c:/Users/adetw/.antigrav
 ---
 
 ## Kapcsolódó
-* [P-182: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX](../../product/decisions/P-182-petty-cash-invoice-attachment-and-unlink-ux.md)
+* [P-183: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX](../../product/decisions/P-183-petty-cash-invoice-attachment-and-unlink-ux.md)
 * [070: Házipénztári Kézi Tételek és Számlák Összerendelésének Számviteli Szabályzata](../../business/decisions/070-petty-cash-invoice-settlement-and-unlink-policy.md)
 * [A-204: Online Pénztárgép (OPG) Modul Architektúra és Házipénztár Integráció](./A-204-online-cash-register-opg-architecture.md)
 * [A-233: Tranzakció Készpénzes Kiegyenlítés Házipénztárba](./A-233-transfers-manual-cash-settlement-to-petty-cash-and-gls-compensation-normalization.md)

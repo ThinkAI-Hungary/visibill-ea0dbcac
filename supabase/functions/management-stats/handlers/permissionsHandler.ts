@@ -4,6 +4,7 @@ export const EAISYBILL_MODULES = [
   'dashboard', 'categories', 'projects', 'partners',
   'invoices', 'receivables', 'transactions', 'petty_cash',
   'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
+  'journals', 'subledger', 'accounting_rules',
   'salaries', 'working_time', 'fixed_assets',
   'integrations', 'exchange_rates', 'upload', 'tickets', 'settings',
   'shipments', 'shipment_import', 'shipment_matching',
@@ -12,20 +13,23 @@ export const EAISYBILL_MODULES = [
 export const ACCOUNTY_MODULES = [
   'portfolio', 'missing_invoices', 'tax_calendar',
   'reports', 'approval_queue', 'alerts', 'nav_deadlines',
-  'payroll', 'onboarding', 'tao', 'settings',
+  'payroll', 'onboarding', 'tao', 'client_bookkeeping', 'settings',
   'admin_audit', 'admin_gdpr', 'admin_templates', 'admin_job_codes',
   'admin_tax_params', 'admin_legal', 'admin_office', 'admin_permissions',
   'admin_accountants', 'tickets', 'ai_assistant', 'help', 'profile',
 ];
 
 export const EAISYBILL_ADMIN_ONLY = new Set(['salaries', 'integrations']);
+// D-3: Cégvezető (admin) default: no accounting-technical modules (owner keeps everything)
+export const EAISYBILL_ACCOUNTING_TECH = new Set(['subledger', 'journals']);
 export const EAISYBILL_ASSISTANT = new Set([
   'dashboard', 'categories', 'projects', 'partners', 'invoices', 'receivables',
   'transactions', 'petty_cash', 'upload', 'tickets', 'exchange_rates', 'settings'
 ]);
 export const EAISYBILL_VIEWER = new Set([
   'dashboard', 'categories', 'projects', 'partners', 'invoices', 'receivables',
-  'transactions', 'petty_cash', 'exchange_rates', 'tickets', 'settings'
+  'transactions', 'petty_cash', 'exchange_rates', 'tickets', 'settings',
+  'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
 ]);
 export const EAISYBILL_EMPLOYEE = new Set(['working_time']);
 
@@ -35,8 +39,13 @@ export function getEaisybillDefault(role: string | null | undefined, module: str
   }
 
   const r = (role || "").toLowerCase();
-  const isAdmin = r === 'admin' || r === 'owner' || r === 'ceo';
-  if (isAdmin) return { canRead: true, canWrite: true };
+  const isOwner = r === 'owner' || r === 'ceo';
+  if (isOwner) return { canRead: true, canWrite: true };
+  if (r === 'admin') {
+    const hidden = EAISYBILL_ACCOUNTING_TECH.has(module);
+    return { canRead: !hidden, canWrite: !hidden };
+  }
+
 
   if (r === 'member') {
     const canAccess = !EAISYBILL_ADMIN_ONLY.has(module) || module === 'working_time';
@@ -68,8 +77,8 @@ export const ACCOUNTY_SENIOR_AND_ADMIN = new Set([
   'reports', 'approval_queue', 'alerts', 'nav_deadlines', 'settings',
 ]);
 export const ACCOUNTY_ALWAYS = new Set([
-  'portfolio', 'missing_invoices', 'tax_calendar', 'payroll',
-  'tao', 'tickets', 'ai_assistant', 'help', 'profile',
+  'portfolio', 'missing_invoices', 'tax_calendar', 'payroll', 'client_bookkeeping',
+  'tickets', 'ai_assistant', 'help', 'profile',
 ]);
 
 export function getAccountyDefault(role: string | null | undefined, module: string): { canRead: boolean; canWrite: boolean } {
@@ -79,11 +88,23 @@ export function getAccountyDefault(role: string | null | undefined, module: stri
 
   if (isAdmin) return { canRead: true, canWrite: true };
 
+  // D-5: Bérszámfejtő (payroll_specialist) - least privilege: payroll + 08 filing only.
+  if (r === 'payroll_specialist') {
+    const PAYROLL_SPECIALIST: Record<string, boolean> = {
+      payroll: true, portfolio: false, tax_calendar: false,
+      tickets: true, ai_assistant: true, help: false, profile: true,
+    };
+    const w = PAYROLL_SPECIALIST[module];
+    return w === undefined ? { canRead: false, canWrite: false } : { canRead: true, canWrite: w };
+  }
+
   let canRead = false;
   if (ACCOUNTY_ALWAYS.has(module)) {
     canRead = true;
   } else if (ACCOUNTY_SENIOR_AND_ADMIN.has(module)) {
     canRead = isSenior;
+  } else if (r === 'asszisztens' && module === 'tao') {
+    canRead = false;
   } else if (!ACCOUNTY_ADMIN_ONLY.has(module)) {
     canRead = true;
   }

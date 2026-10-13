@@ -1,4 +1,4 @@
-# P-182: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX
+# P-183: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX
 
 **Status:** Decided  
 **Category:** UI / Workflow / Petty Cash  
@@ -51,7 +51,7 @@ A könyvelési gyakorlatban a készpénzes számlák rögzítése és a tényleg
 ---
 
 ## Kapcsolódó
-* [A-246: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra](../../architecture/decisions/A-246-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md)
+* [A-249: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra](../../architecture/decisions/A-249-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md)
 * [070: Házipénztári Kézi Tételek és Számlák Összerendelésének Számviteli Szabályzata](../../business/decisions/070-petty-cash-invoice-settlement-and-unlink-policy.md)
 * [P-092: Házipénztár Bizonylat Validáció és Számlakiegyenlítés UX](./P-092-petty-cash-manual-entry-validation-and-settlement-ux.md)
 * [P-115: Házipénztár Szállítói Számlák Kiegyenlítése és Időszaki Zárás UX](./P-115-petty-cash-inbound-settlement-and-period-closing-ux.md)

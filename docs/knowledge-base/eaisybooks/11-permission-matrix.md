@@ -21,11 +21,12 @@ A **Jogosultságkezelő Mátrix** az eaisyBooks könyvelőirodai jogosultság- �
 
 ### Fő feladatai és biztonsági garanciái:
 1. **Kétdimenziós Cég–Könyvelő Mátrix:** Áttekinthető táblázatban jeleníti meg az iroda összes ügyfelét és munkatársát, lehetővé téve a felelősségi körök azonnali hozzárendelését vagy megszüntetését.
-2. **Négyfokozatú szerepkör-kezelés:** Minden hozzárendeléshez meghatározható az adott cégre érvényes szerepkör:
+2. **Ötfokozatú szerepkör-kezelés:** Minden hozzárendeléshez meghatározható az adott cégre érvényes szerepkör (részletek: ADR A-247):
    - **Iroda Admin:** Korlátlan hozzáférés és cégbeállítások kezelése.
-   - **Senior Könyvelő:** Szakmai felügyelet, bevallás jóváhagyás, zárások engedélyezése.
+   - **Senior Könyvelő:** Szakmai felügyelet, bevallás jóváhagyás, zárások engedélyezése. **Kizárólag az Iroda Admin és a Senior** véglegesítheti az ÁFA-bevallást (időszak-zárolás) és generálhat hivatalos ÁNYK XML-t; a Könyvelő, az Asszisztens és a Bérszámfejtő nem (a gombok inaktívak, az adatbázis `ACCESS_DENIED` hibával elutasítja).
    - **Könyvelő:** Operatív számla-, bank- és bizonylatkönyvelés.
-   - **Asszisztens:** Bizonylatelőkészítés, hiánylista kezelés jóváhagyási jog nélkül.
+   - **Asszisztens:** Bizonylatelőkészítés, hiánylista kezelés jóváhagyási jog nélkül. Alapértelmezetten nincs TAO / KIVA hozzáférése.
+   - **Bérszámfejtő (`payroll_specialist`):** Csak bérszámfejtés és a 08-as bevallás. Alapértelmezetten nincs hozzáférése az ügyfél bankszámláihoz, főkönyvhöz, számlákhoz és TAO-hoz; a jogai a Modul Jogosultságok lapfülön **egyénileg módosíthatók** (hibrid modell: a DB-felülírás mindig erősebb az alapértelmezésnél).
 3. **Moduláris funkció-hozzáférés (Olvasás/Írás):** Külön lapfülön szabályozható, hogy az egyes munkatársak mely funkcionális modulokat használhatják (pl. béradatok elrejtése vagy csak olvasási jog biztosítása).
 4. **Valós idejű szinkronizáció:** Minden változtatás mentési gomb nélkül, azonnal lefut az adatbázisban és érvényesül a munkatárs felületén.
 
@@ -74,6 +75,7 @@ A **Jogosultságkezelő Mátrix** az eaisyBooks könyvelőirodai jogosultság- �
   3. Kattintson a **Szem ikonra** (Olvasási jog) a megtekintés engedélyezéséhez vagy tiltásához.
   4. Kattintson a **Ceruza ikonra** (Írási jog) az adatrögzítési és módosítási funkciók bekapcsolásához.
   - **Eredmény:** A munkatárs bal oldali menüjében a tiltott modulok elrejtésre kerülnek, és jogosulatlanul nem végezhet műveletet.
+  - **Adatbázis-szintű védelem:** a **Bérszámfejtő** (`payroll_specialist`) számára a számlák, banki tételek, partnerek, ÁFA és főkönyvi adatok adatbázis-szinten sem olvashatók, amíg az Olvasás kapcsoló az adott modulra nincs bekapcsolva. A **lezárt ÁFA bevallást** (fejléc és sorok) csak Senior, Iroda Admin vagy a cég vezetői módosíthatják, törölhetik vagy nyithatják vissza. Az Írás kapcsoló DB-szinten csak **bővít** (be lehet vele kapcsolni a tiltott alapértelmezést), a kikapcsolás UI-szintű. Az ÁNYK XML generálás böngészőben történik (UI + belső guard védi).
 
 ---
 

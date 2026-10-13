@@ -318,10 +318,21 @@ describe('depreciationPostingService', () => {
         } as any;
       });
 
+      let rpcCallPayload: any = null;
       vi.mocked(supabase.rpc).mockImplementation((fn: string, args: any) => {
-        if (fn === 'acc_post_journal_entry') {
-          rpcCallArgs = args;
-          return Promise.resolve({ data: null, error: null }) as any;
+        if (fn === 'post_depreciation_run_to_gl') {
+          rpcCallPayload = args;
+          return Promise.resolve({
+            data: {
+              success: true,
+              header_id: 'head-new-123',
+              journal_number: 101,
+              total_amount: 5708,
+              asset_count: 1,
+              message: 'Sikeres könyvelés!',
+            },
+            error: null,
+          }) as any;
         }
         return Promise.resolve({ data: null, error: null }) as any;
       });
@@ -336,37 +347,19 @@ describe('depreciationPostingService', () => {
       });
 
       expect(res.success).toBe(true);
+      expect(res.headerId).toBe('head-new-123');
+      expect(res.journalNumber).toBe(101);
       expect(res.totalAmount).toBe(5708);
       expect(res.assetCount).toBe(1);
 
-      // Verify Header
-      expect(insertedHeader).not.toBeNull();
-      expect(insertedHeader.document_id).toBe('ECS-2026-08');
-      expect(insertedHeader.journal_id).toBe('jour-ve');
-      expect(insertedHeader.accounting_year).toBe(2026);
-
-      // Verify Lines
-      expect(insertedLines.length).toBe(2);
-      const debitLine = insertedLines.find(l => l.dc_type === 'T');
-      const creditLine = insertedLines.find(l => l.dc_type === 'K');
-
-      expect(debitLine).toBeDefined();
-      expect(creditLine).toBeDefined();
-      expect(debitLine.amount).toBe(5708);
-      expect(creditLine.amount).toBe(5708);
-      expect(debitLine.gl_account_id).toBe('gl-5711');
-      expect(creditLine.gl_account_id).toBe('gl-13941');
-
-      // Exact double-entry balance: sum(T) === sum(K)
-      const sumT = insertedLines.filter(l => l.dc_type === 'T').reduce((acc, l) => acc + l.amount, 0);
-      const sumK = insertedLines.filter(l => l.dc_type === 'K').reduce((acc, l) => acc + l.amount, 0);
-      expect(sumT).toBe(sumK);
-
-      // Verify RPC call
-      expect(rpcCallArgs).toEqual({
-        p_header_id: 'head-new-123',
-        p_user_id: 'user-1',
-      });
+      // Verify RPC payload
+      expect(rpcCallPayload).not.toBeNull();
+      expect(rpcCallPayload.p_company_id).toBe('comp-1');
+      expect(rpcCallPayload.p_document_id).toBe('ECS-2026-08');
+      expect(rpcCallPayload.p_items).toHaveLength(1);
+      expect(rpcCallPayload.p_items[0].period_amount).toBe(5708);
+      expect(rpcCallPayload.p_items[0].debit_gl_account_id).toBe('gl-5711');
+      expect(rpcCallPayload.p_items[0].credit_gl_account_id).toBe('gl-13941');
     });
   });
 });

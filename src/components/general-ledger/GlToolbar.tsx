@@ -28,6 +28,9 @@ interface GlToolbarProps {
   onOpenManagePresets: () => void;
   onOpenUploadPreset: () => void;
   onOpenCopyPreset?: () => void;
+  activeViewTemplateName?: string;
+  activeViewTemplateType?: 'builtin' | 'custom';
+  onOpenViewSelector?: () => void;
   onOpenAddAccount: () => void;
   onOpenManualEntry: () => void;
   onOpenExportAuditXml?: () => void;
@@ -36,10 +39,13 @@ interface GlToolbarProps {
   onRunAI: () => void;
   onShowPrintPreview: () => void;
   onPrint: () => void;
+  isExporting?: boolean;
   onExportExcel: (options?: { excludeZeroRows?: boolean }) => void;
   onExportAnalyticalExcel: (options?: { excludeZeroRows?: boolean }) => void;
   onExportProcontPdf?: (options?: { excludeZeroRows?: boolean }) => void;
   onExportProcontExcel?: (options?: { excludeZeroRows?: boolean }) => void;
+  onExportAgoraPdf?: (options?: { excludeZeroRows?: boolean }) => void;
+  onExportAgoraExcel?: (options?: { excludeZeroRows?: boolean }) => void;
 }
 
 export function GlToolbar({
@@ -51,6 +57,9 @@ export function GlToolbar({
   selectedCompanyName,
   isAIRunning,
   aiProgress,
+  activeViewTemplateName,
+  activeViewTemplateType,
+  onOpenViewSelector,
   onSelectPreset,
   onOpenManagePresets,
   onOpenUploadPreset,
@@ -63,10 +72,13 @@ export function GlToolbar({
   onRunAI,
   onShowPrintPreview,
   onPrint,
+  isExporting,
   onExportExcel,
   onExportAnalyticalExcel,
   onExportProcontPdf,
   onExportProcontExcel,
+  onExportAgoraPdf,
+  onExportAgoraExcel,
 }: GlToolbarProps) {
   const { t } = useTranslation(['accounting', 'common']);
 
@@ -84,7 +96,7 @@ export function GlToolbar({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 bg-card p-2.5 sm:p-3 rounded-xl border border-border shadow-xs print:hidden">
-      {/* ── 1. Számlatükör Sablon Blokkpár (Bal oldal) ── */}
+      {/* ── 1. Számlatükör Sablon & Nézetválasztó Blokkpár (Bal oldal) ── */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Database className="w-4 h-4 text-primary shrink-0" />
@@ -160,6 +172,29 @@ export function GlToolbar({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* ── Főkönyvi nézetválasztó és egyedi sablonkészítő modal indító gomb ── */}
+        <CustomTooltip content="Főkönyvi nézet elrendezés kiválasztása, testreszabása és új sablon feltöltése" side="bottom">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenViewSelector}
+            className="h-9 px-3 font-medium gap-2 border-primary/30 hover:border-primary/60 bg-primary/5 hover:bg-primary/10 text-foreground transition-colors"
+          >
+            <Table2 className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-muted-foreground">Nézet:</span>
+              <span className="text-xs text-primary font-medium whitespace-nowrap">
+                {activeViewTemplateName || 'Alapértelmezett'}
+              </span>
+            </div>
+            {activeViewTemplateType === 'custom' && (
+              <span className="text-[10px] bg-primary/20 text-primary font-semibold px-1.5 py-0.5 rounded-full">
+                Egyedi
+              </span>
+            )}
+          </Button>
+        </CustomTooltip>
       </div>
 
       {/* ── 2. Műveleti és Könyvelési Gombok (Jobb oldal) ── */}
@@ -256,9 +291,18 @@ export function GlToolbar({
         {/* Exportálás és Nyomtatás Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 gap-1.5 font-medium text-xs">
-              <Download className="h-4 w-4 text-muted-foreground" />
-              <span>{t('accounting:general_ledger.toolbar.export', 'Export')}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isExporting}
+              className="h-9 gap-1.5 font-medium text-xs"
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : (
+                <Download className="h-4 w-4 text-muted-foreground" />
+              )}
+              <span>{isExporting ? 'Exportálás...' : t('accounting:general_ledger.toolbar.export', 'Export')}</span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 ml-0.5" />
             </Button>
           </DropdownMenuTrigger>
@@ -340,6 +384,45 @@ export function GlToolbar({
                     <span>Teljes kivonat (Excel)</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onExportProcontExcel({ excludeZeroRows: true })} className="cursor-pointer text-xs">
+                    <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>0-ás sorok nélkül</span>
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            )}
+            {onExportAgoraPdf && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="cursor-pointer text-xs">
+                    <FileText className="h-4 w-4 mr-2 text-primary" />
+                    <span className="font-semibold text-foreground">"A" főkönyvi kivonat (PDF)</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-52">
+                    <DropdownMenuItem onClick={() => onExportAgoraPdf({ excludeZeroRows: false })} className="cursor-pointer text-xs">
+                      <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>Teljes kivonat (PDF)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onExportAgoraPdf({ excludeZeroRows: true })} className="cursor-pointer text-xs">
+                      <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>0-ás sorok nélkül</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </>
+            )}
+            {onExportAgoraExcel && (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer text-xs">
+                  <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-semibold text-foreground">"A" főkönyvi kivonat (Excel)</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-52">
+                  <DropdownMenuItem onClick={() => onExportAgoraExcel({ excludeZeroRows: false })} className="cursor-pointer text-xs">
+                    <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>Teljes kivonat (Excel)</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onExportAgoraExcel({ excludeZeroRows: true })} className="cursor-pointer text-xs">
                     <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
                     <span>0-ás sorok nélkül</span>
                   </DropdownMenuItem>

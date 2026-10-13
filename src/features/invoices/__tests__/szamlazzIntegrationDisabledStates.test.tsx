@@ -50,6 +50,7 @@ vi.mock('@/features/invoices/context/useInvoiceContext', () => ({
     companyId: 'comp-1',
     selectedCompany: { id: 'comp-1', name: 'Test Kft' },
     activeTab: 'OUTBOUND',
+    writable: true,
     setFilesDialogOpen: vi.fn(),
     setInvoiceParam: vi.fn(),
     openDataExportDialog: vi.fn(),

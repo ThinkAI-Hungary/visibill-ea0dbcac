@@ -2,7 +2,7 @@
 
 > Főkönyvi számlák, naplókönyvelés, GL import/audit, ÁFA kódok.
 
-**Táblák ebben a csoportban:** 9
+**Táblák ebben a csoportban:** 10
 
 ---
 
@@ -228,3 +228,28 @@
 
 ---
 
+### `gl_view_templates`
+
+**RLS:** ✅ | **Sorok:** dinamikus
+
+> Főkönyvi nézetválasztó, egyedi oszlopkonfigurációk és beépített/feltöltött nézetsablonok (A-248).
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| id | text | — | `gen_random_uuid()::text` |
+| company_id | uuid | ✓ | |
+| accounting_firm_id | uuid | ✓ | |
+| name | text | — | |
+| template_type | text | — | `'custom'` |
+| description | text | ✓ | |
+| columns | jsonb | — | `'[]'::jsonb` |
+| source_file_name | text | ✓ | |
+| created_by | uuid | ✓ | |
+| created_at | timestamp with time zone | — | `now()` |
+| updated_at | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`, `accounting_firm_id` → `companies.id`, `created_by` → `auth.users.id`
+
+**Indexek:** `idx_gl_view_templates_company_id`, `idx_gl_view_templates_type`
+
+---

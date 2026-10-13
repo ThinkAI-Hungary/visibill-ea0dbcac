@@ -20,3 +20,7 @@ export { VatTourismTaxSection } from './components/VatTourismTaxSection';
 export { VatScopeRadioGroup } from './components/VatScopeRadioGroup';
 export { VatPoreznaExportDialog } from './components/VatPoreznaExportDialog';
 export { useVatScope } from './hooks/useVatScope';
+export { VatViewSelectorModal } from './components/templates/VatViewSelectorModal';
+export { VatTemplateUploadDialog } from './components/templates/VatTemplateUploadDialog';
+export { VatTemplatePreview } from './components/templates/VatTemplatePreview';
+

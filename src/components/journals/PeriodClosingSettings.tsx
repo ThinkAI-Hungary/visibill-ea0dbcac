@@ -3,11 +3,12 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Lock, Unlock } from 'lucide-react';
+import { Loader2, Lock, Unlock, ShieldAlert } from 'lucide-react';
 
 interface PeriodClosingSettingsProps {
   open: boolean;
@@ -22,9 +23,10 @@ const MONTHS_HUN = [
 export default function PeriodClosingSettings({ open, onOpenChange }: PeriodClosingSettingsProps) {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
+  const { canClosePeriod } = useCompanyCapabilities();
   
-  const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
+  const currentYear = selectedYear;
 
   // Fetch closed periods for selected year
   const { data: closedPeriods = [], isLoading: loadingPeriods, refetch: refetchPeriods } = useQuery({
@@ -42,11 +44,10 @@ export default function PeriodClosingSettings({ open, onOpenChange }: PeriodClos
     enabled: !!selectedCompany?.id && open,
   });
 
-  // Toggle closed period mutation
+  // Toggle closed period mutation via secure RPC
   const toggleMutation = useMutation({
     mutationFn: async ({ month, currentClosed }: { month: number; currentClosed: boolean }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Bejelentkezés szükséges");
+      if (!selectedCompany?.id) throw new Error("Nincs cég kiválasztva");
 
       if (!currentClosed) {
         // Verify drafts in selected month
@@ -57,7 +58,7 @@ export default function PeriodClosingSettings({ open, onOpenChange }: PeriodClos
         const { count, error: countErr } = await supabase
           .from('acc_journal_headers')
           .select('id', { count: 'exact', head: true })
-          .eq('company_id', selectedCompany!.id)
+          .eq('company_id', selectedCompany.id)
           .in('status', ['KEZI_PISZKOZAT', 'JOVAHAGYASRA_VAR', 'GEPI_JAVASLAT'])
           .gte('posting_date', startDate)
           .lte('posting_date', endDate);
@@ -66,35 +67,17 @@ export default function PeriodClosingSettings({ open, onOpenChange }: PeriodClos
         if (count && count > 0) {
           throw new Error(`A hónapban ${count} lekönyveletlen (függő vagy javaslat státuszú) könyvelési tétel található a főkönyvben. Kérjük könyvelje le vagy törölje őket a főkönyvi zárolás előtt! (Megjegyzés: A házipénztár pénzforgalmi zárása és a címletjegyzék a Pénzügyek → Házipénztár menüpontban érhető el, amihez nem szükséges előzetes könyvelés.)`);
         }
-
-        // Lock period
-        const { error } = await supabase
-          .from('acc_accounting_periods')
-          .upsert({
-            company_id: selectedCompany!.id,
-            year: selectedYear,
-            month: month,
-            is_closed: true,
-            closed_at: new Date().toISOString(),
-            closed_by: user.id
-          }, { onConflict: 'company_id, year, month' });
-
-        if (error) throw error;
-      } else {
-        // Unlock period
-        const { error } = await supabase
-          .from('acc_accounting_periods')
-          .update({
-            is_closed: false,
-            closed_at: null,
-            closed_by: null
-          })
-          .eq('company_id', selectedCompany!.id)
-          .eq('year', selectedYear)
-          .eq('month', month);
-
-        if (error) throw error;
       }
+
+      // Secure period closing via backend RPC
+      const { error } = await supabase.rpc('set_accounting_period_closed', {
+        p_company_id: selectedCompany.id,
+        p_year: selectedYear,
+        p_month: month,
+        p_closed: !currentClosed,
+      });
+
+      if (error) throw error;
     },
     onSuccess: () => {
       refetchPeriods();
@@ -121,6 +104,15 @@ export default function PeriodClosingSettings({ open, onOpenChange }: PeriodClos
             (A házipénztár pénzforgalmi zárása és a címletjegyzék készítése a Pénzügyek → Házipénztár menüpontban végezhető el.)
           </DialogDescription>
         </DialogHeader>
+
+        {!canClosePeriod && (
+          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-400">
+            <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              Időszak zárolásának és feloldásának módosítására kizárólag kijelölt könyvelő (Senior könyvelő / Iroda admin), illetve könyvelő nélküli önálló cégnél a vezetőség jogosult.
+            </span>
+          </div>
+        )}
 
         <div className="space-y-4 py-4">
           <div className="flex items-center justify-between">
@@ -162,7 +154,7 @@ export default function PeriodClosingSettings({ open, onOpenChange }: PeriodClos
                       <Switch
                         checked={isClosed}
                         onCheckedChange={() => handleToggle(monthNum, isClosed)}
-                        disabled={toggleMutation.isPending}
+                        disabled={toggleMutation.isPending || !canClosePeriod}
                       />
                     </div>
                   </div>

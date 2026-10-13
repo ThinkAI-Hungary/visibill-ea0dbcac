@@ -521,7 +521,7 @@ export default function AccountyApp() {
               ) : (
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                   <UserCheck className="w-3.5 h-3.5 text-primary" />
-                  {role === 'senior_könyvelő' ? t('portfolio.roles.senior_accountant', 'Senior könyvelő') : role === 'asszisztens' ? t('portfolio.roles.assistant', 'Asszisztens') : t('portfolio.roles.accountant', 'Könyvelő')}
+                  {role === 'senior_könyvelő' ? t('portfolio.roles.senior_accountant', 'Senior könyvelő') : role === 'asszisztens' ? t('portfolio.roles.assistant', 'Asszisztens') : role === 'payroll_specialist' ? t('portfolio.roles.payroll_specialist', 'Bérszámfejtő') : t('portfolio.roles.accountant', 'Könyvelő')}
                 </span>
               )}
             </div>

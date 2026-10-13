@@ -105,8 +105,12 @@ describe('PATH_TO_MODULE mapping', () => {
   });
 
   // Structural tests
-  it('has exactly 24 path mappings', () => {
-    expect(Object.keys(PATH_TO_MODULE)).toHaveLength(24);
+  it('has exactly 25 path mappings', () => {
+    expect(Object.keys(PATH_TO_MODULE)).toHaveLength(25);
+  });
+
+  it('maps /eaisybooks/ev to client_bookkeeping', () => {
+    expect(PATH_TO_MODULE['/eaisybooks/ev']).toBe('client_bookkeeping');
   });
 
   it('all module values are valid AccountyModule values', () => {
@@ -117,6 +121,7 @@ describe('PATH_TO_MODULE mapping', () => {
       'admin_templates', 'admin_job_codes', 'admin_tax_params',
       'admin_legal', 'admin_office', 'admin_permissions',
       'admin_accountants', 'tickets', 'ai_assistant', 'help', 'profile',
+      'client_bookkeeping',
     ];
 
     for (const module of Object.values(PATH_TO_MODULE)) {

@@ -78,6 +78,7 @@ export function ExpandedInvoiceRow({
   approvedAt,
   approvalNote,
   onOpenApprovalDialog,
+  readOnly = false,
   vatCodeId,
   vatRowOverride,
   invoiceType,
@@ -384,6 +385,7 @@ export function ExpandedInvoiceRow({
                         currentVatRowOverride={vatRowOverride}
                         direction={invoiceType ? (invoiceType.toUpperCase() as 'INBOUND' | 'OUTBOUND') : 'INBOUND'}
                         onUpdated={onMatchUpdate}
+                        disabled={readOnly}
                       />
                     </div>
                   </div>
@@ -403,6 +405,7 @@ export function ExpandedInvoiceRow({
                         direction={invoiceType ? (invoiceType.toUpperCase() as 'INBOUND' | 'OUTBOUND') : 'INBOUND'}
                         currency={invoiceCurrency}
                         onUpdated={onMatchUpdate}
+                        disabled={readOnly}
                       />
                     </div>
                   </div>
@@ -480,7 +483,7 @@ export function ExpandedInvoiceRow({
                           </p>
                         </div>
                       </div>
-                      {onOpenApprovalDialog && (
+                      {onOpenApprovalDialog && !readOnly && (
                         <Button
                           type="button"
                           size="sm"
@@ -591,7 +594,7 @@ export function ExpandedInvoiceRow({
                         {t('invoices:expanded.related_items', 'Kapcsolódó tételek')}
                       </div>
                       <div className="flex items-center gap-2">
-                        {matchingEnabled && hasAny && (
+                        {matchingEnabled && !readOnly && hasAny && (
                           <div className="flex items-center gap-1.5">
                             <Button
                               variant="outline"
@@ -720,7 +723,7 @@ export function ExpandedInvoiceRow({
                           <p className="text-sm text-muted-foreground italic">
                             {t('invoices:expanded.no_matched_items', 'Nincs párosított tétel ehhez a számlához.')}
                           </p>
-                          {matchingEnabled && (
+                          {matchingEnabled && !readOnly && (
                             <div className="flex items-center gap-1.5">
                               <Button
                                 variant="outline"

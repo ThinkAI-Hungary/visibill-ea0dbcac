@@ -103,6 +103,16 @@ describe('developmentReserveAutoPoster', () => {
       };
     });
 
+    (supabase.rpc as any).mockImplementation((fn: string, args: any) => {
+      if (fn === 'post_development_reserve_to_gl') {
+        return Promise.resolve({
+          data: { success: true, header_id: 'hdr-new-1', message: 'Sikeres feladás' },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
     const res = await postDevelopmentReserveReleaseToLedger({
       companyId: 'c1',
       userId: 'u1',
@@ -115,37 +125,26 @@ describe('developmentReserveAutoPoster', () => {
 
     expect(res.success).toBe(true);
     expect(res.headerId).toBe('hdr-new-1');
+    expect(supabase.rpc).toHaveBeenCalledWith('post_development_reserve_to_gl', expect.objectContaining({
+      p_company_id: 'c1',
+      p_asset_name: 'CNC Gép',
+      p_reserve_amount: 2500000,
+      p_gl414: 'gl-414',
+      p_gl413: 'gl-413',
+    }));
   });
 
-  it('removes development reserve posting correctly', async () => {
-    const mockFrom = supabase.from as any;
-    const deleteHeaderMock = vi.fn().mockResolvedValue({ error: null });
-    const deleteLinesMock = vi.fn().mockResolvedValue({ error: null });
-
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'acc_journal_headers') {
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'hdr-to-del' }, error: null }),
-          delete: vi.fn().mockReturnValue({
-            eq: deleteHeaderMock,
-          }),
-        };
-      }
-      if (table === 'acc_journal_lines') {
-        return {
-          delete: vi.fn().mockReturnValue({
-            eq: deleteLinesMock,
-          }),
-        };
-      }
-      return {};
+  it('removes development reserve posting via remove_development_reserve_from_gl RPC', async () => {
+    (supabase.rpc as any).mockResolvedValue({
+      data: { success: true, message: 'Fejlesztési tartalék tétel sikeresen törölve/sztornózva.' },
+      error: null,
     });
 
     const res = await removeDevelopmentReservePosting('c1', 'ESZ-001');
     expect(res.success).toBe(true);
-    expect(deleteLinesMock).toHaveBeenCalledWith('header_id', 'hdr-to-del');
-    expect(deleteHeaderMock).toHaveBeenCalledWith('id', 'hdr-to-del');
+    expect(supabase.rpc).toHaveBeenCalledWith('remove_development_reserve_from_gl', {
+      p_company_id: 'c1',
+      p_inventory_number: 'ESZ-001',
+    });
   });
 });

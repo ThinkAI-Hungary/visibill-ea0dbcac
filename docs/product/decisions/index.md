@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-12  
-> **Összesen:** 198 döntés (181 egyedi döntési fájl) | ✅ Decided: 194 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 200 döntés (183 egyedi döntési fájl) | ✅ Decided: 196 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -56,7 +56,7 @@
 | P-157 | Manuális Számlarögzítés, Dokumentum-Feltöltés és Többes Párosítás Felületi Élmény (UX) | ✅ Decided | [P-157](./P-157-manual-submitted-invoice-creation-dialog-and-pairings-ux.md) |
 | P-163 | Online Pénztárgép (OPG) Modul és Házipénztár Integráció UX | ✅ Decided | [P-163](./P-163-online-cash-register-opg-module-ux.md) |
 | P-171 | Utalások Tömeges Rendezés, Kiállítási Dátum Alapértelmezés és Alsó Akciósáv UX | ✅ Decided | [P-171](./P-171-transfers-bulk-settlement-date-defaulting-and-sticky-action-bar-ux.md) |
-| P-182 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX | ✅ Decided | [P-182](./P-182-petty-cash-invoice-attachment-and-unlink-ux.md) |
+| P-183 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX | ✅ Decided | [P-183](./P-183-petty-cash-invoice-attachment-and-unlink-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 
@@ -308,5 +308,7 @@
 | P-179 | ÁFA Bevallás Változásvédelem, Kriptográfiai Pecsét & Önellenőrzési Munkaterület UX | ✅ Decided | [P-179](./P-179-vat-return-snapshots-and-amendments-workspace-ux.md) |
 | P-180 | NAV OSA Háromirányú Egyeztetés (Three-Way Reconciliation) és Fordított ÁFA Acéltermékek UX | ✅ Decided | [P-180](./P-180-nav-osa-three-way-reconciliation-and-steel-products-ux.md) |
 | P-181 | PRC Főkönyvi Kivonat Export Elnevezési Konvenció és Letisztult Megjelenítés UX | ✅ Decided | [P-181](./P-181-prc-general-ledger-export-naming-ux.md) |
+| P-182 | Agora és Novitax Formátumhű Főkönyvi Kivonat és Eredménykimutatás („A” változat) PDF és Excel Export UX | ✅ Decided | [P-182](./P-182-agora-financial-reports-and-income-statement-export-ux.md) |
+| P-184 | Bérszámfejtési Irányítópult Tabosítás, Bérkontroll és Letisztult Menükezelés UX | ✅ Decided | [P-184](./P-184-payroll-dashboard-tabs-and-reconciliation-ux.md) |
 
 

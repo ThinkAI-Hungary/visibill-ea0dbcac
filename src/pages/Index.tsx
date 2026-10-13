@@ -25,6 +25,7 @@ import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import UnifiedFinancialCockpit from '@/components/dashboard/UnifiedFinancialCockpit';
 import { DeferredInvoicesWidget } from '@/components/dashboard/DeferredInvoicesWidget';
+import { AccountingAnomalyWidget } from '@/components/dashboard/AccountingAnomalyWidget';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
@@ -229,6 +230,9 @@ const Index = () => {
 
         {/* Deferred Questionable Invoices Section (Áfa tv. 153/A. §) */}
         <DeferredInvoicesWidget />
+
+        {/* AI Accounting Anomaly Guard (Module 22) */}
+        <AccountingAnomalyWidget />
 
         {/* Unified Financial Cockpit: Operational Action Center directly under VAT */}
         <UnifiedFinancialCockpit />

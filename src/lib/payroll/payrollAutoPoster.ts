@@ -299,26 +299,11 @@ export async function postPayrollCycleToLedger(
       summary.totalSzocho = 0;
     }
 
-    // 1. Find VE (Vegyes) journal for company
-    const { data: journals = [] } = await supabase
-      .from('acc_journals')
-      .select('id, code, name')
-      .eq('company_id', companyId);
-
-    let veJournal = journals.find((j: any) => j.code === 'VE' || j.code === 'BER');
-    if (!veJournal && journals.length > 0) {
-      veJournal = journals.find((j: any) => j.code !== 'NY') || journals[0];
-    }
-
-    if (!veJournal) {
-      return { success: false, message: 'Nem található könyvelési napló (Vegyes napló) a cégnél. Kérjük ellenőrizze a /journals oldalon.' };
-    }
-
-    // 2. Fetch & Resolve GL Accounts for Company Active Chart of Accounts Preset (merged with custom user selections)
+    // 1. Fetch & Resolve GL Accounts for Company Active Chart of Accounts Preset (merged with custom user selections)
     const resolvedCoa = await resolveCompanyGlAccounts(companyId);
     const coaMapping: PayrollGlMapping = {
       ...resolvedCoa,
-      ...(customGlMapping || {}),
+      ...customGlMapping,
     };
 
     if (!coaMapping.gl541 || !coaMapping.gl471) {
@@ -328,213 +313,44 @@ export async function postPayrollCycleToLedger(
       };
     }
 
-    const { gl541, gl551, gl561, gl463, gl462, gl464, gl479, gl471 } = coaMapping;
-
-    const lastDayOfMonth = new Date(summary.year, summary.month, 0).toISOString().slice(0, 10);
-    const documentId = `BER-${summary.year}-${String(summary.month).padStart(2, '0')}`;
-    const description = `Bérfeladás könyvelése — ${summary.year}. ${String(summary.month).padStart(2, '0')}. hó`;
-
-    // 2.5 Idempotency Guard (K40.30): Check if an active (non-sztornozott) journal entry already exists
-    const { data: existingHeaders } = await supabase
-      .from('acc_journal_headers')
-      .select('id, document_id, status, journal_number')
-      .eq('company_id', companyId)
-      .eq('document_id', documentId)
-      .neq('status', 'SZTORNOZOTT');
-
-    if (existingHeaders && existingHeaders.length > 0) {
-      const activeHeader = existingHeaders[0];
-      await supabase.from('accounty_payroll_cycles').update({
-        status: 'closed',
-        current_step: 8,
-        notes: `Bérfeladás lekönyvelve: ${documentId} (Bizonylat: ${activeHeader.journal_number || documentId})`
-      }).eq('id', cycleId);
-
-      return {
-        success: true,
-        headerId: activeHeader.id,
-        journalNumber: activeHeader.journal_number || documentId,
-        message: `A(z) ${summary.year}. ${String(summary.month).padStart(2, '0')}. havi bérfeladás már korábban le lett könyvelve (${documentId}). Új tétel nem került létrehozásra.`,
-        isAlreadyPosted: true,
-      };
-    }
-
-    // 3. Create Header in acc_journal_headers
-    const headerData = {
-      company_id: companyId,
-      journal_id: veJournal.id,
-      accounting_year: summary.year,
-      status: 'KONYVELT',
-      posting_date: lastDayOfMonth,
-      document_date: lastDayOfMonth,
-      document_id: documentId,
-      description,
-      justification: 'Automatikus bérfeladás lezárt bérciklusból',
-      created_by: userId,
-      posted_by: userId,
-      posted_at: new Date().toISOString(),
-    };
-
-    const { data: newHeader, error: headerErr } = await supabase
-      .from('acc_journal_headers')
-      .insert(headerData)
-      .select('id')
-      .single();
-
-    if (headerErr || !newHeader) {
-      console.error('Error inserting payroll journal header:', headerErr);
-      return { success: false, message: `Bizonylat fejléc hiba: ${headerErr?.message}` };
-    }
-
-    // 4. Build Journal Lines (Double-Entry: T = K)
-    const linesToInsert: any[] = [];
-    let seq = 1;
-
-    // Line 1: T 541 Bérköltség (Bruttó)
-    linesToInsert.push({
-      header_id: newHeader.id,
-      sequence_number: seq++,
-      gl_account_id: gl541,
-      dc_type: 'T',
-      amount: summary.totalGross,
-      description: 'Munkabér költség (bruttó bér)',
+    // 2. Feladás tranzakcionális SECURITY DEFINER RPC-n keresztül
+    const { data, error } = await supabase.rpc('post_payroll_cycle_to_gl', {
+      p_company_id: companyId,
+      p_cycle_id: cycleId,
+      p_gl_mapping: {
+        gl541: coaMapping.gl541,
+        gl551: coaMapping.gl551 || null,
+        gl561: coaMapping.gl561 || null,
+        gl463: coaMapping.gl463 || null,
+        gl462: coaMapping.gl462 || null,
+        gl464: coaMapping.gl464 || null,
+        gl479: coaMapping.gl479 || null,
+        gl471: coaMapping.gl471,
+      },
+      p_summary: {
+        totalGross: summary.totalGross,
+        totalSzocho: summary.totalSzocho,
+        totalSzja: summary.totalSzja,
+        totalTb: summary.totalTb,
+        totalMinBaseDiff: summary.totalMinBaseDiff || 0,
+        totalDeductions: summary.totalDeductions,
+        totalNet: summary.totalNet,
+        totalCommute: summary.totalCommute || 0,
+      },
     });
 
-    // Line: T 551 Munkába járás utazási költségtérítés (ha van)
-    if (summary.totalCommute && summary.totalCommute > 0) {
-      linesToInsert.push({
-        header_id: newHeader.id,
-        sequence_number: seq++,
-        gl_account_id: gl551 || gl541,
-        dc_type: 'T',
-        amount: summary.totalCommute,
-        description: 'Munkába járás utazási költségtérítés (39/2010. Korm. rend.)',
-      });
+    if (error) {
+      return { success: false, message: `Bérfeladás hiba: ${error.message}` };
     }
 
-    // Line 2: T 561 SZOCHO költség
-    if (summary.totalSzocho > 0) {
-      linesToInsert.push({
-        header_id: newHeader.id,
-        sequence_number: seq++,
-        gl_account_id: gl561,
-        dc_type: 'T',
-        amount: summary.totalSzocho,
-        description: 'Szociális hozzájárulási adó költség',
-      });
-    }
-
-    // Line 3: K 463 SZOCHO kötelezettség
-    if (summary.totalSzocho > 0) {
-      linesToInsert.push({
-        header_id: newHeader.id,
-        sequence_number: seq++,
-        gl_account_id: gl463,
-        dc_type: 'K',
-        amount: summary.totalSzocho,
-        description: 'SZOCHO fizetési kötelezettség',
-      });
-    }
-
-    // Line 4: K 462 SZJA kötelezettség
-    if (summary.totalSzja > 0) {
-      linesToInsert.push({
-        header_id: newHeader.id,
-        sequence_number: seq++,
-        gl_account_id: gl462,
-        dc_type: 'K',
-        amount: summary.totalSzja,
-        description: 'Levont SZJA kötelezettség',
-      });
-    }
-
-    // Line 5: K 464 TB kötelezettség
-    if (summary.totalTb > 0) {
-      linesToInsert.push({
-        header_id: newHeader.id,
-        sequence_number: seq++,
-        gl_account_id: gl464,
-        dc_type: 'K',
-        amount: summary.totalTb,
-        description: 'Levont TB járulék kötelezettség',
-      });
-    }
-
-    // Line 5b: Minimális járulékalap munkáltatói különbözet (Tbj. 27. §)
-    if (summary.totalMinBaseDiff && summary.totalMinBaseDiff > 0) {
-      linesToInsert.push({
-        header_id: newHeader.id,
-        sequence_number: seq++,
-        gl_account_id: gl561,
-        dc_type: 'T',
-        amount: summary.totalMinBaseDiff,
-        description: 'Minimális járulékalap munkáltatói különbözet (Tbj. 27. §)',
-      });
-      linesToInsert.push({
-        header_id: newHeader.id,
-        sequence_number: seq++,
-        gl_account_id: gl464,
-        dc_type: 'K',
-        amount: summary.totalMinBaseDiff,
-        description: 'Minimális járulékalap munkáltatói TB kötelezettség (Tbj. 27. §)',
-      });
-    }
-
-    // Line 6: K 479 Letiltások / Egyéb
-    if (summary.totalDeductions > 0) {
-      linesToInsert.push({
-        header_id: newHeader.id,
-        sequence_number: seq++,
-        gl_account_id: gl479,
-        dc_type: 'K',
-        amount: summary.totalDeductions,
-        description: 'Bérből levont letiltások és előlegek',
-      });
-    }
-
-    // Line 7: K 471 Nettó bér kötelezettség (kifizetendő bér + adómentes munkába járás)
-    const calculatedNet = summary.totalGross - summary.totalSzja - summary.totalTb - summary.totalDeductions + (summary.totalCommute || 0);
-    if (calculatedNet > 0) {
-      linesToInsert.push({
-        header_id: newHeader.id,
-        sequence_number: seq++,
-        gl_account_id: gl471,
-        dc_type: 'K',
-        amount: calculatedNet,
-        description: 'Kifizetendő nettó munkabér és térítés kötelezettség',
-      });
-    }
-
-    const { error: linesErr } = await supabase
-      .from('acc_journal_lines')
-      .insert(linesToInsert);
-
-    if (linesErr) {
-      console.error('Error inserting payroll journal lines:', linesErr);
-      return { success: false, message: `Bizonylat sorok hiba: ${linesErr.message}` };
-    }
-
-    // 5. Try calling RPC acc_post_journal_entry if available
-    try {
-      await supabase.rpc('acc_post_journal_entry', { p_header_id: newHeader.id, p_user_id: userId });
-    } catch {
-      // Ignored if RPC is not present, status is already KONYVELT
-    }
-
-    // 6. Update cycle notes with journal reference
-    await supabase.from('accounty_payroll_cycles').update({
-      status: 'closed',
-      current_step: 8,
-      notes: `Bérfeladás lekönyvelve: ${documentId} (Bizonylat azonosító: ${newHeader.id})`
-    }).eq('id', cycleId);
-
+    const res = data as any;
     return {
-      success: true,
-      headerId: newHeader.id,
-      journalNumber: documentId,
-      message: `Bérfeladás sikeresen lekönyvelve a Vegyes naplóba (${documentId})!`
+      success: res?.success ?? true,
+      headerId: res?.header_id,
+      journalNumber: res?.journal_number ? String(res.journal_number) : undefined,
+      message: res?.message || 'Bérfeladás sikeresen lekönyvelve a Vegyes naplóba!',
+      isAlreadyPosted: res?.is_already_posted ?? false,
     };
-
   } catch (err: any) {
     console.error('Exception in postPayrollCycleToLedger:', err);
     return { success: false, message: err?.message || 'Váratlan hiba történt a bérfeladás során.' };

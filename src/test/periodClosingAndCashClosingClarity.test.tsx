@@ -32,11 +32,22 @@ vi.mock('@tanstack/react-query', () => ({
   useMutation: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
+vi.mock('@/hooks/useCompanyCapabilities', () => ({
+  useCompanyCapabilities: () => ({
+    canClosePeriod: true,
+    canWriteLedger: true,
+    isLoading: false,
+    hasAssignedBookkeeper: false,
+  }),
+}));
+
 vi.mock('@/integrations/supabase/client', () => ({
+  SUPABASE_URL: 'https://test.supabase.co',
   supabase: {
     auth: {
       getUser: () => Promise.resolve({ data: { user: { id: 'u1' } } }),
     },
+    rpc: () => Promise.resolve({ data: null, error: null }),
     from: () => ({
       select: () => ({
         in: () => Promise.resolve({ data: [] }),

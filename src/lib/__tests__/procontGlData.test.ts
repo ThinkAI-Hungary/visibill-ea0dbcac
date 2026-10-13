@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildProcontGlData,
   cleanAccountNumber,
+  compareGlAccountNumbers,
   getAccountLevel,
   formatProcontPeriod,
   type ProcontAccountInput,
@@ -164,5 +165,66 @@ describe('PROCONT Főkönyvi Kivonat Adatmodell & Egyezőség-számítás', () =
     expect(doc).toBeDefined();
     const pageCount = (doc as any).internal.getNumberOfPages();
     expect(pageCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('sorts account numbers hierarchically: parent class 1, group 13, subgroup 131, leaf 1311', () => {
+    const rawList = ['911', '1311', '1', '13', '311', '131', '3', '31', '14', '2', '4', '45', '454', '5'];
+    const sorted = [...rawList].sort(compareGlAccountNumbers);
+    expect(sorted).toEqual([
+      '1',
+      '13',
+      '131',
+      '1311',
+      '14',
+      '2',
+      '3',
+      '31',
+      '311',
+      '4',
+      '45',
+      '454',
+      '5',
+      '911',
+    ]);
+  });
+
+  it('guarantees buildProcontGlData produces rows in exact hierarchical order (1 -> 13 -> 131 ...)', () => {
+    const sampleAccounts: ProcontAccountInput[] = [
+      { id: '131', name: 'Termelő gépek', debitTurnover: 241220, creditTurnover: 0 },
+      { id: '311', name: 'Belföldi vevő', debitTurnover: 25706231, creditTurnover: 0 },
+      { id: '449', name: 'Pénzügyi lízing', debitTurnover: 317180, creditTurnover: 0 },
+      { id: '454', name: 'Szállítók', debitTurnover: 0, creditTurnover: 9370058 },
+      { id: '466', name: 'Előzetes ÁFA', debitTurnover: 715187, creditTurnover: 0 },
+      { id: '512', name: 'Karbantartási ktg', debitTurnover: 1108000, creditTurnover: 0 },
+      { id: '521', name: 'Számviteli szolg', debitTurnover: 54702, creditTurnover: 0 },
+      { id: '911', name: 'Alaptevékenység', debitTurnover: 0, creditTurnover: 18907652 },
+    ];
+
+    const report = buildProcontGlData(sampleAccounts);
+    const rowAccountNumbers = report.rows.map(r => r.accountNumber);
+
+    // Group 13 and subgroup 131 must directly follow class 1, not be pushed to the bottom of the table
+    const idx1 = rowAccountNumbers.indexOf('1');
+    const idx13 = rowAccountNumbers.indexOf('13');
+    const idx131 = rowAccountNumbers.indexOf('131');
+    const idx3 = rowAccountNumbers.indexOf('3');
+    const idx31 = rowAccountNumbers.indexOf('31');
+    const idx311 = rowAccountNumbers.indexOf('311');
+
+    expect(idx1).toBeLessThan(idx13);
+    expect(idx13).toBeLessThan(idx131);
+    expect(idx131).toBeLessThan(idx3);
+    expect(idx3).toBeLessThan(idx31);
+    expect(idx31).toBeLessThan(idx311);
+
+    // 13 must not be after 9 or at the 2-digit block after all 1-digit classes
+    expect(idx13).toBe(1);
+    expect(idx131).toBe(2);
+  });
+
+  it('handles sub-accounts with slashes and delimiters naturally (e.g. 381, 381/1, 381/2, 381/10)', () => {
+    const subAccs = ['384', '381/10', '381', '381/2', '381/1', '381/9'];
+    const sorted = [...subAccs].sort(compareGlAccountNumbers);
+    expect(sorted).toEqual(['381', '381/1', '381/2', '381/9', '381/10', '384']);
   });
 });

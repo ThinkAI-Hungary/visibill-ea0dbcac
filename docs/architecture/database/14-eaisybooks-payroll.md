@@ -1,8 +1,8 @@
 # 📘 eaisyBooks — Bérszámfejtés
 
-> Foglalkoztatottak, jogviszonyok, bérszámfejtési ciklusok, bérelemek, nyilatkozatok, cafeteria, letiltások.
+> Foglalkoztatottak, jogviszonyok, bérszámfejtési ciklusok, bérelemek, nyilatkozatok, cafeteria, letiltások, Sztv. 471 bérkontroll és banki kifizetés-párosítások.
 
-**Táblák ebben a csoportban:** 14
+**Táblák ebben a csoportban:** 16
 
 ---
 
@@ -406,4 +406,72 @@
 | `updated_at` | timestamp with time zone | ✓ | `now()` |
 
 ---
+
+### `accounty_payroll_reconciliations`
+
+> Module 14: Sztv. 471 Jövedelemelszámolási számla és havi béranalitika egyeztető egyenlegének aggregált audit táblája (Nyitó + Bérfeladás − Kifizetés = Záró / Kockázat).
+
+**RLS:** ✅ | **Sorok:** Dinamikus (cégenként és havonta 1 rekord)
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| `id` | uuid | — | `gen_random_uuid()` |
+| `company_id` | uuid | — | — |
+| `cycle_id` | uuid | ✓ | — |
+| `year` | integer | — | — |
+| `month` | integer | — | — |
+| `opening_balance` | numeric(18,2) | — | `0` |
+| `total_net_accrued` | numeric(18,2) | — | `0` |
+| `total_bank_paid` | numeric(18,2) | — | `0` |
+| `total_cash_paid` | numeric(18,2) | — | `0` |
+| `total_deductions_cleared` | numeric(18,2) | — | `0` |
+| `total_advances_cleared` | numeric(18,2) | — | `0` |
+| `closing_balance` | numeric(18,2) | — | `0` |
+| `discrepancy_amount` | numeric(18,2) | — | `0` |
+| `status` | text | — | `'PENDING_PAYOUT'` |
+| `audited_at` | timestamp with time zone | ✓ | — |
+| `audited_by` | uuid | ✓ | — |
+| `notes` | text | ✓ | — |
+| `created_at` | timestamp with time zone | — | `now()` |
+| `updated_at` | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`, `cycle_id` → `accounty_payroll_cycles.id`, `audited_by` → `auth.users.id`
+
+**Constraint:** `uq_payroll_reconciliation_company_month` (UNIQUE: `company_id`, `year`, `month`), CHECK (`status` IN ('BALANCED', 'PENDING_PAYOUT', 'MISMATCH', 'OVERPAID'))
+
+**Indexek:** `idx_payroll_rec_company_period` (`company_id`, `year`, `month`)
+
+---
+
+### `accounty_payroll_payout_matches`
+
+> Module 14: Bérkifizetések és banki/pénztári tranzakciók közötti auditált kapcsoló és kifizetés-ellenőrző tábla.
+
+**RLS:** ✅ | **Sorok:** Dinamikus (tranzakciónként / dolgozónként)
+
+| Oszlop | Típus | Null | Default |
+|--------|-------|------|---------|
+| `id` | uuid | — | `gen_random_uuid()` |
+| `company_id` | uuid | — | — |
+| `cycle_id` | uuid | — | — |
+| `calculation_id` | uuid | — | — |
+| `employee_id` | uuid | — | — |
+| `bank_transaction_id` | uuid | ✓ | — |
+| `cash_document_id` | uuid | ✓ | — |
+| `match_type` | text | — | `'AUTO_IBAN'` |
+| `match_status` | text | — | `'MATCHED'` |
+| `matched_amount` | numeric(18,2) | — | `0` |
+| `expected_amount` | numeric(18,2) | — | `0` |
+| `discrepancy` | numeric(18,2) | — | `GENERATED ALWAYS AS (matched_amount - expected_amount) STORED` |
+| `matched_at` | timestamp with time zone | — | `now()` |
+| `matched_by` | uuid | ✓ | — |
+| `notes` | text | ✓ | — |
+| `created_at` | timestamp with time zone | — | `now()` |
+| `updated_at` | timestamp with time zone | — | `now()` |
+
+**FK:** `company_id` → `companies.id`, `cycle_id` → `accounty_payroll_cycles.id`, `calculation_id` → `accounty_payroll_calculations.id`, `employee_id` → `accounty_employees.id`, `bank_transaction_id` → `bank_transactions.id`, `matched_by` → `auth.users.id`
+
+**Constraint:** CHECK (`match_type` IN ('AUTO_IBAN', 'AUTO_AMOUNT', 'AUTO_NAME', 'MANUAL', 'GIRO_BATCH_SPLIT')), CHECK (`match_status` IN ('MATCHED', 'PENDING', 'REJECTED', 'DISCREPANCY'))
+
+**Indexek:** `idx_payout_matches_company_cycle` (`company_id`, `cycle_id`), `idx_payout_matches_employee` (`employee_id`), `idx_payout_matches_bank_tx` (`bank_transaction_id`)
 

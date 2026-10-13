@@ -7,13 +7,15 @@ import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import SalaryPageSkeleton from '@/components/salaries/SalaryPageSkeleton';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, Users, Wheat } from 'lucide-react';
+import { Plus, FileText, Users, Wheat, CreditCard, Scale } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SalaryKpiCards } from '@/components/salaries/SalaryKpiCards';
 import { EmployeeAccordion } from '@/components/salaries/EmployeeAccordion';
 import { NavSummaryTable } from '@/components/salaries/NavSummaryTable';
 import { SalaryAddDialog, SalaryEditDialog } from '@/components/salaries/SalaryDialogs';
 import { SalaryFilesDialog } from '@/components/salaries/SalaryFilesTable';
+import { PayoutsTab } from '@/components/salaries/PayoutsTab';
+import { PayrollReconciliationTab } from '@/components/salaries/PayrollReconciliationTab';
 import { PurchaseVouchersTab } from '@/features/purchase-vouchers/components/PurchaseVouchersTab';
 import type { SalaryItem } from '@/lib/salary-helpers';
 import { useTranslation } from 'react-i18next';
@@ -116,7 +118,7 @@ export default function SalariesPage() {
   if (loading && salaryItems.length === 0 && currentTab !== 'purchase_vouchers') return <SalaryPageSkeleton />;
 
   return (
-    <div className="h-full space-y-4 px-2 py-2 page-animate">
+    <div className="min-h-full space-y-4 px-2 pt-2 pb-32 page-animate">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -145,8 +147,16 @@ export default function SalariesPage() {
             <Users className="h-4 w-4" />
             {t('hr:salaries.tabs.overview', 'Alkalmazottak & NAV')}
           </TabsTrigger>
+          <TabsTrigger value="payouts" className="gap-2">
+            <CreditCard className="h-4 w-4 text-primary" />
+            Kifizetések & Bank
+          </TabsTrigger>
+          <TabsTrigger value="reconciliation" className="gap-2">
+            <Scale className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            Bérkontroll
+          </TabsTrigger>
           <TabsTrigger value="purchase_vouchers" className="gap-2">
-            <Wheat className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <Wheat className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             {t('hr:salaries.tabs.purchase_vouchers', 'Felvásárlási jegyek')}
           </TabsTrigger>
         </TabsList>
@@ -171,6 +181,17 @@ export default function SalariesPage() {
 
           {/* NAV Summary Table */}
           <NavSummaryTable navItems={navItems} onEdit={openEditModal} isSingleMonth={isSingleMonth} periodLabel={periodLabel} />
+          
+          {/* Bottom spacing to ensure content clears floating bars when scrolled */}
+          <div className="h-28 w-full shrink-0" aria-hidden="true" />
+        </TabsContent>
+
+        <TabsContent value="payouts" className="mt-0">
+          <PayoutsTab />
+        </TabsContent>
+
+        <TabsContent value="reconciliation" className="mt-0">
+          <PayrollReconciliationTab onNavigateToPayouts={() => handleTabChange('payouts')} />
         </TabsContent>
 
         <TabsContent value="purchase_vouchers" className="mt-0">

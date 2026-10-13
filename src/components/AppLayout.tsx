@@ -8,6 +8,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { usePdfExportNotifications } from "@/hooks/usePdfExportNotifications";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { cn } from "@/lib/utils";
+import { EmployeeShell } from "@/components/EmployeeShell";
 
 interface AppLayoutProps {
   children?: React.ReactNode;
@@ -106,6 +107,12 @@ function useIdleRoutePrefetch() {
 export function AppLayout({ children }: AppLayoutProps) {
   useIdleRoutePrefetch();
   usePdfExportNotifications();
+  const { isEmployee } = useUserRole();
+
+  // RBAC Csomag C (A-247): Munkavállaló - nincs oldalsáv, minimális mobil-first fejléc
+  if (isEmployee) {
+    return <EmployeeShell>{children}</EmployeeShell>;
+  }
 
   return (
     <SidebarProvider

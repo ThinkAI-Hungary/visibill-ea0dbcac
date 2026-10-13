@@ -23,6 +23,8 @@ export const DEFAULT_SETTINGS: Omit<CompanyWorkSettings, 'id' | 'company_id' | '
   fx_revaluation_rate_type: 'mid',
   vat_code_display_mode: 'legacy',
   has_purchase_vouchers: false,
+  active_gl_view_template_id: 'standard_3col',
+  active_vat_view_template_id: 'official_nav65_12col',
 };
 
 export function useCompanySettings() {
@@ -65,6 +67,8 @@ export function useCompanySettings() {
       fx_revaluation_rate_type?: 'mid' | 'buy' | 'sell';
       vat_code_display_mode?: 'legacy' | 'nav';
       has_purchase_vouchers?: boolean;
+      active_gl_view_template_id?: string;
+      active_vat_view_template_id?: string;
     }) => {
       if (!user || !selectedCompany) throw new Error('No user/company');
 
@@ -85,6 +89,8 @@ export function useCompanySettings() {
       if (form.fx_revaluation_rate_type !== undefined) payload.fx_revaluation_rate_type = form.fx_revaluation_rate_type;
       if (form.vat_code_display_mode !== undefined) payload.vat_code_display_mode = form.vat_code_display_mode;
       if (form.has_purchase_vouchers !== undefined) payload.has_purchase_vouchers = form.has_purchase_vouchers;
+      if (form.active_gl_view_template_id !== undefined) payload.active_gl_view_template_id = form.active_gl_view_template_id;
+      if (form.active_vat_view_template_id !== undefined) payload.active_vat_view_template_id = form.active_vat_view_template_id;
 
       const { error } = await supabase
         .from('company_settings')
@@ -122,6 +128,8 @@ export function useCompanySettings() {
     fx_revaluation_rate_type: (settings?.fx_revaluation_rate_type as 'mid' | 'buy' | 'sell') ?? DEFAULT_SETTINGS.fx_revaluation_rate_type,
     vat_code_display_mode: (settings?.vat_code_display_mode as 'legacy' | 'nav') ?? DEFAULT_SETTINGS.vat_code_display_mode,
     has_purchase_vouchers: Boolean(settings?.has_purchase_vouchers ?? DEFAULT_SETTINGS.has_purchase_vouchers),
+    active_gl_view_template_id: settings?.active_gl_view_template_id ?? DEFAULT_SETTINGS.active_gl_view_template_id,
+    active_vat_view_template_id: settings?.active_vat_view_template_id ?? DEFAULT_SETTINGS.active_vat_view_template_id,
   }), [settings]);
 
   return {

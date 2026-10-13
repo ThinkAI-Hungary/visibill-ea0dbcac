@@ -1,8 +1,14 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
 import type { DashboardMetrics as Metrics, NavVatData } from '@/hooks/useDashboardData';
+
+const capabilityState = vi.hoisted(() => ({ canViewBankBalances: true }));
+
+vi.mock('@/hooks/useCompanyCapabilities', () => ({
+  useCompanyCapabilities: () => ({ canViewBankBalances: capabilityState.canViewBankBalances, isLoading: false }),
+}));
 
 const mockMetrics: Metrics = {
   totalRevenue: 1000000,
@@ -30,6 +36,29 @@ const mockNavVatData: NavVatData = {
 const convertToSelectedCurrency = (amount: number) => amount;
 
 describe('DashboardMetrics - Profit KPI Net Invariance', () => {
+  beforeEach(() => {
+    capabilityState.canViewBankBalances = true;
+  });
+
+  it('D-3: hides the cash-flow and petty-cash cards when bank balances are not visible (assistant)', () => {
+    capabilityState.canViewBankBalances = false;
+    render(
+      <DashboardMetrics
+        metrics={mockMetrics}
+        navVatData={mockNavVatData}
+        showBrutto={false}
+        selectedCurrency="HUF"
+        pettyCashBalances={[{ currency: 'HUF', balance: 1000 }]}
+        convertToSelectedCurrency={convertToSelectedCurrency}
+      />
+    );
+
+    expect(screen.getByText(/Összes bevétel \(nettó\)/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Eredmény \(nettó\)/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Realizált/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Házipénztár/i)).not.toBeInTheDocument();
+  });
+
   it('renders Eredmény as nettó when showBrutto is false', () => {
     render(
       <DashboardMetrics

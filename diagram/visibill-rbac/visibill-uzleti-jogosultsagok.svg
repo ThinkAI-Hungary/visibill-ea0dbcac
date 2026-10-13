@@ -1,0 +1,489 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1160" width="100%" height="100%">
+  <defs>
+    <!-- Background Grid -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+    </pattern>
+
+    <!-- Gradients -->
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.15"/>
+      <stop offset="50%" stop-color="#818cf8" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="companyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#0369a1" stop-opacity="0.02"/>
+    </linearGradient>
+
+    <linearGradient id="accountyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#6d28d9" stop-opacity="0.02"/>
+    </linearGradient>
+
+    <linearGradient id="matrixGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.8"/>
+    </linearGradient>
+
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap');
+    text {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+    .title { font-weight: 800; fill: #ffffff; letter-spacing: -0.5px; }
+    .subtitle { font-weight: 500; fill: #94a3b8; }
+    .section-title { font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
+    .card-title { font-weight: 700; font-size: 13px; }
+    .card-role { font-weight: 600; font-size: 10px; }
+    .card-desc { font-weight: 400; font-size: 9.5px; fill: #cbd5e1; line-height: 1.35; }
+    .badge-text { font-weight: 700; font-size: 9px; }
+    .table-header { font-weight: 700; font-size: 11px; fill: #e2e8f0; }
+    .table-sub { font-weight: 500; font-size: 8.5px; fill: #94a3b8; }
+    .table-op { font-weight: 600; font-size: 11px; fill: #f8fafc; }
+    .table-op-desc { font-weight: 400; font-size: 8.5px; fill: #94a3b8; }
+    .cell-ok { font-weight: 700; font-size: 12px; fill: #4ade80; }
+    .cell-view { font-weight: 600; font-size: 11.5px; fill: #7dd3fc; }
+    .cell-warn { font-weight: 600; font-size: 11.5px; fill: #fde047; }
+    .cell-deny { font-weight: 600; font-size: 11.5px; fill: #fca5a5; }
+    .footer-title { font-weight: 700; font-size: 12px; fill: #f8fafc; }
+    .footer-desc { font-weight: 400; font-size: 9.5px; fill: #94a3b8; }
+  </style>
+
+  <!-- Deep Slate Background -->
+  <rect width="100%" height="100%" fill="#090d16"/>
+  <rect width="100%" height="100%" fill="url(#grid)"/>
+
+  <!-- ========================================================================= -->
+  <!-- 1. HEADER SECTION (Top Bar)                                               -->
+  <!-- ========================================================================= -->
+  <g transform="translate(50, 30)">
+    <!-- Header Accent Line -->
+    <rect x="0" y="0" width="1500" height="70" rx="10" fill="url(#headerGrad)" stroke="#1e293b" stroke-width="1"/>
+    <rect x="0" y="0" width="6" height="70" rx="3" fill="#38bdf8"/>
+
+    <!-- Title & Subtitle -->
+    <text x="24" y="28" class="title" font-size="20">VisiBill &amp; eaisyBooks — Üzleti Jogosultsági és Felelősségi Mátrix</text>
+    <text x="24" y="50" class="subtitle" font-size="12">Vállalati és Könyvelőirodai Szerepkörök, Döntési Hatáskörök és Adatvédelmi Vonalak Vezetői Áttekintése</text>
+
+    <!-- Version & Status Badge -->
+    <rect x="1230" y="16" width="246" height="36" rx="18" fill="rgba(16, 185, 129, 0.12)" stroke="#10b981" stroke-width="1.2"/>
+    <circle cx="1252" cy="34" r="5" fill="#10b981"/>
+    <text x="1268" y="38" fill="#34d399" class="badge-text" font-size="10.5">2026. OKTÓBER • AKTÍV ÜZLETI SZABÁLYZAT</text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- 2. PILLARS OF RESPONSIBILITY (Vállalat vs Könyvelőiroda)                  -->
+  <!-- ========================================================================= -->
+
+  <!-- ── 2A. BAL OLDAL: VÁLLALATI SZEREPEK (eaisyBill) ──────────────────────── -->
+  <g transform="translate(50, 115)">
+    <!-- Group Boundary -->
+    <rect x="0" y="0" width="735" height="425" rx="14" fill="url(#companyGrad)" stroke="#0284c7" stroke-width="1.2" stroke-opacity="0.4"/>
+    <rect x="0" y="0" width="735" height="42" rx="14" fill="rgba(2, 132, 199, 0.15)"/>
+    <rect x="16" y="12" width="6" height="18" rx="2" fill="#38bdf8"/>
+    <text x="32" y="27" fill="#38bdf8" class="section-title">🏢 VÁLLALATI SZEREPEK (eaisyBill)</text>
+    <text x="718" y="26" fill="#94a3b8" font-size="10" font-weight="500" text-anchor="end">6 Döntési Szint a Vállalkozáson Belül</text>
+
+    <!-- Kártya 1: Cégtulajdonos (owner) -->
+    <g transform="translate(16, 52)">
+      <rect x="0" y="0" width="345" height="110" rx="8" fill="#0f172a" stroke="#0ea5e9" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(14, 165, 233, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">👑</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Cégtulajdonos</text>
+      <text x="46" y="34" fill="#38bdf8" class="card-role">LEGLEGFELSŐBB TULAJDONOSI VÉTÓJOG</text>
+      <text x="12" y="55" class="card-desc">• Kizárólagos joga a cég törlése és archiválása</text>
+      <text x="12" y="70" class="card-desc">• Szoftver-előfizetés és számlázási csomag gazdája</text>
+      <text x="12" y="85" class="card-desc">• Teljes vezetői betekintés (Eredmény, Mérleg, ÁFA)</text>
+      <text x="12" y="100" class="card-desc">• Tulajdonjog és gazdasági felelősség hordozója</text>
+    </g>
+
+    <!-- Kártya 2: Ügyvezető / Cégvezető (admin) -->
+    <g transform="translate(373, 52)">
+      <rect x="0" y="0" width="345" height="110" rx="8" fill="#0f172a" stroke="#10b981" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(16, 185, 129, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">👔</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Cégvezető / Ügyvezető</text>
+      <text x="46" y="34" fill="#34d399" class="card-role">OPERATÍV IRÁNYÍTÁS &amp; DÖNTÉSHOZATAL</text>
+      <text x="12" y="55" class="card-desc">• Szállítói számlák végső pénzügyi jóváhagyása</text>
+      <text x="12" y="70" class="card-desc">• Banki átutalási csomagok indítása és netbank export</text>
+      <text x="12" y="85" class="card-desc">• Munkatársak meghívása és szerepköreik beállítása</text>
+      <text x="12" y="100" class="card-desc">• Teljes Vezetői Kontrolling (Mérleg, P&amp;L, Tárgyi eszközök)</text>
+    </g>
+
+    <!-- Kártya 3: Pénzügyi Vezető / CFO (member / finance_lead) -->
+    <g transform="translate(16, 172)">
+      <rect x="0" y="0" width="345" height="115" rx="8" fill="#0f172a" stroke="#3b82f6" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(59, 130, 246, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">💼</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Pénzügyi Vezető / CFO</text>
+      <text x="46" y="34" fill="#60a5fa" class="card-role">GAZDASÁGI IRÁNYÍTÓ &amp; ELEMZŐ</text>
+      <text x="12" y="55" class="card-desc">• Banki átutalások előkészítése és számlaellenőrzés</text>
+      <text x="12" y="70" class="card-desc">• Költségelemzés, fedezetszámítás, kontrolling betekintés</text>
+      <text x="12" y="85" class="card-desc">• Vitatott számlák rendezése és partneregyeztetés</text>
+      <text x="12" y="100" class="card-desc" fill="#f87171">🔒 Nem kezelheti a csapattagokat; bérszintek rejtettek</text>
+    </g>
+
+    <!-- Kártya 4: Pénzügyi Asszisztens (assistant) -->
+    <g transform="translate(373, 172)">
+      <rect x="0" y="0" width="345" height="115" rx="8" fill="#0f172a" stroke="#f59e0b" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(245, 158, 11, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">📋</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Pénzügyi Asszisztens</text>
+      <text x="46" y="34" fill="#fbbf24" class="card-role">NAPI SZÁMLÁZÁS &amp; IKTATÁS</text>
+      <text x="12" y="55" class="card-desc">• Kimenő számlák készítése, bejövő számlák feltöltése</text>
+      <text x="12" y="70" class="card-desc">• Kintlévőség-figyelés és fizetési felszólítók küldése</text>
+      <text x="12" y="85" class="card-desc">• Házipénztári bizonylatok rögzítése és iktatás</text>
+      <text x="12" y="100" class="card-desc" fill="#fb7185">🚫 Bankszámla-egyenlegek és könyvelés elől elrejtve</text>
+    </g>
+
+    <!-- Kártya 5: Megfigyelő / Csendestárs (viewer) -->
+    <g transform="translate(16, 297)">
+      <rect x="0" y="0" width="345" height="115" rx="8" fill="#0f172a" stroke="#94a3b8" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(148, 163, 184, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">👁️</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Megfigyelő / Csendestárs</text>
+      <text x="46" y="34" fill="#cbd5e1" class="card-role">PASSZÍV TULAJDONOS &amp; AUDITOR</text>
+      <text x="12" y="55" class="card-desc">• Globális betekintés a pénzügyi mutatókba és számlákba</text>
+      <text x="12" y="70" class="card-desc">• Vezetői kontrolling (P&amp;L, mérleg, eredmény) látható</text>
+      <text x="12" y="85" class="card-desc" fill="#f43f5e">🚫 Semmit nem módosíthat, nem rögzíthet adatot</text>
+      <text x="12" y="100" class="card-desc" fill="#f43f5e">🚫 Utalást nem kezdeményezhet (nincsenek aktív gombjai)</text>
+    </g>
+
+    <!-- Kártya 6: Munkavállaló (employee) -->
+    <g transform="translate(373, 297)">
+      <rect x="0" y="0" width="345" height="115" rx="8" fill="#0f172a" stroke="#64748b" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(100, 116, 139, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">📱</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Munkavállaló / Dolgozó</text>
+      <text x="46" y="34" fill="#94a3b8" class="card-role">KIZÁRÓLAG SAJÁT MUNKAIDŐ &amp; JELENLÉT</text>
+      <text x="12" y="55" class="card-desc">• Saját napi munkaidő rögzítése és jelenléti ív vezetése</text>
+      <text x="12" y="70" class="card-desc">• Szabadságkérelmek leadása és jóváhagyás követése</text>
+      <text x="12" y="85" class="card-desc" fill="#38bdf8">• Letisztult mobil felület — NINCS bonyolult menürendszer</text>
+      <text x="12" y="100" class="card-desc" fill="#f43f5e">🚫 Minden céges pénzügy, partner és számla rejtve</text>
+    </g>
+  </g>
+
+  <!-- ── 2B. JOBB OLDAL: KÖNYVELŐIRODAI SZEREPEK (eaisyBooks) ────────────────── -->
+  <g transform="translate(815, 115)">
+    <!-- Group Boundary -->
+    <rect x="0" y="0" width="735" height="425" rx="14" fill="url(#accountyGrad)" stroke="#8b5cf6" stroke-width="1.2" stroke-opacity="0.4"/>
+    <rect x="0" y="0" width="735" height="42" rx="14" fill="rgba(139, 92, 246, 0.15)"/>
+    <rect x="16" y="12" width="6" height="18" rx="2" fill="#a78bfa"/>
+    <text x="32" y="27" fill="#a78bfa" class="section-title">📚 KÖNYVELŐIRODAI SZEREPEK (eaisyBooks)</text>
+    <text x="718" y="26" fill="#94a3b8" font-size="10" font-weight="500" text-anchor="end">5 Szakterületi Szint a Könyvelőirodában</text>
+
+    <!-- Kártya 1: Iroda Adminisztrátor (iroda_admin) -->
+    <g transform="translate(16, 52)">
+      <rect x="0" y="0" width="345" height="110" rx="8" fill="#0f172a" stroke="#a855f7" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(168, 85, 247, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">🏛️</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Iroda Adminisztrátor / Partner</text>
+      <text x="46" y="34" fill="#c084fc" class="card-role">IRODAVEZETŐ &amp; TELJES PORTFÓLIÓ FELÜGYELET</text>
+      <text x="12" y="55" class="card-desc">• Irodai szintű korlátlan hozzáférés minden ügyfélcéghez</text>
+      <text x="12" y="70" class="card-desc">• Ügyfelek kiosztása: ki melyik cég könyveléséért felel</text>
+      <text x="12" y="85" class="card-desc">• Új ügyfélcégek beállítása, adózási formák és sablonok</text>
+      <text x="12" y="100" class="card-desc">• Számlázási és irodai beállítások, Cégkapu hitelesítés</text>
+    </g>
+
+    <!-- Kártya 2: Szenior Könyvelő (senior_könyvelő) -->
+    <g transform="translate(373, 52)">
+      <rect x="0" y="0" width="345" height="110" rx="8" fill="#0f172a" stroke="#ec4899" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(236, 72, 153, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">⭐</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Szenior Könyvelő</text>
+      <text x="46" y="34" fill="#f472b6" class="card-role">SZAKMAI VEZETŐ &amp; ZÁRÁSI HATÁSKÖR</text>
+      <text x="12" y="55" class="card-desc">• Havi ÁFA-bevallások (2665) véglegesítése és zárolása</text>
+      <text x="12" y="70" class="card-desc">• Hivatalos adóhatósági ÁNYK XML fájlok generálása</text>
+      <text x="12" y="85" class="card-desc">• Éves TAO / KIVA zárások és beszámolók készítése</text>
+      <text x="12" y="100" class="card-desc">• Önálló könyvelők és asszisztensek munkájának jóváhagyása</text>
+    </g>
+
+    <!-- Kártya 3: Önálló Könyvelő (könyvelő) -->
+    <g transform="translate(16, 172)">
+      <rect x="0" y="0" width="345" height="115" rx="8" fill="#0f172a" stroke="#818cf8" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(129, 140, 248, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">📖</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Önálló Könyvelő</text>
+      <text x="46" y="34" fill="#a5b4fc" class="card-role">FELELŐS KÖNYVVEZETŐ (HOZZÁRENDELT CÉGEK)</text>
+      <text x="12" y="55" class="card-desc">• Napi könyvelés: számlák, banki tételek, vegyes naplók</text>
+      <text x="12" y="70" class="card-desc">• Tárgyi eszközök kezelése és havi értékcsökkenés futtatása</text>
+      <text x="12" y="85" class="card-desc">• ÁFA-tervezet összeállítása a szenior felé ellenőrzésre</text>
+      <text x="12" y="100" class="card-desc" fill="#f87171">🔒 Időszakot nem zárhat le; ÁNYK XML-t nem adhat be</text>
+    </g>
+
+    <!-- Kártya 4: Könyvelői Asszisztens (asszisztens) -->
+    <g transform="translate(373, 172)">
+      <rect x="0" y="0" width="345" height="115" rx="8" fill="#0f172a" stroke="#6366f1" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(99, 102, 241, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">🗂️</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Könyvelői Asszisztens</text>
+      <text x="46" y="34" fill="#818cf8" class="card-role">BIZONYLAT-ELŐKÉSZÍTŐ &amp; ADATRÖGZÍTŐ</text>
+      <text x="12" y="55" class="card-desc">• NAV számlák áttekintése, papírszámlák digitalizálása (OCR)</text>
+      <text x="12" y="70" class="card-desc">• Banki kivonatok betöltése és számlapárosítás felügyelete</text>
+      <text x="12" y="85" class="card-desc">• Hiányzó bizonylatok listázása és ügyféli bekérése</text>
+      <text x="12" y="100" class="card-desc" fill="#fb7185">🚫 Számlatükröt nem szerkeszthet, TAO modulhoz nem fér hozzá</text>
+    </g>
+
+    <!-- Kártya 5: Bérszámfejtő és Munkaügyi Szakember - Teljes Szélességben -->
+    <g transform="translate(16, 297)">
+      <rect x="0" y="0" width="702" height="115" rx="8" fill="#0f172a" stroke="#06b6d4" stroke-width="1.2"/>
+      <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(6, 182, 212, 0.15)"/>
+      <text x="24" y="29" font-size="15" text-anchor="middle">👥</text>
+      <text x="46" y="22" fill="#ffffff" class="card-title">Bérszámfejtő és Munkaügyi Szakember</text>
+      <text x="46" y="34" fill="#22d3ee" class="card-role">KIZÁRÓLAG BÉR- ÉS MUNKAÜGYI SZAKTERÜLETRE SPECIALIZÁLVA</text>
+      
+      <!-- Kétoszlopos belső leírás -->
+      <text x="12" y="57" class="card-desc">• Teljes bérszámfejtési folyamat: havi bérek, pótlékok, táppénzek, cafeteria számítása</text>
+      <text x="12" y="72" class="card-desc">• Havi hivatalos járulékbevallások (NAV 08-as bevallás) elkészítése és elektronikus feladása</text>
+      <text x="12" y="87" class="card-desc">• Kilépő és belépő dolgozók munkaügyi adminisztrációja, letölthető bérlapok kiállítása</text>
+      <text x="12" y="102" class="card-desc" fill="#22d3ee">🔒 ADATVÉDELMI GARANCIA: Nem látja a cég bankszámláit, nem fér hozzá a számlákhoz és a főkönyvhöz!</text>
+    </g>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- 3. DECISION MATRIX (Ki mit tehet meg a rendszerben?)                     -->
+  <!-- ========================================================================= -->
+  <g transform="translate(50, 560)">
+    <rect x="0" y="0" width="1500" height="450" rx="14" fill="url(#matrixGrad)" stroke="#334155" stroke-width="1.2"/>
+    <rect x="0" y="0" width="1500" height="40" rx="14" fill="#1e293b"/>
+    <text x="24" y="25" fill="#f8fafc" class="section-title">📊 VEZETŐI HATÁSKÖRI &amp; DÖNTÉSI MÁTRIX (Ki mit végezhet el a rendszerben?)</text>
+    <text x="1476" y="25" font-size="11" text-anchor="end">
+      <tspan fill="#94a3b8">Jelmagyarázat:  </tspan>
+      <tspan fill="#4ade80" font-weight="700">✅ Teljes jog</tspan>    
+      <tspan fill="#7dd3fc" font-weight="700">👁️ Megtekintés</tspan>    
+      <tspan fill="#fde047" font-weight="700">🔒 Védett / Delegált</tspan>    
+      <tspan fill="#fca5a5" font-weight="700">🚫 Tiltva / Rejtve</tspan>
+    </text>
+
+    <!-- Table Column Headers -->
+    <g transform="translate(0, 40)">
+      <!-- Sötét sáv a fejlécnek -->
+      <rect x="0" y="0" width="1500" height="42" fill="#1e293b" fill-opacity="0.8"/>
+      
+      <!-- Oszlop elválasztók és címek -->
+      <text x="20" y="25" class="table-header">ÜZLETI GAZDASÁGI TERÜLET</text>
+      
+      <!-- Vállalati Oszlopok (Kék árnyalat) -->
+      <rect x="420" y="0" width="540" height="42" fill="rgba(2, 132, 199, 0.08)"/>
+      <text x="465" y="18" class="table-header" fill="#38bdf8" text-anchor="middle">Tulajdonos</text>
+      <text x="465" y="32" class="table-sub" text-anchor="middle">Legfelsőbb szint</text>
+      
+      <text x="555" y="18" class="table-header" fill="#38bdf8" text-anchor="middle">Ügyvezető</text>
+      <text x="555" y="32" class="table-sub" text-anchor="middle">Operatív vezetés</text>
+      
+      <text x="645" y="18" class="table-header" fill="#38bdf8" text-anchor="middle">Pénzügyi Vez.</text>
+      <text x="645" y="32" class="table-sub" text-anchor="middle">Gazdasági vezetés</text>
+      
+      <text x="735" y="18" class="table-header" fill="#38bdf8" text-anchor="middle">Asszisztens</text>
+      <text x="735" y="32" class="table-sub" text-anchor="middle">Pénzügyi iktatás</text>
+      
+      <text x="825" y="18" class="table-header" fill="#38bdf8" text-anchor="middle">Megfigyelő</text>
+      <text x="825" y="32" class="table-sub" text-anchor="middle">Passzív auditor</text>
+      
+      <text x="915" y="18" class="table-header" fill="#38bdf8" text-anchor="middle">Munkavállaló</text>
+      <text x="915" y="32" class="table-sub" text-anchor="middle">Saját jelenlét</text>
+
+      <!-- Könyvelői Oszlopok (Lila árnyalat) -->
+      <rect x="960" y="0" width="540" height="42" fill="rgba(139, 92, 246, 0.08)"/>
+      <text x="1014" y="18" class="table-header" fill="#c084fc" text-anchor="middle">Iroda Vezető</text>
+      <text x="1014" y="32" class="table-sub" text-anchor="middle">Irodavezető partner</text>
+      
+      <text x="1122" y="18" class="table-header" fill="#c084fc" text-anchor="middle">Szenior Könyv.</text>
+      <text x="1122" y="32" class="table-sub" text-anchor="middle">Felelős zárás</text>
+      
+      <text x="1230" y="18" class="table-header" fill="#c084fc" text-anchor="middle">Önálló Könyv.</text>
+      <text x="1230" y="32" class="table-sub" text-anchor="middle">Felelős könyvelés</text>
+      
+      <text x="1338" y="18" class="table-header" fill="#c084fc" text-anchor="middle">Könyv. Assziszt.</text>
+      <text x="1338" y="32" class="table-sub" text-anchor="middle">Bizonylatfeldolgozás</text>
+      
+      <text x="1446" y="18" class="table-header" fill="#c084fc" text-anchor="middle">Bérszámfejtő</text>
+      <text x="1446" y="32" class="table-sub" text-anchor="middle">Bér- és munkaügy</text>
+    </g>
+
+    <!-- Vízszintes sorok (6 üzleti terület) -->
+
+    <!-- Sor 1: Banki Utalások és Bankszámlák -->
+    <g transform="translate(0, 82)">
+      <rect x="0" y="0" width="1500" height="58" fill="#0f172a" fill-opacity="0.4"/>
+      <line x1="0" y1="58" x2="1500" y2="58" stroke="#1e293b" stroke-width="1"/>
+      
+      <text x="20" y="25" class="table-op">💳 Banki Utalások &amp; Bankszámlák Kezelése</text>
+      <text x="20" y="42" class="table-op-desc">Fizetési csomag indítása, netbankos export, bankszámlák beállítása</text>
+      
+      <!-- Értékek -->
+      <text x="465" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="555" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="645" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="735" y="34" class="cell-deny" text-anchor="middle">🚫 Tiltva</text>
+      <text x="825" y="34" class="cell-deny" text-anchor="middle">🚫 Tiltva</text>
+      <text x="915" y="34" class="cell-deny" text-anchor="middle">🚫 Tiltva</text>
+      
+      <text x="1014" y="34" class="cell-warn" text-anchor="middle">🔒 Nem utal</text>
+      <text x="1122" y="34" class="cell-warn" text-anchor="middle">🔒 Nem utal</text>
+      <text x="1230" y="34" class="cell-warn" text-anchor="middle">🔒 Nem utal</text>
+      <text x="1338" y="34" class="cell-warn" text-anchor="middle">🔒 Nem utal</text>
+      <text x="1446" y="34" class="cell-deny" text-anchor="middle">🚫 Tiltva</text>
+    </g>
+
+    <!-- Sor 2: Számlázás & Iktatás -->
+    <g transform="translate(0, 140)">
+      <rect x="0" y="0" width="1500" height="58" fill="#1e293b" fill-opacity="0.15"/>
+      <line x1="0" y1="58" x2="1500" y2="58" stroke="#1e293b" stroke-width="1"/>
+      
+      <text x="20" y="25" class="table-op">📄 Számlázás, Iktatás &amp; Kintlévőség-kezelés</text>
+      <text x="20" y="42" class="table-op-desc">Számlák kiállítása, bejövő számlák NAV letöltése, fizetési felszólítók</text>
+      
+      <!-- Értékek -->
+      <text x="465" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="555" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="645" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="735" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="825" y="34" class="cell-view" text-anchor="middle">👁️ Megtekint</text>
+      <text x="915" y="34" class="cell-deny" text-anchor="middle">🚫 Rejtve</text>
+      
+      <text x="1014" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1122" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1230" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1338" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1446" y="34" class="cell-deny" text-anchor="middle">🚫 Rejtve</text>
+    </g>
+
+    <!-- Sor 3: Vezetői Kontrolling & Műszerfal -->
+    <g transform="translate(0, 198)">
+      <rect x="0" y="0" width="1500" height="58" fill="#0f172a" fill-opacity="0.4"/>
+      <line x1="0" y1="58" x2="1500" y2="58" stroke="#1e293b" stroke-width="1"/>
+      
+      <text x="20" y="25" class="table-op">📊 Vezetői Kontrolling &amp; Pénzügyi Eredmény</text>
+      <text x="20" y="42" class="table-op-desc">Eredménykimutatás (P&amp;L), Mérleg, Főkönyvi kartonok, Valós bankegyenleg</text>
+      
+      <!-- Értékek -->
+      <text x="465" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="555" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="645" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="735" y="34" class="cell-deny" text-anchor="middle">🚫 Rejtve</text>
+      <text x="825" y="34" class="cell-view" text-anchor="middle">👁️ Megtekint</text>
+      <text x="915" y="34" class="cell-deny" text-anchor="middle">🚫 Rejtve</text>
+      
+      <text x="1014" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1122" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1230" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1338" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1446" y="34" class="cell-deny" text-anchor="middle">🚫 Rejtve</text>
+    </g>
+
+    <!-- Sor 4: Könyvelés Zárlat & Hivatalos Adóbevallás -->
+    <g transform="translate(0, 256)">
+      <rect x="0" y="0" width="1500" height="58" fill="#1e293b" fill-opacity="0.15"/>
+      <line x1="0" y1="58" x2="1500" y2="58" stroke="#1e293b" stroke-width="1"/>
+      
+      <text x="20" y="25" class="table-op">🏛️ Hivatalos Időszakzárás &amp; ÁFA / TAO Beadása</text>
+      <text x="20" y="42" class="table-op-desc">Havi könyvelési zárás, 2665 ÁFA véglegesítés, ÁNYK XML hivatalos export</text>
+      
+      <!-- Értékek -->
+      <text x="465" y="34" class="cell-warn" text-anchor="middle">🔒 Delegálva</text>
+      <text x="555" y="34" class="cell-warn" text-anchor="middle">🔒 Delegálva</text>
+      <text x="645" y="34" class="cell-warn" text-anchor="middle">🔒 Delegálva</text>
+      <text x="735" y="34" class="cell-deny" text-anchor="middle">🚫 Tiltva</text>
+      <text x="825" y="34" class="cell-deny" text-anchor="middle">🚫 Tiltva</text>
+      <text x="915" y="34" class="cell-deny" text-anchor="middle">🚫 Tiltva</text>
+      
+      <text x="1014" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1122" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1230" y="34" class="cell-warn" text-anchor="middle">🔒 Előkészítés</text>
+      <text x="1338" y="34" class="cell-deny" text-anchor="middle">🚫 Tiltva</text>
+      <text x="1446" y="34" class="cell-deny" text-anchor="middle">🚫 Tiltva</text>
+    </g>
+
+    <!-- Sor 5: Bérszámfejtés & Munkavállalói Béradatok -->
+    <g transform="translate(0, 314)">
+      <rect x="0" y="0" width="1500" height="58" fill="#0f172a" fill-opacity="0.4"/>
+      <line x1="0" y1="58" x2="1500" y2="58" stroke="#1e293b" stroke-width="1"/>
+      
+      <text x="20" y="25" class="table-op">👥 Bérszámfejtés, Fizetések &amp; Havi 08-as Bevallás</text>
+      <text x="20" y="42" class="table-op-desc">Fizetési jegyzékek, járulékok számítása, bérfeladás a könyvelésnek</text>
+      
+      <!-- Értékek -->
+      <text x="465" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="555" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="645" y="34" class="cell-warn" text-anchor="middle">🔒 Titkosítva</text>
+      <text x="735" y="34" class="cell-deny" text-anchor="middle">🚫 Rejtve</text>
+      <text x="825" y="34" class="cell-deny" text-anchor="middle">🚫 Rejtve</text>
+      <text x="915" y="34" class="cell-deny" text-anchor="middle">🚫 Rejtve</text>
+      
+      <text x="1014" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="1122" y="34" class="cell-warn" text-anchor="middle">🔒 Felügyelet</text>
+      <text x="1230" y="34" class="cell-warn" text-anchor="middle">🔒 Felügyelet</text>
+      <text x="1338" y="34" class="cell-deny" text-anchor="middle">🚫 Rejtve</text>
+      <text x="1446" y="34" font-size="16" text-anchor="middle">✅</text>
+    </g>
+
+    <!-- Sor 6: Munkaidő & Jelenléti Ív -->
+    <g transform="translate(0, 372)">
+      <rect x="0" y="0" width="1500" height="58" fill="#1e293b" fill-opacity="0.15"/>
+      
+      <text x="20" y="25" class="table-op">⏱️ Munkaidő-nyilvántartás &amp; Szabadságkezelés</text>
+      <text x="20" y="42" class="table-op-desc">Jelenléti ívek vezetése, távollétek, szabadság jóváhagyás</text>
+      
+      <!-- Értékek -->
+      <text x="465" y="34" font-size="16" text-anchor="middle">✅</text>
+      <text x="555" y="34" class="cell-ok" text-anchor="middle">✅ Jóváhagy</text>
+      <text x="645" y="34" class="cell-ok" text-anchor="middle">✅ Saját ív</text>
+      <text x="735" y="34" class="cell-ok" text-anchor="middle">✅ Saját ív</text>
+      <text x="825" y="34" class="cell-deny" text-anchor="middle">🚫 Nem érinti</text>
+      <text x="915" y="34" class="cell-ok" text-anchor="middle">✅ Saját ív</text>
+      
+      <text x="1014" y="34" class="cell-view" text-anchor="middle">👁️ Ellenőrzi</text>
+      <text x="1122" y="34" class="cell-view" text-anchor="middle">👁️ Ellenőrzi</text>
+      <text x="1230" y="34" class="cell-view" text-anchor="middle">👁️ Ellenőrzi</text>
+      <text x="1338" y="34" class="cell-view" text-anchor="middle">👁️ Ellenőrzi</text>
+      <text x="1446" y="34" class="cell-ok" text-anchor="middle">✅ Számfejti</text>
+    </g>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- 4. EXECUTIVE GUARANTEES (3 Arany Vezetői Védelmi Szabály)                 -->
+  <!-- ========================================================================= -->
+  <g transform="translate(50, 1025)">
+    <rect x="0" y="0" width="1500" height="95" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    
+    <!-- 1. Garancia -->
+    <g transform="translate(24, 18)">
+      <circle cx="16" cy="16" r="16" fill="rgba(16, 185, 129, 0.15)"/>
+      <text x="16" y="22" font-size="14" text-anchor="middle">🛡️</text>
+      <text x="44" y="14" class="footer-title">1. Banki és Utalási Biztonság</text>
+      <text x="44" y="32" class="footer-desc">Pénzügyi asszisztensek, megfigyelők és külső könyvelők soha nem utalhatnak pénzt,</text>
+      <text x="44" y="47" class="footer-desc">és nem férhetnek hozzá a cég bankszámláinak felügyeletéhez.</text>
+    </g>
+
+    <line x1="510" y1="15" x2="510" y2="80" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- 2. Garancia -->
+    <g transform="translate(534, 18)">
+      <circle cx="16" cy="16" r="16" fill="rgba(139, 92, 246, 0.15)"/>
+      <text x="16" y="22" font-size="14" text-anchor="middle">⚖️</text>
+      <text x="44" y="14" class="footer-title">2. Szakmai Zárási Monopólium</text>
+      <text x="44" y="32" class="footer-desc">A hivatalos ÁFA- és mérlegzárást kizárólag a Szenior Könyvelő véglegesítheti.</text>
+      <text x="44" y="47" class="footer-desc">Lezárt időszakban a cégvezetés és a könyvelő sem módosíthat bizonylatot.</text>
+    </g>
+
+    <line x1="1020" y1="15" x2="1020" y2="80" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- 3. Garancia -->
+    <g transform="translate(1044, 18)">
+      <circle cx="16" cy="16" r="16" fill="rgba(245, 158, 11, 0.15)"/>
+      <text x="16" y="22" font-size="14" text-anchor="middle">🔒</text>
+      <text x="44" y="14" class="footer-title">3. Béradatok Szigorú Védelme</text>
+      <text x="44" y="32" class="footer-desc">A munkavállalói és vezetői bérszintek a számlázók, asszisztensek és egyéb dolgozók</text>
+      <text x="44" y="47" class="footer-desc">elől teljes mértékben rejtve vannak; a bérszámfejtő nem lát céges számlákat.</text>
+    </g>
+  </g>
+</svg>

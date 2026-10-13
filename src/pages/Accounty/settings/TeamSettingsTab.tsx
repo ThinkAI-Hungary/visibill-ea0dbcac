@@ -21,12 +21,14 @@ const ROLE_LABELS: Record<string, string> = {
   senior_könyvelő: 'Senior',
   könyvelő: 'Könyvelő',
   asszisztens: 'Asszisztens',
+  payroll_specialist: 'Bérszámfejtő',
 };
 const ROLE_COLORS: Record<string, string> = {
   iroda_admin: 'bg-primary/10 text-primary',
   senior_könyvelő: 'bg-accent dark:bg-accent text-accent-foreground dark:text-primary',
   könyvelő: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
   asszisztens: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400',
+  payroll_specialist: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
 };
 
 interface TeamMember {
@@ -190,7 +192,7 @@ export default function TeamSettingsTab({
             <div className="space-y-2">
               <label className="text-sm font-medium">Szerepkör</label>
               <div className="grid grid-cols-2 gap-2">
-                {(['könyvelő', 'senior_könyvelő', 'asszisztens', 'iroda_admin'] as const).map(r => (
+                {(['könyvelő', 'senior_könyvelő', 'asszisztens', 'payroll_specialist', 'iroda_admin'] as const).map(r => (
                   <button
                     key={r}
                     onClick={() => setInviteRole(r)}

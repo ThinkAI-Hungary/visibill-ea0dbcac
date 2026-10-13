@@ -44,7 +44,7 @@ export function useAppReady() {
   });
 
   // Check if this management user has an active impersonation session
-  const { data: hasImpersonation } = useQuery({
+  const { data: hasImpersonation, isPending: impPending } = useQuery({
     queryKey: ['active-impersonation-check', user?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -74,7 +74,7 @@ export function useAppReady() {
   }
 
   // Wait for company AND profile resolution.
-  if (companyLoading || profilePending) {
+  if (companyLoading || profilePending || ((profileRole === 'management' || profileRole === 'thinkai') && impPending)) {
     return { isReady: false, user, redirectTarget: null as RedirectTarget };
   }
 

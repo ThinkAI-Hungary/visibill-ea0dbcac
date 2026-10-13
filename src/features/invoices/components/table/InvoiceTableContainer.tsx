@@ -25,6 +25,7 @@ export function InvoiceTableContainer() {
     toggleRowExpanded,
     invalidateInvoiceData,
     setLastViewedInvoiceId,
+    writable,
   } = useInvoiceContext();
 
   // 1. Fetch matching NAV invoices for the submitted invoices displayed on the current page
@@ -221,6 +222,7 @@ export function InvoiceTableContainer() {
   const [selectedExclusionInvoice, setSelectedExclusionInvoice] = useState<ExclusionDialogInvoice | null>(null);
 
   const handleOpenExclusionDialog = useCallback((invoice: any) => {
+    if (!writable) return;
     setSelectedExclusionInvoice({
       id: invoice.id,
       invoice_number: invoice.invoice_number || invoice.bizonylatsorszam || '',
@@ -236,10 +238,11 @@ export function InvoiceTableContainer() {
       deferred_vat_reason: invoice.deferred_vat_reason,
     });
     setIsExclusionDialogOpen(true);
-  }, [isSubmittedTab]);
+  }, [isSubmittedTab, writable]);
 
   const handleToggleExclude = useCallback(
     async (invoiceId: string, currentValue: boolean) => {
+      if (!writable) return;
       // If currently not excluded, open dialog so user can choose between Deferred VAT vs Permanent exclusion
       if (!currentValue) {
         const found = isSubmittedTab
@@ -317,7 +320,7 @@ export function InvoiceTableContainer() {
         });
       }
     },
-    [companyId, isSubmittedTab, invalidateInvoiceData, queryClient, paginatedSubmittedInvoices, paginatedNavInvoices, handleOpenExclusionDialog]
+    [companyId, isSubmittedTab, invalidateInvoiceData, queryClient, paginatedSubmittedInvoices, paginatedNavInvoices, handleOpenExclusionDialog, writable]
   );
 
   return (

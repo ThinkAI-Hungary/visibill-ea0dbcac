@@ -127,14 +127,16 @@ const navigationGroups: NavGroup[] = [
     icon: BookOpen,
     items: [
       { title: "Főkönyv", url: "/general-ledger", icon: BookOpen, tourId: "general-ledger", moduleKey: 'general_ledger' },
-      { title: "Folyószámla", url: "/subledger", icon: Layers, tourId: "subledger", moduleKey: 'general_ledger' },
+      { title: "Folyószámla", url: "/subledger", icon: Layers, tourId: "subledger", moduleKey: 'subledger' },
       { title: "Eredménykimutatás", url: "/profit-and-loss", icon: BarChart3, tourId: "profit-and-loss", moduleKey: 'profit_loss' },
       { title: "Mérleg", url: "/balance-sheet", icon: Scale, tourId: "balance-sheet", moduleKey: 'balance_sheet' },
       { title: "Beszámoló", url: "/annual-report", icon: ClipboardCheck, tourId: "annual-report", moduleKey: 'annual_report' },
       { title: "ÁFA Bevallás", url: "/vat-return", icon: FileSpreadsheet, tourId: "vat-return", moduleKey: 'vat_return' },
       { title: "Napló", url: "/journals", icon: BookOpen, tourId: "journals", moduleKey: 'journals' },
-      { title: "Könyvelési szabályok", url: "/accounting-rules", icon: Sliders, tourId: "accounting-rules", moduleKey: 'journals' },
+      { title: "Könyvelési szabályok", url: "/accounting-rules", icon: Sliders, tourId: "accounting-rules", moduleKey: 'accounting_rules' },
+      { title: "Technikai műveletek", url: "/technical-accounting", icon: Wrench, tourId: "technical-accounting", moduleKey: 'accounting_rules' },
     ],
+
   },
   {
     key: 'hr',
@@ -190,6 +192,8 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/journals": () => import("@/pages/JournalsPage"),
   "/accounting-rules": () => import("@/pages/AccountingRulesPage"),
   "/auto-accounting-rules": () => import("@/pages/AccountingRulesPage"),
+  "/technical-accounting": () => import("@/pages/TechnicalAccountingPage"),
+
   "/upload": () => import("@/pages/ManualUpload"),
   "/salaries": () => import("@/pages/SalariesPage"),
   "/working-time": () => import("@/pages/WorkingTimePage"),

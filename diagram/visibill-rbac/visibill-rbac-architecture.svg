@@ -1,0 +1,452 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 1140" width="1560" height="1140">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap');
+      text { font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace; }
+      .title { font-size: 21px; font-weight: 700; fill: #ffffff; }
+      .subtitle { font-size: 11px; font-weight: 400; fill: #94a3b8; }
+      .region-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+      .node-name { font-size: 12px; font-weight: 600; fill: #ffffff; }
+      .node-desc { font-size: 9px; font-weight: 400; fill: #94a3b8; }
+      .badge { font-size: 8px; font-weight: 600; }
+      .gate-title { font-size: 11px; font-weight: 700; fill: #fb7185; }
+      .gate-desc { font-size: 9px; font-weight: 400; fill: #cbd5e1; }
+      .rpc-title { font-size: 11px; font-weight: 700; fill: #fbbf24; }
+      .rpc-item { font-size: 8.5px; font-weight: 500; fill: #e2e8f0; }
+    </style>
+    
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+    </pattern>
+
+    <!-- Arrow Markers -->
+    <marker id="arrow-slate" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-cyan" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#22d3ee"/>
+    </marker>
+    <marker id="arrow-emerald" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#34d399"/>
+    </marker>
+    <marker id="arrow-amber" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#fbbf24"/>
+    </marker>
+    <marker id="arrow-rose" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#fb7185"/>
+    </marker>
+    <marker id="arrow-violet" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#a78bfa"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#fb923c"/>
+    </marker>
+  </defs>
+
+  <!-- 1. Background Grid -->
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <rect width="100%" height="100%" fill="url(#grid)"/>
+
+  <!-- Header Title Block -->
+  <g transform="translate(40, 35)">
+    <text class="title" x="0" y="0">VisiBill &amp; eaisyBooks — RBAC &amp; Főkönyvi Hozzáférés-Vezérlési Architektúra</text>
+    <text class="subtitle" x="0" y="20">A-247 Refaktor: Kétdimenziós Szerepkörök, Autoposter RPC Kapuk, Sztv. 166. § Storno Védelem és RLS Hardening</text>
+  </g>
+
+  <!-- Connection Lines & Arrows (Behind components) -->
+  <!-- Sync Bridge Flow -->
+  <path d="M 610 180 L 665 180" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-amber)"/>
+  <path d="M 895 180 L 950 180" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-amber)"/>
+
+  <!-- Flow to Frontend Capabilities -->
+  <path d="M 325 285 L 325 320" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrow-cyan)"/>
+  <path d="M 1235 285 L 1235 320" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-emerald)"/>
+
+  <!-- Dual Path Flows from Capabilities Layer -->
+  <!-- Left Path: eaisyBill leaders to Autoposter RPC Gate -->
+  <path d="M 410 395 L 410 440" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrow-amber)"/>
+  <!-- Right Path: eaisyBooks accountants to Direct Ledger Write -->
+  <path d="M 1150 395 L 1150 440" stroke="#34d399" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+
+  <!-- From RPC Gate & Direct Write down through RLS / Trigger gates -->
+  <path d="M 410 590 L 410 625" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+  <path d="M 1150 590 L 1150 625" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-emerald)"/>
+
+  <!-- Gate Flow Downwards -->
+  <path d="M 780 695 L 780 725" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+  <path d="M 780 800 L 780 830" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
+
+  <!-- Database routing paths -->
+  <path d="M 270 900 L 200 940" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrow-cyan)"/>
+  <path d="M 610 900 L 565 940" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow-violet)"/>
+  <path d="M 950 900 L 995 940" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrow-rose)"/>
+  <path d="M 1290 900 L 1360 940" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-emerald)"/>
+
+  <!-- Storno Loop Arrow to Ledger -->
+  <path d="M 690 515 C 740 515, 740 940, 680 970" fill="none" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-orange)"/>
+
+  <!-- ======================================================================== -->
+  <!-- REGION 1: eaisyBill Szerepkörök (Cégtagság: company_members) -->
+  <!-- ======================================================================== -->
+  <g transform="translate(40, 75)">
+    <rect x="0" y="0" width="570" height="210" rx="12" fill="none" stroke="#22d3ee" stroke-width="1" stroke-dasharray="6,4"/>
+    <text class="region-title" x="16" y="20" fill="#22d3ee">eaisyBill Cégtagsági Szerepkörök (company_members)</text>
+
+    <!-- Row 1: Owner, Admin, Member -->
+    <!-- Owner -->
+    <g transform="translate(15, 35)">
+      <rect width="165" height="70" rx="6" fill="#0f172a"/>
+      <rect width="165" height="70" rx="6" fill="rgba(8,51,68,0.5)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text class="node-name" x="12" y="22">owner</text>
+      <text class="badge" x="125" y="22" fill="#22d3ee">FULL</text>
+      <text class="node-desc" x="12" y="38">Cégtulajdonos</text>
+      <text class="node-desc" x="12" y="50" fill="#67e8f9">Teljes jog, cégkezelés</text>
+      <text class="node-desc" x="12" y="62" fill="#fde047">Főkönyv: Csak RPC kapun!</text>
+    </g>
+
+    <!-- Admin -->
+    <g transform="translate(195, 35)">
+      <rect width="175" height="70" rx="6" fill="#0f172a"/>
+      <rect width="195" height="70" rx="6" fill="rgba(8,51,68,0.5)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text class="node-name" x="12" y="22">admin</text>
+      <text class="badge" x="115" y="22" fill="#22d3ee">VEZETŐ</text>
+      <text class="node-desc" x="12" y="38">Cégvezető / Ügyvezető</text>
+      <text class="node-desc" x="12" y="50" fill="#67e8f9">Számla, bank, ÁFA-zárás</text>
+      <text class="node-desc" x="12" y="62" fill="#fb7185">⛔ acc_* írás tiltva (RPC OK)</text>
+    </g>
+
+    <!-- Member -->
+    <g transform="translate(385, 35)">
+      <rect width="170" height="70" rx="6" fill="#0f172a"/>
+      <rect width="170" height="70" rx="6" fill="rgba(8,51,68,0.5)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text class="node-name" x="12" y="22">member</text>
+      <text class="badge" x="110" y="22" fill="#22d3ee">PÉNZÜGY</text>
+      <text class="node-desc" x="12" y="38">Pénzügyi Vezető (D-1)</text>
+      <text class="node-desc" x="12" y="50" fill="#67e8f9">Bank, számlák, kontrolling</text>
+      <text class="node-desc" x="12" y="62" fill="#fb7185">⛔ acc_* írás és auto-poster RPC tiltva</text>
+    </g>
+
+    <!-- Row 2: Assistant, Viewer, Employee -->
+    <!-- Assistant -->
+    <g transform="translate(15, 120)">
+      <rect width="165" height="75" rx="6" fill="#0f172a"/>
+      <rect width="165" height="75" rx="6" fill="rgba(8,51,68,0.3)" stroke="#38bdf8" stroke-width="1"/>
+      <text class="node-name" x="12" y="22">assistant</text>
+      <text class="badge" x="110" y="22" fill="#38bdf8">SZÁMLA</text>
+      <text class="node-desc" x="12" y="38">Pénzügyi Asszisztens</text>
+      <text class="node-desc" x="12" y="50">Számla rögzítés (items)</text>
+      <text class="node-desc" x="12" y="64" fill="#fb7185">⛔ ÁFA / Főkönyv: Nincs</text>
+    </g>
+
+    <!-- Viewer -->
+    <g transform="translate(195, 120)">
+      <rect width="175" height="75" rx="6" fill="#0f172a"/>
+      <rect width="175" height="75" rx="6" fill="rgba(30,41,59,0.6)" stroke="#94a3b8" stroke-width="1.5"/>
+      <text class="node-name" x="12" y="22">viewer</text>
+      <text class="badge" x="110" y="22" fill="#94a3b8">READ-ONLY</text>
+      <text class="node-desc" x="12" y="38">Megfigyelő</text>
+      <text class="node-desc" x="12" y="50">Minden modul olvasása</text>
+      <text class="node-desc" x="12" y="64" fill="#fb7185">⛔ RLS Írás 100% Tiltva</text>
+    </g>
+
+    <!-- Employee -->
+    <g transform="translate(385, 120)">
+      <rect width="170" height="75" rx="6" fill="#0f172a"/>
+      <rect width="170" height="75" rx="6" fill="rgba(15,23,42,0.8)" stroke="#64748b" stroke-width="1"/>
+      <text class="node-name" x="12" y="22">employee</text>
+      <text class="badge" x="110" y="22" fill="#64748b">SAJÁT HR</text>
+      <text class="node-desc" x="12" y="38">Munkavállaló</text>
+      <text class="node-desc" x="12" y="50">Saját jelenlét &amp; bérlap</text>
+      <text class="node-desc" x="12" y="64" fill="#fb7185">⛔ Pénzügy: Teljesen zárt</text>
+    </g>
+  </g>
+
+  <!-- ======================================================================== -->
+  <!-- BRIDGE: sync_company_member_to_eaisybooks (Irodai szinkron) -->
+  <!-- ======================================================================== -->
+  <g transform="translate(665, 85)">
+    <rect width="230" height="190" rx="8" fill="#0f172a"/>
+    <rect width="230" height="190" rx="8" fill="rgba(120,53,15,0.25)" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="115" y="22" fill="#fbbf24" font-size="11" font-weight="700" text-anchor="middle">Irodai Házon Belüli Szinkron</text>
+    <text x="115" y="36" fill="#94a3b8" font-size="8" text-anchor="middle">sync_company_member_to_eaisybooks()</text>
+
+    <!-- Sync Rules Box -->
+    <rect x="12" y="46" width="206" height="88" rx="4" fill="#0f172a" stroke="#334155" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#67e8f9" font-size="8.5">owner / admin</text>
+    <text x="135" y="62" fill="#34d399" font-size="8.5">→ iroda_admin</text>
+    
+    <text x="20" y="78" fill="#67e8f9" font-size="8.5">member</text>
+    <text x="135" y="78" fill="#34d399" font-size="8.5">→ könyvelő</text>
+
+    <text x="20" y="94" fill="#67e8f9" font-size="8.5">assistant</text>
+    <text x="135" y="94" fill="#34d399" font-size="8.5">→ asszisztens</text>
+
+    <text x="20" y="110" fill="#f87171" font-size="8.5">viewer / employee</text>
+    <text x="135" y="110" fill="#f87171" font-size="8.5">→ ⛔ NEM KÖNYVELŐ</text>
+
+    <!-- Trigger tags -->
+    <text x="115" y="150" fill="#cbd5e1" font-size="8" text-anchor="middle">INSERT + UPDATE of role trigger</text>
+    <text x="115" y="165" fill="#94a3b8" font-size="8" text-anchor="middle">Lefokozás &amp; Törlés: Auto-visszavonás</text>
+    <text x="115" y="178" fill="#fde047" font-size="8" text-anchor="middle">Kézi hozzárendelés érintetlen védett</text>
+  </g>
+
+  <!-- ======================================================================== -->
+  <!-- REGION 2: eaisyBooks Szerepkörök (accounty_assignments) -->
+  <!-- ======================================================================== -->
+  <g transform="translate(950, 75)">
+    <rect x="0" y="0" width="570" height="210" rx="12" fill="none" stroke="#34d399" stroke-width="1" stroke-dasharray="6,4"/>
+    <text class="region-title" x="16" y="20" fill="#34d399">eaisyBooks Könyvelési Hozzárendelések (accounty_assignments)</text>
+
+    <!-- Row 1: Iroda Admin, Senior Könyvelő, Könyvelő -->
+    <!-- Iroda Admin -->
+    <g transform="translate(15, 35)">
+      <rect width="170" height="70" rx="6" fill="#0f172a"/>
+      <rect width="170" height="70" rx="6" fill="rgba(6,78,59,0.5)" stroke="#34d399" stroke-width="1.5"/>
+      <text class="node-name" x="12" y="22">iroda_admin</text>
+      <text class="badge" x="115" y="22" fill="#34d399">ADMIN</text>
+      <text class="node-desc" x="12" y="38">Irodavezető Könyvelő</text>
+      <text class="node-desc" x="12" y="50" fill="#6ee7b7">Teljes iroda, zárás, XML</text>
+      <text class="node-desc" x="12" y="62" fill="#34d399">Közvetlen főkönyv írás OK</text>
+    </g>
+
+    <!-- Senior Könyvelő -->
+    <g transform="translate(195, 35)">
+      <rect width="175" height="70" rx="6" fill="#0f172a"/>
+      <rect width="175" height="70" rx="6" fill="rgba(6,78,59,0.5)" stroke="#34d399" stroke-width="1.5"/>
+      <text class="node-name" x="12" y="22">senior_könyvelő</text>
+      <text class="badge" x="120" y="22" fill="#34d399">SENIOR</text>
+      <text class="node-desc" x="12" y="38">Szenior Könyvelő</text>
+      <text class="node-desc" x="12" y="50" fill="#6ee7b7">ÁFA-zárás, ÁNYK export</text>
+      <text class="node-desc" x="12" y="62" fill="#34d399">Közvetlen főkönyv írás OK</text>
+    </g>
+
+    <!-- Könyvelő -->
+    <g transform="translate(380, 35)">
+      <rect width="175" height="70" rx="6" fill="#0f172a"/>
+      <rect width="175" height="70" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.2"/>
+      <text class="node-name" x="12" y="22">könyvelő</text>
+      <text class="badge" x="120" y="22" fill="#34d399">OPERATÍV</text>
+      <text class="node-desc" x="12" y="38">Operatív Könyvelő</text>
+      <text class="node-desc" x="12" y="50" fill="#6ee7b7">Főkönyv &amp; naplók írása</text>
+      <text class="node-desc" x="12" y="62" fill="#fb7185">⛔ ÁFA zárás tiltva (Trg)</text>
+    </g>
+
+    <!-- Row 2: Asszisztens, Bérszámfejtő -->
+    <!-- Asszisztens -->
+    <g transform="translate(15, 120)">
+      <rect width="250" height="75" rx="6" fill="#0f172a"/>
+      <rect width="250" height="75" rx="6" fill="rgba(6,78,59,0.25)" stroke="#10b981" stroke-width="1"/>
+      <text class="node-name" x="12" y="22">asszisztens</text>
+      <text class="badge" x="190" y="22" fill="#10b981">RÖGZÍTŐ</text>
+      <text class="node-desc" x="12" y="38">Könyvelő Asszisztens</text>
+      <text class="node-desc" x="12" y="50">Főkönyvi tételek rögzítése, párosítás</text>
+      <text class="node-desc" x="12" y="64" fill="#fb7185">⛔ Zárás / Hivatalos XML: Nincs</text>
+    </g>
+
+    <!-- Bérszámfejtő (payroll_specialist) -->
+    <g transform="translate(280, 120)">
+      <rect width="275" height="75" rx="6" fill="#0f172a"/>
+      <rect width="275" height="75" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+      <text class="node-name" x="12" y="22">payroll_specialist</text>
+      <text class="badge" x="185" y="22" fill="#fbbf24">BÉRSZÁMFEJTŐ</text>
+      <text class="node-desc" x="12" y="38">Bér &amp; Munkaügy Specialista (D-5)</text>
+      <text class="node-desc" x="12" y="50" fill="#fde047">Bér és HR írás/olvasás. Főkönyvbe: Csak RPC-vel!</text>
+      <text class="node-desc" x="12" y="64" fill="#fb7185">⛔ 33 Pénzügyi táblából RLS kizárva</text>
+    </g>
+  </g>
+
+  <!-- ======================================================================== -->
+  <!-- 1. VÉDELMI SZINT: KLIENS KÉPESSÉGEK -->
+  <!-- ======================================================================== -->
+  <g transform="translate(40, 320)">
+    <rect width="1480" height="75" rx="8" fill="#0f172a"/>
+    <rect width="1480" height="75" rx="8" fill="rgba(59,130,246,0.15)" stroke="#60a5fa" stroke-width="1.5"/>
+    <text class="gate-title" x="20" y="22" fill="#60a5fa">1. SZINT — Kliensoldali Képességek &amp; Útvonalvédelem (Frontend React Hooks &amp; Guards)</text>
+    <text class="gate-desc" x="20" y="40">
+      • useCompanyCapabilities() &amp; useAccountyPermissions(): canViewControlling, canManageAccountingTech, canClosePeriod, canExportOfficialTaxReturn.
+    </text>
+    <text class="gate-desc" x="20" y="56">
+      • ProtectedAccountyRoute: Cégvezető elől a technikai /subledger és /journals elrejtve. Bérszámfejtő kizárva az ügyfélkönyvelési felületekről.
+    </text>
+    <text x="1450" y="44" fill="#60a5fa" font-size="10" font-weight="700" text-anchor="end">React UI Guards</text>
+  </g>
+
+  <!-- ======================================================================== -->
+  <!-- 2. SZINT: KETTŐS HOZZÁFÉRÉSI MODELL (DUAL PATH) - AUTOPOSTER RPC vs KÖZVETLEN ÍRÁS -->
+  <!-- ======================================================================== -->
+  <g transform="translate(40, 420)">
+    <rect width="1480" height="175" rx="10" fill="#0f172a"/>
+    <rect width="1480" height="175" rx="10" fill="rgba(15,23,42,0.9)" stroke="#475569" stroke-width="1"/>
+
+    <!-- SECTION TITLE -->
+    <text x="740" y="24" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">2. SZINT — Kettős Főkönyvi Hozzáférési Modell (Refaktorált A-247 Architektúra)</text>
+
+    <!-- LEFT COLUMN: Autoposter RPC Gate -->
+    <g transform="translate(20, 36)">
+      <rect width="700" height="125" rx="8" fill="#0f172a"/>
+      <rect width="700" height="125" rx="8" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+      <text class="rpc-title" x="16" y="22">⚡ Tranzakcionális SECURITY DEFINER RPC Kapu (eaisyBill &amp; Bér)</text>
+      <text x="16" y="38" fill="#94a3b8" font-size="9">Szűrő: check_user_can_auto_post_gl(company_id, allow_payroll): owner/admin + könyvelők (bér/osztalék: + bérszámfejtő)</text>
+      
+      <!-- 5 Autoposter boxes -->
+      <g transform="translate(16, 48)">
+        <rect width="210" height="30" rx="4" fill="#0f172a" stroke="#fbbf24" stroke-width="0.8"/>
+        <text class="rpc-item" x="8" y="14" fill="#fde047">1. post_depreciation_run_to_gl</text>
+        <text class="node-desc" x="8" y="24">Tárgyi eszköz értékcsökkenés</text>
+      </g>
+      <g transform="translate(236, 48)">
+        <rect width="220" height="30" rx="4" fill="#0f172a" stroke="#fbbf24" stroke-width="0.8"/>
+        <text class="rpc-item" x="8" y="14" fill="#fde047">2. post_asset_activation_to_gl</text>
+        <text class="node-desc" x="8" y="24">Aktiválás + remove (Sztv. Storno)</text>
+      </g>
+      <g transform="translate(466, 48)">
+        <rect width="218" height="30" rx="4" fill="#0f172a" stroke="#fbbf24" stroke-width="0.8"/>
+        <text class="rpc-item" x="8" y="14" fill="#fde047">3. post_development_reserve_gl</text>
+        <text class="node-desc" x="8" y="24">Fejlesztési tartalék + Storno</text>
+      </g>
+      <g transform="translate(16, 84)">
+        <rect width="325" height="32" rx="4" fill="#0f172a" stroke="#fbbf24" stroke-width="0.8"/>
+        <text class="rpc-item" x="8" y="14" fill="#fde047">4. post_dividend_to_gl / delete_dividend_gl_entry</text>
+        <text class="node-desc" x="8" y="25">Osztalék előírás &amp; kifizetés (Sztv. 166. § Storno naplóval)</text>
+      </g>
+      <g transform="translate(351, 84)">
+        <rect width="333" height="32" rx="4" fill="#0f172a" stroke="#fbbf24" stroke-width="0.8"/>
+        <text class="rpc-item" x="8" y="14" fill="#fde047">5. post_payroll_cycle_to_gl</text>
+        <text class="node-desc" x="8" y="25">Bérszámfejtési zárás főkönyvi feladása (payroll_specialist)</text>
+      </g>
+    </g>
+
+    <!-- RIGHT COLUMN: Direct Ledger Write via Data API -->
+    <g transform="translate(750, 36)">
+      <rect width="710" height="125" rx="8" fill="#0f172a"/>
+      <rect width="710" height="125" rx="8" fill="rgba(6,78,59,0.3)" stroke="#34d399" stroke-width="1.5"/>
+      <text class="rpc-title" x="16" y="22" fill="#34d399">✍️ Közvetlen Főkönyvi Írás Data API-n (Kizárólag Könyvelőknek!)</text>
+      <text x="16" y="38" fill="#94a3b8" font-size="9">acc_journals, acc_journal_headers, acc_journal_lines, acc_open_item_matches</text>
+
+      <rect x="16" y="48" width="678" height="68" rx="4" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+      <text x="26" y="66" fill="#34d399" font-size="9.5" font-weight="600">Engedélyezve: iroda_admin, senior_könyvelő, könyvelő, asszisztens (+ support_admin)</text>
+      <text x="26" y="82" fill="#cbd5e1" font-size="8.5">• Külső könyvelők cégtagság nélkül írhatnak: rls_accounty_bookkeeping_company_ids() alapján.</text>
+      <text x="26" y="96" fill="#fb7185" font-size="8.5" font-weight="600">• TILTVA Cégtagoknak: owner, admin, member közvetlen INSERT/UPDATE/DELETE kísérlete 0 sort érint (RLS)!</text>
+      <text x="26" y="108" fill="#fb7185" font-size="8.5" font-weight="600">• TILTVA Bérszámfejtőnek: payroll_specialist közvetlen főkönyvi írása RLS szinten szigorúan blokkolva!</text>
+    </g>
+  </g>
+
+  <!-- ======================================================================== -->
+  <!-- 3. SZINT: IMMUTABILITÁSI TRIGGER VÉDELEM -->
+  <!-- ======================================================================== -->
+  <g transform="translate(40, 620)">
+    <rect width="1480" height="75" rx="8" fill="#0f172a"/>
+    <rect width="1480" height="75" rx="8" fill="rgba(136,19,55,0.25)" stroke="#fb7185" stroke-width="1.5"/>
+    <text class="gate-title" x="20" y="22">3. SZINT — Lezárt Bevallás és Időszak Immutabilitási Triggerek (Postgres Triggers)</text>
+    <text class="gate-desc" x="20" y="40">
+      • trg_vat_returns_finalize_guard (INSERT / UPDATE / DELETE): Lezárt bevallást ('finalized') kizárólag can_finalize_company_filing() módosíthat vagy törölhet.
+    </text>
+    <text class="gate-desc" x="20" y="56">
+      • trg_vat_return_children_finalize_guard (vat_return_lines, m_lines, a60_lines): Lezárt tételeket RPC-k és operátorok sem írhatnak felül → ACCESS_DENIED (42501).
+    </text>
+    <text x="1450" y="44" fill="#fb7185" font-size="10" font-weight="700" text-anchor="end">Triggers (42501)</text>
+  </g>
+
+  <!-- ======================================================================== -->
+  <!-- 4. SZINT: RESTRICTIVE RLS GUARDS -->
+  <!-- ======================================================================== -->
+  <g transform="translate(40, 725)">
+    <rect width="1480" height="75" rx="8" fill="#0f172a"/>
+    <rect width="1480" height="75" rx="8" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+    <text class="gate-title" x="20" y="22" fill="#fbbf24">4. SZINT — Szerepkör-Érzékeny RESTRICTIVE RLS Védőkorlátok (Szűkítő Szabályok)</text>
+    <text class="gate-desc" x="20" y="40">
+      • rls_guard_write_ins/upd/del: acc_* táblákon cégtagok írása tiltva; csak könyvelők (rls_accounty_bookkeeping_company_ids()) és support_admin írhat!
+    </text>
+    <text class="gate-desc" x="20" y="56">
+      • rls_guard_payroll_isolation (SELECT, 33 táblán): rls_payroll_blocked_company_ids() teljesen elrejti a főkönyvet, számlákat a bérszámfejtő elől (kivéve wages tábla).
+    </text>
+    <text x="1450" y="44" fill="#fbbf24" font-size="10" font-weight="700" text-anchor="end">RESTRICTIVE RLS</text>
+  </g>
+
+  <!-- ======================================================================== -->
+  <!-- 5. SZINT: PERMISSIVE RLS POLICIES -->
+  <!-- ======================================================================== -->
+  <g transform="translate(40, 830)">
+    <rect width="1480" height="70" rx="8" fill="#0f172a"/>
+    <rect width="1480" height="70" rx="8" fill="rgba(76,29,149,0.3)" stroke="#a78bfa" stroke-width="1.5"/>
+    <text class="gate-title" x="20" y="22" fill="#a78bfa">5. SZINT — Megengedő Szabályzatok &amp; Külső Könyvelői Hozzáférés (PERMISSIVE Policies)</text>
+    <text class="gate-desc" x="20" y="40">
+      • Cégtagsági jogok (company_members) VAGY accounty hozzárendelés (accounty_assignments) via rls_accounty_bookkeeping_company_ids().
+    </text>
+    <text class="gate-desc" x="20" y="54">
+      • Külső könyvelők közvetlenül írhatnak/olvashatnak főkönyvet (acc_*), míg a zárolási időszak (acc_accounting_periods) és számlatételek SELECT-only védettek.
+    </text>
+    <text x="1450" y="44" fill="#a78bfa" font-size="10" font-weight="700" text-anchor="end">PERMISSIVE RLS</text>
+  </g>
+
+  <!-- ======================================================================== -->
+  <!-- ADATBÁZIS DOMÉNEK ÉS TÁBLÁK -->
+  <!-- ======================================================================== -->
+  <g transform="translate(40, 930)">
+    <!-- Domain 1: Számlák & Bank -->
+    <g transform="translate(0, 0)">
+      <rect width="350" height="155" rx="8" fill="#0f172a"/>
+      <rect width="350" height="155" rx="8" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text class="node-name" x="16" y="26" fill="#22d3ee">SZÁMLÁZÁS &amp; BANK</text>
+      <text class="node-desc" x="16" y="44">invoices, transactions, partners,</text>
+      <text class="node-desc" x="16" y="58">nav_invoices, invoice_items</text>
+      
+      <line x1="16" y1="70" x2="334" y2="70" stroke="#334155" stroke-width="0.8"/>
+      <text x="16" y="88" fill="#cbd5e1" font-size="9">Írás: owner, admin, member, assistant</text>
+      <text x="16" y="104" fill="#94a3b8" font-size="9">Olvasás: + viewer, könyvelők (külső is)</text>
+      <text x="16" y="120" fill="#fb7185" font-size="9">⛔ viewer / employee: Írás tiltva (RLS)</text>
+      <text x="16" y="136" fill="#fb7185" font-size="9">⛔ payroll_specialist: Teljesen kizárva</text>
+    </g>
+
+    <!-- Domain 2: Főkönyv & Naplók -->
+    <g transform="translate(375, 0)">
+      <rect width="365" height="155" rx="8" fill="#0f172a"/>
+      <rect width="365" height="155" rx="8" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+      <text class="node-name" x="16" y="26" fill="#a78bfa">FŐKÖNYV &amp; NAPLÓK (KETTŐS KÖNYVVITEL)</text>
+      <text class="node-desc" x="16" y="44">acc_journals, acc_journal_headers,</text>
+      <text class="node-desc" x="16" y="58">acc_journal_lines, acc_open_item_matches</text>
+      
+      <line x1="16" y1="70" x2="349" y2="70" stroke="#334155" stroke-width="0.8"/>
+      <text x="16" y="88" fill="#34d399" font-size="9">Közvetlen írás: CSAK könyvelők &amp; support_admin!</text>
+      <text x="16" y="104" fill="#fde047" font-size="9">Cégvezetők &amp; Bér: KIZÁRÓLAG RPC kapun át könyvelhet!</text>
+      <text x="16" y="120" fill="#fb923c" font-size="9">Sztv. 166. § Storno: Nincs fizikai DELETE (reversed_header)</text>
+      <text x="16" y="136" fill="#fb7185" font-size="9">⛔ payroll / viewer / asszisztens(cég): Direct write tiltva</text>
+    </g>
+
+    <!-- Domain 3: ÁFA & Adóbevallások -->
+    <g transform="translate(765, 0)">
+      <rect width="345" height="155" rx="8" fill="#0f172a"/>
+      <rect width="345" height="155" rx="8" fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1.5"/>
+      <text class="node-name" x="16" y="26" fill="#fb7185">ÁFA &amp; ADÓBEVALLÁSOK</text>
+      <text class="node-desc" x="16" y="44">vat_returns, vat_return_lines,</text>
+      <text class="node-desc" x="16" y="58">vat_return_m_lines, vat_return_a60_lines</text>
+      
+      <line x1="16" y1="70" x2="329" y2="70" stroke="#334155" stroke-width="0.8"/>
+      <text x="16" y="88" fill="#cbd5e1" font-size="9">Tervezet készítés: könyvelő, asszisztens</text>
+      <text x="16" y="104" fill="#fde047" font-size="9">Lezárás/Nyitás: senior, iroda_admin, vezetők</text>
+      <text x="16" y="120" fill="#fb7185" font-size="9">Lezárt bevallás: IMMUTABILIS (Trigger 42501)</text>
+      <text x="16" y="136" fill="#fb7185" font-size="9">⛔ payroll_specialist / viewer: Írás tiltva</text>
+    </g>
+
+    <!-- Domain 4: Bérszámfejtés & HR -->
+    <g transform="translate(1135, 0)">
+      <rect width="345" height="155" rx="8" fill="#0f172a"/>
+      <rect width="345" height="155" rx="8" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text class="node-name" x="16" y="26" fill="#34d399">BÉRSZÁMFEJTÉS &amp; HR</text>
+      <text class="node-desc" x="16" y="44">accounty_payroll_*, accounty_employees,</text>
+      <text class="node-desc" x="16" y="58">accounty_ev_records_wages, worktime_*</text>
+      
+      <line x1="16" y1="70" x2="329" y2="70" stroke="#334155" stroke-width="0.8"/>
+      <text x="16" y="88" fill="#fde047" font-size="9">Írás: payroll_specialist (Bérszámfejtő)</text>
+      <text x="16" y="104" fill="#cbd5e1" font-size="9">+ iroda_admin, owner, admin</text>
+      <text x="16" y="120" fill="#6ee7b7" font-size="9">Főkönyvi feladás: post_payroll_cycle_to_gl</text>
+      <text x="16" y="136" fill="#94a3b8" font-size="9">Munkavállaló (employee): Csak saját bérlap</text>
+    </g>
+  </g>
+
+  <!-- Footer Verification Badge -->
+  <g transform="translate(40, 1105)">
+    <text x="0" y="0" fill="#64748b" font-size="9">Verifikált állapot: 122/122 pgTAP adatbázis teszt PASS | 802/802 Vitest kliens teszt PASS | 0 TypeScript típushiba | Dev DB: qhvcdqkqpgpdxogqqvyr</text>
+  </g>
+
+</svg>

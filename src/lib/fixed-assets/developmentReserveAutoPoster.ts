@@ -76,29 +76,13 @@ export async function postDevelopmentReserveReleaseToLedger(
   params: DevelopmentReservePostingParams
 ): Promise<PostingResult> {
   try {
-    const { companyId, userId, assetName, inventoryNumber, reserveAmount, activationDate, reserveYear } = params;
+    const { companyId, assetId, assetName, inventoryNumber, reserveAmount, activationDate, reserveYear } = params;
 
     if (!reserveAmount || reserveAmount <= 0) {
       return { success: false, message: 'Nincs érvényes fejlesztési tartalék összeg.' };
     }
 
-    // 1. Keresünk Vegyes naplót a cégnél
-    const { data: journals = [] } = await supabase
-      .from('acc_journals')
-      .select('id, code, name')
-      .eq('company_id', companyId)
-      .eq('is_active', true);
-
-    const veJournal =
-      journals?.find(j => j.code?.toUpperCase() === 'VE' || j.code?.toUpperCase() === 'VEG') ||
-      journals?.find(j => j.name?.toLowerCase().includes('vegyes')) ||
-      journals?.[0];
-
-    if (!veJournal) {
-      return { success: false, message: 'Nem található Vegyes könyvelési napló a cégnél.' };
-    }
-
-    // 2. Megkeressük a 414 és 413 főkönyvi számlákat
+    // 1. Megkeressük a 414 és 413 főkönyvi számlákat
     const { gl414, gl413 } = await resolveReserveGlAccounts(companyId);
 
     if (!gl414 || !gl413) {
@@ -108,114 +92,29 @@ export async function postDevelopmentReserveReleaseToLedger(
       };
     }
 
-    const year = parseInt(activationDate.slice(0, 4), 10) || new Date().getFullYear();
-    const cleanInv = inventoryNumber.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const documentId = `FT-FELOLD-${cleanInv}`;
-    const description = `Fejlesztési tartalék feloldása: ${assetName} (${inventoryNumber})${reserveYear ? ` — ${reserveYear}. évi keretből` : ''}`;
+    // 2. Feladás tranzakcionális SECURITY DEFINER RPC-n keresztül
+    const { data, error } = await supabase.rpc('post_development_reserve_to_gl', {
+      p_company_id: companyId,
+      p_asset_id: assetId,
+      p_asset_name: assetName,
+      p_inventory_number: inventoryNumber,
+      p_reserve_amount: reserveAmount,
+      p_activation_date: activationDate,
+      p_reserve_year: reserveYear || null,
+      p_gl414: gl414,
+      p_gl413: gl413,
+    });
 
-    // Megnézzük, van-e már ilyen bizonylatszám a duplikáció elkerülésére
-    const { data: existingHeader } = await supabase
-      .from('acc_journal_headers')
-      .select('id')
-      .eq('company_id', companyId)
-      .eq('document_id', documentId)
-      .maybeSingle();
-
-    let headerId = existingHeader?.id;
-
-    if (!headerId) {
-      // Új fejléc létrehozása PISZKOZAT státusszal
-      const { data: newHeader, error: headerErr } = await supabase
-        .from('acc_journal_headers')
-        .insert({
-          company_id: companyId,
-          journal_id: veJournal.id,
-          accounting_year: year,
-          status: 'PISZKOZAT',
-          entry_type: 'NORMAL',
-          source: 'AUTOMATIKUS',
-          currency: 'HUF',
-          posting_date: activationDate,
-          document_date: activationDate,
-          document_id: documentId,
-          description,
-          justification: `Tárgyi eszköz aktiválás (Tao. tv. 7. § (15)): ${assetName}, összeg: ${reserveAmount.toLocaleString('hu-HU')} Ft`,
-          created_by: userId || null,
-          posted_by: userId || null,
-        })
-        .select('id')
-        .single();
-
-      if (headerErr || !newHeader) {
-        return { success: false, message: `Napló fejléc hiba: ${headerErr?.message}` };
-      }
-      headerId = newHeader.id;
-    } else {
-      // Ha már volt korábbi tétel, a sorokat újraírjuk és visszaállítjuk PISZKOZAT-ra a re-postinghoz
-      await supabase
-        .from('acc_journal_headers')
-        .update({ status: 'PISZKOZAT' })
-        .eq('id', headerId);
-      await supabase.from('acc_journal_lines').delete().eq('header_id', headerId);
+    if (error) {
+      return { success: false, message: `Könyvelési hiba: ${error.message}` };
     }
 
-    // Sorok beszúrása:
-    // 1. sor: Tartozik 414 (Lekötött tartalék csökken / feloldódik)
-    // 2. sor: Követel 413 (Eredménytartalék nő / jóváíródik)
-    const lines = [
-      {
-        header_id: headerId,
-        sequence_number: 1,
-        gl_account_id: gl414,
-        dc_type: 'T',
-        amount: reserveAmount,
-        description: `Lekötött tartalék feloldása (414) — ${assetName}`,
-      },
-      {
-        header_id: headerId,
-        sequence_number: 2,
-        gl_account_id: gl413,
-        dc_type: 'K',
-        amount: reserveAmount,
-        description: `Eredménytartalékba visszavezetés (413) — ${assetName}`,
-      },
-    ];
-
-    const { error: linesErr } = await supabase.from('acc_journal_lines').insert(lines);
-    if (linesErr) {
-      return { success: false, message: `Napló sorok hiba: ${linesErr?.message}` };
-    }
-
-    // Véglegesítés az acc_post_journal_entry RPC-n keresztül (naplósorszám generálás)
-    try {
-      const { error: rpcErr } = await supabase.rpc('acc_post_journal_entry', {
-        p_header_id: headerId,
-        p_user_id: userId || null,
-      });
-
-      if (rpcErr) {
-        console.warn('acc_post_journal_entry RPC warning in reserve posting, falling back to direct update:', rpcErr);
-        await supabase
-          .from('acc_journal_headers')
-          .update({
-            status: 'KONYVELT',
-            posted_at: new Date().toISOString(),
-            posted_by: userId || null,
-          })
-          .eq('id', headerId);
-      }
-    } catch {
-      await supabase
-        .from('acc_journal_headers')
-        .update({
-          status: 'KONYVELT',
-          posted_at: new Date().toISOString(),
-          posted_by: userId || null,
-        })
-        .eq('id', headerId);
-    }
-
-    return { success: true, headerId };
+    const res = data as any;
+    return {
+      success: res?.success ?? true,
+      headerId: res?.header_id,
+      message: res?.message,
+    };
   } catch (err: any) {
     console.error('postDevelopmentReserveReleaseToLedger error:', err);
     return { success: false, message: err?.message || 'Könyvelési hiba' };
@@ -223,30 +122,24 @@ export async function postDevelopmentReserveReleaseToLedger(
 }
 
 /**
- * Törli az eszközhöz tartozó fejlesztési tartalék feloldási könyvelési tételt (fejlécet és sorokat).
+ * Törli vagy sztornózza az eszközhöz tartozó fejlesztési tartalék feloldási könyvelési tételt.
  */
 export async function removeDevelopmentReservePosting(companyId: string, inventoryNumber: string): Promise<PostingResult> {
   try {
-    const cleanInv = inventoryNumber.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const documentId = `FT-FELOLD-${cleanInv}`;
+    const { data, error } = await supabase.rpc('remove_development_reserve_from_gl', {
+      p_company_id: companyId,
+      p_inventory_number: inventoryNumber,
+    });
 
-    const { data: header, error: headErr } = await supabase
-      .from('acc_journal_headers')
-      .select('id')
-      .eq('company_id', companyId)
-      .eq('document_id', documentId)
-      .maybeSingle();
-
-    if (headErr) {
-      return { success: false, message: headErr.message };
+    if (error) {
+      return { success: false, message: `Könyvelési törlési hiba: ${error.message}` };
     }
 
-    if (header?.id) {
-      await supabase.from('acc_journal_lines').delete().eq('header_id', header.id);
-      await supabase.from('acc_journal_headers').delete().eq('id', header.id);
-    }
-
-    return { success: true };
+    const res = data as any;
+    return {
+      success: res?.success ?? true,
+      message: res?.message,
+    };
   } catch (err: any) {
     console.error('removeDevelopmentReservePosting error:', err);
     return { success: false, message: err?.message || 'Könyvelési törlési hiba' };

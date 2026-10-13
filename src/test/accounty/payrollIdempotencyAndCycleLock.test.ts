@@ -105,6 +105,22 @@ describe('Payroll Idempotency & Duplicate Posting Guard', () => {
       };
     });
 
+    (supabase.rpc as any).mockImplementation((fn: string, args: any) => {
+      if (fn === 'post_payroll_cycle_to_gl') {
+        return Promise.resolve({
+          data: {
+            success: true,
+            is_already_posted: true,
+            journal_number: 'BER-2026-09',
+            header_id: 'existing-header-1',
+            message: 'A(z) 2026. 09. havi bérfeladás már korábban le lett könyvelve (BER-2026-09).',
+          },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
     const result = await postPayrollCycleToLedger(cycleId, companyId, userId, {
       gl541: 'gl-541',
       gl471: 'gl-471',
@@ -114,8 +130,14 @@ describe('Payroll Idempotency & Duplicate Posting Guard', () => {
     expect(result.isAlreadyPosted).toBe(true);
     expect(result.journalNumber).toBe('BER-2026-09');
     expect(result.headerId).toBe('existing-header-1');
-    // Crucial: insert should NOT be called because an active entry already exists!
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(supabase.rpc).toHaveBeenCalledWith('post_payroll_cycle_to_gl', expect.objectContaining({
+      p_company_id: companyId,
+      p_cycle_id: cycleId,
+      p_gl_mapping: expect.objectContaining({
+        gl541: 'gl-541',
+        gl471: 'gl-471',
+      }),
+    }));
   });
 
   it('should post fresh journal entry when no active header exists', async () => {
@@ -135,18 +157,6 @@ describe('Payroll Idempotency & Duplicate Posting Guard', () => {
       { id: 'calc-2', gross_salary: 500000, szja_amount: 75000, tb_amount: 92500, net_salary: 332500 },
     ];
 
-    const mockInsertHeader = vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({ data: { id: 'new-header-123' }, error: null }),
-      }),
-    });
-
-    const mockInsertLines = vi.fn().mockResolvedValue({ error: null });
-
-    const mockUpdateCycle = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null }),
-    });
-
     (supabase.from as any).mockImplementation((table: string) => {
       if (table === 'accounty_payroll_cycles') {
         return {
@@ -155,7 +165,6 @@ describe('Payroll Idempotency & Duplicate Posting Guard', () => {
               single: vi.fn().mockResolvedValue({ data: mockCycle, error: null }),
             }),
           }),
-          update: mockUpdateCycle,
         };
       }
       if (table === 'accounty_payroll_calculations') {
@@ -181,35 +190,26 @@ describe('Payroll Idempotency & Duplicate Posting Guard', () => {
           }),
         };
       }
-      if (table === 'acc_journals') {
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ data: [{ id: 'journal-ve', code: 'VE', name: 'Vegyes' }], error: null }),
-          }),
-        };
-      }
-      if (table === 'acc_journal_headers') {
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                neq: vi.fn().mockResolvedValue({ data: [], error: null }), // No existing active header!
-              }),
-            }),
-          }),
-          insert: mockInsertHeader,
-        };
-      }
-      if (table === 'acc_journal_lines') {
-        return {
-          insert: mockInsertLines,
-        };
-      }
       return {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockResolvedValue({ data: [], error: null }),
         }),
       };
+    });
+
+    (supabase.rpc as any).mockImplementation((fn: string, args: any) => {
+      if (fn === 'post_payroll_cycle_to_gl') {
+        return Promise.resolve({
+          data: {
+            success: true,
+            header_id: 'new-header-123',
+            journal_number: 'BER-2026-10',
+            message: 'Bérfeladás sikeresen lekönyvelve a Vegyes naplóba (BER-2026-10)!',
+          },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
     });
 
     const result = await postPayrollCycleToLedger(cycleId, companyId, userId, {
@@ -218,14 +218,21 @@ describe('Payroll Idempotency & Duplicate Posting Guard', () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.isAlreadyPosted).toBeUndefined();
+    expect(result.isAlreadyPosted).toBe(false);
     expect(result.headerId).toBe('new-header-123');
     expect(result.journalNumber).toBe('BER-2026-10');
-    expect(mockInsertHeader).toHaveBeenCalledTimes(1);
-    expect(mockInsertLines).toHaveBeenCalledTimes(1);
-    expect(mockUpdateCycle).toHaveBeenCalledWith(expect.objectContaining({
-      status: 'closed',
-      current_step: 8,
+    expect(supabase.rpc).toHaveBeenCalledWith('post_payroll_cycle_to_gl', expect.objectContaining({
+      p_company_id: companyId,
+      p_cycle_id: cycleId,
+      p_gl_mapping: expect.objectContaining({
+        gl541: 'gl-541',
+        gl471: 'gl-471',
+      }),
+      p_summary: expect.objectContaining({
+        totalGross: 500000,
+        totalSzja: 75000,
+        totalTb: 92500,
+      }),
     }));
   });
 });

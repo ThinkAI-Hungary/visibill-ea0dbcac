@@ -45,7 +45,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, Calendar, Banknote, Percent, Clock, Truck, Building2, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Info, RotateCcw, ChevronDown, BarChart3, Calendar, Banknote, Percent, Clock, Truck, Building2, Loader2, RefreshCw, Sparkles, Scale } from "lucide-react";
 import { queryTaxpayerFromNav } from "@/lib/nav/navTaxpayerService";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
@@ -78,6 +78,8 @@ import {
   RELATION_TYPE_COLORS,
 } from "@/types/related-parties";
 import { useActivePreset } from "@/hooks/useActivePreset";
+import { Partner360SummaryCard } from "@/components/partners/Partner360SummaryCard";
+import { Partner360DossierTab } from "@/components/technical-accounting/Partner360DossierTab";
 
 const DEFAULT_PAGE_SIZE = 15;
 
@@ -201,6 +203,7 @@ export default function PartnersPage() {
   const [isNavLookupLoading, setIsNavLookupLoading] = useState(false);
   const [isEnrichingPartner, setIsEnrichingPartner] = useState(false);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+  const [isPartner360ModalOpen, setIsPartner360ModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   // Tab state: 'partners' | 'related_turnover'
   const currentTab = searchParams.get('tab') || 'partners';
@@ -1668,6 +1671,30 @@ export default function PartnersPage() {
                 </div>
               </div>
 
+              {/* Partner 360° Főkönyvi Kapcsolat & Likviditási Mátrix */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Scale className="h-3.5 w-3.5 text-indigo-500" />
+                    Teljes Főkönyvi Kapcsolat (Partner 360°)
+                  </h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsPartner360ModalOpen(true)}
+                    className="h-7 text-xs gap-1 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/10"
+                  >
+                    <BarChart3 className="h-3 w-3" />
+                    Karton Megnyitása
+                  </Button>
+                </div>
+                <Partner360SummaryCard
+                  companyId={selectedCompany?.id}
+                  partnerId={selectedPartner.id}
+                  onOpenFullView={() => setIsPartner360ModalOpen(true)}
+                />
+              </div>
+
               {/* Partner Számlák — tabbed */}
               <div className="space-y-3 shrink-0">
                 {/* Tab header */}
@@ -2281,6 +2308,26 @@ export default function PartnersPage() {
         open={isDetailDialogOpen}
         onClose={closeInvoiceDetail}
       />
+
+      {/* Partner 360 Detail Modal */}
+      <Dialog open={isPartner360ModalOpen} onOpenChange={setIsPartner360ModalOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-indigo-600">
+              <Scale className="h-5 w-5 text-indigo-500" />
+              Partner 360° Főkönyvi Karton & Likviditási Mátrix
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPartner && (
+            <div className="py-2">
+              <Partner360DossierTab
+                companyId={selectedCompany?.id}
+                initialPartnerId={selectedPartner.id}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

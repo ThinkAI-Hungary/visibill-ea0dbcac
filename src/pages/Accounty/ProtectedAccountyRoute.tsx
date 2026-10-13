@@ -1,8 +1,9 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAccountyRole, AccountyRole } from './AccountyRoleContext';
 import { useHasAccountyAccess } from '@/hooks/useHasEaisybillAccess';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useAccountyPermissions, type AccountyModule } from '@/hooks/useAccountyPermissions';
 
 interface ProtectedAccountyRouteProps {
   children: React.ReactNode;
@@ -13,6 +14,13 @@ interface ProtectedAccountyRouteProps {
    * Example: requiredRoles={['iroda_admin', 'senior_könyvelő']} — both can access.
    */
   requiredRoles?: AccountyRole[];
+  /**
+   * Permission-matrix module required to access this route. Evaluated with
+   * `useAccountyPermissions().canAccess` — i.e. role defaults AND per-user DB
+   * overrides (so a configured Bérszámfejtő / Asszisztens is honoured).
+   * Can be combined with `requiredRoles` (both must pass).
+   */
+  requiredModule?: AccountyModule;
   /** Where to redirect if the user doesn't have the required role. Defaults to '/eaisybooks'. */
   redirectTo?: string;
   /** If true, show nothing instead of redirecting (useful for conditional UI blocks). */
@@ -38,23 +46,20 @@ interface ProtectedAccountyRouteProps {
 export function ProtectedAccountyRoute({
   children,
   requiredRoles,
+  requiredModule,
   redirectTo = '/eaisybooks',
   hideOnly = false,
 }: ProtectedAccountyRouteProps) {
   const { role, isLoading } = useAccountyRole();
+  const { canAccess, isLoading: permissionsLoading } = useAccountyPermissions();
 
   // While loading, show nothing (prevents flash of redirect)
-  if (isLoading) return null;
+  if (isLoading || (requiredModule && permissionsLoading)) return null;
 
-  // If no specific roles required, allow access
-  if (!requiredRoles || requiredRoles.length === 0) {
-    return <>{children}</>;
-  }
+  const roleAllowed = !requiredRoles || requiredRoles.length === 0 || requiredRoles.includes(role);
+  const moduleAllowed = !requiredModule || canAccess(requiredModule);
 
-  // Check if the user's role is in the allowed list
-  const hasAccess = requiredRoles.includes(role);
-
-  if (!hasAccess) {
+  if (!roleAllowed || !moduleAllowed) {
     if (hideOnly) return null;
     return <Navigate to={redirectTo} replace />;
   }
@@ -63,14 +68,38 @@ export function ProtectedAccountyRoute({
 }
 
 /**
+ * AccountyModuleLayout — pathless layout route that module-gates a whole group
+ * of child routes (role defaults + per-user DB overrides, see `requiredModule`).
+ *
+ *   <Route element={<AccountyModuleLayout module="payroll" />}>
+ *     <Route path="payroll" ... />
+ *   </Route>
+ */
+export function AccountyModuleLayout({
+  module,
+  redirectTo,
+}: {
+  module: AccountyModule;
+  redirectTo?: string;
+}) {
+  return (
+    <ProtectedAccountyRoute requiredModule={module} redirectTo={redirectTo}>
+      <Outlet />
+    </ProtectedAccountyRoute>
+  );
+}
+
+/**
  * Helper: checks if a role has at least the given minimum privilege level.
- * iroda_admin > senior_könyvelő > könyvelő > asszisztens
+ * iroda_admin > senior_könyvelő > könyvelő > asszisztens.
+ * payroll_specialist is a parallel, narrowest-scope role and ranks below asszisztens.
  */
 const ROLE_HIERARCHY: Record<AccountyRole, number> = {
   'iroda_admin': 4,
   'senior_könyvelő': 3,
   'könyvelő': 2,
   'asszisztens': 1,
+  'payroll_specialist': 0.5,
 };
 
 export function hasMinimumRole(userRole: AccountyRole, minimumRole: AccountyRole): boolean {

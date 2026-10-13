@@ -10,11 +10,12 @@ import {
   Coins, 
   Landmark, 
   Calculator, 
-  ClipboardList, 
   Brain, 
   Settings, 
-  Building2 
+  Building2,
+  Wrench
 } from 'lucide-react';
+
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useAccountyShell } from '@/pages/Accounty/AccountyShellContext';
@@ -46,61 +47,79 @@ export default function ClientNav() {
            ) : false);
   }, [pathname, evSettings, selectedClient]);
 
-  if (!selectedClientId) return null;
+  const clientNavItems = React.useMemo(() => {
+    if (!selectedClientId) return [];
+    return [
+      { 
+        path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/overview`, 
+        name: t('nav.items.overview', 'Áttekintés'), 
+        icon: Briefcase, 
+        exact: true 
+      },
+      { 
+        path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/profile`, 
+        name: t('nav.items.profile', 'Profil'), 
+        icon: User 
+      },
+      { 
+        path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/invoices`, 
+        name: t('nav.items.invoices', 'Számlák'), 
+        icon: FileText 
+      },
+      { 
+        path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/missing-invoices`, 
+        name: t('nav.items.missing_invoices', 'Hiányzó számlák'), 
+        icon: FileWarning 
+      },
+      { 
+        path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/ev`, 
+        name: t('nav.items.ev', 'Egyéni Vállalkozás'), 
+        icon: Coins 
+      },
+      { 
+        path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/tao`, 
+        name: t('nav.items.tao', 'Társasági Adó'), 
+        icon: Landmark 
+      },
+      { 
+        path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, 
+        name: t('nav.items.payroll', 'Bérszámfejtés'), 
+        icon: Calculator 
+      },
+      { 
+        path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/prompts`, 
+        name: t('nav.items.prompts', 'Könyvelési Szabályok'), 
+        icon: Brain 
+      },
+      { 
+        path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/technical-accounting`, 
+        name: t('nav.items.technical_accounting', 'Technikai műveletek'), 
+        icon: Wrench 
+      },
+      { 
+        path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, 
+        name: t('nav.items.cegkapu_settings', 'Beállítások / Cégkapu'), 
+        icon: Settings 
+      },
+    ];
+  }, [prefix, selectedClientId, currentDateRange, t]);
 
-  const clientNavItems = [
-    { 
-      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/overview`, 
-      name: t('nav.items.overview', 'Áttekintés'), 
-      icon: Briefcase, 
-      exact: true 
-    },
-    { 
-      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/profile`, 
-      name: t('nav.items.profile', 'Profil'), 
-      icon: User 
-    },
-    { 
-      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/invoices`, 
-      name: t('nav.items.invoices', 'Számlák'), 
-      icon: FileText 
-    },
-    { 
-      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/missing-invoices`, 
-      name: t('nav.items.missing_invoices', 'Hiányzó számlák'), 
-      icon: FileWarning 
-    },
-    { 
-      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/ev`, 
-      name: t('nav.items.ev', 'Egyéni Vállalkozás'), 
-      icon: Coins 
-    },
-    { 
-      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/tao`, 
-      name: t('nav.items.tao', 'Társasági Adó'), 
-      icon: Landmark 
-    },
-    { 
-      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/payroll`, 
-      name: t('nav.items.payroll', 'Bérszámfejtés'), 
-      icon: Calculator 
-    },
-    { 
-      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/payroll/filings`, 
-      name: t('nav.items.nav_filings', 'NAV bevallások'), 
-      icon: ClipboardList 
-    },
-    { 
-      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/prompts`, 
-      name: t('nav.items.prompts', 'Könyvelési Szabályok'), 
-      icon: Brain 
-    },
-    { 
-      path: `${prefix}/eaisybooks/${selectedClientId}/${currentDateRange}/settings#notifications`, 
-      name: t('nav.items.cegkapu_settings', 'Beállítások / Cégkapu'), 
-      icon: Settings 
-    },
-  ];
+  const activePath = React.useMemo(() => {
+    const matches = clientNavItems.filter((item) => {
+      const pathWithoutHash = item.path.split('#')[0];
+      if (item.exact) {
+        return pathname === pathWithoutHash;
+      }
+      return pathname === pathWithoutHash || pathname.startsWith(pathWithoutHash + '/');
+    });
+
+    if (matches.length === 0) return null;
+    return matches.reduce((best, curr) =>
+      curr.path.split('#')[0].length > best.path.split('#')[0].length ? curr : best
+    ).path;
+  }, [clientNavItems, pathname]);
+
+  if (!selectedClientId) return null;
 
   if (isCollapsed) {
     return (
@@ -131,8 +150,7 @@ export default function ClientNav() {
         </li>
         <li className="my-1 mx-2 h-px bg-border/50" />
         {clientNavItems.map((item) => {
-          const pathWithoutHash = item.path.split('#')[0];
-          const active = item.exact ? pathname === pathWithoutHash : pathname.startsWith(pathWithoutHash);
+          const active = item.path === activePath;
           return (
             <li key={item.path} className="relative flex justify-center">
               <Tooltip delayDuration={0}>
@@ -186,8 +204,7 @@ export default function ClientNav() {
       {/* Client Context Items */}
       <ul className="flex w-full min-w-0 flex-col gap-1">
         {clientNavItems.map(item => {
-          const pathWithoutHash = item.path.split('#')[0];
-          const active = item.exact ? pathname === pathWithoutHash : pathname.startsWith(pathWithoutHash);
+          const active = item.path === activePath;
           return (
             <li key={item.path}>
               <Link

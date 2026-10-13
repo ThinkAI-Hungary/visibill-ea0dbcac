@@ -38,5 +38,5 @@ A magyar számviteli törvény (Sztv.) és a pénzkezelési szabályzat megköve
 ---
 
 ## Kapcsolódó
-* **ADR:** [A-246: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra](../../architecture/decisions/A-246-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md)
-* **PRD:** [P-182: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX](../../product/decisions/P-182-petty-cash-invoice-attachment-and-unlink-ux.md)
+* **ADR:** [A-249: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra](../../architecture/decisions/A-249-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md)
+* **PRD:** [P-183: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX](../../product/decisions/P-183-petty-cash-invoice-attachment-and-unlink-ux.md)

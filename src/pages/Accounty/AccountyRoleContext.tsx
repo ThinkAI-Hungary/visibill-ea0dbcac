@@ -5,7 +5,9 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
 
-export type AccountyRole = 'iroda_admin' | 'senior_könyvelő' | 'könyvelő' | 'asszisztens';
+import { normalizeAccountyRole, type AccountyRole } from '@/lib/permissions/capabilities';
+
+export type { AccountyRole };
 
 interface AccountyRoleContextType {
   role: AccountyRole;
@@ -26,7 +28,8 @@ export function useAccountyRole() {
 /**
  * Reads the user's Accounty role from the DB (accounty_assignments table).
  * The highest-privilege role across all assignments is used:
- *   iroda_admin > senior_könyvelő > könyvelő > asszisztens
+ *   iroda_admin > senior_könyvelő > könyvelő > asszisztens > payroll_specialist
+ *   (payroll_specialist has the narrowest default access, so it ranks lowest)
  *
  * Support admin and platform management users always receive full iroda_admin access.
  */
@@ -58,29 +61,23 @@ export function AccountyRoleProvider({ children }: { children: React.ReactNode }
       if (error || !data || data.length === 0) return 'könyvelő';
 
       // Role priority: pick the highest privilege
-      const ROLE_PRIORITY: Record<string, number> = {
-        'iroda_admin': 4,
-        'senior_könyvelő': 3,
-        'könyvelő': 2,
-        'asszisztens': 1,
-        // Legacy mappings (in case the migration hasn't run yet)
-        'senior': 4,
-        'admin': 4,
-        'junior': 2,
+      const ROLE_PRIORITY: Record<AccountyRole, number> = {
+        'iroda_admin': 5,
+        'senior_könyvelő': 4,
+        'könyvelő': 3,
+        'asszisztens': 2,
+        'payroll_specialist': 1,
       };
 
-      const roles = (data as any[]).map((d: any) => d.role as string);
-      const bestRole = roles.reduce((best, current) => {
-        const bestPrio = ROLE_PRIORITY[best] ?? 0;
-        const currentPrio = ROLE_PRIORITY[current] ?? 0;
-        return currentPrio > bestPrio ? current : best;
-      }, roles[0]);
+      // Normalize legacy values (senior/admin → iroda_admin, junior → könyvelő); unknown values are ignored
+      const roles = (data as { role: string }[])
+        .map((d) => normalizeAccountyRole(d.role))
+        .filter((r): r is AccountyRole => r !== null);
+      if (roles.length === 0) return 'könyvelő';
 
-      // Map legacy values
-      if (bestRole === 'senior' || bestRole === 'admin') return 'iroda_admin';
-      if (bestRole === 'junior') return 'könyvelő';
-
-      return bestRole as AccountyRole;
+      return roles.reduce((best, current) =>
+        ROLE_PRIORITY[current] > ROLE_PRIORITY[best] ? current : best,
+      roles[0]);
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,

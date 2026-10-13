@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-12  
-> **Összesen:** 245 döntés (227 egyedi döntési fájl) | ✅ Decided: 243 | ⛔ Superseded: 2
+> **Összesen:** 250 döntés (235 egyedi döntési fájl) | ✅ Decided: 248 | ⛔ Superseded: 2
 
 
 ---
@@ -66,6 +66,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-147 | Kétirányú Számlaláncolat (Invoice Chaining), Dinamikus Kapcsolt Bizonylat Feloldás és Előnézeti Dokumentum-lapozás | ✅ Decided | [A-147](./A-147-bidirectional-invoice-chaining-and-preview-tabs.md) |
 | A-179 | Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra | ✅ Decided | [A-179](./A-179-aggreg8-psd2-cross-import-deduplication.md) |
 | A-225 | Duplex PDF Darabolás Robusztusítás, Táblázatfejléc Védelem és Számlaszám Fuzzy NAV Párosítás | ✅ Decided | [A-225](./A-225-duplex-pdf-splitting-header-blacklist-and-fuzzy-nav-matching.md) |
+| A-246 | Worker Invoice Upsert Idempotencia és Postgres 23505 Pre-Check Ütközésvédelem | ✅ Decided | [A-246](./A-246-worker-invoice-upsert-23505-precheck-collision-prevention.md) |
 
 
 ## 🔒 Biztonság & Auth
@@ -283,7 +284,9 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-243 | NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZ/SZJ Detektálás Architektúra | ✅ Decided | [A-243](./A-243-nav-osa-three-way-reconciliation-and-steel-products-architecture.md) |
 | A-244 | Külföldi és Devizás Bejövő Számlák Integrálása az ÁFA Bevallásba és Taxology Baseline Igazítás | ✅ Decided | [A-244](./A-244-foreign-inbound-invoices-vat-return-integration.md) |
 | A-245 | calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése) | ✅ Decided | [A-245](./A-245-calculate-hungarian-vat-return-cursor-bounding-and-exchange-rate-optimization.md) |
-| A-246 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra | ✅ Decided | [A-246](./A-246-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md) |
+| A-247 | Szerepkör-képesség mátrix (Capability Matrix), Bérszámfejtő (payroll_specialist) szerepkör és ÁFA-zárolás backend védelme | ✅ Decided | [A-247](./A-247-role-capability-matrix.md) |
+| A-249 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra | ✅ Decided | [A-249](./A-249-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md) |
+| A-250 | 14. Bérszámfejtés és Főkönyvi Bérfeladás Modul Architektúra, GIRO Motor és Tab Konszolidáció | ✅ Decided | [A-250](./A-250-payroll-module-14-reconciliation-giro-and-tab-architecture.md) |
 
 
 
@@ -323,6 +326,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-149 | In-App Fejlesztői Napló (Patchnotes) Rendszer és Publikációs Pipeline | ✅ Decided | [A-149](./A-149-in-app-changelog-and-patchnotes-system.md) |
 | A-171 | Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció | ✅ Decided | [A-171](./A-171-croatian-minimax-api-invoice-intermediary-sync.md) |
 | A-190 | Menedzsment Dashboard Összesítő Gyorsítótárazás és Python Worker Vault Tehermentesítés (P2 Skálázhatósági Fejlesztés) | ✅ Decided | [A-190](./A-190-management-dashboard-counts-caching-and-worker-vault-offloading.md) |
+| A-248 | Agora / Novitax Formátumhű Pénzügyi Kimutatások (Főkönyvi Kivonat és Eredménykimutatás) Export Architektúra | ✅ Decided | [A-248](./A-248-agora-statutory-financial-reports-export-architecture.md) |
 
 
 

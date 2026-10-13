@@ -54,6 +54,8 @@ export interface CompanyWorkSettings {
   fx_revaluation_rate_type?: 'mid' | 'buy' | 'sell' | null;
   vat_code_display_mode?: 'legacy' | 'nav' | null;
   has_purchase_vouchers?: boolean | null;
+  active_gl_view_template_id?: string | null;
+  active_vat_view_template_id?: string | null;
   created_at: string;
   updated_at: string;
 }

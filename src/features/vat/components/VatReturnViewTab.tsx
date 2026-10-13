@@ -51,6 +51,7 @@ import { useSteelProductsData } from '../hooks/useSteelProductsData';
 import { useQuestionableInvoices } from '@/features/invoices/hooks/useQuestionableInvoices';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import { VatCalculatorView } from './VatCalculatorView';
 import { VatNav65Replica } from './VatNav65Replica';
 import { VatObrazacPdvReplica } from './VatObrazacPdvReplica';
@@ -91,6 +92,10 @@ export function VatReturnViewTab() {
   } = vatData;
 
   const { isCroatia } = useCompanyJurisdiction(selectedCompany);
+  // D-4: period closing + official XML export are limited by role (backend guard: trg_vat_returns_finalize_guard)
+  const { canClosePeriod, canExportOfficialTaxReturn } = useCompanyCapabilities();
+  const closeDeniedTitle = 'Csak senior könyvelő, iroda admin vagy a cég vezetői véglegesíthetik az ÁFA bevallást';
+  const exportDeniedTitle = 'Hivatalos XML exportálás csak senior könyvelő vagy iroda admin számára engedélyezett';
 
   const [showSteelWarningModal, setShowSteelWarningModal] = React.useState(false);
   const [proRataCalculatorOpen, setProRataCalculatorOpen] = React.useState(false);
@@ -111,6 +116,7 @@ export function VatReturnViewTab() {
   const [isA60XmlExportModalOpen, setIsA60XmlExportModalOpen] = React.useState(false);
 
   const executeXmlDownload = () => {
+    if (!canExportOfficialTaxReturn) return;
     if (!vatReturn || !selectedCompany) return;
     if (isCroatia) {
       setPoreznaExportOpen(true);
@@ -151,6 +157,7 @@ export function VatReturnViewTab() {
   };
 
   const handleXmlDownloadClick = () => {
+    if (!canExportOfficialTaxReturn) return;
     if (!vatReturn || !selectedCompany) return;
     if (hasIncompleteSteelItems) {
       setShowSteelWarningModal(true);
@@ -362,7 +369,8 @@ export function VatReturnViewTab() {
               variant="outline"
               size="sm"
               onClick={() => reopenReturn.mutate()}
-              disabled={reopenReturn.isPending}
+              disabled={reopenReturn.isPending || !canClosePeriod}
+              title={!canClosePeriod ? closeDeniedTitle : undefined}
               className="h-9 gap-1.5 text-xs"
             >
               {reopenReturn.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
@@ -371,7 +379,7 @@ export function VatReturnViewTab() {
           ) : (vatReturn as any)?.status === 'validated' ? (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" disabled={finalizeReturn.isPending} className="h-9 gap-1.5 text-xs">
+                <Button size="sm" disabled={finalizeReturn.isPending || !canClosePeriod} title={!canClosePeriod ? closeDeniedTitle : undefined} className="h-9 gap-1.5 text-xs">
                   {finalizeReturn.isPending ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
@@ -516,21 +524,21 @@ export function VatReturnViewTab() {
                   <FileSpreadsheet className="w-4 h-4 mr-2" /> {t('accounting:vat_return.period.pdf_print', 'PDF nyomtatás')}
                 </DropdownMenuItem>
                 {isCroatia ? (
-                  <DropdownMenuItem onClick={() => setPoreznaExportOpen(true)}>
+                  <DropdownMenuItem onClick={() => setPoreznaExportOpen(true)} disabled={!canExportOfficialTaxReturn} title={!canExportOfficialTaxReturn ? exportDeniedTitle : undefined}>
                     <Download className="w-4 h-4 mr-2 text-blue-500" />
                     <span>ePorezna XML export (PDV-S / ZP)</span>
                   </DropdownMenuItem>
                 ) : (
                   <>
-                    <DropdownMenuItem onClick={handleXmlDownloadClick}>
+                    <DropdownMenuItem onClick={handleXmlDownloadClick} disabled={!canExportOfficialTaxReturn} title={!canExportOfficialTaxReturn ? exportDeniedTitle : undefined}>
                       <Download className="w-4 h-4 mr-2" />
                       {t('accounting:vat_return.period.xml_download', 'ÁNYK 65 XML letöltés')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsA60XmlExportModalOpen(true)}>
+                    <DropdownMenuItem onClick={() => setIsA60XmlExportModalOpen(true)} disabled={!canExportOfficialTaxReturn} title={!canExportOfficialTaxReturn ? exportDeniedTitle : undefined}>
                       <FileText className="w-4 h-4 mr-2 text-indigo-500" />
                       <span>ÁNYK A60 XML letöltés (Közösségi összesítő)</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsXmlExportModalOpen(true)}>
+                    <DropdownMenuItem onClick={() => setIsXmlExportModalOpen(true)} disabled={!canExportOfficialTaxReturn} title={!canExportOfficialTaxReturn ? exportDeniedTitle : undefined}>
                       <User className="w-4 h-4 mr-2 text-muted-foreground" />
                       <span>{t('accounting:vat_return.period.edit_representative', 'Ügyintéző adatai (ÁNYK)')}</span>
                     </DropdownMenuItem>

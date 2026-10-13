@@ -23,6 +23,8 @@ export type EaisybillModule =
   | 'annual_report'
   | 'vat_return'
   | 'journals'
+  | 'subledger'
+  | 'accounting_rules'
   | 'salaries'
   | 'working_time'
   | 'fixed_assets'
@@ -60,16 +62,23 @@ const ADMIN_ONLY_MODULES: EaisybillModule[] = [
 ];
 
 /**
- * Modules that require at least member role (not visible to assistant/viewer/employee).
+ * Accounting-technical modules (subledger / folyószámla and journals / napló).
+ * Hidden by default for the `admin` (Cégvezető) role — see capability
+ * `canManageAccountingTech` (D-3). Owner and finance_lead keep access; the owner
+ * can re-enable them per user through the permission panel (DB override wins).
  */
-const MEMBER_MODULES: EaisybillModule[] = [
-  'general_ledger',
-  'profit_loss',
-  'balance_sheet',
-  'annual_report',
-  'vat_return',
-  'journals',
-  'fixed_assets',
+const ACCOUNTING_TECH_MODULES: EaisybillModule[] = ['subledger', 'journals'];
+
+/**
+ * Modules visible to an assignment-derived Bérszámfejtő (payroll_specialist) in eaisyBill.
+ * No invoices / transactions / ledger — payroll itself lives in eaisyBooks (D-5).
+ */
+const PAYROLL_SPECIALIST_MODULES: EaisybillModule[] = [
+  'dashboard',
+  'salaries',
+  'knowledge_base',
+  'tickets',
+  'notes',
 ];
 
 /**
@@ -94,7 +103,8 @@ const ASSISTANT_MODULES: EaisybillModule[] = [
 ];
 
 /**
- * Modules accessible to viewer (read-only financial data).
+ * Modules accessible to viewer (Megfigyelő): read-only financial data incl. managerial
+ * controlling views (spec: "globális read-only"). Accounting-technical views, payroll and settings write stay closed.
  */
 const VIEWER_MODULES: EaisybillModule[] = [
   'dashboard',
@@ -106,6 +116,11 @@ const VIEWER_MODULES: EaisybillModule[] = [
   'transactions',
   'petty_cash',
   'exchange_rates',
+  'general_ledger',
+  'profit_loss',
+  'balance_sheet',
+  'annual_report',
+  'vat_return',
   'knowledge_base',
   'tickets',
   'settings',
@@ -123,6 +138,7 @@ const ALL_MODULES: EaisybillModule[] = [
   'dashboard', 'categories', 'projects', 'partners',
   'invoices', 'receivables', 'transactions', 'petty_cash',
   'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return', 'journals',
+  'subledger', 'accounting_rules',
   'salaries', 'working_time', 'fixed_assets',
   'integrations', 'exchange_rates', 'upload', 'knowledge_base', 'tickets', 'settings',
   'shipments', 'shipment_matching', 'shipment_import', 'notes',
@@ -143,15 +159,15 @@ export const URL_TO_MODULE: Record<string, EaisybillModule> = {
   '/petty-cash': 'petty_cash',
   '/opg': 'petty_cash',
   '/general-ledger': 'general_ledger',
-  '/subledger': 'general_ledger',
+  '/subledger': 'subledger',
   '/profit-and-loss': 'profit_loss',
   '/balance-sheet': 'balance_sheet',
   '/annual-report': 'annual_report',
   '/vat-return': 'vat_return',
   '/journals': 'journals',
-  '/accounting-rules': 'journals',
-  '/auto-accounting-rules': 'journals',
-  '/prompts': 'journals',
+  '/accounting-rules': 'accounting_rules',
+  '/auto-accounting-rules': 'accounting_rules',
+  '/prompts': 'accounting_rules',
   '/salaries': 'salaries',
   '/working-time': 'working_time',
   '/teny': 'fixed_assets',
@@ -189,6 +205,8 @@ export const CONFIGURABLE_MODULES: { key: EaisybillModule; label: string; group:
   { key: 'annual_report', label: 'Beszámoló', group: 'Könyvelés' },
   { key: 'vat_return', label: 'ÁFA Bevallás', group: 'Könyvelés' },
   { key: 'journals', label: 'Napló', group: 'Könyvelés' },
+  { key: 'subledger', label: 'Folyószámla', group: 'Könyvelés' },
+  { key: 'accounting_rules', label: 'Könyvelési szabályok', group: 'Könyvelés' },
   { key: 'salaries', label: 'Bérek/járulékok', group: 'HR & Eszközök' },
   { key: 'working_time', label: 'Munkaidő', group: 'HR & Eszközök' },
   { key: 'fixed_assets', label: 'TENY', group: 'HR & Eszközök' },
@@ -259,24 +277,15 @@ export function useEaisybillPermissions() {
   const permissions = useMemo(() => {
     /** Static default: can the user access this module based on role? */
     function staticCanAccess(module: EaisybillModule): boolean {
-      if (isAdmin) return true;
-      if (role === 'member') return !ADMIN_ONLY_MODULES.includes(module) || module === 'working_time';
-      if (role === 'assistant') return ASSISTANT_MODULES.includes(module);
-      if (role === 'viewer') return VIEWER_MODULES.includes(module);
-      if (role === 'employee') return EMPLOYEE_MODULES.includes(module);
-      return false;
+      // No company selected yet (isAdmin is true only in that case with a null role)
+      if (!role) return isAdmin;
+      return getStaticDefaults(role, module).canRead;
     }
 
     /** Static default: can the user write to this module? */
     function staticCanWrite(module: EaisybillModule): boolean {
-      if (isAdmin) return true;
-      // Settings write (member management, company data edit) is admin-only
-      if (module === 'settings') return false;
-      if (role === 'member') return staticCanAccess(module);
-      if (role === 'assistant') return ASSISTANT_MODULES.includes(module);
-      if (role === 'viewer') return false; // Read-only
-      if (role === 'employee') return module === 'working_time';
-      return false;
+      if (!role) return isAdmin;
+      return getStaticDefaults(role, module).canWrite;
     }
 
     /** Check if the user can access a given module (DB override > static) */
@@ -291,9 +300,6 @@ export function useEaisybillPermissions() {
       if (module === 'shipments' || module === 'shipment_matching' || module === 'shipment_import') {
         return false;
       }
-
-      // Admin always has access to other modules
-      if (isAdmin) return true;
 
       return staticCanAccess(module);
     }
@@ -310,8 +316,6 @@ export function useEaisybillPermissions() {
       if (module === 'shipments' || module === 'shipment_matching' || module === 'shipment_import') {
         return false;
       }
-
-      if (isAdmin) return true;
 
       return staticCanWrite(module);
     }
@@ -342,16 +346,30 @@ export function getStaticDefaults(role: string, module: EaisybillModule): { canR
     return { canRead: false, canWrite: false };
   }
 
-  const isAdminRole = role === 'admin' || role === 'owner';
-  if (isAdminRole) return { canRead: true, canWrite: true };
+  // Owner and support_admin: everything
+  if (role === 'owner' || role === 'support_admin') return { canRead: true, canWrite: true };
 
-  if (role === 'member') {
-    const canAccess = !ADMIN_ONLY_MODULES.includes(module) || module === 'working_time';
+  // Cégvezető (admin): everything except the accounting-technical views (D-3)
+  if (role === 'admin') {
+    const canAccess = !ACCOUNTING_TECH_MODULES.includes(module);
     return { canRead: canAccess, canWrite: canAccess };
+  }
+
+  // Bérszámfejtő (assignment-derived): minimal, payroll only
+  if (role === 'payroll_specialist') {
+    const canAccess = PAYROLL_SPECIALIST_MODULES.includes(module);
+    return { canRead: canAccess, canWrite: canAccess && module !== 'dashboard' };
+  }
+
+  // `member` = Pénzügyi Vezető (finance_lead alias)
+  // Settings write (member management, company data edit) stays owner/admin-only.
+  if (role === 'member' || role === 'finance_lead') {
+    const canAccess = !ADMIN_ONLY_MODULES.includes(module) || module === 'working_time';
+    return { canRead: canAccess, canWrite: canAccess && module !== 'settings' };
   }
   if (role === 'assistant') {
     const canAccess = ASSISTANT_MODULES.includes(module);
-    return { canRead: canAccess, canWrite: canAccess };
+    return { canRead: canAccess, canWrite: canAccess && module !== 'settings' };
   }
   if (role === 'viewer') {
     const canAccess = VIEWER_MODULES.includes(module);

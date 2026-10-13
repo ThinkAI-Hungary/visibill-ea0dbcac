@@ -5,6 +5,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { getActiveLocale } from '@/lib/locale/formatters';
 import type { DashboardMetrics as Metrics, NavVatData } from '@/hooks/useDashboardData';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 
 interface PettyCashCurrencyBalance {
   currency: string;
@@ -30,6 +31,8 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
 }: DashboardMetricsProps) {
   const { t } = useTranslation(['dashboard', 'invoices', 'navigation', 'common']);
   const isHr = getActiveLocale() === 'hr';
+  // D-3: a Pénzügyi Asszisztens nem láthat banki egyenleget / likviditást
+  const { canViewBankBalances } = useCompanyCapabilities();
 
   let payableVat = 0;
   if (navVatData) {
@@ -140,6 +143,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
       />
 
       {/* 3. Operatív egyenleg / Cash-Flow balance (Mindig nettó + Realizált eredmény bontás) */}
+      {canViewBankBalances && (
       <MetricCard
         title={`${t('dashboard:kpis.profit', { defaultValue: 'Operatív eredmény' })} (${netLabel})`}
         description={t('dashboard:kpis.realized_desc', { defaultValue: 'Könyvelt - Kintlévőség' })}
@@ -188,6 +192,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
           </div>
         </div>
       </MetricCard>
+      )}
 
       {/* 4. Feltöltött számlák */}
       <MetricCard
@@ -228,6 +233,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
       />
 
       {/* 8. Házipénztár */}
+      {canViewBankBalances && (
       <MetricCard
         title={t('navigation:items.petty_cash', { defaultValue: 'Házipénztár' })}
         currencyRows={pettyCashRows.length > 0 ? pettyCashRows : undefined}
@@ -249,6 +255,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
               : 'destructive'
         }
       />
+      )}
     </div>
   );
 });

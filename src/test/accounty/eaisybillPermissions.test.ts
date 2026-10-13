@@ -33,7 +33,12 @@ const ASSISTANT_MODULES: EaisybillModule[] = [
 const VIEWER_MODULES: EaisybillModule[] = [
   'dashboard', 'categories', 'projects', 'partners', 'invoices',
   'receivables', 'transactions', 'petty_cash', 'exchange_rates', 'knowledge_base', 'tickets', 'settings', 'notes',
+  // Megfigyelő: read-only managerial controlling views
+  'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
 ];
+
+/** Accounting-technical modules: hidden by default for admin (Cégvezető), D-3. */
+const ACCOUNTING_TECH_MODULES: EaisybillModule[] = ['subledger', 'journals'];
 
 const EMPLOYEE_MODULES: EaisybillModule[] = ['working_time'];
 
@@ -42,7 +47,7 @@ const SHIPMENT_MODULES: EaisybillModule[] = ['shipments', 'shipment_matching', '
 const ALL_MODULES: EaisybillModule[] = [
   'dashboard', 'categories', 'projects', 'partners',
   'invoices', 'receivables', 'transactions', 'petty_cash',
-  'general_ledger', 'journals', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
+  'general_ledger', 'journals', 'subledger', 'accounting_rules', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
   'salaries', 'working_time', 'fixed_assets',
   'integrations', 'exchange_rates', 'upload', 'knowledge_base', 'tickets', 'settings',
   'shipments', 'shipment_matching', 'shipment_import', 'notes',
@@ -72,12 +77,19 @@ describe('getStaticDefaults – owner role', () => {
 });
 
 describe('getStaticDefaults – admin role', () => {
-  it('has full read+write access to ALL non-shipment modules', () => {
+  it('has full read+write access to ALL non-shipment, non-accounting-tech modules', () => {
     for (const mod of ALL_MODULES) {
       if (SHIPMENT_MODULES.includes(mod)) continue;
+      if (ACCOUNTING_TECH_MODULES.includes(mod)) continue;
       const perms = getStaticDefaults('admin', mod);
       expect(perms.canRead).toBe(true);
       expect(perms.canWrite).toBe(true);
+    }
+  });
+
+  it('D-3: accounting-technical modules (subledger, journals) are hidden by default', () => {
+    for (const mod of ACCOUNTING_TECH_MODULES) {
+      expect(getStaticDefaults('admin', mod)).toEqual({ canRead: false, canWrite: false });
     }
   });
 
@@ -153,11 +165,19 @@ describe('getStaticDefaults – assistant role', () => {
     expect(perms.canRead).toBe(false);
   });
 
-  it('can write to assistant modules', () => {
+  it('can write to assistant modules (settings write stays admin-only)', () => {
     for (const mod of ASSISTANT_MODULES) {
       if (SHIPMENT_MODULES.includes(mod)) continue;
+      if (mod === 'settings') continue;
       const perms = getStaticDefaults('assistant', mod);
       expect(perms.canWrite).toBe(true);
+    }
+    expect(getStaticDefaults('assistant', 'settings').canWrite).toBe(false);
+  });
+
+  it('D-3: CANNOT access accounting-technical modules', () => {
+    for (const mod of ACCOUNTING_TECH_MODULES) {
+      expect(getStaticDefaults('assistant', mod).canRead).toBe(false);
     }
   });
 });
@@ -178,10 +198,14 @@ describe('getStaticDefaults – viewer role', () => {
     }
   });
 
-  it('CANNOT access member-only modules', () => {
+  it('Megfigyelő: can READ controlling views but NOT fixed assets or accounting-technical modules', () => {
     for (const mod of MEMBER_MODULES) {
       const perms = getStaticDefaults('viewer', mod);
-      expect(perms.canRead).toBe(false);
+      expect(perms.canRead).toBe(mod !== 'fixed_assets');
+      expect(perms.canWrite).toBe(false);
+    }
+    for (const mod of ACCOUNTING_TECH_MODULES) {
+      expect(getStaticDefaults('viewer', mod).canRead).toBe(false);
     }
   });
 

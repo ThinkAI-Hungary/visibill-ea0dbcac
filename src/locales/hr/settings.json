@@ -237,10 +237,11 @@
       "senior_könyvelő": "Viši knjigovođa",
       "könyvelő": "Knjigovođa",
       "asszisztens": "Asistent",
+      "payroll_specialist": "Obračun plaća",
       "admin": "Admin",
-      "member": "Financije",
+      "member": "Financijski voditelj",
       "assistant": "Financijski asistent",
-      "viewer": "Preglednik",
+      "viewer": "Promatrač",
       "employee": "Zaposlenik"
     },
     "role_descriptions": {
@@ -248,6 +249,7 @@
       "senior_könyvelő": "Knjigovodstveni poslovi i nadzor.",
       "könyvelő": "Obavljanje knjigovodstvenih poslova.",
       "asszisztens": "Administrativni poslovi.",
+      "payroll_specialist": "Samo obračun plaća i prijava 08. Prava se mogu podešavati u matrici ovlasti.",
       "admin": "Puni pristup tvrtki, upravljanje korisnicima.",
       "member": "Pristup čitanju i pisanju financijskih podataka i knjigovodstvu.",
       "assistant": "Upravljanje računima, transakcijama i potraživanjima. Nema uvid u plaće i knjigovodstvo.",

@@ -1,16 +1,17 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Users, Calculator, FileText, Calendar, Clock, TrendingUp,
   Plus, Search, ArrowUpRight, Banknote, UserPlus, ChevronRight,
   AlertTriangle, CheckCircle2, Loader2, Building2, Settings, ChevronLeft,
-  Upload, Sparkles, Coins, LogOut, FolderOpen, Briefcase
+  Upload, Sparkles, Coins, LogOut, FolderOpen, Briefcase, Scale, ClipboardList
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   usePayrollEmployees,
   usePayrollCycles,
@@ -28,12 +29,14 @@ import { useAccountyClients } from '@/hooks/accounty';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { PayrollReconstructionDialog } from '@/components/accounty/payroll/PayrollReconstructionDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import PayrollReconciliationPage from '@/pages/Accounty/PayrollReconciliationPage';
+import FilingsPage from '@/pages/Accounty/FilingsPage';
 
 // ── Animated number component ──
 function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
   const [display, setDisplay] = React.useState(0);
   React.useEffect(() => {
-    if (value === 0) { setDisplay(0); return; }
+    if (value === 0) return;
     let start = 0;
     const step = Math.max(1, Math.ceil(value / (duration / 16)));
     const timer = setInterval(() => {
@@ -43,7 +46,7 @@ function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: 
     }, 16);
     return () => clearInterval(timer);
   }, [value, duration]);
-  return <>{display.toLocaleString('hu-HU')}</>;
+  return <>{(value === 0 ? 0 : display).toLocaleString('hu-HU')}</>;
 }
 
 // ── KPI Card component ──
@@ -139,11 +142,30 @@ function CycleStatusBadge({ status, isHr }: { status: string; isHr?: boolean }) 
 const MONTHS_HU = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
 const MONTHS_HR = ['Siječanj', 'Veljača', 'Ožujak', 'Travanj', 'Svibanj', 'Lipanj', 'Srpanj', 'Kolovoz', 'Rujan', 'Listopad', 'Studeni', 'Prosinac'];
 
-export default function PayrollDashboardPage() {
+interface PayrollDashboardPageProps {
+  defaultTab?: string;
+}
+
+export default function PayrollDashboardPage({ defaultTab }: PayrollDashboardPageProps = {}) {
   const { t, i18n } = useTranslation('accounty');
   const { companyId, dateRange } = useParams<{ companyId: string; dateRange: string }>();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') || defaultTab || 'overview';
+
+  const handleTabChange = useCallback((newTab: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (newTab === 'overview') {
+        next.delete('tab');
+      } else {
+        next.set('tab', newTab);
+      }
+      return next;
+    });
+  }, [setSearchParams]);
+
   const prefix = pathname.startsWith('/hr') ? '/hr' : '';
   const isHr = prefix === '/hr' || i18n.language === 'hr';
   const MONTHS = isHr ? MONTHS_HR : MONTHS_HU;
@@ -269,12 +291,12 @@ export default function PayrollDashboardPage() {
     const activeEmployees = employees.filter(e => e.status === 'active').length;
     const pendingCycles = cycles.filter(c => !['closed', 'submitted'].includes(c.status)).length;
     const pendingFilings = filings.filter(f => !['submitted', 'accepted'].includes(f.status)).length;
-    const currentMonth = new Date().getMonth() + 1;
-    const currentYear = new Date().getFullYear();
+    const currentMonth = dateFrom.getMonth() + 1;
+    const currentYear = dateFrom.getFullYear();
     const hasCurrent = cycles.some(c => c.year === currentYear && c.month === currentMonth);
 
     return { activeEmployees, pendingCycles, pendingFilings, hasCurrent };
-  }, [employees, cycles, filings]);
+  }, [employees, cycles, filings, dateFrom]);
 
   // ── Recent cycles (last 6) ──
   const recentCycles = useMemo(() => cycles.slice(0, 6), [cycles]);
@@ -384,56 +406,77 @@ export default function PayrollDashboardPage() {
             <p className="text-xs text-muted-foreground mt-1">{t('payroll_dashboard.subtitle')}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          <Button
-            onClick={() => setReconstructionOpen(true)}
-            variant="outline"
-            className="flex items-center gap-2 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 shadow-xs"
-          >
-            <Sparkles className="w-4 h-4 text-blue-500" />
-            {t('payroll_dashboard.btn_reconstruction')}
-          </Button>
-          <Button
-            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/import`)}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <Upload className="w-4 h-4" />
-            {t('payroll_dashboard.btn_import')}
-          </Button>
-          <Button
-            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/dividends`)}
-            variant="outline"
-            className="flex items-center gap-2 border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-          >
-            <Coins className="w-4 h-4 text-emerald-600" />
-            {t('payroll_dashboard.btn_dividends')}
-          </Button>
-          <Button
-            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/settings`)}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <Settings className="w-4 h-4" />
-            {t('payroll_dashboard.btn_settings')}
-          </Button>
-          <Button
-            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/new`)}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <UserPlus className="w-4 h-4" />
-            {t('payroll_dashboard.btn_new_employee')}
-          </Button>
-          <Button
-            onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/new`)}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            {t('payroll_dashboard.btn_new_cycle')}
-          </Button>
-        </div>
+        {currentTab === 'overview' && (
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <Button
+              onClick={() => setReconstructionOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 shadow-xs"
+            >
+              <Sparkles className="w-4 h-4 text-blue-500" />
+              {t('payroll_dashboard.btn_reconstruction')}
+            </Button>
+            <Button
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/import`)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              {t('payroll_dashboard.btn_import')}
+            </Button>
+            <Button
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/dividends`)}
+              variant="outline"
+              className="flex items-center gap-2 border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+            >
+              <Coins className="w-4 h-4 text-emerald-600" />
+              {t('payroll_dashboard.btn_dividends')}
+            </Button>
+            <Button
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/settings`)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              {t('payroll_dashboard.btn_settings')}
+            </Button>
+            <Button
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/employees/new`)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              {t('payroll_dashboard.btn_new_employee')}
+            </Button>
+            <Button
+              onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/new`)}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              {t('payroll_dashboard.btn_new_cycle')}
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Module Navigation Tabs */}
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full space-y-6">
+        <TabsList className="bg-muted/60 p-1">
+          <TabsTrigger value="overview" className="gap-2">
+            <Calculator className="h-4 w-4" />
+            {t('payroll_dashboard.tabs.overview', 'Áttekintés & Ciklusok')}
+          </TabsTrigger>
+          <TabsTrigger value="reconciliation" className="gap-2">
+            <Scale className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            {t('payroll_dashboard.tabs.reconciliation', 'Bérkontroll & Bank')}
+          </TabsTrigger>
+          <TabsTrigger value="filings" className="gap-2">
+            <ClipboardList className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            {t('payroll_dashboard.tabs.filings', 'NAV bevallások')}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-8 mt-0">
 
       {/* Onboarding / Fast-Track Banner if 0 cycles */}
       {cycles.length === 0 && (
@@ -918,6 +961,16 @@ export default function PayrollDashboardPage() {
           );
         })}
       </div>
+        </TabsContent>
+
+        <TabsContent value="reconciliation" className="space-y-6 mt-0">
+          <PayrollReconciliationPage embedded />
+        </TabsContent>
+
+        <TabsContent value="filings" className="space-y-6 mt-0">
+          <FilingsPage embedded />
+        </TabsContent>
+      </Tabs>
 
       {/* 2026 Fast-Track Payroll Reconstruction Dialog */}
       <PayrollReconstructionDialog

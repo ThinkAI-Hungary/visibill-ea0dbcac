@@ -23,6 +23,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { exportPnlExcel } from '@/lib/pnlExport';
+import { downloadAgoraPnlPdf } from '@/lib/agoraPnlPdf';
+import { exportAgoraPnlExcel } from '@/lib/agoraPnlExcel';
 import { getLocalizedGlAccountName } from '@/lib/glUtils';
 import { isSameDay, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
 
@@ -594,6 +596,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   const { dateFromFormatted: dateFrom, dateToFormatted: dateTo } = useDateRange();
   const [inThousands, setInThousands] = useState(true);
   const [hideZeroRows, setHideZeroRows] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [showChart, setShowChart] = useState(false); // F9
   const [revenueScale, setRevenueScale] = useState(100);
   const [materialScale, setMaterialScale] = useState(100);
@@ -923,7 +926,86 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     return <FinancialPageSkeleton title={t('accounting:profit_and_loss.loading', 'Eredménykimutatás betöltése...')} />;
   }
 
+  const handleAgoraPdfExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      toast({
+        title: t('common:status.loading', 'Betöltés...'),
+        description: t('accounting:profit_and_loss.toasts.exporting_agora_pdf', 'Hivatalos „A” változat Eredménykimutatás PDF készítése...'),
+      });
+      downloadAgoraPnlPdf({
+        company: {
+          name: selectedCompany?.name || 'Vállalkozás',
+          address: (selectedCompany as any)?.address || '',
+          taxNumber: selectedCompany?.tax_number || '',
+          statisticalCode: (selectedCompany as any)?.statistical_code || '',
+          registrationNumber: (selectedCompany as any)?.company_registration_number || '',
+        },
+        pnlData: pnlData || [],
+        prevYearMap,
+        dateFrom,
+        dateTo,
+        inThousands,
+        branding: 'EaisyBill',
+      });
+      toast({
+        title: t('accounting:profit_and_loss.toasts.export_success_title', 'Sikeres exportálás'),
+        description: t('accounting:profit_and_loss.toasts.export_agora_pdf_success', 'A hivatalos Eredménykimutatás PDF letöltése megkezdődött.'),
+      });
+    } catch (err) {
+      toast({
+        title: t('common:status.error', 'Hiba történt'),
+        description: t('accounting:profit_and_loss.toasts.export_error', 'Nem sikerült legenerálni a PDF fájlt.'),
+        variant: 'destructive',
+      });
+      reportError({ type: 'db_query', component: 'ProfitAndLoss', action: 'error', message: String(err), error: err });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleAgoraExcelExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      toast({
+        title: t('common:status.loading', 'Betöltés...'),
+        description: t('accounting:profit_and_loss.toasts.exporting_agora_excel', 'Hivatalos „A” változat Eredménykimutatás Excel készítése...'),
+      });
+      await exportAgoraPnlExcel({
+        company: {
+          name: selectedCompany?.name || 'Vállalkozás',
+          address: (selectedCompany as any)?.address || '',
+          taxNumber: selectedCompany?.tax_number || '',
+          statisticalCode: (selectedCompany as any)?.statistical_code || '',
+          registrationNumber: (selectedCompany as any)?.company_registration_number || '',
+        },
+        pnlData: pnlData || [],
+        prevYearMap,
+        dateFrom,
+        dateTo,
+        inThousands,
+        branding: 'EaisyBill',
+      });
+      toast({
+        title: t('accounting:profit_and_loss.toasts.export_success_title', 'Sikeres exportálás'),
+        description: t('accounting:profit_and_loss.toasts.export_agora_excel_success', 'A hivatalos Eredménykimutatás Excel letöltése megkezdődött.'),
+      });
+    } catch (err) {
+      toast({
+        title: t('common:status.error', 'Hiba történt'),
+        description: t('accounting:profit_and_loss.toasts.export_error', 'Nem sikerült legenerálni az Excel fájlt.'),
+        variant: 'destructive',
+      });
+      reportError({ type: 'db_query', component: 'ProfitAndLoss', action: 'error', message: String(err), error: err });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleExport = async () => {
+    if (isExporting) return;
     if (!processedData || processedData.length === 0) {
       toast({ 
         title: t('common:status.error', 'Hiba'), 
@@ -933,6 +1015,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
       return;
     }
 
+    setIsExporting(true);
     try {
       let exportItems: GlCategorizedItem[] = Array.from(loadedGlItems.values()).flat();
       if (exportItems.length === 0 && selectedCompany?.id && presetId) {
@@ -961,6 +1044,8 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
         variant: 'destructive' 
       });
       reportError({ type: 'db_query', component: 'ProfitAndLoss', action: 'error', message: String(err), error: err });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -1213,20 +1298,40 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
         <div className="flex items-center gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 gap-2">
-                <Download className="h-4 w-4" />
+              <Button variant="outline" size="sm" className="h-9 gap-2" disabled={isExporting}>
+                {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 {t('accounting:profit_and_loss.export.button', 'Export')}
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={handlePrintPdf}>
-                <FileText className="h-4 w-4 mr-2" />
-                {t('accounting:profit_and_loss.export.pdf', 'Export PDF')}
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuItem onClick={handleAgoraPdfExport} className="cursor-pointer py-2">
+                <FileText className="h-4 w-4 mr-2 text-rose-500 shrink-0" />
+                <div className="flex flex-col">
+                  <span className="font-semibold text-xs">Eredménykimutatás PDF</span>
+                  <span className="text-[10px] text-muted-foreground">Hivatalos „A” változat</span>
+                </div>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExport}>
-                <FileText className="h-4 w-4 mr-2" />
-                {t('accounting:profit_and_loss.export.xlsx', 'Export XLSX')}
+              <DropdownMenuItem onClick={handleAgoraExcelExport} className="cursor-pointer py-2">
+                <FileText className="h-4 w-4 mr-2 text-emerald-600 shrink-0" />
+                <div className="flex flex-col">
+                  <span className="font-semibold text-xs">Eredménykimutatás Excel</span>
+                  <span className="text-[10px] text-muted-foreground">Hivatalos „A” változat</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExport} className="cursor-pointer py-2">
+                <FileText className="h-4 w-4 mr-2 text-indigo-500 shrink-0" />
+                <div className="flex flex-col">
+                  <span className="font-semibold text-xs">Részletes P&L Excel</span>
+                  <span className="text-[10px] text-muted-foreground">Tételes analitikával és számlaszámokkal</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePrintPdf} className="cursor-pointer py-2">
+                <FileText className="h-4 w-4 mr-2 text-slate-500 shrink-0" />
+                <div className="flex flex-col">
+                  <span className="font-semibold text-xs">Nyomtatási nézet</span>
+                  <span className="text-[10px] text-muted-foreground">Böngészős nyomtatás</span>
+                </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

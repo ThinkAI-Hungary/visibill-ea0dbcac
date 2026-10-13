@@ -34,6 +34,8 @@ const KnowledgeBasePage = lazy(() => import("@/pages/KnowledgeBasePage"));
 const ChangelogPage = lazy(() => import("@/pages/ChangelogPage"));
 const TransfersPage = lazy(() => import("@/pages/TransfersPage"));
 const OpgPage = lazy(() => import("@/pages/OpgPage"));
+const TechnicalAccountingPage = lazy(() => import("@/pages/TechnicalAccountingPage"));
+
 
 /**
  * Returns the scoped child route elements for eaisybill
@@ -73,6 +75,8 @@ export function renderEaisybillScopedRoutes() {
       <Route path="teny/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />
       <Route path="fixed-assets/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />
       <Route path="notes" element={<ProtectedPage><NotesPage /></ProtectedPage>} />
+      <Route path="technical-accounting/:tab?" element={<ProtectedPage><TechnicalAccountingPage /></ProtectedPage>} />
+      <Route path="gl-tools/:tab?" element={<ProtectedPage><TechnicalAccountingPage /></ProtectedPage>} />
 
       <Route path="exchange-rates" element={<ProtectedPage><ExchangeRates /></ProtectedPage>} />
       <Route path="salaries/:tab?" element={<ProtectedPage><SalariesPage /></ProtectedPage>} />
@@ -140,6 +144,9 @@ export function renderEaisybillLegacyAndFallbackRoutes() {
       <Route path="/opg" element={<LegacyRedirect page="petty-cash/opg" />} />
       <Route path="/teny" element={<LegacyRedirect page="teny" />} />
       <Route path="/fixed-assets" element={<LegacyRedirect page="teny" />} />
+      <Route path="/technical-accounting" element={<LegacyRedirect page="technical-accounting" />} />
+      <Route path="/gl-tools" element={<LegacyRedirect page="technical-accounting" />} />
+
 
       <Route path="/exchange-rates" element={<LegacyRedirect page="exchange-rates" />} />
       <Route path="/salaries" element={<LegacyRedirect page="salaries" />} />
