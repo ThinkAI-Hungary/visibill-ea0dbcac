@@ -35,6 +35,14 @@ export interface Transaction {
     gl_number: string;
     short_name: string;
   } | null;
+  gl_classifications?: Record<string, {
+    gl_number?: string;
+    gl_account_id?: string;
+    reasoning?: string;
+    confidence_score?: number;
+    is_manual?: boolean;
+    [key: string]: any;
+  }> | null;
 }
 
 export interface TransactionFilters {

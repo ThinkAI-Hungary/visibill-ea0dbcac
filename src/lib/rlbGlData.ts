@@ -455,7 +455,7 @@ export function buildRlbGlData(
       const partners = partnerMapByGl.get(accNum);
       if (partners && partners.length > 0) {
         partners.forEach(p => {
-          if (excludeZero && p.turnoverDebit === 0 && p.turnoverCredit === 0 && p.balanceDebit === 0 && p.balanceCredit === 0) {
+          if (excludeZero && p.debitTurnover === 0 && p.creditTurnover === 0 && p.balanceDebit === 0 && p.balanceCredit === 0) {
             return;
           }
           rows.push({

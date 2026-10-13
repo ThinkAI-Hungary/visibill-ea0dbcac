@@ -15,7 +15,11 @@ function isExternalNoise(msg: string, err?: any): boolean {
     (lowerMsg.includes('starttime') && lowerMsg.includes('undefined')) ||
     lowerMsg.includes('dev-sw') ||
     lowerMsg.includes('serviceworker') ||
-    lowerMsg.includes('service worker')
+    lowerMsg.includes('service worker') ||
+    lowerStack.includes('serviceworker') ||
+    lowerStack.includes('service worker') ||
+    lowerStack.includes('registersw') ||
+    (lowerMsg === 'rejected' && (lowerStack.includes('register') || lowerStack.includes('serviceworker')))
   ) {
     return true;
   }

@@ -17,6 +17,7 @@ import { Save, Banknote, Plus, Trash2, Edit2, Star, MapPin, Loader2, Settings2, 
 import { toast } from '@/hooks/use-toast';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import type { PettyCashRegister, OpeningBalance } from './types';
+import { fmtBalance, roundHuf } from './types';
 import { useTranslation } from 'react-i18next';
 import { RegisterDialog } from './RegisterDialog';
 
