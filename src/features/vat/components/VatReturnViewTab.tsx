@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   User,
   FileText,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -371,65 +372,102 @@ export function VatReturnViewTab() {
               onClick={() => reopenReturn.mutate()}
               disabled={reopenReturn.isPending || !canClosePeriod}
               title={!canClosePeriod ? closeDeniedTitle : undefined}
-              className="h-9 gap-1.5 text-xs"
+              className="h-9 gap-1.5 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 border-amber-500/30"
             >
-              {reopenReturn.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>{t('accounting:vat_return.status.reopen_button', 'Visszanyitás')}</span>
+              {reopenReturn.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+              <span>{t('accounting:vat_return.status.reopen_button', 'Véglegesítés feloldása')}</span>
             </Button>
           ) : (vatReturn as any)?.status === 'validated' ? (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button size="sm" disabled={finalizeReturn.isPending || !canClosePeriod} title={!canClosePeriod ? closeDeniedTitle : undefined} className="h-9 gap-1.5 text-xs">
-                  {finalizeReturn.isPending ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                  )}
-                  <span>{t('accounting:vat_return.status.finalize_button', 'Véglegesítés')}</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {t('accounting:vat_return.status.finalize_dialog_title', 'Bevallás véglegesítése')}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t(
-                      'accounting:vat_return.status.finalize_dialog_desc',
-                      'A véglegesítés után a bevallás sorai nem módosíthatók. Visszanyitás csak a „Visszanyitás" gombbal lehetséges.'
+            <div className="flex items-center gap-1.5">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" disabled={finalizeReturn.isPending || !canClosePeriod} title={!canClosePeriod ? closeDeniedTitle : undefined} className="h-9 gap-1.5 text-xs">
+                    {finalizeReturn.isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="w-3.5 h-3.5" />
                     )}
-                    <br />
-                    <br />
-                    {t('accounting:vat_return.status.finalize_dialog_confirm', {
-                      period: `${year}/${String(month).padStart(2, '0')}`,
-                      defaultValue: `Biztosan véglegesíted a ${year}/${String(month).padStart(2, '0')} időszak bevallását?`,
-                    })}
+                    <span>{t('accounting:vat_return.status.finalize_button', 'Véglegesítés')}</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      {t('accounting:vat_return.status.finalize_dialog_title', 'Bevallás véglegesítése')}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t(
+                        'accounting:vat_return.status.finalize_dialog_desc',
+                        'A véglegesítés után a bevallás sorai nem módosíthatók. Visszanyitás csak a „Véglegesítés feloldása" gombbal lehetséges.'
+                      )}
+                      <br />
+                      <br />
+                      {t('accounting:vat_return.status.finalize_dialog_confirm', {
+                        period: `${year}/${String(month).padStart(2, '0')}`,
+                        defaultValue: `Biztosan véglegesíted a ${year}/${String(month).padStart(2, '0')} időszak bevallását?`,
+                      })}
 
-                    {questionableCount > 0 && (
-                      <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs text-left">
-                        <div className="font-semibold flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
-                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                          <span>
-                            Figyelem: {questionableCount} db kérdéses számla várakozik döntésre ({formatCurrency(questionableVat, 'HUF')} ÁFA tartalom)!
-                          </span>
+                      {questionableCount > 0 && (
+                        <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs text-left">
+                          <div className="font-semibold flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>
+                              Figyelem: {questionableCount} db kérdéses számla várakozik döntésre ({formatCurrency(questionableVat, 'HUF')} ÁFA tartalom)!
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-300/80">
+                            A bevallás véglegesítése előtt ezeket még beemelheted az aktuális havi levonható ÁFA tételek és költségek közé. Ha most véglegesítesz, ezek a számlák a későbbi hónapokban maradnak elszámolhatók (a 2 éves törvényi jogvesztő határidőn belül).
+                          </p>
                         </div>
-                        <p className="mt-1 text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-300/80">
-                          A bevallás véglegesítése előtt ezeket még beemelheted az aktuális havi levonható ÁFA tételek és költségek közé. Ha most véglegesítesz, ezek a számlák a későbbi hónapokban maradnak elszámolhatók (a 2 éves törvényi jogvesztő határidőn belül).
-                        </p>
-                      </div>
-                    )}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>
-                    {t('accounting:vat_return.status.cancel', 'Mégse')}
-                  </AlertDialogCancel>
-                  <AlertDialogAction onClick={() => finalizeReturn.mutate()}>
-                    {t('accounting:vat_return.status.finalize_button', 'Véglegesítés')}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                      )}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>
+                      {t('accounting:vat_return.status.cancel', 'Mégse')}
+                    </AlertDialogCancel>
+                    <AlertDialogAction onClick={() => finalizeReturn.mutate()}>
+                      {t('accounting:vat_return.status.finalize_button', 'Véglegesítés')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => reopenReturn.mutate()}
+                disabled={reopenReturn.isPending || !canClosePeriod}
+                title={!canClosePeriod ? closeDeniedTitle : 'Ellenőrzött státusz feloldása és visszalépés piszkozatba'}
+                className="h-9 gap-1.5 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 border-amber-500/30"
+              >
+                {reopenReturn.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-3.5 h-3.5" />
+                )}
+                <span>Véglegesítés feloldása</span>
+              </Button>
+
+              <Button
+                onClick={() => calculate.mutate()}
+                disabled={calculate.isPending}
+                size="sm"
+                variant="secondary"
+                className="h-9 gap-1.5 text-xs"
+              >
+                {calculate.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Calculator className="w-3.5 h-3.5" />
+                )}
+                <span>
+                  {calculate.isPending
+                    ? t('accounting:vat_return.period.calculating', 'Számítás...')
+                    : t('accounting:vat_return.period.calculate', 'Számítás')}
+                </span>
+              </Button>
+            </div>
           ) : (
             <div className="flex items-center gap-1.5">
               <Button

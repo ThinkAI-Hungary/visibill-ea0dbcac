@@ -183,11 +183,11 @@ describe('resolveCapabilities', () => {
     expect(member.canExportOfficialTaxReturn).toBe(true);
   });
 
-  it('O2/O1: managed company (hasAssignedBookkeeper = true) strips ledger & closing rights from company leadership', () => {
+  it('O2/O1: managed company (hasAssignedBookkeeper = true) strips ledger rights from company leadership, but owner retains closing and official XML export rights', () => {
     const owner = resolveCapabilities({ memberRole: 'owner', hasAssignedBookkeeper: true });
     expect(owner.canWriteLedger).toBe(false);
-    expect(owner.canClosePeriod).toBe(false);
-    expect(owner.canExportOfficialTaxReturn).toBe(false);
+    expect(owner.canClosePeriod).toBe(true);
+    expect(owner.canExportOfficialTaxReturn).toBe(true);
     expect(owner.canManageInvoices).toBe(true);
     expect(owner.canManageTeam).toBe(true);
 

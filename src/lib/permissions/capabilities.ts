@@ -245,16 +245,26 @@ export function resolveCapabilities(input: {
   const assignment = input.assignmentRole ? getAccountyCapabilities(input.assignmentRole) : null;
 
   // Segregation of duties / O1 fallback:
-  // When an accountant is assigned to the company, company leadership delegates
+  // When an accountant is assigned to the company, company leadership (admin, member) delegates
   // ledger writing and closing to the professional accountants.
-  // Support admin is exempt.
+  // Support admin and owner retain period closing and official XML export rights.
   if (input.hasAssignedBookkeeper && member && input.memberRole !== 'support_admin') {
-    member = {
-      ...member,
-      canWriteLedger: false,
-      canClosePeriod: false,
-      canExportOfficialTaxReturn: false,
-    };
+    if (input.memberRole === 'owner') {
+      // Owner retains closing and XML export rights, but delegates operational ledger writes
+      member = {
+        ...member,
+        canWriteLedger: false,
+        canClosePeriod: true,
+        canExportOfficialTaxReturn: true,
+      };
+    } else {
+      member = {
+        ...member,
+        canWriteLedger: false,
+        canClosePeriod: false,
+        canExportOfficialTaxReturn: false,
+      };
+    }
   }
 
   if (member && assignment) {
