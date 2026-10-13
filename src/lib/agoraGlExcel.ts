@@ -244,7 +244,7 @@ export async function exportAgoraGlExcel(
   const safeComp = (data.companyName || 'Ceg').replace(/[^a-zA-Z0-9]/g, '_');
   const period = data.periodText.replace(/[^a-zA-Z0-9]/g, '_') || 'idoszak';
   const zeroSuffix = options.excludeZeroRows ? '_0_nelkul' : '';
-  const filename = `Agora_Fokonyvi_Kivonat_${safeComp}_${data.year}_${period}${zeroSuffix}.xlsx`;
+  const filename = `A_Fokonyvi_Kivonat_${safeComp}_${data.year}_${period}${zeroSuffix}.xlsx`;
 
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');

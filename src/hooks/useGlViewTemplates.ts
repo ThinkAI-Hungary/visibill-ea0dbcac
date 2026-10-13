@@ -62,9 +62,9 @@ export const BUILTIN_TEMPLATES_FALLBACK: GlViewTemplate[] = [
   },
   {
     id: 'agora_6col',
-    name: 'Agora (Novitax) 6 oszlopos',
+    name: '"A" főkönyvi kivonat nézet',
     template_type: 'builtin',
-    description: 'Szla, Megnevezés, Forgalom T/K, Egyenleg T/K az Agora / Novitax A4 szabványnak megfelelően.',
+    description: 'Szla, Megnevezés, Forgalom T/K, Egyenleg T/K az "A" formátumú (Novitax/Agora) A4 szabványnak megfelelően.',
     columns: [
       { id: 'gl_number', key: 'gl_number', label: 'Szla.', width: '90px', align: 'center', field: 'id', required: true },
       { id: 'name', key: 'name', label: 'Megnevezés', width: '1fr', align: 'left', field: 'name', required: true },
@@ -110,19 +110,22 @@ export function useGlViewTemplates() {
         return BUILTIN_TEMPLATES_FALLBACK;
       }
 
-      const mapped: GlViewTemplate[] = (data as any[]).map((row) => ({
-        id: row.id,
-        company_id: row.company_id,
-        accounting_firm_id: row.accounting_firm_id,
-        name: row.name,
-        template_type: row.template_type as 'builtin' | 'custom',
-        description: row.description,
-        columns: (row.columns || []) as GlTemplateColumn[],
-        source_file_name: row.source_file_name,
-        created_by: row.created_by,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-      }));
+      const mapped: GlViewTemplate[] = (data as any[]).map((row) => {
+        const builtinFallback = BUILTIN_TEMPLATES_FALLBACK.find((b) => b.id === row.id);
+        return {
+          id: row.id,
+          company_id: row.company_id,
+          accounting_firm_id: row.accounting_firm_id,
+          name: row.template_type === 'builtin' && builtinFallback ? builtinFallback.name : row.name,
+          template_type: row.template_type as 'builtin' | 'custom',
+          description: row.template_type === 'builtin' && builtinFallback ? builtinFallback.description : row.description,
+          columns: (row.columns || []) as GlTemplateColumn[],
+          source_file_name: row.source_file_name,
+          created_by: row.created_by,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        };
+      });
 
       // Ensure all code-defined builtins (like agora_6col) are always available even if DB table lacks them
       const dbIds = new Set(mapped.map((m) => m.id));

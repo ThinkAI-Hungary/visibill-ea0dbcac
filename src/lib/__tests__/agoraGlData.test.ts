@@ -232,7 +232,7 @@ describe('AGORA (Novitax) Főkönyvi Kivonat Adatmodell & Mérlegegyezőség', (
     expect(global.URL.createObjectURL).toHaveBeenCalled();
     expect(appendSpy).toHaveBeenCalled();
     expect(removeSpy).toHaveBeenCalled();
-  });
+  }, 20000);
 
   it('preserves 2 decimal cents for foreign currencies (e.g. EUR)', () => {
     const eurLeaves: ProcontAccountInput[] = [

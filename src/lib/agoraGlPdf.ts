@@ -269,7 +269,7 @@ export function downloadAgoraGlPdf(
   const safeComp = (data.companyName || 'Ceg').replace(/[^a-zA-Z0-9]/g, '_');
   const period = data.periodText.replace(/[^a-zA-Z0-9]/g, '_') || 'idoszak';
   const zeroSuffix = options.excludeZeroRows ? '_0_nelkul' : '';
-  const filename = `Agora_Fokonyvi_Kivonat_${safeComp}_${data.year}_${period}${zeroSuffix}.pdf`;
+  const filename = `A_Fokonyvi_Kivonat_${safeComp}_${data.year}_${period}${zeroSuffix}.pdf`;
 
   doc.save(filename);
 }

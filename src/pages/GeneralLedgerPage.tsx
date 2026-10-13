@@ -717,8 +717,8 @@ export default function GeneralLedgerPage() {
             onExportAnalyticalExcel={(opts) => handleExportAction('Részletező analitika', () => tableRef.current?.exportAnalyticalExcel(selectedCompany?.name, opts))}
             onExportProcontPdf={(opts) => handleExportAction('Procont PDF', () => tableRef.current?.exportProcontPdf(selectedCompany?.name, opts))}
             onExportProcontExcel={(opts) => handleExportAction('Procont Excel', () => tableRef.current?.exportProcontExcel(selectedCompany?.name, opts))}
-            onExportAgoraPdf={(opts) => handleExportAction('Agora PDF kivonat', () => tableRef.current?.exportAgoraPdf(selectedCompany?.name, opts))}
-            onExportAgoraExcel={(opts) => handleExportAction('Agora Excel kivonat', () => tableRef.current?.exportAgoraExcel(selectedCompany?.name, opts))}
+            onExportAgoraPdf={(opts) => handleExportAction('"A" PDF kivonat', () => tableRef.current?.exportAgoraPdf(selectedCompany?.name, opts))}
+            onExportAgoraExcel={(opts) => handleExportAction('"A" Excel kivonat', () => tableRef.current?.exportAgoraExcel(selectedCompany?.name, opts))}
           />
 
           {isAIRunning && (
