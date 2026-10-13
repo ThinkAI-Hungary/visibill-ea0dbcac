@@ -91,6 +91,7 @@ describe('Module 22 - Technical Accounting & Analytics Unit Tests', () => {
         p_partner_id: mockPartnerId,
         p_start_date: '2026-01-01',
         p_end_date: '2026-12-31',
+        p_include_drafts: true,
       });
 
       expect(result.partner.name).toBe('Teszt Partner Kft.');
@@ -146,6 +147,7 @@ describe('Module 22 - Technical Accounting & Analytics Unit Tests', () => {
         p_account_code_prefix: '5',
         p_start_date: '2026-01-01',
         p_end_date: '2026-06-30',
+        p_include_drafts: true,
       });
 
       expect(result).toHaveLength(1);
