@@ -1,4 +1,4 @@
-# A-252 — Házipénztár Egyedi Név, Perzisztált Bizonylatszám és 65-ös ÁFA Motor Integráció Architektúra
+# A-254 — Házipénztár Egyedi Név, Perzisztált Bizonylatszám és 65-ös ÁFA Motor Integráció Architektúra
 
 > **Státusz:** ✅ Elfogadva (Decided)  
 > **Dátum:** 2026-10-13  

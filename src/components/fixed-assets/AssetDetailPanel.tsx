@@ -6,7 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import { DepreciationCards } from './DepreciationCards';
 import type { FixedAsset, AssetEvent } from '@/types/fixed-assets';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
-import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt, FolderKanban, RefreshCw, FileCheck, Landmark } from 'lucide-react';
+import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt, FolderKanban, RefreshCw, FileCheck, Landmark, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -16,15 +16,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { reportError } from '@/lib/errorReporter';
 import { generateAndAttachAssetProtocolPdf } from '@/hooks/useFixedAssets';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
+import { downloadAssetHandoverProtocolPdf } from '@/lib/fixed-assets/assetHandoverProtocolPdf';
 
 // Lazy-load dialogs so they don't bloat the initial page chunk
 const TransferDialog = lazy(() => import('./TransferDialog').then(m => ({ default: m.TransferDialog })));
 const ReactivationDialog = lazy(() => import('./ReactivationDialog').then(m => ({ default: m.ReactivationDialog })));
 const DisposalDialog = lazy(() => import('./DisposalDialog').then(m => ({ default: m.DisposalDialog })));
+const DisposalApprovalDialog = lazy(() => import('./DisposalApprovalDialog').then(m => ({ default: m.DisposalApprovalDialog })));
 const QrLabelDialog = lazy(() => import('./QrLabelDialog').then(m => ({ default: m.QrLabelDialog })));
 const DevelopmentReserveAssignDialog = lazy(() => import('./DevelopmentReserveAssignDialog').then(m => ({ default: m.DevelopmentReserveAssignDialog })));
+const MultiYearMovementTable = lazy(() => import('./MultiYearMovementTable').then(m => ({ default: m.MultiYearMovementTable })));
+const AssetComponentsView = lazy(() => import('./AssetComponentsView').then(m => ({ default: m.AssetComponentsView })));
 
 function parseLocalDate(ymdStr: string): Date {
   const parts = ymdStr.split('-');
@@ -46,6 +52,9 @@ const EVENT_ICONS: Record<string, React.ReactNode> = {
   project_transfer: <FolderKanban className="h-3.5 w-3.5 text-indigo-500" />,
   reactivation: <PlusCircle className="h-3.5 w-3.5 text-warning" />,
   disposal: <Trash2 className="h-3.5 w-3.5 text-destructive" />,
+  disposal_requested: <ShieldCheck className="h-3.5 w-3.5 text-warning" />,
+  disposal_approved: <CheckCircle className="h-3.5 w-3.5 text-success" />,
+  disposal_rejected: <ShieldOff className="h-3.5 w-3.5 text-destructive" />,
   value_change: <PlusCircle className="h-3.5 w-3.5 text-warning" />,
   document_upload: <Upload className="h-3.5 w-3.5 text-muted-foreground" />,
   performance_log: <PlusCircle className="h-3.5 w-3.5 text-success" />,
@@ -58,6 +67,9 @@ const EVENT_LABELS: Record<string, string> = {
   project_transfer: 'Projekt hozzárendelés',
   reactivation: 'Ráaktiválás',
   disposal: 'Kivezetés',
+  disposal_requested: 'Kivezetés kezdeményezve',
+  disposal_approved: 'Kivezetés jóváhagyva',
+  disposal_rejected: 'Kivezetés elutasítva',
   value_change: 'Értékváltozás',
   document_upload: 'Dokumentum feltöltés',
   performance_log: 'Teljesítmény rögzítés',
@@ -69,6 +81,8 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
   const [transferOpen, setTransferOpen] = useState(false);
   const [reactivationOpen, setReactivationOpen] = useState(false);
   const [disposalOpen, setDisposalOpen] = useState(false);
+  const [disposalApprovalOpen, setDisposalApprovalOpen] = useState(false);
+  const { canWriteLedger } = useCompanyCapabilities();
   const [qrOpen, setQrOpen] = useState(false);
   const [reserveAssignOpen, setReserveAssignOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -78,6 +92,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { selectedCompany } = useCompany();
 
   // Protocol PDF Generation state
   const [generatingProtocol, setGeneratingProtocol] = useState(false);
@@ -94,6 +109,32 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
     } finally {
       setGeneratingProtocol(false);
     }
+  };
+
+  const handleDownloadTransferProtocol = (event: AssetEvent) => {
+    downloadAssetHandoverProtocolPdf({
+      companyName: selectedCompany?.name || 'VisiBill Cég',
+      companyAddress: selectedCompany?.address,
+      companyTaxNumber: selectedCompany?.tax_number,
+      protocolNumber: `AAT-${asset.inventory_number}-${event.event_date}`,
+      eventDate: event.event_date,
+      assetName: asset.name,
+      inventoryNumber: asset.inventory_number,
+      description: asset.description || undefined,
+      vtszTeszor: asset.vtsz_teszor || undefined,
+      activationDate: asset.activation_date,
+      acquisitionValue: asset.acquisition_value,
+      oldLocationName: event.old_values?.location || asset.location?.name,
+      newLocationName: event.new_values?.location || asset.location?.name,
+      oldSubLocationName: event.old_values?.sub_location || asset.sub_location?.name,
+      newSubLocationName: event.new_values?.sub_location || asset.sub_location?.name,
+      oldCustodianName: event.old_values?.custodian,
+      newCustodianName: event.new_values?.custodian,
+      oldCostCenterName: event.old_values?.cost_center,
+      newCostCenterName: event.new_values?.cost_center,
+      projectName: event.new_values?.project || asset.project?.name,
+      notes: event.description || undefined,
+    });
   };
 
   // Performance Log States
@@ -306,6 +347,28 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           )}
         </div>
         <div>
+          <span className="text-muted-foreground">Tárolóhely / Iroda</span>
+          <p className="font-semibold">{asset.sub_location?.name || '-'}</p>
+          {asset.sub_location?.code && (
+            <p className="text-xs text-muted-foreground font-mono">({asset.sub_location.code})</p>
+          )}
+        </div>
+        <div>
+          <span className="text-muted-foreground">Felelős személy</span>
+          <p className="font-semibold">
+            {asset.custodian ? `${asset.custodian.last_name} ${asset.custodian.first_name}` : '-'}
+          </p>
+          {asset.custodian?.email && (
+            <p className="text-xs text-muted-foreground truncate">{asset.custodian.email}</p>
+          )}
+        </div>
+        <div>
+          <span className="text-muted-foreground">Költséghely / Egység</span>
+          <p className="font-semibold">
+            {asset.cost_center ? `${asset.cost_center.code} – ${asset.cost_center.name}` : '-'}
+          </p>
+        </div>
+        <div>
           <span className="text-muted-foreground">{t('fixed_assets.detail.project')}</span>
           {asset.project ? (
             <div className="flex items-center gap-1.5 mt-0.5">
@@ -333,6 +396,22 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ASSET_STATUS_COLORS[asset.status]}`}>
             {t(`fixed_assets.status.${asset.status}`, ASSET_STATUS_LABELS[asset.status])}
           </span>
+          {asset.disposal_status === 'pending_approval' && (
+            <span
+              id="asset-disposal-pending-badge"
+              className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning"
+            >
+              {t('fixed_assets.detail.disposal_pending', 'Kivezetés jóváhagyásra vár')}
+            </span>
+          )}
+          {asset.disposal_status === 'rejected' && asset.status === 'active' && (
+            <span
+              id="asset-disposal-rejected-badge"
+              className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive"
+            >
+              {t('fixed_assets.detail.disposal_rejected', 'Kivezetés elutasítva')}
+            </span>
+          )}
         </div>
         {asset.gl_account && (
           <div>
@@ -385,6 +464,20 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           .map(e => ({ date: e.event_date, amount: e.new_values?.period_performance || 0 }))
         }
       />
+
+      {/* Többéves Mozgástábla és Tao összehasonlítás */}
+      <Suspense fallback={null}>
+        <div className="pt-2">
+          <MultiYearMovementTable asset={asset} />
+        </div>
+      </Suspense>
+
+      {/* Komponens-elvű nyilvántartás & Pályázati források */}
+      <Suspense fallback={null}>
+        <div className="pt-2 border-t mt-4">
+          <AssetComponentsView asset={asset} />
+        </div>
+      </Suspense>
 
       {/* Teljesítményarányos ÉCS napló */}
       {asset.depreciation_method === 'performance' && (
@@ -538,16 +631,33 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           {t('fixed_assets.detail.btn_reactivation')}
         </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/5"
-          disabled={!isActive}
-          onClick={() => setDisposalOpen(true)}
-        >
-          <Trash2 className="h-4 w-4" />
-          {t('fixed_assets.detail.btn_disposal')}
-        </Button>
+        {asset.disposal_status === 'pending_approval' ? (
+          <Button
+            id="asset-disposal-review-btn"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-warning/40 text-warning hover:bg-warning/5"
+            disabled={!isActive}
+            onClick={() => setDisposalApprovalOpen(true)}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            {canWriteLedger
+              ? t('fixed_assets.detail.btn_disposal_review', 'Kivezetés jóváhagyása')
+              : t('fixed_assets.detail.btn_disposal_pending', 'Jóváhagyásra vár')}
+          </Button>
+        ) : (
+          <Button
+            id="asset-disposal-request-btn"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/5"
+            disabled={!isActive}
+            onClick={() => setDisposalOpen(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+            {t('fixed_assets.detail.btn_disposal')}
+          </Button>
+        )}
 
         <Button
           variant="outline"
@@ -578,16 +688,30 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('fixed_assets.detail.timeline_title')}</h4>
           <div className="space-y-2">
             {events.map((event) => (
-              <div key={event.id} className="flex items-center gap-3 text-sm">
-                <div className="flex-shrink-0">{EVENT_ICONS[event.event_type] || <CheckCircle className="h-3.5 w-3.5" />}</div>
-                <span className="text-muted-foreground font-mono text-xs">
-                  {format(parseLocalDate(event.event_date), 'yyyy.MM.dd', { locale: getDateFnsLocale() })}
-                </span>
-                <span className="font-medium">
-                  {t(`fixed_assets.detail.events.${event.event_type}`, EVENT_LABELS[event.event_type] || event.event_type)}
-                </span>
-                {event.description && (
-                  <span className="text-muted-foreground text-xs truncate">— {event.description}</span>
+              <div key={event.id} className="flex items-center justify-between gap-2 text-sm py-0.5 group">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex-shrink-0">{EVENT_ICONS[event.event_type] || <CheckCircle className="h-3.5 w-3.5" />}</div>
+                  <span className="text-muted-foreground font-mono text-xs whitespace-nowrap">
+                    {format(parseLocalDate(event.event_date), 'yyyy.MM.dd', { locale: getDateFnsLocale() })}
+                  </span>
+                  <span className="font-medium whitespace-nowrap">
+                    {t(`fixed_assets.detail.events.${event.event_type}`, EVENT_LABELS[event.event_type] || event.event_type)}
+                  </span>
+                  {event.description && (
+                    <span className="text-muted-foreground text-xs truncate">— {event.description}</span>
+                  )}
+                </div>
+                {(event.event_type === 'transfer' || event.event_type === 'project_transfer') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[11px] px-1.5 opacity-80 group-hover:opacity-100 gap-1 text-primary hover:bg-primary/10 flex-shrink-0"
+                    onClick={() => handleDownloadTransferProtocol(event)}
+                    title="Kétnyelvű átadás-átvételi nyilatkozat letöltése"
+                  >
+                    <FileDown className="h-3 w-3" />
+                    <span>PDF</span>
+                  </Button>
                 )}
               </div>
             ))}
@@ -753,7 +877,15 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
         {transferOpen && <TransferDialog open={transferOpen} onOpenChange={setTransferOpen} asset={asset} />}
         {reactivationOpen && <ReactivationDialog open={reactivationOpen} onOpenChange={setReactivationOpen} asset={asset} />}
         {disposalOpen && <DisposalDialog open={disposalOpen} onOpenChange={setDisposalOpen} asset={asset} />}
-        {qrOpen && <QrLabelDialog open={qrOpen} onOpenChange={setQrOpen} asset={asset} />}
+        {disposalApprovalOpen && (
+          <DisposalApprovalDialog
+            open={disposalApprovalOpen}
+            onOpenChange={setDisposalApprovalOpen}
+            asset={asset}
+            canApprove={canWriteLedger}
+          />
+        )}
+        {qrOpen && <QrLabelDialog open={qrOpen} onOpenChange={setQrOpen} asset={asset} companyName={selectedCompany?.name} />}
         {reserveAssignOpen && (
           <DevelopmentReserveAssignDialog
             open={reserveAssignOpen}

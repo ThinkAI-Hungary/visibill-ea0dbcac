@@ -101,8 +101,8 @@ export async function postDevelopmentReserveReleaseToLedger(
       p_reserve_amount: reserveAmount,
       p_activation_date: activationDate,
       p_reserve_year: reserveYear || null,
-      p_gl414: gl414,
-      p_gl413: gl413,
+      p_gl_414_id: gl414,
+      p_gl_413_id: gl413,
     });
 
     if (error) {

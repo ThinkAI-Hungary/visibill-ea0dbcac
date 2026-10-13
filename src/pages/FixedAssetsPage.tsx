@@ -6,13 +6,14 @@ import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { AssetListTable } from '@/components/fixed-assets/AssetListTable';
 import { AssetDetailPanel } from '@/components/fixed-assets/AssetDetailPanel';
 import { DevelopmentReservesTab } from '@/components/fixed-assets/DevelopmentReservesTab';
+import { AssetReconciliationTab } from '@/components/fixed-assets/AssetReconciliationTab';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
-import { Package2, ShieldCheck, PiggyBank, Calculator, Plus, Upload } from 'lucide-react';
+import { Package2, ShieldCheck, PiggyBank, Calculator, Plus, Upload, Scale, BarChart3, FolderKanban } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-// Lazy-load heavy dialogs to keep initial chunk small
+// Lazy-load heavy dialogs and tabs to keep initial chunk small
 const InventoryCheckDialog = lazy(() =>
   import('@/components/fixed-assets/InventoryCheckDialog').then(m => ({ default: m.InventoryCheckDialog }))
 );
@@ -24,6 +25,12 @@ const CreateFixedAssetDialog = lazy(() =>
 );
 const AssetImportModal = lazy(() =>
   import('@/components/fixed-assets/AssetImportModal').then(m => ({ default: m.AssetImportModal }))
+);
+const AssetAnalyticsDashboard = lazy(() =>
+  import('@/components/fixed-assets/AssetAnalyticsDashboard').then(m => ({ default: m.AssetAnalyticsDashboard }))
+);
+const GrantProjectsTab = lazy(() =>
+  import('@/components/fixed-assets/GrantProjectsTab').then(m => ({ default: m.GrantProjectsTab }))
 );
 
 export default function FixedAssetsPage() {
@@ -80,6 +87,17 @@ export default function FixedAssetsPage() {
     setInventoryCheckOpen(v);
     if (!v) setInventoryParam(false);
   }, [setInventoryParam]);
+
+  // Rekonciliaciós munkalapról: ugrás az eszköz részleteihez (eszközök fül + ?asset=<id>)
+  const handleOpenAssetFromReconciliation = useCallback((assetId: string) => {
+    setSelectedAssetId(assetId);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('tab');
+      next.set('asset', assetId);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   // Select asset and update URL
   const handleSelectAsset = useCallback((assetId: string | null) => {
@@ -142,6 +160,30 @@ export default function FixedAssetsPage() {
                 <PiggyBank className="h-3.5 w-3.5 text-amber-500" />
                 {t('hr:fixed_assets.tab_dev_reserves', 'Fejlesztési Tartalékok')}
               </button>
+              <button
+                id="fixed-assets-tab-reconciliation"
+                onClick={() => handleTabChange('reconciliation')}
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'reconciliation' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Scale className="h-3.5 w-3.5 text-primary" />
+                {t('hr:fixed_assets.tab_reconciliation', 'Rekonciliació & Főkönyv')}
+              </button>
+              <button
+                id="fixed-assets-tab-analytics"
+                onClick={() => handleTabChange('analytics')}
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'analytics' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <BarChart3 className="h-3.5 w-3.5 text-indigo-500" />
+                {t('hr:fixed_assets.tab_analytics', 'Vagyonkimutatás & Elemzés')}
+              </button>
+              <button
+                id="fixed-assets-tab-grants"
+                onClick={() => handleTabChange('grant_projects')}
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'grant_projects' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <FolderKanban className="h-3.5 w-3.5 text-blue-500" />
+                {t('hr:fixed_assets.tab_grants', 'Pályázatok & Támogatások')}
+              </button>
             </div>
 
             {currentTab === 'assets' && (
@@ -195,9 +237,35 @@ export default function FixedAssetsPage() {
       </div>
 
       {/* Main Body */}
-      {currentTab === 'development_reserves' ? (
+      <div className={currentTab === 'reconciliation' ? 'flex-1 overflow-y-auto block' : 'hidden'}>
+        <AssetReconciliationTab
+          active={currentTab === 'reconciliation'}
+          assets={assets}
+          writable={writable}
+          onOpenAsset={handleOpenAssetFromReconciliation}
+        />
+      </div>
+      {currentTab === 'reconciliation' ? null : currentTab === 'development_reserves' ? (
         <div className="flex-1 overflow-y-auto">
           <DevelopmentReservesTab />
+        </div>
+      ) : currentTab === 'analytics' ? (
+        <div className="flex-1 overflow-y-auto">
+          <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground"><LoadingSpinner /></div>}>
+            <AssetAnalyticsDashboard assets={assets} writable={writable} />
+          </Suspense>
+        </div>
+      ) : currentTab === 'grant_projects' ? (
+        <div className="flex-1 overflow-y-auto">
+          <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground"><LoadingSpinner /></div>}>
+            <GrantProjectsTab
+              companyId={selectedCompany.id}
+              currency={assets[0]?.currency || 'HUF'}
+              assets={assets}
+              writable={writable}
+              onOpenAsset={handleOpenAssetFromReconciliation}
+            />
+          </Suspense>
         </div>
       ) : (
         /* Master-Detail Layout */

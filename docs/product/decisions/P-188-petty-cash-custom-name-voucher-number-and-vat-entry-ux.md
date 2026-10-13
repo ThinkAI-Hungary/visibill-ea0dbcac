@@ -1,4 +1,4 @@
-# P-186 — Házipénztár Egyedi Név, Kézi/Auto Bizonylatszám, Gyors Pénztárkészítés és 65-ös ÁFA Rögzítés UX
+# P-188 — Házipénztár Egyedi Név, Kézi/Auto Bizonylatszám, Gyors Pénztárkészítés és 65-ös ÁFA Rögzítés UX
 
 > **Státusz:** ✅ Elfogadva (Decided)  
 > **Dátum:** 2026-10-13  

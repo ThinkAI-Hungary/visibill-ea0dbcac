@@ -186,6 +186,9 @@ export function useFixedAssets(companyId: string | undefined) {
         .select(`
           *,
           location:company_locations(id, name, address, location_type),
+          sub_location:company_sub_locations(id, name, code, location_id, parent_id),
+          custodian:accounty_employees(id, first_name, last_name, email),
+          cost_center:accounty_cost_centers(id, name, code, responsible),
           project:projects(id, name, project_code, color, icon),
           tao_template:tao_depreciation_templates(id, name, tao_rate_percent),
           gl_account:gl_accounts(id, gl_number, short_name),
@@ -212,6 +215,9 @@ export function useFixedAssetDetail(assetId: string | null) {
           .select(`
             *,
             location:company_locations(id, name, address, location_type),
+            sub_location:company_sub_locations(id, name, code, location_id, parent_id),
+            custodian:accounty_employees(id, first_name, last_name, email),
+            cost_center:accounty_cost_centers(id, name, code, responsible),
             project:projects(id, name, project_code, color, icon),
             tao_template:tao_depreciation_templates(id, name, tao_rate_percent),
             gl_account:gl_accounts(id, gl_number, short_name),
@@ -467,7 +473,7 @@ export async function generateInventoryNumber(
   return `${prefix}${String(nextNum).padStart(4, '0')}`;
 }
 
-// ── Transfer asset (áthelyezés / projekt hozzárendelés) ──
+// ── Transfer asset (áthelyezés / felelősváltás / projekt hozzárendelés) ──
 export function useTransferAsset() {
   const queryClient = useQueryClient();
 
@@ -479,6 +485,15 @@ export function useTransferAsset() {
       newLocationId?: string | null;
       newLocationName?: string;
       oldLocationName?: string;
+      newSubLocationId?: string | null;
+      newSubLocationName?: string;
+      oldSubLocationName?: string;
+      newCustodianId?: string | null;
+      newCustodianName?: string;
+      oldCustodianName?: string;
+      newCostCenterId?: string | null;
+      newCostCenterName?: string;
+      oldCostCenterName?: string;
       newProjectId?: string | null;
       newProjectName?: string;
       oldProjectName?: string;
@@ -492,6 +507,15 @@ export function useTransferAsset() {
       if (params.newLocationId !== undefined) {
         updatePayload.location_id = params.newLocationId || null;
       }
+      if (params.newSubLocationId !== undefined) {
+        updatePayload.sub_location_id = params.newSubLocationId || null;
+      }
+      if (params.newCustodianId !== undefined) {
+        updatePayload.custodian_id = params.newCustodianId || null;
+      }
+      if (params.newCostCenterId !== undefined) {
+        updatePayload.cost_center_id = params.newCostCenterId || null;
+      }
       if (params.newProjectId !== undefined) {
         updatePayload.project_id = params.newProjectId || null;
       }
@@ -502,33 +526,48 @@ export function useTransferAsset() {
         .eq('id', params.assetId);
       if (updateError) throw updateError;
 
-      // Determine event type & description
+      // Determine changed dimensions
       const isLocationChange = params.newLocationId !== undefined && params.newLocationName !== params.oldLocationName;
+      const isSubLocationChange = params.newSubLocationId !== undefined && params.newSubLocationName !== params.oldSubLocationName;
+      const isCustodianChange = params.newCustodianId !== undefined && params.newCustodianName !== params.oldCustodianName;
+      const isCostCenterChange = params.newCostCenterId !== undefined && params.newCostCenterName !== params.oldCostCenterName;
       const isProjectChange = params.newProjectId !== undefined && params.newProjectName !== params.oldProjectName;
 
       let eventType: 'transfer' | 'project_transfer' = 'transfer';
-      let autoDesc = '';
+      const changeParts: string[] = [];
       const oldVals: Record<string, any> = {};
       const newVals: Record<string, any> = {};
 
-      if (isLocationChange && isProjectChange) {
-        eventType = 'transfer';
-        autoDesc = `Áthelyezés: ${params.oldLocationName || 'Nincs'} → ${params.newLocationName || 'Nincs'}, Projekt: ${params.oldProjectName || 'Nincs'} → ${params.newProjectName || 'Nincs'}`;
-        oldVals.location = params.oldLocationName;
-        oldVals.project = params.oldProjectName;
-        newVals.location = params.newLocationName;
-        newVals.project = params.newProjectName;
-      } else if (isProjectChange) {
-        eventType = 'project_transfer';
-        autoDesc = `Projekt hozzárendelés: ${params.oldProjectName || 'Nincs'} → ${params.newProjectName || 'Nincs'}`;
-        oldVals.project = params.oldProjectName;
-        newVals.project = params.newProjectName;
-      } else {
-        eventType = 'transfer';
-        autoDesc = `Áthelyezés: ${params.oldLocationName || 'Nincs'} → ${params.newLocationName || 'Nincs'}`;
-        oldVals.location = params.oldLocationName;
-        newVals.location = params.newLocationName;
+      if (isLocationChange) {
+        changeParts.push(`Telephely: ${params.oldLocationName || 'Nincs'} → ${params.newLocationName || 'Nincs'}`);
+        oldVals.location = params.oldLocationName || null;
+        newVals.location = params.newLocationName || null;
       }
+      if (isSubLocationChange) {
+        changeParts.push(`Tárolóhely: ${params.oldSubLocationName || 'Nincs'} → ${params.newSubLocationName || 'Nincs'}`);
+        oldVals.sub_location = params.oldSubLocationName || null;
+        newVals.sub_location = params.newSubLocationName || null;
+      }
+      if (isCustodianChange) {
+        changeParts.push(`Felelős: ${params.oldCustodianName || 'Nincs'} → ${params.newCustodianName || 'Nincs'}`);
+        oldVals.custodian = params.oldCustodianName || null;
+        newVals.custodian = params.newCustodianName || null;
+      }
+      if (isCostCenterChange) {
+        changeParts.push(`Költséghely: ${params.oldCostCenterName || 'Nincs'} → ${params.newCostCenterName || 'Nincs'}`);
+        oldVals.cost_center = params.oldCostCenterName || null;
+        newVals.cost_center = params.newCostCenterName || null;
+      }
+      if (isProjectChange) {
+        changeParts.push(`Projekt: ${params.oldProjectName || 'Nincs'} → ${params.newProjectName || 'Nincs'}`);
+        oldVals.project = params.oldProjectName || null;
+        newVals.project = params.newProjectName || null;
+        if (!isLocationChange && !isSubLocationChange && !isCustodianChange && !isCostCenterChange) {
+          eventType = 'project_transfer';
+        }
+      }
+
+      const autoDesc = changeParts.join(', ') || 'Áthelyezés / felelősváltás';
 
       const { error: eventError } = await supabase
         .from('asset_events')
@@ -549,6 +588,44 @@ export function useTransferAsset() {
       queryClient.invalidateQueries({ queryKey: ['fixedAssetDetail', variables.assetId] });
       queryClient.invalidateQueries({ queryKey: ['project-fixed-assets'] });
     },
+  });
+}
+
+// ── Céges alkalmazottak lekérése felelősként ──
+export function useCompanyEmployees(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['companyEmployees', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from('accounty_employees')
+        .select('id, first_name, last_name, email, status')
+        .eq('company_id', companyId)
+        .order('last_name', { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; first_name: string; last_name: string; email: string | null; status: string | null }>;
+    },
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+// ── Céges költséghelyek lekérése szervezeti egységként ──
+export function useCompanyCostCenters(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['companyCostCenters', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from('accounty_cost_centers')
+        .select('id, code, name, responsible')
+        .eq('company_id', companyId)
+        .order('code', { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; code: string; name: string; responsible: string | null }>;
+    },
+    enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -599,6 +676,10 @@ export function useReactivateAsset() {
 }
 
 // ── Disposal / Scrap (kivezetés / selejtezés) ──
+/**
+ * @deprecated TENY M1.4: nem könyvel és megkerüli a jóváhagyási kaput (disposal_status workflow).
+ * Használd helyette: `requestAssetDisposal` / `approveAssetDisposal` (`@/lib/fixed-assets/assetDisposalPostingService`).
+ */
 export function useDisposeAsset() {
   const queryClient = useQueryClient();
 

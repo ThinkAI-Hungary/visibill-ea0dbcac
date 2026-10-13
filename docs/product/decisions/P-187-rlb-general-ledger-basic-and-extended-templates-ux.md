@@ -1,9 +1,9 @@
-# P-185: RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Exportok UX
+# P-187: RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Exportok UX
 
 **Status:** Decided  
 **Date:** 2026-10-13  
 **Category:** UI / Workflow / General Ledger & Financial Reporting  
-**Kapcsolódó döntések:** [ADR A-251](../../architecture/decisions/A-251-rlb-general-ledger-basic-and-extended-templates-architecture.md) · [BDR-021](../../business/decisions/021-general-ledger.md) · [P-177](./P-177-procont-general-ledger-export-and-reconciliation-ux.md) · [P-181](./P-181-prc-general-ledger-export-naming-ux.md) · [P-182](./P-182-agora-financial-reports-and-income-statement-export-ux.md)
+**Kapcsolódó döntések:** [ADR A-253](../../architecture/decisions/A-253-rlb-general-ledger-basic-and-extended-templates-architecture.md) · [BDR-021](../../business/decisions/021-general-ledger.md) · [P-177](./P-177-procont-general-ledger-export-and-reconciliation-ux.md) · [P-181](./P-181-prc-general-ledger-export-naming-ux.md) · [P-182](./P-182-agora-financial-reports-and-income-statement-export-ux.md)
 
 ---
 

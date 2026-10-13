@@ -98,8 +98,8 @@ export const Partner360DossierTab: React.FC<Partner360DossierTabProps> = ({
 =======================================================================
 
 Dátum: ${new Date().toLocaleDateString('hu-HU')}
-Kezdeményező Cég: ${currentCompany?.name || 'Visibill Ügyfél'}
-Adószám: ${currentCompany?.tax_number || '—'}
+Kezdeményező Cég: ${selectedCompany?.name || 'Visibill Ügyfél'}
+Adószám: ${selectedCompany?.tax_number || '—'}
 
 Partner Cég: ${partner.name}
 Adószám: ${partner.tax_number || '—'}
@@ -127,7 +127,7 @@ Pozíció Jellege:                               ${summary.position_type === 'NE
 Cégszerű Aláírás:                              Cégszerű Aláírás:
 
 ..................................             ..................................
-${currentCompany?.name}                         ${partner.name}
+${selectedCompany?.name}                         ${partner.name}
 =======================================================================
 `;
 

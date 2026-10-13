@@ -1,9 +1,9 @@
-# A-251: RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Export Motor Architektúra
+# A-253: RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Export Motor Architektúra
 
 **Status:** Decided  
 **Date:** 2026-10-13  
 **Category:** General Ledger / Reporting / Client-side Architecture  
-**Kapcsolódó döntések:** [P-185](../../product/decisions/P-185-rlb-general-ledger-basic-and-extended-templates-ux.md) · [A-239](./A-239-procont-general-ledger-export-and-reconciliation-architecture.md) · [A-248](./A-248-agora-statutory-financial-reports-export-architecture.md)
+**Kapcsolódó döntések:** [P-187](../../product/decisions/P-187-rlb-general-ledger-basic-and-extended-templates-ux.md) · [A-239](./A-239-procont-general-ledger-export-and-reconciliation-architecture.md) · [A-248](./A-248-agora-statutory-financial-reports-export-architecture.md)
 
 ---
 
