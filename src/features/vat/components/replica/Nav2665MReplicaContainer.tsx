@@ -279,20 +279,6 @@ export function Nav2665MReplicaContainer({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handlePrevPartner, handleNextPartner]);
 
-  if (!eligiblePartners.length) {
-    return (
-      <div className="bg-card border border-border/70 rounded-xl p-8 text-center space-y-3">
-        <Building2 className="w-10 h-10 text-muted-foreground mx-auto opacity-40" />
-        <h3 className="font-semibold text-base text-foreground">
-          Nincsenek belföldi partnerek a kiválasztott időszakban
-        </h3>
-        <p className="text-xs text-muted-foreground max-w-md mx-auto">
-          Az adott időszakra nem található olyan belföldi számla, amely a 2665M nyomtatvány lapjain jelentésre kötelezett lenne.
-        </p>
-      </div>
-    );
-  }
-
   // Flattened sheets array for the active partner:
   // [0] = Főlap
   // [1..N] = 02 sheets
@@ -349,6 +335,22 @@ export function Nav2665MReplicaContainer({
 
     return list;
   }, [sheetData]);
+
+  if (!eligiblePartners.length) {
+    return (
+      <div className="bg-card border border-border/70 rounded-xl p-8 text-center space-y-3">
+        <Building2 className="w-10 h-10 text-muted-foreground mx-auto opacity-40" />
+        <h3 className="font-semibold text-base text-foreground">
+          Nincsenek belföldi partnerek a kiválasztott időszakban
+        </h3>
+        <p className="text-xs text-muted-foreground max-w-md mx-auto">
+          Az adott időszakra nem található olyan belföldi számla, amely a 2665M nyomtatvány lapjain jelentésre kötelezett lenne.
+        </p>
+      </div>
+    );
+  }
+
+
 
   const totalSheets = flattenedSheets.length;
   const currentSheet = flattenedSheets[activeSheetIndex] || flattenedSheets[0];

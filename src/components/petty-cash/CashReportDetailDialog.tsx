@@ -42,6 +42,7 @@ export function CashReportDetailDialog({
 }: CashReportDetailDialogProps) {
   const { selectedCompany } = useCompany();
   const { data, isLoading } = useCashReportDetails(reportId || undefined);
+  const { t } = useTranslation(['pettyCash', 'common']);
 
   if (!reportId) return null;
 
@@ -98,7 +99,6 @@ export function CashReportDetailDialog({
       registerName,
     });
   };
-  const { t } = useTranslation(['pettyCash', 'common']);
   const currency = report?.currency || 'HUF';
 
   return (

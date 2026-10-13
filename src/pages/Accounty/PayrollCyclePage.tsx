@@ -144,6 +144,9 @@ export default function PayrollCyclePage() {
   const [viewMode, setViewMode] = useState<'stepper' | 'worksheet'>('stepper');
   const [closingModalOpen, setClosingModalOpen] = useState(false);
   const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false);
+  const [attendanceData, setAttendanceData] = useState<Record<string, { workDays: number; workedHours?: number; overtime: number; sickDays: number; leaveDays: number }>>({});
+  const [newYear, setNewYear] = useState(() => new Date().getFullYear());
+  const [newMonth, setNewMonth] = useState(() => new Date().getMonth() + 1);
 
   const defaultWorkDays = React.useMemo(() => {
     const year = cycle?.year || new Date().getFullYear();
@@ -189,8 +192,7 @@ export default function PayrollCyclePage() {
         }
       });
   }, [cycle?.id, allEmployments, defaultWorkDays]);
-  
-  const [attendanceData, setAttendanceData] = useState<Record<string, { workDays: number; workedHours?: number; overtime: number; sickDays: number; leaveDays: number }>>({});
+
 
   const [garnishments, setGarnishments] = useState<any[]>([]);
   React.useEffect(() => {
@@ -775,8 +777,7 @@ export default function PayrollCyclePage() {
     printAllPayslips(dataList);
   };
 
-  const [newYear, setNewYear] = useState(new Date().getFullYear());
-  const [newMonth, setNewMonth] = useState(new Date().getMonth() + 1);
+
 
   const currentStep = cycle?.current_step || 1;
 

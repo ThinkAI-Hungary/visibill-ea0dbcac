@@ -1206,6 +1206,7 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
 
   const cfg = BANK_CONFIG[bankKey];
   const bgClass = cfg?.bgClass || 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
+  const [isExporting, setIsExporting] = useState(false);
 
   // U2: Contextual empty state
   if (!isLoading && uploadIds.length === 0) {
@@ -1232,7 +1233,6 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
     );
   }
 
-  const [isExporting, setIsExporting] = useState(false);
 
   const handleExportClick = async (format: 'xlsx' | 'csv' | 'pdf') => {
     if (!onExport) return;

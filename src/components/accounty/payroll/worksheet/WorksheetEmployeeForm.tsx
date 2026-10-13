@@ -172,6 +172,22 @@ export default function WorksheetEmployeeForm({
     }
   };
 
+  const actualWorkedDays = Math.max(
+    0,
+    (attendance?.workDays || defaultWorkDays) - (attendance?.sickDays || 0) - (attendance?.leaveDays || 0)
+  );
+
+  const calculatedCommuteAmount = React.useMemo(() => {
+    if (!employee || !employment) return 0;
+    if (commuteInput.commuteType === 'car') {
+      return Math.round((commuteInput.distanceKm || 0) * actualWorkedDays * (commuteInput.carRate || 30));
+    }
+    if (commuteInput.commuteType === 'public_transit') {
+      return Math.round(((commuteInput.passCost || 0) * (commuteInput.pct || 86)) / 100);
+    }
+    return 0;
+  }, [employee, employment, commuteInput, actualWorkedDays]);
+
   if (!employee || !employment) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
@@ -182,20 +198,6 @@ export default function WorksheetEmployeeForm({
   }
 
   const isHourly = employment.salary_type === 'hourly';
-  const actualWorkedDays = Math.max(
-    0,
-    (attendance.workDays || defaultWorkDays) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)
-  );
-
-  const calculatedCommuteAmount = React.useMemo(() => {
-    if (commuteInput.commuteType === 'car') {
-      return Math.round((commuteInput.distanceKm || 0) * actualWorkedDays * (commuteInput.carRate || 30));
-    }
-    if (commuteInput.commuteType === 'public_transit') {
-      return Math.round(((commuteInput.passCost || 0) * (commuteInput.pct || 86)) / 100);
-    }
-    return 0;
-  }, [commuteInput, actualWorkedDays]);
 
   return (
     <div className="space-y-6">
