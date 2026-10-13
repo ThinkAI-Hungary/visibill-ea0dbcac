@@ -272,24 +272,40 @@ export function useSteelProductsData(
       const navIds = navList.map(i => i.id);
       const subIds = subList.map(i => i.id);
 
-      const [navItemsRes, subItemsRes] = await Promise.all([
-        navIds.length > 0
-          ? supabase
-              .from('nav_invoice_items')
-              .select('id, nav_invoice_id, line_number, line_description, product_code, quantity, unit_of_measure, net_amount, vat_rate, net_weight_kg')
-              .in('nav_invoice_id', navIds)
-          : Promise.resolve({ data: [] }),
-        subIds.length > 0
-          ? supabase
-              .from('invoice_items')
-              .select('id, invoice_id, line_number, line_description, product_code, quantity, unit_of_measure, net_amount, vat_rate, net_weight_kg')
-              .in('invoice_id', subIds)
-          : Promise.resolve({ data: [] }),
+      // Safe chunked fetching in batches of 50 IDs to avoid HTTP 400 Bad Request (URI Too Long)
+      const navItemPromises: any[] = [];
+      for (let i = 0; i < navIds.length; i += 50) {
+        const chunk = navIds.slice(i, i + 50);
+        navItemPromises.push(
+          supabase
+            .from('nav_invoice_items')
+            .select('id, nav_invoice_id, line_number, line_description, product_code, quantity, unit_of_measure, net_amount, vat_rate, net_weight_kg')
+            .in('nav_invoice_id', chunk)
+        );
+      }
+
+      const subItemPromises: any[] = [];
+      for (let i = 0; i < subIds.length; i += 50) {
+        const chunk = subIds.slice(i, i + 50);
+        subItemPromises.push(
+          supabase
+            .from('invoice_items')
+            .select('id, invoice_id, line_number, line_description, product_code, quantity, unit_of_measure, net_amount, vat_rate, net_weight_kg')
+            .in('invoice_id', chunk)
+        );
+      }
+
+      const [navChunkResults, subChunkResults] = await Promise.all([
+        Promise.all(navItemPromises),
+        Promise.all(subItemPromises),
       ]);
+
+      const navItemsList = navChunkResults.flatMap((res: any) => res.data || []);
+      const subItemsList = subChunkResults.flatMap((res: any) => res.data || []);
 
       const records: SteelItemRecord[] = [];
 
-      (navItemsRes.data || []).forEach((it: any) => {
+      navItemsList.forEach((it: any) => {
         if (isSteelCandidate(it)) {
           const inv = navMap.get(it.nav_invoice_id);
           const isOut = (inv?.invoice_direction || 'INBOUND').toUpperCase() === 'OUTBOUND';
@@ -327,7 +343,7 @@ export function useSteelProductsData(
         }
       });
 
-      (subItemsRes.data || []).forEach((it: any) => {
+      subItemsList.forEach((it: any) => {
         if (isSteelCandidate(it)) {
           const inv = subMap.get(it.invoice_id);
           const isOut = (inv?.invoice_direction || 'INBOUND').toUpperCase() === 'OUTBOUND';
