@@ -213,37 +213,59 @@ export function InvoiceItemsDialog({
   const { data: parentInvoice } = useQuery({
     queryKey: ['parentInvoice', source, invoiceId],
     queryFn: async () => {
-      const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
-      const selectFields = source === 'submitted'
-        ? 'company_id, project_id, invoice_direction, kibocsatas_datuma, teljesites_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number, gl_account_id, gl_classifications'
-        : 'company_id, project_id, invoice_direction, invoice_issue_date, invoice_delivery_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched, gl_account_id, gl_classifications';
+      const primaryTable = source === 'submitted' ? 'invoices' : 'nav_invoices';
+      const submittedFields = 'company_id, project_id, invoice_direction, kibocsatas_datuma, teljesites_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number, gl_account_id, gl_classifications';
+      const navFields = 'company_id, project_id, invoice_direction, invoice_issue_date, invoice_delivery_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched, gl_account_id, gl_classifications';
 
-      const { data, error } = await supabase
-        .from(table as any)
-        .select(selectFields)
+      let effectiveSource = source;
+      let record: any = null;
+
+      // 1. Try primary table
+      const { data: primaryData } = await supabase
+        .from(primaryTable as any)
+        .select(source === 'submitted' ? submittedFields : navFields)
         .eq('id', invoiceId)
-        .single();
-      if (error) throw error;
+        .maybeSingle();
 
-      let vatSummary = (data as any)?.vat_summary || null;
-      let isRc = (data as any)?.is_reverse_charge || false;
+      if (primaryData) {
+        record = primaryData;
+      } else {
+        // 2. Cross-table fallback: check if invoiceId was passed inverted
+        const altTable = source === 'submitted' ? 'nav_invoices' : 'invoices';
+        const { data: altData } = await supabase
+          .from(altTable as any)
+          .select(source === 'submitted' ? navFields : submittedFields)
+          .eq('id', invoiceId)
+          .maybeSingle();
+
+        if (altData) {
+          record = altData;
+          effectiveSource = source === 'submitted' ? 'nav' : 'submitted';
+        }
+      }
+
+      if (!record) return null;
+
+      let vatSummary = record.vat_summary || null;
+      let isRc = record.is_reverse_charge || false;
 
       let twinNavId: string | null = null;
       let twinNavNumber: string | null = null;
       let twinNavNetAmount: number | null = null;
       let twinNavVatAmount: number | null = null;
       let twinNavGrossAmount: number | null = null;
+      let twinSubmittedId: string | null = null;
 
-      if (source === 'submitted') {
-        if ((data as any)?.forditott_adozas != null) {
-          isRc = Boolean((data as any).forditott_adozas);
+      if (effectiveSource === 'submitted') {
+        if (record.forditott_adozas != null) {
+          isRc = Boolean(record.forditott_adozas);
         }
-        if ((data as any)?.bizonylatsorszam) {
-          const num = ((data as any).bizonylatsorszam as string).replace(/\s+/g, '');
+        if (record.bizonylatsorszam) {
+          const num = (record.bizonylatsorszam as string).replace(/\s+/g, '');
           let twinQuery = (supabase.from('nav_invoices') as any)
             .select('id, invoice_number, invoice_net_amount, invoice_vat_amount, invoice_gross_amount, vat_summary, is_reverse_charge');
-          if ((data as any)?.company_id) {
-            twinQuery = twinQuery.eq('company_id', (data as any).company_id);
+          if (record.company_id) {
+            twinQuery = twinQuery.eq('company_id', record.company_id);
           }
           const { data: twinNav } = await twinQuery
             .ilike('invoice_number', `%${num}%`)
@@ -261,38 +283,59 @@ export function InvoiceItemsDialog({
             twinNavGrossAmount = (twinNav as any).invoice_gross_amount != null ? Number((twinNav as any).invoice_gross_amount) : null;
           }
         }
+      } else {
+        // effectiveSource === 'nav' -> lookup twin submitted invoice
+        if (record.invoice_number) {
+          const num = (record.invoice_number as string).replace(/\s+/g, '');
+          let twinSubQuery = (supabase.from('invoices') as any)
+            .select('id, bizonylatsorszam');
+          if (record.company_id) {
+            twinSubQuery = twinSubQuery.eq('company_id', record.company_id);
+          }
+          const { data: twinSub } = await twinSubQuery
+            .ilike('bizonylatsorszam', `%${num}%`)
+            .limit(1)
+            .maybeSingle();
+          if (twinSub) {
+            twinSubmittedId = (twinSub as any).id || null;
+          }
+        }
       }
 
-      const isOutbound = ((data as any)?.invoice_direction || '').toUpperCase() === 'OUTBOUND';
-      const partnerAdoszam = source === 'submitted'
-        ? (isOutbound ? (data as any)?.vevo_vat_id : (data as any)?.elado_vat_id)
-        : (isOutbound ? (data as any)?.customer_tax_number : (data as any)?.supplier_tax_number);
-      const partnerNev = source === 'submitted'
-        ? (isOutbound ? (data as any)?.vevo_nev : (data as any)?.elado_nev)
-        : (isOutbound ? (data as any)?.customer_name : (data as any)?.supplier_name);
+      const isOutbound = (record.invoice_direction || '').toUpperCase() === 'OUTBOUND';
+      const partnerAdoszam = effectiveSource === 'submitted'
+        ? (isOutbound ? record.vevo_vat_id : record.elado_vat_id)
+        : (isOutbound ? record.customer_tax_number : record.supplier_tax_number);
+      const partnerNev = effectiveSource === 'submitted'
+        ? (isOutbound ? record.vevo_nev : record.elado_nev)
+        : (isOutbound ? record.customer_name : record.supplier_name);
 
       return {
-        ...(data as any),
+        ...record,
+        effectiveSource,
         partner_adoszam: partnerAdoszam || null,
         partner_nev: partnerNev || null,
-        supplier_tax_number: (data as any)?.supplier_tax_number || (data as any)?.elado_vat_id || null,
-        supplier_name: (data as any)?.supplier_name || (data as any)?.elado_nev || null,
-        customer_tax_number: (data as any)?.customer_tax_number || (data as any)?.vevo_vat_id || null,
-        customer_name: (data as any)?.customer_name || (data as any)?.vevo_nev || null,
+        supplier_tax_number: record.supplier_tax_number || record.elado_vat_id || null,
+        supplier_name: record.supplier_name || record.elado_nev || null,
+        customer_tax_number: record.customer_tax_number || record.vevo_vat_id || null,
+        customer_name: record.customer_name || record.vevo_nev || null,
         vat_summary: vatSummary,
         is_reverse_charge: isRc,
-        partner_gl_number: (data as any)?.partner_gl_number || null,
-        vat_gl_number: (data as any)?.vat_gl_number || null,
-        gl_account_id: (data as any)?.gl_account_id || null,
-        gl_classifications: (data as any)?.gl_classifications || null,
-        invoice_number: (data as any)?.invoice_number || (data as any)?.bizonylatsorszam || null,
-        details_fetched: (data as any)?.details_fetched ?? null,
+        partner_gl_number: record.partner_gl_number || null,
+        vat_gl_number: record.vat_gl_number || null,
+        gl_account_id: record.gl_account_id || null,
+        gl_classifications: record.gl_classifications || null,
+        invoice_number: record.invoice_number || record.bizonylatsorszam || null,
+        details_fetched: record.details_fetched ?? null,
         twinNavId,
         twinNavNumber,
         twinNavNetAmount,
         twinNavVatAmount,
         twinNavGrossAmount,
+        twinSubmittedId,
       } as {
+        company_id?: string;
+        effectiveSource?: 'nav' | 'submitted';
         project_id?: string | null;
         invoice_direction?: string;
         kibocsatas_datuma?: string;
@@ -319,6 +362,7 @@ export function InvoiceItemsDialog({
         twinNavNetAmount?: number | null;
         twinNavVatAmount?: number | null;
         twinNavGrossAmount?: number | null;
+        twinSubmittedId?: string | null;
       } | null;
     },
     enabled: open && !!invoiceId,
@@ -445,38 +489,103 @@ export function InvoiceItemsDialog({
     });
   };
 
-  // Fetch invoice items from DB
+  // Fetch invoice items from DB (with cross-table and twin counterpart resilient fallbacks)
   const { data: items = [], isLoading: loading } = useQuery({
-    queryKey: ['invoiceItems', source, invoiceId],
+    queryKey: ['invoiceItems', source, invoiceId, parentInvoice?.twinNavId, parentInvoice?.twinSubmittedId],
     queryFn: async () => {
       const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes, deductible_percentage, net_weight_kg, vat_code_id, vat_code, is_vat_code_manual';
       const fullCols = baseCols + ', exclude_from_accounting';
       const fkCol = source === 'submitted' ? 'invoice_id' : 'nav_invoice_id';
       const fromTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
 
-      // Try with exclude_from_accounting first; fallback to without if column doesn't exist
+      // 1. Primary query
       const { data, error } = await supabase
         .from(fromTable as any)
         .select(fullCols)
         .eq(fkCol, invoiceId)
         .order('line_number', { ascending: true });
 
-      if (error) {
-        // Column doesn't exist yet (42703) — retry without it
-        if (error.code === '42703' || error.message?.includes('does not exist')) {
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from(fromTable as any)
-            .select(baseCols)
-            .eq(fkCol, invoiceId)
-            .order('line_number', { ascending: true });
-          if (fallbackError) throw fallbackError;
-          return (fallbackData || []) as unknown as InvoiceLineItem[];
+      let fetchedItems: InvoiceLineItem[] = [];
+
+      if (!error && data && data.length > 0) {
+        fetchedItems = data as unknown as InvoiceLineItem[];
+      } else if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
+        // Fallback without exclude_from_accounting if column is missing
+        const { data: fallbackData } = await supabase
+          .from(fromTable as any)
+          .select(baseCols)
+          .eq(fkCol, invoiceId)
+          .order('line_number', { ascending: true });
+        if (fallbackData && fallbackData.length > 0) {
+          fetchedItems = fallbackData as unknown as InvoiceLineItem[];
         }
       }
 
-      let fetchedItems = (data || []) as unknown as InvoiceLineItem[];
+      // 2. Cross-table ID fallback: if 0 items, check if invoiceId was passed inverted (belongs to the opposite table)
+      if (fetchedItems.length === 0) {
+        const altTable = source === 'submitted' ? 'nav_invoice_items' : 'invoice_items';
+        const altFkCol = source === 'submitted' ? 'nav_invoice_id' : 'invoice_id';
+        const { data: crossData } = await supabase
+          .from(altTable as any)
+          .select(baseCols)
+          .eq(altFkCol, invoiceId)
+          .order('line_number', { ascending: true });
 
-      // Ha NAV számla és még nincsenek letöltve a tételek (pl. a hajnali gyors szinkron során deferálva lettek),
+        if (crossData && crossData.length > 0) {
+          fetchedItems = crossData as unknown as InvoiceLineItem[];
+        }
+      }
+
+      // 3. Twin counterpart fallback by invoice number / twin ID
+      if (fetchedItems.length === 0) {
+        if (source === 'submitted' && parentInvoice?.twinNavId) {
+          const { data: navTwinData } = await supabase
+            .from('nav_invoice_items')
+            .select(baseCols)
+            .eq('nav_invoice_id', parentInvoice.twinNavId)
+            .order('line_number', { ascending: true });
+          if (navTwinData && navTwinData.length > 0) {
+            fetchedItems = navTwinData as unknown as InvoiceLineItem[];
+          }
+        } else if (source === 'nav') {
+          const twinSubId = parentInvoice?.twinSubmittedId;
+          if (twinSubId) {
+            const { data: subTwinData } = await supabase
+              .from('invoice_items')
+              .select(baseCols)
+              .eq('invoice_id', twinSubId)
+              .order('line_number', { ascending: true });
+            if (subTwinData && subTwinData.length > 0) {
+              fetchedItems = subTwinData as unknown as InvoiceLineItem[];
+            }
+          } else {
+            const invNum = (invoiceNumber || parentInvoice?.invoice_number || '').replace(/\s+/g, '');
+            if (invNum) {
+              let twinQuery = supabase.from('invoices').select('id');
+              if (parentInvoice?.company_id || selectedCompany?.id) {
+                twinQuery = twinQuery.eq('company_id', (parentInvoice?.company_id || selectedCompany?.id)!);
+              }
+              const { data: subInv } = await twinQuery
+                .ilike('bizonylatsorszam', `%${invNum}%`)
+                .limit(1)
+                .maybeSingle();
+
+              if (subInv?.id) {
+                const { data: subItems } = await supabase
+                  .from('invoice_items')
+                  .select(baseCols)
+                  .eq('invoice_id', subInv.id)
+                  .order('line_number', { ascending: true });
+                if (subItems && subItems.length > 0) {
+                  fetchedItems = subItems as unknown as InvoiceLineItem[];
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 4. Ha NAV számla és még nincsenek letöltve a tételek (pl. a hajnali gyors szinkron során deferálva lettek),
       // automatikusan lekérjük a részleteket a nav-fetch-details Edge Function segítségével
       if (source !== 'submitted' && fetchedItems.length === 0 && parentInvoice?.details_fetched === false) {
         try {
@@ -2034,6 +2143,7 @@ export function InvoiceItemsDialog({
                   <TableBody>
                     {sortedItems.map((item, index) => {
                       const alreadyActivated = isItemAlreadyActivated(item);
+                      const isReverseCharge = parentInvoice?.is_reverse_charge ?? false;
                       return (
                       <TableRow 
                         key={item.id}
@@ -2299,9 +2409,10 @@ export function InvoiceItemsDialog({
                         </TableCell>
                         <TableCell className="text-right font-mono text-xs px-2 whitespace-nowrap">
                           {(() => {
+                            const isRc = parentInvoice?.is_reverse_charge ?? isReverseCharge;
                             const val = validateAndResolveItemVat({
                               ...item,
-                              is_reverse_charge: isReverseCharge,
+                              is_reverse_charge: isRc,
                             });
                             const matchingNav = twinNavItems.find((n: any) => n.line_number === item.line_number);
                             const hasNavDiff = matchingNav && matchingNav.vat_amount != null && item.vat_amount != null && Math.abs(matchingNav.vat_amount - item.vat_amount) > 2;
