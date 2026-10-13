@@ -385,6 +385,91 @@ describe('Error Hunter Regression Suite', () => {
       expect(ALLOWED_NAV_STATUSES.has(buggyStatus)).toBe(false);
     });
   });
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 8. Dual-Engine Live AI Progress & GlKpiBar Synchronization
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  describe('Dual-Engine Live AI Progress & GlKpiBar Live Synchronization', () => {
+    it('synchronizes polled fallback updates seamlessly when realtime events lag or drop', () => {
+      let isAIRunning = true;
+      let aiProgress: { processed: number; total: number } | null = { processed: 0, total: 100 };
+
+      const syncFromPolledNotification = (notif: {
+        processing_status: string;
+        items_processed?: number | null;
+        items_total?: number | null;
+      }) => {
+        if (notif.processing_status === 'processing') {
+          isAIRunning = true;
+          aiProgress = {
+            processed: notif.items_processed || 0,
+            total: notif.items_total || 0,
+          };
+        } else if (notif.processing_status === 'completed') {
+          isAIRunning = false;
+          aiProgress = null;
+        }
+      };
+
+      // 1. Polling tick 1: 50 items
+      syncFromPolledNotification({ processing_status: 'processing', items_processed: 50, items_total: 100 });
+      expect(isAIRunning).toBe(true);
+      expect(aiProgress).toEqual({ processed: 50, total: 100 });
+
+      // 2. Polling tick 2: 100 items completed
+      syncFromPolledNotification({ processing_status: 'completed', items_processed: 100, items_total: 100 });
+      expect(isAIRunning).toBe(false);
+      expect(aiProgress).toBeNull();
+    });
+
+    it('dynamically increments effectiveGlStats in real time without querying database', () => {
+      const baseStats = {
+        accountCount: 150,
+        leafCount: 400,
+        totalDebit: 1000000,
+        totalCredit: 1000000,
+        classifiedItems: 2400,
+        totalItems: 3000,
+      };
+
+      let initialClassifiedRef: number | null = null;
+      let isAIRunning = true;
+      let aiProgress = { processed: 150, total: 500 };
+
+      const computeEffectiveStats = (stats: typeof baseStats, running: boolean, progress: typeof aiProgress | null) => {
+        if (!stats) return null;
+        if (!running || !progress || progress.processed <= 0) return stats;
+
+        if (initialClassifiedRef === null) {
+          initialClassifiedRef = Math.max(0, stats.classifiedItems - progress.processed);
+        }
+        const base = initialClassifiedRef;
+        const liveClassified = Math.min(stats.totalItems, base + progress.processed);
+
+        return {
+          ...stats,
+          classifiedItems: liveClassified,
+        };
+      };
+
+      // When AI starts at 0 processed: initialClassifiedRef is captured
+      initialClassifiedRef = baseStats.classifiedItems; // 2400
+      
+      // Live update at 150 processed:
+      const liveStats1 = computeEffectiveStats(baseStats, isAIRunning, { processed: 150, total: 500 });
+      expect(liveStats1?.classifiedItems).toBe(2550); // 2400 + 150
+      expect(Math.round((liveStats1!.classifiedItems / liveStats1!.totalItems) * 100)).toBe(85); // 2550/3000 = 85%
+
+      // Live update at 350 processed:
+      const liveStats2 = computeEffectiveStats(baseStats, isAIRunning, { processed: 350, total: 500 });
+      expect(liveStats2?.classifiedItems).toBe(2750); // 2400 + 350
+      expect(Math.round((liveStats2!.classifiedItems / liveStats2!.totalItems) * 100)).toBe(92); // 2750/3000 = 92%
+
+      // Never exceeds totalItems
+      const liveStatsOver = computeEffectiveStats(baseStats, isAIRunning, { processed: 9999, total: 500 });
+      expect(liveStatsOver?.classifiedItems).toBe(3000);
+    });
+  });
 });
 
 

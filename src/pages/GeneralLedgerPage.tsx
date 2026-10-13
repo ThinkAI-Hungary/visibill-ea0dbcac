@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,6 +88,25 @@ export default function GeneralLedgerPage() {
   const tableRef = useRef<GeneralLedgerTableRef>(null);
   const handleStatsChange = useCallback((stats: typeof glStats) => setGlStats(stats), []);
   const handleLoadingChange = useCallback((loading: boolean) => setIsTableLoading(loading), []);
+
+  const initialClassifiedRef = useRef<number | null>(null);
+
+  // Live dynamic synchronization for the bottom KPI bar while AI is running
+  const effectiveGlStats = useMemo(() => {
+    if (!glStats) return null;
+    if (!isAIRunning || !aiProgress || aiProgress.processed <= 0) return glStats;
+
+    if (initialClassifiedRef.current === null) {
+      initialClassifiedRef.current = Math.max(0, glStats.classifiedItems - aiProgress.processed);
+    }
+    const base = initialClassifiedRef.current;
+    const liveClassified = Math.min(glStats.totalItems, base + aiProgress.processed);
+
+    return {
+      ...glStats,
+      classifiedItems: liveClassified,
+    };
+  }, [glStats, isAIRunning, aiProgress]);
 
   const handleExportAction = useCallback(async (
     actionName: string,
@@ -447,48 +466,89 @@ export default function GeneralLedgerPage() {
 
   const { activePresetId, setActivePresetId, presets, isLoading: isPresetsLoading } = useActivePreset(selectedCompany?.id);
 
+  // ── Dual-Engine Live AI Progress: 1. Lightweight 2s Polling Guard ──
+  const { data: latestAiNotification } = useQuery({
+    queryKey: ['latestGlAiNotification', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return null;
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('gl_upload_notifications')
+        .select('id, processing_status, message, items_processed, items_total, created_at')
+        .eq('company_id', selectedCompany.id)
+        .gte('created_at', fifteenMinutesAgo)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) return null;
+      return data;
+    },
+    enabled: !!selectedCompany?.id,
+    refetchInterval: isAIRunning ? 2000 : false,
+  });
+
+  // Synchronize polled AI notification state with UI
+  useEffect(() => {
+    if (!latestAiNotification) return;
+
+    if (latestAiNotification.processing_status === 'pending' || latestAiNotification.processing_status === 'processing') {
+      setIsAIRunning(true);
+      if (latestAiNotification.items_total !== null && latestAiNotification.items_total !== undefined) {
+        setAiProgress({
+          processed: latestAiNotification.items_processed || 0,
+          total: latestAiNotification.items_total,
+        });
+      }
+    } else if (latestAiNotification.processing_status === 'completed' || latestAiNotification.processing_status === 'error') {
+      if (isAIRunning) {
+        setIsAIRunning(false);
+        setAiProgress(null);
+        initialClassifiedRef.current = null;
+        queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+        queryClient.invalidateQueries({ queryKey: ['glItems'] });
+        queryClient.invalidateQueries({ queryKey: ['glJournalItems'] });
+        queryClient.invalidateQueries({ queryKey: ['glCategorizedItems'] });
+
+        if (latestAiNotification.processing_status === 'error') {
+          toast({
+            title: t('common:status.error', 'Hiba történt'),
+            description: latestAiNotification.message || t('accounting:general_ledger.toasts.ai_error', 'Az AI feldolgozás sikertelen.'),
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: t('common:status.ready', 'Kész!'),
+            description: latestAiNotification.message || t('accounting:general_ledger.toasts.ai_success', 'Az AI feldolgozás sikeresen befejeződött.'),
+            className: "bg-green-50 text-green-900 border-green-200",
+          });
+        }
+      }
+    }
+  }, [latestAiNotification, isAIRunning, queryClient, t, toast]);
+
+  // ── Dual-Engine Live AI Progress: 2. Realtime WebSocket Stream ──
   useEffect(() => {
     if (!selectedCompany?.id) return;
 
-    let cancelled = false;
-
-    // Check if there is an active job already running on mount / company switch (within last 15 mins)
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-    supabase
-      .from('gl_upload_notifications')
-      .select('processing_status, items_processed, items_total, created_at')
-      .eq('company_id', selectedCompany.id)
-      .in('processing_status', ['pending', 'processing'])
-      .gte('created_at', fifteenMinutesAgo)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled || !data) return;
-        setIsAIRunning(true);
-        if (data.items_total) {
-          setAiProgress({
-            processed: data.items_processed || 0,
-            total: data.items_total,
-          });
-        }
-      });
-
-    const channel = supabase.channel('ai_notifications')
+    const channelName = `ai_notifications_${selectedCompany.id}_${Date.now()}`;
+    const channel = supabase.channel(channelName)
       .on('postgres_changes', { 
-        event: 'UPDATE', 
+        event: '*', 
         schema: 'public', 
         table: 'gl_upload_notifications',
         filter: `company_id=eq.${selectedCompany.id}`
       }, (payload) => {
         const row = payload.new as { 
-          processing_status: string; 
-          message: string;
+          processing_status?: string; 
+          message?: string;
           items_processed?: number | null;
           items_total?: number | null;
-        };
+        } | null;
 
-        if (row.processing_status === 'processing') {
+        if (!row || !row.processing_status) return;
+
+        if (row.processing_status === 'pending' || row.processing_status === 'processing') {
           setIsAIRunning(true);
           setAiProgress({
             processed: row.items_processed || 0,
@@ -501,10 +561,12 @@ export default function GeneralLedgerPage() {
         
         setIsAIRunning(false);
         setAiProgress(null);
+        initialClassifiedRef.current = null;
         queryClient.invalidateQueries({ queryKey: ['glBalances'] });
         queryClient.invalidateQueries({ queryKey: ['glItems'] });
         queryClient.invalidateQueries({ queryKey: ['glJournalItems'] });
         queryClient.invalidateQueries({ queryKey: ['glCategorizedItems'] });
+        queryClient.invalidateQueries({ queryKey: ['latestGlAiNotification', selectedCompany.id] });
         
         if (row.processing_status === 'error') {
           toast({ title: t('common:status.error', 'Hiba történt'), description: row.message || t('accounting:general_ledger.toasts.ai_error', 'Az AI feldolgozás sikertelen.'), variant: 'destructive' });
@@ -519,7 +581,6 @@ export default function GeneralLedgerPage() {
       .subscribe();
 
     return () => {
-      cancelled = true;
       supabase.removeChannel(channel);
     };
   }, [selectedCompany?.id, toast, t, queryClient]);
@@ -585,6 +646,9 @@ export default function GeneralLedgerPage() {
     if (!selectedCompany?.id) return;
     setIsAIRunning(true);
     setAiProgress({ processed: 0, total: 0 });
+    if (glStats) {
+      initialClassifiedRef.current = glStats.classifiedItems;
+    }
     try {
       // PGMQ: INSERT into gl_upload_notifications triggers the DB trigger
       // which enqueues the job to the gl_classification_jobs PGMQ queue.
@@ -598,6 +662,7 @@ export default function GeneralLedgerPage() {
         });
 
       if (error) throw new Error(error.message);
+      queryClient.invalidateQueries({ queryKey: ['latestGlAiNotification', selectedCompany.id] });
       toast({
         title: t('accounting:general_ledger.toasts.ai_started_title', 'Sikeres indítás'),
         description: t('accounting:general_ledger.toasts.ai_started', 'Az AI besorolás elindult a paramétereknek megfelelően.')
@@ -606,6 +671,7 @@ export default function GeneralLedgerPage() {
       toast({ title: t('common:status.error', 'Hiba történt'), description: error.message, variant: 'destructive' });
       setIsAIRunning(false);
       setAiProgress(null);
+      initialClassifiedRef.current = null;
     }
   };
 
@@ -766,7 +832,7 @@ export default function GeneralLedgerPage() {
           )}
 
           <GlKpiBar
-            glStats={glStats}
+            glStats={effectiveGlStats}
             isTableLoading={isTableLoading}
             currencyLabel={defaultCurrency === 'HUF' ? 'Ft' : defaultCurrency}
             isCroatia={isCroatia}
