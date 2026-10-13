@@ -99,6 +99,7 @@ export interface A60InvoiceItem {
   defaultIsService?: boolean;
   hasTaxNumber: boolean;
   isValidFormat: boolean;
+  formatError?: string;
   source_table?: 'nav_invoices' | 'invoices';
 }
 

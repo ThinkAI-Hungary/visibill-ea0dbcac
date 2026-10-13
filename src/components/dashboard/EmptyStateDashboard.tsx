@@ -449,58 +449,10 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
               return chunks;
             };
 
-            const endDate = new Date();
-            const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-            const dateChunks = splitDateRange(startDate, endDate);
-            
-
-            // Process all chunks sequentially in background
-            (async () => {
-              let successCount = 0;
-              for (const chunk of dateChunks) {
-                // Refresh session before each chunk to prevent JWT expiration
-                const { data: { session: freshSession } } = await supabase.auth.getSession();
-                if (!freshSession) {
-                  reportError({ type: 'auth', severity: 'warning', component: 'EmptyStateDashboard', action: 'warn', message: 'Session expired during background sync, aborting remaining chunks' });
-                  break;
-                }
-                const currentToken = freshSession.access_token;
-
-                const [outbound, inbound] = await Promise.allSettled([
-                  supabase.functions.invoke('nav-query-outbound-invoices', {
-                    body: {
-                      invoiceDirection: 'OUTBOUND',
-                      dateFrom: chunk.from,
-                      dateTo: chunk.to,
-                      companyId: companyData.id
-                    },
-                    headers: {
-                      Authorization: `Bearer ${currentToken}`,
-                    },
-                  }),
-                  supabase.functions.invoke('nav-query-outbound-invoices', {
-                    body: {
-                      invoiceDirection: 'INBOUND',
-                      dateFrom: chunk.from,
-                      dateTo: chunk.to,
-                      companyId: companyData.id
-                    },
-                    headers: {
-                      Authorization: `Bearer ${currentToken}`,
-                    },
-                  })
-                ]);
-                
-                if ((outbound.status === 'fulfilled' && !outbound.value.error) ||
-                    (inbound.status === 'fulfilled' && !inbound.value.error)) {
-                  successCount++;
-                }
-              }
-              
-              if (successCount > 0) {
-                toast({ title: 'NAV számlák szinkronizálása elindult a háttérben' });
-              }
-            })();
+            // In Wizard mode, we do NOT trigger background auto-sync here.
+            // Instead, the user will trigger it from the prominent wizard start card
+            // or directly on the posting-wizard page.
+            toast({ title: 'NAV hitelesítő adatok sikeresen elmentve!' });
           }
         }
       }
@@ -511,14 +463,16 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       setSelectedCompany(companyData);
       toast({ title: 'Beállítás sikeres! Üdvözöljük a eaisybill-ben!' });
       
-      // Hard reload to the new company's dashboard.
-      // navigate() doesn't work because React state batching means companies
-      // haven't committed to the DOM yet, causing the wizard to reappear.
-      // A full page reload guarantees fresh state and cleans up the Dialog Portal.
+      // Hard reload to the new company's posting-wizard if NAV was connected, or dashboard otherwise.
       const now = new Date();
       const yearStart = `${now.getFullYear()}-01-01`;
       const yearEnd = `${now.getFullYear()}-12-31`;
-      window.location.href = `/${companyData.id}/${yearStart}_${yearEnd}/`;
+      const hasNav = navValidationStatus === 'valid' && isNavFormComplete;
+      const targetPath = hasNav
+        ? `/${companyData.id}/${yearStart}_${yearEnd}/posting-wizard`
+        : `/${companyData.id}/${yearStart}_${yearEnd}/`;
+
+      window.location.href = targetPath;
       return; // stop execution — page is reloading
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'error', message: 'Error during onboarding:', error: error });

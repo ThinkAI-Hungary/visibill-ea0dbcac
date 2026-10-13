@@ -27,7 +27,12 @@ export function extractTag(xmlChunk: string, tag: string): string {
 export function extractTaxNumber(xmlChunk: string, parentTag: string): string {
   const parentMatch = xmlChunk.match(new RegExp(`<(?:\\w+:)?${parentTag}[^>]*>([\\s\\S]*?)<\\/(?:\\w+:)?${parentTag}>`));
   if (!parentMatch) return '';
-  return extractTag(parentMatch[1], 'taxpayerId') || extractTag(xmlChunk, parentTag);
+  return (
+    extractTag(parentMatch[1], 'taxpayerId') ||
+    extractTag(parentMatch[1], 'communityVatNumber') ||
+    extractTag(parentMatch[1], 'thirdStateTaxId') ||
+    extractTag(xmlChunk, parentTag)
+  );
 }
 
 /**
@@ -85,8 +90,15 @@ export function parseInvoiceDigestXml(xmlResponse: string): NavInvoiceDigest[] {
     const invoiceNumber = extractTag(chunk, 'invoiceNumber');
     if (!invoiceNumber) continue;
 
-    const supplierTax = extractTaxNumber(chunk, 'supplierTaxNumber') || extractTag(chunk, 'supplierTaxNumber');
-    const customerTax = extractTaxNumber(chunk, 'customerTaxNumber') || extractTag(chunk, 'customerTaxNumber');
+    const supplierTax =
+      extractTaxNumber(chunk, 'supplierTaxNumber') ||
+      extractTag(chunk, 'supplierTaxNumber') ||
+      extractTag(chunk, 'communityVatNumber');
+    const customerTax =
+      extractTaxNumber(chunk, 'customerTaxNumber') ||
+      extractTag(chunk, 'customerTaxNumber') ||
+      extractTag(chunk, 'communityVatNumber') ||
+      extractTag(chunk, 'thirdStateTaxId');
 
     const netAmount = parseFloat(extractTag(chunk, 'invoiceNetAmount')) || 0;
     const vatAmount = parseFloat(extractTag(chunk, 'invoiceVatAmount')) || 0;

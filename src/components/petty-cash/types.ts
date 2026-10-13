@@ -52,6 +52,12 @@ export interface PettyCashEntry {
   cancelled_at?: string | null;
   cancelled_by?: string | null;
   receipt_id?: string | null;
+  receipt_number?: string | null;
+  payee_name?: string | null;
+  net_amount?: number | null;
+  vat_amount?: number | null;
+  vat_code_id?: string | null;
+  vat_row_override?: string | null;
 }
 
 export type CashReportStatus = 'open' | 'closing' | 'closed' | 'posted' | 'reopened';
@@ -255,6 +261,10 @@ export function validatePettyCashEntryPayload(params: {
   description: string | null | undefined;
   invoiceMode?: boolean;
   selectedInvoiceCount?: number;
+  isVat?: boolean;
+  net_amount?: number;
+  vat_amount?: number;
+  vat_row_override?: string | null;
 }): { valid: boolean; error?: string } {
   if (!params.register_id || params.register_id.trim() === '') {
     return { valid: false, error: 'Pénztár kiválasztása kötelező!' };
@@ -269,6 +279,14 @@ export function validatePettyCashEntryPayload(params: {
     }
     if (!params.description || params.description.trim() === '') {
       return { valid: false, error: 'A leírás megadása kötelező!' };
+    }
+    if (params.isVat) {
+      if (params.net_amount == null || params.net_amount < 0) {
+        return { valid: false, error: 'A nettó összeg érvénytelen!' };
+      }
+      if (params.vat_amount == null || params.vat_amount < 0) {
+        return { valid: false, error: 'Az ÁFA összeg érvénytelen!' };
+      }
     }
   }
   return { valid: true };

@@ -145,6 +145,7 @@ export function VatReturnContainer() {
     handleViesCheck,
     setEuTypeOverrides,
     calculate,
+    updateInvoiceEuTaxNumber,
   } = vatData;
 
   const {
@@ -611,6 +612,8 @@ export function VatReturnContainer() {
                     month={month}
                     frequency={frequency}
                     a60Lines={a60Lines}
+                    onUpdateTaxNumber={updateInvoiceEuTaxNumber.mutateAsync}
+                    isUpdatingTaxNumber={updateInvoiceEuTaxNumber.isPending}
                   />
                 )}
               </div>

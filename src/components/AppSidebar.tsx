@@ -74,6 +74,7 @@ import {
   Sparkles,
   Layers,
   Sliders,
+  Wand2,
 } from "lucide-react";
 import { useUnreadTicketCount } from "@/hooks/useTickets";
 import { useHasUnreadChangelog } from "@/hooks/useChangelog";
@@ -126,6 +127,7 @@ const navigationGroups: NavGroup[] = [
     label: 'Könyvelés',
     icon: BookOpen,
     items: [
+      { title: "Kontírozás varázsló", url: "/general-ledger?tab=wizard", icon: Wand2, tourId: "posting-wizard", moduleKey: 'general_ledger' },
       { title: "Főkönyv", url: "/general-ledger", icon: BookOpen, tourId: "general-ledger", moduleKey: 'general_ledger' },
       { title: "Folyószámla", url: "/subledger", icon: Layers, tourId: "subledger", moduleKey: 'subledger' },
       { title: "Eredménykimutatás", url: "/profit-and-loss", icon: BarChart3, tourId: "profit-and-loss", moduleKey: 'profit_loss' },
@@ -184,6 +186,7 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/kintlevo": () => import("@/pages/KintlevoPage"),
   "/transactions": () => import("@/pages/TransactionsPage"),
   "/general-ledger": () => import("@/pages/GeneralLedgerPage"),
+  "/posting-wizard": () => import("@/pages/PostingWizardPage"),
   "/subledger": () => import("@/pages/SubledgerPage"),
   "/profit-and-loss": () => import("@/pages/ProfitAndLoss"),
   "/balance-sheet": () => import("@/pages/BalanceSheet"),

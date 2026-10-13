@@ -16,10 +16,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { RegisterDialog } from './RegisterDialog';
 import {
   Save, Plus, ArrowRightLeft, Loader2, Filter, AlertTriangle, BookOpen, FileDown,
   ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check, Eye, Search, ExternalLink, X, HelpCircle,
-  Unlink, AlertCircle
+  Unlink, AlertCircle, Percent
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -54,6 +56,44 @@ const DISPLAY_SOURCE_LABELS: Record<string, string> = {
   ...SOURCE_LABELS,
   opening_balance: 'Nyitó egyenleg',
 };
+
+// Hungarian 65-ös ÁFA bevallás bevallási sorok készpénzes bizonylatokhoz
+const EXPENSE_VAT_ROWS = [
+  { row: '66', percent: 27, label: '66. sor – 27% Belföldi beszerzés (általános)' },
+  { row: '65', percent: 18, label: '65. sor – 18% Belföldi beszerzés' },
+  { row: '64', percent: 5, label: '64. sor – 5% Belföldi beszerzés' },
+  { row: '77', percent: 27, label: '77. sor – Tárgyi eszköz / Beruházás (66+77)' },
+  { row: '63', percent: 0, label: '63. sor – Tárgyi adómentes beszerzés (TAM)' },
+  { row: '29', percent: 0, label: '29. sor – Fordított adózás (belföldi)' },
+  { row: '67', percent: 27, label: '67. sor – Külföldi szolgáltatás igénybevétel' },
+  { row: '70', percent: 27, label: '70. sor – Közösségi termékbeszerzés' },
+  { row: '68', percent: 27, label: '68. sor – Közösségi tárgyi eszköz beszerzés' },
+  { row: 'other', percent: 0, label: 'Egyéb egyedi bevallási sor...' },
+];
+
+const INCOME_VAT_ROWS = [
+  { row: '07', percent: 27, label: '07. sor – 27% Belföldi értékesítés' },
+  { row: '05', percent: 18, label: '05. sor – 18% Belföldi értékesítés' },
+  { row: '03', percent: 5, label: '03. sor – 5% Belföldi értékesítés' },
+  { row: '45', percent: 27, label: '45. sor – Kapott előleg (07+45)' },
+  { row: '43', percent: 27, label: '43. sor – Tárgyi eszköz értékesítés (07+43)' },
+  { row: '01', percent: 0, label: '01. sor – Alanyi adómentes (AAM)' },
+  { row: '02', percent: 0, label: '02. sor – Tárgyi adómentes (TAM)' },
+  { row: '91', percent: 0, label: '91. sor – Export / Harmadik ország (ATHK)' },
+  { row: '92', percent: 0, label: '92. sor – EU szolgáltatásnyújtás' },
+  { row: 'other', percent: 0, label: 'Egyéb egyedi bevallási sor...' },
+];
+
+// Helper to get formatted today string
+const getTodayString = () => {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const createFallbackReceiptNumber = () => `PB-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  ENTRIES TAB
@@ -101,6 +141,40 @@ export default function EntriesTab() {
   const [previewInvoice, setPreviewInvoice] = useState<any | null>(null);
   const [printingEntry, setPrintingEntry] = useState<PettyCashEntry | null>(null);
   const [signatureOpen, setSignatureOpen] = useState(false);
+  const [showNewRegisterDialog, setShowNewRegisterDialog] = useState(false);
+  const [newlyCreatedRegisterId, setNewlyCreatedRegisterId] = useState<string | null>(null);
+
+  const createRegisterMutation = useMutation({
+    mutationFn: async (regData: Partial<PettyCashRegister>) => {
+      if (!regData.name?.trim()) throw new Error('A pénztár neve kötelező');
+      const { data, error } = await supabase.from('petty_cash_registers').insert({
+        company_id: companyId,
+        name: regData.name.trim(),
+        location: regData.location?.trim() || null,
+        currencies: regData.currencies?.length ? regData.currencies : ['HUF'],
+        closing_mode: regData.closing_mode || 'monthly',
+        custom_days: regData.custom_days || 30,
+        cash_limit: regData.cash_limit ?? 1500000,
+        limit_action: regData.limit_action || 'warn',
+        receipt_policy: regData.receipt_policy || 'when_no_document',
+        approval_threshold: regData.approval_threshold ?? 200000,
+        gl_account: regData.gl_account || '381',
+        is_single_person_mode: regData.is_single_person_mode ?? false,
+        is_default: registers.length === 0,
+      }).select().single();
+      if (error) throw error;
+      return data as PettyCashRegister;
+    },
+    onSuccess: (newReg) => {
+      qc.invalidateQueries({ queryKey: queryKeys.pettyCashRegisters(companyId) });
+      setShowNewRegisterDialog(false);
+      setNewlyCreatedRegisterId(newReg.id);
+      toast({ title: t('pettyCash:toasts.register_created', 'Pénztár sikeresen létrehozva') });
+    },
+    onError: (err: any) => {
+      toast({ title: t('common:error', 'Hiba'), description: err.message, variant: 'destructive' });
+    }
+  });
 
   // Keyboard shortcuts:
   // - F4 or Alt+Z: opens Cash Closing (Pénztárzárás) dialog
@@ -302,7 +376,7 @@ export default function EntriesTab() {
   }, [partners, pendingPartnerName]);
 
   const isPendingRelated = matchedPartner?.related_party || false;
-  const pendingDate = editPendingForm.kibocsatas_datuma || format(new Date(), 'yyyy-MM-dd');
+  const pendingDate = editPendingForm.kibocsatas_datuma || getTodayString();
   
   const { data: pendingMonthlyTotal = 0 } = useQuery({
     queryKey: ['partner-monthly-cash-total', companyId, matchedPartner?.id, pendingDate],
@@ -490,10 +564,13 @@ export default function EntriesTab() {
       result = result.filter(e => {
         const desc = (e.description || '').toLowerCase();
         const amt = Math.abs(e.amount).toString();
-        const receiptNo = (receiptNumbers[e.id] || '').toLowerCase();
+        const receiptNo = (e.receipt_number || receiptNumbers[e.id] || '').toLowerCase();
         const invNumber = ((e as any).raw_invoice?.bizonylatsorszam || '').toLowerCase();
+        const payee = (e.payee_name || '').toLowerCase();
+        const vatRow = (e.vat_row_override || '').toLowerCase();
+        const partnerName = ((e as any).partner?.name || '').toLowerCase();
         
-        return desc.includes(term) || amt.includes(term) || receiptNo.includes(term) || invNumber.includes(term);
+        return desc.includes(term) || amt.includes(term) || receiptNo.includes(term) || invNumber.includes(term) || payee.includes(term) || vatRow.includes(term) || partnerName.includes(term);
       });
     }
 
@@ -651,6 +728,15 @@ export default function EntriesTab() {
               {t('pettyCash:entries.transfer', 'Pénztárközi átvezetés')}
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowNewRegisterDialog(true)}
+            disabled={!writable}
+            className="border-primary/25 hover:bg-primary/10 text-primary"
+          >
+            <Plus className="w-4 h-4 mr-1" /> {t('pettyCash:registers.new_register', 'Új pénztár')}
+          </Button>
           <Button size="sm" onClick={() => { setEditingEntry(null); setShowManualDialog(true); }} disabled={!writable} className="shadow-sm">
             <Plus className="w-4 h-4 mr-1" /> {t('pettyCash:entries.manual_entry', 'Manuális tétel')}
             <kbd className="ml-1.5 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium rounded border border-current/25 bg-current/10 text-current opacity-90">
@@ -723,7 +809,7 @@ export default function EntriesTab() {
                               'font-mono text-[10px]',
                               entry.amount >= 0 ? 'text-emerald-600 border-emerald-500/30' : 'text-destructive border-destructive/30'
                             )}>
-                              {receiptNo}
+                              {entry.receipt_number || receiptNo}
                             </Badge>
                             {entry.source_id && invoiceImagesMap[entry.source_id] && (
                               <TooltipProvider>
@@ -765,7 +851,7 @@ export default function EntriesTab() {
                             : t(`pettyCash:entries.source_types.${entry.source_type}`, { defaultValue: DISPLAY_SOURCE_LABELS[entry.source_type] || entry.source_type })}
                         </span>
                       </TableCell>
-                      <TableCell className="max-w-[250px] truncate text-sm">
+                      <TableCell className="max-w-[280px] truncate text-sm">
                         {(() => {
                           const isEntryRelated = entry.partner_id
                             ? partners.find(p => p.id === entry.partner_id)?.related_party || false
@@ -774,19 +860,38 @@ export default function EntriesTab() {
                           
                           const localizedDesc = getLocalizedEntryDescription(entry.description, t);
                           return (
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="truncate" title={localizedDesc}>{localizedDesc}</span>
-                              {isEntryRelated && (
-                                <Badge variant="outline" className="text-[8px] h-3.5 px-1 bg-amber-500/10 text-amber-600 border-amber-500/20 font-semibold shrink-0">
-                                  {t('pettyCash:entries.badges.related_party', 'Kapcsolt')}
-                                </Badge>
-                              )}
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="truncate" title={localizedDesc}>{localizedDesc}</span>
+                                {isEntryRelated && (
+                                  <Badge variant="outline" className="text-[8px] h-3.5 px-1 bg-amber-500/10 text-amber-600 border-amber-500/20 font-semibold shrink-0">
+                                    {t('pettyCash:entries.badges.related_party', 'Kapcsolt')}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {entry.payee_name && (
+                                  <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-mono">
+                                    <span className="font-semibold">{entry.amount >= 0 ? 'Befizető:' : 'Átvevő:'}</span> {entry.payee_name}
+                                  </span>
+                                )}
+                                {entry.vat_amount && entry.vat_amount !== 0 ? (
+                                  <Badge variant="secondary" className="text-[9px] py-0 px-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-mono">
+                                    ÁFA: {fmtAmount(Math.abs(entry.vat_amount), entry.currency)} {entry.vat_row_override ? `(${entry.vat_row_override}. sor)` : ''}
+                                  </Badge>
+                                ) : null}
+                              </div>
                             </div>
                           );
                         })()}
                       </TableCell>
                       <TableCell className={cn('text-right font-medium text-sm tabular-nums whitespace-nowrap', entry.amount >= 0 ? 'text-emerald-500' : 'text-destructive')}>
-                        {fmtAmount(entry.amount, entry.currency)}
+                        <div>{fmtAmount(entry.amount, entry.currency)}</div>
+                        {entry.net_amount != null && entry.vat_amount != null && entry.vat_amount !== 0 && (
+                          <div className="text-[10px] text-muted-foreground font-mono tabular-nums opacity-85">
+                            Nettó: {fmtAmount(entry.net_amount, entry.currency)} | ÁFA: {fmtAmount(entry.vat_amount, entry.currency)}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="text-right text-sm tabular-nums whitespace-nowrap">
                         {isPending ? (
@@ -905,6 +1010,17 @@ export default function EntriesTab() {
         editingEntry={editingEntry}
         onCancelEditing={() => setEditingEntry(null)}
         partners={partners}
+        onOpenCreateRegister={() => setShowNewRegisterDialog(true)}
+        newlyCreatedRegisterId={newlyCreatedRegisterId}
+      />
+
+      {/* Register creation dialog accessible directly from EntriesTab */}
+      <RegisterDialog
+        open={showNewRegisterDialog}
+        onOpenChange={setShowNewRegisterDialog}
+        register={null}
+        onSave={(data) => createRegisterMutation.mutate(data)}
+        saving={createRegisterMutation.isPending}
       />
 
       {/* F4: Cash Closing Dialog */}
@@ -1566,7 +1682,18 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
 //  MANUAL ENTRY DIALOG  (U5: amount validation + editing/deleting)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, editingEntry, onCancelEditing, partners }: {
+function ManualEntryDialog({
+  open,
+  onOpenChange,
+  registers,
+  companyId,
+  userId,
+  editingEntry,
+  onCancelEditing,
+  partners,
+  onOpenCreateRegister,
+  newlyCreatedRegisterId,
+}: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   registers: PettyCashRegister[];
@@ -1575,18 +1702,129 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   editingEntry?: PettyCashEntry | null;
   onCancelEditing?: () => void;
   partners: any[];
+  onOpenCreateRegister?: () => void;
+  newlyCreatedRegisterId?: string | null;
 }) {
+  const handleClose = () => {
+    onOpenChange(false);
+    if (onCancelEditing) onCancelEditing();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
+      {open && (
+        <ManualEntryDialogContent
+          key={editingEntry ? editingEntry.id : (newlyCreatedRegisterId || 'new-entry')}
+          registers={registers}
+          companyId={companyId}
+          userId={userId}
+          editingEntry={editingEntry}
+          partners={partners}
+          onClose={handleClose}
+          onOpenCreateRegister={onOpenCreateRegister}
+          initialRegisterId={newlyCreatedRegisterId}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+interface ManualEntryDialogContentProps {
+  registers: PettyCashRegister[];
+  companyId: string;
+  userId: string;
+  editingEntry?: PettyCashEntry | null;
+  partners: any[];
+  onClose: () => void;
+  onOpenCreateRegister?: () => void;
+  initialRegisterId?: string | null;
+}
+
+function ManualEntryDialogContent({
+  registers,
+  companyId,
+  userId,
+  editingEntry,
+  partners,
+  onClose,
+  onOpenCreateRegister,
+  initialRegisterId,
+}: ManualEntryDialogContentProps) {
   const { t } = useTranslation(['pettyCash', 'common']);
   const qc = useQueryClient();
-  const defaultReg = registers.find(r => r.is_default) || registers[0];
-  const [form, setForm] = useState({
-    register_id: defaultReg?.id || '',
-    entry_date: format(new Date(), 'yyyy-MM-dd'),
-    description: '',
-    amount: '',
-    currency: defaultReg?.currencies[0] || 'HUF',
-    isExpense: false,
-    partner_id: '',
+
+  const defaultReg = (initialRegisterId && registers.find(r => r.id === initialRegisterId)) ||
+    (editingEntry && registers.find(r => r.id === editingEntry.register_id)) ||
+    registers.find(r => r.is_default) ||
+    registers[0];
+
+  const [form, setForm] = useState(() => {
+    if (editingEntry) {
+      const isExp = editingEntry.amount < 0;
+      const absAmt = Math.abs(editingEntry.amount);
+      const isVatEntry = !!(editingEntry.vat_amount && editingEntry.vat_amount !== 0);
+      const netAmt = editingEntry.net_amount != null ? Math.abs(editingEntry.net_amount) : (isVatEntry ? absAmt - Math.abs(editingEntry.vat_amount || 0) : absAmt);
+      const vatAmt = editingEntry.vat_amount != null ? Math.abs(editingEntry.vat_amount) : 0;
+      const pct = (netAmt > 0 && vatAmt > 0) ? Math.round((vatAmt / netAmt) * 100) : 27;
+      const standardRows = ['66', '65', '64', '77', '63', '29', '67', '70', '68', '07', '05', '03', '45', '43', '01', '02', '91', '92'];
+      const rawRow = editingEntry.vat_row_override || (isExp ? '66' : '07');
+      const isCustom = !standardRows.includes(rawRow);
+
+      return {
+        register_id: editingEntry.register_id,
+        entry_date: editingEntry.entry_date,
+        description: editingEntry.description || '',
+        amount: String(absAmt),
+        currency: editingEntry.currency,
+        isExpense: isExp,
+        partner_id: editingEntry.partner_id || '',
+        receipt_number: editingEntry.receipt_number || '',
+        payee_name: editingEntry.payee_name || '',
+        isVat: isVatEntry,
+        netAmount: isVatEntry && netAmt > 0 ? String(netAmt) : '',
+        vatPercent: pct,
+        vatAmount: isVatEntry && vatAmt > 0 ? String(vatAmt) : '',
+        vatCodeId: editingEntry.vat_code_id || '',
+        vatRowOverride: isCustom ? 'other' : rawRow,
+        customVatRow: isCustom ? rawRow : '',
+      };
+    }
+
+    return {
+      register_id: defaultReg?.id || '',
+      entry_date: getTodayString(),
+      description: '',
+      amount: '',
+      currency: defaultReg?.currencies[0] || 'HUF',
+      isExpense: false,
+      partner_id: '',
+      receipt_number: '',
+      payee_name: '',
+      isVat: false,
+      netAmount: '',
+      vatPercent: 27,
+      vatAmount: '',
+      vatCodeId: '',
+      vatRowOverride: '07',
+      customVatRow: '',
+    };
+  });
+
+  // Fetch company's custom vat_codes if configured
+  const { data: dbVatCodes = [] } = useQuery({
+    queryKey: ['vat_codes', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from('vat_codes')
+        .select('id, code, label, vat_percent, direction, target_rows')
+        .eq('company_id', companyId)
+        .order('sort_order');
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!companyId,
+    staleTime: 60_000,
   });
 
   // ─── Invoice settlement mode ────────────────────────────────────────────
@@ -1595,7 +1833,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
 
-  // Fetch open unpaid invoices (outbound sales & inbound expenses) for this company
+  // Fetch open unpaid invoices for this company
   const { data: openInvoices = [] } = useQuery({
     queryKey: ['open-settlement-invoices', companyId],
     queryFn: async () => {
@@ -1615,7 +1853,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
           : (inv.vevo_nev || 'Ismeretlen vevő')
       })) as OpenSettlementInvoice[];
     },
-    enabled: !!companyId && open,
+    enabled: !!companyId,
   });
 
   const filteredOpenInvoices = useMemo(() => {
@@ -1648,56 +1886,10 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       }, 0);
   }, [openInvoices, selectedInvoiceIds]);
 
-  React.useEffect(() => {
-    if (open) {
-      // Reset invoice mode on open
-      setInvoiceMode(false);
-      setSelectedInvoiceIds(new Set());
-      setInvoiceSearchQuery('');
-
-      if (editingEntry) {
-        setForm({
-          register_id: editingEntry.register_id,
-          entry_date: editingEntry.entry_date,
-          description: editingEntry.description || '',
-          amount: String(Math.abs(editingEntry.amount)),
-          currency: editingEntry.currency,
-          isExpense: editingEntry.amount < 0,
-          partner_id: editingEntry.partner_id || '',
-        });
-      } else {
-        const activeReg = (registers.length > 0 && registers.find(r => r.id === form.register_id)) || defaultReg || registers[0];
-        setForm({
-          register_id: activeReg?.id || '',
-          entry_date: format(new Date(), 'yyyy-MM-dd'),
-          description: '',
-          amount: '',
-          currency: activeReg?.currencies[0] || 'HUF',
-          isExpense: false,
-          partner_id: '',
-        });
-      }
-    }
-  }, [open, editingEntry, defaultReg, registers]);
-
-  // If registers load asynchronously while dialog is open and register_id is currently empty
-  React.useEffect(() => {
-    if (open && !editingEntry && !form.register_id && registers.length > 0) {
-      const activeReg = defaultReg || registers[0];
-      if (activeReg?.id) {
-        setForm(f => ({
-          ...f,
-          register_id: activeReg.id,
-          currency: activeReg.currencies[0] || f.currency || 'HUF',
-        }));
-      }
-    }
-  }, [open, editingEntry, form.register_id, registers, defaultReg]);
-
   const selectedReg = registers.find(r => r.id === form.register_id);
 
   // Fetch monthly total for selected partner to run RPT prepared limit checks
-  const selectedDate = form.entry_date || format(new Date(), 'yyyy-MM-dd');
+  const selectedDate = form.entry_date || getTodayString();
   const selectedPartnerId = form.partner_id;
   const selectedPartnerObj = partners.find(p => p.id === selectedPartnerId);
   const selectedPartnerName = selectedPartnerObj?.name || '';
@@ -1719,10 +1911,9 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       }
       return Number(data) || 0;
     },
-    enabled: !!selectedPartnerId && selectedPartnerId !== 'none' && !!companyId && open,
+    enabled: !!selectedPartnerId && selectedPartnerId !== 'none' && !!companyId,
   });
 
-  // References for keyboard navigation and validation focus
   const recordBtnRef = React.useRef<HTMLButtonElement>(null);
   const descInputRef = React.useRef<HTMLInputElement>(null);
   const amountInputRef = React.useRef<HTMLInputElement>(null);
@@ -1735,7 +1926,6 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   );
   const singlePaymentLimit = Number(singlePaymentLimitRule?.amount) || 1000000;
 
-  // U5: Amount validation with robust Hungarian space/comma parsing
   const parsedAmount = parseCleanAmount(form.amount);
   const databaseTotalExcludingCurrent = useMemo(() => {
     if (!editingEntry) return monthlyTotal;
@@ -1743,8 +1933,6 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
   }, [monthlyTotal, editingEntry]);
 
   const totalWithCurrent = databaseTotalExcludingCurrent + parsedAmount;
-
-  const isAmountValid = parsedAmount > 0;
   const exceedsPolicySingleLimit = form.isExpense && form.currency === 'HUF' && parsedAmount > singlePaymentLimit;
   const isLargeAmount = exceedsPolicySingleLimit || (form.currency === 'HUF'
     ? parsedAmount > 1_000_000
@@ -1754,17 +1942,138 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     : null;
   const showRoundingHint = roundedPreview !== null && roundedPreview !== parsedAmount;
 
+  // ─── VAT & Amount Synchronized Calculations ──────────────────────────────
+  const handleVatToggle = (checked: boolean) => {
+    setForm(f => {
+      if (checked) {
+        const gross = parseCleanAmount(f.amount);
+        const net = Math.round(gross / (1 + f.vatPercent / 100));
+        const vat = gross - net;
+        return {
+          ...f,
+          isVat: true,
+          netAmount: gross > 0 ? String(net) : '',
+          vatAmount: gross > 0 ? String(vat) : '',
+          vatRowOverride: f.vatRowOverride || (f.isExpense ? '66' : '07'),
+        };
+      } else {
+        return {
+          ...f,
+          isVat: false,
+          netAmount: '',
+          vatAmount: '',
+          vatCodeId: '',
+        };
+      }
+    });
+  };
+
+  const handleNetAmountChange = (val: string) => {
+    const net = parseCleanAmount(val);
+    const vat = Math.round(net * (form.vatPercent / 100));
+    const gross = net + vat;
+    setForm(f => ({
+      ...f,
+      netAmount: val,
+      vatAmount: net > 0 ? String(vat) : '',
+      amount: net > 0 ? String(gross) : f.amount,
+    }));
+  };
+
+  const handleVatAmountChange = (val: string) => {
+    const vat = parseCleanAmount(val);
+    const net = parseCleanAmount(form.netAmount);
+    const gross = (net > 0 ? net : 0) + vat;
+    setForm(f => ({
+      ...f,
+      vatAmount: val,
+      amount: gross > 0 ? String(gross) : f.amount,
+    }));
+  };
+
+  const handleGrossAmountChange = (val: string) => {
+    if (form.isVat) {
+      const gross = parseCleanAmount(val);
+      const net = Math.round(gross / (1 + form.vatPercent / 100));
+      const vat = gross - net;
+      setForm(f => ({
+        ...f,
+        amount: val,
+        netAmount: gross > 0 ? String(net) : '',
+        vatAmount: gross > 0 ? String(vat) : '',
+      }));
+    } else {
+      setForm(f => ({ ...f, amount: val }));
+    }
+  };
+
+  const handleVatRowChange = (rowVal: string) => {
+    if (rowVal === 'other') {
+      setForm(f => ({ ...f, vatRowOverride: 'other' }));
+      return;
+    }
+    const rowList = form.isExpense ? EXPENSE_VAT_ROWS : INCOME_VAT_ROWS;
+    const found = rowList.find(r => r.row === rowVal);
+    const newPct = found ? found.percent : form.vatPercent;
+
+    setForm(f => {
+      const net = parseCleanAmount(f.netAmount);
+      const vat = Math.round(net * (newPct / 100));
+      const gross = net + vat;
+      return {
+        ...f,
+        vatRowOverride: rowVal,
+        vatPercent: newPct,
+        vatAmount: net > 0 ? String(vat) : f.vatAmount,
+        amount: net > 0 ? String(gross) : f.amount,
+      };
+    });
+  };
+
+  const handleVatCodeChange = (codeId: string) => {
+    if (codeId === 'none') {
+      setForm(f => ({ ...f, vatCodeId: '' }));
+      return;
+    }
+    const vc = dbVatCodes.find((c: any) => c.id === codeId);
+    if (vc) {
+      const newPct = vc.vat_percent != null ? vc.vat_percent : form.vatPercent;
+      const targetRow = Array.isArray(vc.target_rows) ? vc.target_rows[0]?.row : (vc.target_rows || '');
+      setForm(f => {
+        const net = parseCleanAmount(f.netAmount);
+        const vat = Math.round(net * (newPct / 100));
+        const gross = net + vat;
+        return {
+          ...f,
+          vatCodeId: codeId,
+          vatPercent: newPct,
+          vatRowOverride: targetRow || f.vatRowOverride,
+          vatAmount: net > 0 ? String(vat) : f.vatAmount,
+          amount: net > 0 ? String(gross) : f.amount,
+        };
+      });
+    }
+  };
+
   const selectTypeAndFocus = useCallback((isExpense: boolean, e?: React.SyntheticEvent) => {
-    setForm(f => ({ ...f, isExpense }));
+    setForm(f => {
+      // Default return row when switching direction
+      let nextVatRow = f.vatRowOverride;
+      if (isExpense && f.vatRowOverride === '07') nextVatRow = '66';
+      else if (!isExpense && f.vatRowOverride === '66') nextVatRow = '07';
+
+      return {
+        ...f,
+        isExpense,
+        vatRowOverride: nextVatRow,
+      };
+    });
     if (e?.currentTarget && 'blur' in e.currentTarget) {
       (e.currentTarget as HTMLElement).blur();
     }
     requestAnimationFrame(() => {
       recordBtnRef.current?.focus();
     });
-    setTimeout(() => {
-      recordBtnRef.current?.focus();
-    }, 60);
   }, []);
 
   const save = useMutation({
@@ -1802,53 +2111,176 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
         return { isInvoice: true, count: selectedInvoiceIds.size, data };
       }
 
-      // Regular manual entry
+      // Determine receipt number: manual input or sequential auto-generation
+      let finalReceiptNumber = form.receipt_number?.trim() || null;
+      if (!finalReceiptNumber && !editingEntry) {
+        try {
+          const { data: generatedNo } = await (supabase as any).rpc('generate_next_cash_receipt_number', {
+            p_company_id: companyId,
+            p_cash_register_id: validRegisterId,
+            p_receipt_type: form.isExpense ? 'out' : 'in',
+            p_issued_at: form.entry_date,
+          });
+          if (generatedNo && typeof generatedNo === 'string') {
+            finalReceiptNumber = generatedNo;
+          }
+        } catch (genErr) {
+          console.warn('Could not auto-generate cash receipt number:', genErr);
+        }
+      }
+
       const signed = form.isExpense ? -Math.abs(rawAmount) : Math.abs(rawAmount);
       const rounded = roundHuf(signed, form.currency);
       const finalPartnerId = sanitizePartnerId(form.partner_id);
-      
-      if (editingEntry) {
-        // UPDATE
-        const { error } = await supabase.from('petty_cash_entries')
-          .update({
-            register_id: validRegisterId,
-            entry_date: form.entry_date,
-            description: form.description.trim(),
-            amount: rounded,
-            currency: form.currency,
-            partner_id: finalPartnerId,
-          })
-          .eq('id', editingEntry.id);
-        if (error) throw error;
-      } else {
-        // INSERT
-        const { error } = await supabase.from('petty_cash_entries')
+      const finalPayee = form.payee_name?.trim() || null;
+
+      // Effective VAT return row
+      const effectiveVatRow = form.isVat
+        ? (form.vatRowOverride === 'other' ? form.customVatRow?.trim() || null : form.vatRowOverride || null)
+        : null;
+
+      if (form.isVat) {
+        // ÁFA-s tétel rögzítése:
+        // 1. Invoices rekord létrehozása (invoice_type = 'penztarbizonylat') -> így a 65-ös ÁFA bevallás automatikusan látja
+        const rawNet = parseCleanAmount(form.netAmount) || Math.round(rawAmount / (1 + form.vatPercent / 100));
+        const rawVat = parseCleanAmount(form.vatAmount) || (rawAmount - rawNet);
+        const signedNet = form.isExpense ? -Math.abs(rawNet) : Math.abs(rawNet);
+        const signedVat = form.isExpense ? -Math.abs(rawVat) : Math.abs(rawVat);
+
+        const sellerName = form.isExpense
+          ? (finalPayee || selectedPartnerName || 'Készpénzes partner')
+          : (selectedReg?.name || 'Saját cég');
+        const buyerName = form.isExpense
+          ? (selectedReg?.name || 'Saját cég')
+          : (finalPayee || selectedPartnerName || 'Készpénzes vásárló');
+
+        const { data: invoiceData, error: invError } = await supabase
+          .from('invoices')
           .insert({
             company_id: companyId,
-            register_id: validRegisterId,
-            entry_date: form.entry_date,
-            description: form.description.trim(),
-            amount: rounded,
-            currency: form.currency,
-            source_type: 'manual',
-            routed_by: 'manual',
-            created_by: userId,
-            partner_id: finalPartnerId,
-          });
-        if (error) throw error;
+            user_id: userId,
+            invoice_type: 'penztarbizonylat',
+            bizonylatsorszam: finalReceiptNumber || createFallbackReceiptNumber(),
+            invoice_direction: form.isExpense ? 'INBOUND' : 'OUTBOUND',
+            kibocsatas_datuma: form.entry_date,
+            teljesites_datuma: form.entry_date,
+            fizetesi_hatarido: form.entry_date,
+            fizetve: true,
+            fizetesi_mod: 'Készpénz',
+            penznem: form.currency,
+            adoalap_osszesen: Math.abs(signedNet),
+            afa_osszeg_osszesen: Math.abs(signedVat),
+            brutto_vegosszeg: rounded,
+            elado_nev: sellerName,
+            vevo_nev: buyerName,
+            adojogi_megjegyzes: form.description.trim(),
+            vat_code_id: form.vatCodeId || null,
+            vat_row_override: effectiveVatRow,
+          } as any)
+          .select('id')
+          .single();
+
+        if (invError) throw invError;
+
+        // 2. Petty cash entry rögzítése a létrejött számlához kötve
+        if (editingEntry) {
+          const { error: pceError } = await supabase.from('petty_cash_entries')
+            .update({
+              register_id: validRegisterId,
+              entry_date: form.entry_date,
+              description: form.description.trim(),
+              amount: rounded,
+              currency: form.currency,
+              partner_id: finalPartnerId,
+              receipt_number: finalReceiptNumber,
+              payee_name: finalPayee,
+              net_amount: signedNet,
+              vat_amount: signedVat,
+              vat_code_id: form.vatCodeId || null,
+              vat_row_override: effectiveVatRow,
+              source_table: 'invoices',
+              source_id: invoiceData.id,
+            })
+            .eq('id', editingEntry.id);
+          if (pceError) throw pceError;
+        } else {
+          const { error: pceError } = await supabase.from('petty_cash_entries')
+            .insert({
+              company_id: companyId,
+              register_id: validRegisterId,
+              entry_date: form.entry_date,
+              description: form.description.trim(),
+              amount: rounded,
+              currency: form.currency,
+              source_type: 'manual',
+              source_table: 'invoices',
+              source_id: invoiceData.id,
+              created_by: userId,
+              partner_id: finalPartnerId,
+              receipt_number: finalReceiptNumber,
+              payee_name: finalPayee,
+              net_amount: signedNet,
+              vat_amount: signedVat,
+              vat_code_id: form.vatCodeId || null,
+              vat_row_override: effectiveVatRow,
+            });
+          if (pceError) throw pceError;
+        }
+      } else {
+        // Nem ÁFA-s tétel mentése
+        if (editingEntry) {
+          const { error } = await supabase.from('petty_cash_entries')
+            .update({
+              register_id: validRegisterId,
+              entry_date: form.entry_date,
+              description: form.description.trim(),
+              amount: rounded,
+              currency: form.currency,
+              partner_id: finalPartnerId,
+              receipt_number: finalReceiptNumber,
+              payee_name: finalPayee,
+              net_amount: null,
+              vat_amount: null,
+              vat_code_id: null,
+              vat_row_override: null,
+            })
+            .eq('id', editingEntry.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('petty_cash_entries')
+            .insert({
+              company_id: companyId,
+              register_id: validRegisterId,
+              entry_date: form.entry_date,
+              description: form.description.trim(),
+              amount: rounded,
+              currency: form.currency,
+              source_type: 'manual',
+              routed_by: 'manual',
+              created_by: userId,
+              partner_id: finalPartnerId,
+              receipt_number: finalReceiptNumber,
+              payee_name: finalPayee,
+              net_amount: null,
+              vat_amount: null,
+              vat_code_id: null,
+              vat_row_override: null,
+            });
+          if (error) throw error;
+        }
       }
+
       return { isInvoice: false };
     },
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
-      if (result?.isInvoice) {
+      if (result?.isInvoice || form.isVat) {
         qc.invalidateQueries({ queryKey: ['open-settlement-invoices', companyId] });
-        qc.invalidateQueries({ queryKey: ['open-outbound-invoices', companyId] });
         qc.invalidateQueries({ queryKey: ['invoices'] });
+        qc.invalidateQueries({ queryKey: ['vat-return'] });
       }
-      onOpenChange(false);
-      if (onCancelEditing) onCancelEditing();
+      onClose();
       if (result?.isInvoice) {
         toast({
           title: t('pettyCash:toasts.invoice_settled_title'),
@@ -1885,8 +2317,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
       qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
-      onOpenChange(false);
-      if (onCancelEditing) onCancelEditing();
+      onClose();
       toast({ title: t('pettyCash:toasts.entry_deleted') });
     },
     onError: (e: any) => toast({
@@ -1895,11 +2326,6 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       variant: 'destructive'
     }),
   });
-
-  const handleClose = () => {
-    onOpenChange(false);
-    if (onCancelEditing) onCancelEditing();
-  };
 
   const handleAttemptSave = useCallback(() => {
     if (save.isPending) return;
@@ -1946,10 +2372,8 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
     save.mutate();
   }, [save, invoiceMode, selectedInvoiceIds.size, form.amount, form.description, form.register_id, t]);
 
-  // Keyboard shortcuts: B = Bevétel, K = Kiadás, Enter = Mentés / Validáció
+  // Keyboard shortcuts: B = Bevétel, K = Kiadás, Enter = Mentés
   useEffect(() => {
-    if (!open) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
       const keyLower = e.key.toLowerCase();
       const isAltB = e.altKey && keyLower === 'b';
@@ -1958,8 +2382,7 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
       const isBareK = !e.altKey && !e.ctrlKey && !e.metaKey && keyLower === 'k';
 
       const target = e.target as HTMLElement | null;
-      // Do not trigger bare B/K when typing inside free-text description inputs or textareas
-      const isFreeTextInput = target?.tagName === 'TEXTAREA' || target === descInputRef.current;
+      const isFreeTextInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
 
       if (isAltB || (isBareB && !isFreeTextInput)) {
         e.preventDefault();
@@ -1969,12 +2392,8 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
         selectTypeAndFocus(true);
       } else if (e.key === 'Enter') {
         const isTextarea = target?.tagName === 'TEXTAREA';
-        if (isTextarea && !e.ctrlKey && !e.metaKey) {
-          return; // Allow multiline in textarea unless Ctrl/Cmd+Enter
-        }
-        if (target?.getAttribute('data-action') === 'cancel' || target?.getAttribute('data-action') === 'delete') {
-          return; // Don't intercept cancel or delete buttons
-        }
+        if (isTextarea && !e.ctrlKey && !e.metaKey) return;
+        if (target?.getAttribute('data-action') === 'cancel' || target?.getAttribute('data-action') === 'delete') return;
         e.preventDefault();
         handleAttemptSave();
       }
@@ -1982,430 +2401,245 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, selectTypeAndFocus, handleAttemptSave]);
+  }, [selectTypeAndFocus, handleAttemptSave]);
+
+  const activeVatRows = form.isExpense ? EXPENSE_VAT_ROWS : INCOME_VAT_ROWS;
 
   return (
-    <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
-      <DialogContent className="sm:max-w-lg max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {editingEntry
-              ? t('pettyCash:manual_entry_dialog.title_edit')
-              : invoiceMode
-              ? t('pettyCash:manual_entry_dialog.title_invoice')
-              : t('pettyCash:manual_entry_dialog.title_manual')}
-          </DialogTitle>
-          <DialogDescription>
-            {invoiceMode
-              ? t('pettyCash:manual_entry_dialog.desc_invoice')
-              : t('pettyCash:manual_entry_dialog.desc_manual')}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          {registers.length === 0 && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-medium">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{t('pettyCash:manual_entry_dialog.no_registers_warning', 'Nincs elérhető házipénztár. Először hozz létre egy pénztárat a Pénztárak lapfülön.')}</span>
-            </div>
-          )}
+    <DialogContent className="sm:max-w-xl max-w-lg max-h-[92vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>
+          {editingEntry
+            ? t('pettyCash:manual_entry_dialog.title_edit')
+            : invoiceMode
+            ? t('pettyCash:manual_entry_dialog.title_invoice')
+            : t('pettyCash:manual_entry_dialog.title_manual')}
+        </DialogTitle>
+        <DialogDescription>
+          {invoiceMode
+            ? t('pettyCash:manual_entry_dialog.desc_invoice')
+            : t('pettyCash:manual_entry_dialog.desc_manual')}
+        </DialogDescription>
+      </DialogHeader>
 
-          {/* Invoice settlement toggle — only for new entries */}
-          {!editingEntry && openInvoices.length > 0 && (
-            <button
-              onClick={() => {
-                setInvoiceMode(prev => !prev);
-                if (!invoiceMode) {
-                  setSelectedInvoiceIds(new Set());
-                }
-              }}
-              className={cn(
-                'w-full flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all',
-                invoiceMode
-                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-400 shadow-sm ring-1 ring-blue-500/20'
-                  : 'border-dashed border-muted-foreground/30 text-muted-foreground hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'
-              )}
-            >
-              <div className={cn(
-                'w-7 h-7 rounded-md flex items-center justify-center shrink-0',
-                invoiceMode ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'
-              )}>
-                <FileText className="w-3.5 h-3.5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold">{t('pettyCash:manual_entry_dialog.title_invoice')}</p>
-                <p className="text-[10px] opacity-70 mt-0.5">
-                  {invoiceMode
-                    ? t('pettyCash:manual_entry_dialog.invoice_selected_count', { count: selectedInvoiceIds.size })
-                    : t('pettyCash:manual_entry_dialog.invoice_available_count', { count: openInvoices.length })
-                  }
-                </p>
-              </div>
-              <div className={cn(
-                'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                invoiceMode
-                  ? 'bg-blue-500 border-blue-500 text-white'
-                  : 'border-muted-foreground/30'
-              )}>
-                {invoiceMode && <Check className="w-3 h-3" />}
-              </div>
-            </button>
-          )}
-
-          {/* Invoice multiselect panel */}
-          {invoiceMode && (
-            <div className="space-y-2.5 animate-in slide-in-from-top-2 duration-200">
-              {/* Direction filter tabs */}
-              <div className="flex gap-1.5 p-1 bg-muted/60 rounded-md border border-border/50 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setInvoiceFilter('all')}
-                  className={cn(
-                    'flex-1 py-1 px-2 rounded font-medium text-xs transition-all text-center',
-                    invoiceFilter === 'all' ? 'bg-background text-foreground shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {t('pettyCash:manual_entry_dialog.filter_all', { count: openInvoices.length, defaultValue: `Összes (${openInvoices.length})` })}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInvoiceFilter('OUTBOUND')}
-                  className={cn(
-                    'flex-1 py-1 px-2 rounded font-medium text-xs transition-all text-center',
-                    invoiceFilter === 'OUTBOUND' ? 'bg-background text-emerald-600 dark:text-emerald-400 shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {t('pettyCash:manual_entry_dialog.filter_outbound', { count: outboundCount, defaultValue: `Vevői (${outboundCount})` })}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInvoiceFilter('INBOUND')}
-                  className={cn(
-                    'flex-1 py-1 px-2 rounded font-medium text-xs transition-all text-center',
-                    invoiceFilter === 'INBOUND' ? 'bg-background text-destructive shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {t('pettyCash:manual_entry_dialog.filter_inbound', { count: inboundCount, defaultValue: `Szállítói (${inboundCount})` })}
-                </button>
-              </div>
-
-              {/* Search filter input */}
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                <Input
-                  type="text"
-                  placeholder={t('pettyCash:manual_entry_dialog.search_invoices_placeholder', 'Keresés partnerre, számlaszámra, összegre...')}
-                  value={invoiceSearchQuery}
-                  onChange={(e) => setInvoiceSearchQuery(e.target.value)}
-                  className="h-8 pl-8 pr-8 text-xs bg-background/80"
-                />
-                {invoiceSearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setInvoiceSearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5"
-                    title="Keresés törlése"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">
-                  {t('pettyCash:manual_entry_dialog.select_invoices_btn', {
-                    selected: selectedInvoiceIds.size,
-                    total: filteredOpenInvoices.length
-                  })}
-                </Label>
-                {selectedInvoiceIds.size > 0 && (
-                  <p className={cn(
-                    'text-xs font-bold font-mono tabular-nums',
-                    selectedNetSum >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
-                  )}>
-                    Σ {selectedNetSum >= 0 ? '+' : ''}{formatNumberLocale(selectedNetSum)} HUF{' '}
-                    <span className="text-[10px] font-normal opacity-80">
-                      ({selectedNetSum >= 0
-                        ? t('pettyCash:manual_entry_dialog.net_income', 'Pénztári bevétel')
-                        : t('pettyCash:manual_entry_dialog.net_expense', 'Pénztári kiadás')})
-                    </span>
-                  </p>
-                )}
-              </div>
-              <div className="max-h-52 overflow-y-auto rounded-lg border border-border divide-y divide-border/50">
-                {filteredOpenInvoices.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-muted-foreground">
-                    {t('pettyCash:closing_dialog.empty', 'Nincs nyitott számla a kiválasztott szűrővel')}
-                  </div>
-                ) : filteredOpenInvoices.map(inv => {
-                  const isSelected = selectedInvoiceIds.has(inv.id);
-                  const isInbound = inv.invoice_direction?.toUpperCase() === 'INBOUND';
-                  const amount = Number(inv.brutto_vegosszeg) || 0;
-                  return (
-                    <button
-                      key={inv.id}
-                      onClick={() => {
-                        setSelectedInvoiceIds(prev => {
-                          const next = new Set(prev);
-                          if (next.has(inv.id)) next.delete(inv.id);
-                          else next.add(inv.id);
-                          return next;
-                        });
-                      }}
-                      className={cn(
-                        'w-full flex items-center gap-3 px-3 py-2 text-left transition-all',
-                        isSelected
-                          ? (isInbound ? 'bg-red-50 dark:bg-red-950/20' : 'bg-emerald-50 dark:bg-emerald-950/20')
-                          : 'hover:bg-muted/50'
-                      )}
-                    >
-                      <div className={cn(
-                        'rounded border-2 flex items-center justify-center shrink-0 transition-all',
-                        isSelected
-                          ? (isInbound ? 'bg-destructive border-destructive text-white' : 'bg-emerald-600 border-emerald-600 text-white')
-                          : 'border-muted-foreground/30'
-                      )} style={{ width: '18px', height: '18px' }}>
-                        {isSelected && <Check className="w-3 h-3" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={cn(
-                            'text-[9px] px-1 py-0 font-medium shrink-0',
-                            isInbound ? 'border-destructive/40 text-destructive bg-destructive/10' : 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
-                          )}>
-                            {isInbound ? t('pettyCash:manual_entry_dialog.badge_inbound', 'Szállítói (-)') : t('pettyCash:manual_entry_dialog.badge_outbound', 'Vevői (+)')}
-                          </Badge>
-                          <p className="text-xs font-bold text-foreground font-mono">
-                            {inv.bizonylatsorszam}
-                          </p>
-                          <span className="text-[10px] text-muted-foreground">
-                            {inv.kibocsatas_datuma ? formatDateLocale(inv.kibocsatas_datuma, 'yyyy. MM. dd.') : ''}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                          {inv.partner_name || (isInbound ? inv.elado_nev : inv.vevo_nev) || '—'}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className={cn(
-                          'text-xs font-bold font-mono tabular-nums',
-                          isInbound ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'
-                        )}>
-                          {isInbound ? '-' : '+'}{formatNumberLocale(amount)} {inv.penznem || 'HUF'}
-                        </p>
-                        {inv.fizetesi_hatarido && (
-                          <p className={cn(
-                            'text-[10px] font-mono tabular-nums',
-                            new Date(inv.fizetesi_hatarido) < new Date() ? 'text-destructive' : 'text-muted-foreground'
-                          )}>
-                            {new Date(inv.fizetesi_hatarido) < new Date()
-                              ? t('pettyCash:manual_entry_dialog.due_expired') + ' '
-                              : t('pettyCash:manual_entry_dialog.due_date') + ' '}
-                            {formatDateLocale(inv.fizetesi_hatarido, 'yyyy. MM. dd.')}
-                          </p>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Standard form fields — only visible when NOT in invoice mode */}
-          {!invoiceMode && (
-            <>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>{t('pettyCash:manual_entry_dialog.register_label')}</Label>
-              <Select value={form.register_id} onValueChange={v => setForm(f => ({ ...f, register_id: v }))}>
-                <SelectTrigger className={cn(!form.register_id && 'border-destructive/60')}>
-                  <SelectValue placeholder={t('pettyCash:manual_entry_dialog.choose_register', 'Válassz pénztárat...')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {registers.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t('pettyCash:manual_entry_dialog.date_label')}</Label>
-              <Input type="date" value={form.entry_date} onChange={e => setForm(f => ({ ...f, entry_date: e.target.value }))} />
-            </div>
+      <div className="space-y-4 py-2">
+        {registers.length === 0 && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-medium">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{t('pettyCash:manual_entry_dialog.no_registers_warning', 'Nincs elérhető házipénztár. Először hozz létre egy pénztárat!')}</span>
           </div>
-          <div>
-            <Label htmlFor="manual-partner">{t('pettyCash:manual_entry_dialog.partner_label')}</Label>
-            <Select 
-              value={form.partner_id || 'none'} 
-              onValueChange={v => {
-                const nextVal = v === 'none' ? '' : v;
-                setForm(f => {
-                  const selected = partners.find(p => p.id === nextVal);
-                  const updatedDesc = selected && !f.description
-                    ? (f.isExpense
-                        ? t('pettyCash:manual_entry_dialog.desc_expense_partner', { partner: selected.name })
-                        : t('pettyCash:manual_entry_dialog.desc_income_partner', { partner: selected.name }))
-                    : f.description;
-                  return {
-                    ...f,
-                    partner_id: nextVal,
-                    description: updatedDesc
-                  };
-                });
-              }}
-            >
-              <SelectTrigger id="manual-partner" className="h-9">
-                <SelectValue placeholder={t('pettyCash:manual_entry_dialog.partner_placeholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{t('pettyCash:manual_entry_dialog.no_partner')}</SelectItem>
-                {partners.filter(p => p.id != null).map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name} {p.related_party ? ` ${t('pettyCash:manual_entry_dialog.related_tag')}` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>{t('pettyCash:manual_entry_dialog.desc_label')}</Label>
-            <Input
-              ref={descInputRef}
-              value={form.description}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              placeholder={t('pettyCash:manual_entry_dialog.desc_placeholder')}
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
-              <Label>{t('pettyCash:manual_entry_dialog.amount_label')}</Label>
-              <Input
-                ref={amountInputRef}
-                type="text"
-                inputMode="numeric"
-                value={form.amount}
-                onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                placeholder="0"
-                className={cn(isLargeAmount && 'border-amber-500 focus-visible:ring-amber-500')}
-              />
-              {/* U5: Rounding hint */}
-              {showRoundingHint && (
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {t('pettyCash:manual_entry_dialog.rounded_preview', {
-                    amount: formatNumberLocale(roundedPreview!),
-                    currency: 'HUF'
-                  })}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label>{t('pettyCash:entries.currency_label', 'Pénznem')}</Label>
-              <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(selectedReg?.currencies || ['HUF']).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">{t('pettyCash:entries.columns.type', 'Típus')}</Label>
-            <div className="grid grid-cols-2 gap-2 p-1 bg-muted/60 rounded-lg border border-border/50">
-              <button
-                type="button"
-                onClick={(e) => selectTypeAndFocus(false, e)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    selectTypeAndFocus(false, e);
-                  }
-                }}
-                className={cn(
-                  "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all",
-                  !form.isExpense
-                    ? "bg-emerald-600 text-white shadow-sm font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                )}
-              >
-                <kbd className={cn(
-                  "px-1.5 py-0.5 rounded text-[10px] font-mono",
-                  !form.isExpense ? "bg-emerald-700 text-white" : "bg-muted text-muted-foreground border border-border/50"
-                )}>B</kbd>
-                {t('pettyCash:manual_entry_dialog.type_income', 'Bevétel')}
-              </button>
-              <button
-                type="button"
-                onClick={(e) => selectTypeAndFocus(true, e)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    selectTypeAndFocus(true, e);
-                  }
-                }}
-                className={cn(
-                  "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all",
-                  form.isExpense
-                    ? "bg-destructive text-destructive-foreground shadow-sm font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                )}
-              >
-                <kbd className={cn(
-                  "px-1.5 py-0.5 rounded text-[10px] font-mono",
-                  form.isExpense ? "bg-red-700 text-white" : "bg-muted text-muted-foreground border border-border/50"
-                )}>K</kbd>
-                {t('pettyCash:manual_entry_dialog.type_expense', 'Kiadás')}
-              </button>
-            </div>
-          </div>
-          {/* U5: Policy single payment limit or large amount warning */}
-          {exceedsPolicySingleLimit ? (
-            <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span>
-                {t('pettyCash:manual_entry_dialog.policy_single_payment_warning', {
-                  limit: singlePaymentLimit.toLocaleString('hu-HU'),
-                  defaultValue: `Számviteli politika figyelmeztetés: A kiadás összege meghaladja a szabályzat szerinti egyedi kifizetési keretet (${singlePaymentLimit.toLocaleString('hu-HU')} Ft)!`,
-                })}
-              </span>
-            </div>
-          ) : isLargeAmount ? (
-            <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 text-amber-600 text-xs">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              {t('pettyCash:manual_entry_dialog.large_amount_warning')}
-            </div>
-          ) : null}
+        )}
 
-          {/* Related party prepared limit warning */}
-          {isRelated && form.currency === 'HUF' && totalWithCurrent >= 1200000 && (
+        {/* Invoice settlement toggle — only for new entries */}
+        {!editingEntry && openInvoices.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              setInvoiceMode(prev => !prev);
+              if (!invoiceMode) setSelectedInvoiceIds(new Set());
+            }}
+            className={cn(
+              'w-full flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all',
+              invoiceMode
+                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-400 shadow-sm ring-1 ring-blue-500/20'
+                : 'border-dashed border-muted-foreground/30 text-muted-foreground hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'
+            )}
+          >
             <div className={cn(
-              "flex items-start gap-2 p-2.5 rounded-lg text-xs leading-normal animate-in fade-in slide-in-from-top-2 duration-200",
-              totalWithCurrent >= 1500000 
-                ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20" 
-                : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+              'w-7 h-7 rounded-md flex items-center justify-center shrink-0',
+              invoiceMode ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'
             )}>
-              <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", totalWithCurrent >= 1500000 ? "text-red-500" : "text-amber-500")} />
-              <div className="space-y-0.5">
-                <p className="font-bold">
-                  {totalWithCurrent >= 1500000 
-                    ? t('pettyCash:manual_entry_dialog.related_party_exceeded') 
-                    : t('pettyCash:manual_entry_dialog.related_party_warning')}
-                </p>
-                <p className="opacity-90">
-                  {t('pettyCash:manual_entry_dialog.related_party_prefix')}{" "}
-                  <strong className="font-mono">{formatNumberLocale(totalWithCurrent)} Ft</strong>.
-                  {totalWithCurrent >= 1500000 
-                    ? t('pettyCash:manual_entry_dialog.related_party_exceeded_desc') 
-                    : t('pettyCash:manual_entry_dialog.related_party_warning_desc')}
-                </p>
-              </div>
+              <FileText className="w-3.5 h-3.5" />
             </div>
-          )}
-            </>
-          )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold">{t('pettyCash:manual_entry_dialog.title_invoice')}</p>
+              <p className="text-[10px] opacity-70 mt-0.5">
+                {invoiceMode
+                  ? t('pettyCash:manual_entry_dialog.invoice_selected_count', { count: selectedInvoiceIds.size })
+                  : t('pettyCash:manual_entry_dialog.invoice_available_count', { count: openInvoices.length })}
+              </p>
+            </div>
+            <div className={cn(
+              'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+              invoiceMode ? 'bg-blue-500 border-blue-500 text-white' : 'border-muted-foreground/30'
+            )}>
+              {invoiceMode && <Check className="w-3 h-3" />}
+            </div>
+          </button>
+        )}
 
-          {/* Invoice mode: register + date selector */}
-          {invoiceMode && (
+        {/* Invoice multiselect panel */}
+        {invoiceMode && (
+          <div className="space-y-2.5 animate-in slide-in-from-top-2 duration-200">
+            <div className="flex gap-1.5 p-1 bg-muted/60 rounded-md border border-border/50 text-xs">
+              <button
+                type="button"
+                onClick={() => setInvoiceFilter('all')}
+                className={cn(
+                  'flex-1 py-1 px-2 rounded font-medium text-xs transition-all text-center',
+                  invoiceFilter === 'all' ? 'bg-background text-foreground shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {t('pettyCash:manual_entry_dialog.filter_all', { count: openInvoices.length, defaultValue: `Összes (${openInvoices.length})` })}
+              </button>
+              <button
+                type="button"
+                onClick={() => setInvoiceFilter('OUTBOUND')}
+                className={cn(
+                  'flex-1 py-1 px-2 rounded font-medium text-xs transition-all text-center',
+                  invoiceFilter === 'OUTBOUND' ? 'bg-background text-emerald-600 dark:text-emerald-400 shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {t('pettyCash:manual_entry_dialog.filter_outbound', { count: outboundCount, defaultValue: `Vevői (${outboundCount})` })}
+              </button>
+              <button
+                type="button"
+                onClick={() => setInvoiceFilter('INBOUND')}
+                className={cn(
+                  'flex-1 py-1 px-2 rounded font-medium text-xs transition-all text-center',
+                  invoiceFilter === 'INBOUND' ? 'bg-background text-destructive shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {t('pettyCash:manual_entry_dialog.filter_inbound', { count: inboundCount, defaultValue: `Szállítói (${inboundCount})` })}
+              </button>
+            </div>
+
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                placeholder={t('pettyCash:manual_entry_dialog.search_invoices_placeholder', 'Keresés partnerre, számlaszámra, összegre...')}
+                value={invoiceSearchQuery}
+                onChange={(e) => setInvoiceSearchQuery(e.target.value)}
+                className="h-8 pl-8 pr-8 text-xs bg-background/80"
+              />
+              {invoiceSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setInvoiceSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                  title="Keresés törlése"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">
+                {t('pettyCash:manual_entry_dialog.select_invoices_btn', {
+                  selected: selectedInvoiceIds.size,
+                  total: filteredOpenInvoices.length
+                })}
+              </Label>
+              {selectedInvoiceIds.size > 0 && (
+                <p className={cn(
+                  'text-xs font-bold font-mono tabular-nums',
+                  selectedNetSum >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+                )}>
+                  Σ {selectedNetSum >= 0 ? '+' : ''}{formatNumberLocale(selectedNetSum)} HUF{' '}
+                  <span className="text-[10px] font-normal opacity-80">
+                    ({selectedNetSum >= 0
+                      ? t('pettyCash:manual_entry_dialog.net_income', 'Pénztári bevétel')
+                      : t('pettyCash:manual_entry_dialog.net_expense', 'Pénztári kiadás')})
+                  </span>
+                </p>
+              )}
+            </div>
+            <div className="max-h-52 overflow-y-auto rounded-lg border border-border divide-y divide-border/50">
+              {filteredOpenInvoices.length === 0 ? (
+                <div className="p-4 text-center text-xs text-muted-foreground">
+                  {t('pettyCash:closing_dialog.empty', 'Nincs nyitott számla a kiválasztott szűrővel')}
+                </div>
+              ) : filteredOpenInvoices.map(inv => {
+                const isSelected = selectedInvoiceIds.has(inv.id);
+                const isInbound = inv.invoice_direction?.toUpperCase() === 'INBOUND';
+                const amount = Number(inv.brutto_vegosszeg) || 0;
+                return (
+                  <button
+                    key={inv.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedInvoiceIds(prev => {
+                        const next = new Set(prev);
+                        if (next.has(inv.id)) next.delete(inv.id);
+                        else next.add(inv.id);
+                        return next;
+                      });
+                    }}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2 text-left transition-all',
+                      isSelected
+                        ? (isInbound ? 'bg-red-50 dark:bg-red-950/20' : 'bg-emerald-50 dark:bg-emerald-950/20')
+                        : 'hover:bg-muted/50'
+                    )}
+                  >
+                    <div className={cn(
+                      'rounded border-2 flex items-center justify-center shrink-0 transition-all',
+                      isSelected
+                        ? (isInbound ? 'bg-destructive border-destructive text-white' : 'bg-emerald-600 border-emerald-600 text-white')
+                        : 'border-muted-foreground/30'
+                    )} style={{ width: '18px', height: '18px' }}>
+                      {isSelected && <Check className="w-3 h-3" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={cn(
+                          'text-[9px] px-1 py-0 font-medium shrink-0',
+                          isInbound ? 'border-destructive/40 text-destructive bg-destructive/10' : 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                        )}>
+                          {isInbound ? t('pettyCash:manual_entry_dialog.badge_inbound', 'Szállítói (-)') : t('pettyCash:manual_entry_dialog.badge_outbound', 'Vevői (+)')}
+                        </Badge>
+                        <p className="text-xs font-bold text-foreground font-mono">
+                          {inv.bizonylatsorszam}
+                        </p>
+                        <span className="text-[10px] text-muted-foreground">
+                          {inv.kibocsatas_datuma ? formatDateLocale(inv.kibocsatas_datuma, 'yyyy. MM. dd.') : ''}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                        {inv.partner_name || (isInbound ? inv.elado_nev : inv.vevo_nev) || '—'}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={cn(
+                        'text-xs font-bold font-mono tabular-nums',
+                        isInbound ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'
+                      )}>
+                        {isInbound ? '-' : '+'}{formatNumberLocale(amount)} {inv.penznem || 'HUF'}
+                      </p>
+                      {inv.fizetesi_hatarido && (
+                        <p className="text-[10px] font-mono tabular-nums text-muted-foreground">
+                          {t('pettyCash:manual_entry_dialog.due_date', 'Esedékesség:')}{' '}
+                          {formatDateLocale(inv.fizetesi_hatarido, 'yyyy. MM. dd.')}
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Standard form fields — only visible when NOT in invoice settlement mode */}
+        {!invoiceMode && (
+          <>
+            {/* Row 1: Register + Date */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>{t('pettyCash:manual_entry_dialog.target_register_label')}</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>{t('pettyCash:manual_entry_dialog.register_label', 'Pénztár')}</Label>
+                  {onOpenCreateRegister && (
+                    <button
+                      type="button"
+                      onClick={onOpenCreateRegister}
+                      className="text-[11px] text-primary hover:underline flex items-center gap-0.5 font-medium cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" /> {t('pettyCash:registers.new_register', 'Új pénztár')}
+                    </button>
+                  )}
+                </div>
                 <Select value={form.register_id} onValueChange={v => setForm(f => ({ ...f, register_id: v }))}>
                   <SelectTrigger className={cn(!form.register_id && 'border-destructive/60')}>
                     <SelectValue placeholder={t('pettyCash:manual_entry_dialog.choose_register', 'Válassz pénztárat...')} />
@@ -2416,39 +2650,392 @@ function ManualEntryDialog({ open, onOpenChange, registers, companyId, userId, e
                 </Select>
               </div>
               <div>
-                <Label>{t('pettyCash:manual_entry_dialog.settle_date_label')}</Label>
+                <Label className="mb-1 block">{t('pettyCash:manual_entry_dialog.date_label', 'Dátum')}</Label>
                 <Input type="date" value={form.entry_date} onChange={e => setForm(f => ({ ...f, entry_date: e.target.value }))} />
               </div>
             </div>
-          )}
-        </div>
-        <DialogFooter className="flex justify-between items-center w-full gap-2 sm:gap-0">
-          {editingEntry ? (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => deleteEntry.mutate()}
-              disabled={deleteEntry.isPending || save.isPending}
-            >
-              {deleteEntry.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
-              {t('pettyCash:manual_entry_dialog.delete_btn')}
-            </Button>
-          ) : <div />}
-          <div className="flex flex-row-reverse gap-2">
-            <Button
-              ref={recordBtnRef}
-              onClick={handleAttemptSave}
-              disabled={save.isPending}
-            >
-              {save.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              {editingEntry ? t('pettyCash:manual_entry_dialog.save_btn') : t('pettyCash:manual_entry_dialog.record_btn')}
-            </Button>
-            <Button variant="outline" data-action="cancel" onClick={handleClose}>
-              {t('pettyCash:manual_entry_dialog.cancel_btn')}
-            </Button>
+
+            {/* Row 2: Bizonylatszám (Voucher Number) */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label htmlFor="manual-receipt-no">
+                  {t('pettyCash:entries.columns.sequence', 'Bizonylatszám')}
+                </Label>
+                <span className="text-[10px] text-muted-foreground">
+                  {form.receipt_number?.trim() ? 'Kézi sorszám' : 'Üresen hagyva automatikus (pl. KPB-2026-00001)'}
+                </span>
+              </div>
+              <Input
+                id="manual-receipt-no"
+                placeholder={form.isExpense ? "pl. KPB-2026-00001 vagy üres (auto)" : "pl. BPB-2026-00001 vagy üres (auto)"}
+                value={form.receipt_number}
+                onChange={e => setForm(f => ({ ...f, receipt_number: e.target.value }))}
+                className="font-mono text-xs"
+              />
+            </div>
+
+            {/* Row 3: Partner & Egyedi Befizető / Átvevő neve */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="manual-partner" className="mb-1 block">
+                  {t('pettyCash:manual_entry_dialog.partner_label', 'Partner')}
+                </Label>
+                <Select
+                  value={form.partner_id || 'none'}
+                  onValueChange={v => {
+                    const nextVal = v === 'none' ? '' : v;
+                    setForm(f => {
+                      const selected = partners.find(p => p.id === nextVal);
+                      const updatedDesc = selected && !f.description
+                        ? (f.isExpense
+                            ? t('pettyCash:manual_entry_dialog.desc_expense_partner', { partner: selected.name })
+                            : t('pettyCash:manual_entry_dialog.desc_income_partner', { partner: selected.name }))
+                        : f.description;
+                      return {
+                        ...f,
+                        partner_id: nextVal,
+                        description: updatedDesc,
+                        payee_name: f.payee_name || (selected?.name || '')
+                      };
+                    });
+                  }}
+                >
+                  <SelectTrigger id="manual-partner" className="h-9">
+                    <SelectValue placeholder={t('pettyCash:manual_entry_dialog.partner_placeholder', 'Partner kiválasztása...')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t('pettyCash:manual_entry_dialog.no_partner', 'Nincs partner kiválasztva')}</SelectItem>
+                    {partners.filter(p => p.id != null).map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name} {p.related_party ? ` ${t('pettyCash:manual_entry_dialog.related_tag', '(Kapcsolt vállalkozás)')}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="manual-payee-name" className="mb-1 block">
+                  {form.isExpense
+                    ? t('pettyCash:manual_entry_dialog.recipient_name', 'Átvevő neve (egyedi név)')
+                    : t('pettyCash:manual_entry_dialog.payer_name', 'Befizető neve (egyedi név)')}
+                </Label>
+                <Input
+                  id="manual-payee-name"
+                  value={form.payee_name}
+                  onChange={e => setForm(f => ({ ...f, payee_name: e.target.value }))}
+                  placeholder="pl. Kis János, Alkalmi eladó..."
+                  className="h-9 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Row 4: Leírás */}
+            <div>
+              <Label className="mb-1 block">{t('pettyCash:manual_entry_dialog.desc_label', 'Leírás')}</Label>
+              <Input
+                ref={descInputRef}
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder={t('pettyCash:manual_entry_dialog.desc_placeholder', 'Készpénzes vásárlás, irodaszer, stb.')}
+              />
+            </div>
+
+            {/* Row 5: Bevétel / Kiadás Selector */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">{t('pettyCash:entries.columns.type', 'Típus')}</Label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-muted/60 rounded-lg border border-border/50">
+                <button
+                  type="button"
+                  onClick={(e) => selectTypeAndFocus(false, e)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      selectTypeAndFocus(false, e);
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all",
+                    !form.isExpense
+                      ? "bg-emerald-600 text-white shadow-sm font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  )}
+                >
+                  <kbd className={cn(
+                    "px-1.5 py-0.5 rounded text-[10px] font-mono",
+                    !form.isExpense ? "bg-emerald-700 text-white" : "bg-muted text-muted-foreground border border-border/50"
+                  )}>B</kbd>
+                  {t('pettyCash:manual_entry_dialog.type_income', 'Bevétel')}
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => selectTypeAndFocus(true, e)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      selectTypeAndFocus(true, e);
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all",
+                    form.isExpense
+                      ? "bg-destructive text-destructive-foreground shadow-sm font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  )}
+                >
+                  <kbd className={cn(
+                    "px-1.5 py-0.5 rounded text-[10px] font-mono",
+                    form.isExpense ? "bg-red-700 text-white" : "bg-muted text-muted-foreground border border-border/50"
+                  )}>K</kbd>
+                  {t('pettyCash:manual_entry_dialog.type_expense', 'Kiadás')}
+                </button>
+              </div>
+            </div>
+
+            {/* Row 6: ÁFA toggle panel */}
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="vat-toggle" className="text-xs font-bold cursor-pointer">
+                      ÁFÁ-s tétel rögzítése
+                    </Label>
+                    <Badge variant="outline" className="text-[10px] py-0 px-1 font-mono">
+                      65-ös ÁFA bevallás
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    A tétel bekerül a 65-ös ÁFA bevallás kiválasztott sorába pénztárbizonylatként
+                  </p>
+                </div>
+                <Switch
+                  id="vat-toggle"
+                  checked={form.isVat}
+                  onCheckedChange={handleVatToggle}
+                />
+              </div>
+
+              {form.isVat && (
+                <div className="space-y-3 pt-2 border-t border-border/40 animate-in fade-in-50 duration-200">
+                  {/* 65-ös ÁFA bevallási sor választó */}
+                  <div>
+                    <Label className="text-xs mb-1 block">65-ös ÁFA bevallási sor hozzárendelés</Label>
+                    <Select value={form.vatRowOverride} onValueChange={handleVatRowChange}>
+                      <SelectTrigger className="h-8 text-xs font-medium">
+                        <SelectValue placeholder="Válassz bevallási sort..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {activeVatRows.map(vr => (
+                          <SelectItem key={vr.row} value={vr.row} className="text-xs">
+                            {vr.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {form.vatRowOverride === 'other' && (
+                    <div>
+                      <Label className="text-xs mb-1 block">Egyedi 65-ös bevallási sor száma</Label>
+                      <Input
+                        value={form.customVatRow}
+                        onChange={e => setForm(f => ({ ...f, customVatRow: e.target.value }))}
+                        placeholder="pl. 68, 77, 92..."
+                        className="h-8 text-xs font-mono"
+                      />
+                    </div>
+                  )}
+
+                  {/* Company VAT codes (if defined) */}
+                  {dbVatCodes.length > 0 && (
+                    <div>
+                      <Label className="text-xs mb-1 block">Rendszer ÁFA kód (opcionális)</Label>
+                      <Select value={form.vatCodeId || 'none'} onValueChange={handleVatCodeChange}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Válassz ÁFA kódot..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Alapértelmezett kalkuláció</SelectItem>
+                          {dbVatCodes.map((vc: any) => (
+                            <SelectItem key={vc.id} value={vc.id} className="text-xs">
+                              {vc.code} - {vc.label || ''} ({vc.vat_percent}%)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* VAT Breakdown Calculator */}
+                  <div className="grid grid-cols-3 gap-2.5 pt-1">
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground block mb-1">Nettó összeg</Label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        value={form.netAmount}
+                        onChange={e => handleNetAmountChange(e.target.value)}
+                        placeholder="0"
+                        className="h-8 text-xs font-mono"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground block mb-1">ÁFA ({form.vatPercent}%)</Label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        value={form.vatAmount}
+                        onChange={e => handleVatAmountChange(e.target.value)}
+                        placeholder="0"
+                        className="h-8 text-xs font-mono"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-bold block mb-1">Bruttó összeg</Label>
+                      <Input
+                        ref={amountInputRef}
+                        type="text"
+                        inputMode="numeric"
+                        value={form.amount}
+                        onChange={e => handleGrossAmountChange(e.target.value)}
+                        placeholder="0"
+                        className="h-8 text-xs font-mono font-bold"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Standard Amount + Currency (when VAT toggle is OFF) */}
+            {!form.isVat && (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <Label className="mb-1 block">{t('pettyCash:manual_entry_dialog.amount_label', 'Összeg')}</Label>
+                  <Input
+                    ref={amountInputRef}
+                    type="text"
+                    inputMode="numeric"
+                    value={form.amount}
+                    onChange={e => handleGrossAmountChange(e.target.value)}
+                    placeholder="0"
+                    className={cn(isLargeAmount && 'border-amber-500 focus-visible:ring-amber-500 font-mono')}
+                  />
+                  {showRoundingHint && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {t('pettyCash:manual_entry_dialog.rounded_preview', {
+                        amount: formatNumberLocale(roundedPreview!),
+                        currency: 'HUF'
+                      })}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label className="mb-1 block">{t('pettyCash:entries.currency_label', 'Pénznem')}</Label>
+                  <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(selectedReg?.currencies || ['HUF']).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Warnings: Single payment policy limit & Large amounts */}
+            {exceedsPolicySingleLimit ? (
+              <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>
+                  {t('pettyCash:manual_entry_dialog.policy_single_payment_warning', {
+                    limit: singlePaymentLimit.toLocaleString('hu-HU'),
+                    defaultValue: `Számviteli politika figyelmeztetés: A kiadás összege meghaladja a szabályzat szerinti egyedi kifizetési keretet (${singlePaymentLimit.toLocaleString('hu-HU')} Ft)!`,
+                  })}
+                </span>
+              </div>
+            ) : isLargeAmount ? (
+              <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 text-amber-600 text-xs">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                {t('pettyCash:manual_entry_dialog.large_amount_warning')}
+              </div>
+            ) : null}
+
+            {/* Related party prepared limit warning */}
+            {isRelated && form.currency === 'HUF' && totalWithCurrent >= 1200000 && (
+              <div className={cn(
+                "flex items-start gap-2 p-2.5 rounded-lg text-xs leading-normal animate-in fade-in slide-in-from-top-2 duration-200",
+                totalWithCurrent >= 1500000 
+                  ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20" 
+                  : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+              )}>
+                <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", totalWithCurrent >= 1500000 ? "text-red-500" : "text-amber-500")} />
+                <div className="space-y-0.5">
+                  <p className="font-bold">
+                    {totalWithCurrent >= 1500000 
+                      ? t('pettyCash:manual_entry_dialog.related_party_exceeded') 
+                      : t('pettyCash:manual_entry_dialog.related_party_warning')}
+                  </p>
+                  <p className="opacity-90">
+                    {t('pettyCash:manual_entry_dialog.related_party_prefix')}{" "}
+                    <strong className="font-mono">{formatNumberLocale(totalWithCurrent)} Ft</strong>.
+                    {totalWithCurrent >= 1500000 
+                      ? t('pettyCash:manual_entry_dialog.related_party_exceeded_desc') 
+                      : t('pettyCash:manual_entry_dialog.related_party_warning_desc')}
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Invoice mode: register + date selector */}
+        {invoiceMode && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>{t('pettyCash:manual_entry_dialog.target_register_label')}</Label>
+              <Select value={form.register_id} onValueChange={v => setForm(f => ({ ...f, register_id: v }))}>
+                <SelectTrigger className={cn(!form.register_id && 'border-destructive/60')}>
+                  <SelectValue placeholder={t('pettyCash:manual_entry_dialog.choose_register', 'Válassz pénztárat...')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {registers.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{t('pettyCash:manual_entry_dialog.settle_date_label')}</Label>
+              <Input type="date" value={form.entry_date} onChange={e => setForm(f => ({ ...f, entry_date: e.target.value }))} />
+            </div>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        )}
+      </div>
+
+      <DialogFooter className="flex justify-between items-center w-full gap-2 sm:gap-0">
+        {editingEntry ? (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => deleteEntry.mutate()}
+            disabled={deleteEntry.isPending || save.isPending}
+          >
+            {deleteEntry.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            {t('pettyCash:manual_entry_dialog.delete_btn')}
+          </Button>
+        ) : <div />}
+        <div className="flex flex-row-reverse gap-2">
+          <Button
+            ref={recordBtnRef}
+            onClick={handleAttemptSave}
+            disabled={save.isPending}
+          >
+            {save.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            {editingEntry ? t('pettyCash:manual_entry_dialog.save_btn') : t('pettyCash:manual_entry_dialog.record_btn')}
+          </Button>
+          <Button variant="outline" data-action="cancel" onClick={onClose}>
+            {t('pettyCash:manual_entry_dialog.cancel_btn')}
+          </Button>
+        </div>
+      </DialogFooter>
+    </DialogContent>
   );
 }

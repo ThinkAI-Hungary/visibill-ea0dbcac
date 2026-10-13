@@ -26,6 +26,7 @@ import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import UnifiedFinancialCockpit from '@/components/dashboard/UnifiedFinancialCockpit';
 import { DeferredInvoicesWidget } from '@/components/dashboard/DeferredInvoicesWidget';
 import { AccountingAnomalyWidget } from '@/components/dashboard/AccountingAnomalyWidget';
+import { PendingPostingPoolWidget } from '@/components/dashboard/PendingPostingPoolWidget';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { getDateFnsLocale, getActiveLocale } from '@/lib/locale/formatters';
@@ -216,6 +217,12 @@ const Index = () => {
             convertToSelectedCurrency={convertToSelectedCurrency}
           />
         )}
+
+        {/* Kontírozásra váró tételek pool widget */}
+        <PendingPostingPoolWidget
+          companyId={selectedCompany?.id}
+          defaultCurrency={prefs.selectedCurrency}
+        />
 
         <VatSection
           navVatData={navVatData}

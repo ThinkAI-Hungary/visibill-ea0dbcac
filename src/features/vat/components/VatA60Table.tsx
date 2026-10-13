@@ -12,14 +12,27 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
+  Pencil,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { type A60CalculationsResult, type A60Line, fmtEft, formatThousands } from '../types';
+import { validateEuVatNumber, EU_VAT_RULES } from '@/lib/vat/euVatValidator';
+import { type A60CalculationsResult, type A60Line, type A60InvoiceItem, fmtEft, formatThousands } from '../types';
 import { VatXmlExportModal } from './VatXmlExportModal';
 
 interface VatA60TableProps {
@@ -34,6 +47,15 @@ interface VatA60TableProps {
   frequency?: string;
   a60Lines?: A60Line[];
   onExportClick?: () => void;
+  onUpdateTaxNumber?: (params: {
+    invoiceId: string;
+    sourceTable: 'nav_invoices' | 'invoices';
+    direction: 'OUTBOUND' | 'INBOUND';
+    newTaxNumber: string;
+    partnerName?: string;
+    updatePartnerRecord?: boolean;
+  }) => Promise<any>;
+  isUpdatingTaxNumber?: boolean;
 }
 
 export function VatA60Table({
@@ -48,9 +70,51 @@ export function VatA60Table({
   frequency,
   a60Lines = [],
   onExportClick,
+  onUpdateTaxNumber,
+  isUpdatingTaxNumber = false,
 }: VatA60TableProps) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [directionFilter, setDirectionFilter] = useState<'ALL' | 'OUTBOUND' | 'INBOUND'>('ALL');
+
+  // Közösségi adószám szerkesztés és partner törzs mentés állapotok
+  const [editingItem, setEditingItem] = useState<A60InvoiceItem | null>(null);
+  const [editTaxInput, setEditTaxInput] = useState('');
+  const [updatePartnerMaster, setUpdatePartnerMaster] = useState(true);
+  const [isSavingTaxLocal, setIsSavingTaxLocal] = useState(false);
+
+  const editValidation = useMemo(() => {
+    if (!editingItem) return null;
+    return validateEuVatNumber(editTaxInput);
+  }, [editingItem, editTaxInput]);
+
+  const openEditModal = (item: A60InvoiceItem) => {
+    setEditingItem(item);
+    setEditTaxInput(item.partner_tax_number || '');
+    setUpdatePartnerMaster(true);
+  };
+
+  const closeEditModal = () => {
+    setEditingItem(null);
+    setEditTaxInput('');
+  };
+
+  const handleSaveTaxNumber = async () => {
+    if (!editingItem || !editValidation?.isValid || !onUpdateTaxNumber) return;
+    setIsSavingTaxLocal(true);
+    try {
+      await onUpdateTaxNumber({
+        invoiceId: editingItem.id,
+        sourceTable: editingItem.source_table || 'nav_invoices',
+        direction: editingItem.invoice_direction,
+        newTaxNumber: editValidation.cleanVatNumber,
+        partnerName: editingItem.partner_name,
+        updatePartnerRecord: updatePartnerMaster,
+      });
+      closeEditModal();
+    } finally {
+      setIsSavingTaxLocal(false);
+    }
+  };
 
   const filteredItems = useMemo(() => {
     if (directionFilter === 'ALL') return a60Calculations.itemsList;
@@ -550,17 +614,20 @@ export function VatA60Table({
                                 'px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 w-max',
                                 item.isValidFormat
                                   ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
-                                  : 'bg-red-500/10 text-red-600 dark:bg-red-950/40 dark:text-red-400'
+                                  : 'bg-red-500/10 text-red-600 dark:bg-red-950/40 dark:text-red-400 border border-red-500/30'
                               )}
+                              title={item.formatError}
                             >
                               {item.isValidFormat ? (
-                                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                               ) : (
-                                <AlertTriangle className="w-3 h-3 text-red-500" />
+                                <AlertTriangle className="w-3 h-3 text-red-500 shrink-0" />
                               )}
                               {item.partner_tax_number || 'HIÁNYZIK!'}
                             </span>
-                            {item.partner_tax_number &&
+
+                            {/* VIES státusz CSAK akkor jelenik meg, ha a szintaxis formátum érvényes */}
+                            {item.isValidFormat && item.partner_tax_number &&
                               (() => {
                                 const status = viesStatuses[item.partner_tax_number];
                                 if (status === 'loading') {
@@ -590,7 +657,28 @@ export function VatA60Table({
                                 }
                                 return null;
                               })()}
-                            {item.partner_tax_number && (
+
+                            {/* Hibás formátum jelvény */}
+                            {!item.isValidFormat && (
+                              <Badge
+                                variant="outline"
+                                className="bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400 text-[9px] px-1 py-0 select-none font-sans"
+                              >
+                                Hibás formátum
+                              </Badge>
+                            )}
+
+                            {/* Ceruza gomb az azonnali szerkesztéshez */}
+                            <button
+                              type="button"
+                              title="Közösségi adószám javítása és partner törzsbe mentése"
+                              onClick={() => openEditModal(item)}
+                              className="text-muted-foreground hover:text-primary hover:bg-muted p-1 rounded transition-colors inline-flex items-center"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+
+                            {item.isValidFormat && item.partner_tax_number && (
                               <button
                                 type="button"
                                 title="VIES újraellenőrzése ennél a számlánál"
@@ -601,6 +689,11 @@ export function VatA60Table({
                               </button>
                             )}
                           </div>
+                          {item.formatError && (
+                            <div className="text-[10px] text-red-600 dark:text-red-400 font-sans mt-1 leading-tight font-normal">
+                              {item.formatError}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right font-mono font-semibold">
                           {formatThousands(item.invoice_net_amount, { decimals: 2 })}{' '}
@@ -714,6 +807,144 @@ export function VatA60Table({
           a60Lines={a60Lines || []}
         />
       )}
+
+      {/* Közösségi adószám szerkesztő Dialog */}
+      <Dialog open={!!editingItem} onOpenChange={(open) => !open && closeEditModal()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Pencil className="w-4 h-4 text-primary" />
+              Közösségi Adószám Javítása
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Módosítsd a számlán szereplő közösségi (EU) adószámot. Mentés után a rendszer azonnal leellenőrzi az EU VIES adatbázisában.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingItem && (
+            <div className="space-y-4 py-2 text-xs">
+              {/* Számla és Partner kontextus doboz */}
+              <div className="p-3 bg-muted/40 border border-border/80 rounded-lg space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Partner neve:</span>
+                  <span className="font-semibold text-foreground">{editingItem.partner_name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Számlaszám:</span>
+                  <span className="font-mono font-medium">{editingItem.invoice_number}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Irány / Összeg:</span>
+                  <span className="font-medium">
+                    {editingItem.invoice_direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'} •{' '}
+                    {formatThousands(editingItem.invoice_net_amount, { decimals: 2 })} {editingItem.currency}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Jelenlegi adószám:</span>
+                  <span className="font-mono font-semibold text-muted-foreground">
+                    {editingItem.partner_tax_number || 'Nincs rögzítve'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Új adószám beviteli mező */}
+              <div className="space-y-1.5">
+                <Label htmlFor="eu-tax-input" className="text-xs font-semibold">
+                  Új Közösségi Adószám:
+                </Label>
+                <Input
+                  id="eu-tax-input"
+                  value={editTaxInput}
+                  onChange={(e) => setEditTaxInput(e.target.value.toUpperCase())}
+                  placeholder="pl. SK2020123456, DE123456789, ATU12345678..."
+                  className="font-mono uppercase text-sm tracking-wider"
+                  autoFocus
+                />
+              </div>
+
+              {/* Valós idejű formátum ellenőrző doboz */}
+              {editValidation && (
+                <div
+                  className={cn(
+                    'p-2.5 rounded-lg border text-xs space-y-1 transition-all',
+                    editValidation.isValid
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                      : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400'
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold">
+                    {editValidation.isValid ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <span>Formátum szintaktikailag helyes ({editValidation.countryCode})</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span>Formátum még nem érvényes</span>
+                      </>
+                    )}
+                  </div>
+                  {editValidation.errorMessage && (
+                    <p className="text-[11px] opacity-90 pl-5">{editValidation.errorMessage}</p>
+                  )}
+                  {editValidation.countryCode && EU_VAT_RULES[editValidation.countryCode] && (
+                    <p className="text-[11px] opacity-80 pl-5">
+                      Ország: {EU_VAT_RULES[editValidation.countryCode].countryName} • Elvárt minta:{' '}
+                      {EU_VAT_RULES[editValidation.countryCode].example}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Partner törzsadat szinkronizálási checkbox */}
+              <div className="flex items-center space-x-2 pt-1">
+                <Checkbox
+                  id="update-partner-master"
+                  checked={updatePartnerMaster}
+                  onCheckedChange={(checked) => setUpdatePartnerMaster(!!checked)}
+                />
+                <Label
+                  htmlFor="update-partner-master"
+                  className="text-xs text-muted-foreground font-normal cursor-pointer leading-tight"
+                >
+                  A partner ({editingItem.partner_name}) törzsadatát is frissítse ezzel a közösségi adószámmal
+                </Label>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={closeEditModal}
+              disabled={isSavingTaxLocal || isUpdatingTaxNumber}
+            >
+              Mégse
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveTaxNumber}
+              disabled={!editValidation?.isValid || isSavingTaxLocal || isUpdatingTaxNumber}
+              className="gap-1.5 bg-primary hover:bg-primary/90"
+            >
+              {isSavingTaxLocal || isUpdatingTaxNumber ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Mentés és ellenőrzés...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Mentés és VIES ellenőrzés
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

@@ -7,6 +7,7 @@ import type {
   VatFrequency,
 } from '../types';
 import { formatThousands } from '../types';
+import { validateEuVatNumber } from '@/lib/vat/euVatValidator';
 
 /**
  * Validates a Hungarian tax number (8-digit törzsszám or 11-digit XXXXXXXX-X-XX)
@@ -312,15 +313,16 @@ export function calculateA60Aggregations(
     }
 
     const rawTaxNumber = inv.partner_tax_number || '';
-    const cleanTaxNumber = rawTaxNumber.replace(/[\s.-]/g, '').trim().toUpperCase();
+    const validation = validateEuVatNumber(rawTaxNumber);
+    const cleanTaxNumber = validation.cleanVatNumber;
     const hasTaxNumber = !!cleanTaxNumber;
-    const isValidFormat = /^[A-Z]{2}[A-Z0-9]{2,15}$/.test(cleanTaxNumber);
+    const isValidFormat = validation.isValid;
 
     if (!hasTaxNumber) {
       taxErrors.push(`${inv.invoice_number} sz. számla: Hiányzik a partner közösségi adószáma!`);
     } else if (!isValidFormat) {
       taxErrors.push(
-        `${inv.invoice_number} sz. számla: Hibás formátumú közösségi adószám (${inv.partner_tax_number})!`
+        `${inv.invoice_number} sz. számla: ${validation.errorMessage || `Hibás formátumú közösségi adószám (${rawTaxNumber})!`}`
       );
     }
 
@@ -333,6 +335,7 @@ export function calculateA60Aggregations(
       amountEft,
       hasTaxNumber,
       isValidFormat,
+      formatError: !isValidFormat ? validation.errorMessage : undefined,
     });
   });
 

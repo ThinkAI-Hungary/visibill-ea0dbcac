@@ -14,6 +14,9 @@ import { downloadProcontGlPdf } from '@/lib/procontGlPdf';
 import { exportProcontGlExcel } from '@/lib/procontGlExcel';
 import { downloadAgoraGlPdf } from '@/lib/agoraGlPdf';
 import { exportAgoraGlExcel } from '@/lib/agoraGlExcel';
+import { downloadRlbGlPdf } from '@/lib/rlbGlPdf';
+import { exportRlbGlExcel } from '@/lib/rlbGlExcel';
+import type { RlbPartnerItemInput } from '@/lib/rlbGlData';
 import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, fetchAllGlAccountsByPreset, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
 import type { GlAccountType, SubledgerType, GlAccountRecord } from '@/types/accounting';
 import { GlItemGroupingMode, enrichGlItemsWithInvoiceMeta, groupLedgerItemsByInvoice } from '@/lib/glInvoiceGrouping';
@@ -146,6 +149,10 @@ export interface GeneralLedgerTableRef {
   exportProcontExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
   exportAgoraPdf: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
   exportAgoraExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
+  exportRlbBasicPdf: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
+  exportRlbBasicExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
+  exportRlbExtendedPdf: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
+  exportRlbExtendedExcel: (companyName?: string, options?: { excludeZeroRows?: boolean }) => Promise<void>;
   getStats: () => { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number };
   expandAll: () => void;
   collapseAll: () => void;
@@ -1578,6 +1585,134 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         dateTo,
         excludeZeroRows: shouldExcludeZero,
         branding: 'EaisyBill',
+      });
+    },
+    exportRlbBasicPdf: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
+      const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
+      const accounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+      downloadRlbGlPdf(accounts, {
+        companyName: companyName || selectedCompany?.name || 'Vállalkozás',
+        taxNumber: selectedCompany?.tax_number,
+        dateFrom,
+        dateTo,
+        excludeZeroRows: shouldExcludeZero,
+        mode: 'basic',
+      });
+    },
+    exportRlbBasicExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
+      const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
+      const accounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+      await exportRlbGlExcel(accounts, {
+        companyName: companyName || selectedCompany?.name || 'Vállalkozás',
+        taxNumber: selectedCompany?.tax_number,
+        dateFrom,
+        dateTo,
+        excludeZeroRows: shouldExcludeZero,
+        mode: 'basic',
+      });
+    },
+    exportRlbExtendedPdf: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
+      const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
+      const accounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+
+      let items = batchCategorizedItems;
+      if ((!items || items.length === 0) && selectedCompany?.id && presetId) {
+        toast({ title: 'Adatok betöltése...', description: 'Partner-analitika előkészítése az RLB Bővített kivonathoz.' });
+        try {
+          items = await fetchAllGlCategorizedItems({
+            companyId: selectedCompany.id,
+            presetId,
+            dateFrom,
+            dateTo,
+            dateBasis,
+            postingStatus,
+            exchangeRates: exchangeRates || {},
+          });
+        } catch (e) {
+          console.warn('Could not fetch all categorized items for extended RLB export:', e);
+        }
+      }
+
+      const partnerItems: RlbPartnerItemInput[] = [];
+      const glIdToNum = new Map<string, string>();
+      accounts.forEach(a => {
+        if (a.glAccountId) glIdToNum.set(a.glAccountId, cleanIdVal(a.id));
+      });
+
+      (items || []).filter(i => !i.is_excluded && i.partner).forEach(i => {
+        const accNum = i.gl_account_id ? glIdToNum.get(i.gl_account_id) : undefined;
+        if (!accNum) return;
+        if (accNum.startsWith('31') || accNum.startsWith('454') || accNum.startsWith('354') || accNum.startsWith('453')) {
+          const amt = Number(i.amount) || 0;
+          partnerItems.push({
+            glAccountNumber: accNum,
+            partnerName: i.partner!,
+            debitAmount: amt > 0 ? amt : 0,
+            creditAmount: amt < 0 ? Math.abs(amt) : 0,
+          });
+        }
+      });
+
+      downloadRlbGlPdf(accounts, {
+        companyName: companyName || selectedCompany?.name || 'Vállalkozás',
+        taxNumber: selectedCompany?.tax_number,
+        dateFrom,
+        dateTo,
+        excludeZeroRows: shouldExcludeZero,
+        mode: 'extended',
+        partnerItems,
+      });
+    },
+    exportRlbExtendedExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {
+      const shouldExcludeZero = options?.excludeZeroRows !== undefined ? options.excludeZeroRows : hideZeroBalances;
+      const accounts = allAccountsRef.current.length > 0 ? allAccountsRef.current : tableData.filter(d => !d.isItem);
+
+      let items = batchCategorizedItems;
+      if ((!items || items.length === 0) && selectedCompany?.id && presetId) {
+        toast({ title: 'Adatok betöltése...', description: 'Partner-analitika előkészítése az RLB Bővített Excelhez.' });
+        try {
+          items = await fetchAllGlCategorizedItems({
+            companyId: selectedCompany.id,
+            presetId,
+            dateFrom,
+            dateTo,
+            dateBasis,
+            postingStatus,
+            exchangeRates: exchangeRates || {},
+          });
+        } catch (e) {
+          console.warn('Could not fetch all categorized items for extended RLB export:', e);
+        }
+      }
+
+      const partnerItems: RlbPartnerItemInput[] = [];
+      const glIdToNum = new Map<string, string>();
+      accounts.forEach(a => {
+        if (a.glAccountId) glIdToNum.set(a.glAccountId, cleanIdVal(a.id));
+      });
+
+      (items || []).filter(i => !i.is_excluded && i.partner).forEach(i => {
+        const accNum = i.gl_account_id ? glIdToNum.get(i.gl_account_id) : undefined;
+        if (!accNum) return;
+        if (accNum.startsWith('31') || accNum.startsWith('454') || accNum.startsWith('354') || accNum.startsWith('453')) {
+          const amt = Number(i.amount) || 0;
+          partnerItems.push({
+            glAccountNumber: accNum,
+            partnerName: i.partner!,
+            debitAmount: amt > 0 ? amt : 0,
+            creditAmount: amt < 0 ? Math.abs(amt) : 0,
+          });
+        }
+      });
+
+      await exportRlbGlExcel(accounts, {
+        companyName: companyName || selectedCompany?.name || 'Vállalkozás',
+        taxNumber: selectedCompany?.tax_number,
+        dateFrom,
+        dateTo,
+        excludeZeroRows: shouldExcludeZero,
+        mode: 'extended',
+        partnerItems,
       });
     },
     exportAnalyticalExcel: async (companyName?: string, options?: { excludeZeroRows?: boolean }) => {

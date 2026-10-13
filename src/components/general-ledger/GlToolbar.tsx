@@ -46,6 +46,10 @@ interface GlToolbarProps {
   onExportProcontExcel?: (options?: { excludeZeroRows?: boolean }) => void;
   onExportAgoraPdf?: (options?: { excludeZeroRows?: boolean }) => void;
   onExportAgoraExcel?: (options?: { excludeZeroRows?: boolean }) => void;
+  onExportRlbBasicPdf?: (options?: { excludeZeroRows?: boolean }) => void;
+  onExportRlbBasicExcel?: (options?: { excludeZeroRows?: boolean }) => void;
+  onExportRlbExtendedPdf?: (options?: { excludeZeroRows?: boolean }) => void;
+  onExportRlbExtendedExcel?: (options?: { excludeZeroRows?: boolean }) => void;
 }
 
 export function GlToolbar({
@@ -79,6 +83,10 @@ export function GlToolbar({
   onExportProcontExcel,
   onExportAgoraPdf,
   onExportAgoraExcel,
+  onExportRlbBasicPdf,
+  onExportRlbBasicExcel,
+  onExportRlbExtendedPdf,
+  onExportRlbExtendedExcel,
 }: GlToolbarProps) {
   const { t } = useTranslation(['accounting', 'common']);
 
@@ -428,6 +436,95 @@ export function GlToolbar({
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
+            )}
+            {(onExportRlbBasicPdf || onExportRlbBasicExcel || onExportRlbExtendedPdf || onExportRlbExtendedExcel) && (
+              <>
+                <DropdownMenuSeparator />
+                {onExportRlbBasicPdf && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="cursor-pointer text-xs">
+                      <FileText className="h-4 w-4 mr-2 text-blue-600 dark:text-blue-400" />
+                      <div className="flex flex-col text-left">
+                        <span className="font-semibold text-foreground">RLB Alap kivonat (PDF)</span>
+                        <span className="text-[10px] text-muted-foreground font-normal">Bankoknak, hitelhez</span>
+                      </div>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-52">
+                      <DropdownMenuItem onClick={() => onExportRlbBasicPdf({ excludeZeroRows: false })} className="cursor-pointer text-xs">
+                        <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>Teljes kivonat (PDF)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onExportRlbBasicPdf({ excludeZeroRows: true })} className="cursor-pointer text-xs">
+                        <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>0-ás sorok nélkül</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+                {onExportRlbBasicExcel && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="cursor-pointer text-xs">
+                      <FileSpreadsheet className="h-4 w-4 mr-2 text-blue-600 dark:text-blue-400" />
+                      <div className="flex flex-col text-left">
+                        <span className="font-semibold text-foreground">RLB Alap kivonat (Excel)</span>
+                        <span className="text-[10px] text-muted-foreground font-normal">Banki táblázat</span>
+                      </div>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-52">
+                      <DropdownMenuItem onClick={() => onExportRlbBasicExcel({ excludeZeroRows: false })} className="cursor-pointer text-xs">
+                        <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>Teljes kivonat (Excel)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onExportRlbBasicExcel({ excludeZeroRows: true })} className="cursor-pointer text-xs">
+                        <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>0-ás sorok nélkül</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+                {onExportRlbExtendedPdf && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="cursor-pointer text-xs">
+                      <FileText className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" />
+                      <div className="flex flex-col text-left">
+                        <span className="font-semibold text-foreground">RLB Bővített kivonat (PDF)</span>
+                        <span className="text-[10px] text-muted-foreground font-normal">Könyvvizsgálóknak, vevő-szállító</span>
+                      </div>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-52">
+                      <DropdownMenuItem onClick={() => onExportRlbExtendedPdf({ excludeZeroRows: false })} className="cursor-pointer text-xs">
+                        <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>Teljes kivonat (PDF)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onExportRlbExtendedPdf({ excludeZeroRows: true })} className="cursor-pointer text-xs">
+                        <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>0-ás sorok nélkül</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+                {onExportRlbExtendedExcel && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="cursor-pointer text-xs">
+                      <FileSpreadsheet className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" />
+                      <div className="flex flex-col text-left">
+                        <span className="font-semibold text-foreground">RLB Bővített kivonat (Excel)</span>
+                        <span className="text-[10px] text-muted-foreground font-normal">Audit vevő-szállító analitika</span>
+                      </div>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-52">
+                      <DropdownMenuItem onClick={() => onExportRlbExtendedExcel({ excludeZeroRows: false })} className="cursor-pointer text-xs">
+                        <Layers className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>Teljes kivonat (Excel)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onExportRlbExtendedExcel({ excludeZeroRows: true })} className="cursor-pointer text-xs">
+                        <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>0-ás sorok nélkül</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

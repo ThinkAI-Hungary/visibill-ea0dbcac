@@ -73,6 +73,34 @@ export const BUILTIN_TEMPLATES_FALLBACK: GlViewTemplate[] = [
       { id: 'balance_debit', key: 'balance_debit', label: 'Egyenleg T', width: '160px', align: 'right', field: 'balanceDebit', format: 'currency' },
       { id: 'balance_credit', key: 'balance_credit', label: 'Egyenleg K', width: '180px', align: 'right', field: 'balanceCredit', format: 'currency' }
     ]
+  },
+  {
+    id: 'rlb_basic_6col',
+    name: 'RLB Főkönyvi kivonat (Alap)',
+    template_type: 'builtin',
+    description: 'Fők.szám, Megnevezés, Forgalom T/K, Egyenleg T/K az RLB-60 szabványú alap (banki) elrendezés szerint.',
+    columns: [
+      { id: 'gl_number', key: 'gl_number', label: 'Fők.szám', width: '95px', align: 'center', field: 'id', required: true },
+      { id: 'name', key: 'name', label: 'Megnevezés', width: '1fr', align: 'left', field: 'name', required: true },
+      { id: 'turnover_debit', key: 'turnover_debit', label: 'Forgalom T', width: '160px', align: 'right', field: 'debitTurnover', format: 'currency' },
+      { id: 'turnover_credit', key: 'turnover_credit', label: 'Forgalom K', width: '160px', align: 'right', field: 'creditTurnover', format: 'currency' },
+      { id: 'balance_debit', key: 'balance_debit', label: 'Egyenleg T', width: '160px', align: 'right', field: 'balanceDebit', format: 'currency' },
+      { id: 'balance_credit', key: 'balance_credit', label: 'Egyenleg K', width: '180px', align: 'right', field: 'balanceCredit', format: 'currency' }
+    ]
+  },
+  {
+    id: 'rlb_extended_6col',
+    name: 'RLB Főkönyvi kivonat (Bővített - vevő-szállító)',
+    template_type: 'builtin',
+    description: 'RLB-60 szabványú bővített kivonat a 311/312/317 és 4541/4542 számlák alatti partner-analitikával (könyvvizsgálóknak).',
+    columns: [
+      { id: 'gl_number', key: 'gl_number', label: 'Fők.szám', width: '120px', align: 'center', field: 'id', required: true },
+      { id: 'name', key: 'name', label: 'Megnevezés', width: '1fr', align: 'left', field: 'name', required: true },
+      { id: 'turnover_debit', key: 'turnover_debit', label: 'Forgalom T', width: '160px', align: 'right', field: 'debitTurnover', format: 'currency' },
+      { id: 'turnover_credit', key: 'turnover_credit', label: 'Forgalom K', width: '160px', align: 'right', field: 'creditTurnover', format: 'currency' },
+      { id: 'balance_debit', key: 'balance_debit', label: 'Egyenleg T', width: '160px', align: 'right', field: 'balanceDebit', format: 'currency' },
+      { id: 'balance_credit', key: 'balance_credit', label: 'Egyenleg K', width: '180px', align: 'right', field: 'balanceCredit', format: 'currency' }
+    ]
   }
 ];
 

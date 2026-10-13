@@ -27,6 +27,7 @@ import {
   calculateDeadlineCountdown,
   findSuspiciousReverseChargeInvoices,
 } from '../core/vatEngine';
+import { validateEuVatNumber, cleanEuVatNumber } from '@/lib/vat/euVatValidator';
 import { useVatScope } from './useVatScope';
 
 export function useVatReturnData() {
@@ -681,10 +682,48 @@ export function useVatReturnData() {
         taxNum: string | null | undefined,
         partnerName: string | null | undefined
       ): { isEu: boolean; cleanTax: string; country?: string; isKnownService?: boolean } => {
-        const clean = (taxNum || '').replace(/[\s.-]/g, '').trim().toUpperCase();
+        const clean = cleanEuVatNumber(taxNum);
         const nameLower = (partnerName || '').trim().toLowerCase();
         const known = KNOWN_EU_VENDORS.find((k) => k.pattern.test(nameLower));
+        const pRecord = partnerTaxMap.get(nameLower) || (clean ? partnerTaxMap.get(clean) : null);
 
+        // 1. Ha a számlán lévő adószám érvényes EU közösségi adószám
+        const invoiceValidation = validateEuVatNumber(clean);
+        if (invoiceValidation.isValid && !clean.startsWith('HU')) {
+          return {
+            isEu: true,
+            cleanTax: invoiceValidation.cleanVatNumber,
+            country: invoiceValidation.countryCode || clean.slice(0, 2),
+            isKnownService: known?.isService,
+          };
+        }
+
+        // 2. Ha a számlán lévő adószám érvénytelen vagy hiányzik, feloldás a Partner törzsadatból
+        if (pRecord?.eu_tax_number) {
+          const pEuValidation = validateEuVatNumber(pRecord.eu_tax_number);
+          if (pEuValidation.isValid && !pEuValidation.cleanVatNumber.startsWith('HU')) {
+            return {
+              isEu: true,
+              cleanTax: pEuValidation.cleanVatNumber,
+              country: pEuValidation.countryCode || pRecord.country_code || pEuValidation.cleanVatNumber.slice(0, 2),
+              isKnownService: known?.isService,
+            };
+          }
+        }
+        if (pRecord?.tax_number) {
+          const pTaxValidation = validateEuVatNumber(pRecord.tax_number);
+          if (pTaxValidation.isValid && !pTaxValidation.cleanVatNumber.startsWith('HU')) {
+            return {
+              isEu: true,
+              cleanTax: pTaxValidation.cleanVatNumber,
+              country: pTaxValidation.countryCode || pRecord.country_code || pTaxValidation.cleanVatNumber.slice(0, 2),
+              isKnownService: known?.isService,
+            };
+          }
+        }
+
+        // 3. Ha egyik sem érvényes formátumú, de az ügylet EU-s
+        // 3a. A számlán lévő kód EU tagállami előtaggal kezdődik (pl. 'SKINVALID', formátumhiba észleléshez)
         if (euPrefixes.some((pref) => clean.startsWith(pref)) && !clean.startsWith('HU')) {
           return {
             isEu: true,
@@ -693,40 +732,21 @@ export function useVatReturnData() {
             isKnownService: known?.isService,
           };
         }
-        const pRecord = partnerTaxMap.get(nameLower) || (clean ? partnerTaxMap.get(clean) : null);
-        if (pRecord?.eu_tax_number) {
-          const pClean = pRecord.eu_tax_number.replace(/[\s.-]/g, '').trim().toUpperCase();
-          if (euPrefixes.some((pref) => pClean.startsWith(pref)) && !pClean.startsWith('HU')) {
-            return {
-              isEu: true,
-              cleanTax: pClean,
-              country: pRecord.country_code || pClean.slice(0, 2),
-              isKnownService: known?.isService,
-            };
-          }
-        }
-        if (pRecord?.tax_number) {
-          const pClean = pRecord.tax_number.replace(/[\s.-]/g, '').trim().toUpperCase();
-          if (euPrefixes.some((pref) => pClean.startsWith(pref)) && !pClean.startsWith('HU')) {
-            return {
-              isEu: true,
-              cleanTax: pClean,
-              country: pRecord.country_code || pClean.slice(0, 2),
-              isKnownService: known?.isService,
-            };
-          }
-        }
+
+        // 3b. Partner országa EU tagállam
         if (pRecord?.country_code && euPrefixes.includes(pRecord.country_code.toUpperCase())) {
           return {
             isEu: true,
             cleanTax:
               clean && !clean.startsWith('HU')
                 ? clean
-                : pRecord.eu_tax_number || `${pRecord.country_code.toUpperCase()}${clean}`,
+                : cleanEuVatNumber(pRecord.eu_tax_number) || '',
             country: pRecord.country_code.toUpperCase(),
             isKnownService: known?.isService,
           };
         }
+
+        // 3c. Ismert EU szolgáltató minta alapján
         if (known) {
           return {
             isEu: true,
@@ -735,6 +755,7 @@ export function useVatReturnData() {
             isKnownService: known.isService,
           };
         }
+
         return { isEu: false, cleanTax: clean };
       };
 
@@ -1233,20 +1254,14 @@ export function useVatReturnData() {
 
     await Promise.all(
       taxNumsToCheck.map(async (rawNum) => {
-        const clean = rawNum.replace(/[\s.-]/g, '').trim().toUpperCase();
-        if (!clean || clean.length < 4) {
+        const validation = validateEuVatNumber(rawNum);
+        if (!validation.isValid) {
           resultsState[rawNum] = 'invalid';
           return;
         }
 
-        const countryCode = clean.slice(0, 2);
-        const vatNumber = clean.slice(2);
-        const isValidFormat = /^[A-Z]{2}[A-Z0-9+*.]{2,15}$/.test(clean);
-
-        if (!isValidFormat) {
-          resultsState[rawNum] = 'invalid';
-          return;
-        }
+        const countryCode = validation.countryCode!;
+        const vatNumber = validation.cleanVatNumber.slice(2);
 
         try {
           const controller = new AbortController();
@@ -1268,11 +1283,11 @@ export function useVatReturnData() {
             liveCheckSucceeded++;
             return;
           }
-          // Server returned error (e.g. 503 or invalid country), fallback to format
-          resultsState[rawNum] = isValidFormat ? 'valid' : 'invalid';
+          // Server returned error (e.g. 503 or VIES maintenance), fallback to strict syntax check
+          resultsState[rawNum] = validation.isValid ? 'valid' : 'invalid';
         } catch {
-          // Timeout or CORS/network failure -> graceful format validation fallback
-          resultsState[rawNum] = isValidFormat ? 'valid' : 'invalid';
+          // Timeout or CORS/network failure -> fallback to strict syntax check
+          resultsState[rawNum] = validation.isValid ? 'valid' : 'invalid';
         }
       })
     );
@@ -1288,6 +1303,98 @@ export function useVatReturnData() {
           : `${taxNumsToCheck.length} db adószám formátuma ellenőrizve (az EU VIES szerver közvetlenül nem volt elérhető).`,
     });
   };
+
+  const updateInvoiceEuTaxNumber = useMutation({
+    mutationFn: async ({
+      invoiceId,
+      sourceTable,
+      direction,
+      newTaxNumber,
+      partnerName,
+      updatePartnerRecord = true,
+    }: {
+      invoiceId: string;
+      sourceTable: 'nav_invoices' | 'invoices';
+      direction: 'OUTBOUND' | 'INBOUND';
+      newTaxNumber: string;
+      partnerName?: string;
+      updatePartnerRecord?: boolean;
+    }) => {
+      const clean = cleanEuVatNumber(newTaxNumber);
+      if (!clean) {
+        throw new Error('A közösségi adószám nem lehet üres!');
+      }
+
+      const isOut = direction === 'OUTBOUND';
+
+      // 1. Számla tábla frissítése
+      if (sourceTable === 'nav_invoices') {
+        const updatePayload: Record<string, string> = isOut
+          ? { customer_tax_number: clean }
+          : { supplier_tax_number: clean };
+
+        const { error } = await supabase
+          .from('nav_invoices')
+          .update(updatePayload)
+          .eq('id', invoiceId);
+
+        if (error) throw error;
+      } else {
+        const updatePayload: Record<string, string> = isOut
+          ? { vevo_vat_id: clean }
+          : { elado_vat_id: clean };
+
+        const { error } = await supabase
+          .from('invoices')
+          .update(updatePayload)
+          .eq('id', invoiceId);
+
+        if (error) throw error;
+      }
+
+      // 2. Partner törzsadat frissítése ha kérve van
+      if (updatePartnerRecord && partnerName && selectedCompany?.id) {
+        const trimmedName = partnerName.trim();
+        const { data: matchedPartners } = await supabase
+          .from('partners')
+          .select('id, country_code')
+          .eq('company_id', selectedCompany.id)
+          .ilike('name', trimmedName);
+
+        if (matchedPartners && matchedPartners.length > 0) {
+          const countryCode = clean.slice(0, 2);
+          for (const p of matchedPartners) {
+            const partnerUpdates: Record<string, any> = { eu_tax_number: clean };
+            if (!p.country_code || p.country_code === 'HU') {
+              partnerUpdates.country_code = countryCode;
+            }
+            await supabase
+              .from('partners')
+              .update(partnerUpdates)
+              .eq('id', p.id);
+          }
+        }
+      }
+
+      return { cleanTaxNumber: clean };
+    },
+    onSuccess: async (data) => {
+      await qc.invalidateQueries({ queryKey: ['vat_eu_invoices'] });
+      await qc.invalidateQueries({ queryKey: ['vat_return'] });
+      toast({
+        title: 'Közösségi adószám sikeresen frissítve',
+        description: `Új adószám: ${data.cleanTaxNumber}. VIES ellenőrzés folyamatban...`,
+      });
+      handleViesCheck(data.cleanTaxNumber);
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Hiba az adószám mentésekor',
+        description: err.message || 'Nem sikerült menteni a közösségi adószámot.',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const runXmlValidationLocal = (xmlContent: string) => {
     setIsValidatingXml(true);
@@ -1397,6 +1504,7 @@ export function useVatReturnData() {
     viesStatuses,
     isValidatingVies,
     handleViesCheck,
+    updateInvoiceEuTaxNumber,
     xmlValidationResults,
     isValidatingXml,
     runXmlValidationLocal,

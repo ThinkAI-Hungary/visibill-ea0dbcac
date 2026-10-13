@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-10-12  
-> **Összesen:** 200 döntés (183 egyedi döntési fájl) | ✅ Decided: 196 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-10-13  
+> **Összesen:** 201 döntés (184 egyedi döntési fájl) | ✅ Decided: 197 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -57,6 +57,7 @@
 | P-163 | Online Pénztárgép (OPG) Modul és Házipénztár Integráció UX | ✅ Decided | [P-163](./P-163-online-cash-register-opg-module-ux.md) |
 | P-171 | Utalások Tömeges Rendezés, Kiállítási Dátum Alapértelmezés és Alsó Akciósáv UX | ✅ Decided | [P-171](./P-171-transfers-bulk-settlement-date-defaulting-and-sticky-action-bar-ux.md) |
 | P-183 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX | ✅ Decided | [P-183](./P-183-petty-cash-invoice-attachment-and-unlink-ux.md) |
+| P-186 | Házipénztár Egyedi Név, Kézi/Auto Bizonylatszám, Gyors Pénztárkészítés és 65-ös ÁFA Rögzítés UX | ✅ Decided | [P-186](./P-186-petty-cash-custom-name-voucher-number-and-vat-entry-ux.md) |
 
 ## 🔄 Tranzakció & Párosítás
 
@@ -310,5 +311,7 @@
 | P-181 | PRC Főkönyvi Kivonat Export Elnevezési Konvenció és Letisztult Megjelenítés UX | ✅ Decided | [P-181](./P-181-prc-general-ledger-export-naming-ux.md) |
 | P-182 | Agora és Novitax Formátumhű Főkönyvi Kivonat és Eredménykimutatás („A” változat) PDF és Excel Export UX | ✅ Decided | [P-182](./P-182-agora-financial-reports-and-income-statement-export-ux.md) |
 | P-184 | Bérszámfejtési Irányítópult Tabosítás, Bérkontroll és Letisztult Menükezelés UX | ✅ Decided | [P-184](./P-184-payroll-dashboard-tabs-and-reconciliation-ux.md) |
+| P-185 | RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Exportok UX | ✅ Decided | [P-185](./P-185-rlb-general-ledger-basic-and-extended-templates-ux.md) |
+| P-186 | Házipénztár Egyedi Név, Kézi/Auto Bizonylatszám, Gyors Pénztárkészítés és 65-ös ÁFA Rögzítés UX | ✅ Decided | [P-186](./P-186-petty-cash-custom-name-voucher-number-and-vat-entry-ux.md) |
 
 

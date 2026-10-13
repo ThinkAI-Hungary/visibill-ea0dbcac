@@ -107,6 +107,7 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
     viesStatuses,
     isValidatingVies,
     handleViesCheck,
+    updateInvoiceEuTaxNumber,
     xmlValidationResults,
     isValidatingXml,
     runXmlValidationLocal,
@@ -181,6 +182,8 @@ export function VatCalculatorView({ vatData }: VatCalculatorViewProps) {
           month={month}
           frequency={frequency}
           a60Lines={a60Lines}
+          onUpdateTaxNumber={updateInvoiceEuTaxNumber.mutateAsync}
+          isUpdatingTaxNumber={updateInvoiceEuTaxNumber.isPending}
         />
       )}
 

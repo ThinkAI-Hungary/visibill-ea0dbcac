@@ -121,7 +121,8 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
   const [loading, setLoading] = useState(true);
 
   const { activePresetId } = useActivePreset(transaction.company_id || undefined);
-  const [selectedGlId, setSelectedGlId] = useState(transaction.gl_account_id || '');
+  const activePresetGlId = (activePresetId && (transaction.gl_classifications as any)?.[activePresetId]?.gl_account_id) || transaction.gl_account_id || '';
+  const [selectedGlId, setSelectedGlId] = useState(activePresetGlId);
   const [isEditingGl, setIsEditingGl] = useState(false);
   const [glSearchQuery, setGlSearchQuery] = useState('');
   const [saving, setSaving] = useState(false);
@@ -242,10 +243,11 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
   };
 
   useEffect(() => {
-    setSelectedGlId(transaction.gl_account_id || '');
+    const activeGl = (activePresetId && (transaction.gl_classifications as any)?.[activePresetId]?.gl_account_id) || transaction.gl_account_id || '';
+    setSelectedGlId(activeGl);
     setIsEditingGl(false);
     setGlSearchQuery('');
-  }, [transaction.gl_account_id]);
+  }, [transaction.gl_account_id, transaction.gl_classifications, activePresetId]);
 
   // Notes state
   const [newNoteTitle, setNewNoteTitle] = useState('');
@@ -528,7 +530,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                   </div>
                   <Card className="bg-muted/30 border-border/50">
                     <CardContent className="p-4 space-y-3">
-                      {transaction.gl_account_id ? (
+                      {transaction.gl_account_id || (activePresetId && (transaction.gl_classifications as any)?.[activePresetId]?.gl_account_id) ? (
                         <div className="space-y-2">
                           <div className="bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-md p-2.5 flex items-center justify-between gap-2">
                             <div className="min-w-0">
@@ -537,8 +539,10 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
                               </p>
                               <p className="text-xs font-mono font-bold mt-1 truncate">
                                 {(() => {
-                                  const gl = glAccounts.find(g => g.id === transaction.gl_account_id);
-                                  return gl ? `${gl.gl_number} ${gl.short_name}` : transaction.gl_account_id;
+                                  const effectiveGlId = (activePresetId && (transaction.gl_classifications as any)?.[activePresetId]?.gl_account_id) || transaction.gl_account_id;
+                                  const presetCls = activePresetId ? (transaction.gl_classifications as any)?.[activePresetId] : undefined;
+                                  const gl = glAccounts.find(g => g.id === effectiveGlId || (presetCls?.gl_number && g.gl_number === presetCls.gl_number));
+                                  return gl ? `${gl.gl_number} ${gl.short_name}` : (presetCls?.gl_number || effectiveGlId);
                                 })()}
                               </p>
                             </div>
@@ -819,9 +823,10 @@ interface TransactionRowProps {
   isSelected?: boolean;
   onSelect?: (id: string, shiftKey: boolean) => void;
   showCheckbox?: boolean;
+  activePresetId?: string;
 }
 
-const TransactionRow = React.memo(function TransactionRow({ transaction, exchangeRates, isExpanded, onToggleExpand, onOpenDetails, bankLabel, bankFullName, bankBgClass, isDuplicate, isSelected, onSelect, showCheckbox }: TransactionRowProps) {
+const TransactionRow = React.memo(function TransactionRow({ transaction, exchangeRates, isExpanded, onToggleExpand, onOpenDetails, bankLabel, bankFullName, bankBgClass, isDuplicate, isSelected, onSelect, showCheckbox, activePresetId }: TransactionRowProps) {
   const { t, i18n } = useTranslation(['transactions', 'common']);
   const isHr = i18n.language === 'hr';
   const matchStatus = computeMatchStatus(transaction);
@@ -1008,20 +1013,26 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
       </TableCell>
       {/* Számlaosztály cell */}
       <TableCell className="text-center overflow-hidden">
-        {transaction.gl_accounts?.gl_number ? (
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-600/15 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/20 max-w-[120px] truncate cursor-default">
-                  {transaction.gl_accounts.gl_number}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{transaction.gl_accounts.short_name}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ) : (
-          <span className="text-xs text-muted-foreground">-</span>
-        )}
+        {(() => {
+          const presetCls = (activePresetId && (transaction.gl_classifications as any)?.[activePresetId]) || undefined;
+          const displayGlNumber = presetCls?.gl_number || transaction.gl_accounts?.gl_number;
+          const displayGlName = presetCls?.gl_name || presetCls?.short_name || transaction.gl_accounts?.short_name;
+
+          return displayGlNumber ? (
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-600/15 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/20 max-w-[120px] truncate cursor-default">
+                    {displayGlNumber}
+                  </span>
+                </TooltipTrigger>
+                {displayGlName && <TooltipContent>{displayGlName}</TooltipContent>}
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <span className="text-xs text-muted-foreground">-</span>
+          );
+        })()}
       </TableCell>
       <TableCell className="text-center whitespace-nowrap">
         <TooltipProvider delayDuration={0}>
@@ -1477,6 +1488,7 @@ const TransactionTable = React.memo(function TransactionTable({
                     isSelected={selectedIds.has(transaction.id)}
                     onSelect={handleSelect}
                     showCheckbox={showBulkMode}
+                    activePresetId={activePresetId}
                   />
                 );
               })

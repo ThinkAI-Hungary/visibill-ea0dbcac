@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, AlertTriangle, CheckCircle, Shield, Key, RefreshCw, XCircle, Clock, Loader2, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle, Shield, Key, RefreshCw, XCircle, Clock, Loader2, ArrowUpRight, ArrowDownLeft, Wand2, ArrowRight } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { reportError } from '@/lib/errorReporter';
 import { isGroupVatMember } from '@/lib/validationUtils';
 import { useTranslation } from 'react-i18next';
+import { useScopedNavigate } from '@/lib/navigation';
 
 interface NavCredentialsFormProps {
   companyId?: string;
@@ -53,6 +54,10 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
   }>({});
   const [manualSyncing, setManualSyncing] = useState(false);
   const [companyTaxNumber, setCompanyTaxNumber] = useState<string | null>(null);
+  const [companyPostingMode, setCompanyPostingMode] = useState<'wizard' | 'auto'>('wizard');
+  const [syncingAndNavigating, setSyncingAndNavigating] = useState(false);
+  const [showWizardPromptCard, setShowWizardPromptCard] = useState(false);
+  const scopedNavigate = useScopedNavigate();
   
   const [formData, setFormData] = useState({
     nav_username: '',
@@ -111,7 +116,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           .maybeSingle(),
         supabase
           .from('companies')
-          .select('tax_number')
+          .select('tax_number, posting_mode')
           .eq('id', companyId)
           .maybeSingle(),
         supabase
@@ -122,8 +127,11 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           .limit(20)
       ]);
       
-      if (!compRes.error && compRes.data?.tax_number) {
-        setCompanyTaxNumber(compRes.data.tax_number);
+      if (!compRes.error && compRes.data) {
+        setCompanyTaxNumber(compRes.data.tax_number || null);
+        if ((compRes.data as any).posting_mode) {
+          setCompanyPostingMode((compRes.data as any).posting_mode);
+        }
       } else {
         setCompanyTaxNumber(null);
       }
@@ -312,15 +320,21 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       // Step 3: Run handleValidate to update DB validation_status
       await handleValidate();
 
-      // Step 4: Trigger initial data sync only on credential save
+      // Step 4: Conditional sync based on posting_mode
+      // In 'auto' mode: trigger automatic background sync.
+      // In 'wizard' mode (default): do NOT sync blindly; display prominent wizard prompt card instead.
       const { data: { session: currentSession } } = await supabase.auth.getSession();
-      if (currentSession) {
+      if (companyPostingMode === 'auto' && currentSession) {
         await triggerInitialSync(currentSession.access_token);
+      } else {
+        setShowWizardPromptCard(true);
       }
       
       toast({
         title: t('settings:integrations.nav.toast_save_success_title', 'Sikeres mentés'),
-        description: t('settings:integrations.nav.toast_save_success_desc', 'NAV hitelesítő adatok sikeresen mentve és validálva.'),
+        description: companyPostingMode === 'auto'
+          ? t('settings:integrations.nav.toast_save_success_desc', 'NAV hitelesítő adatok sikeresen mentve és validálva.')
+          : 'NAV hitelesítő adatok mentve. Indítsd el a számlák letöltését a Kontírozás varázslóval!',
       });
 
       onCredentialsSaved?.();
@@ -335,6 +349,25 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     } finally {
       setLoading(false);
       setValidating(false);
+    }
+  };
+
+  const handleStartWizardSync = async () => {
+    setSyncingAndNavigating(true);
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession) {
+        await triggerInitialSync(currentSession.access_token);
+      }
+      scopedNavigate('/posting-wizard');
+    } catch (err: any) {
+      toast({
+        title: 'Szinkronizációs hiba',
+        description: err.message || 'Nem sikerült elindítani a szinkronizációt.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncingAndNavigating(false);
     }
   };
 
@@ -828,6 +861,45 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     return (
       <div className="space-y-6">
         {getConnectionStatusCard()}
+        
+        {/* Számlák letöltése és Kontírozás varázsló indítása kiemelt kártya */}
+        <Card className="border-2 border-primary bg-gradient-to-r from-primary/10 via-primary/5 to-background shadow-md overflow-hidden">
+          <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-sm">
+                <Wand2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-bold text-lg text-foreground">
+                  Számlák letöltése és Kontírozás varázsló indítása
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
+                  A NAV Online Számla kapcsolat érvényes. Indítsd el a számlák letöltését a Kontírozás varázslóval, ahol a tételeket kontírszámok szerint csoportosítva, billentyűzettel azonnal áttekintheted és jóváhagyhatod.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              size="lg"
+              onClick={handleStartWizardSync}
+              disabled={loading || validating || manualSyncing || syncingAndNavigating}
+              className="gap-2 font-semibold h-12 px-6 shrink-0 shadow-md text-base"
+            >
+              {syncingAndNavigating ? (
+                <>
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  Számlák letöltése...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-5 h-5" />
+                  Számlák letöltése és Varázsló indítása
+                  <ArrowRight className="w-5 h-5 ml-1" />
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
         
         {isOwner ? (
           <Card>

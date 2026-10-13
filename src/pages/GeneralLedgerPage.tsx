@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter, FolderTree, ListTree, FileSpreadsheet, Receipt, ListFilter, Sparkles } from 'lucide-react';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2, BookOpen, Table2, Calendar, CalendarCheck, Layers, ShieldCheck, Plus, LayoutGrid, Columns, Filter, FolderTree, ListTree, FileSpreadsheet, Receipt, ListFilter, Sparkles, Wand2 } from 'lucide-react';
 import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
 import { ExportAuditXmlModal } from '@/components/general-ledger/ExportAuditXmlModal';
 import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
@@ -43,6 +43,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { cn } from '@/lib/utils';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
+import { PostingWizardView } from '@/features/posting-wizard/components/PostingWizardView';
 import { GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
 import { useTranslation } from 'react-i18next';
 
@@ -50,6 +51,9 @@ import { GlAccountCardView } from '@/components/general-ledger/GlAccountCardView
 import { PartnerLedgerCardView } from '@/components/general-ledger/PartnerLedgerCardView';
 import { GlAnalyticReconciliationView } from '@/components/general-ledger/GlAnalyticReconciliationView';
 import { CreditCard, UserCheck, ShieldAlert } from 'lucide-react';
+import { useTypelessTransactions } from '@/hooks/useTypelessTransactions';
+import { TypelessTransactionsBanner } from '@/components/general-ledger/TypelessTransactionsBanner';
+import { TypelessTransactionsApprovalModal } from '@/components/general-ledger/TypelessTransactionsApprovalModal';
 
 export default function GeneralLedgerPage() {
   const { t } = useTranslation(['accounting', 'common']);
@@ -60,6 +64,7 @@ export default function GeneralLedgerPage() {
 
   const { dateFromFormatted: dateFrom, dateToFormatted: dateTo } = useDateRange();
   const taxYear = dateFrom ? dateFrom.substring(0, 4) : new Date().getFullYear().toString();
+  const { activePresetId, setActivePresetId, presets, isLoading: isPresetsLoading } = useActivePreset(selectedCompany?.id);
   
   const [partnerBreakdown, setPartnerBreakdown] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -71,7 +76,38 @@ export default function GeneralLedgerPage() {
   const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
   const [aiProgress, setAiProgress] = useState<{ processed: number; total: number } | null>(null);
-  const [activeViewTab, setActiveViewTab] = useState<'extract' | 'cards' | 'journal' | 'comparison'>('extract');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const activeViewTab: 'extract' | 'cards' | 'journal' | 'comparison' | 'wizard' = 
+    (tabParam === 'wizard' || tabParam === 'cards' || tabParam === 'journal' || tabParam === 'comparison')
+      ? tabParam
+      : 'extract';
+
+  const handleTabChange = useCallback((newTab: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (newTab === 'extract') {
+      newParams.delete('tab');
+    } else {
+      newParams.set('tab', newTab);
+    }
+    setSearchParams(newParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Pending posting summary query for the wizard tab badge
+  const { data: pendingPostingSummary } = useQuery<{ pending_item_count: number } | null>({
+    queryKey: ['pending-posting-summary', selectedCompany?.id, activePresetId],
+    queryFn: async () => {
+      if (!selectedCompany?.id || !activePresetId) return null;
+      const { data, error } = await (supabase.rpc as any)('get_pending_posting_summary', {
+        p_company_id: selectedCompany.id,
+        p_preset_id: activePresetId,
+      });
+      if (error) return null;
+      return data;
+    },
+    enabled: !!selectedCompany?.id && !!activePresetId,
+    staleTime: 30000,
+  });
   const [cardSubTab, setCardSubTab] = useState<'account' | 'partner' | 'reconciliation'>('account');
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
   const [printLayoutMode, setPrintLayoutMode] = useState<'synthetic' | 'analytical'>('analytical');
@@ -81,10 +117,20 @@ export default function GeneralLedgerPage() {
   const [glSearchQuery, setGlSearchQuery] = useState('');
   const [glSearchResults, setGlSearchResults] = useState<GlSearchResult[]>([]);
   const [glViewSelectorOpen, setGlViewSelectorOpen] = useState(false);
+  const [typelessApprovalOpen, setTypelessApprovalOpen] = useState(false);
   const {
     activeTemplate: activeGlViewTemplate,
     applyTemplate: applyGlTemplate,
   } = useGlViewTemplates(selectedCompany?.id);
+  const {
+    typelessTransactions,
+    count: typelessCount,
+    presetAccounts,
+    approveTransaction: approveTypelessTransaction,
+    approveBatchTransactions: approveBatchTypelessTransactions,
+    isApproving: isApprovingTypeless,
+    isApprovingBatch: isApprovingBatchTypeless,
+  } = useTypelessTransactions(selectedCompany?.id, activePresetId);
   const tableRef = useRef<GeneralLedgerTableRef>(null);
   const handleStatsChange = useCallback((stats: typeof glStats) => setGlStats(stats), []);
   const handleLoadingChange = useCallback((loading: boolean) => setIsTableLoading(loading), []);
@@ -161,7 +207,6 @@ export default function GeneralLedgerPage() {
   const activeAuditImport = auditImports?.find(i => i.processing_status === 'completed' && !i.dry_run) || null;
 
   // ── URL deep-linking for modals, date basis & posting status ──
-  const [searchParams, setSearchParams] = useSearchParams();
   const { effectiveSettings } = useCompanySettings();
   const urlDateBasis = searchParams.get('date_basis') as GlDateBasis | null;
   const [dateBasis, setDateBasis] = useState<GlDateBasis>(() => {
@@ -464,8 +509,6 @@ export default function GeneralLedgerPage() {
     if (actionFromUrl === 'manage' && !manageModalOpen) setManageModalOpen(true);
   }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { activePresetId, setActivePresetId, presets, isLoading: isPresetsLoading } = useActivePreset(selectedCompany?.id);
-
   // ── Dual-Engine Live AI Progress: 1. Lightweight 2s Polling Guard ──
   const { data: latestAiNotification } = useQuery({
     queryKey: ['latestGlAiNotification', selectedCompany?.id],
@@ -754,6 +797,14 @@ export default function GeneralLedgerPage() {
         </Card>
       ) : (
         <>
+          {typelessCount > 0 && (
+            <TypelessTransactionsBanner
+              count={typelessCount}
+              onOpenApproval={() => setTypelessApprovalOpen(true)}
+              className="mb-2"
+            />
+          )}
+
           <GlToolbar
             activePresetId={activePresetId}
             presets={presets}
@@ -785,6 +836,10 @@ export default function GeneralLedgerPage() {
             onExportProcontExcel={(opts) => handleExportAction('Procont Excel', () => tableRef.current?.exportProcontExcel(selectedCompany?.name, opts))}
             onExportAgoraPdf={(opts) => handleExportAction('"A" PDF kivonat', () => tableRef.current?.exportAgoraPdf(selectedCompany?.name, opts))}
             onExportAgoraExcel={(opts) => handleExportAction('"A" Excel kivonat', () => tableRef.current?.exportAgoraExcel(selectedCompany?.name, opts))}
+            onExportRlbBasicPdf={(opts) => handleExportAction('RLB Alap PDF', () => tableRef.current?.exportRlbBasicPdf(selectedCompany?.name, opts))}
+            onExportRlbBasicExcel={(opts) => handleExportAction('RLB Alap Excel', () => tableRef.current?.exportRlbBasicExcel(selectedCompany?.name, opts))}
+            onExportRlbExtendedPdf={(opts) => handleExportAction('RLB Bővített PDF', () => tableRef.current?.exportRlbExtendedPdf(selectedCompany?.name, opts))}
+            onExportRlbExtendedExcel={(opts) => handleExportAction('RLB Bővített Excel', () => tableRef.current?.exportRlbExtendedExcel(selectedCompany?.name, opts))}
           />
 
           {isAIRunning && (
@@ -839,8 +894,8 @@ export default function GeneralLedgerPage() {
             companyId={selectedCompany?.id}
           />
 
-      {/* F7: View tabs — Kivonat vs Kartonok vs Naplófőkönyv vs Összehasonlítás */}
-      <Tabs value={activeViewTab} onValueChange={v => setActiveViewTab(v as any)} className="print:hidden">
+      {/* F7: View tabs — Kivonat vs Kartonok vs Naplófőkönyv vs Összehasonlítás vs Kontírozás varázsló */}
+      <Tabs value={activeViewTab} onValueChange={handleTabChange} className="print:hidden">
         <TabsList className="mb-0">
           <TabsTrigger value="extract" className="gap-1.5">
             <Database className="w-4 h-4" /> {t('accounting:general_ledger.tabs.extract', 'Kivonat')}
@@ -853,6 +908,15 @@ export default function GeneralLedgerPage() {
           </TabsTrigger>
           <TabsTrigger value="comparison" className="gap-1.5">
             <Table2 className="w-4 h-4" /> {t('accounting:general_ledger.tabs.comparison', 'Összehasonlítás')}
+          </TabsTrigger>
+          <TabsTrigger value="wizard" className="gap-1.5 relative border border-primary/20 bg-primary/5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+            <Wand2 className="w-4 h-4" />
+            <span>Kontírozás varázsló</span>
+            {pendingPostingSummary && pendingPostingSummary.pending_item_count > 0 && (
+              <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] bg-primary/20 font-mono font-bold">
+                {pendingPostingSummary.pending_item_count}
+              </Badge>
+            )}
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -1059,6 +1123,16 @@ export default function GeneralLedgerPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Kontírozás Varázsló nézet (Jóváhagyási pool és kötegelt kontírozás) */}
+      {activeViewTab === 'wizard' && (
+        <Card className="border-border/60 shadow-md p-5 content-animate">
+          <PostingWizardView
+            companyId={selectedCompany?.id}
+            onExit={() => handleTabChange('extract')}
+          />
+        </Card>
+      )}
       </>
       )}
 
@@ -1121,6 +1195,19 @@ export default function GeneralLedgerPage() {
         onSuccess={(newPresetId) => {
           handleSelectPreset(newPresetId);
         }}
+      />
+
+      {/* Típus nélküli tranzakciók jóváhagyó modal (Hard Guard) */}
+      <TypelessTransactionsApprovalModal
+        open={typelessApprovalOpen}
+        onOpenChange={setTypelessApprovalOpen}
+        transactions={typelessTransactions}
+        presetAccounts={presetAccounts}
+        activePresetId={activePresetId}
+        onApproveSingle={approveTypelessTransaction}
+        onApproveBatch={approveBatchTypelessTransactions}
+        isApproving={isApprovingTypeless}
+        isApprovingBatch={isApprovingBatchTypeless}
       />
 
       {/* Főkönyvi nézetválasztó és egyedi sablonkészítő modal */}
