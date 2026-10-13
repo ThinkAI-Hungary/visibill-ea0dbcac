@@ -1,4 +1,4 @@
-import type { GlViewTemplate } from '@/types/glTemplate';
+import type { GlViewTemplate, GlTemplateField } from '@/types/glTemplate';
 
 export interface GLRow {
   id: string;

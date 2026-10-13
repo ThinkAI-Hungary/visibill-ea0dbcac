@@ -72,7 +72,10 @@ export function useCompanySettings() {
     }) => {
       if (!user || !selectedCompany) throw new Error('No user/company');
 
-      const payload: CompanySettingsInsert = {
+      const payload: CompanySettingsInsert & {
+        active_gl_view_template_id?: string;
+        active_vat_view_template_id?: string;
+      } = {
         company_id: selectedCompany.id,
         updated_at: new Date().toISOString(),
       };
@@ -94,7 +97,7 @@ export function useCompanySettings() {
 
       const { error } = await supabase
         .from('company_settings')
-        .upsert(payload, { onConflict: 'company_id' });
+        .upsert(payload as any, { onConflict: 'company_id' });
 
       if (error) throw error;
     },

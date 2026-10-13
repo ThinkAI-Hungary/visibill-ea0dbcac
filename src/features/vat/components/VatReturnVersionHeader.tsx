@@ -40,6 +40,7 @@ import {
   type VatSnapshotRecord,
   type VatRevisionDiffSummary,
 } from '../services/vatSnapshotService';
+import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 
 interface VatReturnVersionHeaderProps {
   className?: string;
@@ -60,6 +61,7 @@ interface VatReturnVersionHeaderProps {
   onNavigateToAmendments?: () => void;
   taxPayable?: number;
   taxDeductible?: number;
+  canClosePeriod?: boolean;
 }
 
 export function VatReturnVersionHeader({
@@ -80,9 +82,13 @@ export function VatReturnVersionHeader({
   onNavigateToAmendments: onNavigateToAmendmentsProp,
   taxPayable: taxPayableProp,
   taxDeductible: taxDeductibleProp,
+  canClosePeriod: canClosePeriodProp,
 }: VatReturnVersionHeaderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { canClosePeriod: hookCanClosePeriod } = useCompanyCapabilities();
+  const canClosePeriod = canClosePeriodProp !== undefined ? canClosePeriodProp : hookCanClosePeriod;
+  const closeDeniedTooltip = 'A bevallási időszak zárolása és véglegesítése a kirendelt könyvelő jogosultsága (SoD feladatmegosztás).';
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [snapshotLabel, setSnapshotLabel] = useState('');
   const [internalSelectedVersion, setInternalSelectedVersion] = useState<number | null>(null);
@@ -112,11 +118,13 @@ export function VatReturnVersionHeader({
     if (!diffAnalysis) {
       return {
         hasRevisions: false,
+        hasDifferences: false,
         totalItemsCount: 0,
         totalTaxBaseDiff: 0,
         totalTaxAmountDiff: 0,
         totalPenaltyHuf: 0,
         items: [],
+        diffs: [],
       };
     }
     const diffs = diffAnalysis.diffs || [];
@@ -127,12 +135,14 @@ export function VatReturnVersionHeader({
       taxAmountDiff += d.taxAmountDiff || 0;
     });
     return {
-      hasRevisions: diffAnalysis.hasDifferences && diffs.length > 0,
+      hasRevisions: Boolean(diffAnalysis.hasDifferences && diffs.length > 0),
+      hasDifferences: Boolean(diffAnalysis.hasDifferences),
       totalItemsCount: diffs.length,
       totalTaxBaseDiff: taxBaseDiff,
       totalTaxAmountDiff: taxAmountDiff,
       totalPenaltyHuf: 0,
-      items: [],
+      items: diffs,
+      diffs: diffs,
     };
   }, [revisionSummaryProp, diffAnalysis]);
 
@@ -200,6 +210,14 @@ export function VatReturnVersionHeader({
   };
 
   const handleOpenLockDialog = () => {
+    if (!canClosePeriod) {
+      toast({
+        title: 'Hozzáférés megtagadva',
+        description: closeDeniedTooltip,
+        variant: 'destructive',
+      });
+      return;
+    }
     const nextVer = snapshots.length + 1;
     const defaultLabel = snapshots.length === 0
       ? `v1.0 (Eredeti beadás)`
@@ -209,6 +227,14 @@ export function VatReturnVersionHeader({
   };
 
   const handleConfirmSubmit = async () => {
+    if (!canClosePeriod) {
+      toast({
+        title: 'Hozzáférés megtagadva',
+        description: closeDeniedTooltip,
+        variant: 'destructive',
+      });
+      return;
+    }
     if (onSubmitSnapshotProp) {
       try {
         await onSubmitSnapshotProp(snapshotLabel);
@@ -374,31 +400,34 @@ export function VatReturnVersionHeader({
           )}
 
           {/* Action button: Beadva / Zárolás */}
-          <Button
-            size="sm"
-            variant={revisionSummary.hasRevisions ? 'default' : 'outline'}
-            onClick={handleOpenLockDialog}
-            disabled={isSubmittingSnapshot}
-            className={cn(
-              'h-8 text-xs gap-1.5 shadow-xs',
-              revisionSummary.hasRevisions
-                ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                : 'text-foreground'
-            )}
-          >
-            {isSubmittingSnapshot ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <FileCheck2 className="w-3.5 h-3.5" />
-            )}
-            <span>
-              {!hasSnapshots
-                ? 'Beadva / Véglegesítés'
-                : revisionSummary.hasRevisions
-                ? 'Önellenőrzés rögzítése'
-                : 'Új pillanatkép mentése'}
-            </span>
-          </Button>
+          <span title={!canClosePeriod ? closeDeniedTooltip : undefined} className="inline-flex">
+            <Button
+              size="sm"
+              variant={revisionSummary.hasRevisions ? 'default' : 'outline'}
+              onClick={handleOpenLockDialog}
+              disabled={isSubmittingSnapshot || !canClosePeriod}
+              className={cn(
+                'h-8 text-xs gap-1.5 shadow-xs',
+                revisionSummary.hasRevisions
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                  : 'text-foreground',
+                !canClosePeriod && 'opacity-60 cursor-not-allowed'
+              )}
+            >
+              {isSubmittingSnapshot ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <FileCheck2 className="w-3.5 h-3.5" />
+              )}
+              <span>
+                {!hasSnapshots
+                  ? 'Beadva / Véglegesítés'
+                  : revisionSummary.hasRevisions
+                  ? 'Önellenőrzés rögzítése'
+                  : 'Új pillanatkép mentése'}
+              </span>
+            </Button>
+          </span>
         </div>
       </div>
 
@@ -480,7 +509,7 @@ export function VatReturnVersionHeader({
             </Button>
             <Button
               onClick={handleConfirmSubmit}
-              disabled={isSubmittingSnapshot || !snapshotLabel.trim()}
+              disabled={isSubmittingSnapshot || !snapshotLabel.trim() || !canClosePeriod}
               className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[120px]"
             >
               {isSubmittingSnapshot ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Zárolás megerősítése'}

@@ -12,6 +12,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:staging": "vite build --mode staging",
+    "typecheck": "tsc --project tsconfig.app.json --noEmit",
     "lint": "eslint .",
     "lint:fast": "oxlint",
     "lint:fast:fix": "oxlint --fix",

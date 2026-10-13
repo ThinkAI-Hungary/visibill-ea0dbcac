@@ -129,8 +129,8 @@ describe('developmentReserveAutoPoster', () => {
       p_company_id: 'c1',
       p_asset_name: 'CNC Gép',
       p_reserve_amount: 2500000,
-      p_gl414: 'gl-414',
-      p_gl413: 'gl-413',
+      p_gl_414_id: 'gl-414',
+      p_gl_413_id: 'gl-413',
     }));
   });
 

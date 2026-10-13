@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 interface GlViewSelectorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  companyId?: string;
 }
 
 export function GlViewSelectorModal({ open, onOpenChange }: GlViewSelectorModalProps) {

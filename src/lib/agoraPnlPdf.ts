@@ -174,12 +174,12 @@ export function generateAgoraPnlPdf(data: AgoraPnlReportData): jsPDF {
 
   const tableHead = [
     [
-      { content: hu('Sorszám'), styles: { halign: 'left', fontStyle: 'bold' } },
-      { content: hu('Kód'), styles: { halign: 'left', fontStyle: 'bold' } },
-      { content: hu('Megnevezés'), styles: { halign: 'left', fontStyle: 'bold' } },
-      { content: hu('Előző'), styles: { halign: 'right', fontStyle: 'bold' } },
-      { content: hu('Mód'), styles: { halign: 'right', fontStyle: 'bold' } },
-      { content: hu('Tárgyév'), styles: { halign: 'right', fontStyle: 'bold' } },
+      { content: hu('Sorszám'), styles: { halign: 'left' as const, fontStyle: 'bold' as const } },
+      { content: hu('Kód'), styles: { halign: 'left' as const, fontStyle: 'bold' as const } },
+      { content: hu('Megnevezés'), styles: { halign: 'left' as const, fontStyle: 'bold' as const } },
+      { content: hu('Előző'), styles: { halign: 'right' as const, fontStyle: 'bold' as const } },
+      { content: hu('Mód'), styles: { halign: 'right' as const, fontStyle: 'bold' as const } },
+      { content: hu('Tárgyév'), styles: { halign: 'right' as const, fontStyle: 'bold' as const } },
     ],
   ];
 

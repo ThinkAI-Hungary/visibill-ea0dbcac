@@ -67,6 +67,7 @@ interface JournalItem {
   grossAmount: number;
   grossGlAccount: string;
   taxReturnRow: string;
+  returnRowCode?: string;
   countryCode: string;
   euTaxNumber: string;
 }

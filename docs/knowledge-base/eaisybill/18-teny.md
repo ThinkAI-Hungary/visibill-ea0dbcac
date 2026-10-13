@@ -79,14 +79,21 @@ A **TENY (Tárgyi Eszköz Nyilvántartó)** modul a vállalkozás tartós haszn�
 ### 3.5 Eszköz Selejtezése és Kivezetése
 - **Hogy hívják:** „Selejtezés / Kivezetés” funkció
 - **Mire való:** Használhatatlanná vált, összetört, ellopott vagy értékesített eszköz törvényes kivezetése a könyvekből a maradványérték elszámolásával.
-- **Hol található a felületen:** Az eszköz adatlapjának jobb felső szélén lévő piros **„Kivezetés”** gomb.
-- **Hogyan használhatja a felhasználó:**
-  1. Nyissa meg az érintett eszköz adatlapját.
-  2. Kattintson a **„Kivezetés / Selejtezés”** gombra.
-  3. Válassza ki a kivezetés jogcímét: *Értékesítés*, *Selejtezés (tönkrement)*, *Káresemény / Lopás*, *Térítés nélküli átadás*.
-  4. Adja meg a selejtezési bizottság tagjainak nevét és a kivezetés dátumát.
-  5. Kattintson a **„Selejtezési jegyzőkönyv jóváhagyása”** gombra.
-  - **Eredmény:** A rendszer legenerálja a selejtezési jegyzőkönyvet, és automatikusan lekönyveli a kivezetést a vegyes naplóban (86-os egyéb ráfordítás / 1-es eszközszámla).
+- **Hol található a felületen:** Az eszköz adatlapján a **„Kivezetés”** gomb; a jóváhagyó az **„Kivezetés elbírálása”** gombot látja, amíg a kérelem „Kivezetés jóváhagyásra vár” állapotban van.
+- **Hogyan használhatja a felhasználó (kétlépéses, jóváhagyás-alapú):**
+  1. Nyissa meg az érintett eszköz adatlapját, kattintson a **„Kivezetés”** gombra.
+  2. Válassza ki a jogcímet: *Értékesítés*, *Selejtezés*, *Leltárhiány*, *Térítés nélküli átadás*; adja meg a dátumot és az indoklást (jogcím szerinti további mezőkkel).
+  3. Küldje be a kérelmet – az eszköz „Kivezetés jóváhagyásra vár” jelvényt kap.
+  4. A kijelölt könyvelő (vagy könyvelő nélküli cégnél a cégvezetés) megnyitja a jóváhagyó dialógust, ellenőrzi a könyvelési előnézetet (bruttó érték, halmozott ÉCS, nettó érték), letöltheti a **Jegyzőkönyv PDF**-et, majd **jóváhagyja** vagy **elutasítja** a kérelmet.
+  - **Eredmény:** Jóváhagyáskor a rendszer egy tranzakcióban könyveli a kivezetést (pótlólagos ÉCS a kivezetés napjáig, halmozott ÉCS és bruttó érték kivezetése, a nettó érték a 861 vagy 869 számlára), és az eszköz „kivezetett” lesz. Ha az eszköz bruttó értéke még nincs a főkönyvben, a jóváhagyás nem lehetséges – előbb a **Rekonciliáció & Főkönyv** fülön kell az eszközt könyvelni.
+  - **Fontos:** a jogosultság nélküli felhasználó csak megtekintheti a kérelmet. Értékesítésnél az ÁFA nincs kezelve (nettó ár); a kimenő számlát külön kell könyvelni.
+
+### 3.5.1 Rekonciliáció & Főkönyv fül
+- **Mire való:** a TENY analitika és a főkönyv (1x, 1x9, 161) eszközönkénti egyezőségét mutatja KPI kártyákkal és eltérés-okokkal; a **„Hiányzó tételek pótlása”** gombbal a még nem könyvelt eszközök kötegelten könyvelhetők.
+- **Hol található:** Tárgyi eszközök oldal → **Rekonciliáció & Főkönyv** fül (`/teny?tab=reconciliation`), valamint a Főkönyv rekonciliációs nézet Tárgyi eszközök kártyájáról.
+
+### 3.5.2 Fejlesztési tartalék riasztások
+- A **Fejlesztési Tartalékok** fülön piros/sárga sáv jelzi a 3.–4. adóévben lejáró és a lejárt, fel nem használt tartalékokat becsült visszafizetéssel (9% társasági adó + késedelmi pótlék). **Tájékoztató becslés**, a tényleges kötelezettséget a bevallás határozza meg. Kivezetéskor elidegenítési tilalom figyelmeztetés jelenik meg a tartalékhoz kötött eszközöknél.
 
 ### 3.6 Hivatalos Eszközkarton és Havi ÉCS Feladás Letöltése
 - **Hogy hívják:** „Eszközkarton letöltése” és „Havi ÉCS feladás export”
@@ -96,3 +103,32 @@ A **TENY (Tárgyi Eszköz Nyilvántartó)** modul a vállalkozás tartós haszn�
   1. Egyedi kartonhoz kattintson az eszköz lapján a **„Karton (PDF)”** gombra.
   2. Havi könyvelési záráshoz kattintson a listaoldalon az **„ÉCS feladás exportálása”** gombra.
   - **Eredmény:** Nyomtatható hivatalos eszközkarton és a főkönyvi vegyes könyvelésbe közvetlenül beolvasható amortizációs feladás.
+
+### 3.7 Tárolóhelyek, Felelősök, Kétnyelvű Átadás-Átvételi Nyilatkozat és Címkenyomtatás
+- **Hogy hívják:** „Áthelyezés”, „Átadás-átvételi jegyzőkönyv (PDF)”, „Címkenyomtatás (Vonalkód & QR)”
+- **Mire való:** Telephelyen belüli fizikai elhelyezés (épület/emelet/szoba), személyi felelős és költséghely kezelése az Mt. 179. § szerinti anyagi felelősségvállalási nyilatkozattal és ipari címkézéssel.
+- **Hol található:** Az eszközkarton fejlécében és műveleti sávjában.
+- **Hogyan használhatja:**
+  1. **Áthelyezés:** Kattintson az **„Áthelyezés”** gombra, válassza ki az új tárolóhelyet (fa struktúra), felelőst és költséghelyet.
+  2. **Átadás-átvételi jegyzőkönyv:** Mentés után a Timeline-on megjelenő eseményről tölthető le a kétnyelvű (magyar/angol) jogi nyilatkozat.
+  3. **Címkenyomtatás:** A **„Címkenyomtatás”** gombra kattintva válasszon méretet (50×30 mm, 70×36 mm vagy A4 ív), és küldje közvetlenül nyomtatóra vagy töltse le SVG formátumban.
+
+### 3.8 Mobilbarát Leltározó és Fordulónapi Leltárív (Sztv. 69. §)
+- **Hogy hívják:** „Leltárellenőrzés” és „Leltárív exportálása”
+- **Mire való:** Raktári vagy irodai fizikai leltározás okostelefon kamerával, azonnali fizikai állapot rögzítés (ép, sérült, selejt), és hivatalos 3 fős bizottsági leltárív generálás.
+- **Hol található:** Tárgyi eszközök oldal → Leltározás fül / eszközkarton.
+- **Hogyan használhatja:**
+  1. Okostelefonon vagy táblagépen nyissa meg a leltározó dialógust és olvassa be a címkét a kamerával.
+  2. Rögzítse az eszköz fizikai állapotát és az esetleges eltérést.
+  3. A leltározási időszak végén kattintson a **„Leltárív letöltése”** gombra az analitikus Excel vagy aláírható PDF letöltéséhez.
+
+### 3.9 Pályázati Projektek, Többforrásos Komponensek és ÉCS-arányos PIE Feloldás
+- **Hogy hívják:** „Pályázatok” fül és „Komponensek” karton-nézet
+- **Mire való:** Vissza nem térítendő támogatásból megvalósult eszközök és többforrásos alkatrészek nyilvántartása, a fenntartási időszak nyomon követése, és az Sztv. szerinti időszaki támogatási passzív időbeli elhatárolás (PIE) automatikus feladása a főkönyvbe (**T 483 → K 964**).
+- **Hol található:** Tárgyi eszközök oldal → **Pályázatok** fül (`/teny?tab=grant_projects`), illetve az eszközkarton **Komponensek** füle.
+- **Hogyan használhatja:**
+  1. **Négyoldalú egyezőség:** A Pályázatok fül tetején lévő Zero-Error banner azonnal igazolja a Pályázati keret ↔ TÉNY analitika ↔ Főkönyv 964 ↔ Elhatárolás 483 közötti tökéletes egyensúlyt.
+  2. **PIE Feloldás könyvelése és alszámla választás:** Kattintson a **„PIE Feloldás könyvelése”** gombra. A megjelenő párbeszédablakban a rendszer automatikusan felkínálja a cég számlatükrében szereplő 483-as (Tartozik) és 964-es (Követel) alszámlákat (pl. 4831 és 9641). Amennyiben egy alszámla hiányzik, sárga figyelmeztetés és közvetlen navigációs javaslat segíti a számlatükör kiegészítését. A gomb dupla kattintás elleni védelemmel (`in-flight mutex`) rendelkezik, megelőzve a párhuzamos könyvelést.
+  3. **Többéves göngyölítés és kerekítési garancia:** A feloldott összeg soha nem haladhatja meg a projekt fennmaradó elhatárolását, és az utolsó leírási időszakban a rendszer automatikusan kivezeti a kerekítési forintmaradványokat is.
+  4. **Pályázati projektek törlési védelme:** Pályázati projektet nem lehet véletlenül törölni, amennyiben ahhoz tárgyi eszköz vagy részegység (komponens) kapcsolódik, vagy korábban már született rá főkönyvi PIE bizonylat. A megerősítő ablakban a Törlés gomb zárolt, és tájékoztató sáv jelzi az összefüggő tételeket.
+  5. **Kivezetett eszközök részegység-zárolása:** Ha az eszköz kivezetett (selejtezett, eladott, hiányzó) állapotba kerül, a Komponensek fül zárolt módba vált: új részegység felvétele nem lehetséges, a meglévő komponensek nem szerkeszthetők és nem törölhetők („Zárolva” állapot), megőrizve a kivezetéskori audit állapotot.

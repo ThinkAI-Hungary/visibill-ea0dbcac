@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { ShieldCheck, ShieldAlert, CheckCircle2, AlertTriangle, RefreshCw, ArrowRight } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { useScopedBasePath } from '@/lib/navigation';
 
 interface GlAnalyticReconciliationViewProps {
   companyId: string | undefined;
@@ -22,6 +24,7 @@ export function GlAnalyticReconciliationView({
 }: GlAnalyticReconciliationViewProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const basePath = useScopedBasePath();
 
   // ── Query reconciliation data via RPC or client fallback ──
   const { data: reconData, isLoading, isFetching, refetch } = useQuery({
@@ -256,6 +259,15 @@ export function GlAnalyticReconciliationView({
                   </div>
                 </div>
 
+                {row.category_name.startsWith('Tárgyi eszközök') && (
+                  <div className="flex justify-end">
+                    <Button asChild variant="outline" size="sm" className="h-7 text-xs gap-1.5">
+                      <Link id="gl-recon-link-fixed-assets" to={`${basePath}/teny?tab=reconciliation`}>
+                        Rekonciliációs munkalap megnyitása <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </Button>
+                  </div>
+                )}
                 {!isOk && (
                   <div className="pt-2 border-t border-destructive/20 flex items-center justify-between text-xs text-destructive font-medium">
                     <span>Eltérés összege: {formatCurrency(row.difference)}</span>

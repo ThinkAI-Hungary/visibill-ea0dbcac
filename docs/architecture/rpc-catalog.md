@@ -1,7 +1,7 @@
 # PostgreSQL RPC és Függvény Katalógus
 
-> **Utoljára frissítve:** 2026-10-11  
-> **Összesen:** 150 hívható RPC függvény | 74 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
+> **Utoljára frissítve:** 2026-10-13  
+> **Összesen:** 155 hívható RPC függvény | 75 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
 > **Tesztelési Követelmények:** Lásd a [PostgreSQL RPC Tesztelési Stratégia és Blueprint](./rpc-testing-blueprint.md) dokumentumot.
 
 Ez a dokumentáció az eaisybill-prod és eaisyBooks rendszerekben használt összes PostgreSQL tárolt eljárást és RPC (Remote Procedure Call) függvényt tartalmazza. Részletezi a függvény szignatúráját, biztonsági környezetét (`SECURITY DEFINER` vs `INVOKER`), hívó komponensét és funkcionális szerepét.
@@ -11,15 +11,15 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 
 ## Tartalomjegyzék
 
-1. [📊 Frontend Lekérdező és Aggregációs RPC-k (32 db)](#1--frontend-lekérdező-és-aggregációs-rpc-k)
-2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (33 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
-3. [📄 Kettős Könyvviteli Naplók (acc_*) és Folyószámla RPC-k (15 db)](#3--kettős-könyvviteli-naplók-acc_-rpc-k)
+1. [📊 Frontend Lekérdező és Aggregációs RPC-k (33 db)](#1--frontend-lekérdező-és-aggregációs-rpc-k)
+2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (35 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
+3. [📄 Kettős Könyvviteli Naplók (acc_*) és Folyószámla RPC-k (17 db)](#3--kettős-könyvviteli-naplók-acc_-rpc-k)
 4. [📘 eaisyBooks és EV Modul RPC-k (8 db)](#4--eaisybooks-és-ev-modul-rpc-k)
 5. [🔐 Jogosultságkezelés és RLS Segédfüggvények (15 db)](#5--jogosultságkezelés-és-rls-segédfüggvények)
 6. [⚡ Queue, Worker és Job Management (PGMQ) RPC-k (14 db)](#6-️-queue-worker-és-job-management-pgmq-rpc-k)
 7. [🛠️ Platform és Management Üzemeltetési RPC-k (13 db)](#7-️-platform-és-management-üzemeltetési-rpc-k)
 8. [📧 Email Fiókok, Vault és Hitelesítő Adatok (15 db)](#8--email-fiókok-vault-és-hitelesítő-adatok)
-9. [⚙️ PostgreSQL Trigger Függvények (74 db)](#9-️-postgresql-trigger-függvények)
+9. [⚙️ PostgreSQL Trigger Függvények (75 db)](#9-️-postgresql-trigger-függvények)
 
 ---
 
@@ -63,6 +63,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `get_vat_breakdown(p_company_id uuid, p_date_from date, p_date_to date)` | `DEFINER` | `TABLE(vat_rate text, invoice_direction text, currency text, net_sum numeric, vat_sum numeric)` | VatSummarySection.tsx | ÁFA analitika adómértékenként és irányonként (nettó alap, ÁFA összeg). |
 | `search_gl_entities(p_company_id uuid, p_preset_id uuid, p_query text, p_limit integer)` | `DEFINER` | `TABLE(entity_type text, entity_id text, gl_number text, title text, subtitle text, account_id uuid, target_gl_number text, amount numeric)` | GlobalSearch / GLSelect | Intelligens entitás és számlaszám kereső a főkönyvi modulhoz (partnerek, bizonylatok, főkönyvi számok). |
 | `suggest_gl_mappings(p_company_id uuid, p_preset_id uuid)` | `INVOKER` | `TABLE(gl_account_id uuid, gl_number text, short_name text, pnl_structure_id uuid, pnl_row_code text, pnl_row_name text, bs_structure_id uuid, bs_row_code text, bs_row_name text, reasoning text)` | ChartOfAccountsMapping.tsx | AI/heurisztikus főkönyvi szám hozzárendelési javaslatok a mérleg és eredménykimutatás soraihoz. |
+| `reconcile_fixed_assets_with_gl(p_company_id uuid, p_date date)` | `DEFINER` (STABLE) | `jsonb` | AssetReconciliationTab.tsx | Főkönyv és TÉNY analitika (1x bruttó, 1x9 halmozott ÉCS, 161 beruházás) eszközönkénti mérlegegyeztetése és differencia kimutatása (A-251). |
 
 ---
 
@@ -103,6 +104,8 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `toggle_invoice_continuous(p_invoice_id uuid, p_is_continuous boolean, p_service_period_start date, p_service_period_end date, p_ti_override date)` | `DEFINER` | `json` | ContinuousServiceToggle | Folyamatos teljesítésű státusz és elszámolási időszak állítása a számlán. |
 | `unmark_storno_group_settled(p_storno_nav_id uuid)` | `DEFINER` | `jsonb` | StornoGroupDetailModal | Sztornó csoport lezárásának feloldása. |
 | `validate_annual_report(p_report_id uuid)` | `DEFINER` | `jsonb` | AnnualReportDetail.tsx | Beszámoló és mérleg egyezőség ellenőrzése, logikai validáció. |
+| `request_asset_disposal(p_company_id uuid, p_asset_id uuid, p_reason_type text, p_disposal_date date, p_reason text, p_committee jsonb, p_waste_info jsonb, p_details jsonb)` | `DEFINER` | `jsonb` | DisposalDialog.tsx | Tárgyi eszköz kivezetési kérelem indítása (értékesítés, selejtezés, hiány, adomány) jóváhagyásra váró státusszal (A-251). |
+| `reject_asset_disposal(p_company_id uuid, p_asset_id uuid, p_rejection_reason text)` | `DEFINER` | `jsonb` | DisposalApprovalDialog.tsx | Tárgyi eszköz kivezetési kérelem elutasítása és aktív státusz visszaállítása könyvelői jóváhagyó által (A-251). |
 
 ---
 
@@ -127,6 +130,8 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `settle_open_items(p_company_id uuid, p_invoice_line_id uuid, p_settling_line_id uuid, p_amount_huf numeric, p_amount_foreign numeric, p_match_type text, p_notes text, p_user_id uuid)` | `DEFINER` | `uuid` | SubledgerPage.tsx / Match Modal | Két naplósor összerendezése és kiegyenlítés rögzítése az `acc_open_item_matches` táblában. |
 | `unsettle_open_items(p_company_id uuid, p_match_id uuid, p_user_id uuid)` | `DEFINER` | `boolean` | SubledgerItemMatchesModal.tsx | Folyószámla tétel korábbi párosításának felbontása és az eredeti nyitott összeg visszaállítása. |
 | `write_off_subledger_difference(p_company_id uuid, p_line_id uuid, p_diff_amount_huf numeric, p_reason text, p_user_id uuid)` | `DEFINER` | `jsonb` | BulkRoundingWriteOffModal.tsx / WriteOffSettlementModal.tsx | Kerekítési ($\le 10$ Ft, 8755/9779) vagy árfolyamkülönbözet (8762/9762) leírása automatikus vegyes naplós ellentételezéssel. |
+| `approve_asset_disposal(p_company_id uuid, p_asset_id uuid, p_journal_lines jsonb, p_disposal_date date, p_approval_notes text)` | `DEFINER` | `jsonb` | DisposalApprovalDialog.tsx | Tárgyi eszköz kivezetésének jóváhagyása és atomi vegyes könyvelése (bruttó, halmozott ÉCS, maradványérték, A-251). |
+| `post_grant_deferral_release_to_gl(p_company_id uuid, p_asset_id uuid, p_grant_project_id uuid, p_period_date date, p_depreciation_amount numeric, p_release_amount numeric, p_gl_483_id uuid, p_gl_964_id uuid, p_notes text)` | `DEFINER` | `jsonb` | GrantProjectsTab.tsx | Beruházási támogatás ÉCS-arányos passzív időbeli elhatárolásának (PIE) feladása a Vegyes naplóba: T 483 -> K 964 (Sztv. 45. § (2), A-252, BDR-072). |
 
 ---
 
@@ -314,6 +319,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `update_user_subscriptions_updated_at()` | `INVOKER` | `trigger` | Rekord módosításakor az `updated_at` időbélyeg automatikus frissítése `now()`-ra. |
 | `update_vat_updated_at()` | `INVOKER` | `trigger` | Rekord módosításakor az `updated_at` időbélyeg automatikus frissítése `now()`-ra. |
 | `upgrade_foreign_partner_on_nav_invoice()` | `DEFINER` | `trigger` | Integritás és automatikus üzleti szabály trigger. |
+| `check_grant_project_can_delete()` | `DEFINER` | `trigger` | Pályázati projekt törlésvédelmi őr trigger: megakadályozza a grant_projects törlését, ha aktív eszköz, alkatrész-komponens vagy lekönyvelt PIE vegyes tétel kapcsolódik hozzá (A-252, Option A, 20261013170000). |
 
 ---
 

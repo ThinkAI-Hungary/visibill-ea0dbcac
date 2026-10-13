@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-12  
-> **Összesen:** 250 döntés (235 egyedi döntési fájl) | ✅ Decided: 248 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-13  
+> **Összesen:** 252 döntés (237 egyedi döntési fájl) | ✅ Decided: 250 | ⛔ Superseded: 2
 
 
 ---
@@ -287,6 +287,8 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-247 | Szerepkör-képesség mátrix (Capability Matrix), Bérszámfejtő (payroll_specialist) szerepkör és ÁFA-zárolás backend védelme | ✅ Decided | [A-247](./A-247-role-capability-matrix.md) |
 | A-249 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra | ✅ Decided | [A-249](./A-249-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md) |
 | A-250 | 14. Bérszámfejtés és Főkönyvi Bérfeladás Modul Architektúra, GIRO Motor és Tab Konszolidáció | ✅ Decided | [A-250](./A-250-payroll-module-14-reconciliation-giro-and-tab-architecture.md) |
+| A-251 | Tárgyi Eszköz ↔ Főkönyv Kapcsolat, Rekonciliáció és Jóváhagyás-alapú Kivezetési Workflow | ✅ Decided | [A-251](./A-251-fixed-assets-gl-linkage-reconciliation-and-disposal-workflow.md) |
+| A-252 | TÉNY Phase 2 és Phase 3 — Tárolóhely- és Felelős-hierarchia, Hibrid Címkenyomtatás, Mobil Leltározó, Többforrásos Komponensek, Pályázati PIE Feloldás és 4-oldalú Rekonciliáció | ✅ Decided | [A-252](./A-252-fixed-assets-phase2-and-phase3-inventory-grants-components-pie.md) |
 
 
 

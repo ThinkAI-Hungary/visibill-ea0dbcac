@@ -3913,7 +3913,7 @@ export default function JournalsPage() {
                       {acc.gl_number}
                     </span>
                     <span className="text-xs font-semibold text-foreground truncate">
-                      {acc.description || acc.name || acc.short_name}
+                      {acc.description || (acc as any).name || (acc as any).short_name}
                     </span>
                   </div>
                   <Button

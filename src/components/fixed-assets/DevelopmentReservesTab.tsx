@@ -14,6 +14,14 @@ import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { toast } from '@/hooks/use-toast';
 import { PlusCircle, Search, PiggyBank, Calendar, Clock, AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
 import type { DevelopmentReserve } from '@/types/fixed-assets';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { formatDateLocale } from '@/lib/locale/formatters';
+import {
+  assessReserveExpiry,
+  estimateUnusedReservePenalty,
+  type ReserveExpiryAssessment,
+  type PenaltyEstimate,
+} from '@/lib/fixed-assets/developmentReservePenaltyCalculator';
 
 export function DevelopmentReservesTab() {
   const { t } = useTranslation(['hr', 'common']);
@@ -143,6 +151,23 @@ export function DevelopmentReservesTab() {
     });
   }, [reserves, statusFilter, search]);
 
+  // M1.5: 3. és 4. adóévben lejáró / lejárt, fel nem használt tartalékok
+  const [todayIso] = useState(() => new Date().toISOString().split('T')[0]);
+  const expiryAlerts = useMemo(() => {
+    const asOf = todayIso;
+    return reserves
+      .map((reserve) => {
+        const assessment = assessReserveExpiry(reserve, asOf);
+        const penalty =
+          assessment.level === 'overdue'
+            ? estimateUnusedReservePenalty({ remaining: assessment.remaining, deadline: assessment.deadline, asOf })
+            : null;
+        return { reserve, assessment, penalty };
+      })
+      .filter((a): a is { reserve: DevelopmentReserve; assessment: ReserveExpiryAssessment; penalty: PenaltyEstimate | null } => a.assessment.level !== 'ok')
+      .sort((a, b) => a.assessment.deadline.localeCompare(b.assessment.deadline));
+  }, [reserves, todayIso]);
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -229,6 +254,60 @@ export function DevelopmentReservesTab() {
           </span>
         </div>
       </div>
+
+      {/* 1b. Lejárati riasztások (M1.5) */}
+      {expiryAlerts.length > 0 && (
+        <div className="space-y-2" id="dev-reserve-expiry-alerts">
+          {expiryAlerts.map(({ reserve, assessment, penalty }) => {
+            const isOverdue = assessment.level === 'overdue';
+            return (
+              <Alert
+                key={reserve.id}
+                variant={isOverdue || assessment.level === 'critical' ? 'destructive' : 'default'}
+                id={`dev-reserve-alert-${reserve.creation_year}`}
+              >
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>
+                  {isOverdue
+                    ? t('hr:fixed_assets.dev_reserves.alert_overdue_title', { defaultValue: '{{year}}. évi tartalék: lejárt, fel nem használt rész', year: reserve.creation_year })
+                    : assessment.level === 'critical'
+                      ? t('hr:fixed_assets.dev_reserves.alert_critical_title', { defaultValue: '{{year}}. évi tartalék: a felhasználás utolsó adóéve', year: reserve.creation_year })
+                      : t('hr:fixed_assets.dev_reserves.alert_warning_title', { defaultValue: '{{year}}. évi tartalék: a 3. adóévben jár', year: reserve.creation_year })}
+                </AlertTitle>
+                <AlertDescription className="space-y-1">
+                  <p>
+                    {t('hr:fixed_assets.dev_reserves.alert_unused', { defaultValue: 'Fel nem használt: {{amount}} — határidő: {{deadline}}',
+                      amount: formatCurrency(assessment.remaining, 'HUF'),
+                      deadline: formatDateLocale(assessment.deadline),
+                    })}
+                    {!isOverdue &&
+                      ` (${t('hr:fixed_assets.dev_reserves.alert_days_left', { defaultValue: '{{days}} nap van hátra', days: assessment.daysToDeadline })})`}
+                  </p>
+                  {penalty && (
+                    <p>
+                      {t('hr:fixed_assets.dev_reserves.alert_penalty', { defaultValue: 'Becsült visszafizetés: adóalap-növelés {{base}}, társasági adó {{tax}}, késedelmi pótlék {{penalty}} ({{days}} nap, {{rate}}%) — összesen {{total}}.',
+                          base: formatCurrency(penalty.taxBaseIncrease, 'HUF'),
+                          tax: formatCurrency(penalty.corporateTax, 'HUF'),
+                          penalty: formatCurrency(penalty.penalty, 'HUF'),
+                          days: penalty.lateDays,
+                          rate: penalty.annualRatePercent.toFixed(1),
+                          total: formatCurrency(penalty.total, 'HUF'),
+                        },
+                      )}
+                    </p>
+                  )}
+                </AlertDescription>
+              </Alert>
+            );
+          })}
+          <p className="text-xs text-muted-foreground">
+            {t(
+              'hr:fixed_assets.dev_reserves.alert_disclaimer',
+              'Tájékoztató becslés (9% társasági adó, MNB alapkamat + 5 százalékpont pótlékkulcs). A tényleges kötelezettséget a bevallás határozza meg.',
+            )}
+          </p>
+        </div>
+      )}
 
       {/* 2. Toolbar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">

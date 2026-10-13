@@ -126,7 +126,6 @@ export default function PayrollReconciliationPage({ embedded = false }: PayrollR
         employeeId: manualMatchItem.employee_id,
         matchedAmount: amt,
         expectedAmount: manualMatchItem.total_payable,
-        paymentDate: new Date().toISOString().split('T')[0],
       });
       toast({
         title: 'Kézi párosítás elmentve',
@@ -147,11 +146,7 @@ export default function PayrollReconciliationPage({ embedded = false }: PayrollR
   const handleUnmatch = async (employee: EmployeePayoutSummary) => {
     if (!targetCompanyId || !recData?.cycle?.id) return;
     try {
-      await unmatchMutation.mutateAsync({
-        companyId: targetCompanyId,
-        cycleId: recData.cycle.id,
-        calculationId: employee.calculation_id,
-      });
+      await unmatchMutation.mutateAsync(employee.calculation_id);
       toast({
         title: 'Párosítás feloldva',
         description: `${employee.employee_name} kifizetésének párosítása törölve lett.`,
@@ -180,7 +175,7 @@ export default function PayrollReconciliationPage({ embedded = false }: PayrollR
     }
 
     const companyName = selectedCompany?.name || 'Visibill Ügyfél';
-    const cleanDebtorIban = formatToIban(debtorIban || selectedCompany?.bank_account || 'HU000000000000000000000000');
+    const cleanDebtorIban = formatToIban(debtorIban || (selectedCompany as any)?.bank_account || 'HU000000000000000000000000');
 
     const payoutItems = unpaidOrPartial.map((emp) => ({
       employeeId: emp.employee_id,

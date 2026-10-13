@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-10-12  
-> **Összesen:** 200 döntés (183 egyedi döntési fájl) | ✅ Decided: 196 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-10-13  
+> **Összesen:** 202 döntés (185 egyedi döntési fájl) | ✅ Decided: 198 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -310,5 +310,7 @@
 | P-181 | PRC Főkönyvi Kivonat Export Elnevezési Konvenció és Letisztult Megjelenítés UX | ✅ Decided | [P-181](./P-181-prc-general-ledger-export-naming-ux.md) |
 | P-182 | Agora és Novitax Formátumhű Főkönyvi Kivonat és Eredménykimutatás („A” változat) PDF és Excel Export UX | ✅ Decided | [P-182](./P-182-agora-financial-reports-and-income-statement-export-ux.md) |
 | P-184 | Bérszámfejtési Irányítópult Tabosítás, Bérkontroll és Letisztult Menükezelés UX | ✅ Decided | [P-184](./P-184-payroll-dashboard-tabs-and-reconciliation-ux.md) |
+| P-185 | TENY Rekonciliáció, Kivezetés Jóváhagyás és Fejlesztési Tartalék Riasztás UX | ✅ Decided | [P-185](./P-185-fixed-assets-reconciliation-disposal-approval-and-reserve-alerts-ux.md) |
+| P-186 | TENY Raktár és Felelős Kezelés, Kétnyelvű Átadási Bizonylat, Címkenyomtatás, Leltárív és Pályázati Projektlap UX | ✅ Decided | [P-186](./P-186-fixed-assets-phase2-and-phase3-ux.md) |
 
 

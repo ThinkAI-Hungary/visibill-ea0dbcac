@@ -103,7 +103,7 @@ export async function postAssetActivationToLedger(
       p_inventory_number: inventoryNumber,
       p_acquisition_value: acquisitionValue,
       p_activation_date: activationDate,
-      p_asset_gl_account_id: glAccountId,
+      p_gl_account_id: glAccountId,
       p_cip_gl_account_id: gl161,
       p_currency: currency || 'HUF',
     });

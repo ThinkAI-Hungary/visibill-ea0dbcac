@@ -33,10 +33,11 @@ Mielőtt bármilyen kódolási feladatot befejezettnek jelentesz a felhasználó
 2. **TypeScript Típusellenőrzés:**
    * Futtasd le és győződj meg a hibamentességről:
      ```powershell
-     npm run build
-     # vagy
-     npx tsc --noEmit
+     npm run typecheck
+     # vagy célzottan:
+     npx tsc --project tsconfig.app.json --noEmit
      ```
+   * Szigorúan tilos a paraméter nélküli `npx tsc --noEmit` használata, mert a gyökér `tsconfig.json` a Project References miatt üres (`files: []`) és kihagyja az alkalmazáskód vizsgálatát!
    * Ha a parancs fordítási vagy típussérülést jelez, javítsd ki mielőtt válaszolsz.
 3. **Kötelező Tesztelés & Tesztek Futtatása (Különösen RPC és Edge Function esetén):**
    * **Kötelező tesztírás:** Bármilyen RPC-t vagy Edge Function-t hozol létre vagy módosítasz, **szigorúan kötelező automatizált tesztet írni hozzá** (Vitest kliensoldali regressziós/szerződésteszt a `src/test/` alatt, vagy Deno teszt az Edge Function mellett).

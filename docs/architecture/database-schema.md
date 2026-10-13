@@ -1,7 +1,7 @@
 # eaisybill-prod — Adatbázis Séma Áttekintés
 
-> **Utoljára frissítve:** 2026-10-11  
-> **Összesen:** 199 aktív alkalmazás-tábla (200 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
+> **Utoljára frissítve:** 2026-10-13  
+> **Összesen:** 202 aktív alkalmazás-tábla (203 sémában) | **RLS:** mind engedélyezve (100% InitPlan & Single-Permissive optimalizált) | **FK Indexek:** 100% lefedettség | **Supabase PostgreSQL**
 
 Ez a dokumentáció az eaisybill-prod Supabase projekt teljes adatbázis sémáját tartalmazza. Célja, hogy bármely fejlesztő és AI agent azonnal megértse a táblastruktúrát, kapcsolatokat és felhasználási kontextust.
 A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [PostgreSQL RPC Katalógus](./rpc-catalog.md), a serverless függvényeket az [Edge Functions Katalógus](./edge-functions.md), a biztonsági és indexelési irányelveket pedig az [A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció](./decisions/A-092-database-security-and-performance-optimization.md) dokumentálja.
@@ -20,7 +20,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 - [📊 Főkönyv (General Ledger)](./database/07-general-ledger.md) — 10 tábla, ~30771 sor
 - [💰 Bér & Munkaidő](./database/08-salary-hr.md) — 5 tábla, ~341 sor
 - [🏦 Házipénztár & OPG](./database/09-petty-cash.md) — 8 tábla, ~1380 sor
-- [📦 Tárgyi Eszközök](./database/10-assets.md) — 4 tábla, ~35 sor
+- [📦 Tárgyi Eszközök](./database/10-assets.md) — 7 tábla, ~35 sor
 - [🚚 Szállítmányozás](./database/11-shipping.md) — 4 tábla, ~0 sor
 - [📋 Éves Beszámoló & ÁFA](./database/12-annual-reports.md) — 14 tábla, ~1934 sor
 - [📘 eaisyBooks — Alap](./database/13-eaisybooks-core.md) — 16 tábla, ~26176 sor
@@ -159,6 +159,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `company_email_settings` | 🏢 Cégek & Tagság | 8 | *(Legacy)* Régi egyrekordos levelezési beállítás. |
 | `company_fx_settings` | 🏢 Cégek & Tagság | 0 | Devizaárfolyam forrás beállítások. |
 | `company_locations` | 🏢 Cégek & Tagság | 0 | Telephelyek és székhelyek. |
+| `company_sub_locations` | 📦 Tárgyi Eszközök | 0 | Hierarchikus tárgyi eszköz tárolóhelyek és rész-helyszínek (M2.1, A-252) |
 | `company_members` | 🏢 Cégek & Tagság | 95 | Felhasználói tagságok és szerepkörök. |
 | `company_prompt_rules` | 🛠️ Platform & Üzemeltetés | 3 | Cégenkénti testreszabott LLM prompt szabályok és instrukciók (A-079). |
 | `company_settings` | 🏢 Cégek & Tagság | 4 | Cég általános működési beállításai. |
@@ -172,6 +173,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `employee_rates` | 💰 Bér & Munkaidő | 50 | Alkalmazotti óradíjak és bérkategóriák. |
 | `feedback` | 🛠️ Platform & Üzemeltetés | 71 | Felhasználói visszajelzések és hibajelentések. |
 | `fixed_assets` | 📦 Tárgyi Eszközök | 0 | Tárgyi eszközök törzsadatai és projekt FK. |
+| `fixed_asset_components` | 📦 Tárgyi Eszközök | 0 | Tárgyi eszköz alkatrész-, forrás- és ráaktiválási komponensek (M3.1, A-252) |
 | `gl_accounts` | 📊 Főkönyv | 20853 | Számlatükör főkönyvi számlái. |
 | `gl_audit_accounts` | 📊 Főkönyv | 116 | Importált főkönyvi számlák. |
 | `gl_audit_imports` | 📊 Főkönyv | 3 | XML főkönyvi import kötegek. |
@@ -180,6 +182,7 @@ A kapcsolódó adatbázis eljárások és szerveroldali logikák részleteit a [
 | `gl_overrides_log` | 📊 Főkönyv | 350 | Kézi GL besorolás felülbírálási napló. |
 | `gl_upload_notifications` | 📊 Főkönyv | 2950 | Főkönyvi import értesítések. |
 | `gl_view_templates` | 📊 Főkönyv | 0 | Főkönyvi nézetválasztó sablonok és egyedi oszlopkonfigurációk (A-248, P-182) |
+| `grant_projects` | 📦 Tárgyi Eszközök | 0 | Vissza nem térítendő beruházási támogatási és pályázati projektek (M3.1, M3.4, A-252) |
 | `hp_settings` | 🏦 Házipénztár | 0 | Házipénztár beállítások és határértékek. |
 | `invoice_items` | 📄 Számlák | 17473 | Feltöltött számlák tételsorai (ÁFA, GL, projekt, jegyzet). |
 | `invoice_uploads` | 📄 Számlák | 7186 | Számlafeltöltési kötegek és fájlok. |

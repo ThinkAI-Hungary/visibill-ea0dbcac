@@ -267,6 +267,7 @@ export type Database = {
           cost_center_id: string | null
           dc_type: string
           description: string | null
+          fixed_asset_id: string | null
           foreign_amount: number | null
           gl_account_id: string | null
           header_id: string
@@ -287,6 +288,7 @@ export type Database = {
           cost_center_id?: string | null
           dc_type: string
           description?: string | null
+          fixed_asset_id?: string | null
           foreign_amount?: number | null
           gl_account_id?: string | null
           header_id: string
@@ -307,6 +309,7 @@ export type Database = {
           cost_center_id?: string | null
           dc_type?: string
           description?: string | null
+          fixed_asset_id?: string | null
           foreign_amount?: number | null
           gl_account_id?: string | null
           header_id?: string
@@ -322,6 +325,13 @@ export type Database = {
           vat_role?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "acc_journal_lines_fixed_asset_id_fkey"
+            columns: ["fixed_asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "acc_journal_lines_gl_account_id_fkey"
             columns: ["gl_account_id"]
@@ -6345,6 +6355,67 @@ export type Database = {
           },
         ]
       }
+      company_sub_locations: {
+        Row: {
+          code: string | null
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          location_id: string
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location_id: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location_id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_sub_locations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_sub_locations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "company_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_sub_locations_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "company_sub_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_members: {
         Row: {
           company_id: string
@@ -6992,12 +7063,20 @@ export type Database = {
           activated_by_user_id: string | null
           activation_date: string
           company_id: string
+          cost_center_id: string | null
           created_at: string | null
           currency: string | null
+          custodian_id: string | null
           depreciation_method: string | null
           depreciation_schedule: Json | null
           description: string | null
+          disposal_committee: Json | null
           disposal_date: string | null
+          disposal_details: Json | null
+          disposal_journal_entry_id: string | null
+          disposal_reason_type: string | null
+          disposal_status: string
+          disposal_waste_info: Json | null
           documents: Json | null
           gl_account_id: string | null
           id: string
@@ -7012,6 +7091,7 @@ export type Database = {
           source_invoice_number: string | null
           source_invoice_type: string | null
           status: string
+          sub_location_id: string | null
           supplier_name: string | null
           tao_rate_override: number | null
           tao_template_id: string | null
@@ -7027,12 +7107,20 @@ export type Database = {
           activated_by_user_id?: string | null
           activation_date: string
           company_id: string
+          cost_center_id?: string | null
           created_at?: string | null
           currency?: string | null
+          custodian_id?: string | null
           depreciation_method?: string | null
           depreciation_schedule?: Json | null
           description?: string | null
+          disposal_committee?: Json | null
           disposal_date?: string | null
+          disposal_details?: Json | null
+          disposal_journal_entry_id?: string | null
+          disposal_reason_type?: string | null
+          disposal_status?: string
+          disposal_waste_info?: Json | null
           documents?: Json | null
           gl_account_id?: string | null
           id?: string
@@ -7047,6 +7135,7 @@ export type Database = {
           source_invoice_number?: string | null
           source_invoice_type?: string | null
           status?: string
+          sub_location_id?: string | null
           supplier_name?: string | null
           tao_rate_override?: number | null
           tao_template_id?: string | null
@@ -7062,12 +7151,20 @@ export type Database = {
           activated_by_user_id?: string | null
           activation_date?: string
           company_id?: string
+          cost_center_id?: string | null
           created_at?: string | null
           currency?: string | null
+          custodian_id?: string | null
           depreciation_method?: string | null
           depreciation_schedule?: Json | null
           description?: string | null
+          disposal_committee?: Json | null
           disposal_date?: string | null
+          disposal_details?: Json | null
+          disposal_journal_entry_id?: string | null
+          disposal_reason_type?: string | null
+          disposal_status?: string
+          disposal_waste_info?: Json | null
           documents?: Json | null
           gl_account_id?: string | null
           id?: string
@@ -7082,6 +7179,7 @@ export type Database = {
           source_invoice_number?: string | null
           source_invoice_type?: string | null
           status?: string
+          sub_location_id?: string | null
           supplier_name?: string | null
           tao_rate_override?: number | null
           tao_template_id?: string | null
@@ -7097,6 +7195,27 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_cost_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_custodian_id_fkey"
+            columns: ["custodian_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_disposal_journal_entry_id_fkey"
+            columns: ["disposal_journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "acc_journal_headers"
             referencedColumns: ["id"]
           },
           {
@@ -7118,6 +7237,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_sub_location_id_fkey"
+            columns: ["sub_location_id"]
+            isOneToOne: false
+            referencedRelation: "company_sub_locations"
             referencedColumns: ["id"]
           },
           {
@@ -13076,6 +13202,36 @@ export type Database = {
           p_partner_tax?: string
           p_skonto_days?: number
           p_skonto_percent?: number
+        }
+        Returns: Json
+      }
+      reconcile_fixed_assets_with_gl: {
+        Args: { p_company_id: string; p_date?: string }
+        Returns: Json
+      }
+      request_asset_disposal: {
+        Args: {
+          p_asset_id: string
+          p_committee?: Json
+          p_company_id: string
+          p_details?: Json
+          p_disposal_date: string
+          p_reason?: string
+          p_reason_type: string
+          p_waste_info?: Json
+        }
+        Returns: Json
+      }
+      reject_asset_disposal: {
+        Args: { p_asset_id: string; p_company_id: string; p_reason?: string }
+        Returns: Json
+      }
+      approve_asset_disposal: {
+        Args: {
+          p_asset_id: string
+          p_company_id: string
+          p_description?: string
+          p_lines: Json
         }
         Returns: Json
       }

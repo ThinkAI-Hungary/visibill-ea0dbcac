@@ -78,9 +78,9 @@ export const BUILTIN_TEMPLATES_FALLBACK: GlViewTemplate[] = [
 
 export const BUILTIN_GL_TEMPLATES = BUILTIN_TEMPLATES_FALLBACK;
 
-export function useGlViewTemplates() {
+export function useGlViewTemplates(propCompanyId?: string) {
   const { selectedCompany } = useCompany();
-  const companyId = selectedCompany?.id;
+  const companyId = propCompanyId || selectedCompany?.id;
   const { effectiveSettings, saveMutation } = useCompanySettings();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -224,6 +224,7 @@ export function useGlViewTemplates() {
       name: string;
       description?: string;
       columns: GlTemplateColumn[];
+      template_type?: 'builtin' | 'custom';
       source_file_name?: string;
     }) => {
       if (!companyId) throw new Error('Nincs kiválasztva aktív cég.');
