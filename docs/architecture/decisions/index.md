@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-13  
-> **Összesen:** 254 döntés (239 egyedi döntési fájl) | ✅ Decided: 252 | ⛔ Superseded: 2
+> **Összesen:** 255 döntés (240 egyedi döntési fájl) | ✅ Decided: 253 | ⛔ Superseded: 2
 
 
 ---
@@ -291,6 +291,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-252 | TÉNY Phase 2 és Phase 3 — Tárolóhely- és Felelős-hierarchia, Hibrid Címkenyomtatás, Mobil Leltározó, Többforrásos Komponensek, Pályázati PIE Feloldás és 4-oldalú Rekonciliáció | ✅ Decided | [A-252](./A-252-fixed-assets-phase2-and-phase3-inventory-grants-components-pie.md) |
 | A-253 | RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Export Motor Architektúra | ✅ Decided | [A-253](./A-253-rlb-general-ledger-basic-and-extended-templates-architecture.md) |
 | A-254 | Házipénztár Egyedi Név, Bizonylatszám Szekvencia és 65-ös ÁFA Bizonylat Architektúra | ✅ Decided | [A-254](./A-254-petty-cash-custom-name-voucher-number-and-vat-entry-architecture.md) |
+| A-255 | Technikai Könyvelési és Bérszámfejtési RPC Jogosultságkezelés, Külső Könyvelői Hozzáférés (has_accounty_company_access) és Folyószámla Típusbiztonság | ✅ Decided | [A-255](./A-255-technical-accounting-and-payroll-accountant-access-and-subledger-type-safety.md) |
 
 
 

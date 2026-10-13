@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "src/components/AppSidebar.tsx": {
-    "mtime": 1791903796.1521058,
-    "ast_hash": "cf4710567d81ef463aef01f84eb491e9",
+    "mtime": 1791903905.2900846,
+    "ast_hash": "c04b8059a87f9d754975328a6fdc2084",
     "semantic_hash": ""
   },
   "src/components/AssetActivationDialog.tsx": {
@@ -2980,8 +2980,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791903796.071741,
-    "ast_hash": "e5c91446d3b5160ef4e2f4f1df51f1a2",
+    "mtime": 1791904340.6986065,
+    "ast_hash": "a7b9d11b71e265625b3e9fb03fb7a3f2",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -4900,8 +4900,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/03-permissions.md": {
-    "mtime": 1791901839.6787422,
-    "ast_hash": "9d15abf7a3bc1936a6e839752454a489",
+    "mtime": 1791904408.9580185,
+    "ast_hash": "45675c48b7197b73586dd16f91b71eb0",
     "semantic_hash": ""
   },
   "docs/architecture/database/04-invoices.md": {
@@ -4955,8 +4955,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/14-eaisybooks-payroll.md": {
-    "mtime": 1791901839.679741,
-    "ast_hash": "e2e95a1e9c80fe64c9285b0ae4c57fd6",
+    "mtime": 1791904392.6864035,
+    "ast_hash": "6e0bdd24f56db3b65aecbfa9c3399ce3",
     "semantic_hash": ""
   },
   "docs/architecture/database/15-eaisybooks-tax-legal.md": {
@@ -6650,8 +6650,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/22-accounting-journals.md": {
-    "mtime": 1791583290.9147763,
-    "ast_hash": "2006ed6594dcec2a90db2636b73e50e9",
+    "mtime": 1791904376.284097,
+    "ast_hash": "fec02e81971e76415e4738e7aaea7bd8",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-057-accounting-journals-architecture.md": {
@@ -8560,8 +8560,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1791903796.0727415,
-    "ast_hash": "beec3a6d99e1d5504c1c1c4ebc97d693",
+    "mtime": 1791904360.1455796,
+    "ast_hash": "69c7a159c53718391bd3177b6a1b8608",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
@@ -16639,6 +16639,16 @@
   "session-summary/Jani/2026-10-13/summary-164000-error-hunter-subledger-rpc-steel-chunking-and-sw-filter.md": {
     "mtime": 1791903796.1511052,
     "ast_hash": "00e6e20a1f7d1189ceb6f1445bba77d5",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-255-technical-accounting-and-payroll-accountant-access-and-subledger-type-safety.md": {
+    "mtime": 1791904328.196257,
+    "ast_hash": "6cd63ec0775e5d9d33f7b8837550f201",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-13/summary-170500-fix-tech-accounting-and-payroll-rpc-external-accountant-auth.md": {
+    "mtime": 1791903905.5170863,
+    "ast_hash": "ba41189bae8758d9ac3b826c88409d8a",
     "semantic_hash": ""
   }
 }
