@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn, formatVatRate, is27PercentVatRate, normalizeVatRatePercent } from '@/lib/utils';
+import { validateAndResolveItemVat } from '@/lib/invoiceItemVatValidation';
 import { isValidUUID } from '@/lib/validationUtils';
 import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ArrowLeftRight, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark, CalendarClock } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -227,6 +228,12 @@ export function InvoiceItemsDialog({
       let vatSummary = (data as any)?.vat_summary || null;
       let isRc = (data as any)?.is_reverse_charge || false;
 
+      let twinNavId: string | null = null;
+      let twinNavNumber: string | null = null;
+      let twinNavNetAmount: number | null = null;
+      let twinNavVatAmount: number | null = null;
+      let twinNavGrossAmount: number | null = null;
+
       if (source === 'submitted') {
         if ((data as any)?.forditott_adozas != null) {
           isRc = Boolean((data as any).forditott_adozas);
@@ -234,7 +241,7 @@ export function InvoiceItemsDialog({
         if ((data as any)?.bizonylatsorszam) {
           const num = ((data as any).bizonylatsorszam as string).replace(/\s+/g, '');
           let twinQuery = (supabase.from('nav_invoices') as any)
-            .select('vat_summary, is_reverse_charge');
+            .select('id, invoice_number, invoice_net_amount, invoice_vat_amount, invoice_gross_amount, vat_summary, is_reverse_charge');
           if ((data as any)?.company_id) {
             twinQuery = twinQuery.eq('company_id', (data as any).company_id);
           }
@@ -247,6 +254,11 @@ export function InvoiceItemsDialog({
             if ((twinNav as any).is_reverse_charge != null) {
               isRc = (twinNav as any).is_reverse_charge;
             }
+            twinNavId = (twinNav as any).id || null;
+            twinNavNumber = (twinNav as any).invoice_number || null;
+            twinNavNetAmount = (twinNav as any).invoice_net_amount != null ? Number((twinNav as any).invoice_net_amount) : null;
+            twinNavVatAmount = (twinNav as any).invoice_vat_amount != null ? Number((twinNav as any).invoice_vat_amount) : null;
+            twinNavGrossAmount = (twinNav as any).invoice_gross_amount != null ? Number((twinNav as any).invoice_gross_amount) : null;
           }
         }
       }
@@ -275,6 +287,11 @@ export function InvoiceItemsDialog({
         gl_classifications: (data as any)?.gl_classifications || null,
         invoice_number: (data as any)?.invoice_number || (data as any)?.bizonylatsorszam || null,
         details_fetched: (data as any)?.details_fetched ?? null,
+        twinNavId,
+        twinNavNumber,
+        twinNavNetAmount,
+        twinNavVatAmount,
+        twinNavGrossAmount,
       } as {
         project_id?: string | null;
         invoice_direction?: string;
@@ -297,6 +314,11 @@ export function InvoiceItemsDialog({
         bizonylatsorszam?: string | null;
         invoice_number?: string | null;
         details_fetched?: boolean | null;
+        twinNavId?: string | null;
+        twinNavNumber?: string | null;
+        twinNavNetAmount?: number | null;
+        twinNavVatAmount?: number | null;
+        twinNavGrossAmount?: number | null;
       } | null;
     },
     enabled: open && !!invoiceId,
@@ -626,6 +648,178 @@ export function InvoiceItemsDialog({
       return [];
     }
   }, [source, invoiceId, selectedCompany?.id, activePresetId]);
+
+  // Fetch authoritative twin NAV items if parent invoice has a twin in nav_invoices
+  const { data: twinNavItems = [], isLoading: isTwinNavLoading } = useQuery({
+    queryKey: ['twinNavItems', (parentInvoice as any)?.twinNavId],
+    queryFn: async () => {
+      const twinId = (parentInvoice as any)?.twinNavId;
+      if (!twinId) return [];
+      const { data, error } = await supabase
+        .from('nav_invoice_items')
+        .select('*')
+        .eq('nav_invoice_id', twinId)
+        .order('line_number', { ascending: true });
+      if (error) {
+        console.warn('[InvoiceItemsDialog] Failed to fetch twinNavItems:', error);
+        return [];
+      }
+      return (data || []) as any[];
+    },
+    enabled: open && source === 'submitted' && !!((parentInvoice as any)?.twinNavId),
+  });
+
+  // Calculate items with discrepancies compared to NAV (OSA) twin
+  const navDiscrepancyItems = useMemo(() => {
+    if (source !== 'submitted' || !twinNavItems?.length) return [];
+    return items.filter(item => {
+      const navItem = twinNavItems.find((n: any) => n.line_number === item.line_number);
+      if (!navItem) return false;
+      const storedVat = item.vat_amount;
+      const navVat = navItem.vat_amount;
+      return storedVat != null && navVat != null && Math.abs(storedVat - navVat) > 2;
+    });
+  }, [source, items, twinNavItems]);
+
+  // Calculate items where mathematical reverse validation detected OCR corruption
+  const mathDiscrepancyItems = useMemo(() => {
+    const isRc = parentInvoice?.is_reverse_charge ?? false;
+    return items.filter(item => {
+      const v = validateAndResolveItemVat({
+        ...item,
+        is_reverse_charge: isRc,
+      });
+      return v.hasOcrVatDiscrepancy;
+    });
+  }, [items, parentInvoice?.is_reverse_charge]);
+
+  const [isSyncingFromNav, setIsSyncingFromNav] = useState(false);
+
+  const handleSyncFromNav = async () => {
+    const twinNavId = (parentInvoice as any)?.twinNavId;
+    if (!twinNavId || twinNavItems.length === 0) return;
+
+    setIsSyncingFromNav(true);
+    try {
+      // 1. Update line items in invoice_items with authoritative NAV data
+      for (const navItem of twinNavItems) {
+        const matchingItem = items.find(it => it.line_number === navItem.line_number);
+        if (matchingItem) {
+          const updatePayload: any = {
+            vat_amount: navItem.vat_amount,
+            net_amount: navItem.net_amount,
+            gross_amount: navItem.gross_amount,
+          };
+          if (navItem.vat_rate != null) {
+            updatePayload.vat_rate = typeof navItem.vat_rate === 'number' && navItem.vat_rate <= 1
+              ? `${Math.round(navItem.vat_rate * 100)}%`
+              : String(navItem.vat_rate);
+          }
+          if (navItem.line_description && (!matchingItem.line_description || matchingItem.line_description.trim() === '')) {
+            updatePayload.line_description = navItem.line_description;
+          }
+          await supabase
+            .from('invoice_items')
+            .update(updatePayload)
+            .eq('id', matchingItem.id);
+        }
+      }
+
+      // 2. Also update parent invoice totals if twin NAV headers are available
+      const navVat = (parentInvoice as any)?.twinNavVatAmount;
+      const navGross = (parentInvoice as any)?.twinNavGrossAmount;
+      const navNet = (parentInvoice as any)?.twinNavNetAmount;
+      if (navVat != null || navGross != null || navNet != null) {
+        const invPayload: any = {};
+        if (navVat != null) invPayload.afa_osszeg_osszesen = navVat;
+        if (navGross != null) invPayload.brutto_vegosszeg = navGross;
+        if (navNet != null) invPayload.adoalap_osszesen = navNet;
+
+        await supabase
+          .from('invoices')
+          .update(invPayload)
+          .eq('id', invoiceId);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['parentInvoice', source, invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return'] });
+      queryClient.invalidateQueries({ queryKey: ['vatCollectorItems'] });
+
+      toast({
+        title: 'NAV (OSA) adatok átemelve',
+        description: 'A számlatételek és összegek sikeresen frissítve lettek a hivatalos NAV adatok alapján.',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Szinkronizálási hiba',
+        description: err.message || 'Nem sikerült a NAV adatok átemelése.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSyncingFromNav(false);
+    }
+  };
+
+  const [isSavingMathCorrections, setIsSavingMathCorrections] = useState(false);
+
+  const handleSaveMathCorrections = async () => {
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    setIsSavingMathCorrections(true);
+    try {
+      let savedCount = 0;
+      const isRc = parentInvoice?.is_reverse_charge ?? false;
+      for (const item of items) {
+        const validation = validateAndResolveItemVat({
+          ...item,
+          is_reverse_charge: isRc,
+        });
+        if (validation.isAutoCorrected && validation.hasOcrVatDiscrepancy && validation.vatAmount !== null) {
+          const updatePayload: any = { vat_amount: validation.vatAmount };
+          if (validation.grossAmount !== null) {
+            updatePayload.gross_amount = validation.grossAmount;
+          }
+          await supabase
+            .from(table as any)
+            .update(updatePayload)
+            .eq('id', item.id);
+          savedCount++;
+        }
+      }
+
+      // If submitted invoice and header VAT or Gross was corrupted, also update parent invoice header
+      if (source === 'submitted' && (totals.vat >= 0 || totals.gross > 0)) {
+        const invPayload: any = {};
+        if (totals.vat >= 0) invPayload.afa_osszeg_osszesen = totals.vat;
+        if (totals.gross > 0) invPayload.brutto_vegosszeg = totals.gross;
+        if (totals.net > 0) invPayload.adoalap_osszesen = totals.net;
+        await supabase
+          .from('invoices')
+          .update(invPayload)
+          .eq('id', invoiceId);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['parentInvoice', source, invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return'] });
+      queryClient.invalidateQueries({ queryKey: ['vatCollectorItems'] });
+
+      toast({
+        title: 'Korrekciók elmentve',
+        description: `${savedCount} tétel ÁFA összege sikeresen frissítve lett az adatbázisban.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Mentési hiba',
+        description: err.message || 'Nem sikerült menteni a korrekciókat.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingMathCorrections(false);
+    }
+  };
 
   // Telecom invoice smart detection
   const isTelecomInvoice = useMemo(() => {
@@ -1578,37 +1772,19 @@ export function InvoiceItemsDialog({
     return unit ? `${formatted} ${unit}` : formatted;
   };
 
-  const getVatAmount = (item: InvoiceLineItem): number | null => {
-    if (item.vat_amount !== null && item.vat_amount !== undefined && item.vat_amount !== 0) {
-      return item.vat_amount;
-    }
-    // Fallback if missing or 0 but net_amount > 0 and numeric vat_rate > 0 (e.g. NAV utility invoices like MVM)
-    if ((item.vat_amount === null || item.vat_amount === 0 || item.vat_amount === undefined) &&
-        (item.gross_amount === null || item.gross_amount === 0 || item.gross_amount === undefined) &&
-        item.net_amount && item.net_amount > 0 && item.vat_rate) {
-      const num = parseFloat(item.vat_rate);
-      if (!isNaN(num) && num > 0) {
-        const rate = num >= 1 ? num / 100 : num;
-        return Math.round(item.net_amount * rate);
-      }
-    }
-    return item.vat_amount ?? null;
-  };
+  const getVatAmount = useCallback((item: InvoiceLineItem): number | null => {
+    return validateAndResolveItemVat({
+      ...item,
+      is_reverse_charge: parentInvoice?.is_reverse_charge ?? false,
+    }).vatAmount;
+  }, [parentInvoice?.is_reverse_charge]);
 
-  const getGrossAmount = (item: InvoiceLineItem): number | null => {
-    if (item.gross_amount !== null && item.gross_amount !== undefined && item.gross_amount !== 0) {
-      return item.gross_amount;
-    }
-    const computedVat = getVatAmount(item);
-    if (item.net_amount !== null && computedVat !== null) {
-      return item.net_amount + computedVat;
-    }
-    if (item.gross_amount !== null && item.gross_amount !== undefined) {
-      return item.gross_amount;
-    }
-    if (item.net_amount !== null) return item.net_amount;
-    return null;
-  };
+  const getGrossAmount = useCallback((item: InvoiceLineItem): number | null => {
+    return validateAndResolveItemVat({
+      ...item,
+      is_reverse_charge: parentInvoice?.is_reverse_charge ?? false,
+    }).grossAmount;
+  }, [parentInvoice?.is_reverse_charge]);
 
   const totals = useMemo(() => {
     let net = 0;
@@ -1643,7 +1819,7 @@ export function InvoiceItemsDialog({
       nonDeductibleVat,
       hasNonDeductible: hasNonDeductible && nonDeductibleVat > 0,
     };
-  }, [items]);
+  }, [items, getVatAmount, getGrossAmount]);
 
   // Selection helpers — only count selectable (non-activated) items
   const allSelected = selectableItems.length > 0 && selectableItems.every(i => selectedIds.has(i.id));
@@ -1742,6 +1918,61 @@ export function InvoiceItemsDialog({
                   >
                     {isApplying7030 ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Sparkles className="w-3.5 h-3.5 text-amber-500 mr-1.5" />}
                     {t('invoices:dialogs.items.apply_70_30_btn')}
+                  </Button>
+                </div>
+              )}
+
+              {/* Hivatalos NAV (OSA) ikerszámla szinkronizációs banner */}
+              {source === 'submitted' && (parentInvoice as any)?.twinNavId && (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-500/10 border border-blue-500/25 rounded-lg px-4 py-2.5 mb-3 text-xs">
+                  <div className="flex items-center gap-2 text-blue-900 dark:text-blue-100 min-w-0">
+                    <Landmark className="h-4 w-4 text-blue-500 shrink-0" />
+                    <div>
+                      <strong>Hivatalos NAV (OSA) számlapár:</strong> <span className="font-mono font-bold">{(parentInvoice as any).twinNavNumber}</span>
+                      {navDiscrepancyItems.length > 0 ? (
+                        <span className="ml-2 text-amber-700 dark:text-amber-300 font-medium">
+                          ({navDiscrepancyItems.length} tételnél ÁFA eltérés a feltöltött adatokhoz képest)
+                        </span>
+                      ) : (
+                        <span className="ml-2 text-emerald-700 dark:text-emerald-300 font-medium">
+                          (Tételek összegei megegyeznek)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSyncFromNav}
+                    disabled={isSyncingFromNav}
+                    className="h-7 text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-900 dark:text-blue-100 border-blue-500/40 shrink-0 font-medium cursor-pointer"
+                  >
+                    {isSyncingFromNav ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Sparkles className="w-3.5 h-3.5 text-blue-500 mr-1.5" />}
+                    NAV (OSA) tételek átemelése
+                  </Button>
+                </div>
+              )}
+
+              {/* Matematikai OCR ÁFA korrekció banner */}
+              {mathDiscrepancyItems.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-amber-500/10 border border-amber-500/25 rounded-lg px-4 py-2.5 mb-3 text-xs">
+                  <div className="flex items-center gap-2 text-amber-900 dark:text-amber-100 min-w-0">
+                    <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
+                    <div>
+                      <strong>Matematikai ÁFA korrekció:</strong> {mathDiscrepancyItems.length} tételnél a tárolt ÁFA hibás volt (pl. OCR csonkítás). A rendszer automatikusan Bruttó - Nettó alapján a helyes ÁFÁ-t jeleníti meg és összegzi.
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSaveMathCorrections}
+                    disabled={isSavingMathCorrections}
+                    className="h-7 text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 border-amber-500/40 shrink-0 font-medium cursor-pointer"
+                  >
+                    {isSavingMathCorrections ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Check className="w-3.5 h-3.5 text-amber-500 mr-1.5" />}
+                    Javított ÁFA mentése adatbázisba
                   </Button>
                 </div>
               )}
@@ -2067,7 +2298,55 @@ export function InvoiceItemsDialog({
                           })()}
                         </TableCell>
                         <TableCell className="text-right font-mono text-xs px-2 whitespace-nowrap">
-                          {formatAmount(getVatAmount(item))}
+                          {(() => {
+                            const val = validateAndResolveItemVat({
+                              ...item,
+                              is_reverse_charge: isReverseCharge,
+                            });
+                            const matchingNav = twinNavItems.find((n: any) => n.line_number === item.line_number);
+                            const hasNavDiff = matchingNav && matchingNav.vat_amount != null && item.vat_amount != null && Math.abs(matchingNav.vat_amount - item.vat_amount) > 2;
+
+                            return (
+                              <div className="flex items-center justify-end gap-1.5">
+                                {val.hasOcrVatDiscrepancy ? (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 cursor-help">
+                                        <Sparkles className="w-2.5 h-2.5 text-amber-500" />
+                                        <span>OCR korr.</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="text-xs max-w-xs z-[130] text-left">
+                                      <p className="font-semibold text-amber-600 dark:text-amber-400">Automatikus matematikai korrekció</p>
+                                      <p className="mt-1">{val.reason}</p>
+                                      {matchingNav && matchingNav.vat_amount != null && (
+                                        <p className="mt-1 pt-1 border-t border-border/50 text-blue-600 dark:text-blue-400 font-medium">
+                                          Hivatalos NAV (OSA) ÁFA: {formatAmount(matchingNav.vat_amount)}
+                                        </p>
+                                      )}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ) : hasNavDiff ? (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 cursor-help">
+                                        <Info className="w-2.5 h-2.5 text-blue-500" />
+                                        <span>NAV eltérés</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="text-xs max-w-xs z-[130] text-left">
+                                      <p className="font-semibold text-blue-600 dark:text-blue-400">NAV Online Számla eltérés</p>
+                                      <p className="mt-1">NAV ÁFA: {formatAmount(matchingNav.vat_amount)}</p>
+                                      <p>Tárolt ÁFA: {formatAmount(item.vat_amount)}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ) : null}
+                                <span className={cn(val.hasOcrVatDiscrepancy && "font-bold text-amber-700 dark:text-amber-300")}>
+                                  {formatAmount(val.vatAmount)}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                         {!isOutbound && (
                           <TableCell className="text-center px-1 whitespace-nowrap">
