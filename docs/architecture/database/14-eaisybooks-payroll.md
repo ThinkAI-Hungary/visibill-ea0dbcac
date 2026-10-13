@@ -475,3 +475,21 @@
 
 **Indexek:** `idx_payout_matches_company_cycle` (`company_id`, `cycle_id`), `idx_payout_matches_employee` (`employee_id`), `idx_payout_matches_bank_tx` (`bank_transaction_id`)
 
+---
+
+### Bérszámfejtési és Bérkontroll RPC Függvények (Module 14, A-250, A-255)
+
+- `get_payroll_471_reconciliation(p_company_id uuid, p_year int, p_month int)`:
+  - Főkönyvi 471-es (Jövedelemelszámolási számla) forgalom és béranalitika havi egyeztetése.
+  - Visszaadja a nyitó, terhelési, követelési és záró 471-es egyenleget, a béranalitika szerinti nettó és utazási térítést, dolgozónkénti kifizetettségi státuszt (`PAID`, `PARTIAL`, `OVERPAID`, `PENDING`), és automatikusan generálja a diszkrepancia-listát (`OVERPAYMENT`, `OVERDUE_PAYOUT`, `GL_PAYROLL_MISMATCH`).
+  - Eredményét menti / frissíti az `accounty_payroll_reconciliations` táblában.
+  - Védve: `public.has_accounty_company_access(p_company_id)`.
+
+- `auto_match_payroll_bank_transactions(p_company_id uuid, p_year int, p_month int)`:
+  - Bérszámfejtési nettó kifizetések és a banki kiadási tranzakciók automatikus párosítása.
+  - 2-szintű heurisztika:
+    1. **Tier 1 (AUTO_IBAN):** Tisztított IBAN/számlaszám egyezés + pontos összeg egyezés.
+    2. **Tier 2 (AUTO_NAME):** Dolgozó vezeték- és keresztneve a partner nevében + pontos összeg egyezés.
+  - Sikeres egyezés esetén rögzíti a kapcsolatot az `accounty_payroll_payout_matches` táblában.
+  - Védve: `public.has_accounty_company_access(p_company_id)` és `rls_write_denied_company_ids('accounty', ARRAY['salaries'])` zárolásvédelem (A-255).
+

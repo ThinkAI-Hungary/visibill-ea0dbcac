@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-12  
-> **Összesen:** 250 döntés (235 egyedi döntési fájl) | ✅ Decided: 248 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-13  
+> **Összesen:** 251 döntés (236 egyedi döntési fájl) | ✅ Decided: 249 | ⛔ Superseded: 2
 
 
 ---
@@ -287,6 +287,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-247 | Szerepkör-képesség mátrix (Capability Matrix), Bérszámfejtő (payroll_specialist) szerepkör és ÁFA-zárolás backend védelme | ✅ Decided | [A-247](./A-247-role-capability-matrix.md) |
 | A-249 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra | ✅ Decided | [A-249](./A-249-petty-cash-invoice-linking-and-unlinking-atomic-rpcs.md) |
 | A-250 | 14. Bérszámfejtés és Főkönyvi Bérfeladás Modul Architektúra, GIRO Motor és Tab Konszolidáció | ✅ Decided | [A-250](./A-250-payroll-module-14-reconciliation-giro-and-tab-architecture.md) |
+| A-255 | Technikai Könyvelési és Bérszámfejtési RPC Jogosultságkezelés, Külső Könyvelői Hozzáférés (has_accounty_company_access) és Folyószámla Típusbiztonság | ✅ Decided | [A-255](./A-255-technical-accounting-and-payroll-accountant-access-and-subledger-type-safety.md) |
 
 
 

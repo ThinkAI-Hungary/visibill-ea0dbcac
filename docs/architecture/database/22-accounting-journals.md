@@ -230,8 +230,8 @@
 ### 6. Folyószámla és Nyitott Tételek Kezelése (Subledger RPC-k, A-175)
 - `get_subledger_items(p_company_id uuid, p_gl_account_id uuid, p_partner_id uuid, p_mode text, p_date_from date, p_date_to date, p_status_filter text)`:
   - Analitikus és nyitott folyószámla tételek lekérdezése (HUF/deviza, esedékesség, rendezett és hátralévő összeg). Támogatja a `'ALL_ACTIVE'`, `'POSTED_ONLY'`, `'DRAFT_ONLY'` szűrést.
-- `get_subledger_item_matches(p_line_id uuid)`:
-  - Adott naplósorhoz tartozó valamennyi kiegyenlítés részletezése (bizonylatszám, dátum, kiegyenlített összeg, kezelő).
+- `get_subledger_item_matches(p_company_id uuid, p_line_id uuid)`:
+  - Adott naplósorhoz tartozó valamennyi kiegyenlítés részletezése `TABLE` formátumban (párosítás ID, HUF és deviza összeg, pénznem, dátum, típus, megjegyzés, kapcsolódó bizonylatszám, dátum, T/K irány, összeg, naplókód és `other_description text`). Szigorú típusillesztés garantálja a 42804 hibamentességet (A-255).
 - `settle_open_items(p_company_id uuid, p_invoice_line_id uuid, p_settling_line_id uuid, p_amount_huf numeric, p_amount_foreign numeric, p_match_type text, p_notes text, p_user_id uuid)`:
   - Két naplósor (követelés/kötelezettség vs. kiegyenlítés) összevezetése és részösszeg levonása az `acc_open_item_matches` táblában.
 - `unsettle_open_items(p_company_id uuid, p_match_id uuid, p_user_id uuid)`:
@@ -275,5 +275,48 @@ Automatikus könyvelési szabályok központi konfigurációja a háttérben fut
 | `created_at` | timestamptz | — | `now()` | Létrehozás időbélyeg |
 | `updated_at` | timestamptz | — | `now()` | Utolsó módosítás időbélyeg |
 
+---
 
+### 7. Technikai Könyvelés és Számviteli Audit (Module 22, A-255)
 
+A számviteli adatok konzisztenciájának ellenőrzésére, az inverz számlaegyenlegek detektálására, a Partner 360 fokos pénzügyi pozíció aggregálására és az auditált főkönyvi átvezetésekre szolgáló moduláris alrendszer.
+
+#### `acc_reclassifications` (Főkönyvi Átvezetések Audit Naplója)
+
+**RLS:** ✅ | **Felelős:** Számviteli audit napló
+
+| Oszlop | Típus | Null | Default | Leírás |
+|---|---|---|---|---|
+| `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
+| `company_id` | uuid | — | — | FK → `companies.id` (CASCADE) |
+| `batch_number` | varchar(64) | — | — | Köteg azonosító (`BATCH-ATV-YYYYMMDD-HHMISS`) |
+| `source_gl_account_id` | uuid | — | — | Forrás főkönyvi számla (FK → `gl_accounts.id`) |
+| `target_gl_account_id` | uuid | — | — | Cél főkönyvi számla (FK → `gl_accounts.id`) |
+| `clearing_gl_account_id` | uuid | ✓ | NULL | Opcionális technikai elszámolási számla |
+| `reclassified_amount` | numeric(18,2) | — | — | Átvezetett összeg (HUF) |
+| `lines_count` | integer | — | — | Érintett naplósorok darabszáma |
+| `affected_journal_line_ids` | uuid[] | — | — | Átvezetett tételek azonosítói |
+| `generated_journal_header_id` | uuid | — | — | Generált Vegyes bizonylat fej (FK → `acc_journal_headers.id`) |
+| `storno_journal_header_id` | uuid | ✓ | NULL | Visszagörgetéskor generált sztornó bizonylat fej |
+| `reason` | text | — | — | Átvezetés számviteli indoklása |
+| `status` | varchar(32) | — | `'COMPLETED'` | Státusz: `COMPLETED` vagy `ROLLED_BACK` |
+| `executed_by` | uuid | — | — | Végrehajtó felhasználó (FK → `auth.users.id`) |
+| `rolled_back_by` | uuid | ✓ | NULL | Visszagörgető felhasználó |
+| `rolled_back_at` | timestamptz | ✓ | NULL | Visszagörgetés időbélyege |
+| `created_at` | timestamptz | — | `now()` | Létrehozás időbélyege |
+
+#### Moduláris Technikai Könyvelési RPC Függvények (A-255):
+- `detect_accounting_anomalies(p_company_id uuid, p_start_date date, p_end_date date)`:
+  - Automatikus számla- és egyenleg audit:
+    1. **Partner nélküli kötelező tételek:** Vevő (31), Szállító (454), Előlegek (35, 453), Kölcsönök (44, 458), Külső igénybe vett szolgáltatások (52).
+    2. **Inverz számlaegyenlegek (CRITICAL):** Negatív házipénztár (`381`), negatív bank (`384`), vagy túlfizetett szállítói tartozik egyenleg (`454`).
+    3. **ÁFA inkonzisztenciák:** Levonási tiltás alá eső számlák (pl. 552 reprezentáció) levonható ÁFA kóddal.
+  - Védve: `public.has_accounty_company_access(p_company_id)`.
+- `get_partner_360_matrix(p_company_id uuid, p_partner_id uuid, p_start_date date, p_end_date date, p_include_drafts boolean)`:
+  - Partnerre vonatkozó valamennyi főkönyvi kötelezettség és követelés aggregálása, nettó pénzügyi pozíció (`NET_RECEIVABLE` / `NET_PAYABLE` / `BALANCED`), és kompenzálható összeg kalkulációja. Védve: `has_accounty_company_access`.
+- `get_omni_partner_ledger(p_company_id uuid, p_gl_account_id uuid, p_account_code_prefix text, p_start_date date, p_end_date date, p_include_drafts boolean)`:
+  - Partnerenként aggregált főkönyvi kimutatás nettó egyenleggel és tételszámmal.
+- `execute_journal_reclassification(p_company_id uuid, p_source_gl_account_id uuid, p_target_gl_account_id uuid, p_journal_line_ids uuid[], p_reclassification_date date, p_reason text, p_clearing_gl_account_id uuid, p_is_simulation boolean)`:
+  - Zárt időszak és főkönyvi számlák ellenőrzése, új Vegyes (`VE`) bizonylat (`V-ATV-YYYY-XXXX`) és tételsorok (T cél, K forrás) létrehozása, valamint bejegyzés az `acc_reclassifications` táblába. Támogatja az előzetes szimulációs módot (`p_is_simulation`). Védve: `has_accounty_company_access` + `rls_write_denied_company_ids`.
+- `rollback_journal_reclassification(p_company_id uuid, p_reclassification_id uuid, p_reason text)`:
+  - Átvezetési köteg visszagörgetése szigorú ellentétes előjelű sztornó bizonylattal (`V-STV-YYYY-XXXX`), az eredeti bizonylat `SZTORNOZOTT` státuszra állításával és a köteg `ROLLED_BACK` jelölésével. Zárolásvédett (A-255).

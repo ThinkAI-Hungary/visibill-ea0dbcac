@@ -61,6 +61,8 @@
 > **Külső Könyvelői Főkönyvi Hozzáférés (`20261011052000`):** PERMISSIVE `accounty_bookkeeping_access` ALL szabályzat `acc_journals`, `acc_journal_headers`, `acc_journal_lines`, `acc_open_item_matches` táblákon az `accounty_assignments` alapján (`rls_accounty_bookkeeping_company_ids()` segédfüggvénnyel). Az `acc_accounting_periods` és `invoice_items` SELECT-only hozzáférést kapott. Bérszámfejtő kizárva.
 >
 > **Banki Utalások és Céges Bankszámlák RLS Védelme (`20261011130700`):** RESTRICTIVE write policyk (`payment_transfers_write_guard`, `company_bank_accounts_write_guard`) a `payment_transfers` és `company_bank_accounts` táblákon az INSERT, UPDATE és DELETE műveletekre. Kizárólag a cégvezetés és pénzügyi irányítás (`owner`, `admin`, `member`, `support_admin`) jogosult írásra. Megfigyelő (`viewer`), asszisztens (`assistant`), munkavállaló (`employee`), valamint külső könyvelők közvetlen táblamódosítása blokkolt.
+>
+> **RPC Eljárások Kötelező Hozzáférés-Ellenőrzési Mintája (A-255, `20261013180000`):** Szigorúan tilos az eljárásokban naiv `company_members` vizsgálatot végezni (`WHERE company_id = p_company_id AND user_id = auth.uid()`), mert az kizárja a megbízott külső könyvelőket (`accounty_assignments`). Ehelyett a `public.has_accounty_company_access(p_company_id)` függvényt kell alkalmazni (támogatva a cégtagokat, a kijelölt könyvelőket, az irodai adminokat és a support adminokat). Módosító (write) RPC eljárások esetén a hozzáférést kötelező kiegészíteni az `rls_write_denied_company_ids()` zárolási ellenőrzéssel.
 
 ---
 
