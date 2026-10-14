@@ -76,10 +76,11 @@ Amikor a fejlesztő vagy az AI agent bármilyen okból a **`develop` ágra vált
          * Így a `develop` ágon mások által párhuzamosan végzett fejlesztések 100%-os biztonsággal elszigetelve maradnak, és soha nem kerülnek ki véletlenül az éles (Production) környezetbe.
   * **Tilos a vak `git merge develop`:** Szigorúan tilos előzetes felmérés és felhasználói jóváhagyás nélkül teljes merge-et végezni, ha a `develop` ág divergens vagy idegen fejlesztéseket tartalmaz!
 
-* **Kötelező Éles Adatbázis- és Backend-szinkron Main Merge Során (Full Production Parity):**
-  * A `main` ágra történő merge-eléskor vagy hotfix promóciókor **NEM ELÉG kizárólag a formális migrációs fájlokat (`supabase/migrations/`) átvinni**!
-  * **SZIGORÚAN KÖTELEZŐ az összes olyan adatbázis-módosítást és backend elemet érvényesíteni a termelési (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`), amelyek szükségesek ahhoz, hogy a `main`-re kikerülő új vagy módosított funkciók élesben is hibátlanul működjenek:**
-    1. **Adatbázis sémamódosítások & migrációk:** Új táblák, oszlopok, indexek, enum típusok és idegen kulcsok átvezetése.
+* **Teljes Develop Merge Szabály (Nem-Hotfix Teljes Ág-Merge esetén kötelező Main DB Paritás):**
+  * **Alapelv:** Amennyiben nem egy célzott, izolált hotfix (`hotfix/<nev>`) kerül élesítésre, hanem a teljes `develop` ágat beolvasztjuk a `main`-be (`git merge develop`), **SZIGORÚAN KÖTELEZŐ a main adatbázist (Prod DB) is teljeskörűen szinkronizálni a fejlesztői adatbázissal**.
+  * **Minden változtatást le kell futtatni a main DB-n:** A kód és az adatbázis nem válhat el egymástól! A `develop` ágon felhalmozódott összes sémamódosítást, táblát, mezőt, migrációt, tárolt eljárást (RPC), RLS szabályt és Edge Functiont maradéktalanul, teljeskörűen végre kell hajtani az éles (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`).
+  * **SZIGORÚAN KÖTELEZŐ az összes olyan adatbázis-módosítást és backend elemet érvényesíteni a termelési (Prod) Supabase adatbázison, amelyek a `develop` ágon létrejöttek:**
+    1. **Adatbázis sémamódosítások & migrációk:** Minden új vagy módosított `supabase/migrations/` SQL fájl érvényesítése a Prod DB-n (mind a fizikai sémában, mind a `supabase_migrations.schema_migrations` naplóban).
     2. **Tárolt eljárások (RPC / SQL függvények):** Bármilyen új vagy módosított `CREATE OR REPLACE FUNCTION` eljárás és trigger függvény élesítése a Prod DB-ben.
     3. **RLS szabályok és biztonsági jogosultságok:** Új táblákhoz és műveletekhez tartozó `CREATE POLICY`, `ENABLE ROW LEVEL SECURITY`, valamint `GRANT / REVOKE` jogosultságok átvezetése.
     4. **Konfigurációs, Seed és Rendszeradatok:** Bármilyen rendszerbeállítási rekord, funkciókapcsoló (feature flag), alapértelmezett kategória/mapping, státuszkód vagy PGMQ queue regisztráció, amely a fejlesztés során létrejött és a kód futásához elengedhetetlen.
