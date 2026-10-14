@@ -31,6 +31,8 @@ const sampleRules = [
   },
 ];
 
+let dynamicRules: any[] = [...sampleRules];
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn(() => ({
@@ -87,7 +89,7 @@ vi.mock('@tanstack/react-query', () => {
   return {
     useQuery: ({ queryKey }: any) => {
       if (queryKey[0] === 'invoice_item_rules') {
-        return { data: sampleRules, isLoading: false };
+        return { data: dynamicRules, isLoading: false };
       }
       if (queryKey[0] === 'glAccounts_rules_dialog') {
         return { data: [{ id: 'gl-acc-1', gl_number: '5230', short_name: 'Távközlési szolgáltatás' }], isLoading: false };
@@ -109,6 +111,7 @@ describe('InvoiceRulesDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    dynamicRules = [...sampleRules];
     mockRpc.mockResolvedValue({ data: { total_updated: 5 }, error: null });
     mockUpdate.mockResolvedValue({ error: null });
     mockDelete.mockResolvedValue({ error: null });
@@ -153,5 +156,51 @@ describe('InvoiceRulesDialog', () => {
     expect(screen.getByText('Új számlakontírozási szabály létrehozása')).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/pl. Telekom számlák kontírozása/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Szabály létrehozása/i })).toBeInTheDocument();
+  });
+
+  it('switches to edit mode for an existing rule and populates form fields', () => {
+    render(<InvoiceRulesDialog {...defaultProps} />);
+
+    const editBtn = screen.getByTitle('Szerkesztés');
+    fireEvent.click(editBtn);
+
+    expect(screen.getByText('Számlaszabály szerkesztése')).toBeInTheDocument();
+    const nameInput = screen.getByPlaceholderText(/pl. Telekom számlák kontírozása/i) as HTMLInputElement;
+    expect(nameInput.value).toBe('Telekom számlák');
+    expect(screen.getByRole('button', { name: /Módosítás mentése/i })).toBeInTheDocument();
+  });
+
+  it('handles opening edit mode for a rule with null/undefined fields without throwing TypeError', () => {
+    dynamicRules = [
+      {
+        id: 'rule-corrupted',
+        company_id: 'company-uuid-1',
+        user_id: 'user-1',
+        name: null as any,
+        description_pattern: null as any,
+        pattern_type: 'contains',
+        direction: 'ALL',
+        partner_tax_number: null,
+        partner_name: null,
+        target_gl_number: '5230',
+        target_gl_account_id: null,
+        target_vat_code_id: null,
+        target_vat_code: null,
+        scope: 'company',
+        is_active: true,
+        priority: 100,
+        created_at: '2026-09-24T00:00:00Z',
+      },
+    ];
+
+    expect(() => {
+      render(<InvoiceRulesDialog {...defaultProps} />);
+      const editBtn = screen.getByTitle('Szerkesztés');
+      fireEvent.click(editBtn);
+    }).not.toThrow();
+
+    expect(screen.getByText('Számlaszabály szerkesztése')).toBeInTheDocument();
+    const saveBtn = screen.getByRole('button', { name: /Módosítás mentése/i });
+    expect(saveBtn).toBeDisabled();
   });
 });

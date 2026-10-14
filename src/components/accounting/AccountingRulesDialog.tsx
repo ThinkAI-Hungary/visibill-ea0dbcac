@@ -35,7 +35,7 @@ export function AccountingRulesDialog({
 
   // Fetch deterministic invoice item rules count for the badge
   const { data: itemRules = [] } = useQuery<any[]>({
-    queryKey: ['invoice_item_rules', companyId],
+    queryKey: ['invoice_item_rules', 'count', companyId],
     queryFn: async () => {
       if (!companyId) return [];
       const { data, error } = await supabase
