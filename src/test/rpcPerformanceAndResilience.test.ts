@@ -289,6 +289,47 @@ describe('RPC Performance & Edge Function Resilience Tests', () => {
     });
   });
 
+  describe('get_gl_journal_view_items RPC Return Contract', () => {
+    it('validates server-side paginated journal item schema with window totals and mapped GL codes', () => {
+      const mockJournalRow = {
+        item_id: 'item-uuid-1',
+        gl_account_id: 'gl-uuid-1',
+        gl_number: '529.',
+        gl_name: 'Egyéb igénybe vett szolgáltatások',
+        source_table: 'acc_journal_lines',
+        item_type: 'Könyvelt napló tétel (T)',
+        partner: 'DigitalOcean LLC',
+        description: 'Droplets havi díj',
+        amount: 28000,
+        original_amount: 28000,
+        original_currency: 'HUF',
+        item_date: '2026-10-01',
+        is_temporary: false,
+        total_count: 1420,
+        total_debit: 54200000,
+        total_credit: 54100000,
+      };
+
+      expect(mockJournalRow).toMatchObject({
+        item_id: expect.any(String),
+        gl_account_id: expect.any(String),
+        gl_number: expect.any(String),
+        gl_name: expect.any(String),
+        source_table: expect.stringMatching(/^(transactions|invoice_items|invoices_vat|invoices_partner|nav_invoice_items|nav_invoices_vat|nav_invoices_partner|journal_entry|acc_journal_lines|invoices)$/),
+        partner: expect.any(String),
+        description: expect.any(String),
+        amount: expect.any(Number),
+        original_amount: expect.any(Number),
+        original_currency: expect.any(String),
+        item_date: expect.any(String),
+        is_temporary: expect.any(Boolean),
+        total_count: expect.any(Number),
+        total_debit: expect.any(Number),
+        total_credit: expect.any(Number),
+      });
+    });
+  });
+
   describe('get_filtered_submitted_invoices RPC Return Contract', () => {
     it('validates submitted invoice contract with accountant review & match status', () => {
       const mockSubmittedInvoice = {

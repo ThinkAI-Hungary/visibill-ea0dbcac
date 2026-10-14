@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import JournalView, { getLogicalTypeLabel, TYPE_LABELS } from '../JournalView';
-import * as glDataModule from '@/lib/glData';
+import JournalView, { getLogicalTypeLabel } from '../JournalView';
+import * as glDataModule from '../../../lib/glData';
 
 // Mock contexts and hooks
 vi.mock('@/contexts/CompanyContext', () => ({
@@ -62,13 +62,18 @@ describe('JournalView - logical types and unclassified label', () => {
         item_date: '2026-09-01',
         partner: 'Hetzner Online GmbH',
         description: 'Project Default',
-        gl_account_id: null,
+        gl_account_id: '00000000-0000-0000-0000-000000000000',
         gl_number: 'UNCLASSIFIED',
         gl_name: 'Besorolatlan tételek',
         item_type: 'Bejövő (Költség)',
         amount: -14527.27,
+        original_amount: -14527.27,
+        original_currency: 'EUR',
         source_table: 'invoice_items',
-        is_excluded: false,
+        is_temporary: false,
+        total_count: 3,
+        total_debit: 11621989.00,
+        total_credit: 14527.27,
       },
       {
         item_id: 'item-2',
@@ -76,40 +81,44 @@ describe('JournalView - logical types and unclassified label', () => {
         partner: 'DigitalOcean LLC',
         description: 'Droplets',
         gl_account_id: 'acc-529',
+        gl_number: '529.',
+        gl_name: 'Egyéb igénybe vett szolgáltatások',
         amount: 28.00,
+        original_amount: 28.00,
+        original_currency: 'EUR',
         source_table: 'acc_journal_lines',
-        is_excluded: false,
+        item_type: 'Könyvelt napló tétel (T)',
+        is_temporary: false,
+        total_count: 3,
+        total_debit: 11621989.00,
+        total_credit: 14527.27,
       },
       {
         item_id: 'item-3',
         item_date: '2026-08-31',
         partner: 'Wagner Global Services Kft.',
         description: 'Szoftver',
-        gl_account_id: null,
-        amount: 11621961.00,
-        source_table: 'nav_invoice_items',
-        is_excluded: false,
-      },
-    ];
-
-    const mockBalances = [
-      {
-        gl_account_id: 'acc-529',
-        gl_number: '529.',
-        short_name: 'Egyéb igénybe vett szolgáltatások',
-        total_balance: 28.00,
-      },
-      {
-        gl_account_id: null,
+        gl_account_id: '00000000-0000-0000-0000-000000000000',
         gl_number: 'UNCLASSIFIED',
-        short_name: 'Besorolatlan tételek',
-        total_balance: 11607433.73,
+        gl_name: 'Besorolatlan tételek',
+        amount: 11621961.00,
+        original_amount: 11621961.00,
+        original_currency: 'HUF',
+        source_table: 'nav_invoice_items',
+        item_type: 'NAV Bejövő tétel',
+        is_temporary: true,
+        total_count: 3,
+        total_debit: 11621989.00,
+        total_credit: 14527.27,
       },
     ];
 
-    vi.spyOn(glDataModule, 'fetchAllGlCategorizedItems').mockResolvedValue(mockItems as any);
-    vi.spyOn(glDataModule, 'fetchAllGlBalances').mockResolvedValue(mockBalances as any);
-    vi.spyOn(glDataModule, 'fetchAllGlAccountsByPreset').mockResolvedValue(mockBalances as any);
+    vi.spyOn(glDataModule, 'fetchGlJournalItemsPaged').mockResolvedValue({
+      items: mockItems as any,
+      totalCount: 3,
+      totalDebit: 11621989.00,
+      totalCredit: 14527.27,
+    });
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -159,8 +168,13 @@ describe('JournalView - logical types and unclassified label', () => {
         gl_name: 'Anyagköltség',
         item_type: 'XML Könyvelési tétel (T)',
         amount: 50000,
+        original_amount: 50000,
+        original_currency: 'HUF',
         source_table: 'journal_entry',
-        is_excluded: false,
+        is_temporary: false,
+        total_count: 2,
+        total_debit: 50000,
+        total_credit: 50000,
       },
       {
         item_id: sharedId,
@@ -172,14 +186,22 @@ describe('JournalView - logical types and unclassified label', () => {
         gl_name: 'Szállítók',
         item_type: 'XML Könyvelési tétel (K)',
         amount: -50000,
+        original_amount: -50000,
+        original_currency: 'HUF',
         source_table: 'journal_entry',
-        is_excluded: false,
+        is_temporary: false,
+        total_count: 2,
+        total_debit: 50000,
+        total_credit: 50000,
       },
     ];
 
-    vi.spyOn(glDataModule, 'fetchAllGlCategorizedItems').mockResolvedValue(compoundItems as any);
-    vi.spyOn(glDataModule, 'fetchAllGlBalances').mockResolvedValue([] as any);
-    vi.spyOn(glDataModule, 'fetchAllGlAccountsByPreset').mockResolvedValue([] as any);
+    vi.spyOn(glDataModule, 'fetchGlJournalItemsPaged').mockResolvedValue({
+      items: compoundItems as any,
+      totalCount: 2,
+      totalDebit: 50000,
+      totalCredit: 50000,
+    });
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -202,9 +224,7 @@ describe('JournalView - logical types and unclassified label', () => {
   });
 
   it('renders error state with retry button and reports error when items query fails', async () => {
-    vi.spyOn(glDataModule, 'fetchAllGlCategorizedItems').mockRejectedValue(new Error('Statement timeout 57014'));
-    vi.spyOn(glDataModule, 'fetchAllGlBalances').mockResolvedValue([]);
-    vi.spyOn(glDataModule, 'fetchAllGlAccountsByPreset').mockResolvedValue([]);
+    vi.spyOn(glDataModule, 'fetchGlJournalItemsPaged').mockRejectedValue(new Error('Statement timeout 57014'));
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -222,7 +242,7 @@ describe('JournalView - logical types and unclassified label', () => {
       expect.objectContaining({
         type: 'db_query',
         component: 'JournalView',
-        action: 'fetchAllGlCategorizedItems',
+        action: 'fetchGlJournalItemsPaged',
         message: 'Statement timeout 57014',
       })
     );

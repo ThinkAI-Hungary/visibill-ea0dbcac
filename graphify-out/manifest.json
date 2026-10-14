@@ -2980,8 +2980,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791977451.8927925,
-    "ast_hash": "7e01ee62d17d7d7bb877c02c97fca0b8",
+    "mtime": 1791980079.3547103,
+    "ast_hash": "d0dfdbcb4d0bb4bc37e77365e9483982",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3620,8 +3620,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/JournalView.tsx": {
-    "mtime": 1791583293.082422,
-    "ast_hash": "cd0e2b16690ec382cd1ce3c4b054e6b0",
+    "mtime": 1791978770.9170263,
+    "ast_hash": "7ecbcb06dfcd2abf19c741148a13a8c3",
     "semantic_hash": ""
   },
   "src/components/general-ledger/UploadAuditXmlModal.tsx": {
@@ -7875,13 +7875,13 @@
     "semantic_hash": ""
   },
   "src/lib/glData.test.ts": {
-    "mtime": 1791583293.253106,
-    "ast_hash": "b633e3d1c413d3dc8d819ad93e1ff64e",
+    "mtime": 1791978978.1978786,
+    "ast_hash": "23e0208042a88d8d8de344f1694b07fc",
     "semantic_hash": ""
   },
   "src/lib/glData.ts": {
-    "mtime": 1791583293.253628,
-    "ast_hash": "20a474750ddbfcaaa151d68317020bda",
+    "mtime": 1791978733.2131152,
+    "ast_hash": "2350d30ca440d5ac9423d88822ce4b6f",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md": {
@@ -8145,8 +8145,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/JournalView.test.tsx": {
-    "mtime": 1791583293.0871286,
-    "ast_hash": "4909c0835ca376ba8c7bd166b17d0c31",
+    "mtime": 1791978803.4648106,
+    "ast_hash": "0940e3ad8c10072612c3296cf87643ea",
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/GeneralLedgerComparisonTable.test.tsx": {
@@ -8560,8 +8560,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1791972991.7196708,
-    "ast_hash": "dcde096a45da670535f457c3abace3bd",
+    "mtime": 1791980093.7551684,
+    "ast_hash": "1145b0eac55b34070587e6ea16de775f",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
@@ -11520,7 +11520,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-153-general-ledger-batch-itemized-view-architecture.md": {
-    "mtime": 1791977441.1846108,
+    "mtime": 1791977665.9770699,
     "ast_hash": "716bc8612d03a1dd245b0480185eb94e",
     "semantic_hash": ""
   },
@@ -13555,8 +13555,8 @@
     "semantic_hash": ""
   },
   "src/test/rpcPerformanceAndResilience.test.ts": {
-    "mtime": 1791583293.3838499,
-    "ast_hash": "2ed7b3dcfdb06ea7110dab5cb67be4e0",
+    "mtime": 1791978816.0881975,
+    "ast_hash": "75ad06f7d6c30a5251c432a59d21b366",
     "semantic_hash": ""
   },
   "supabase/migrations/20261003040000_optimize_gl_and_filter_rpcs_stability_and_tenant_isolation.sql": {
@@ -16694,6 +16694,16 @@
   "session-summary/\u00c1ron/2026-10-12/summary-231500-transaction-matching-journal-sorting-and-invoice-gl-sides.md": {
     "mtime": 1791972684.2534075,
     "ast_hash": "e99053534b453b22cbe1cd37bcd7dcdb",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261014140000_get_gl_journal_view_items.sql": {
+    "mtime": 1791978638.2276502,
+    "ast_hash": "466bfa12fdf90b6639a99a1436a11a7a",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-256-general-ledger-journal-view-server-side-pagination-and-window-aggregates.md": {
+    "mtime": 1791980048.7766993,
+    "ast_hash": "413dbb01c1e331e0bb3d1d1c062c6043",
     "semantic_hash": ""
   }
 }

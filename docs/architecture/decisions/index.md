@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-13  
-> **Összesen:** 255 döntés (240 egyedi döntési fájl) | ✅ Decided: 253 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-14  
+> **Összesen:** 256 döntés (241 egyedi döntési fájl) | ✅ Decided: 254 | ⛔ Superseded: 2
 
 
 ---
@@ -144,6 +144,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-151 | Eredménykimutatás és Mérleg Lekérdezési Vihar Megszüntetése, Trend Chunking és Igény Szerinti (On-Demand) Tételes Fúrás | ✅ Decided | [A-151](./A-151-pnl-and-balance-sheet-query-storm-elimination.md) |
 | A-152 | Analitikai és Jelentéskészítő RPC Stabilitás (STABLE), PostgREST Rate Limiter Mentesség és Realtime Eseményszivárgás Védelem | ✅ Decided | [A-152](./A-152-rate-limiter-rpc-stability-and-realtime-leak-hardening.md) |
 | A-153 | Főkönyvi Kivonat Kötegelt Tételes Adatbetöltés, Csoportos Nyitás és Fastruktúra Renderelés | ✅ Decided | [A-153](./A-153-general-ledger-batch-itemized-view-architecture.md) |
+| A-256 | Könyvelési Napló (JournalView) Szerveroldali Lapozás és Window Aggregációk | ✅ Decided | [A-256](./A-256-general-ledger-journal-view-server-side-pagination-and-window-aggregates.md) |
 | A-173 | Számlalánc Tranzakció-örökítés, Irányfüggő Partnerillesztés és PostgreSQL Propagáció | ✅ Decided | [A-173](./A-173-invoice-chain-transaction-propagation.md) |
 | A-179 | Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra | ✅ Decided | [A-179](./A-179-aggreg8-psd2-cross-import-deduplication.md) |
 | A-182 | Részfizetés és Jutaléklevonás Számlapárosítás és Deduplikációs Architektúra | ✅ Decided | [A-182](./A-182-partial-payment-matching-and-transaction-deduplication.md) |
