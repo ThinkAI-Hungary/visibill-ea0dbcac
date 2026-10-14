@@ -253,3 +253,26 @@
 **Indexek:** `idx_gl_view_templates_company_id`, `idx_gl_view_templates_type`
 
 ---
+
+## ⚙️ Főkönyvi Lekérdező RPC Függvények & Nyitó Átgördítés (A-258)
+
+A főkönyvi kivonatok és kartonok számítását PostgreSQL tárolt eljárások végzik, amelyek a Számviteli Törvény (Sztv.) folytonossági elvének megfelelően kezelik a nyitó és időszaki egyenlegeket:
+
+### `get_gl_balances` / `get_gl_balances_json`
+- **Szignatúra:** `(p_company_id uuid, p_start_date date, p_end_date date, p_include_drafts boolean)`
+- **Biztonság:** `SECURITY DEFINER`, védve: `public.check_company_access(p_company_id)`
+- **Működés:**
+  - Aggregálja a főkönyvi számlák Tartozik/Követel forgalmát és számítja a nyitó és záró egyenlegeket.
+  - **Évközi Nyitó Átgördítés (Rollforward — A-258):**
+    - Ha `p_start_date` nem az üzleti év első napja (pl. 2026-10-01), az 1-4. számlaosztályok mérlegszámláira a rendszer a tárgyév kezdő napjától (`date_trunc('year', p_start_date)::date`) a lekérdezés kezdőnapjáig terjedő nyitó (`NYITO`) tételeket automatikusan beszámítja a nyitó egyenlegbe (`opening_debit` / `opening_credit`).
+    - Az 5-9. eredményszámlák (költségek, ráfordítások, bevételek) kizárólag az adott évközi időszak tételeit mutatják, nyitó átgördítés nélkül (induló egyenleg = 0).
+  - A `get_gl_balances_json` verzió optimalizált JSON struktúrában adja vissza az eredményt a kliensoldali hierarchikus fanézet számára.
+
+### `get_gl_categorized_items`
+- **Szignatúra:** `(p_company_id uuid, p_start_date date, p_end_date date, p_gl_account_id uuid DEFAULT NULL, ...)`
+- **Biztonság:** `SECURITY DEFINER`, védve: `public.check_company_access(p_company_id)`
+- **Működés:**
+  - Tételes főkönyvi és analitikai listázás bizonylatszintű sorbontással.
+  - Támogatja a rollforward nyitó tételek tételes megjelenítését és a göngyölített egyenlegek precíz kalkulációját.
+
+---

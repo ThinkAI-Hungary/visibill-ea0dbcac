@@ -128,5 +128,14 @@
 
 **FK:** `company_id` → `companies.id`, `employee_id` → `accounty_employees.id`
 
+**Indexek / Megkötések:**
+- `accounty_transfers_company_employee_period_unique` (UNIQUE: `company_id`, `employee_id`, `period` WHERE `employee_id IS NOT NULL`) — Megelőzi a bérátutalási tételek duplikációját egy adott munkavállaló és béridőszak esetén.
+
+**RLS Házirendek:**
+- `tr_select` (SELECT): `check_company_access(company_id)`
+- `tr_insert` (INSERT): `check_company_access(company_id)`
+- `tr_update` (UPDATE): `check_company_access(company_id)`
+- `tr_delete` (DELETE): `check_company_access(company_id)` — Engedélyezi az utalási lista újragenerálásakor a meglévő pending/nem végleges tételek törlését.
+
 ---
 
