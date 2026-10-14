@@ -268,10 +268,11 @@ Minden alkalommal, amikor kód kerül beolvasztásra a `main` ágba (akár Pull 
      * Amennyiben a diffben a jelenlegi feladaton felüli egyéb migrációk vagy forrásfájlok is találhatók (más fejlesztők vagy korábbi, még nem élesítendő feladatok munkái), az agent **KÖTELES MEGÁLLNI ÉS RÁKÉRDEZNI A FELHASZNÁLÓNÁL (`ask_question`)**:
        - **Teljes Merge:** Minden dev migráció lefut az éles Prod DB-n (ha a többi fejlesztő munkája is élesítésre alkalmas és jóváhagyott).
        - **Célzott Hotfix Ág a `main`-ből (`hotfix/<nev>`):** Tiszta ágat indítunk a `main`-ből (`git checkout -b hotfix/<nev> main`), cherry-pickkel átemeljük a javítást, bemergeled a `main`-be, és **KIZÁRÓLAG az adott feladathoz tartozó migráció** fut le az éles Prod DB-n!
-2. **Kötelező Éles Végrehajtás a Jóváhagyott Körre (Execution on Prod DB):**
-   * A jóváhagyott hatókörben (teljes merge vagy szelektív hotfix) szereplő migráció(ka)t:
-     * **SZIGORÚAN KÖTELEZŐ elvégezni az éles (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`)!**
-     * Sosem szabad a `main` ágat úgy hagyni, hogy a kód már feltételez egy új táblát, mezőt, RPC-t vagy RLS szabályt, de az éles adatbázis még a régi sémán fut.
+2. **Kötelező Éles Végrehajtás és Teljeskörű DB Szinkronizáció (Execution on Prod DB):**
+   * **Teljes Develop Merge Szabály:** Amennyiben NEM célzott hotfix történik, hanem a `develop` ágat teljesen mergeljük a `main`-be, **SZIGORÚAN KÖTELEZŐ a main adatbázist (Prod DB) is teljeskörűen szinkronizálni a fejlesztői adatbázissal**.
+   * **Minden változtatást le kell futtatni a main DB-n:** A `develop` ágon felhalmozódott ÖSSZES sémamódosítást, új táblát, mezőt, indexet, migrációt, tárolt eljárást (RPC), RLS szabályt és konfigurációs rekordot maradéktalanul, teljeskörűen le kell futtatni és érvényesíteni kell az éles (Prod) Supabase adatbázison (`vxxgvdlqvvchtlmqnrqf`, MCP: `supabase-visibill`)!
+   * **Célzott Hotfix Kivétel:** Kizárólag akkor engedélyezett a részleges migráció-futtatás a Prod DB-n, ha explicit szelektív hotfix ágon (`hotfix/<nev>`) keresztül, a felhasználó megerősített jóváhagyásával, kizárólag a jelenlegi javítás commitjai és migrációja került a `main`-be.
+   * **Kód és Adatbázis Paritás:** Sosem szabad a `main` ágat úgy hagyni, hogy a kód már feltételez egy új táblát, mezőt, RPC-t vagy RLS szabályt, de az éles adatbázis még a régi sémán fut.
 3. **Alkalmazási Módok és Verifikáció:**
    * **Automatikus GitHub Integráció:** Ha a `main` ágra történő push után a Supabase automatikus integrációja fut le, az agent köteles lekérdezni a Prod DB `supabase_migrations.schema_migrations` tábláját, és ellenőrizni, hogy a migráció verziója sikeresen regisztrálásra került.
    * **Közvetlen migráció futtatás (Direct Apply):** Ha a migráció nem fut le automatikusan, az agent köteles a jóváhagyott migrációs SQL-t a Prod DB-n végrehajtani (`execute_sql` vagy `apply_migration`), majd kiadni a schema reload parancsot:
@@ -279,6 +280,6 @@ Minden alkalommal, amikor kód kerül beolvasztásra a `main` ágba (akár Pull 
      NOTIFY pgrst, 'reload schema';
      ```
 4. **Bizonyítás (Evidence Gate):**
-   * A feladat nem tekinthető befejezettnek mindaddig, amíg nincs fizikai bizonyíték arról, hogy az éles adatbázis sémája naprakész a `main` ágon lévő kóddal.
+   * A feladat nem tekinthető befejezettnek mindaddig, amíg nincs fizikai bizonyíték (lekérdezési eredmény) arról, hogy az éles adatbázis sémája és migrációs naplója 100%-ban naprakész és szinkronban van a `main` ágon lévő kóddal.
 
 
