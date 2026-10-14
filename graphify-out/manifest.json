@@ -1035,7 +1035,7 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1791982550.679581,
+    "mtime": 1791983164.5229845,
     "ast_hash": "544c71a37331c2f0d73e72c739aeb2a7",
     "semantic_hash": ""
   },
@@ -2980,8 +2980,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791980785.0162416,
-    "ast_hash": "d0dfdbcb4d0bb4bc37e77365e9483982",
+    "mtime": 1791983653.8767116,
+    "ast_hash": "70654927fc7b7816ea60aeb1b6ba18b2",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -7875,12 +7875,12 @@
     "semantic_hash": ""
   },
   "src/lib/glData.test.ts": {
-    "mtime": 1791982585.6456792,
+    "mtime": 1791983164.5239842,
     "ast_hash": "262a1031a1bc1571223fb46031ac2f06",
     "semantic_hash": ""
   },
   "src/lib/glData.ts": {
-    "mtime": 1791982562.6778896,
+    "mtime": 1791983164.5239842,
     "ast_hash": "7cbcea7458f0940f25996f7d2a1cb918",
     "semantic_hash": ""
   },
@@ -8150,7 +8150,7 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/GeneralLedgerComparisonTable.test.tsx": {
-    "mtime": 1791982685.366946,
+    "mtime": 1791983164.521984,
     "ast_hash": "aa3648f8a6483735fa922038104a159a",
     "semantic_hash": ""
   },
@@ -8560,7 +8560,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1791982851.2942376,
+    "mtime": 1791983164.4533763,
     "ast_hash": "248cc070c97b7697efba86f1a30d18e7",
     "semantic_hash": ""
   },
@@ -9720,7 +9720,7 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/AddGlAccountModal.test.tsx": {
-    "mtime": 1791982741.1764505,
+    "mtime": 1791983164.5209856,
     "ast_hash": "dcca80f2d1c04c33435fe533bf45c21c",
     "semantic_hash": ""
   },
@@ -13555,7 +13555,7 @@
     "semantic_hash": ""
   },
   "src/test/rpcPerformanceAndResilience.test.ts": {
-    "mtime": 1791982600.5060494,
+    "mtime": 1791983164.524984,
     "ast_hash": "244656496ee797a1a224ec7d492fd15d",
     "semantic_hash": ""
   },
@@ -16707,8 +16707,13 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20261014150000_optimize_gl_balances_preaggregation_and_json_rpc.sql": {
-    "mtime": 1791982438.1700287,
-    "ast_hash": "f7a8f2feaa41bfe5ee569042ba0d961a",
+    "mtime": 1791983164.5269883,
+    "ast_hash": "e79924e71c62b283c4f9a06477e100ff",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-257-general-ledger-balances-preaggregation-and-atomic-json-rpc.md": {
+    "mtime": 1791983638.747992,
+    "ast_hash": "d2d37c5d405c13b89d4a028e42eabdf7",
     "semantic_hash": ""
   }
 }
