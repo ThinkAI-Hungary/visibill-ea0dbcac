@@ -35,8 +35,12 @@ Amikor a fejlesztő vagy az AI agent bármilyen okból a **`develop` ágra vált
 ---
 
 ## 🛡️ 4. Konfigurációs Integritás, Merge Védelem és Kötelező Éles Adatbázis- és Backend-szinkronizáció
-* A `develop` ág-specifikus beállítások (mint a [`supabase/config.toml`](file:///d:/ThinkAI/Visibill/eaisybill-prod/supabase/config.toml) `project_id = "qhvcdqkqpgpdxogqqvyr"`, vagy a lokális [`.env.local`](file:///d:/ThinkAI/Visibill/eaisybill-prod/.env.local) kulcsok) soha nem kerülhetnek át akaratlanul a `main` ágra.
-* Pull Request vagy `main` ágba történő merge előtt kötelező ellenőrizni a konfigurációk éles állapotának megőrzését (`project_id = "vxxgvdlqvvchtlmqnrqf"` a `main` ágon).
+* **Szigorú config.toml project_id Izoláció (Tilos Összemergedni):**
+  * A `supabase/config.toml` fájlban lévő `project_id` beállítást **SZIGORÚAN TILOS átemelni vagy felülírni a merge során**:
+    - A `main` ágon KÖTELEZŐEN az éles projektazonosítónak kell szerepelnie: `project_id = "vxxgvdlqvvchtlmqnrqf"` (Prod DB).
+    - A `develop` ágon KÖTELEZŐEN a fejlesztői projektazonosítónak kell szerepelnie: `project_id = "qhvcdqkqpgpdxogqqvyr"` (Dev DB).
+  * Pull Request, ág-merge (`git merge develop`) vagy hotfix után az AI agent **KÖTELES fizikai fájlolvasással ellenőrizni** a `supabase/config.toml` tartalmát, és ha a merge felülírta, AZONNAL visszaállítani az adott ágnak megfelelő projektazonosítót!
+  * Hasonlóan a lokális [`.env.local`](file:///d:/ThinkAI/Visibill/eaisybill-prod/.env.local) és ág-specifikus kulcsok soha nem kerülhetnek át akaratlanul a `main` ágra.
 * **Divergencia Ellenőrzés és Szelektív Hotfix Kapu (Selective Hotfix vs Full Develop Merge):**
   * Mielőtt bármilyen kód vagy módosítás a `main` ágba kerülne, az agent KÖTELES ellenőrizni a `main` és `develop` ágak közötti tényleges eltérést:
     ```powershell
