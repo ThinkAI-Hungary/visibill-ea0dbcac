@@ -12732,6 +12732,7 @@ export type Database = {
           p_date_from?: string
           p_date_to?: string
           p_exchange_rates?: Json
+          p_only_active?: boolean
           p_posting_status?: string
           p_preset_id: string
         }
@@ -12744,6 +12745,19 @@ export type Database = {
           temp_balance: number
           total_balance: number
         }[]
+      }
+      get_gl_balances_json: {
+        Args: {
+          p_company_id: string
+          p_date_basis?: string
+          p_date_from?: string
+          p_date_to?: string
+          p_exchange_rates?: Json
+          p_only_active?: boolean
+          p_posting_status?: string
+          p_preset_id: string
+        }
+        Returns: Json
       }
       get_gl_categorized_items: {
         Args: {

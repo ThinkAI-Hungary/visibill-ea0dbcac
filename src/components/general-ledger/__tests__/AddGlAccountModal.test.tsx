@@ -77,26 +77,26 @@ describe('AddGlAccountModal', () => {
 
     expect(screen.getByText(/Új Főkönyvi Szám \/ Alábontás Felvitele/i)).toBeInTheDocument();
     expect(screen.getByText('Jó számlatükör')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/pl\. 4712/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/pl\. Jövedelemelszámolási/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/pl\. 3111 vagy 4541/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/pl\. Belföldi vevők vagy Készpénz/i)).toBeInTheDocument();
   });
 
   it('detects parent account when typing sub-account number (e.g. 4712 under 471)', async () => {
     renderModal();
 
-    const glNumberInput = screen.getByPlaceholderText(/pl\. 4712/i);
+    const glNumberInput = screen.getByPlaceholderText(/pl\. 3111 vagy 4541/i);
     fireEvent.change(glNumberInput, { target: { value: '4712' } });
 
     await waitFor(() => {
-      expect(screen.getByText(/Alábontás a következő gyűjtőhöz/i)).toBeInTheDocument();
-      expect(screen.getByText(/471 — Jövedelemelszámolási számla/i)).toBeInTheDocument();
+      expect(screen.getByText(/Szülő számla:/i)).toBeInTheDocument();
+      expect(screen.getByText(/471/i)).toBeInTheDocument();
     });
   });
 
   it('displays duplicate warning if account already exists', async () => {
     renderModal();
 
-    const glNumberInput = screen.getByPlaceholderText(/pl\. 4712/i);
+    const glNumberInput = screen.getByPlaceholderText(/pl\. 3111 vagy 4541/i);
     fireEvent.change(glNumberInput, { target: { value: '4711' } });
 
     await waitFor(() => {
@@ -110,17 +110,17 @@ describe('AddGlAccountModal', () => {
 
     renderModal({ onOpenChange, onSuccess });
 
-    const glNumberInput = screen.getByPlaceholderText(/pl\. 4712/i);
-    const shortNameInput = screen.getByPlaceholderText(/pl\. Jövedelemelszámolási/i);
+    const glNumberInput = screen.getByPlaceholderText(/pl\. 3111 vagy 4541/i);
+    const shortNameInput = screen.getByPlaceholderText(/pl\. Belföldi vevők vagy Készpénz/i);
 
     fireEvent.change(glNumberInput, { target: { value: '4712' } });
     fireEvent.change(shortNameInput, { target: { value: 'Fizikai dolgozók munkabére' } });
 
     await waitFor(() => {
-      expect(screen.getByText(/Alábontás a következő gyűjtőhöz/i)).toBeInTheDocument();
+      expect(screen.getByText(/Szülő számla:/i)).toBeInTheDocument();
     });
 
-    const submitBtn = screen.getByRole('button', { name: /Hozzáadás/i });
+    const submitBtn = screen.getByRole('button', { name: /Főkönyvi szám mentése/i });
     expect(submitBtn).not.toBeDisabled();
     fireEvent.click(submitBtn);
 
