@@ -1035,8 +1035,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1791972991.8212304,
-    "ast_hash": "b82bdd30711c172ad363d49c91634cd8",
+    "mtime": 1791982550.679581,
+    "ast_hash": "544c71a37331c2f0d73e72c739aeb2a7",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -2980,7 +2980,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791980079.3547103,
+    "mtime": 1791980785.0162416,
     "ast_hash": "d0dfdbcb4d0bb4bc37e77365e9483982",
     "semantic_hash": ""
   },
@@ -3620,8 +3620,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/JournalView.tsx": {
-    "mtime": 1791978770.9170263,
-    "ast_hash": "7ecbcb06dfcd2abf19c741148a13a8c3",
+    "mtime": 1791980785.0850391,
+    "ast_hash": "3c5cd1808961c2708e9c2dd48daf20ec",
     "semantic_hash": ""
   },
   "src/components/general-ledger/UploadAuditXmlModal.tsx": {
@@ -7875,13 +7875,13 @@
     "semantic_hash": ""
   },
   "src/lib/glData.test.ts": {
-    "mtime": 1791978978.1978786,
-    "ast_hash": "23e0208042a88d8d8de344f1694b07fc",
+    "mtime": 1791982585.6456792,
+    "ast_hash": "262a1031a1bc1571223fb46031ac2f06",
     "semantic_hash": ""
   },
   "src/lib/glData.ts": {
-    "mtime": 1791978733.2131152,
-    "ast_hash": "2350d30ca440d5ac9423d88822ce4b6f",
+    "mtime": 1791982562.6778896,
+    "ast_hash": "7cbcea7458f0940f25996f7d2a1cb918",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md": {
@@ -8145,13 +8145,13 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/JournalView.test.tsx": {
-    "mtime": 1791978803.4648106,
-    "ast_hash": "0940e3ad8c10072612c3296cf87643ea",
+    "mtime": 1791980785.0862837,
+    "ast_hash": "af042df191fcaf3e05e639352a03f753",
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/GeneralLedgerComparisonTable.test.tsx": {
-    "mtime": 1791583293.08556,
-    "ast_hash": "d83e0adb6316ca9e2a41924d0814813b",
+    "mtime": 1791982685.366946,
+    "ast_hash": "aa3648f8a6483735fa922038104a159a",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-087-gl-database-search-and-account-pagination.md": {
@@ -8560,8 +8560,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1791980093.7551684,
-    "ast_hash": "1145b0eac55b34070587e6ea16de775f",
+    "mtime": 1791982851.2942376,
+    "ast_hash": "248cc070c97b7697efba86f1a30d18e7",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
@@ -9720,8 +9720,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/AddGlAccountModal.test.tsx": {
-    "mtime": 1791583293.0850422,
-    "ast_hash": "f2c5a0d3d25179e9cd09008c4009a5e9",
+    "mtime": 1791982741.1764505,
+    "ast_hash": "dcca80f2d1c04c33435fe533bf45c21c",
     "semantic_hash": ""
   },
   "src/test/kintlevoDateFilter.test.ts": {
@@ -13555,8 +13555,8 @@
     "semantic_hash": ""
   },
   "src/test/rpcPerformanceAndResilience.test.ts": {
-    "mtime": 1791978816.0881975,
-    "ast_hash": "75ad06f7d6c30a5251c432a59d21b366",
+    "mtime": 1791982600.5060494,
+    "ast_hash": "244656496ee797a1a224ec7d492fd15d",
     "semantic_hash": ""
   },
   "supabase/migrations/20261003040000_optimize_gl_and_filter_rpcs_stability_and_tenant_isolation.sql": {
@@ -16697,13 +16697,18 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20261014140000_get_gl_journal_view_items.sql": {
-    "mtime": 1791978638.2276502,
-    "ast_hash": "466bfa12fdf90b6639a99a1436a11a7a",
+    "mtime": 1791980785.0897913,
+    "ast_hash": "3ba6be6db67497bf1b12a3982829225b",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-256-general-ledger-journal-view-server-side-pagination-and-window-aggregates.md": {
-    "mtime": 1791980048.7766993,
-    "ast_hash": "413dbb01c1e331e0bb3d1d1c062c6043",
+    "mtime": 1791980785.0151987,
+    "ast_hash": "b7bf6f3b84b6e5b3c5dd4e409d1d206f",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261014150000_optimize_gl_balances_preaggregation_and_json_rpc.sql": {
+    "mtime": 1791982438.1700287,
+    "ast_hash": "f7a8f2feaa41bfe5ee569042ba0d961a",
     "semantic_hash": ""
   }
 }
