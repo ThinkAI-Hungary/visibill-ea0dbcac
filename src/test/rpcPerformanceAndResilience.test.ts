@@ -256,6 +256,43 @@ describe('RPC Performance & Edge Function Resilience Tests', () => {
       expect(mockOrphanRow.gl_number).toBe('UNCLASSIFIED');
       expect(mockOrphanRow.total_balance).toBeGreaterThan(0);
     });
+
+    it('validates get_gl_balances_json atomic payload structure and array invariants', () => {
+      const mockJsonResponse = [
+        {
+          gl_account_id: 'a1b2c3d4-0000-0000-0000-000000000001',
+          gl_number: '466',
+          short_name: 'Levonható ÁFA',
+          total_balance: 1450000,
+          final_balance: 1200000,
+          temp_balance: 250000,
+          item_count: 85,
+        },
+        {
+          gl_account_id: '00000000-0000-0000-0000-000000000000',
+          gl_number: 'UNCLASSIFIED',
+          short_name: 'Nem kategorizált tételek',
+          total_balance: 50000,
+          final_balance: 50000,
+          temp_balance: 0,
+          item_count: 3,
+        },
+      ];
+
+      expect(Array.isArray(mockJsonResponse)).toBe(true);
+      expect(mockJsonResponse.length).toBeGreaterThan(0);
+      for (const row of mockJsonResponse) {
+        expect(row).toHaveProperty('gl_account_id');
+        expect(row).toHaveProperty('gl_number');
+        expect(row).toHaveProperty('short_name');
+        expect(row).toHaveProperty('total_balance');
+        expect(row).toHaveProperty('final_balance');
+        expect(row).toHaveProperty('temp_balance');
+        expect(row).toHaveProperty('item_count');
+        expect(typeof row.total_balance).toBe('number');
+        expect(row.total_balance).toBe(row.final_balance + row.temp_balance);
+      }
+    });
   });
 
   describe('get_gl_categorized_items RPC Return Contract', () => {

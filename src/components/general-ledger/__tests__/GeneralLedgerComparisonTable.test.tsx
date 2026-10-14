@@ -14,6 +14,7 @@ vi.mock('@/hooks/useExchangeRates', () => ({
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {},
+  SUPABASE_URL: 'https://test-project.supabase.co',
 }));
 
 vi.mock('@/hooks/use-toast', () => ({

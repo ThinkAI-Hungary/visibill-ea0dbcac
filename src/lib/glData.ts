@@ -36,8 +36,9 @@ const PAGE_SIZE = 1000;
 
 
 /**
- * Fetch all GL balances by preset and company, automatically paginating
- * across PostgREST's default 1000-row limit.
+ * Fetch all GL balances by preset and company in a single atomic call via get_gl_balances_json,
+ * eliminating the slow multi-request pagination loop and upstream timeouts.
+ * Falls back to get_gl_balances if needed.
  */
 export async function fetchAllGlBalances(params: {
   companyId: string;
@@ -47,7 +48,48 @@ export async function fetchAllGlBalances(params: {
   dateBasis?: GlDateBasis;
   postingStatus?: GlPostingStatus;
   exchangeRates?: Record<string, any> | Json;
+  onlyActive?: boolean;
 }): Promise<GlBalanceItem[]> {
+  const rpcParams = {
+    p_company_id: params.companyId,
+    p_preset_id: params.presetId,
+    p_date_from: params.dateFrom || null,
+    p_date_to: params.dateTo || null,
+    p_exchange_rates: (params.exchangeRates as Json) || {},
+    p_date_basis: params.dateBasis || 'kibocsatas',
+    p_posting_status: params.postingStatus === 'posted_only' ? 'POSTED_ONLY' : 'ALL',
+    p_only_active: params.onlyActive ?? false,
+  };
+
+  try {
+    const { data, error } = await supabase.rpc('get_gl_balances_json', rpcParams);
+
+    if (!error && Array.isArray(data)) {
+      return data as unknown as GlBalanceItem[];
+    }
+    if (!error && data === null) {
+      return [];
+    }
+    if (error) {
+      const isMissingRpc =
+        error.code === 'PGRST202' ||
+        error.code === '42883' ||
+        (error.message && error.message.includes('get_gl_balances_json'));
+      if (!isMissingRpc) {
+        throw error;
+      }
+    }
+  } catch (err: any) {
+    const isMissingRpc =
+      err?.code === 'PGRST202' ||
+      err?.code === '42883' ||
+      (typeof err?.message === 'string' && err.message.includes('get_gl_balances_json'));
+    if (!isMissingRpc) {
+      throw err;
+    }
+  }
+
+  // Fallback to legacy paginated get_gl_balances
   let allBalances: GlBalanceItem[] = [];
   let page = 0;
   let hasMore = true;
@@ -65,6 +107,7 @@ export async function fetchAllGlBalances(params: {
         p_exchange_rates: (params.exchangeRates as Json) || {},
         p_date_basis: params.dateBasis || 'kibocsatas',
         p_posting_status: params.postingStatus === 'posted_only' ? 'POSTED_ONLY' : 'ALL',
+        p_only_active: params.onlyActive ?? false,
       })
       .range(from, to);
 
