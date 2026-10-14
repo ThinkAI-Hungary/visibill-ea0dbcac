@@ -17,7 +17,7 @@ import { exportAgoraGlExcel } from '@/lib/agoraGlExcel';
 import { downloadRlbGlPdf } from '@/lib/rlbGlPdf';
 import { exportRlbGlExcel } from '@/lib/rlbGlExcel';
 import type { RlbPartnerItemInput } from '@/lib/rlbGlData';
-import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, fetchAllGlAccountsByPreset, GlDateBasis, GlPostingStatus, GlSearchResult } from '@/lib/glData';
+import { fetchAllGlBalances, fetchAllGlCategorizedItems, fetchGlItemsForAccount, fetchGlItemsForAccounts, fetchAllGlAccountsByPreset, GlDateBasis, GlPostingStatus, GlSearchResult, GlCategorizedItem } from '@/lib/glData';
 import type { GlAccountType, SubledgerType, GlAccountRecord } from '@/types/accounting';
 import { GlItemGroupingMode, enrichGlItemsWithInvoiceMeta, groupLedgerItemsByInvoice } from '@/lib/glInvoiceGrouping';
 export type { GlItemGroupingMode };
@@ -582,6 +582,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // On-demand loaded transaction items per account CID: Map<accountCid, LedgerItem[]>
   const [loadedRawAccountItems, setLoadedRawAccountItems] = useState<Map<string, LedgerItem[]>>(new Map());
+  const loadedRawAccountItemsRef = useRef(loadedRawAccountItems);
+  loadedRawAccountItemsRef.current = loadedRawAccountItems;
   const [loadingAccountCids, setLoadingAccountCids] = useState<Set<string>>(new Set());
   const loadingAccountCidsRef = useRef<Set<string>>(new Set());
   const [failedAccountCids, setFailedAccountCids] = useState<Set<string>>(new Set());
@@ -1904,9 +1906,45 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     setExpandedRowIds(new Set([])); // Collapse to only root items
   };
 
+  function mapEnrichedItemToLedgerItem(
+    item: GlCategorizedItem,
+    parentCid: string,
+    occurrenceMap: Map<string, number>
+  ): LedgerItem {
+    const baseKey = `${parentCid}_${item.source_table || 'item'}_${item.item_id}`;
+    const occ = occurrenceMap.get(baseKey) || 0;
+    occurrenceMap.set(baseKey, occ + 1);
+    const pseudoCid = occ === 0 ? baseKey : `${baseKey}_${occ}`;
+
+    let displayDesc = item.description || item.partner || 'Névtelen tétel';
+    if (item.partner && item.description && item.partner !== item.description) {
+      displayDesc = `${item.partner} - ${item.description}`;
+    }
+    displayDesc = fixCharacterEncoding(displayDesc);
+
+    return {
+      id: `item_${item.item_id}`,
+      name: displayDesc,
+      balance: Number(item.amount) || 0,
+      hasChildren: false,
+      cid: pseudoCid,
+      isItem: true,
+      itemType: fixCharacterEncoding(item.item_type),
+      partner: fixCharacterEncoding(item.partner),
+      date: item.item_date,
+      sourceTable: item.source_table,
+      originalGlId: item.gl_account_id,
+      originalAmount: Number(item.original_amount) || 0,
+      originalCurrency: item.original_currency,
+      isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary),
+      invoiceId: item.invoice_id || null,
+      invoiceNumber: item.invoice_number || null,
+    };
+  }
+
   const fetchAccountItemsOnDemand = useCallback(async (targetCid: string) => {
     if (!dbData || !selectedCompany?.id || !presetId) return;
-    if (loadedRawAccountItems.has(targetCid) || loadingAccountCidsRef.current.has(targetCid)) return;
+    if (loadedRawAccountItemsRef.current.has(targetCid) || loadingAccountCidsRef.current.has(targetCid)) return;
 
     const requestFilterKey = activeFilterKeyRef.current;
     loadingAccountCidsRef.current.add(targetCid);
@@ -1922,8 +1960,6 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const glAccountId = targetCid === 'UNCLASSIFIED'
         ? '00000000-0000-0000-0000-000000000000'
         : (dbData.find(d => cleanId(d.gl_number) === targetCid)?.gl_account_id || null);
-
-      const isPagedAccount = targetCid === 'UNCLASSIFIED' || (dbData.find(d => cleanId(d.gl_number) === targetCid)?.item_count ?? 0) > 100;
 
       const items = await fetchGlItemsForAccount({
         companyId: selectedCompany.id,
@@ -1953,35 +1989,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const mappedItems: LedgerItem[] = enriched.map(item => {
         const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
         const parentCid = isUnclass ? 'UNCLASSIFIED' : targetCid;
-        const baseKey = `${parentCid}_${item.source_table || 'item'}_${item.item_id}`;
-        const occ = occurrenceMap.get(baseKey) || 0;
-        occurrenceMap.set(baseKey, occ + 1);
-        const pseudoCid = occ === 0 ? baseKey : `${baseKey}_${occ}`;
-
-        let displayDesc = item.description || item.partner || 'Névtelen tétel';
-        if (item.partner && item.description && item.partner !== item.description) {
-          displayDesc = `${item.partner} - ${item.description}`;
-        }
-        displayDesc = fixCharacterEncoding(displayDesc);
-
-        return {
-          id: `item_${item.item_id}`,
-          name: displayDesc,
-          balance: Number(item.amount) || 0,
-          hasChildren: false,
-          cid: pseudoCid,
-          isItem: true,
-          itemType: fixCharacterEncoding(item.item_type),
-          partner: fixCharacterEncoding(item.partner),
-          date: item.item_date,
-          sourceTable: item.source_table,
-          originalGlId: item.gl_account_id,
-          originalAmount: Number(item.original_amount) || 0,
-          originalCurrency: item.original_currency,
-          isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary),
-          invoiceId: item.invoice_id || null,
-          invoiceNumber: item.invoice_number || null,
-        };
+        return mapEnrichedItemToLedgerItem(item, parentCid, occurrenceMap);
       });
 
       setLoadedRawAccountItems(prev => {
@@ -2010,14 +2018,136 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         return next;
       });
     }
-  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedRawAccountItems]);
+  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates]);
+
+  const fetchBatchAccountItems = useCallback(async (targetCids: string[]) => {
+    if (!dbData || !selectedCompany?.id || !presetId || targetCids.length === 0) return;
+
+    const requestFilterKey = activeFilterKeyRef.current;
+    const cleanId = cleanIdVal;
+
+    // Filter out CIDs that are already loaded or currently loading
+    const cidsToLoad = targetCids.filter(cid => 
+      !loadedRawAccountItemsRef.current.has(cid) && !loadingAccountCidsRef.current.has(cid)
+    );
+
+    if (cidsToLoad.length === 0) return;
+
+    // Mark all as loading in ref and state
+    cidsToLoad.forEach(cid => loadingAccountCidsRef.current.add(cid));
+    setLoadingAccountCids(prev => new Set([...prev, ...cidsToLoad]));
+    setFailedAccountCids(prev => {
+      const next = new Set(prev);
+      cidsToLoad.forEach(cid => next.delete(cid));
+      return next;
+    });
+
+    try {
+      // Chunk into batches of up to 30 accounts to keep queries bounded
+      const CHUNK_SIZE = 30;
+      for (let i = 0; i < cidsToLoad.length; i += CHUNK_SIZE) {
+        if (activeFilterKeyRef.current !== requestFilterKey) break;
+
+        const chunkCids = cidsToLoad.slice(i, i + CHUNK_SIZE);
+        const accountIdToCid = new Map<string, string>();
+        const glAccountIds: string[] = [];
+
+        chunkCids.forEach(cid => {
+          if (cid === 'UNCLASSIFIED') {
+            glAccountIds.push('00000000-0000-0000-0000-000000000000');
+          } else {
+            const matchingDbItem = dbData.find(d => cleanId(d.gl_number) === cid);
+            if (matchingDbItem?.gl_account_id) {
+              glAccountIds.push(matchingDbItem.gl_account_id);
+              accountIdToCid.set(matchingDbItem.gl_account_id, cid);
+            }
+          }
+        });
+
+        if (glAccountIds.length === 0) {
+          setLoadedRawAccountItems(prev => {
+            const next = new Map(prev);
+            chunkCids.forEach(cid => next.set(cid, []));
+            return next;
+          });
+          continue;
+        }
+
+        const items = await fetchGlItemsForAccounts({
+          companyId: selectedCompany.id,
+          presetId,
+          glAccountIds,
+          dateFrom,
+          dateTo,
+          dateBasis,
+          postingStatus,
+          exchangeRates: exchangeRates || {},
+        });
+
+        if (activeFilterKeyRef.current !== requestFilterKey) return;
+
+        const enriched = await enrichGlItemsWithInvoiceMeta(items);
+
+        if (activeFilterKeyRef.current !== requestFilterKey) return;
+
+        const itemsByCid = new Map<string, LedgerItem[]>();
+        chunkCids.forEach(cid => itemsByCid.set(cid, []));
+
+        const occurrenceMap = new Map<string, number>();
+        enriched.forEach(item => {
+          const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
+          const parentCid = isUnclass ? 'UNCLASSIFIED' : (accountIdToCid.get(item.gl_account_id) || 'UNCLASSIFIED');
+          if (itemsByCid.has(parentCid)) {
+            const mapped = mapEnrichedItemToLedgerItem(item, parentCid, occurrenceMap);
+            itemsByCid.get(parentCid)!.push(mapped);
+          }
+        });
+
+        setLoadedRawAccountItems(prev => {
+          const next = new Map(prev);
+          itemsByCid.forEach((mappedList, cid) => {
+            next.set(cid, mappedList);
+          });
+          return next;
+        });
+
+        setHasMoreAccountCids(prev => {
+          const next = new Set(prev);
+          itemsByCid.forEach((mappedList, cid) => {
+            const dbItem = dbData.find(d => cleanId(d.gl_number) === cid);
+            const totalExpected = dbItem ? Number(dbItem.item_count) || 0 : 0;
+            if (mappedList.length < totalExpected && mappedList.length === 100) {
+              next.add(cid);
+            } else {
+              next.delete(cid);
+            }
+          });
+          return next;
+        });
+      }
+    } catch (error) {
+      reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching batch account items:', error });
+      setFailedAccountCids(prev => {
+        const next = new Set(prev);
+        cidsToLoad.forEach(cid => next.add(cid));
+        return next;
+      });
+    } finally {
+      cidsToLoad.forEach(cid => loadingAccountCidsRef.current.delete(cid));
+      setLoadingAccountCids(prev => {
+        const next = new Set(prev);
+        cidsToLoad.forEach(cid => next.delete(cid));
+        return next;
+      });
+    }
+  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates]);
 
   const fetchMoreAccountItems = useCallback(async (targetCid: string) => {
     if (!dbData || !selectedCompany?.id || !presetId) return;
     if (loadingMoreAccountCidsRef.current.has(targetCid)) return;
 
     const requestFilterKey = activeFilterKeyRef.current;
-    const currentItems = loadedRawAccountItems.get(targetCid) || [];
+    const currentItems = loadedRawAccountItemsRef.current.get(targetCid) || [];
     loadingMoreAccountCidsRef.current.add(targetCid);
     setLoadingMoreAccountCids(prev => new Set(prev).add(targetCid));
 
@@ -2061,35 +2191,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const mappedItems: LedgerItem[] = enriched.map(item => {
         const isUnclass = !item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000';
         const parentCid = isUnclass ? 'UNCLASSIFIED' : targetCid;
-        const baseKey = `${parentCid}_${item.source_table || 'item'}_${item.item_id}`;
-        const occ = occurrenceMap.get(baseKey) || 0;
-        occurrenceMap.set(baseKey, occ + 1);
-        const pseudoCid = occ === 0 ? baseKey : `${baseKey}_${occ}`;
-
-        let displayDesc = item.description || item.partner || 'Névtelen tétel';
-        if (item.partner && item.description && item.partner !== item.description) {
-          displayDesc = `${item.partner} - ${item.description}`;
-        }
-        displayDesc = fixCharacterEncoding(displayDesc);
-
-        return {
-          id: `item_${item.item_id}`,
-          name: displayDesc,
-          balance: Number(item.amount) || 0,
-          hasChildren: false,
-          cid: pseudoCid,
-          isItem: true,
-          itemType: fixCharacterEncoding(item.item_type),
-          partner: fixCharacterEncoding(item.partner),
-          date: item.item_date,
-          sourceTable: item.source_table,
-          originalGlId: item.gl_account_id,
-          originalAmount: Number(item.original_amount) || 0,
-          originalCurrency: item.original_currency,
-          isTemporary: (!item.gl_account_id || item.gl_account_id === '00000000-0000-0000-0000-000000000000' || item.is_temporary),
-          invoiceId: item.invoice_id || null,
-          invoiceNumber: item.invoice_number || null,
-        };
+        return mapEnrichedItemToLedgerItem(item, parentCid, occurrenceMap);
       });
 
       setLoadedRawAccountItems(prev => {
@@ -2116,7 +2218,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         return next;
       });
     }
-  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates, loadedRawAccountItems]);
+  }, [dbData, selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus, exchangeRates]);
 
   const handleNavigateToEntity = useCallback(async (result: GlSearchResult) => {
     const targetGl = result.target_gl_number || result.gl_number;
@@ -2247,21 +2349,22 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     }
   };
 
-  // Load items for any expanded leaf accounts on mount / expand restore with concurrency throttling
+  // Load items for any expanded leaf accounts on mount / expand restore with batching and no cascade loop
   useEffect(() => {
     if (viewGranularity === 'teteles') return; // In teteles mode, batch query handles all items! Avoid N+1 requests!
     if (!dbData || !selectedCompany?.id || !presetId) return;
 
-    let cancelled = false;
     const targetCidsToFetch: string[] = [];
     const seenCids = new Set<string>();
+    const cleanId = cleanIdVal;
 
     expandedRowIds.forEach(id => {
-      const cleanTargetId = cleanIdVal(id);
-      const row = tableData.find(d => d.id === id || cleanIdVal(d.id) === cleanTargetId);
-      if (row && row.hasItemChildren) {
-        const cid = row.cid;
-        if (!seenCids.has(cid) && !loadedRawAccountItems.has(cid) && !loadingAccountCidsRef.current.has(cid)) {
+      const cleanTargetId = cleanId(id);
+      const dbItem = dbData.find(d => cleanId(d.gl_number) === cleanTargetId);
+      const hasItems = (dbItem && (Number(dbItem.item_count) || 0) > 0) || (cleanTargetId === 'UNCLASSIFIED' && orphanCount > 0);
+      if (hasItems) {
+        const cid = cleanTargetId;
+        if (!seenCids.has(cid) && !loadedRawAccountItemsRef.current.has(cid) && !loadingAccountCidsRef.current.has(cid)) {
           seenCids.add(cid);
           targetCidsToFetch.push(cid);
         }
@@ -2270,42 +2373,36 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
     if (targetCidsToFetch.length === 0) return;
 
-    // Concurrency throttle: maximum 2 parallel queries to prevent DB statement timeouts and pool exhaustion
-    const queue = [...targetCidsToFetch];
-    const MAX_CONCURRENT = 2;
-
-    async function worker() {
-      while (queue.length > 0 && !cancelled) {
-        const nextCid = queue.shift();
-        if (nextCid) {
-          await fetchAccountItemsOnDemand(nextCid);
-        }
-      }
+    if (targetCidsToFetch.length === 1) {
+      fetchAccountItemsOnDemand(targetCidsToFetch[0]);
+    } else {
+      fetchBatchAccountItems(targetCidsToFetch);
     }
+  }, [viewGranularity, expandedRowIds, dbData, selectedCompany?.id, presetId, orphanCount, fetchAccountItemsOnDemand, fetchBatchAccountItems]);
 
-    const workers = Array.from({ length: Math.min(MAX_CONCURRENT, queue.length) }, () => worker());
-    Promise.all(workers);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [viewGranularity, expandedRowIds, tableData, dbData, selectedCompany?.id, presetId, loadedRawAccountItems, fetchAccountItemsOnDemand]);
-
-  // When searchResults contains item matches for accounts that haven't loaded items yet, fetch them
+  // When searchResults contains item matches for accounts that haven't loaded items yet, fetch them (batched)
   useEffect(() => {
     if (viewGranularity === 'teteles') return; // In teteles mode, batch query handles all items! Avoid N+1 requests!
     if (!searchQuery.trim() || searchResults.length === 0 || !dbData || !selectedCompany?.id || !presetId) return;
 
+    const cidsToLoad = new Set<string>();
     searchResults.forEach(res => {
       if (res.entity_type === 'item') {
         const targetGl = res.target_gl_number || res.gl_number;
         const targetCid = targetGl === 'UNCLASSIFIED' ? 'UNCLASSIFIED' : cleanIdVal(targetGl);
-        if (targetCid && !loadedAccountItems.has(targetCid) && !loadingAccountCidsRef.current.has(targetCid)) {
-          fetchAccountItemsOnDemand(targetCid);
+        if (targetCid && !loadedRawAccountItemsRef.current.has(targetCid) && !loadingAccountCidsRef.current.has(targetCid)) {
+          cidsToLoad.add(targetCid);
         }
       }
     });
-  }, [searchQuery, searchResults, dbData, selectedCompany?.id, presetId, loadedAccountItems, fetchAccountItemsOnDemand, viewGranularity]);
+
+    const targetList = Array.from(cidsToLoad);
+    if (targetList.length === 1) {
+      fetchAccountItemsOnDemand(targetList[0]);
+    } else if (targetList.length > 1) {
+      fetchBatchAccountItems(targetList);
+    }
+  }, [searchQuery, searchResults, dbData, selectedCompany?.id, presetId, viewGranularity, fetchAccountItemsOnDemand, fetchBatchAccountItems]);
 
 
 
