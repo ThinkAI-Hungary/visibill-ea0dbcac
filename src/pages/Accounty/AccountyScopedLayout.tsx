@@ -27,9 +27,18 @@ export default function AccountyScopedLayout() {
   const { setSelectedClientId } = useAccountyShell();
   const parsedUrlDateRange = urlDateRange ? parseDateRange(urlDateRange) : null;
 
-  // Sync guard lock to prevent infinite redirect loops
-  const syncingFromUrl = useRef(false);
-  const [accessDenied, setAccessDenied] = useState(false);
+  // Sync guard refs to prevent fighting between URL ➔ Context and Context ➔ URL
+  const isNavigatingFromContext = useRef(false);
+  const lastSyncedUrlRange = useRef<string | null>(null);
+  const [deniedCompanyId, setDeniedCompanyId] = useState<string | null>(null);
+  const accessDenied = Boolean(urlCompanyId && deniedCompanyId === urlCompanyId);
+
+  // Keep a ref of current context range so Effect 1 can read it without subscribing to its re-renders
+  const contextRange = `${dateFromFormatted}_${dateToFormatted}`;
+  const contextRangeRef = useRef(contextRange);
+  useEffect(() => {
+    contextRangeRef.current = contextRange;
+  }, [contextRange]);
 
   // Clear switch pending flag on mount when landing on a valid scoped route
   useEffect(() => {
@@ -63,11 +72,11 @@ export default function AccountyScopedLayout() {
         
         let targetPath = '';
         if (urlCompanyId === 'payroll') {
-          targetPath = `/eaisybooks/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/payroll/${cleanPage}`;
+          targetPath = `/eaisybooks/${urlDateRange}/${contextRangeRef.current}/payroll/${cleanPage}`;
         } else if (urlCompanyId === 'client') {
-          targetPath = `/eaisybooks/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/${cleanPage || 'overview'}`;
+          targetPath = `/eaisybooks/${urlDateRange}/${contextRangeRef.current}/${cleanPage || 'overview'}`;
         } else if (urlCompanyId === 'missing-invoices') {
-          targetPath = `/eaisybooks/${urlDateRange}/${dateFromFormatted}_${dateToFormatted}/missing-invoices/${cleanPage}`;
+          targetPath = `/eaisybooks/${urlDateRange}/${contextRangeRef.current}/missing-invoices/${cleanPage}`;
         }
 
         if (targetPath) {
@@ -81,26 +90,29 @@ export default function AccountyScopedLayout() {
       }
     }
 
-    syncingFromUrl.current = true;
+    // If the URL dateRange is already what we synced, or if it was navigated by Context, skip!
+    if (isNavigatingFromContext.current && urlDateRange === lastSyncedUrlRange.current) {
+      isNavigatingFromContext.current = false;
+      return;
+    }
+
+    if (urlDateRange === contextRangeRef.current) {
+      lastSyncedUrlRange.current = urlDateRange;
+      return;
+    }
 
     const syncDateAndFinish = () => {
       const parsed = parseDateRange(urlDateRange);
       if (parsed) {
-        const urlFrom = formatCompact(parsed.from);
-        const urlTo = formatCompact(parsed.to);
-        if (urlFrom !== dateFromFormatted) setDateFrom(parsed.from);
-        if (urlTo !== dateToFormatted) setDateTo(parsed.to);
+        lastSyncedUrlRange.current = urlDateRange;
+        setDateFrom(parsed.from);
+        setDateTo(parsed.to);
       }
-
-      requestAnimationFrame(() => {
-        syncingFromUrl.current = false;
-      });
     };
 
     // Check client permission
     const hasClient = clients.some(c => c.id === urlCompanyId || c.companyId === urlCompanyId);
     if (hasClient) {
-      setAccessDenied(false);
       syncDateAndFinish();
     } else if (clients.length > 0) {
       if (user?.id && urlCompanyId) {
@@ -112,23 +124,20 @@ export default function AccountyScopedLayout() {
           .maybeSingle()
           .then(({ data: member }) => {
             if (member) {
-              setAccessDenied(false);
+              setDeniedCompanyId(null);
               syncDateAndFinish();
             } else {
-              setAccessDenied(true);
-              syncingFromUrl.current = false;
+              setDeniedCompanyId(urlCompanyId);
             }
           });
         return;
       }
-      setAccessDenied(true);
-      syncingFromUrl.current = false;
+      Promise.resolve().then(() => setDeniedCompanyId(urlCompanyId));
       return;
     } else {
-      setAccessDenied(false);
       syncDateAndFinish();
     }
-  }, [urlCompanyId, urlDateRange, clients, clientsLoading, isLegacyKeyword, dateFromFormatted, dateToFormatted, location.pathname, navigate, user?.id]);
+  }, [urlCompanyId, urlDateRange, clients, clientsLoading, isLegacyKeyword, navigate, user?.id, prefix, location.pathname, setDateFrom, setDateTo]);
 
   // 1b. Store selected Accounty company in localStorage to remember it when switching to eaisybill
   useEffect(() => {
@@ -139,12 +148,16 @@ export default function AccountyScopedLayout() {
 
   // 2. Context ➔ URL Sync (when date changes via UI)
   useEffect(() => {
-    if (syncingFromUrl.current || accessDenied || !urlCompanyId || isLegacyKeyword) return;
+    if (accessDenied || !urlCompanyId || isLegacyKeyword) return;
 
     const currentDateRange = `${dateFromFormatted}_${dateToFormatted}`;
-    const expectedPrefix = `/eaisybooks/${urlCompanyId}/${currentDateRange}`;
+    if (currentDateRange === urlDateRange) return;
+
+    const expectedPrefix = `${prefix}/eaisybooks/${urlCompanyId}/${currentDateRange}`;
 
     if (!location.pathname.startsWith(expectedPrefix)) {
+      isNavigatingFromContext.current = true;
+      lastSyncedUrlRange.current = currentDateRange;
       const page = extractAccountyPageSegment(location.pathname);
       const newPath =
         generateAccountyScopedPath(
@@ -152,10 +165,11 @@ export default function AccountyScopedLayout() {
           dateFromFormatted,
           dateToFormatted,
           page === '/' ? '' : page.slice(1),
+          Boolean(prefix),
         ) + location.search + location.hash;
       navigate(newPath, { replace: true });
     }
-  }, [urlCompanyId, dateFromFormatted, dateToFormatted, location.pathname, accessDenied, isLegacyKeyword, navigate]);
+  }, [urlCompanyId, dateFromFormatted, dateToFormatted, location.pathname, location.search, location.hash, accessDenied, isLegacyKeyword, navigate, urlDateRange, prefix]);
 
   if (clientsLoading) {
     return (
@@ -183,7 +197,7 @@ export default function AccountyScopedLayout() {
           <Button
             variant="outline"
             onClick={() => {
-              setAccessDenied(false);
+              setDeniedCompanyId(null);
               navigate(`${prefix}/eaisybooks`, { replace: true });
             }}
             className="px-6"

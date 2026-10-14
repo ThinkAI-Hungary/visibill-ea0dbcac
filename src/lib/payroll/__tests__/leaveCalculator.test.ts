@@ -426,6 +426,81 @@ describe('resolveEmployeeLeaveInput (Mt. 116-122. § entitlements)', () => {
     expect(balance.baseLeave).toBe(45);
     expect(balance.totalAnnual).toBe(45);
   });
+
+  it('should read carried over leave and source from employment metadata', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      primaryEmployment: {
+        id: 'emp-metadata-1',
+        metadata: {
+          leave_overrides: {
+            carried_over_days: 7,
+            carried_over_source: 'previous_job',
+          },
+        },
+      },
+    });
+
+    expect(input?.carriedOverDays).toBe(7);
+    expect(input?.carriedOverSource).toBe('previous_job');
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.carriedOver).toBe(7);
+    expect(balance.carriedOverSource).toBe('previous_job');
+    expect(balance.totalAvailable).toBe(balance.totalAnnual + 7);
+  });
+
+  it('should grant 5 rehab leave days when has_rehab_disability_leave is enabled in metadata (Mt. 120. §)', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      primaryEmployment: {
+        id: 'emp-rehab-1',
+        metadata: {
+          leave_overrides: {
+            has_rehab_disability_leave: true,
+          },
+        },
+      },
+    });
+
+    expect(input?.hasRehabLeave).toBe(true);
+    expect(input?.rehabLeaveDays).toBe(5);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.rehabLeave).toBe(5);
+    expect(balance.rehabLeaveHours).toBe(40);
+    expect(balance.totalAnnual).toBe(20 + 6 + 5); // base(20) + age(6) + rehab(5)
+  });
+
+  it('should apply customOverrides when specified in employment metadata', () => {
+    const input = resolveEmployeeLeaveInput({
+      employee: defaultEmployee,
+      targetYear: 2026,
+      primaryEmployment: {
+        id: 'emp-custom-1',
+        metadata: {
+          leave_overrides: {
+            custom_overrides: {
+              baseLeave: 25,
+              extraLeave: 3,
+            },
+          },
+        },
+      },
+    });
+
+    expect(input?.customOverrides?.baseLeave).toBe(25);
+    expect(input?.customOverrides?.extraLeave).toBe(3);
+
+    const balance = calculateLeaveBalance(input!);
+    expect(balance.baseLeave).toBe(25);
+    expect(balance.extraLeave).toBe(3);
+    expect(balance.totalAnnual).toBe(25 + 6 + 3); // base(25) + age(6) + extra(3) = 34
+    expect(balance.hasOverrides).toBe(true);
+  });
 });
+
 
 

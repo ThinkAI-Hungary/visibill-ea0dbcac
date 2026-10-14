@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Printer, CheckCircle, Clock, Eye,
   Languages, Stamp, RefreshCw, Loader2, Database, Search, X, ArrowUpDown
@@ -13,10 +13,30 @@ import { useToast } from '@/hooks/use-toast';
 import { exportPdf } from '@/lib/exportPdf';
 import { getPayslipPreviewUrl, downloadPayslipPdf, type PayslipPdfData } from '@/lib/payslipPdf';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const CURRENT_DATE = new Date();
+const CURRENT_YEAR = CURRENT_DATE.getFullYear();
+const CURRENT_MONTH = CURRENT_DATE.getMonth() + 1;
+const DEFAULT_CALENDAR_PERIOD = `${CURRENT_YEAR}-${String(CURRENT_MONTH).padStart(2, '0')}`;
+
+const MONTH_NAMES = [
+  'Január', 'Február', 'Március', 'Április', 'Május', 'Június',
+  'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'
+];
+
+function formatPeriodLabel(year: number, month: number, status?: string) {
+  const monthName = MONTH_NAMES[month - 1] || `${month}. hó`;
+  const statusBadge = status === 'completed' || status === 'approved' ? ' (Lezárt)' : status === 'in_progress' ? ' (Folyamatban)' : '';
+  return `${year}. ${monthName}${statusBadge}`;
+}
 
 export default function PayslipGeneratorPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const id = companyId;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryPeriod = searchParams.get('period');
+
   const [template, setTemplate] = useState<'official' | 'custom'>('official');
   const [language, setLanguage] = useState<'hu' | 'en'>('hu');
   const [avdh, setAvdh] = useState(false);
@@ -27,23 +47,74 @@ export default function PayslipGeneratorPage() {
   const { toast } = useToast();
   const generateDocs = useGenerateDocuments();
 
-  // Fetch actual data
-  const { data: docs, isLoading } = useAccountyDocuments(id || '', 'payslip');
-  const { data: clients } = useAccountyClients();
-  const company = useMemo(() => clients?.find(c => c.id === id), [clients, id]);
   const { data: cycles = [] } = usePayrollCycles(id || '');
 
-  const currentCycle = useMemo(() => {
-    const now = new Date();
-    return cycles.find(c => c.year === now.getFullYear() && c.month === now.getMonth() + 1) || cycles[0];
+  const availablePeriods = useMemo(() => {
+    const list = cycles.map(c => ({
+      period: `${c.year}-${String(c.month).padStart(2, '0')}`,
+      label: formatPeriodLabel(c.year, c.month, c.status),
+      cycleId: c.id,
+    }));
+    if (!list.some(item => item.period === DEFAULT_CALENDAR_PERIOD)) {
+      list.push({
+        period: DEFAULT_CALENDAR_PERIOD,
+        label: formatPeriodLabel(CURRENT_YEAR, CURRENT_MONTH),
+        cycleId: '',
+      });
+    }
+    return list;
   }, [cycles]);
 
-  const { data: calculations = [] } = usePayrollCalculations(currentCycle?.id || '');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(() => {
+    return queryPeriod || DEFAULT_CALENDAR_PERIOD;
+  });
 
-  const slips = docs || [];
+  const hasAutoSelectedLatest = useRef(false);
+  useEffect(() => {
+    if (!queryPeriod && cycles.length > 0 && !hasAutoSelectedLatest.current) {
+      hasAutoSelectedLatest.current = true;
+      const latest = `${cycles[0].year}-${String(cycles[0].month).padStart(2, '0')}`;
+      setSelectedPeriod(latest);
+    }
+  }, [cycles, queryPeriod]);
+
+  const handlePeriodChange = (newPeriod: string) => {
+    setSelectedPeriod(newPeriod);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('period', newPeriod);
+      return next;
+    }, { replace: true });
+  };
+
+  const selectedCycle = useMemo(() => {
+    const [yStr, mStr] = selectedPeriod.split('-');
+    const y = parseInt(yStr, 10);
+    const m = parseInt(mStr, 10);
+    return cycles.find(c => c.year === y && c.month === m) || cycles[0];
+  }, [cycles, selectedPeriod]);
+
+  // Fetch actual data filtered by selectedPeriod
+  const { data: docs, isLoading } = useAccountyDocuments(id || '', 'payslip', selectedPeriod);
+  const { data: clients } = useAccountyClients();
+  const company = useMemo(() => clients?.find(c => c.id === id), [clients, id]);
+
+  const { data: calculations = [] } = usePayrollCalculations(selectedCycle?.id || '');
+
+  const slips = useMemo(() => docs || [], [docs]);
   const generatedCount = slips.filter(s => s.status === 'generated').length;
-  const deadline = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 10);
-  const daysUntil = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+  const deadline = useMemo(() => {
+    if (selectedCycle) {
+      return new Date(selectedCycle.year, selectedCycle.month, 10);
+    }
+    const [yStr, mStr] = selectedPeriod.split('-');
+    const y = parseInt(yStr, 10) || CURRENT_YEAR;
+    const m = parseInt(mStr, 10) || CURRENT_MONTH;
+    return new Date(y, m, 10);
+  }, [selectedCycle, selectedPeriod]);
+
+  const daysUntil = Math.ceil((deadline.getTime() - CURRENT_DATE.getTime()) / (1000 * 60 * 60 * 24));
 
   const sortedAndFilteredSlips = useMemo(() => {
     let result = [...slips];
@@ -112,8 +183,24 @@ export default function PayslipGeneratorPage() {
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-blue-500 to-primary rounded-lg shadow-lg shadow-blue-500/25"><FileText className="w-5 h-5 text-white" /></div>
           <div>
-            <h1 className="text-2xl font-bold">Bérjegyzék generálás</h1>
-            <p className="text-sm text-muted-foreground">Mt. 155. § — Havi bérjegyzékek</p>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl font-bold">Bérjegyzék generálás</h1>
+              <div className="w-56">
+                <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+                  <SelectTrigger className="h-8 text-xs font-semibold bg-background border-border">
+                    <SelectValue placeholder="Időszak választása" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePeriods.map(p => (
+                      <SelectItem key={p.period} value={p.period} className="text-xs">
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">{selectedPeriod} — Mt. 155. § Havi bérjegyzékek</p>
           </div>
         </div>
         <div className={cn('px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5', daysUntil <= 0 ? 'bg-red-100 text-red-700' : daysUntil <= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-emerald-100 text-emerald-700')}>
@@ -157,8 +244,13 @@ export default function PayslipGeneratorPage() {
             <Button 
               onClick={async () => { 
                 try {
-                  await generateDocs.mutateAsync({ companyId: id || '', docType: 'payslip' });
-                  toast({ title: 'Kész', description: 'Bérjegyzékek sikeresen generálva.' }); 
+                  await generateDocs.mutateAsync({
+                    companyId: id || '',
+                    docType: 'payslip',
+                    cycleId: selectedCycle?.id,
+                    period: selectedPeriod,
+                  });
+                  toast({ title: 'Kész', description: `Bérjegyzékek sikeresen generálva (${selectedPeriod}).` }); 
                 } catch (error: any) {
                   toast({ title: 'Hiba a generálás során', description: error.message || 'Generálás sikertelen.', variant: 'destructive' });
                 }
@@ -173,7 +265,7 @@ export default function PayslipGeneratorPage() {
               if (sortedAndFilteredSlips.length === 0) return;
               exportPdf('berjegyzekek', {
                 title: 'Bérjegyzékek',
-                subtitle: `Havi bérjegyzék lista${searchQuery.trim() ? ` (Szűrés: "${searchQuery}")` : ''}`,
+                subtitle: `Havi bérjegyzék lista — ${selectedPeriod}${searchQuery.trim() ? ` (Szűrés: "${searchQuery}")` : ''}`,
                 headers: ['Dokumentum', 'Időszak', 'Státusz'],
                 rows: sortedAndFilteredSlips.map(s => [s.title, s.period, s.status === 'generated' ? 'Generálva' : s.status]),
               });
@@ -192,8 +284,34 @@ export default function PayslipGeneratorPage() {
       ) : slips.length === 0 ? (
         <div className="bg-card rounded-lg border border-border p-12 text-center space-y-3">
           <Database className="w-10 h-10 mx-auto text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Nincsenek bérjegyzékek erre az időszakra.</p>
+          <p className="text-sm text-muted-foreground">Nincsenek bérjegyzékek erre az időszakra ({selectedPeriod}).</p>
           <p className="text-xs text-muted-foreground">A bérjegyzékek a számfejtés véglegesítése után generálhatók.</p>
+          {calculations.length > 0 && (
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await generateDocs.mutateAsync({
+                      companyId: id || '',
+                      docType: 'payslip',
+                      cycleId: selectedCycle?.id,
+                      period: selectedPeriod,
+                    });
+                    toast({ title: 'Kész', description: `Bérjegyzékek sikeresen generálva (${selectedPeriod}).` });
+                  } catch (e: any) {
+                    toast({ title: 'Hiba a generálás során', description: e.message || 'Generálás sikertelen.', variant: 'destructive' });
+                  }
+                }}
+                disabled={generateDocs.isPending}
+                className="gap-1.5"
+              >
+                {generateDocs.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                Bérjegyzékek generálása ({calculations.length} számfejtett dolgozó)
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">

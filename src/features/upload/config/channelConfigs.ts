@@ -174,6 +174,7 @@ export const BANK_HINT_OPTIONS: BankHintOption[] = [
   { value: 'magnet', label: 'MagNet Bank', group: 'hungary' },
   { value: 'revolut', label: 'Revolut', group: 'fintech' },
   { value: 'wise', label: 'Wise', group: 'fintech' },
+  { value: 'szallas', label: 'Szallas.hu', group: 'other', hint: '(virtuális bank / elszámolás)' },
   { value: 'szep', label: 'SZÉP Kártya', group: 'other', hint: '(elfogadóhelyi)' },
   { value: 'zaba', label: 'Zagrebačka banka (ZABA)', group: 'other' },
   { value: 'minimax', label: 'Minimax / e-racuni', group: 'other' },

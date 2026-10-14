@@ -141,7 +141,7 @@ export function VatViewSelectorModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden bg-background border-border shadow-2xl">
+        <DialogContent className="max-w-[96vw] xl:max-w-[95vw] 2xl:max-w-[1700px] w-[96vw] h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-background border-border shadow-2xl">
           {/* Fejléc */}
           <DialogHeader className="px-5 py-3.5 border-b border-border/70 flex flex-row items-center justify-between space-y-0 shrink-0 bg-muted/20">
             <div className="flex items-center gap-2.5">

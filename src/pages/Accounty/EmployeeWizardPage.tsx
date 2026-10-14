@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { useCreateEmployee, useCreateEmployment, useJobCodes, useCreateDependent } from '@/hooks/usePayrollData';
 import { useProjectList } from '@/hooks/useProjectList';
-import { validateTajNumber, validateTaxId, validateBankAccount, validateFeorCode, formatTajNumber, formatBankAccount, formatTajNumberOnType, formatBankAccountOnType } from '@/lib/payroll/validators';
+import { validateTajNumber, validateTaxId, validateBankAccount, validateFeorCode, validateBirthDate, formatTajNumber, formatBankAccount, formatTajNumberOnType, formatBankAccountOnType } from '@/lib/payroll/validators';
 
 // ── Step definitions ──
 const STEPS = [
@@ -220,6 +220,11 @@ export default function EmployeeWizardPage() {
     if (step === 1) {
       if (!form.last_name.trim()) newErrors.last_name = 'Kötelező mező';
       if (!form.first_name.trim()) newErrors.first_name = 'Kötelező mező';
+
+      if (form.birth_date) {
+        const birthResult = validateBirthDate(form.birth_date);
+        if (!birthResult.valid) newErrors.birth_date = birthResult.error!;
+      }
 
       if (form.taj_number) {
         const tajResult = validateTajNumber(form.taj_number);
@@ -525,7 +530,7 @@ export default function EmployeeWizardPage() {
             <FormField label="Keresztnév *" value={form.first_name} onChange={(v) => update('first_name', v)} error={errors.first_name} placeholder="pl. János" />
             <FormField label="Születési név" value={form.birth_name} onChange={(v) => update('birth_name', v)} placeholder="Ha eltér a jelenlegi névtől" />
             <FormField label="Születési hely" value={form.birth_place} onChange={(v) => update('birth_place', v)} placeholder="pl. Budapest" />
-            <FormField label="Születési dátum" value={form.birth_date} onChange={(v) => update('birth_date', v)} type="date" />
+            <FormField label="Születési dátum" value={form.birth_date} onChange={(v) => update('birth_date', v)} error={errors.birth_date} type="date" toYear={CURRENT_YEAR} />
             <FormField label="Anyja neve" value={form.mothers_name} onChange={(v) => update('mothers_name', v)} placeholder="pl. Kiss Mária" />
             <div>
               <label className="block text-sm font-medium text-foreground/90 mb-1.5">Nem</label>
@@ -681,7 +686,11 @@ export default function EmployeeWizardPage() {
                               list[idx].birth_date = dateStr;
                               update('dependents', list);
                             }}
-                            placeholder="éééé. hh. nn."
+                            placeholder="éééé-hh-nn"
+                            allowInput
+                            showYearMonthDropdown
+                            fromYear={1920}
+                            toYear={CURRENT_YEAR}
                             className="h-8 text-xs"
                           />
                         </td>
@@ -1147,9 +1156,11 @@ export default function EmployeeWizardPage() {
   );
 }
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 // ── Helper components ──
 
-function FormField({ label, value, onChange, error, type = 'text', placeholder, className }: {
+function FormField({ label, value, onChange, error, type = 'text', placeholder, className, toYear }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -1157,7 +1168,9 @@ function FormField({ label, value, onChange, error, type = 'text', placeholder, 
   type?: string;
   placeholder?: string;
   className?: string;
+  toYear?: number;
 }) {
+  const effectiveToYear = toYear ?? (label.toLowerCase().includes('szület') ? CURRENT_YEAR : CURRENT_YEAR + 5);
   return (
     <div className={className}>
       <label className="block text-sm font-medium text-foreground/90 mb-1.5">{label}</label>
@@ -1165,8 +1178,12 @@ function FormField({ label, value, onChange, error, type = 'text', placeholder, 
         <DatePicker
           value={value}
           onChange={onChange}
-          placeholder={placeholder || 'éééé. hh. nn.'}
+          placeholder={placeholder || 'éééé-hh-nn (pl. 1970-05-12)'}
           clearable
+          allowInput
+          showYearMonthDropdown
+          fromYear={1920}
+          toYear={effectiveToYear}
           className={cn('bg-card border-border', error && 'border-red-500')}
         />
       ) : (

@@ -29,8 +29,9 @@ import SalaryHistoryTab from './employee-details/SalaryHistoryTab';
 import { printEmploymentCertificate, printIncomeCertificate, printTimesheetTemplate, printAnnualLedger } from '@/lib/payroll/payslipTemplates';
 import { SickLeaveFormDialog } from '@/components/accounty/payroll/SickLeaveFormDialog';
 import { generate2608Xml, generate2658Xml, generateT1041Xml, generateT1042EXml } from '@/lib/payroll/xmlGenerator';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { payrollQueryKeys } from '@/hooks/usePayrollData';
 import { calculatePayroll, calculateGarnishments, isEligibleForYoung25, DEFAULT_2026_PARAMS } from '@/lib/payroll/taxEngine';
 
 // ── Tab definíciók ──
@@ -49,6 +50,7 @@ export default function EmployeeDetailsPage() {
   const { companyId, empId } = useParams<{ companyId: string; empId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [showNewDeclaration, setShowNewDeclaration] = useState(false);
   const [editingDeclaration, setEditingDeclaration] = useState<PayrollDeclaration | null>(null);
@@ -262,7 +264,16 @@ export default function EmployeeDetailsPage() {
         )}
 
         {activeTab === 'leave' && (
-          <EmployeeLeaveTab leaves={leaves} leaveBalance={leaveBalance} />
+          <EmployeeLeaveTab
+            leaves={leaves}
+            leaveBalance={leaveBalance}
+            employmentType={primaryEmployment?.employment_type}
+            employmentId={primaryEmployment?.id}
+            employmentMetadata={primaryEmployment?.metadata}
+            onRefresh={() => {
+              queryClient.invalidateQueries({ queryKey: payrollQueryKeys.employments(empId || '') });
+            }}
+          />
         )}
 
         {activeTab === 'garnishments' && (

@@ -253,7 +253,119 @@ function parseMinimaxRows(rows: any[]): OpeningImportReport {
 /**
  * Parses generic CSV or Excel rows (Hungarian/English column naming).
  */
-function parseGenericRows(rows: any[], format: 'generic_csv' | 'generic_excel'): OpeningImportReport {
+/**
+ * Normalizes header or column string into a lowercase ASCII token with underscores.
+ * Strips accents (á->a, ő->o, etc.) and punctuation.
+ */
+export function normalizeKey(str: string): string {
+  if (!str) return '';
+  return str
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
+/**
+ * Checks if a value indicates a Credit (Követel / K / C / Potražuje) side.
+ */
+export function isCreditIndicator(val: any): boolean {
+  if (val === null || val === undefined) return false;
+  const s = String(val).trim().toUpperCase();
+  const normalized = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return (
+    s === 'K' ||
+    s === 'C' ||
+    normalized.startsWith('KOVETEL') ||
+    normalized.startsWith('CREDIT') ||
+    normalized.startsWith('POTRAZUJE') ||
+    normalized === 'CR' ||
+    normalized === 'KREDIT'
+  );
+}
+
+/**
+ * Checks if a value indicates a Debit (Tartozik / T / D / Duguje) side.
+ */
+export function isDebitIndicator(val: any): boolean {
+  if (val === null || val === undefined) return false;
+  const s = String(val).trim().toUpperCase();
+  const normalized = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return (
+    s === 'T' ||
+    s === 'D' ||
+    normalized.startsWith('TARTOZIK') ||
+    normalized.startsWith('DEBIT') ||
+    normalized.startsWith('DUGUJE') ||
+    normalized === 'DR' ||
+    normalized === 'DEB'
+  );
+}
+
+/**
+ * Splits CSV text into headers and row objects, handling delimiters, BOM, and quotes.
+ */
+export function parseCsvContent(text: string): { headers: string[]; rows: any[] } {
+  const cleanText = text.replace(/^\uFEFF/, '').trim();
+  const rawLines = cleanText.split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (rawLines.length < 2) {
+    throw new Error('A fájlnak legalább egy fejlécet és egy adatsort tartalmaznia kell.');
+  }
+
+  // Detect delimiter from first line (; or \t or ,)
+  const firstLine = rawLines[0];
+  const semicolonCount = (firstLine.match(/;/g) || []).length;
+  const tabCount = (firstLine.match(/\t/g) || []).length;
+  const commaCount = (firstLine.match(/,/g) || []).length;
+  let delimiter = ';';
+  if (tabCount > semicolonCount && tabCount > commaCount) delimiter = '\t';
+  else if (commaCount > semicolonCount) delimiter = ',';
+
+  const splitRow = (rowStr: string): string[] => {
+    const res: string[] = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < rowStr.length; i++) {
+      const ch = rowStr[i];
+      if (ch === '"') {
+        if (inQuotes && rowStr[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === delimiter && !inQuotes) {
+        res.push(cur.trim().replace(/^"|"$/g, ''));
+        cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    res.push(cur.trim().replace(/^"|"$/g, ''));
+    return res;
+  };
+
+  const headers = splitRow(rawLines[0]);
+  const rows: any[] = [];
+  for (let i = 1; i < rawLines.length; i++) {
+    const cols = splitRow(rawLines[i]);
+    if (cols.length === 0 || (cols.length === 1 && cols[0] === '')) continue;
+    const rowObj: any = {};
+    headers.forEach((h, idx) => {
+      rowObj[h] = cols[idx] !== undefined ? cols[idx] : '';
+    });
+    rows.push(rowObj);
+  }
+  return { headers, rows };
+}
+
+/**
+ * Parses generic CSV or Excel rows (Hungarian/English column naming).
+ */
+export function parseGenericRows(rows: any[], format: 'generic_csv' | 'generic_excel'): OpeningImportReport {
   const items: ParsedOpeningLine[] = [];
   let totalDebit = 0;
   let totalCredit = 0;
@@ -262,33 +374,46 @@ function parseGenericRows(rows: any[], format: 'generic_csv' | 'generic_excel'):
     const keys = Object.keys(row);
     if (keys.length === 0) continue;
 
+    const normKeys = keys.map(k => ({ original: k, norm: normalizeKey(k) }));
+
     // Account detection
-    const glKey = keys.find(k => /szamla|fokonyv|fksz|gl|account|konto/i.test(k));
-    let gl_number = glKey ? String(row[glKey]).trim() : String(row[keys[0]]).trim();
+    const glMatch = normKeys.find(k => /szamla|fokonyv|fksz|gl|account|konto/i.test(k.norm));
+    let gl_number = glMatch ? String(row[glMatch.original]).trim() : String(row[keys[0]]).trim();
     gl_number = gl_number.replace(/\s*-\s*$/, '').replace(/\s*-\s*/g, '-');
 
     // DC detection
-    const dcKey = keys.find(k => /irany|jel|dc|t_k|tartozik_kovetel|side/i.test(k));
-    const dcRaw = dcKey ? String(row[dcKey]).toUpperCase().trim() : '';
+    const dcMatch = normKeys.find(k => 
+      /^(irany|jel|dc|t_k|tartozik_kovetel|side|oldal)$/i.test(k.norm) || 
+      /^(t|k|t_per_k)$/i.test(k.norm)
+    );
+    const dcRaw = dcMatch ? row[dcMatch.original] : null;
 
     // Amount detection
-    const egyenlegKey = keys.find(k => /^egyenleg$/i.test(k) || /net_balance|closing_balance|zaro_egyenleg/i.test(k));
-    const amtKey = keys.find(k => /osszeg|amount|egyenleg|balance/i.test(k));
-    const debitKey = keys.find(k => /tartozik|debit|duguje|^zt$/i.test(k));
-    const creditKey = keys.find(k => /kovetel|credit|potrazuje|^zk$/i.test(k));
+    const egyenlegMatch = normKeys.find(k => /^(egyenleg|net_balance|closing_balance|zaro_egyenleg)$/i.test(k.norm));
+    const amtMatch = normKeys.find(k => /^(osszeg|amount|balance|ertek)$/i.test(k.norm));
+    const debitMatch = normKeys.find(k => /^(tartozik|debit|duguje|zt)$/i.test(k.norm));
+    const creditMatch = normKeys.find(k => /^(kovetel|credit|potrazuje|zk)$/i.test(k.norm));
 
     let dc_type: 'T' | 'K' = 'T';
     let amount = 0;
 
-    if (egyenlegKey && row[egyenlegKey] !== undefined && row[egyenlegKey] !== null && String(row[egyenlegKey]).trim() !== '') {
-      const bal = parseAmount(row[egyenlegKey]);
+    if (egyenlegMatch && row[egyenlegMatch.original] !== undefined && row[egyenlegMatch.original] !== null && String(row[egyenlegMatch.original]).trim() !== '') {
+      const bal = parseAmount(row[egyenlegMatch.original]);
       if (Math.abs(bal) > 0.001) {
-        dc_type = bal >= 0 ? 'T' : 'K';
-        amount = Math.abs(bal);
+        if (dcRaw && isCreditIndicator(dcRaw)) {
+          dc_type = 'K';
+          amount = Math.abs(bal);
+        } else if (dcRaw && isDebitIndicator(dcRaw)) {
+          dc_type = 'T';
+          amount = Math.abs(bal);
+        } else {
+          dc_type = bal >= 0 ? 'T' : 'K';
+          amount = Math.abs(bal);
+        }
       }
-    } else if (debitKey && creditKey) {
-      const d = parseAmount(row[debitKey]);
-      const c = parseAmount(row[creditKey]);
+    } else if (debitMatch && creditMatch) {
+      const d = parseAmount(row[debitMatch.original]);
+      const c = parseAmount(row[creditMatch.original]);
       if (d > 0) {
         dc_type = 'T';
         amount = d;
@@ -296,26 +421,35 @@ function parseGenericRows(rows: any[], format: 'generic_csv' | 'generic_excel'):
         dc_type = 'K';
         amount = c;
       }
-    } else if (amtKey) {
-      amount = parseAmount(row[amtKey]);
-      if (dcRaw.startsWith('T') || dcRaw.startsWith('D')) {
-        dc_type = 'T';
-      } else if (dcRaw.startsWith('K') || dcRaw.startsWith('C')) {
+    } else if (amtMatch) {
+      const rawAmt = parseAmount(row[amtMatch.original]);
+      if (dcRaw && isCreditIndicator(dcRaw)) {
         dc_type = 'K';
+        amount = Math.abs(rawAmt);
+      } else if (dcRaw && isDebitIndicator(dcRaw)) {
+        dc_type = 'T';
+        amount = Math.abs(rawAmt);
+      } else if (rawAmt < 0) {
+        dc_type = 'K';
+        amount = Math.abs(rawAmt);
       } else {
-        dc_type = amount >= 0 ? 'T' : 'K';
-        amount = Math.abs(amount);
+        dc_type = 'T';
+        amount = rawAmt;
       }
     } else if (keys.length >= 3) {
       // Positional fallback: col 0 = gl, col 1 = dc, col 2 = amount
-      const dRaw = String(row[keys[1]] || '').toUpperCase();
-      dc_type = (dRaw.startsWith('T') || dRaw.startsWith('D')) ? 'T' : 'K';
-      amount = parseAmount(row[keys[2]]);
+      const dRaw = row[keys[1]];
+      if (isCreditIndicator(dRaw)) {
+        dc_type = 'K';
+      } else {
+        dc_type = 'T';
+      }
+      amount = Math.abs(parseAmount(row[keys[2]]));
     }
 
     // Description
-    const descKey = keys.find(k => /leiras|megnevezes|desc|name|nev/i.test(k));
-    const description = descKey ? String(row[descKey]).trim() : 'Nyitó egyenleg';
+    const descMatch = normKeys.find(k => /^(leiras|megnevezes|desc|name|nev|szoveg)$/i.test(k.norm));
+    const description = descMatch ? String(row[descMatch.original]).trim() : 'Nyitó egyenleg';
 
     if (gl_number && amount > 0) {
       items.push({ gl_number, dc_type, amount, description });
@@ -385,24 +519,7 @@ export async function parseOpeningFile(file: File): Promise<OpeningImportReport>
 
   // 3. CSV / TXT
   const text = await file.text();
-  const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
-  if (lines.length < 2) {
-    throw new Error('A fájlnak legalább egy fejlécet és egy adatsort tartalmaznia kell.');
-  }
-
-  const delimiter = lines[0].includes(';') ? ';' : ',';
-  const headers = lines[0].split(delimiter).map(h => h.trim().replace(/"/g, ''));
-
-  const rows: any[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(delimiter).map(c => c.trim().replace(/"/g, ''));
-    if (cols.length === 0 || (cols.length === 1 && cols[0] === '')) continue;
-    const rowObj: any = {};
-    headers.forEach((h, idx) => {
-      rowObj[h] = cols[idx] || '';
-    });
-    rows.push(rowObj);
-  }
+  const { headers, rows } = parseCsvContent(text);
 
   if (isMinimaxFormat(headers)) {
     return parseMinimaxRows(rows);
@@ -410,3 +527,4 @@ export async function parseOpeningFile(file: File): Promise<OpeningImportReport>
 
   return parseGenericRows(rows, 'generic_csv');
 }
+

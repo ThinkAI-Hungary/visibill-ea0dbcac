@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Printer, CheckCircle, Clock,
-  Eye, AlertTriangle, Package, Loader2
+  Eye, AlertTriangle, Package, Loader2, Calculator
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { resolveEmployeeLeaveInput, calculateLeaveBalance, calculateLeavePayout } from '@/lib/payroll/leaveCalculator';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -63,13 +64,18 @@ const STATUS_BADGE: Record<string, { label: string; color: string; icon: React.E
 export default function ExitDocumentsPage() {
   const { companyId, empId } = useParams<{ companyId: string; empId: string }>();
   const id = companyId;
+
+  const [currentYear] = useState(() => new Date().getFullYear());
+  const [currentMonth] = useState(() => new Date().getMonth() + 1);
+  const [todayFormatted] = useState(() => new Date().toLocaleDateString('hu-HU'));
+
   const { data: jobs, isLoading, isError: jobsError, refetch: refetchJobs } = useEmployeeJobs(id || '', empId || '');
   const { data: clients } = useAccountyClients();
   const currentCompany = clients?.find(c => c.id === id || c.companyId === id);
   const { data: employee } = usePayrollEmployee(empId || '');
   const { data: employments = [] } = usePayrollEmployments(empId || '');
   const { data: cycles = [] } = usePayrollCycles(id || '');
-  const currentCycle = cycles.find(c => c.year === new Date().getFullYear() && c.month === new Date().getMonth() + 1) || cycles[0];
+  const currentCycle = cycles.find(c => c.year === currentYear && c.month === currentMonth) || cycles[0];
   const { data: calculations = [] } = usePayrollCalculations(currentCycle?.id || '');
   const primaryEmployment = employments.find(e => e.status === 'active') || employments[0];
   const { data: leaves = [] } = usePayrollLeaves(primaryEmployment?.id || '');
@@ -112,10 +118,62 @@ export default function ExitDocumentsPage() {
     return meta?.employee_id === empId;
   }) || calculations[0];
 
+  // Mt. 125. § Szabadság-megváltás és távolléti díj kalkuláció
+  const leaveSummary = useMemo(() => {
+    const gross = empCalc?.gross_salary || primaryEmployment?.base_salary || 450000;
+    const dailyRate = Math.round(gross / 21.67);
+    const months = currentCycle?.month || currentMonth;
+
+    let totalAnnualDays = 22;
+    let proportionalDays = 22;
+    let usedDays = leaves.filter(l => l.leave_type === 'annual' && l.status === 'approved').reduce((s, l) => s + Number(l.days), 0);
+    let remainingDays = 0;
+    let baseDays = 20;
+    let bonusDays = 2;
+
+    const leaveInput = resolveEmployeeLeaveInput({
+      employee,
+      primaryEmployment,
+      leaves,
+      targetYear: currentYear,
+    });
+
+    if (leaveInput) {
+      const balance = calculateLeaveBalance(leaveInput);
+      baseDays = balance.baseLeave;
+      bonusDays = balance.ageSupplement + balance.childSupplement + balance.rehabLeave + balance.extraLeave;
+      totalAnnualDays = balance.totalAnnual;
+      proportionalDays = balance.totalAvailable;
+      usedDays = balance.used;
+      remainingDays = balance.remaining;
+    } else {
+      baseDays = 20;
+      bonusDays = 2;
+      totalAnnualDays = baseDays + bonusDays;
+      const proportion = Math.min(1, Math.max(0.08, months / 12));
+      proportionalDays = Math.max(usedDays, Math.round(totalAnnualDays * proportion));
+      remainingDays = Math.max(0, proportionalDays - usedDays);
+    }
+
+    const payout = calculateLeavePayout(remainingDays, dailyRate);
+
+    return {
+      gross,
+      dailyRate,
+      baseDays,
+      bonusDays,
+      totalAnnualDays,
+      proportionalDays,
+      usedDays,
+      remainingDays: payout.daysToPayOut,
+      leaveCompensation: payout.payoutAmount,
+    };
+  }, [empCalc, primaryEmployment, leaves, employee, currentCycle, currentMonth, currentYear]);
+
   const renderExitDocumentPage = (d: jsPDF, doc: ExitDocument, pageIndex: number, totalPages: number) => {
     const pw = d.internal.pageSize.getWidth();
     const ph = d.internal.pageSize.getHeight();
-    const today = new Date().toLocaleDateString('hu-HU');
+    const today = todayFormatted;
     const exitDate = primaryEmployment?.end_date ? fmtDate(primaryEmployment.end_date) : today;
     const startDate = primaryEmployment?.start_date ? fmtDate(primaryEmployment.start_date) : '2026. 01. 01.';
     const companyName = currentCompany?.name || 'Munkáltató Kft.';
@@ -127,22 +185,23 @@ export default function ExitDocumentsPage() {
     const tb = empCalc?.tb_amount || Math.round(gross * 0.185);
     const net = empCalc?.net_salary || (gross - szja - tb);
 
-    const months = currentCycle?.month || new Date().getMonth() + 1;
+    const months = currentCycle?.month || currentMonth;
     const yearGross = (empCalc?.gross_salary || gross) * months;
     const yearSzja = Math.round(yearGross * 0.15);
     const yearTb = Math.round(yearGross * 0.185);
     const yearNet = yearGross - yearSzja - yearTb;
 
-    // Vacation resolution
-    const usedDays = leaves.filter(l => l.leave_type === 'annual' && l.status === 'approved').reduce((s, l) => s + l.days, 0);
-    const baseDays = 20;
-    const bonusDays = 2;
-    const totalAnnualDays = baseDays + bonusDays;
-    const proportion = Math.min(1, Math.max(0.08, months / 12));
-    const proportionalDays = Math.max(usedDays, Math.round(totalAnnualDays * proportion));
-    const remainingDays = Math.max(0, proportionalDays - usedDays);
-    const dailyRate = Math.round(gross / 21.67);
-    const leaveCompensation = remainingDays * dailyRate;
+    // Vacation resolution (Mt. 125. §)
+    const {
+      usedDays,
+      baseDays,
+      bonusDays,
+      totalAnnualDays,
+      proportionalDays,
+      remainingDays,
+      dailyRate,
+      leaveCompensation,
+    } = leaveSummary;
 
     // Header band (Deep teal)
     d.setFillColor(15, 118, 110);
@@ -741,6 +800,46 @@ export default function ExitDocumentsPage() {
               {isExpanded && (
                 <div className="px-5 pb-4 pl-[68px] border-t border-border/50 pt-3">
                   <p className="text-xs text-muted-foreground">{doc.template}</p>
+
+                  {/* Mt. 125. § Szabadság-megváltás interaktív kalkulációs kártya */}
+                  {doc.id === 'leave' && (
+                    <div className="mt-3 p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                          <Calculator className="w-3.5 h-3.5" /> Mt. 125. § Szabadság-megváltás kalkuláció
+                        </h4>
+                        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20">
+                          Megváltási összeg: {fmt(leaveSummary.leaveCompensation)} Ft
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                        <div className="p-2.5 rounded-lg bg-card border border-border">
+                          <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Időarányos keret</span>
+                          <span className="font-mono font-bold text-foreground text-sm">{leaveSummary.proportionalDays} nap</span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-card border border-border">
+                          <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Igénybe vett</span>
+                          <span className="font-mono font-bold text-foreground text-sm">{leaveSummary.usedDays} nap</span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-card border border-border">
+                          <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Megváltandó</span>
+                          <span className={cn('font-mono font-bold text-sm', leaveSummary.remainingDays > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}>
+                            {leaveSummary.remainingDays} nap
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-card border border-border">
+                          <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Napi távolléti díj</span>
+                          <span className="font-mono font-bold text-foreground text-sm">{fmt(leaveSummary.dailyRate)} Ft/nap</span>
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        A Munka Törvénykönyve 125. §-a szerint a munkaviszony megszűnésekor, ha a munkáltató az arányos szabadságot nem adta ki, azt kötelező pénzben megváltani a munkavállaló távolléti díjával számolva.
+                      </p>
+                    </div>
+                  )}
+
                   {doc.status === 'pending' && (
                     <Button size="sm" className="mt-3 gap-1 text-xs bg-blue-600 hover:bg-blue-700" disabled={saving} onClick={async () => {
                       setSaving(true);

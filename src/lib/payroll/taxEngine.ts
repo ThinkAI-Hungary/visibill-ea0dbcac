@@ -535,8 +535,15 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
           ? params.minimum_wage 
           : params.guaranteed_minimum;
         
-        tbBase = Math.max(tbBase, Math.round(minBaseVal * nonPensionerRatio));
-        szochoBase = Math.max(szochoBase, Math.round(minBaseVal * nonPensionerRatio));
+        // Tbj. 40. § (3) és 41. § (4): Ha a biztosítási jogviszony a hónap nem teljes időtartamában állt fenn,
+        // a járulékalap naptári napokra eső részét kell figyelembe venni: (insuredDays / monthDays)
+        const dayRatio = (insuredDays > 0 && monthDays > 0 && insuredDays < monthDays)
+          ? (insuredDays / monthDays)
+          : 1;
+
+        const proratedMinBase = Math.round(minBaseVal * dayRatio * nonPensionerRatio);
+        tbBase = Math.max(tbBase, proratedMinBase);
+        szochoBase = Math.max(szochoBase, proratedMinBase);
       } else if (input.jobCode === '1115' || input.jobCode?.startsWith('1101') || input.jobCode === '20') {
         // Törvényi alsó határ munkaviszonyban és tartós megbízásban: minimálbér 30%-a időarányosan (2026: 96.840 Ft teljes hónapra)
         const minFloor = Math.round((params.minimum_wage * 0.3) * (insuredDays / monthDays) * nonPensionerRatio);

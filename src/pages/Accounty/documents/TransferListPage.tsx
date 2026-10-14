@@ -1,30 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, CreditCard, Download, CheckCircle,
-  Eye, Loader2, Database
+  Eye, Loader2, Database, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
-import { useTransfers, type Transfer } from '@/hooks/accounty';
+import { useTransfers, useGenerateDocuments, type Transfer } from '@/hooks/accounty';
 import { useAccountyClients } from '@/hooks/accounty';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { generateTransferPdf } from '@/lib/documentPdfs';
 import { usePayrollCycles, usePayrollCalculations } from '@/hooks/usePayrollData';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+
+const CURRENT_DATE = new Date();
+const CURRENT_YEAR = CURRENT_DATE.getFullYear();
+const CURRENT_MONTH = CURRENT_DATE.getMonth() + 1;
+const DEFAULT_CALENDAR_PERIOD = `${CURRENT_YEAR}-${String(CURRENT_MONTH).padStart(2, '0')}`;
+
+const MONTH_NAMES = [
+  'Január', 'Február', 'Március', 'Április', 'Május', 'Június',
+  'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'
+];
+
+function formatPeriodLabel(year: number, month: number, status?: string) {
+  const monthName = MONTH_NAMES[month - 1] || `${month}. hó`;
+  const statusBadge = status === 'completed' || status === 'approved' ? ' (Lezárt)' : status === 'in_progress' ? ' (Folyamatban)' : '';
+  return `${year}. ${monthName}${statusBadge}`;
+}
 
 export default function TransferListPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const id = companyId;
-  const currentPeriod = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-  const { data: transfers, isLoading } = useTransfers(id || '', currentPeriod);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryPeriod = searchParams.get('period');
+  const { toast } = useToast();
+  const generateDocs = useGenerateDocuments();
+
   const { data: clients } = useAccountyClients();
   const { data: cycles = [] } = usePayrollCycles(id || '');
   const company = clients?.find(c => c.id === id);
 
-  const currentCycle = cycles.find(c => c.year === new Date().getFullYear() && c.month === new Date().getMonth() + 1) || cycles[0];
-  const { data: calculations = [] } = usePayrollCalculations(currentCycle?.id || '');
+  const availablePeriods = useMemo(() => {
+    const list = cycles.map(c => ({
+      period: `${c.year}-${String(c.month).padStart(2, '0')}`,
+      label: formatPeriodLabel(c.year, c.month, c.status),
+      cycleId: c.id,
+    }));
+    if (!list.some(item => item.period === DEFAULT_CALENDAR_PERIOD)) {
+      list.push({
+        period: DEFAULT_CALENDAR_PERIOD,
+        label: formatPeriodLabel(CURRENT_YEAR, CURRENT_MONTH),
+        cycleId: '',
+      });
+    }
+    return list;
+  }, [cycles]);
+
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(() => {
+    return queryPeriod || DEFAULT_CALENDAR_PERIOD;
+  });
+
+  const hasAutoSelectedLatest = useRef(false);
+  useEffect(() => {
+    if (!queryPeriod && cycles.length > 0 && !hasAutoSelectedLatest.current) {
+      hasAutoSelectedLatest.current = true;
+      const latest = `${cycles[0].year}-${String(cycles[0].month).padStart(2, '0')}`;
+      setSelectedPeriod(latest);
+    }
+  }, [cycles, queryPeriod]);
+
+  const handlePeriodChange = (newPeriod: string) => {
+    setSelectedPeriod(newPeriod);
+    setCurrentPage(1);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('period', newPeriod);
+      return next;
+    }, { replace: true });
+  };
+
+  const { data: transfers, isLoading } = useTransfers(id || '', selectedPeriod);
+
+  const selectedCycle = useMemo(() => {
+    const [yStr, mStr] = selectedPeriod.split('-');
+    const y = parseInt(yStr, 10);
+    const m = parseInt(mStr, 10);
+    return cycles.find(c => c.year === y && c.month === m) || cycles[0];
+  }, [cycles, selectedPeriod]);
+
+  const { data: calculations = [] } = usePayrollCalculations(selectedCycle?.id || '');
 
   const [exportFormat, setExportFormat] = useState<'sepa' | 'mt940'>('sepa');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -32,7 +100,17 @@ export default function TransferListPage() {
   const [pageSize, setPageSize] = useState(50);
 
   const transferList = React.useMemo(() => {
-    return [...(transfers || [])].sort((a, b) => (a.employeeName || '').localeCompare(b.employeeName || '', 'hu', { sensitivity: 'base' }));
+    if (!transfers) return [];
+    const seen = new Set<string>();
+    const unique: Transfer[] = [];
+    for (const t of transfers) {
+      const key = `${t.employeeId || t.employeeName}:${t.period}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(t);
+      }
+    }
+    return unique.sort((a, b) => (a.employeeName || '').localeCompare(b.employeeName || '', 'hu', { sensitivity: 'base' }));
   }, [transfers]);
   const totalItems = transferList.length;
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -49,9 +127,9 @@ export default function TransferListPage() {
   const handleExportFormat = () => {
     if (transferList.length === 0) return;
     if (exportFormat === 'sepa') {
-      downloadSepaXml(transferList, company?.name || '', currentPeriod);
+      downloadSepaXml(transferList, company?.name || '', selectedPeriod);
     } else {
-      downloadMt940(transferList, company?.name || '', currentPeriod);
+      downloadMt940(transferList, company?.name || '', selectedPeriod);
     }
   };
 
@@ -59,7 +137,7 @@ export default function TransferListPage() {
     if (calculations.length === 0) return;
     const url = generateTransferPdf({
       companyName: company?.name || '–',
-      period: currentCycle ? `${currentCycle.year}/${String(currentCycle.month).padStart(2, '0')}` : currentPeriod,
+      period: selectedCycle ? `${selectedCycle.year}/${String(selectedCycle.month).padStart(2, '0')}` : selectedPeriod,
       calculations: calculations as any[],
     });
     setPreviewUrl(url);
@@ -72,8 +150,24 @@ export default function TransferListPage() {
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/25"><CreditCard className="w-5 h-5 text-white" /></div>
           <div>
-            <h1 className="text-2xl font-bold">Utalási lista</h1>
-            <p className="text-sm text-muted-foreground">{currentPeriod} — Bér utalási állomány</p>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl font-bold">Utalási lista</h1>
+              <div className="w-56">
+                <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+                  <SelectTrigger className="h-8 text-xs font-semibold bg-background border-border">
+                    <SelectValue placeholder="Időszak választása" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePeriods.map(p => (
+                      <SelectItem key={p.period} value={p.period} className="text-xs">
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">{selectedPeriod} — Bér utalási állomány</p>
           </div>
         </div>
         <div className="flex gap-2 items-center">
@@ -88,11 +182,11 @@ export default function TransferListPage() {
             Exportálás ({exportFormat.toUpperCase()})
           </Button>
           <ExportButton
-            filename={`utalasi_lista_${currentPeriod}`}
+            filename={`utalasi_lista_${selectedPeriod}`}
             headers={['Kedvezményezett', 'Bankszámla', 'Nettó (Ft)', 'Státusz']}
             getRows={() => transferList.map(t => [t.employeeName, t.bankAccount || '', t.netSalary, t.status])}
             size="sm"
-            pdfOptions={{ title: `Utalási lista — ${currentPeriod}` }}
+            pdfOptions={{ title: `Utalási lista — ${selectedPeriod}` }}
           />
         </div>
       </div>
@@ -102,8 +196,34 @@ export default function TransferListPage() {
       ) : transferList.length === 0 ? (
         <div className="bg-card rounded-lg border border-border p-12 text-center space-y-3">
           <Database className="w-10 h-10 mx-auto text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Nincsenek utalási tételek erre az időszakra ({currentPeriod}).</p>
+          <p className="text-sm text-muted-foreground">Nincsenek utalási tételek erre az időszakra ({selectedPeriod}).</p>
           <p className="text-xs text-muted-foreground">Az utalási lista a bérszámfejtés véglegesítése után generálódik.</p>
+          {calculations.length > 0 && (
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await generateDocs.mutateAsync({
+                      companyId: id || '',
+                      docType: 'transfer',
+                      cycleId: selectedCycle?.id,
+                      period: selectedPeriod,
+                    });
+                    toast({ title: 'Sikeres generálás', description: 'Az utalási lista elkészült a kiválasztott időszakra.' });
+                  } catch (e: any) {
+                    toast({ title: 'Hiba a generálás során', description: e.message || 'Sikertelen generálás', variant: 'destructive' });
+                  }
+                }}
+                disabled={generateDocs.isPending}
+                className="gap-1.5"
+              >
+                {generateDocs.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Utalási lista generálása ({calculations.length} számfejtett dolgozó)
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -171,7 +291,7 @@ export default function TransferListPage() {
           <DialogHeader className="px-6 py-4 border-b border-border">
             <DialogTitle className="flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-emerald-500" />
-              Utalási lista — {currentPeriod}
+              Utalási lista — {selectedPeriod}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 w-full bg-muted dark:bg-card">

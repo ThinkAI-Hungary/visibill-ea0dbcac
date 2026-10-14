@@ -240,8 +240,8 @@ export const queryKeys = {
     ['filings', companyId, filingType] as const,
   accountyTransfers: (companyId: string, period?: string) =>
     ['transfers', companyId, period] as const,
-  accountyDocuments: (companyId: string, docType?: string) =>
-    ['accounty-documents', companyId, docType] as const,
+  accountyDocuments: (companyId: string, docType?: string, period?: string) =>
+    ['accounty-documents', companyId, docType, period] as const,
 
   // ── Accounty Reports ──
   accountyReportInvoices: () =>
