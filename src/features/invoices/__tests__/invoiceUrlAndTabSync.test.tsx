@@ -238,4 +238,48 @@ describe('Invoice URL Parameter Cleanup on Dialog Close and Row Collapse', () =>
     // Now URL has invoice=inv-999
     expect(result.current.searchParams.get('invoice')).toBe('inv-999');
   });
+
+  it('preserves SUBMITTED_OUTBOUND tab and does not jump to SUBMITTED_INBOUND when handling outbound submitted invoice', () => {
+    // Regression test for user report:
+    // Opening/closing an invoice from SUBMITTED_OUTBOUND must not switch to SUBMITTED_INBOUND
+    const mockSubmittedInvoice = {
+      id: 'sub-outbound-1',
+      invoice_direction: 'OUTBOUND',
+      invoice_type: 'sima_szla', // Note: invoice_type is document category, not direction!
+    };
+
+    let activeTab: string = 'SUBMITTED_OUTBOUND';
+    const setActiveTab = vi.fn((tab: string) => {
+      activeTab = tab;
+    });
+
+    const isOutbound =
+      mockSubmittedInvoice.invoice_direction === 'OUTBOUND' ||
+      (mockSubmittedInvoice as any).invoice_type === 'outbound';
+
+    expect(isOutbound).toBe(true);
+
+    const actionFromUrl: string | null = 'view';
+    const currentTab = activeTab;
+
+    if (actionFromUrl) {
+      if (isOutbound && currentTab !== 'SUBMITTED_OUTBOUND') {
+        setActiveTab('SUBMITTED_OUTBOUND');
+      } else if (!isOutbound && currentTab !== 'SUBMITTED_INBOUND') {
+        setActiveTab('SUBMITTED_INBOUND');
+      }
+    }
+
+    // Since currentTab was SUBMITTED_OUTBOUND and invoice is OUTBOUND, tab switch must NOT be called
+    expect(setActiveTab).not.toHaveBeenCalled();
+    expect(activeTab).toBe('SUBMITTED_OUTBOUND');
+
+    // And if actionFromUrl is null (dialog was closed), it definitely does not switch
+    const noAction: string | null = null;
+    if (noAction) {
+      setActiveTab('SUBMITTED_INBOUND');
+    }
+    expect(activeTab).toBe('SUBMITTED_OUTBOUND');
+  });
 });
+

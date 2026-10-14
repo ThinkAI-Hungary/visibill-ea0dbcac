@@ -131,7 +131,7 @@ export function InvoiceDialogManager() {
         onClose={() => {
           setImageDialogOpen(false);
           setSelectedInvoice(null);
-          setInvoiceParam(null);
+          setInvoiceParam(null, undefined, { removeInvoice: true });
         }}
       />
 
@@ -144,7 +144,7 @@ export function InvoiceDialogManager() {
         onClose={() => {
           setEditDialogOpen(false);
           setSelectedInvoice(null);
-          setInvoiceParam(null);
+          setInvoiceParam(null, undefined, { removeInvoice: true });
         }}
         onSave={invalidateInvoiceData}
       />
@@ -156,7 +156,7 @@ export function InvoiceDialogManager() {
           onOpenChange={(open) => {
             setItemsDialogOpen(open);
             if (!open) {
-              setInvoiceParam(null);
+              setInvoiceParam(null, undefined, { removeInvoice: true });
               dialogClosingRef.current = true;
               setTimeout(() => {
                 setSelectedNavInvoice(null);
@@ -182,7 +182,7 @@ export function InvoiceDialogManager() {
           onOpenChange={(open) => {
             setSubmittedItemsDialogOpen(open);
             if (!open) {
-              setInvoiceParam(null);
+              setInvoiceParam(null, undefined, { removeInvoice: true });
               dialogClosingRef.current = true;
               setTimeout(() => {
                 setSelectedSubmittedForItems(null);
