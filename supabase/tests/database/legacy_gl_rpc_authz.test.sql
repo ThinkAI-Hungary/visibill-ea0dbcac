@@ -4,7 +4,7 @@
 --              period closing RPC, and O1 fallback semantics.
 -- ==============================================================================
 BEGIN;
-SELECT plan(23);
+SELECT plan(27);
 
 -- ─── 1. Metadata / Signature verification ─────────────────────────────────────
 SELECT ok(prosecdef, 'set_accounting_period_closed is SECURITY DEFINER')
@@ -91,23 +91,27 @@ BEGIN
 
   -- Test 1: Outsider
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_uid_outsider, 'role', 'authenticated')::text, true);
+  INSERT INTO _authz_res VALUES ('outsider.member_read', public.has_company_role_tier(v_co_with_accountant, 'member_read')::text);
   INSERT INTO _authz_res VALUES ('outsider.member_write', public.has_company_role_tier(v_co_with_accountant, 'member_write')::text);
   INSERT INTO _authz_res VALUES ('outsider.ledger_write', public.has_company_role_tier(v_co_with_accountant, 'ledger_write')::text);
 
   -- Test 2: Viewer
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_uid_viewer, 'role', 'authenticated')::text, true);
+  INSERT INTO _authz_res VALUES ('viewer.member_read', public.has_company_role_tier(v_co_with_accountant, 'member_read')::text);
   INSERT INTO _authz_res VALUES ('viewer.member_write', public.has_company_role_tier(v_co_with_accountant, 'member_write')::text);
   INSERT INTO _authz_res VALUES ('viewer.ledger_write', public.has_company_role_tier(v_co_with_accountant, 'ledger_write')::text);
   INSERT INTO _authz_res VALUES ('viewer.senior', public.has_company_role_tier(v_co_with_accountant, 'senior')::text);
 
-  -- Test 3: Assistant (member_write yes, ledger_write no)
+  -- Test 3: Assistant (member_read yes, member_write yes, ledger_write no)
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_uid_assistant, 'role', 'authenticated')::text, true);
+  INSERT INTO _authz_res VALUES ('assistant.member_read', public.has_company_role_tier(v_co_with_accountant, 'member_read')::text);
   INSERT INTO _authz_res VALUES ('assistant.member_write', public.has_company_role_tier(v_co_with_accountant, 'member_write')::text);
   INSERT INTO _authz_res VALUES ('assistant.ledger_write', public.has_company_role_tier(v_co_with_accountant, 'ledger_write')::text);
   INSERT INTO _authz_res VALUES ('assistant.senior', public.has_company_role_tier(v_co_with_accountant, 'senior')::text);
 
-  -- Test 4: Managed company owner (has accountant -> member_write yes, ledger_write NO, senior NO)
+  -- Test 4: Managed company owner (has accountant -> member_read yes, member_write yes, ledger_write NO, senior NO)
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_uid_owner_managed, 'role', 'authenticated')::text, true);
+  INSERT INTO _authz_res VALUES ('managed_owner.member_read', public.has_company_role_tier(v_co_with_accountant, 'member_read')::text);
   INSERT INTO _authz_res VALUES ('managed_owner.member_write', public.has_company_role_tier(v_co_with_accountant, 'member_write')::text);
   INSERT INTO _authz_res VALUES ('managed_owner.ledger_write', public.has_company_role_tier(v_co_with_accountant, 'ledger_write')::text);
   INSERT INTO _authz_res VALUES ('managed_owner.senior', public.has_company_role_tier(v_co_with_accountant, 'senior')::text);
@@ -146,11 +150,15 @@ END
 $test_fixture$;
 
 -- Assertions
+SELECT is((SELECT v FROM _authz_res WHERE k = 'outsider.member_read'), 'false', 'outsider denied member_read');
 SELECT is((SELECT v FROM _authz_res WHERE k = 'outsider.member_write'), 'false', 'outsider denied member_write');
+SELECT is((SELECT v FROM _authz_res WHERE k = 'viewer.member_read'), 'true', 'viewer granted member_read');
 SELECT is((SELECT v FROM _authz_res WHERE k = 'viewer.member_write'), 'false', 'viewer denied member_write');
 SELECT is((SELECT v FROM _authz_res WHERE k = 'viewer.ledger_write'), 'false', 'viewer denied ledger_write');
+SELECT is((SELECT v FROM _authz_res WHERE k = 'assistant.member_read'), 'true', 'assistant granted member_read');
 SELECT is((SELECT v FROM _authz_res WHERE k = 'assistant.member_write'), 'true', 'assistant granted member_write');
 SELECT is((SELECT v FROM _authz_res WHERE k = 'assistant.ledger_write'), 'false', 'assistant denied ledger_write');
+SELECT is((SELECT v FROM _authz_res WHERE k = 'managed_owner.member_read'), 'true', 'managed owner granted member_read');
 SELECT is((SELECT v FROM _authz_res WHERE k = 'managed_owner.member_write'), 'true', 'managed owner granted member_write');
 SELECT is((SELECT v FROM _authz_res WHERE k = 'managed_owner.ledger_write'), 'false', 'managed owner denied ledger_write (accountant assigned)');
 SELECT is((SELECT v FROM _authz_res WHERE k = 'managed_owner.senior'), 'false', 'managed owner denied senior (accountant assigned)');
