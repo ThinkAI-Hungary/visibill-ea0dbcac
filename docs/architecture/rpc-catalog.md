@@ -1,7 +1,7 @@
 # PostgreSQL RPC és Függvény Katalógus
 
 > **Utoljára frissítve:** 2026-10-14  
-> **Összesen:** 156 hívható RPC függvény | 75 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
+> **Összesen:** 157 hívható RPC függvény | 75 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
 > **Tesztelési Követelmények:** Lásd a [PostgreSQL RPC Tesztelési Stratégia és Blueprint](./rpc-testing-blueprint.md) dokumentumot.
 
 Ez a dokumentáció az eaisybill-prod és eaisyBooks rendszerekben használt összes PostgreSQL tárolt eljárást és RPC (Remote Procedure Call) függvényt tartalmazza. Részletezi a függvény szignatúráját, biztonsági környezetét (`SECURITY DEFINER` vs `INVOKER`), hívó komponensét és funkcionális szerepét.
@@ -11,7 +11,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 
 ## Tartalomjegyzék
 
-1. [📊 Frontend Lekérdező és Aggregációs RPC-k (33 db)](#1--frontend-lekérdező-és-aggregációs-rpc-k)
+1. [📊 Frontend Lekérdező és Aggregációs RPC-k (34 db)](#1--frontend-lekérdező-és-aggregációs-rpc-k)
 2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (36 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
 3. [📄 Kettős Könyvviteli Naplók (acc_*) és Folyószámla RPC-k (17 db)](#3--kettős-könyvviteli-naplók-acc_-rpc-k)
 4. [📘 eaisyBooks és EV Modul RPC-k (8 db)](#4--eaisybooks-és-ev-modul-rpc-k)
@@ -43,6 +43,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 | `get_fx_differences(p_company_id uuid, p_date_from date, p_date_to date)` | `DEFINER` | `TABLE(invoice_id uuid, invoice_source text, invoice_number text, partner_name text, invoice_direction text, currency text, foreign_amount numeric, delivery_date date, delivery_rate numeric, delivery_huf numeric, settlement_date date, settlement_rate numeric, settlement_huf numeric, fx_difference numeric, settlement_month text)` | FxDifferencesSection.tsx | Árfolyamkülönbözet analitika: számla teljesítéskori vs. kiegyenlítéskori devizaárfolyamok eltérése és realizált nyereség/veszteség. |
 | `get_gl_balances(p_company_id uuid, p_preset_id uuid, p_date_from date, p_date_to date, p_exchange_rates jsonb, p_posting_status text, p_date_basis text)` | `DEFINER` (STABLE) | `TABLE(gl_account_id uuid, gl_number text, short_name text, total_balance numeric, final_balance numeric, temp_balance numeric, item_count bigint)` | GeneralLedgerTable.tsx | Főkönyvi kivonat és karton egyenlegek (A-189, A-189.1 & A-189.2: STABLE státusz, bérlői izoláció, pre-materializált számlafejlécek, egyetlen anti-join értékelés, memóriabeli napló-számla hash join timeout védelemmel: ~40x gyorsulás). |
 | `get_gl_categorized_items(p_company_id uuid, p_preset_id uuid, p_date_from date, p_date_to date, p_exchange_rates jsonb, p_date_basis text, p_posting_status text, p_gl_account_id uuid, p_limit integer, p_offset integer, p_gl_account_ids uuid[])` | `DEFINER` (STABLE) | `TABLE(item_id uuid, gl_account_id uuid, source_table text, item_type text, partner text, description text, amount numeric, original_amount numeric, original_currency text, item_date text, is_temporary boolean)` | GeneralLedgerTable.tsx / ItemDetailModal | Lapozható tételszintű főkönyvi és napló lista (A-189, A-189.1, A-189.2 & A-232: STABLE státusz, pre-materializált számlafejlécek és anti-join védelem, dinamikus egy- és többszámlás pushdown tömb támogatással). |
+| `get_gl_journal_view_items(p_company_id uuid, p_preset_id uuid, p_date_from date, p_date_to date, p_exchange_rates jsonb, p_date_basis text, p_posting_status text, p_search text, p_type_filter text, p_sort_dir text, p_page integer, p_page_size integer)` | `DEFINER` (STABLE) | `TABLE(item_id uuid, gl_account_id uuid, gl_number text, gl_name text, source_table text, item_type text, partner text, description text, amount numeric, original_amount numeric, original_currency text, item_date text, is_temporary boolean, total_count bigint, total_debit numeric, total_credit numeric)` | JournalView.tsx | Könyvelési napló szerveroldali lapozott, szűrt és rendezett audit-lista window aggregációkkal (`total_count`, `total_debit`, `total_credit`) és kereséssel (A-256). |
 | `get_gl_analytic_reconciliation(p_company_id uuid, p_preset_id uuid, p_date_to date)` | `DEFINER` (STABLE) | `TABLE(category_name text, gl_account_range text, gl_balance numeric, analytic_balance numeric, difference numeric, status text)` | GlAnalyticReconciliationView.tsx | Főkönyv és analitika (vevők 311, szállítók 454, pénztár 381, tárgyi eszközök 161) egyeztetése és differencia-számítása (A-226). |
 | `get_gl_number_from_classifications(classifications jsonb)` | `DEFINER` | `text` | Főkönyvi motor / UI | Kinyeri az elsődleges főkönyvi számot egy JSONB klasszifikációs objektumból. |
 | `get_invoice_aggregates(p_company_id uuid, p_date_from date, p_date_to date)` | `DEFINER` | `TABLE(currency text, total_gross numeric, processing_count bigint, completed_count bigint, total_count bigint)` | InvoicesHeader.tsx | Számlák devizánkénti bruttó összegző és feldolgozottsági KPI aggregációi. |
