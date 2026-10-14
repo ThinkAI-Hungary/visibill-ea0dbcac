@@ -143,7 +143,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-150 | Főkönyvi Lekérdezés Teljesítmény, Hibakezelési Reziliencia & DOM/Layout Védelem | ✅ Decided | [A-150](./A-150-gl-performance-resilience-and-layout-hardening.md) |
 | A-151 | Eredménykimutatás és Mérleg Lekérdezési Vihar Megszüntetése, Trend Chunking és Igény Szerinti (On-Demand) Tételes Fúrás | ✅ Decided | [A-151](./A-151-pnl-and-balance-sheet-query-storm-elimination.md) |
 | A-152 | Analitikai és Jelentéskészítő RPC Stabilitás (STABLE), PostgREST Rate Limiter Mentesség és Realtime Eseményszivárgás Védelem | ✅ Decided | [A-152](./A-152-rate-limiter-rpc-stability-and-realtime-leak-hardening.md) |
-| A-153 | Főkönyvi Kivonat Kötegelt Tételes Adatbetöltés és Fastruktúra Renderelés | ✅ Decided | [A-153](./A-153-general-ledger-batch-itemized-view-architecture.md) |
+| A-153 | Főkönyvi Kivonat Kötegelt Tételes Adatbetöltés, Csoportos Nyitás és Fastruktúra Renderelés | ✅ Decided | [A-153](./A-153-general-ledger-batch-itemized-view-architecture.md) |
 | A-173 | Számlalánc Tranzakció-örökítés, Irányfüggő Partnerillesztés és PostgreSQL Propagáció | ✅ Decided | [A-173](./A-173-invoice-chain-transaction-propagation.md) |
 | A-179 | Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra | ✅ Decided | [A-179](./A-179-aggreg8-psd2-cross-import-deduplication.md) |
 | A-182 | Részfizetés és Jutaléklevonás Számlapárosítás és Deduplikációs Architektúra | ✅ Decided | [A-182](./A-182-partial-payment-matching-and-transaction-deduplication.md) |

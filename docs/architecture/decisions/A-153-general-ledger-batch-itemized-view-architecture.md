@@ -2,8 +2,8 @@
 
 **Status:** Decided  
 **Dátum:** 2026-09-24  
-**Utoljára frissítve:** 2026-09-25  
-**Érintett modulok:** `GeneralLedgerTable.tsx`, `GeneralLedgerPage.tsx`, `src/lib/glData.ts`  
+**Utoljára frissítve:** 2026-10-14  
+**Érintett modulok:** `GeneralLedgerTable.tsx`, `GeneralLedgerPage.tsx`, `src/lib/glData.ts`, `src/components/general-ledger/__tests__/GeneralLedgerBatchLoading.test.tsx`  
 
 ---
 
@@ -34,6 +34,18 @@ Ha ezt számlánkénti on-demand lekérdezéssel oldanánk meg, több tucat vagy
 ### 4. Állapotmegőrzés (`savedKontirokExpandedRef`)
 - A könyvelő által a `Kontírok` módban manuálisan beállított kinyitott/becsukott fa-állapotot egy `useRef` tárolja el a `Tételes` módba lépéskor.
 - A `Kontírok` nézetre való visszaváltáskor a korábbi kibontási állapot automatikusan helyreáll.
+
+### 5. Kontírok/Összesített Nézet: Re-render Kaszkádvédelem és Kötegelt Levelek Betöltése (`fetchBatchAccountItems`) (2026-10-14)
+- **Háttér és Hiba:** A nem tételes (`kontirok` / aggregált) nézetben, amikor a felhasználó rákattintott az "Összes kinyitása" (Expand All) gombra vagy több hierarchikus ágat nyitott ki, a korábbi `useEffect` implementáció egy reaktív kaszkád-hurkot indított el.
+  - A `useEffect` dependenciáiban szerepelt a `tableData`, a `loadedRawAccountItems` és a `fetchAccountItemsOnDemand`.
+  - Amint egy számla lekérdezése elindult, a `loadingAccountCids` és `loadedRawAccountItems` állapotváltozások azonnali re-rendert váltottak ki, ami leállította a meglévő munkamenetet (`cancelled = true`), de az in-flight HTTP kéréseket nem szakította meg, és azonnal egy új effectet indított.
+  - Ennek következtében 40 ms alatt akár 25–40 párhuzamos POST kérés zúdult a `/rest/v1/rpc/get_gl_categorized_items` végpontra, ami a PostgREST Warp szál-kezelőjét túlterhelte (`Warp server error: Thread killed by timeout manager`) és a PostgreSQL-ben statement timeoutot (`code: 57014`) okozott.
+- **Megoldás:**
+  1. **Referenciális izoláció (`loadedRawAccountItemsRef`):** A betöltött tételeket egy `useRef` követi, így a betöltési folyamat során bekövetkező állapotfrissítések nem indítják újra a betöltő `useEffect`-et.
+  2. **Dependenciák megtisztítása:** A `tableData` és a `loadedRawAccountItems` kikerült a `useEffect` dependency listájából; a számlák tétel-érintettségét a stabil `dbData` vizsgálja (`Number(item_count) > 0`).
+  3. **Kötegelt tétellekérés (`fetchBatchAccountItems`):** Ha egynél több számla nyílik ki (pl. "Összes kinyitása"), nem N darab külön lekérdezés fut le, hanem a `fetchGlItemsForAccounts` funkcióval a számlák azonosítóit egy `p_gl_account_ids: uuid[]` tömbben adjuk át a `get_gl_categorized_items` RPC-nek, legfeljebb 30-as chunkolással (egyetlen ~80ms-os hívásban).
+  4. **Keresési találatok előtöltése:** A keresőmező (`searchResults`) általi tételkibontás szintén a kötegelt loaderre támaszkodik, elkerülve a párhuzamos lekérdezési lavinát.
+  5. **Közös leképező segédfüggvény (`mapEnrichedItemToLedgerItem`):** DRY architektúra a tételadatok és pseudo CID-k transzformációjára.
 
 ---
 
