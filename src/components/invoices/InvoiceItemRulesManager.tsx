@@ -315,7 +315,7 @@ export function InvoiceItemRulesManager({
 
   const filteredRules = useMemo(() => {
     if (!searchQuery?.trim()) return rules;
-    const q = searchQuery.toLowerCase().trim();
+    const q = (searchQuery || '').toLowerCase().trim();
     return rules.filter(
       (r) =>
         (r.name || '').toLowerCase().includes(q) ||
