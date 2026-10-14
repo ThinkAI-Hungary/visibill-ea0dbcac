@@ -428,6 +428,94 @@ describe('glData pagination utilities', () => {
       })).rejects.toThrow('Database error');
     });
   });
+
+  describe('fetchGlJournalItemsPaged', () => {
+    it('calls get_gl_journal_view_items RPC with server-side pagination, search, and typeFilter', async () => {
+      const { fetchGlJournalItemsPaged } = await import('./glData');
+      const mockRows = [
+        {
+          item_id: 'item-uuid-1',
+          gl_account_id: 'gl-uuid-1',
+          gl_number: '529.',
+          gl_name: 'Egyéb szolgáltatások',
+          source_table: 'acc_journal_lines',
+          item_type: 'Könyvelt napló tétel (T)',
+          partner: 'DigitalOcean LLC',
+          description: 'Cloud hosting',
+          amount: 25000,
+          original_amount: 25000,
+          original_currency: 'HUF',
+          item_date: '2026-10-01',
+          is_temporary: false,
+          total_count: 142,
+          total_debit: 5000000,
+          total_credit: 4900000,
+        },
+      ];
+
+      (supabase.rpc as any).mockResolvedValue({ data: mockRows, error: null });
+
+      const response = await fetchGlJournalItemsPaged({
+        companyId: 'comp-1',
+        presetId: 'preset-1',
+        dateFrom: '2026-01-01',
+        dateTo: '2026-12-31',
+        dateBasis: 'teljesites',
+        postingStatus: 'posted_only',
+        search: '  DigitalOcean  ',
+        typeFilter: 'acc_journal_lines',
+        sortDir: 'asc',
+        page: 2,
+        pageSize: 50,
+      });
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_gl_journal_view_items', {
+        p_company_id: 'comp-1',
+        p_preset_id: 'preset-1',
+        p_date_from: '2026-01-01',
+        p_date_to: '2026-12-31',
+        p_exchange_rates: {},
+        p_date_basis: 'teljesites',
+        p_posting_status: 'POSTED_ONLY',
+        p_search: 'DigitalOcean',
+        p_type_filter: 'acc_journal_lines',
+        p_sort_dir: 'asc',
+        p_page: 2,
+        p_page_size: 50,
+      });
+
+      expect(response.totalCount).toBe(142);
+      expect(response.totalDebit).toBe(5000000);
+      expect(response.totalCredit).toBe(4900000);
+      expect(response.items).toHaveLength(1);
+      expect(response.items[0].partner).toBe('DigitalOcean LLC');
+    });
+
+    it('handles empty results and defaults totalCount and totals to 0', async () => {
+      const { fetchGlJournalItemsPaged } = await import('./glData');
+      (supabase.rpc as any).mockResolvedValue({ data: [], error: null });
+
+      const response = await fetchGlJournalItemsPaged({
+        companyId: 'comp-1',
+        presetId: 'preset-1',
+      });
+
+      expect(response.totalCount).toBe(0);
+      expect(response.totalDebit).toBe(0);
+      expect(response.totalCredit).toBe(0);
+      expect(response.items).toEqual([]);
+    });
+
+    it('throws error when RPC fails', async () => {
+      const { fetchGlJournalItemsPaged } = await import('./glData');
+      (supabase.rpc as any).mockResolvedValue({ data: null, error: new Error('RPC failure') });
+
+      await expect(fetchGlJournalItemsPaged({
+        companyId: 'comp-1',
+        presetId: 'preset-1',
+      })).rejects.toThrow('RPC failure');
+    });
+  });
 });
 
 

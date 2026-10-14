@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Input } from '@/components/ui/input';
@@ -13,7 +12,7 @@ import { exportToFile } from '@/lib/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
-import { fetchAllGlAccountsByPreset, fetchAllGlCategorizedItems, GlDateBasis, GlPostingStatus } from '@/lib/glData';
+import { fetchGlJournalItemsPaged, GlDateBasis, GlPostingStatus } from '@/lib/glData';
 import { useTranslation } from 'react-i18next';
 import { getLocalizedGlAccountName, getLocalizedGlItemType } from '@/lib/glUtils';
 import { useCompanyJurisdiction } from '@/hooks/useCompanyJurisdiction';
@@ -29,22 +28,6 @@ interface JournalViewProps {
   dateTo?: string;
   dateBasis?: GlDateBasis;
   postingStatus?: GlPostingStatus;
-}
-
-interface JournalEntry {
-  item_id: string;
-  item_date: string | null;
-  partner: string | null;
-  description: string | null;
-  gl_number: string | null;
-  gl_name: string | null;
-  item_type: string | null;
-  amount: number;
-  source_table: string | null;
-  original_amount?: number;
-  original_currency?: string;
-  is_unclassified?: boolean;
-  logical_type?: string;
 }
 
 export const TYPE_LABELS: Record<string, string> = {
@@ -95,26 +78,52 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
   const { selectedCompany } = useCompany();
   const { data: exchangeRates } = useExchangeRates();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [isExporting, setIsExporting] = useState(false);
   const pageSize = 50;
+
+  // 300ms debounce for server-side search input to prevent query hammering
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat(isCroatia ? 'hr-HR' : 'hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 
+  // Server-side paginated and aggregated items query (protects against statement timeout 57014)
   const {
-    data: rawItems = [],
+    data: pagedData,
     isLoading,
+    isFetching,
     isError,
     error: itemsError,
     refetch,
   } = useQuery({
-    queryKey: ['glJournalItems', selectedCompany?.id, presetId, dateFrom, dateTo, dateBasis, postingStatus],
+    queryKey: [
+      'glJournalItemsPaged',
+      selectedCompany?.id,
+      presetId,
+      dateFrom,
+      dateTo,
+      dateBasis,
+      postingStatus,
+      debouncedSearch,
+      typeFilter,
+      sortDir,
+      currentPage,
+      pageSize,
+    ],
     queryFn: async () => {
-      if (!selectedCompany?.id || !presetId) return [];
+      if (!selectedCompany?.id || !presetId) return null;
       try {
-        const data = await fetchAllGlCategorizedItems({
+        return await fetchGlJournalItemsPaged({
           companyId: selectedCompany.id,
           presetId,
           dateFrom,
@@ -122,14 +131,18 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           dateBasis,
           postingStatus,
           exchangeRates: exchangeRates || {},
+          search: debouncedSearch,
+          typeFilter,
+          sortDir,
+          page: currentPage,
+          pageSize,
         });
-        return (data || []) as unknown as JournalEntry[];
       } catch (error) {
         reportError({
           type: 'db_query',
           severity: 'error',
           component: 'JournalView',
-          action: 'fetchAllGlCategorizedItems',
+          action: 'fetchGlJournalItemsPaged',
           message: error instanceof Error ? error.message : 'Ismeretlen hiba a naplófőkönyvi tételek lekérdezésekor',
           error,
           context: {
@@ -139,6 +152,10 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
             dateTo,
             dateBasis,
             postingStatus,
+            search: debouncedSearch,
+            typeFilter,
+            sortDir,
+            page: currentPage,
           },
         });
         throw error;
@@ -146,168 +163,117 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
     },
     enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
     staleTime: 30_000,
+    placeholderData: (prev) => prev,
   });
 
-  // Fetch GL account definitions for preset to display account names and numbers
-  const { data: glAccounts = [], refetch: refetchAccounts } = useQuery({
-    queryKey: ['glAccountsByPreset', presetId],
-    queryFn: async () => {
-      if (!presetId) return [];
-      try {
-        const data = await fetchAllGlAccountsByPreset(presetId);
-        return data || [];
-      } catch (error) {
-        reportError({
-          type: 'db_query',
-          severity: 'warning',
-          component: 'JournalView',
-          action: 'fetchAllGlAccountsByPreset',
-          message: error instanceof Error ? error.message : 'Ismeretlen hiba a főkönyvi számlák lekérdezésekor',
-          error,
-          context: { presetId },
-        });
-        return [];
-      }
-    },
-    enabled: !!presetId,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const glMap = useMemo(() => {
-    const m: Record<string, { gl_number: string; short_name: string }> = {};
-    glAccounts.forEach((a: any) => {
-      const accountId = a.gl_account_id || a.id;
-      if (accountId) {
-        m[accountId] = { gl_number: a.gl_number, short_name: fixCharacterEncoding(a.short_name) };
-      }
-    });
-    return m;
-  }, [glAccounts]);
-
-  // All items with GL info enriched, excluding excluded
-  const enrichedItems = useMemo(() => {
-    return rawItems
-      .filter((i: any) => !i.is_excluded)
-      .map((item: any) => {
-        const gl = glMap[item.gl_account_id];
-        const isUnclassified =
-          !item.gl_account_id ||
-          item.gl_account_id === '00000000-0000-0000-0000-000000000000' ||
-          gl?.gl_number === 'UNCLASSIFIED' ||
-          item.gl_number === 'UNCLASSIFIED' ||
-          !gl?.gl_number ||
-          gl?.gl_number === '—';
-
-        const glNumber = isUnclassified
-          ? t('accounting:general_ledger.unclassified', 'Besorolatlan')
-          : (gl?.gl_number || item.gl_number || t('accounting:general_ledger.unclassified', 'Besorolatlan'));
-
-        const rawName = isUnclassified
-          ? t('accounting:general_ledger.unclassified', 'Besorolatlan tétel')
-          : (gl?.short_name || item.gl_name || t('accounting:general_ledger.unclassified', 'Besorolatlan tétel'));
-
-        const glName = isUnclassified
-          ? rawName
-          : getLocalizedGlAccountName(glNumber, rawName, t);
-
-        const logicalType = getLogicalTypeLabel(item.source_table, item.item_type, t);
-
-        return {
-          ...item,
-          gl_number: glNumber,
-          gl_name: glName,
-          is_unclassified: isUnclassified,
-          logical_type: logicalType,
-        };
-      });
-  }, [rawItems, glMap, t]);
-
-  // Filter + search
-  const filtered = useMemo(() => {
-    let result = enrichedItems;
-    if (typeFilter !== 'all') {
-      result = result.filter((i: any) =>
-        i.source_table === typeFilter ||
-        i.item_type === typeFilter ||
-        i.logical_type === typeFilter
-      );
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter((i: any) =>
-        (i.partner && i.partner.toLowerCase().includes(q)) ||
-        (i.description && i.description.toLowerCase().includes(q)) ||
-        (i.gl_number && i.gl_number.toLowerCase().includes(q)) ||
-        (i.gl_name && i.gl_name.toLowerCase().includes(q)) ||
-        (i.logical_type && i.logical_type.toLowerCase().includes(q)) ||
-        (i.item_type && i.item_type.toLowerCase().includes(q))
-      );
-    }
-    // Sort by date
-    result = [...result].sort((a: any, b: any) => {
-      const da = a.item_date || '';
-      const db = b.item_date || '';
-      return sortDir === 'asc' ? da.localeCompare(db) : db.localeCompare(da);
-    });
-    return result;
-  }, [enrichedItems, typeFilter, search, sortDir]);
-
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  const paginated = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, currentPage]);
-
-  // Unique types for filter with logical labels
-  const typeFilterOptions = useMemo(() => {
-    const map = new Map<string, string>();
-    enrichedItems.forEach((i: any) => {
-      const key = i.source_table || i.item_type;
-      if (key && !map.has(key)) {
-        map.set(key, i.logical_type || getLogicalTypeLabel(i.source_table, i.item_type, t));
-      }
-    });
-    return Array.from(map.entries())
-      .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => a.label.localeCompare(b.label, isCroatia ? 'hr' : 'hu'));
-  }, [enrichedItems, t, isCroatia]);
-
-  // Totals
+  const totalCount = pagedData?.totalCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const totals = useMemo(() => {
-    let debit = 0, credit = 0;
-    filtered.forEach((i: any) => {
-      if (i.amount > 0) debit += i.amount;
-      else credit += Math.abs(i.amount);
-    });
+    const debit = pagedData?.totalDebit ?? 0;
+    const credit = pagedData?.totalCredit ?? 0;
     return { debit, credit, net: debit - credit };
-  }, [filtered]);
+  }, [pagedData?.totalDebit, pagedData?.totalCredit]);
+
+  // Enrich returned items with localized names and human-friendly labels
+  const enrichedItems = useMemo(() => {
+    return (pagedData?.items || []).map((item) => {
+      const isUnclassified =
+        !item.gl_number ||
+        item.gl_number === 'UNCLASSIFIED' ||
+        item.gl_account_id === '00000000-0000-0000-0000-000000000000' ||
+        item.gl_number === '—';
+
+      const glNumber = isUnclassified
+        ? t('accounting:general_ledger.unclassified', 'Besorolatlan')
+        : item.gl_number;
+
+      const rawName = isUnclassified
+        ? t('accounting:general_ledger.unclassified', 'Besorolatlan tétel')
+        : (item.gl_name || t('accounting:general_ledger.unclassified', 'Besorolatlan tétel'));
+
+      const glName = isUnclassified
+        ? rawName
+        : getLocalizedGlAccountName(glNumber, fixCharacterEncoding(rawName), t);
+
+      const logicalType = getLogicalTypeLabel(item.source_table, item.item_type, t);
+
+      return {
+        ...item,
+        gl_number: glNumber,
+        gl_name: glName,
+        is_unclassified: isUnclassified,
+        logical_type: logicalType,
+      };
+    });
+  }, [pagedData?.items, t]);
+
+  // Standard type filter options
+  const typeFilterOptions = useMemo(() => [
+    { value: 'invoice_items', label: getLogicalTypeLabel('invoice_items', null, t) },
+    { value: 'nav_invoice_items', label: getLogicalTypeLabel('nav_invoice_items', null, t) },
+    { value: 'acc_journal_lines', label: getLogicalTypeLabel('acc_journal_lines', null, t) },
+    { value: 'journal_entry', label: getLogicalTypeLabel('journal_entry', null, t) },
+    { value: 'transactions', label: getLogicalTypeLabel('transactions', null, t) },
+    { value: 'invoices_vat', label: 'ÁFA tétel' },
+    { value: 'invoices_partner', label: 'Partner tétel' },
+  ], [t]);
 
   const handleExport = async () => {
-    const basisLabel = dateBasis === 'teljesites' ? 'Teljesítés' : 'Kibocsátás';
-    const headers = [
-      `${t('accounting:general_ledger.journal_view.col_date', 'Dátum')} (${basisLabel})`,
-      t('accounting:general_ledger.journal_view.col_partner', 'Partner'),
-      t('accounting:general_ledger.journal_view.col_description', 'Leírás'),
-      t('accounting:general_ledger.table.gl_account', 'Főkönyvi szám'),
-      t('accounting:general_ledger.table.name', 'Főkönyvi megnevezés'),
-      t('accounting:general_ledger.journal_view.col_type', 'Típus'),
-      `${t('accounting:general_ledger.journal_view.col_debit', 'Tartozik')} (${currencyLabel})`,
-      `${t('accounting:general_ledger.journal_view.col_credit', 'Követel')} (${currencyLabel})`,
-    ];
-    const rows = filtered.map((item: any) => [
-      item.item_date ? item.item_date.substring(0, 10) : '',
-      item.partner || '',
-      item.description || '',
-      item.gl_number || t('accounting:general_ledger.unclassified', 'Besorolatlan'),
-      item.gl_name || t('accounting:general_ledger.unclassified', 'Besorolatlan tétel'),
-      item.logical_type || getLogicalTypeLabel(item.source_table, item.item_type, t),
-      item.amount > 0 ? item.amount.toString() : '',
-      item.amount < 0 ? Math.abs(item.amount).toString() : '',
-    ]);
-    const rangePart = (dateFrom && dateTo) ? `_${dateFrom}_${dateTo}` : '';
-    const fileSuffix = dateBasis === 'teljesites' ? `naplofokonyv${rangePart}_teljesites_alapjan` : `naplofokonyv${rangePart}_kibocsatas_alapjan`;
-    await exportToFile(headers, rows, 'xlsx', fileSuffix);
-    toast({ title: t('accounting:general_ledger.journal_view.export_toast', 'Naplófőkönyv exportálva') });
+    if (!selectedCompany?.id || !presetId) return;
+    setIsExporting(true);
+    try {
+      // Fetch up to 10,000 filtered rows for export
+      const exportData = await fetchGlJournalItemsPaged({
+        companyId: selectedCompany.id,
+        presetId,
+        dateFrom,
+        dateTo,
+        dateBasis,
+        postingStatus,
+        exchangeRates: exchangeRates || {},
+        search: debouncedSearch,
+        typeFilter,
+        sortDir,
+        page: 1,
+        pageSize: 10000,
+      });
+
+      const basisLabel = dateBasis === 'teljesites' ? 'Teljesítés' : 'Kibocsátás';
+      const headers = [
+        `${t('accounting:general_ledger.journal_view.col_date', 'Dátum')} (${basisLabel})`,
+        t('accounting:general_ledger.journal_view.col_partner', 'Partner'),
+        t('accounting:general_ledger.journal_view.col_description', 'Leírás'),
+        t('accounting:general_ledger.table.gl_account', 'Főkönyvi szám'),
+        t('accounting:general_ledger.table.name', 'Főkönyvi megnevezés'),
+        t('accounting:general_ledger.journal_view.col_type', 'Típus'),
+        `${t('accounting:general_ledger.journal_view.col_debit', 'Tartozik')} (${currencyLabel})`,
+        `${t('accounting:general_ledger.journal_view.col_credit', 'Követel')} (${currencyLabel})`,
+      ];
+      const rows = exportData.items.map((item) => {
+        const isUnclass = item.gl_number === 'UNCLASSIFIED' || !item.gl_number;
+        const glNum = isUnclass ? t('accounting:general_ledger.unclassified', 'Besorolatlan') : item.gl_number;
+        const glNm = isUnclass ? t('accounting:general_ledger.unclassified', 'Besorolatlan tétel') : getLocalizedGlAccountName(item.gl_number, fixCharacterEncoding(item.gl_name), t);
+        const logicalType = getLogicalTypeLabel(item.source_table, item.item_type, t);
+        return [
+          item.item_date ? item.item_date.substring(0, 10) : '',
+          item.partner || '',
+          item.description || '',
+          glNum,
+          glNm,
+          logicalType,
+          item.amount > 0 ? item.amount.toString() : '',
+          item.amount < 0 ? Math.abs(item.amount).toString() : '',
+        ];
+      });
+      const rangePart = (dateFrom && dateTo) ? `_${dateFrom}_${dateTo}` : '';
+      const fileSuffix = dateBasis === 'teljesites' ? `naplofokonyv${rangePart}_teljesites_alapjan` : `naplofokonyv${rangePart}_kibocsatas_alapjan`;
+      await exportToFile(headers, rows, 'xlsx', fileSuffix);
+      toast({ title: t('accounting:general_ledger.journal_view.export_toast', 'Naplófőkönyv exportálva') });
+    } catch (err: any) {
+      toast({ title: 'Hiba az exportálás során', description: err?.message, variant: 'destructive' });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -319,7 +285,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           <Input
             placeholder={t('accounting:general_ledger.journal_view.search_placeholder', 'Keresés (partner, leírás, főkönyvi szám...)')}
             value={search}
-            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+            onChange={e => setSearch(e.target.value)}
             className="pl-9 h-9"
           />
         </div>
@@ -334,8 +300,15 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
             ))}
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleExport} disabled={isLoading || isError || filtered.length === 0}>
-          <Download className="w-4 h-4" /> {t('accounting:general_ledger.toolbar.export', 'Export')}
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 gap-1.5"
+          onClick={handleExport}
+          disabled={isLoading || isError || totalCount === 0 || isExporting}
+        >
+          {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {t('accounting:general_ledger.toolbar.export', 'Export')}
         </Button>
       </div>
 
@@ -350,13 +323,19 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
           </span>
         ) : (
           <>
-            <span>{filtered.length} {t('accounting:general_ledger.journal_view.items_count', 'tétel')}</span>
+            <span>{totalCount} {t('accounting:general_ledger.journal_view.items_count', 'tétel')}</span>
             <span>|</span>
             <span className="text-emerald-600 font-medium">{t('accounting:general_ledger.journal_view.debit', 'Tartozik:')} {formatCurrency(totals.debit)} {currencyLabel}</span>
             <span className="text-destructive font-medium">{t('accounting:general_ledger.journal_view.credit', 'Követel:')} {formatCurrency(totals.credit)} {currencyLabel}</span>
             <span className={cn('font-bold', totals.net >= 0 ? 'text-foreground' : 'text-destructive')}>
               {t('accounting:general_ledger.journal_view.net', 'Nettó:')} {formatCurrency(totals.net)} {currencyLabel}
             </span>
+            {isFetching && !isLoading && (
+              <span className="ml-auto flex items-center gap-1 text-[11px] text-muted-foreground/70">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Frissítés...
+              </span>
+            )}
           </>
         )}
       </div>
@@ -366,8 +345,12 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
         {/* Header */}
         <div className="grid grid-cols-12 bg-muted/80 border-b text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none">
           <button
+            type="button"
             className="col-span-1 p-3 text-center flex items-center justify-center gap-1 hover:text-foreground transition-colors"
-            onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+            onClick={() => {
+              setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+              setCurrentPage(1);
+            }}
           >
             {t('accounting:general_ledger.journal_view.col_date', 'Dátum')} <ArrowUpDown className="w-3 h-3" />
           </button>
@@ -427,24 +410,21 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  refetch();
-                  refetchAccounts();
-                }}
+                onClick={() => refetch()}
                 disabled={isLoading}
                 className="mt-2 gap-2"
               >
-                <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+                <RefreshCw className={cn("w-4 h-4", (isLoading || isFetching) && "animate-spin")} />
                 {t('common:retry', 'Újrapróbálás')}
               </Button>
             </div>
-          ) : paginated.length === 0 ? (
+          ) : enrichedItems.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground flex flex-col items-center gap-2">
               <BookOpen className="w-8 h-8 text-muted-foreground/40" />
               <p className="text-sm">{t('accounting:general_ledger.journal_view.no_items', 'Nincs naplófőkönyvi tétel a kiválasztott időszakban')}</p>
             </div>
           ) : (
-            paginated.map((item: any, idx: number) => {
+            enrichedItems.map((item, idx) => {
               const debit = item.amount > 0 ? item.amount : 0;
               const credit = item.amount < 0 ? Math.abs(item.amount) : 0;
               const uniqueKey = `${item.source_table}_${item.item_id}_${item.gl_account_id || 'unclass'}_${item.item_type || ''}_${idx}`;
@@ -497,7 +477,7 @@ export default function JournalView({ presetId, dateFrom, dateTo, dateBasis = 'k
         <UnifiedPagination
           currentPage={currentPage}
           totalPages={totalPages}
-          totalItems={filtered.length}
+          totalItems={totalCount}
           pageSize={pageSize}
           onPageChange={setCurrentPage}
           onPageSizeChange={() => {}}

@@ -324,3 +324,99 @@ export async function searchGlEntities(params: SearchGlEntitiesParams): Promise<
   return (data || []) as GlSearchResult[];
 }
 
+export interface FetchGlJournalItemsPagedParams {
+  companyId: string;
+  presetId: string;
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  dateBasis?: GlDateBasis;
+  postingStatus?: GlPostingStatus;
+  exchangeRates?: Record<string, any> | Json;
+  search?: string | null;
+  typeFilter?: string | null;
+  sortDir?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface GlJournalItemRow {
+  item_id: string;
+  gl_account_id: string;
+  gl_number: string;
+  gl_name: string;
+  source_table: string;
+  item_type: string;
+  partner: string | null;
+  description: string | null;
+  amount: number;
+  original_amount: number;
+  original_currency: string;
+  item_date: string | null;
+  is_temporary: boolean;
+  total_count: number;
+  total_debit: number;
+  total_credit: number;
+}
+
+export interface GlJournalPagedResponse {
+  items: GlJournalItemRow[];
+  totalCount: number;
+  totalDebit: number;
+  totalCredit: number;
+}
+
+/**
+ * Fetch server-side paginated and aggregated items for JournalView (Naplófőkönyv).
+ * Pushes search, typeFilter, sorting, and pagination down to PostgreSQL.
+ */
+export async function fetchGlJournalItemsPaged(params: FetchGlJournalItemsPagedParams): Promise<GlJournalPagedResponse> {
+  const { data, error } = await (supabase.rpc as any)('get_gl_journal_view_items', {
+    p_company_id: params.companyId,
+    p_preset_id: params.presetId,
+    p_date_from: params.dateFrom || null,
+    p_date_to: params.dateTo || null,
+    p_exchange_rates: (params.exchangeRates as Json) || {},
+    p_date_basis: params.dateBasis || 'kibocsatas',
+    p_posting_status: params.postingStatus === 'posted_only' ? 'POSTED_ONLY' : 'ALL',
+    p_search: params.search?.trim() || null,
+    p_type_filter: params.typeFilter === 'all' || !params.typeFilter ? null : params.typeFilter,
+    p_sort_dir: params.sortDir || 'desc',
+    p_page: params.page ?? 1,
+    p_page_size: params.pageSize ?? 50,
+  });
+
+  if (error) throw error;
+
+  const rows = (data || []) as any[];
+  const firstRow = rows[0];
+  const totalCount = Number(firstRow?.total_count) || 0;
+  const totalDebit = Number(firstRow?.total_debit) || 0;
+  const totalCredit = Number(firstRow?.total_credit) || 0;
+
+  const items: GlJournalItemRow[] = rows.map(r => ({
+    item_id: r.item_id,
+    gl_account_id: r.gl_account_id,
+    gl_number: r.gl_number,
+    gl_name: r.gl_name,
+    source_table: r.source_table,
+    item_type: r.item_type,
+    partner: r.partner,
+    description: r.description,
+    amount: Number(r.amount) || 0,
+    original_amount: Number(r.original_amount) || 0,
+    original_currency: r.original_currency || 'HUF',
+    item_date: r.item_date,
+    is_temporary: Boolean(r.is_temporary),
+    total_count: totalCount,
+    total_debit: totalDebit,
+    total_credit: totalCredit,
+  }));
+
+  return {
+    items,
+    totalCount,
+    totalDebit,
+    totalCredit,
+  };
+}
+
