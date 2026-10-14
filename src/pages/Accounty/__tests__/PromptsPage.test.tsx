@@ -145,10 +145,10 @@ describe('PromptsPage Dual Tabs', () => {
     vi.clearAllMocks();
   });
 
-  it('renders dual tabs and defaults to item_rules tab showing InvoiceItemRulesManager', async () => {
+  it('renders tabs and displays InvoiceItemRulesManager in item_rules tab', async () => {
     renderWithClient(
       <PromptsPage />,
-      '/eaisybooks/company-uuid-1/2026-01-01_2026-12-31/prompts'
+      '/eaisybooks/company-uuid-1/2026-01-01_2026-12-31/prompts?tab=item_rules'
     );
 
     // Header title

@@ -149,7 +149,7 @@ export default function PromptsPage() {
 
   // Fetch deterministic invoice item rules count for the badge
   const { data: itemRules = [] } = useQuery<any[]>({
-    queryKey: ['invoice_item_rules', effectiveCompanyId],
+    queryKey: ['invoice_item_rules', 'count', effectiveCompanyId],
     queryFn: async () => {
       if (!effectiveCompanyId) return [];
       const { data, error } = await supabase

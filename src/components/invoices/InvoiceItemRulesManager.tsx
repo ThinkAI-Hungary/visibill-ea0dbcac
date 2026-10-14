@@ -94,7 +94,7 @@ export function InvoiceItemRulesManager({
 
   // Fetch rules
   const { data: rules = [], isLoading: rulesLoading } = useQuery<InvoiceItemRule[]>({
-    queryKey: ['invoice_item_rules', companyId],
+    queryKey: ['invoice_item_rules', 'list', companyId],
     queryFn: async () => {
       if (!companyId) return [];
       const { data, error } = await supabase
@@ -152,31 +152,39 @@ export function InvoiceItemRulesManager({
 
   const handleOpenEdit = (rule: InvoiceItemRule) => {
     setEditingRule(rule);
-    setFormName(rule.name);
-    setFormPattern(rule.description_pattern);
+    setFormName(rule.name || '');
+    setFormPattern(rule.description_pattern || '');
     setFormPatternType(rule.pattern_type === 'exact' ? 'exact' : 'contains');
-    setFormDirection(rule.direction);
+    setFormDirection(rule.direction || 'ALL');
     setFormPartnerTax(rule.partner_tax_number || '');
     setFormPartnerName(rule.partner_name || '');
-    setFormGlAccountId(rule.target_gl_account_id || '');
+
+    // Robust GL account ID resolution: fallback to match by target_gl_number if target_gl_account_id is null
+    let matchedGlId = rule.target_gl_account_id || '';
+    if (!matchedGlId && rule.target_gl_number && Array.isArray(glAccounts) && glAccounts.length > 0) {
+      const found = glAccounts.find((g: any) => g.gl_number === rule.target_gl_number);
+      if (found) matchedGlId = found.id;
+    }
+    setFormGlAccountId(matchedGlId);
     setFormVatCodeId(rule.target_vat_code_id || '');
     setFormScope(rule.scope === 'tenant' ? 'tenant' : 'company');
     setViewMode('form');
   };
 
-  const handleToggleActive = async (ruleId: string, currentActive: boolean) => {
+  const handleToggleActive = React.useCallback(async (ruleId: string, currentActive: boolean) => {
     try {
+      const nowIso = new Date().toISOString();
       const { error } = await supabase
         .from('invoice_item_rules' as any)
-        .update({ is_active: !currentActive, updated_at: new Date().toISOString() })
+        .update({ is_active: !currentActive, updated_at: nowIso })
         .eq('id', ruleId);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['invoice_item_rules', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['invoice_item_rules'] });
     } catch (e: any) {
       toast({ title: t('invoices:item_rules.toast_status_error', 'Hiba a státusz módosításakor'), description: e.message, variant: 'destructive' });
     }
-  };
+  }, [queryClient, toast, t]);
 
   const handleDeleteRule = async (ruleId: string) => {
     try {
@@ -187,27 +195,29 @@ export function InvoiceItemRulesManager({
 
       if (error) throw error;
       toast({ title: t('invoices:item_rules.toast_deleted', 'Szabály törölve') });
-      queryClient.invalidateQueries({ queryKey: ['invoice_item_rules', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['invoice_item_rules'] });
     } catch (e: any) {
       toast({ title: t('invoices:item_rules.toast_delete_error', 'Hiba a törléskor'), description: e.message, variant: 'destructive' });
     }
   };
 
   const handleSaveForm = async () => {
-    if (!formName.trim() || !formPattern.trim() || !companyId || !session?.user?.id) return;
+    const cleanName = (formName || '').trim();
+    const cleanPattern = (formPattern || '').trim();
+    if (!cleanName || !cleanPattern || !companyId || !session?.user?.id) return;
     setSaving(true);
     try {
       const targetGlAccount = glAccounts.find((g: any) => g.id === formGlAccountId);
-      const targetGlNumber = targetGlAccount?.gl_number || '';
+      const targetGlNumber = targetGlAccount?.gl_number || editingRule?.target_gl_number || '';
       const targetVatCode = (vatCodes as any[]).find((v: any) => v.id === formVatCodeId);
 
       const payload: any = {
-        name: formName.trim(),
-        description_pattern: formPattern.trim(),
+        name: cleanName,
+        description_pattern: cleanPattern,
         pattern_type: formPatternType,
         direction: formDirection,
-        partner_tax_number: formPartnerTax.trim() || null,
-        partner_name: formPartnerName.trim() || null,
+        partner_tax_number: (formPartnerTax || '').trim() || null,
+        partner_name: (formPartnerName || '').trim() || null,
         target_gl_number: targetGlNumber,
         target_gl_account_id: formScope === 'company' ? (formGlAccountId || null) : null,
         target_vat_code_id: formVatCodeId || null,
@@ -235,7 +245,7 @@ export function InvoiceItemRulesManager({
         toast({ title: t('invoices:item_rules.toast_created', 'Új szabály létrehozva') });
       }
 
-      queryClient.invalidateQueries({ queryKey: ['invoice_item_rules', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['invoice_item_rules'] });
       setViewMode('list');
     } catch (e: any) {
       toast({ title: t('invoices:item_rules.toast_save_error', 'Mentési hiba'), description: e.message, variant: 'destructive' });
@@ -304,13 +314,13 @@ export function InvoiceItemRulesManager({
   };
 
   const filteredRules = useMemo(() => {
-    if (!searchQuery.trim()) return rules;
-    const q = searchQuery.toLowerCase();
+    if (!searchQuery?.trim()) return rules;
+    const q = searchQuery.toLowerCase().trim();
     return rules.filter(
       (r) =>
-        r.name.toLowerCase().includes(q) ||
-        r.description_pattern.toLowerCase().includes(q) ||
-        r.target_gl_number.toLowerCase().includes(q) ||
+        (r.name || '').toLowerCase().includes(q) ||
+        (r.description_pattern || '').toLowerCase().includes(q) ||
+        (r.target_gl_number || '').toLowerCase().includes(q) ||
         (r.target_vat_code && r.target_vat_code.toLowerCase().includes(q)) ||
         (r.partner_name && r.partner_name.toLowerCase().includes(q))
     );
@@ -434,14 +444,16 @@ export function InvoiceItemRulesManager({
                     <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-bold text-foreground truncate">
-                          {rule.name}
+                          {rule.name || rule.description_pattern || t('invoices:item_rules.unnamed_rule', 'Névtelen szabály')}
                         </span>
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] font-mono font-medium px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20"
-                        >
-                          {rule.target_gl_number}
-                        </Badge>
+                        {rule.target_gl_number ? (
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] font-mono font-medium px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20"
+                          >
+                            {rule.target_gl_number}
+                          </Badge>
+                        ) : null}
                         {rule.target_vat_code && (
                           <Badge
                             variant="outline"
@@ -468,7 +480,7 @@ export function InvoiceItemRulesManager({
 
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap">
                         <span>
-                          {t('invoices:item_rules.label_pattern', 'Minta:')} <code className="bg-muted px-1 rounded text-foreground font-mono">{rule.description_pattern}</code>
+                          {t('invoices:item_rules.label_pattern', 'Minta:')} <code className="bg-muted px-1 rounded text-foreground font-mono">{rule.description_pattern || '—'}</code>
                         </span>
                         {rule.partner_name && (
                           <span>• {t('invoices:item_rules.label_partner', 'Partner:')} {rule.partner_name}</span>
@@ -512,7 +524,7 @@ export function InvoiceItemRulesManager({
           <div className="space-y-1.5">
             <Label className="text-xs font-medium">{t('invoices:item_rules.form_name_label', 'Szabály megnevezése')}</Label>
             <Input
-              value={formName}
+              value={formName || ''}
               onChange={(e) => setFormName(e.target.value)}
               placeholder={t('invoices:item_rules.form_name_placeholder', 'pl. Telekom számlák kontírozása')}
               className="text-xs h-8"
@@ -522,7 +534,7 @@ export function InvoiceItemRulesManager({
           <div className="space-y-1.5">
             <Label className="text-xs font-medium">{t('invoices:item_rules.form_pattern_label', 'Keresendő szövegminta a tétel leírásában')}</Label>
             <Input
-              value={formPattern}
+              value={formPattern || ''}
               onChange={(e) => setFormPattern(e.target.value)}
               placeholder={t('invoices:item_rules.form_pattern_placeholder', 'pl. Telekom, Üzemanyag, Előfizetés...')}
               className="text-xs font-mono h-8"
@@ -594,13 +606,13 @@ export function InvoiceItemRulesManager({
             <Label className="text-xs font-medium">{t('invoices:item_rules.form_partner_label', 'Partner szűrés (opcionális)')}</Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Input
-                value={formPartnerName}
+                value={formPartnerName || ''}
                 onChange={(e) => setFormPartnerName(e.target.value)}
                 placeholder={t('invoices:item_rules.form_partner_name_placeholder', 'Partner neve...')}
                 className="text-xs h-8"
               />
               <Input
-                value={formPartnerTax}
+                value={formPartnerTax || ''}
                 onChange={(e) => setFormPartnerTax(e.target.value)}
                 placeholder={t('invoices:item_rules.form_partner_tax_placeholder', 'Partner adószáma...')}
                 className="text-xs font-mono h-8"
@@ -653,7 +665,7 @@ export function InvoiceItemRulesManager({
             <Button
               size="sm"
               onClick={handleSaveForm}
-              disabled={!formName.trim() || !formPattern.trim() || saving}
+              disabled={!formName?.trim() || !formPattern?.trim() || saving}
               className="text-xs bg-primary hover:bg-primary/90 min-w-[140px] tabular-nums"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}

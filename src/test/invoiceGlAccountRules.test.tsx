@@ -276,6 +276,40 @@ describe('Brief Requirement: Customer Account Selection & Fixed VAT Account', ()
       expect(res.debitIsItem).toBe(true);
       expect(res.creditIsItem).toBe(false);
     });
+
+    it('unclassified INBOUND item without netGl has debitGl "-" and creditGl = partnerGl', () => {
+      const res = computeLineItemDebitCreditSides({
+        item: { net_amount: 50000, gross_amount: 63500 },
+        isOutbound: false,
+        netGl: undefined,
+        partnerGl: '4541',
+        isSwapped: false,
+      });
+
+      expect(res.debitGl).toBe('-');
+      expect(res.creditGl).toBe('4541');
+      expect(res.debitRole).toBe('Költség / Ráfordítás');
+      expect(res.creditRole).toBe('Szállítói kötelezettség');
+    });
+
+    it('unclassified INBOUND item with header fallback resolves debitGl to inherited account', () => {
+      const parentInvoiceHeaderGl = '5291';
+      const itemNetGl = undefined;
+      const effectiveNetGl = itemNetGl || parentInvoiceHeaderGl;
+
+      const res = computeLineItemDebitCreditSides({
+        item: { net_amount: 50000, gross_amount: 63500 },
+        isOutbound: false,
+        netGl: effectiveNetGl,
+        partnerGl: '4541',
+        isSwapped: false,
+      });
+
+      expect(res.debitGl).toBe('5291');
+      expect(res.creditGl).toBe('4541');
+      expect(res.debitIsItem).toBe(true);
+    });
   });
 });
+
 

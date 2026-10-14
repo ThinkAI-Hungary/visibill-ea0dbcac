@@ -48,6 +48,9 @@ import {
   Layers,
   LayoutGrid,
   ChevronsLeftRight,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from 'lucide-react';
 import { AccountingRulesDialog } from '@/components/accounting/AccountingRulesDialog';
 import { extractStoragePath } from '@/lib/utils';
@@ -1313,12 +1316,108 @@ export default function JournalsPage() {
     return getActiveFilterChips(filterCriteria, journalNamesById);
   }, [filterCriteria, journalNamesById]);
 
+  // Table header sorting state
+  type JournalSortColumn = 'date' | 'journal_num' | 'doc_num' | 'partner' | 'description' | 'gl_accounts' | 'amount' | 'type' | 'status';
+  type SortDirection = 'asc' | 'desc';
+
+  const [sortColumn, setSortColumn] = useState<JournalSortColumn | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const handleSort = useCallback((column: JournalSortColumn) => {
+    if (sortColumn !== column) {
+      setSortColumn(column);
+      setSortDirection(column === 'date' || column === 'amount' ? 'desc' : 'asc');
+    } else {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection('asc');
+      }
+    }
+    setCurrentPage(1);
+  }, [sortColumn, sortDirection]);
+
   // Filtered entries using RLB filterJournalEntries
   const filteredEntries = React.useMemo(() => {
     return filterJournalEntries(entries, filterCriteria, search, stornoFilter);
   }, [entries, filterCriteria, search, stornoFilter]);
 
-  const totalItems = filteredEntries.length;
+  // Sorted entries based on selected table header
+  const sortedEntries = React.useMemo(() => {
+    if (!sortColumn) return filteredEntries;
+
+    return [...filteredEntries].sort((a: any, b: any) => {
+      let comparison = 0;
+      switch (sortColumn) {
+        case 'date': {
+          const dateA = a.posting_date || '';
+          const dateB = b.posting_date || '';
+          comparison = dateA.localeCompare(dateB);
+          break;
+        }
+        case 'journal_num': {
+          const aCode = a.journal?.code || '';
+          const bCode = b.journal?.code || '';
+          if (aCode !== bCode) {
+            comparison = aCode.localeCompare(bCode);
+          } else {
+            comparison = (a.journal_number || 0) - (b.journal_number || 0);
+          }
+          break;
+        }
+        case 'doc_num': {
+          const aDoc = a.document_id || '';
+          const bDoc = b.document_id || '';
+          comparison = aDoc.localeCompare(bDoc, undefined, { numeric: true, sensitivity: 'base' });
+          break;
+        }
+        case 'partner': {
+          const aPart = a.partner?.name || '';
+          const bPart = b.partner?.name || '';
+          comparison = aPart.localeCompare(bPart, 'hu', { sensitivity: 'base' });
+          break;
+        }
+        case 'description': {
+          const aDesc = a.description || '';
+          const bDesc = b.description || '';
+          comparison = aDesc.localeCompare(bDesc, 'hu', { sensitivity: 'base' });
+          break;
+        }
+        case 'gl_accounts': {
+          const aT = a.lines?.find((l: any) => l.dc_type === 'T')?.gl_account?.gl_number || '';
+          const bT = b.lines?.find((l: any) => l.dc_type === 'T')?.gl_account?.gl_number || '';
+          comparison = aT.localeCompare(bT, undefined, { numeric: true });
+          break;
+        }
+        case 'amount': {
+          const getEntryAmount = (e: any) => {
+            const raw = e.lines?.reduce((acc: number, l: any) => l.dc_type === 'T' ? acc + Number(l.amount || 0) : acc, 0) || 0;
+            return e.entry_type === 'SZTORNO' ? -Math.abs(raw) : raw;
+          };
+          comparison = getEntryAmount(a) - getEntryAmount(b);
+          break;
+        }
+        case 'type': {
+          const aType = a.entry_type || '';
+          const bType = b.entry_type || '';
+          comparison = aType.localeCompare(bType);
+          break;
+        }
+        case 'status': {
+          const aStat = a.status || '';
+          const bStat = b.status || '';
+          comparison = aStat.localeCompare(bStat);
+          break;
+        }
+        default:
+          comparison = 0;
+      }
+      return sortDirection === 'desc' ? -comparison : comparison;
+    });
+  }, [filteredEntries, sortColumn, sortDirection]);
+
+  const totalItems = sortedEntries.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   // Auto-clamp currentPage if totalPages decreases due to deletions
@@ -1328,7 +1427,7 @@ export default function JournalsPage() {
     }
   }, [totalPages, currentPage]);
 
-  const paginatedEntries = filteredEntries.slice(
+  const paginatedEntries = sortedEntries.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -2402,15 +2501,132 @@ export default function JournalsPage() {
                         })()}
                       </div>
                     </TableHead>
-                    <TableHead className="w-[95px] whitespace-nowrap">{t('accounting:journals.table.col_date', 'Dátum')}</TableHead>
-                    <TableHead className="w-[125px] whitespace-nowrap">{t('accounting:journals.table.col_journal_num', 'Naplószám')}</TableHead>
-                    <TableHead className="w-[160px] whitespace-nowrap">{t('accounting:journals.table.col_doc_num', 'Bizonylatszám')}</TableHead>
-                    <TableHead className="w-[170px] whitespace-nowrap">{t('accounting:journals.table.col_partner', 'Partner')}</TableHead>
-                    <TableHead className="w-auto min-w-[180px]">{t('accounting:journals.table.col_description', 'Megnevezés')}</TableHead>
-                    <TableHead className="w-[130px] text-center whitespace-nowrap">{t('accounting:journals.table.col_gl_accounts', 'Kontír (T / K)')}</TableHead>
-                    <TableHead className="w-[140px] text-right whitespace-nowrap">{t('accounting:journals.table.col_amount', 'Összeg')}</TableHead>
-                    <TableHead className="w-[100px] text-center whitespace-nowrap">{t('accounting:journals.table.col_type', 'Típus')}</TableHead>
-                    <TableHead className="w-[130px] text-center whitespace-nowrap">{t('accounting:journals.table.col_status', 'Státusz')}</TableHead>
+                    <TableHead
+                      onClick={() => handleSort('date')}
+                      className="w-[95px] whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors group"
+                      title={t('accounting:journals.table.sort_date', 'Rendezés dátum szerint')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>{t('accounting:journals.table.col_date', 'Dátum')}</span>
+                        {sortColumn === 'date' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-75 shrink-0 transition-opacity" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('journal_num')}
+                      className="w-[125px] whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors group"
+                      title={t('accounting:journals.table.sort_journal_num', 'Rendezés naplószám szerint')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>{t('accounting:journals.table.col_journal_num', 'Naplószám')}</span>
+                        {sortColumn === 'journal_num' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-75 shrink-0 transition-opacity" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('doc_num')}
+                      className="w-[160px] whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors group"
+                      title={t('accounting:journals.table.sort_doc_num', 'Rendezés bizonylatszám szerint')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>{t('accounting:journals.table.col_doc_num', 'Bizonylatszám')}</span>
+                        {sortColumn === 'doc_num' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-75 shrink-0 transition-opacity" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('partner')}
+                      className="w-[170px] whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors group"
+                      title={t('accounting:journals.table.sort_partner', 'Rendezés partner szerint')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>{t('accounting:journals.table.col_partner', 'Partner')}</span>
+                        {sortColumn === 'partner' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-75 shrink-0 transition-opacity" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('description')}
+                      className="w-auto min-w-[180px] cursor-pointer select-none hover:text-foreground transition-colors group"
+                      title={t('accounting:journals.table.sort_description', 'Rendezés megnevezés szerint')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>{t('accounting:journals.table.col_description', 'Megnevezés')}</span>
+                        {sortColumn === 'description' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-75 shrink-0 transition-opacity" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('gl_accounts')}
+                      className="w-[130px] text-center whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors group"
+                      title={t('accounting:journals.table.sort_gl_accounts', 'Rendezés főkönyvi számok szerint')}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <span>{t('accounting:journals.table.col_gl_accounts', 'Kontír (T / K)')}</span>
+                        {sortColumn === 'gl_accounts' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-75 shrink-0 transition-opacity" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('amount')}
+                      className="w-[140px] text-right whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors group"
+                      title={t('accounting:journals.table.sort_amount', 'Rendezés összeg szerint')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>{t('accounting:journals.table.col_amount', 'Összeg')}</span>
+                        {sortColumn === 'amount' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-75 shrink-0 transition-opacity" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('type')}
+                      className="w-[100px] text-center whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors group"
+                      title={t('accounting:journals.table.sort_type', 'Rendezés típus szerint')}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <span>{t('accounting:journals.table.col_type', 'Típus')}</span>
+                        {sortColumn === 'type' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-75 shrink-0 transition-opacity" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('status')}
+                      className="w-[130px] text-center whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors group"
+                      title={t('accounting:journals.table.sort_status', 'Rendezés státusz szerint')}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <span>{t('accounting:journals.table.col_status', 'Státusz')}</span>
+                        {sortColumn === 'status' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-primary shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-75 shrink-0 transition-opacity" />
+                        )}
+                      </div>
+                    </TableHead>
                     <TableHead className="w-[135px] text-right whitespace-nowrap">{t('accounting:journals.table.col_actions', 'Műveletek')}</TableHead>
                   </TableRow>
                 </TableHeader>

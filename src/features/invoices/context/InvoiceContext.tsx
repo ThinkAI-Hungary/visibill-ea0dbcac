@@ -198,6 +198,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   const expandUrlTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isHandlingDeepLinkRef = useRef(false);
   const handledDeepLinkInvoiceRef = useRef<string | null>(null);
+  const autoOpenedDialogInvoiceIdRef = useRef<string | null>(null);
 
   // Clean up expand debounce timer on unmount
   useEffect(() => {
@@ -291,6 +292,10 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       action: InvoiceAction = 'items',
       options?: { removeInvoice?: boolean }
     ) => {
+      if (invoiceId) {
+        handledDeepLinkInvoiceRef.current = invoiceId;
+        autoOpenedDialogInvoiceIdRef.current = invoiceId;
+      }
       setSearchParams(
         prev => {
           const next = new URLSearchParams(prev);
@@ -434,7 +439,6 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   // ── Auto-open invoice from URL (?invoice=<id>&action=<action>) ──
   const invoiceIdFromUrl = searchParams.get('invoice');
   const actionFromUrl = searchParams.get('action') as InvoiceAction | null;
-  const autoOpenedDialogInvoiceIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!invoiceIdFromUrl || !selectedCompany?.id) {
@@ -464,16 +468,18 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
 
       handledDeepLinkInvoiceRef.current = navInv.id;
 
-      // Switch tab if direction doesn't match current tab
+      // Switch tab if direction doesn't match current tab and an action is requested
       const currentTab = activeTabRef.current;
-      if (navInv.invoice_direction === 'INBOUND' && currentTab !== 'INBOUND') {
-        isHandlingDeepLinkRef.current = true;
-        setActiveTab('INBOUND', { preserveInvoiceParam: true });
-        isHandlingDeepLinkRef.current = false;
-      } else if (navInv.invoice_direction === 'OUTBOUND' && currentTab !== 'OUTBOUND') {
-        isHandlingDeepLinkRef.current = true;
-        setActiveTab('OUTBOUND', { preserveInvoiceParam: true });
-        isHandlingDeepLinkRef.current = false;
+      if (actionFromUrl) {
+        if (navInv.invoice_direction === 'INBOUND' && currentTab !== 'INBOUND') {
+          isHandlingDeepLinkRef.current = true;
+          setActiveTab('INBOUND', { preserveInvoiceParam: true });
+          isHandlingDeepLinkRef.current = false;
+        } else if (navInv.invoice_direction === 'OUTBOUND' && currentTab !== 'OUTBOUND') {
+          isHandlingDeepLinkRef.current = true;
+          setActiveTab('OUTBOUND', { preserveInvoiceParam: true });
+          isHandlingDeepLinkRef.current = false;
+        }
       }
 
       setSelectedNavInvoice(navInv);
@@ -529,14 +535,20 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         handledDeepLinkInvoiceRef.current = sub.id;
 
         const currentTab = activeTabRef.current;
-        if (sub.invoice_type === 'outbound' && currentTab !== 'SUBMITTED_OUTBOUND') {
-          isHandlingDeepLinkRef.current = true;
-          setActiveTab('SUBMITTED_OUTBOUND', { preserveInvoiceParam: true });
-          isHandlingDeepLinkRef.current = false;
-        } else if (sub.invoice_type !== 'outbound' && currentTab !== 'SUBMITTED_INBOUND') {
-          isHandlingDeepLinkRef.current = true;
-          setActiveTab('SUBMITTED_INBOUND', { preserveInvoiceParam: true });
-          isHandlingDeepLinkRef.current = false;
+        const isOutbound =
+          sub.invoice_direction === 'OUTBOUND' ||
+          (sub as any).invoice_type === 'outbound';
+
+        if (actionFromUrl) {
+          if (isOutbound && currentTab !== 'SUBMITTED_OUTBOUND') {
+            isHandlingDeepLinkRef.current = true;
+            setActiveTab('SUBMITTED_OUTBOUND', { preserveInvoiceParam: true });
+            isHandlingDeepLinkRef.current = false;
+          } else if (!isOutbound && currentTab !== 'SUBMITTED_INBOUND') {
+            isHandlingDeepLinkRef.current = true;
+            setActiveTab('SUBMITTED_INBOUND', { preserveInvoiceParam: true });
+            isHandlingDeepLinkRef.current = false;
+          }
         }
 
         setSelectedInvoice(sub);
