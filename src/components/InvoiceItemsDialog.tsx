@@ -213,16 +213,17 @@ export function InvoiceItemsDialog({
   const { data: parentInvoice } = useQuery({
     queryKey: ['parentInvoice', source, invoiceId],
     queryFn: async () => {
-      const table = source === 'submitted' ? 'invoices' : 'nav_invoices';
-      const selectFields = source === 'submitted'
-        ? 'company_id, project_id, invoice_direction, kibocsatas_datuma, teljesites_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number'
-        : 'company_id, project_id, invoice_direction, invoice_issue_date, invoice_delivery_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched';
-
-      const { data, error } = await supabase
-        .from(table as any)
-        .select(selectFields)
-        .eq('id', invoiceId)
-        .single();
+      const { data, error } = source === 'submitted'
+        ? await supabase
+            .from('invoices')
+            .select('company_id, project_id, invoice_direction, kibocsatas_datuma, teljesites_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number')
+            .eq('id', invoiceId)
+            .single()
+        : await supabase
+            .from('nav_invoices')
+            .select('company_id, project_id, invoice_direction, invoice_issue_date, invoice_delivery_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched')
+            .eq('id', invoiceId)
+            .single();
       if (error) throw error;
 
       let vatSummary = (data as any)?.vat_summary || null;
