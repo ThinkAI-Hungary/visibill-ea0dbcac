@@ -22,10 +22,12 @@ import {
   Search,
   ArrowLeft,
 } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOptionalDateRange } from '@/contexts/DateRangeContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { isValidUUID } from '@/lib/validationUtils';
@@ -242,6 +244,20 @@ export function InvoiceItemRulesManager({
     }
   };
 
+  const dateRangeContext = useOptionalDateRange();
+  const { dateRange } = useParams<{ dateRange?: string }>();
+
+  let effectiveDateFrom: string | null = dateRangeContext?.dateFromFormatted || null;
+  let effectiveDateTo: string | null = dateRangeContext?.dateToFormatted || null;
+
+  if (!effectiveDateFrom && dateRange && dateRange.includes('_')) {
+    const parts = dateRange.split('_');
+    if (parts.length === 2 && parts[0] && parts[1]) {
+      effectiveDateFrom = parts[0];
+      effectiveDateTo = parts[1];
+    }
+  }
+
   const handleApplyRules = async () => {
     if (!companyId || !activePresetId) return;
     setApplyingRules(true);
@@ -251,16 +267,28 @@ export function InvoiceItemRulesManager({
         p_preset_id: activePresetId,
         p_user_id: session?.user?.id || null,
         p_only_unclassified: true,
+        p_date_from: effectiveDateFrom,
+        p_date_to: effectiveDateTo,
       });
 
       if (error) throw error;
 
       const total = (data as any)?.total_updated || 0;
+      const periodLabel = effectiveDateFrom && effectiveDateTo
+        ? ` (${effectiveDateFrom} – ${effectiveDateTo})`
+        : '';
+
       toast({
         title: t('invoices:item_rules.toast_applied_title', 'Szabályok alkalmazása befejeződött'),
         description: total > 0
-          ? t('invoices:item_rules.toast_applied_desc', { count: total, defaultValue: `${total} számlatétel automatikusan besorolva a szabályok alapján.` })
-          : t('invoices:item_rules.toast_applied_none', 'Nem található olyan besorolatlan számlatétel, amely megfelelt a szabályoknak.'),
+          ? t('invoices:item_rules.toast_applied_desc', {
+              count: total,
+              defaultValue: `${total} számlatétel automatikusan besorolva a szabályok alapján${periodLabel}.`,
+            })
+          : t(
+              'invoices:item_rules.toast_applied_none',
+              `Nem található olyan besorolatlan számlatétel${periodLabel ? ` a kiválasztott időszakban${periodLabel}` : ''}, amely megfelelt a szabályoknak.`
+            ),
       });
 
       queryClient.invalidateQueries({ queryKey: ['invoiceItems'] });
@@ -335,6 +363,7 @@ export function InvoiceItemRulesManager({
               variant="outline"
               onClick={handleApplyRules}
               disabled={applyingRules || rules.length === 0}
+              title={effectiveDateFrom && effectiveDateTo ? `Szabályok futtatása a kiválasztott időszakra: ${effectiveDateFrom} – ${effectiveDateTo}` : undefined}
               className="h-8 gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 min-w-[140px] tabular-nums"
             >
               {applyingRules ? (

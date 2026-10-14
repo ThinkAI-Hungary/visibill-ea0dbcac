@@ -64,7 +64,9 @@ public.apply_invoice_item_rules(
     p_company_id UUID,
     p_preset_id UUID,
     p_user_id UUID DEFAULT NULL,
-    p_only_unclassified BOOLEAN DEFAULT true
+    p_only_unclassified BOOLEAN DEFAULT true,
+    p_date_from DATE DEFAULT NULL,
+    p_date_to DATE DEFAULT NULL
 ) RETURNS JSONB
 ```
 
@@ -76,8 +78,13 @@ public.apply_invoice_item_rules(
    - A mintában (`description_pattern`) szereplő `%` és `_` karakterek automatikusan escape-elésre kerülnek (`REPLACE(...) ESCAPE '\'`), megelőzve, hogy egy pl. „20% akció” leírás joker karakterként nem kívánt tételeket fedjen le.
 3. **Prioritás és Hatókör Rendezés:**
    - A szabályokat prioritás (`priority ASC, created_at DESC`) szerint futtatja le, a cég-specifikus szabályok előnyt élveznek az irodai szabályok felett.
-4. **Atomi és Visszamenőleges Végrehajtás:**
+4. **Időszakszűrés & Skálázhatósági Védelem (2026-10-14 Optimalizáció):**
+   - A frontend automatikusan átadja a felhasználó által kijelölt dátumtartományt (`p_date_from`, `p_date_to`), így nem kell a cég teljes többéves történetét (tízezer tétel) feleslegesen végigpásztázni.
+   - **Idempotencia védelem:** Az UPDATE-ek kizárólag azokat a sorokat módosítják, ahol a cél mezők (`gl_number`, `vat_code`, `vat_code_id`, `rule_id`) ténylegesen eltérnek (`IS DISTINCT FROM`), megelőzve a felesleges sorzárolásokat, indexfrissítéseket és trigger viharokat.
+   - **Trigger optimalizáció:** A `trg_nav_invoice_items_auto_vat` trigger célzott oszlopokra lett korlátozva (`UPDATE OF vat_rate, net_amount, vat_amount, line_description`), a `trg_nav_invoice_items_project_rules` pedig a sor saját `company_id` mezőjét használja a korábbi felesleges `nav_invoices` al-lekérdezés helyett.
+   - **Statement Timeout emelés:** Az RPC explicit `SET statement_timeout = '60s'` direktívával rendelkezik, elkerülve a PostgREST alapértelmezett 8 másodperces megszakítását nagy tételszámoknál.
+5. **Atomi és Visszamenőleges Végrehajtás:**
    - Végigpásztázza mind a beküldött számlatételeket (`invoice_items`), mind a NAV tételeket (`nav_invoice_items`).
    - Ha a számla iránya, a partner adószáma és a tételleírás mintája illeszkedik, atomi UPDATE-tel frissíti a `gl_classifications` JSONB mezőt (`is_manual = false`, `rule_id`, `reasoning`), és ha a szabály áfakódot is tartalmaz, beállítja a `vat_code_id`-t és `vat_code`-ot is.
-5. **Eredmény Visszajelzés:**
+6. **Eredmény Visszajelzés:**
    - JSON formátumban visszaadja a módosított tételek darabszámát (`total_updated`, `updated_invoice_items`, `updated_nav_items`).

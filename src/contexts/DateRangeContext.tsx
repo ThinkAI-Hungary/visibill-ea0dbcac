@@ -136,3 +136,7 @@ export function useDateRange() {
   }
   return context;
 }
+
+export function useOptionalDateRange() {
+  return useContext(DateRangeContext);
+}

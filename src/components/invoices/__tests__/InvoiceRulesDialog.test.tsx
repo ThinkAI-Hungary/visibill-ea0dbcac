@@ -32,6 +32,7 @@ const sampleRules = [
 ];
 
 vi.mock('@/integrations/supabase/client', () => ({
+  SUPABASE_URL: 'https://vxxgvdlqvvchtlmqnrqf.supabase.co',
   supabase: {
     from: vi.fn(() => ({
       select: vi.fn(() => ({
@@ -137,6 +138,8 @@ describe('InvoiceRulesDialog', () => {
         p_preset_id: 'preset-uuid-1',
         p_user_id: 'user-1',
         p_only_unclassified: true,
+        p_date_from: null,
+        p_date_to: null,
       });
       expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         title: 'Szabályok alkalmazása befejeződött',

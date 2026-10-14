@@ -2285,6 +2285,11 @@ export function InvoiceItemsDialog({
                         </TableCell>
                         <TableCell className="text-right font-mono text-xs px-2 whitespace-nowrap">
                           {(() => {
+                            const isReverseCharge = Boolean(
+                              (item as any)?.is_reverse_charge ||
+                              (parentInvoice as any)?.is_reverse_charge ||
+                              (parentInvoice as any)?.forditott_adozas
+                            );
                             const val = validateAndResolveItemVat({
                               ...item,
                               is_reverse_charge: isReverseCharge,

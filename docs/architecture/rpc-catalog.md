@@ -1,7 +1,7 @@
 # PostgreSQL RPC és Függvény Katalógus
 
-> **Utoljára frissítve:** 2026-10-13  
-> **Összesen:** 155 hívható RPC függvény | 75 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
+> **Utoljára frissítve:** 2026-10-14  
+> **Összesen:** 156 hívható RPC függvény | 75 PostgreSQL trigger függvény | `public` séma | **Supabase PostgreSQL**  
 > **Tesztelési Követelmények:** Lásd a [PostgreSQL RPC Tesztelési Stratégia és Blueprint](./rpc-testing-blueprint.md) dokumentumot.
 
 Ez a dokumentáció az eaisybill-prod és eaisyBooks rendszerekben használt összes PostgreSQL tárolt eljárást és RPC (Remote Procedure Call) függvényt tartalmazza. Részletezi a függvény szignatúráját, biztonsági környezetét (`SECURITY DEFINER` vs `INVOKER`), hívó komponensét és funkcionális szerepét.
@@ -12,7 +12,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 ## Tartalomjegyzék
 
 1. [📊 Frontend Lekérdező és Aggregációs RPC-k (33 db)](#1--frontend-lekérdező-és-aggregációs-rpc-k)
-2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (35 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
+2. [✏️ Frontend Állapotmódosító és Üzleti RPC-k (36 db)](#2-️-frontend-állapotmódosító-és-üzleti-rpc-k)
 3. [📄 Kettős Könyvviteli Naplók (acc_*) és Folyószámla RPC-k (17 db)](#3--kettős-könyvviteli-naplók-acc_-rpc-k)
 4. [📘 eaisyBooks és EV Modul RPC-k (8 db)](#4--eaisybooks-és-ev-modul-rpc-k)
 5. [🔐 Jogosultságkezelés és RLS Segédfüggvények (15 db)](#5--jogosultságkezelés-és-rls-segédfüggvények)
@@ -71,6 +71,7 @@ A kapcsolódó adatbázis sémát az [Adatbázis Séma Áttekintés](./database-
 
 | RPC Függvény és Paraméterek | Biztonság | Visszatérési érték | Hívó | Cél és Működés |
 |---|:---:|---|---|---|
+| `apply_invoice_item_rules(p_company_id uuid, p_preset_id uuid, p_user_id uuid, p_only_unclassified boolean, p_date_from date, p_date_to date)` | `DEFINER` | `jsonb` | InvoiceItemRulesManager.tsx | Determinisztikus tételszintű kontírozási és ÁFA szabályok kötegelt érvényesítése a bejövő és NAV számlatételekre dátumtartomány szűréssel, idempotencia- és trigger-védelemmel, statement timeout elkerüléssel (A-144). |
 | `approve_invoice_for_accounting(p_invoice_id uuid, p_approval_note text)` | `DEFINER` | `jsonb` | InvoiceApprovalModal | Számla könyvelésre való jóváhagyása megjegyzéssel és időbélyeggel. |
 | `assign_supplier_default_projects(p_company_id uuid)` | `DEFINER` | `integer` | Projects / SupplierRules | Szállítóhoz rendelt alapértelmezett projektek automatikus kiosztása a korábbi számlákra. |
 | `book_accrual_entry(p_accrual_id uuid)` | `DEFINER` | `json` | AccrualsTab.tsx | Időszaki elhatárolás automatikus lekönyvelése a vegyes naplóba. |
