@@ -1,4 +1,4 @@
-# A-258: invoice_items Multi-Tenant Denormalizáció, PostgREST Lateral Join Timeout Felszámolása és get_unclassified_gl_items Limit Védelem
+# A-259: invoice_items Multi-Tenant Denormalizáció, PostgREST Lateral Join Timeout Felszámolása és get_unclassified_gl_items Limit Védelem
 
 **Status:** Decided  
 **Date:** 2026-10-15  
