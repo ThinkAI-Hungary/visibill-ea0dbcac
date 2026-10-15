@@ -17,6 +17,10 @@ export interface PettyCashRegister {
   is_single_person_mode?: boolean;
   cashier_user_id?: string | null;
   controller_user_id?: string | null;
+  authorizer_user_id?: string | null;
+  receipt_prefix?: string | null;
+  attachment_required?: 'mandatory' | 'when_no_document' | 'optional';
+  valuation_method?: 'average' | 'fifo';
   created_at: string;
 }
 
@@ -108,12 +112,155 @@ export interface CashReceipt {
   legal_title: string | null;
   description: string | null;
   attachments?: any[];
+  payer_signature?: string | null;
+  recipient_signature?: string | null;
+  source_doc_type?: 'invoice' | 'payroll' | 'travel_order' | 'bank_withdrawal' | 'owner_loan' | 'other' | string | null;
+  source_doc_id?: string | null;
+  printed_copy_count?: number;
+  last_printed_at?: string | null;
   is_cancelled: boolean;
   cancellation_reason: string | null;
   cancelled_at: string | null;
   cancelled_by: string | null;
   created_by: string | null;
   created_at: string;
+}
+
+export interface TimelineIntegrityResult {
+  valid: boolean;
+  message?: string;
+  first_failing_date?: string;
+  first_failing_entry_id?: string;
+  first_failing_receipt_number?: string;
+  running_balance_before_deficit?: number;
+  deficit_amount?: number;
+  opening_balance?: number;
+  current_balance?: number;
+  min_projected_balance?: number;
+  failed_at_date?: string;
+  failed_at_receipt_number?: string;
+  failed_at_description?: string;
+  failed_balance?: number;
+  error_message?: string;
+}
+
+export interface GlReconciliationRegister {
+  register_id: string;
+  register_name: string;
+  currency: string;
+  currencies?: string[];
+  gl_account_code: string;
+  gl_account?: string;
+  analytics_balance_fx: number;
+  analytics_balance_huf: number;
+  analytic_balance?: number;
+  gl_balance_huf: number;
+  gl_balance?: number;
+  diff_huf: number;
+  difference?: number;
+  is_matching?: boolean;
+}
+
+export interface GlItemizedDiscrepancy {
+  discrepancy_type: 'unposted_entry' | 'direct_gl_posting' | 'fx_difference' | string;
+  date: string;
+  description: string;
+  amount_huf: number;
+  remedy_suggestion: string;
+}
+
+export interface GlReconciliationResult {
+  year: number;
+  date_to: string;
+  is_reconciled: boolean;
+  is_fully_reconciled?: boolean;
+  status_message?: string;
+  analytics_total_huf: number;
+  gl_total_huf: number;
+  discrepancy_huf: number;
+  total_analytic_balance?: number;
+  total_gl_balance?: number;
+  total_difference?: number;
+  registers: GlReconciliationRegister[];
+  itemized_discrepancies?: GlItemizedDiscrepancy[];
+  unposted_entries?: Array<{
+    id: string;
+    entry_date: string;
+    register_name: string;
+    amount: number;
+    currency: string;
+    description: string;
+    status: string;
+    receipt_number?: string;
+    cash_report_status?: string;
+  }>;
+  direct_gl_entries?: Array<{
+    journal_header_id: string;
+    journal_number: number;
+    source: string;
+    posting_date: string;
+    description: string;
+    dc_type: string;
+    amount: number;
+    gl_number: string;
+  }>;
+}
+
+export interface FxCashRevaluationItem {
+  register_id: string;
+  register_name: string;
+  currency: string;
+  currency_balance: number;
+  fx_balance?: number;
+  book_value_huf: number;
+  book_huf?: number;
+  official_mnb_rate: number;
+  mnb_rate?: number;
+  revalued_huf: number;
+  market_huf?: number;
+  diff_huf: number;
+  difference_huf?: number;
+  direction?: 'GAIN' | 'LOSS';
+}
+
+export interface FxCashRevaluationResult {
+  year: number;
+  cutoff_date?: string;
+  total_revaluation_diff_huf: number;
+  total_gain_huf?: number;
+  total_loss_huf?: number;
+  net_revaluation_huf?: number;
+  items: FxCashRevaluationItem[];
+  voucher_number?: string | null;
+  journal_header_id?: string | null;
+}
+
+export interface CashPartnerMonthlyLimit {
+  partner_id: string;
+  partner_name: string;
+  tax_number?: string;
+  partner_tax_number?: string;
+  tx_count?: number;
+  total_amount_huf: number;
+  total_cash_huf?: number;
+  monthly_threshold_huf: number;
+  threshold_huf?: number;
+  excess_amount_huf: number;
+  excess_amount?: number;
+  penalty_risk_huf: number;
+  status: 'normal' | 'warning' | 'exceeded';
+  is_exceeded?: boolean;
+}
+
+export interface CashPartnerMonthlyLimitResult {
+  year: number;
+  month: number;
+  threshold_huf?: number;
+  violating_partner_count: number;
+  total_penalty_risk_huf: number;
+  start_date?: string;
+  end_date?: string;
+  partners: CashPartnerMonthlyLimit[];
 }
 
 export interface DenominationRow {

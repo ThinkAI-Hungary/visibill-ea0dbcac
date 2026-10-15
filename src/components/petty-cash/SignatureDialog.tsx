@@ -35,12 +35,13 @@ export default function SignatureDialog({ open, onOpenChange, onConfirm, isExpen
 
   useEffect(() => {
     if (open) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (payerCanvasRef.current) initCanvas(payerCanvasRef.current);
         if (recipientCanvasRef.current) initCanvas(recipientCanvasRef.current);
+        setPayerDrawn(false);
+        setRecipientDrawn(false);
       }, 100);
-      setPayerDrawn(false);
-      setRecipientDrawn(false);
+      return () => clearTimeout(timer);
     }
   }, [open]);
 

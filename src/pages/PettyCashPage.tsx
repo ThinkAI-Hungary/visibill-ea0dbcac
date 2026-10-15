@@ -8,7 +8,7 @@ import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Banknote, Settings2, Star, Zap, ClipboardCheck, Calculator, FileText, ArrowRight } from 'lucide-react';
+import { AlertTriangle, Banknote, Settings2, Star, Zap, ClipboardCheck, Calculator, FileText, ArrowRight, Scale, ShieldAlert } from 'lucide-react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useScopedNavigate } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,8 @@ import RoutingRulesTab from '@/components/petty-cash/RoutingRulesTab';
 import ApprovalTab from '@/components/petty-cash/ApprovalTab';
 import CashReportsTab from '@/components/petty-cash/CashReportsTab';
 import DenominationCalculatorDialog from '@/components/petty-cash/DenominationCalculatorDialog';
+import PettyCashGlReconciliationPanel from '@/components/petty-cash/PettyCashGlReconciliationPanel';
+import CashPartnerLimitsTab from '@/components/petty-cash/CashPartnerLimitsTab';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
@@ -462,6 +464,12 @@ const PettyCashPage = () => {
                 <TabsTrigger value="rules" className="gap-1.5">
                   <Zap className="w-4 h-4" /> {t('pettyCash:tabs.rules', 'Routing szabályok')}
                 </TabsTrigger>
+                <TabsTrigger value="reconciliation" className="gap-1.5">
+                  <Scale className="w-4 h-4" /> {t('pettyCash:tabs.reconciliation', 'Főkönyvi Egyezőség & Deviza (381/382)')}
+                </TabsTrigger>
+                <TabsTrigger value="partner-limits" className="gap-1.5">
+                  <ShieldAlert className="w-4 h-4" /> {t('pettyCash:tabs.partner_limits', 'Art. 114. § 1,5M Kp. Limit')}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="entries" className="mt-4 focus-visible:outline-none">
@@ -478,6 +486,12 @@ const PettyCashPage = () => {
               </TabsContent>
               <TabsContent value="rules" className="mt-4 focus-visible:outline-none">
                 <RoutingRulesTab />
+              </TabsContent>
+              <TabsContent value="reconciliation" className="mt-4 focus-visible:outline-none">
+                <PettyCashGlReconciliationPanel companyId={companyId} />
+              </TabsContent>
+              <TabsContent value="partner-limits" className="mt-4 focus-visible:outline-none">
+                <CashPartnerLimitsTab companyId={companyId} />
               </TabsContent>
             </Tabs>
           </>

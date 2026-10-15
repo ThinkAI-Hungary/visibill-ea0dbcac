@@ -64,9 +64,15 @@ export default function RegistersTab() {
         cash_limit: reg.cash_limit ?? 1500000,
         limit_action: reg.limit_action || 'warn',
         receipt_policy: reg.receipt_policy || 'when_no_document',
+        attachment_required: reg.attachment_required || 'when_no_document',
+        valuation_method: reg.valuation_method || 'average',
+        receipt_prefix: reg.receipt_prefix || null,
         approval_threshold: reg.approval_threshold ?? 200000,
-        gl_account: reg.gl_account || '381',
+        gl_account: reg.gl_account || (reg.currencies?.includes('HUF') ? '381' : '382'),
         is_single_person_mode: reg.is_single_person_mode ?? false,
+        cashier_user_id: reg.cashier_user_id || null,
+        controller_user_id: reg.controller_user_id || null,
+        authorizer_user_id: reg.authorizer_user_id || null,
       };
 
       if (reg.id) {
@@ -225,6 +231,11 @@ export default function RegistersTab() {
                   {reg.currencies.map(c => (
                     <Badge key={c} variant="outline" className="text-xs font-semibold">{c}</Badge>
                   ))}
+                  {reg.receipt_prefix && (
+                    <Badge variant="outline" className="text-[10px] border-primary/40 text-primary font-mono font-semibold">
+                      {reg.receipt_prefix}
+                    </Badge>
+                  )}
                   <Badge variant="secondary" className="text-[10px] bg-muted/60 text-muted-foreground">
                     {reg.closing_mode === 'daily' ? 'Napi zárás' :
                      reg.closing_mode === 'weekly' ? 'Heti zárás' :
@@ -237,6 +248,11 @@ export default function RegistersTab() {
                   {reg.gl_account && (
                     <Badge variant="outline" className="text-[10px] border-border/70 text-muted-foreground font-mono">
                       Főkönyv: {reg.gl_account}
+                    </Badge>
+                  )}
+                  {reg.attachment_required === 'mandatory' && (
+                    <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600 bg-amber-500/10">
+                      Kötelező csatolmány
                     </Badge>
                   )}
                 </div>
@@ -294,19 +310,20 @@ function OpeningBalancesEditor({ registerId, currencies, companyId }: { register
     },
   });
 
-  const [drafts, setDrafts] = useState<Record<string, { amount: string; startDate: string }>>({});
+  const [userEdits, setUserEdits] = useState<Record<string, { amount?: string; startDate?: string }>>({});
 
-  React.useEffect(() => {
-    const d: typeof drafts = {};
+  const drafts = React.useMemo(() => {
+    const d: Record<string, { amount: string; startDate: string }> = {};
     currencies.forEach(cur => {
       const existing = balances.find(b => b.currency === cur);
+      const userEdit = userEdits[cur];
       d[cur] = {
-        amount: existing ? String(existing.amount) : '0',
-        startDate: existing?.start_date || '',
+        amount: userEdit?.amount !== undefined ? userEdit.amount : (existing ? String(existing.amount) : '0'),
+        startDate: userEdit?.startDate !== undefined ? userEdit.startDate : (existing?.start_date || ''),
       };
     });
-    setDrafts(d);
-  }, [balances, currencies]);
+    return d;
+  }, [balances, currencies, userEdits]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -356,7 +373,7 @@ function OpeningBalancesEditor({ registerId, currencies, companyId }: { register
                 type="number"
                 className="h-8 text-sm"
                 value={drafts[cur]?.amount || ''}
-                onChange={e => setDrafts(prev => ({ ...prev, [cur]: { ...prev[cur], amount: e.target.value } }))}
+                onChange={e => setUserEdits(prev => ({ ...prev, [cur]: { ...prev[cur], amount: e.target.value } }))}
               />
             </div>
             <div>
@@ -365,7 +382,7 @@ function OpeningBalancesEditor({ registerId, currencies, companyId }: { register
                 type="date"
                 className="h-8 text-sm"
                 value={drafts[cur]?.startDate || ''}
-                onChange={e => setDrafts(prev => ({ ...prev, [cur]: { ...prev[cur], startDate: e.target.value } }))}
+                onChange={e => setUserEdits(prev => ({ ...prev, [cur]: { ...prev[cur], startDate: e.target.value } }))}
               />
             </div>
             <div />

@@ -223,6 +223,10 @@ export function useCreateCashReceipt() {
       legalTitle?: string;
       description?: string;
       partnerId?: string | null;
+      payerSignature?: string | null;
+      recipientSignature?: string | null;
+      sourceDocType?: string | null;
+      sourceDocId?: string | null;
     }) => {
       const { data, error } = await supabase.rpc('create_cash_receipt_with_seq' as any, {
         p_company_id: params.companyId,
@@ -238,6 +242,10 @@ export function useCreateCashReceipt() {
         p_legal_title: params.legalTitle || '',
         p_description: params.description || '',
         p_partner_id: params.partnerId || null,
+        p_payer_signature: params.payerSignature || null,
+        p_recipient_signature: params.recipientSignature || null,
+        p_source_doc_type: params.sourceDocType || null,
+        p_source_doc_id: params.sourceDocId || null,
       });
 
       if (error) throw error;
@@ -246,6 +254,7 @@ export function useCreateCashReceipt() {
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: cashReportQueryKeys.receipts(vars.companyId) });
       queryClient.invalidateQueries({ queryKey: ['petty-cash-entries', vars.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['pettyCashSummary', vars.companyId] });
     },
   });
 }

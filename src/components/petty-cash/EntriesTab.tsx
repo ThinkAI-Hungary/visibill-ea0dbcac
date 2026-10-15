@@ -49,6 +49,10 @@ import { formatNumberLocale, formatDateLocale } from '@/lib/locale/formatters';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import SignatureDialog from './SignatureDialog';
 import { generateCashReceiptPdf } from '@/lib/cashReceiptPdf';
+import { printCashReceipt } from './print/printCashReceipt';
+import { numberToWordsHu } from '@/lib/documents/templates/cashReceiptTemplate';
+import CashTimelineErrorDialog from './CashTimelineErrorDialog';
+import type { TimelineIntegrityResult } from './types';
 import { useCompanyAccountingRule } from '@/hooks/useAccountingPolicy';
 
 // Add display label for opening balance source type
@@ -143,6 +147,8 @@ export default function EntriesTab() {
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [showNewRegisterDialog, setShowNewRegisterDialog] = useState(false);
   const [newlyCreatedRegisterId, setNewlyCreatedRegisterId] = useState<string | null>(null);
+  const [timelineErrorResult, setTimelineErrorResult] = useState<TimelineIntegrityResult | null>(null);
+  const [showTimelineErrorDialog, setShowTimelineErrorDialog] = useState(false);
 
   const createRegisterMutation = useMutation({
     mutationFn: async (regData: Partial<PettyCashRegister>) => {
@@ -1012,6 +1018,10 @@ export default function EntriesTab() {
         partners={partners}
         onOpenCreateRegister={() => setShowNewRegisterDialog(true)}
         newlyCreatedRegisterId={newlyCreatedRegisterId}
+        onTimelineError={(res) => {
+          setTimelineErrorResult(res);
+          setShowTimelineErrorDialog(true);
+        }}
       />
 
       {/* Register creation dialog accessible directly from EntriesTab */}
@@ -1337,25 +1347,90 @@ export default function EntriesTab() {
           onOpenChange={setSignatureOpen}
           isExpense={printingEntry.amount < 0}
           onConfirm={async ({ payerSig, recipientSig }) => {
-            const regName = registerMap[printingEntry.register_id]?.name || 'Főpénztár';
-            const receiptNo = receiptNumbers[printingEntry.id] || 'N/A';
-            await generateCashReceiptPdf({
-              receiptNumber: receiptNo,
+            const reg = registers.find(r => r.id === printingEntry.register_id);
+            const regName = reg?.name || registerMap[printingEntry.register_id]?.name || 'Főpénztár';
+            const isExp = printingEntry.amount < 0;
+            const absAmount = Math.abs(printingEntry.amount);
+            const receiptNo = printingEntry.receipt_number || receiptNumbers[printingEntry.id] || 'N/A';
+
+            let dbReceipt = null;
+            try {
+              const { data: existing } = await supabase
+                .from('cash_receipts')
+                .select('*')
+                .eq('cash_entry_id', printingEntry.id)
+                .maybeSingle();
+
+              if (existing) {
+                await supabase.from('cash_receipts').update({
+                  payer_signature: payerSig || existing.payer_signature,
+                  recipient_signature: recipientSig || existing.recipient_signature,
+                  printed_copy_count: (existing.printed_copy_count || 0) + 1,
+                  last_printed_at: new Date().toISOString(),
+                }).eq('id', existing.id);
+                dbReceipt = { ...existing, payer_signature: payerSig, recipient_signature: recipientSig };
+              } else {
+                const { data: created } = await (supabase.rpc as any)('create_cash_receipt_with_seq', {
+                  p_company_id: companyId,
+                  p_cash_register_id: printingEntry.register_id,
+                  p_cash_entry_id: printingEntry.id,
+                  p_receipt_type: isExp ? 'out' : 'in',
+                  p_issued_at: printingEntry.entry_date,
+                  p_payer_or_payee_name: printingEntry.payee_name || (printingEntry as any).partner?.name || (isExp ? 'Kedvezményezett' : 'Befizető'),
+                  p_payer_or_payee_address: (printingEntry as any).partner?.address || null,
+                  p_amount: absAmount,
+                  p_currency: printingEntry.currency,
+                  p_amount_in_words: numberToWordsHu(absAmount),
+                  p_legal_title: printingEntry.description || (isExp ? 'Készpénz kifizetés' : 'Készpénz bevételezés'),
+                  p_description: printingEntry.description || null,
+                  p_partner_id: printingEntry.partner_id || null,
+                  p_payer_signature: payerSig || null,
+                  p_recipient_signature: recipientSig || null,
+                  p_source_doc_type: (printingEntry as any).source_table === 'invoices' ? 'invoice' : null,
+                  p_source_doc_id: (printingEntry as any).source_id ? String((printingEntry as any).source_id) : null,
+                });
+                dbReceipt = created;
+              }
+            } catch (err) {
+              console.warn('Could not sync cash_receipts:', err);
+            }
+
+            // Print official 2-copy Hungarian voucher (Sztv. 165-167. §)
+            printCashReceipt({
+              receipt: {
+                receipt_number: dbReceipt?.receipt_number || receiptNo,
+                receipt_type: isExp ? 'out' : 'in',
+                issued_at: printingEntry.entry_date,
+                amount: absAmount,
+                currency: printingEntry.currency,
+                payer_or_payee_name: printingEntry.payee_name || (printingEntry as any).partner?.name || (isExp ? 'Kedvezményezett' : 'Befizető'),
+                payer_or_payee_address: (printingEntry as any).partner?.address || undefined,
+                legal_title: printingEntry.description || (isExp ? 'Készpénz kifizetés' : 'Készpénz bevételezés'),
+                description: printingEntry.description || undefined,
+                amount_in_words: numberToWordsHu(absAmount),
+                payer_signature: payerSig || dbReceipt?.payer_signature || null,
+                recipient_signature: recipientSig || dbReceipt?.recipient_signature || null,
+                source_doc_type: (printingEntry as any).source_table === 'invoices' ? 'invoice' : null,
+                source_doc_id: (printingEntry as any).source_id ? String((printingEntry as any).source_id) : null,
+              },
               companyName: selectedCompany?.name || '',
-              companyAddress: selectedCompany?.address || '',
-              companyTaxNumber: selectedCompany?.tax_number || '',
-              partnerName: payerSig || selectedCompany?.name || '',
-              amount: printingEntry.amount,
-              currency: printingEntry.currency,
-              paymentReason: printingEntry.description || '',
-              receiptDate: printingEntry.entry_date,
-              payeeName: recipientSig,
-              issuerName: payerSig,
+              companyTaxNumber: selectedCompany?.tax_number || undefined,
+              companyAddress: selectedCompany?.address || undefined,
+              registerName: regName,
+              authorizerName: (reg as any)?.authorizer_user_id ? 'Utalványozó' : undefined,
+              cashierName: (reg as any)?.cashier_user_id ? 'Pénztáros' : user?.email?.split('@')[0],
             });
+
             setPrintingEntry(null);
+            qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
           }}
         />
       )}
+      <CashTimelineErrorDialog
+        open={showTimelineErrorDialog}
+        onOpenChange={setShowTimelineErrorDialog}
+        result={timelineErrorResult}
+      />
     </div>
   );
 }
@@ -1693,6 +1768,7 @@ function ManualEntryDialog({
   partners,
   onOpenCreateRegister,
   newlyCreatedRegisterId,
+  onTimelineError,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -1704,6 +1780,7 @@ function ManualEntryDialog({
   partners: any[];
   onOpenCreateRegister?: () => void;
   newlyCreatedRegisterId?: string | null;
+  onTimelineError?: (res: TimelineIntegrityResult) => void;
 }) {
   const handleClose = () => {
     onOpenChange(false);
@@ -1723,6 +1800,7 @@ function ManualEntryDialog({
           onClose={handleClose}
           onOpenCreateRegister={onOpenCreateRegister}
           initialRegisterId={newlyCreatedRegisterId}
+          onTimelineError={onTimelineError}
         />
       )}
     </Dialog>
@@ -1738,6 +1816,7 @@ interface ManualEntryDialogContentProps {
   onClose: () => void;
   onOpenCreateRegister?: () => void;
   initialRegisterId?: string | null;
+  onTimelineError?: (res: TimelineIntegrityResult) => void;
 }
 
 function ManualEntryDialogContent({
@@ -1749,6 +1828,7 @@ function ManualEntryDialogContent({
   onClose,
   onOpenCreateRegister,
   initialRegisterId,
+  onTimelineError,
 }: ManualEntryDialogContentProps) {
   const { t } = useTranslation(['pettyCash', 'common']);
   const qc = useQueryClient();
@@ -1780,6 +1860,8 @@ function ManualEntryDialogContent({
         partner_id: editingEntry.partner_id || '',
         receipt_number: editingEntry.receipt_number || '',
         payee_name: editingEntry.payee_name || '',
+        source_doc_type: (editingEntry as any).source_doc_type || ((editingEntry as any).source_table === 'invoices' ? 'invoice' : ''),
+        source_doc_id: (editingEntry as any).source_doc_id || ((editingEntry as any).source_id ? String((editingEntry as any).source_id) : ''),
         isVat: isVatEntry,
         netAmount: isVatEntry && netAmt > 0 ? String(netAmt) : '',
         vatPercent: pct,
@@ -1800,6 +1882,8 @@ function ManualEntryDialogContent({
       partner_id: '',
       receipt_number: '',
       payee_name: '',
+      source_doc_type: '',
+      source_doc_id: '',
       isVat: false,
       netAmount: '',
       vatPercent: 27,
@@ -2130,6 +2214,36 @@ function ManualEntryDialogContent({
       }
 
       const signed = form.isExpense ? -Math.abs(rawAmount) : Math.abs(rawAmount);
+
+      // Check timeline integrity before saving (hard-stop if negative balance)
+      const { data: integrityData, error: integrityErr } = await (supabase.rpc as any)('check_petty_cash_timeline_integrity', {
+        p_company_id: companyId,
+        p_register_id: validRegisterId,
+        p_currency: form.currency,
+        p_candidate_date: form.entry_date,
+        p_candidate_amount: signed,
+        p_exclude_entry_id: editingEntry?.id || null,
+      });
+
+      if (integrityErr) {
+        console.warn('Timeline check warning:', integrityErr);
+      } else if (integrityData && !(integrityData as any).valid) {
+        if (onTimelineError) {
+          onTimelineError(integrityData as any);
+        }
+        throw new Error((integrityData as any).message || 'Negatív pénztáregyenleg tilalma (Sztv. 165. §)!');
+      }
+
+      // Check mandatory attachment policy (Pénzkezelési Szabályzat)
+      if (selectedReg?.attachment_required && !form.source_doc_id?.trim() && !form.source_doc_type && !editingEntry?.source_id) {
+        toast({
+          title: 'Kötelező forrásbizonylat (Pénzkezelési Szabályzat)',
+          description: 'A kiválasztott pénztárhoz kötelező megadni a forrásdokumentum típusát és azonosítóját!',
+          variant: 'destructive',
+        });
+        throw new Error('Kötelező forrásbizonylat megadása!');
+      }
+
       const rounded = roundHuf(signed, form.currency);
       const finalPartnerId = sanitizePartnerId(form.partner_id);
       const finalPayee = form.payee_name?.trim() || null;
@@ -2302,6 +2416,28 @@ function ManualEntryDialogContent({
   const deleteEntry = useMutation({
     mutationFn: async () => {
       if (!editingEntry) return;
+
+      if (editingEntry.amount > 0) {
+        // Deleting an income reduces cash by that amount -> could cause negative balance!
+        const { data: integrityData, error: integrityErr } = await (supabase.rpc as any)('check_petty_cash_timeline_integrity', {
+          p_company_id: companyId,
+          p_register_id: editingEntry.register_id,
+          p_currency: editingEntry.currency,
+          p_candidate_date: null,
+          p_candidate_amount: null,
+          p_exclude_entry_id: editingEntry.id,
+        });
+
+        if (integrityErr) {
+          console.warn('Timeline check warning on delete:', integrityErr);
+        } else if (integrityData && !(integrityData as any).valid) {
+          if (onTimelineError) {
+            onTimelineError(integrityData as any);
+          }
+          throw new Error((integrityData as any).message || 'A tétel törlése későbbi negatív pénztáregyenleget okozna (Sztv. 165. §)!');
+        }
+      }
+
       if (editingEntry.source_type === 'transfer') {
         const { error } = await (supabase.rpc as any)('delete_petty_cash_transfer', {
           p_entry_id: editingEntry.id,
@@ -2739,6 +2875,61 @@ function ManualEntryDialogContent({
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 placeholder={t('pettyCash:manual_entry_dialog.desc_placeholder', 'Készpénzes vásárlás, irodaszer, stb.')}
               />
+            </div>
+
+            {/* Row 4.1: Forrásbizonylat & Csatolmány (Sztv. 165. §) */}
+            <div className="p-3 bg-muted/30 border border-border/70 rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-primary" />
+                  <span>Forrásbizonylat (Sztv. 165. §)</span>
+                </Label>
+                {selectedReg?.attachment_required ? (
+                  <Badge variant="destructive" className="text-[9px] uppercase font-bold px-1.5 py-0">
+                    Kötelező forrásbizonylat
+                  </Badge>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">Opcionális</span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="source-doc-type" className="text-[11px] text-muted-foreground mb-1 block">
+                    Bizonylat jellege
+                  </Label>
+                  <Select
+                    value={form.source_doc_type || 'none'}
+                    onValueChange={(val) => setForm(f => ({ ...f, source_doc_type: val === 'none' ? '' : val }))}
+                  >
+                    <SelectTrigger id="source-doc-type" className="h-8 text-xs">
+                      <SelectValue placeholder="Válasszon típust..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nincs külön forrásdokumentum</SelectItem>
+                      <SelectItem value="invoice">Számla / Egyszerűsített számla</SelectItem>
+                      <SelectItem value="payroll">Bérkifizetési jegyzék / Bérlista</SelectItem>
+                      <SelectItem value="travel_order">Kiküldetési rendelvény</SelectItem>
+                      <SelectItem value="bank_withdrawal">Banki készpénzfelvételi bizonylat</SelectItem>
+                      <SelectItem value="owner_loan">Tulajdonosi tagi kölcsön szerződés</SelectItem>
+                      <SelectItem value="other">Egyéb bizonylat</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="source-doc-id" className="text-[11px] text-muted-foreground mb-1 block">
+                    Bizonylatszám / Hivatkozás
+                  </Label>
+                  <Input
+                    id="source-doc-id"
+                    value={form.source_doc_id}
+                    onChange={(e) => setForm(f => ({ ...f, source_doc_id: e.target.value }))}
+                    placeholder="pl. SZLA-2026/044, BER-2026-10..."
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Row 5: Bevétel / Kiadás Selector */}

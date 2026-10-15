@@ -6,7 +6,9 @@
     "registers": "Pénztárak",
     "rules": "Routing szabályok",
     "approvals": "Jóváhagyások",
-    "reports": "Pénztárjelentések"
+    "reports": "Pénztárjelentések",
+    "reconciliation": "Főkönyvi Egyezőség & Deviza (381/382)",
+    "partner_limits": "Art. 114. § 1,5M Kp. Limit"
   },
   "total_summary": "Összesítés",
   "default_badge": "Alapértelmezett",
