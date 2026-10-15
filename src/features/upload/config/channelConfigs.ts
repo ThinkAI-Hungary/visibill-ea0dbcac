@@ -176,6 +176,8 @@ export const BANK_HINT_OPTIONS: BankHintOption[] = [
   { value: 'wise', label: 'Wise', group: 'fintech' },
   { value: 'szallas', label: 'Szallas.hu', group: 'other', hint: '(virtuális bank / elszámolás)' },
   { value: 'szep', label: 'SZÉP Kártya', group: 'other', hint: '(elfogadóhelyi)' },
+  { value: 'otp_pos', label: 'OTP POS / Kártyaelfogadó', group: 'other', hint: '(virtuális bank / elszámolás)' },
+  { value: 'amex_pos', label: 'OTP AMEX Elfogadó', group: 'other', hint: '(virtuális bank / elszámolás)' },
   { value: 'zaba', label: 'Zagrebačka banka (ZABA)', group: 'other' },
   { value: 'minimax', label: 'Minimax / e-racuni', group: 'other' },
 ];

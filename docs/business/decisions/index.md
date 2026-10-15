@@ -159,5 +159,6 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 072 | Tárgyi Eszköz Analitika, Sztv. és Tao Értékcsökkenés, Leltározási, Kivezetési és Pályázati PIE Számviteli Szabályzat | ✅ Decided | [072-fixed-assets-statutory-accounting-inventory-and-grant-policy.md](./072-fixed-assets-statutory-accounting-inventory-and-grant-policy.md) |
 | 073 | Főkönyvi Nyitó Egyenlegek Folytonossága, Virtuális Bankszámlák és Egydevizás Házipénztár Szabályzat | ✅ Decided | [073-gl-opening-continuity-virtual-banks-and-single-currency-cash-policy.md](./073-gl-opening-continuity-virtual-banks-and-single-currency-cash-policy.md) |
 | 074 | Fakov Kft. Infotéka (Kontír.NET) AuditXML Főkönyvi Egyeztetés és Könyvelési Összehangolás | ✅ Decided | [074-fakov-infoteka-auditxml-reconciliation-and-gl-alignment.md](./074-fakov-infoteka-auditxml-reconciliation-and-gl-alignment.md) |
+| 075 | Bankkártyás és AMEX Elfogadói Göngyölegek Feldolgozása Virtuális Bankként és Zéró-Egyenlegű Főkönyvi Elszámolása | ✅ Decided | [075-pos-and-amex-card-settlement-virtual-banking-and-gl-clearing.md](./075-pos-and-amex-card-settlement-virtual-banking-and-gl-clearing.md) |
 
 

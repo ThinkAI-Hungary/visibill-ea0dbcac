@@ -316,5 +316,6 @@
 | P-187 | RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Exportok UX | ✅ Decided | [P-187](./P-187-rlb-general-ledger-basic-and-extended-templates-ux.md) |
 | P-189 | Pénztárak Egyetlen Devizaneme, Szallas.hu Virtuális Bank, Főkönyvi Default Nézet (0-szűrés és Dinamikus Osztálybontás), ÁFA Sablon Kiszélesítés és Nyitó Sablon Parser UX | ✅ Decided | [P-189](./P-189-eaisybooks-gl-defaults-petty-cash-currency-and-virtual-bank-ux.md) |
 | P-190 | Fakov Kft. Infotéka (Kontír.NET) Főkönyvi Rekonciliáció és Összehasonlító Kivonat UX | ✅ Decided | [P-190-fakov-infoteka-general-ledger-reconciliation-ux.md](./P-190-fakov-infoteka-general-ledger-reconciliation-ux.md) |
+| P-191 | Bankkártyás POS és AMEX Göngyölegek Virtuális Banki Feldolgozása, Tételes Tranzakció Generálás és Kereskedői Elszámolási UX | ✅ Decided | [P-191](./P-191-bankcard-pos-settlement-virtual-bank-and-accounting-ux.md) |
 
 
