@@ -9,8 +9,11 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/h
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
-import { ChevronDown, Scale, FileText, Package, Sparkles, DownloadCloud, Loader2, Clock, Ban } from 'lucide-react';
+import { ChevronDown, Scale, FileText, Package, Sparkles, DownloadCloud, Loader2, Clock, Ban, Percent } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import type { InvoiceProjectSummary } from '@/lib/invoiceProjectSummary';
 import { useSyncSzamlazzOutbound, useSzamlazzStatus } from '@/hooks/useSzamlazzSync';
 import { getInitials, getAvatarColor } from '@/lib/helpers';
 import { normalizeInvoiceNumber } from '@/lib/invoiceMatchingUtils';
@@ -40,6 +43,7 @@ interface NavInvoiceRowProps {
   onRowClick: (invoiceId: string, e: React.MouseEvent) => void;
   onToggleExclude: (invoiceId: string, currentValue: boolean) => Promise<void>;
   onOpenExclusionDialog?: (invoice: NavInvoice) => void;
+  itemProjectSummary?: InvoiceProjectSummary;
 }
 
 interface LazyRowSelectProps {
@@ -110,6 +114,7 @@ function NavInvoiceRowComponent({
   onRowClick,
   onToggleExclude,
   onOpenExclusionDialog,
+  itemProjectSummary,
 }: NavInvoiceRowProps) {
   const { t } = useTranslation(['invoices', 'common']);
   const { defaultCurrency } = useCompanyJurisdiction();
@@ -150,7 +155,8 @@ function NavInvoiceRowComponent({
   const submittedMatches = useMemo(() => navToSubmittedMap.get(navKey) || [], [navToSubmittedMap, navKey]);
   const isLastViewed = lastViewedInvoiceId === invoice.id || (submittedMatches.length > 0 && submittedMatches.some(s => s.id === lastViewedInvoiceId));
   const effectiveCategoryId = invoice.category_id || submittedMatches[0]?.category_id || null;
-  const effectiveProjectId = invoice.project_id || submittedMatches[0]?.project_id || null;
+  const hasMultiProjects = Boolean(itemProjectSummary?.hasMultiProjects);
+  const effectiveProjectId = invoice.project_id || submittedMatches[0]?.project_id || itemProjectSummary?.singleProjectId || null;
 
   const rawPartnerName = getInvoicePartnerName(invoice);
   const isOutbound = invoice.invoice_direction === 'OUTBOUND';
@@ -743,12 +749,103 @@ function NavInvoiceRowComponent({
         )}
 
         <TableCell className="text-center">
-          <LazyRowSelect
-            value={effectiveProjectId}
-            items={projects}
-            onChange={(value) => handleProjectChange(invoice.id, value)}
-            disabled={!writable}
-          />
+          {hasMultiProjects && itemProjectSummary ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  role="combobox"
+                  style={{ outline: 'none' }}
+                  className={cn(
+                    "h-7 px-2 text-xs w-full max-w-[130px] justify-between bg-primary/5 hover:bg-primary/10 border-primary/30 text-primary font-medium mx-auto",
+                    "transition-colors duration-150",
+                    "outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 focus-visible:ring-offset-0",
+                    "[outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]",
+                    "[box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]"
+                  )}
+                  onClick={(e) => e.stopPropagation()}
+                  title="Több projekt között felosztva"
+                >
+                  <div className="flex items-center gap-1 truncate">
+                    <Percent className="w-3 h-3 text-primary shrink-0" />
+                    <span className="truncate">{itemProjectSummary.totalProjectCount} projekt</span>
+                  </div>
+                  <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-primary/15 text-primary font-mono shrink-0">
+                    {itemProjectSummary.totalProjectCount}
+                  </Badge>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-80 p-3 text-xs shadow-lg space-y-2.5"
+                align="center"
+                onCloseAutoFocus={(e) => e.preventDefault()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between border-b pb-2">
+                  <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                    <Percent className="w-4 h-4 text-primary" />
+                    <span>Költségmegosztás ({itemProjectSummary.totalProjectCount} projekt)</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                  {itemProjectSummary.allocations.map((alloc) => {
+                    const proj = projects.find((p) => p.id === alloc.projectId);
+                    return (
+                      <div key={alloc.projectId} className="flex items-center justify-between p-1.5 rounded-md bg-muted/40 border border-border/40 text-xs">
+                        <div className="flex items-center gap-1.5 truncate max-w-[160px]">
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: proj?.color || '#3b82f6' }}
+                          />
+                          <span className="font-medium truncate" title={proj?.name || alloc.projectId}>
+                            {proj?.name || 'Ismeretlen projekt'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 font-mono text-[11px] shrink-0">
+                          {alloc.percentage !== undefined && (
+                            <span className="text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-semibold">
+                              {alloc.percentage}%
+                            </span>
+                          )}
+                          {alloc.amount !== undefined && alloc.amount > 0 && (
+                            <span className="font-medium text-foreground">
+                              {formatCurrency(alloc.amount, invoice.currency || defaultCurrency)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="pt-2 border-t border-border">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10 gap-1.5 w-full justify-center"
+                    onClick={() => {
+                      setSelectedNavInvoice(invoice);
+                      setItemsDialogOpen(true);
+                      setInvoiceParam(invoice.id);
+                      setLastViewedInvoiceId(invoice.id);
+                    }}
+                  >
+                    <Package className="w-3.5 h-3.5" />
+                    <span>Tételek és allokációk megtekintése</span>
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <LazyRowSelect
+              value={effectiveProjectId}
+              items={projects}
+              onChange={(value) => handleProjectChange(invoice.id, value)}
+              disabled={!writable}
+            />
+          )}
         </TableCell>
 
         <TableCell className="text-center">

@@ -158,11 +158,15 @@ export function FloatingBulkBar({
             size="sm"
             disabled={!saveAllowed}
             onClick={onSave}
+            style={{ outline: 'none' }}
             className={cn(
-              'h-9 text-xs gap-1.5 rounded-lg font-semibold shadow-sm transition-all shrink-0 px-3',
+              'h-9 text-xs gap-1.5 rounded-lg font-semibold shrink-0 px-3',
+              'transition-colors duration-150',
+              'outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 focus-visible:ring-offset-0',
+              '[outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]',
               isDirty
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20 animate-in fade-in zoom-in-95'
-                : 'opacity-50 cursor-not-allowed'
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20 animate-in fade-in zoom-in-95'
+                : 'opacity-50 cursor-not-allowed [box-shadow:none!important]'
             )}
           >
             {isSaving ? (
@@ -182,7 +186,14 @@ export function FloatingBulkBar({
           type="button"
           variant="outline"
           size="sm"
-          className="h-9 text-xs px-3 text-muted-foreground hover:text-foreground bg-background/80 hover:bg-accent/60 border-border/80 rounded-lg transition-colors font-medium gap-1 shrink-0"
+          style={{ outline: 'none' }}
+          className={cn(
+            'h-9 text-xs px-3 text-muted-foreground hover:text-foreground bg-background/80 hover:bg-accent/60 border-border/80 rounded-lg font-medium gap-1 shrink-0',
+            'transition-colors duration-150',
+            'outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 focus-visible:ring-offset-0',
+            '[outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]',
+            '[box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]'
+          )}
           onClick={onCancel}
         >
           <X className="w-3.5 h-3.5" />

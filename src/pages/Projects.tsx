@@ -250,6 +250,7 @@ const Projects = () => {
               .select(`
                 id,
                 project_id,
+                project_allocations,
                 net_amount,
                 vat_amount,
                 gross_amount,
@@ -268,7 +269,7 @@ const Projects = () => {
                 )
               `)
               .eq('company_id', selectedCompany!.id)
-              .not('project_id', 'is', null)
+              .or('project_id.not.is.null,project_allocations.not.is.null')
               .range(itemFrom, itemFrom + PAGE_SIZE - 1);
 
             if (itemsError) throw itemsError;
@@ -316,9 +317,8 @@ const Projects = () => {
         });
       });
 
-      // B. Process explicit line item assignments
+      // B. Process explicit line item assignments (including multi-project percentage splits)
       lineItemAssignments.forEach((assignment: any) => {
-        const itemProjectId = assignment.project_id;
         const parentInv = assignment.nav_invoices;
         if (!parentInv) return;
 
@@ -326,47 +326,71 @@ const Projects = () => {
         const itemGross = parseFloat(assignment.gross_amount) || 
                           (parseFloat(assignment.net_amount) || 0) + (parseFloat(assignment.vat_amount) || 0);
 
-        // Case: The item's project is different from the parent's project (override)
-        if (itemProjectId !== parentProjectId) {
-          // If parent had a project, subtract the overridden item's amount from parent's project portion
-          if (parentProjectId) {
-            const parentProjMap = projectInvoicePortions.get(parentProjectId);
-            if (parentProjMap && parentProjMap.has(parentInv.id)) {
-              const current = parentProjMap.get(parentInv.id)!;
-              current.portionGross = Math.max(0, current.portionGross - itemGross);
-              current.isPartial = true;
-            }
-          }
+        // Normalize allocations: multi-project allocations take precedence, fallback to single project_id
+        const rawAllocations = assignment.project_allocations;
+        const allocations: Array<{ project_id: string; percentage: number }> =
+          Array.isArray(rawAllocations) && rawAllocations.length > 0
+            ? rawAllocations
+            : assignment.project_id
+              ? [{ project_id: assignment.project_id, percentage: 100 }]
+              : [];
 
-          // Add the item's amount to the item's project
-          if (!projectInvoicePortions.has(itemProjectId)) {
-            projectInvoicePortions.set(itemProjectId, new Map());
+        if (allocations.length === 0) return;
+
+        // If parent invoice had a project, and the item has explicit assignment:
+        // We subtract the item's full gross amount from the parent project's portion.
+        // (If the parent project is one of the allocated projects, it will get its allocated share added below).
+        if (parentProjectId) {
+          const parentProjMap = projectInvoicePortions.get(parentProjectId);
+          if (parentProjMap && parentProjMap.has(parentInv.id)) {
+            const current = parentProjMap.get(parentInv.id)!;
+            current.portionGross = Math.max(0, current.portionGross - itemGross);
+            current.isPartial = true;
           }
-          const itemProjMap = projectInvoicePortions.get(itemProjectId)!;
-          if (itemProjMap.has(parentInv.id)) {
-            const current = itemProjMap.get(parentInv.id)!;
-            current.portionGross += itemGross;
+        }
+
+        // Add the allocated portions to their respective projects
+        allocations.forEach((alloc) => {
+          const targetProjectId = alloc.project_id;
+          if (!targetProjectId) return;
+
+          const pct = Number(alloc.percentage) || 0;
+          if (pct <= 0) return;
+
+          const allocatedGross = Math.round((itemGross * (pct / 100)) * 100) / 100;
+
+          if (!projectInvoicePortions.has(targetProjectId)) {
+            projectInvoicePortions.set(targetProjectId, new Map());
+          }
+          const projMap = projectInvoicePortions.get(targetProjectId)!;
+
+          const itemDescWithPct = allocations.length > 1
+            ? `${assignment.line_description || 'Tétel'} (${pct}%)`
+            : (assignment.line_description || 'Tétel');
+
+          if (projMap.has(parentInv.id)) {
+            const current = projMap.get(parentInv.id)!;
+            current.portionGross += allocatedGross;
             current.isPartial = true;
             current.assignedItems.push({
               line_number: assignment.line_number,
-              line_description: assignment.line_description,
-              gross_amount: itemGross
+              line_description: itemDescWithPct,
+              gross_amount: allocatedGross,
             });
           } else {
-            // Map parentInv to have project_id = itemProjectId for matching
-            const mappedInv = { ...parentInv, project_id: itemProjectId };
-            itemProjMap.set(parentInv.id, {
+            const mappedInv = { ...parentInv, project_id: targetProjectId };
+            projMap.set(parentInv.id, {
               invoice: mappedInv,
-              portionGross: itemGross,
+              portionGross: allocatedGross,
               isPartial: true,
               assignedItems: [{
                 line_number: assignment.line_number,
-                line_description: assignment.line_description,
-                gross_amount: itemGross
-              }]
+                line_description: itemDescWithPct,
+                gross_amount: allocatedGross,
+              }],
             });
           }
-        }
+        });
       });
 
       // Flatten map to get assignedInvoices list and financials

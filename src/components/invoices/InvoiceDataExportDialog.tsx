@@ -31,7 +31,10 @@ export interface ExportableInvoice {
   paid_amount?: number | null;
   remaining_amount?: number | null;
   submitted?: boolean;
+  category_id?: string | null;
   category_name?: string;
+  project_id?: string | null;
+  project_allocations?: any[] | null;
   project_name?: string;
   image_url?: string;
   melleklet_url?: string;

@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
 > **Utoljára frissítve:** 2026-10-15  
-> **Összesen:** 73 döntés | ✅ Decided: 60 | 🟡 Partially Decided: 7 | ⛔ Superseded: 1 | 🔴 Open: 5
+> **Összesen:** 74 döntés | ✅ Decided: 61 | 🟡 Partially Decided: 7 | ⛔ Superseded: 1 | 🔴 Open: 5
 
 ---
 
@@ -158,5 +158,6 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 071 | Bérszámfejtés, Sztv. 471 Főkönyvi Egyeztetés és Banki GIRO Kifizetés-ellenőrzési Szabályzat | ✅ Decided | [071-payroll-statutory-reconciliation-and-bank-giro-policy.md](./071-payroll-statutory-reconciliation-and-bank-giro-policy.md) |
 | 072 | Tárgyi Eszköz Analitika, Sztv. és Tao Értékcsökkenés, Leltározási, Kivezetési és Pályázati PIE Számviteli Szabályzat | ✅ Decided | [072-fixed-assets-statutory-accounting-inventory-and-grant-policy.md](./072-fixed-assets-statutory-accounting-inventory-and-grant-policy.md) |
 | 073 | Főkönyvi Nyitó Egyenlegek Folytonossága, Virtuális Bankszámlák és Egydevizás Házipénztár Szabályzat | ✅ Decided | [073-gl-opening-continuity-virtual-banks-and-single-currency-cash-policy.md](./073-gl-opening-continuity-virtual-banks-and-single-currency-cash-policy.md) |
+| 074 | Számlatételek Többes Projekt-Költségmegosztása és 100%-os Érvényesítése | ✅ Decided | [074-multi-project-item-allocations-and-cost-split.md](./074-multi-project-item-allocations-and-cost-split.md) |
 
 

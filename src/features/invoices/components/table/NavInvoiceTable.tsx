@@ -17,6 +17,7 @@ import { useSzamlazzStatus } from '@/hooks/useSzamlazzSync';
 import type { SubmittedInvoice, TransactionRecord } from '../../types';
 import type { SuggestedSubmittedInvoiceWithScore } from '../../utils/invoiceRelations';
 import type { InvoiceDeductibilitySummary } from '../../hooks/usePageDeductibilityMap';
+import { useInvoiceItemProjectAllocations } from '../../hooks/useInvoiceItemProjectAllocations';
 
 interface NavInvoiceTableProps {
   navToSubmittedMap: Map<string, SubmittedInvoice[]>;
@@ -64,6 +65,9 @@ export function NavInvoiceTable({
 
   const { data: szamlazzStatus } = useSzamlazzStatus(companyId);
   const hasSzamlazzKey = Boolean(szamlazzStatus?.hasAgentKey);
+
+  const visibleNavInvoiceIds = React.useMemo(() => paginatedNavInvoices.map((i) => i.id), [paginatedNavInvoices]);
+  const { data: itemProjectSummaries } = useInvoiceItemProjectAllocations(companyId, visibleNavInvoiceIds, 'nav');
 
   const [tableContainerEl, setTableContainerEl] = React.useState<HTMLDivElement | null>(null);
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
@@ -279,6 +283,7 @@ export function NavInvoiceTable({
                       onRowClick={onRowClick}
                       onToggleExclude={onToggleExclude}
                       onOpenExclusionDialog={onOpenExclusionDialog}
+                      itemProjectSummary={itemProjectSummaries?.[invoice.id]}
                     />
                   ))
                 )}

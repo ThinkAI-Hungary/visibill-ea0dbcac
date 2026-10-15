@@ -125,10 +125,11 @@
 | deferred_vat_reason | text | ✓ | NULL | Halasztás indoka |
 | deferred_vat_since | timestamp with time zone | ✓ | NULL | Halasztás időpontja |
 | deferred_vat_target_period | text | ✓ | NULL | Célidőszak `'YYYY-MM'` |
+| project_allocations | jsonb | ✓ | NULL | Többes projekt-költségmegosztás JSON tömbje: `[{"project_id": uuid, "percentage": number}]` (lásd [A-260](../decisions/A-260-multi-project-item-allocations-and-financial-split.md)) |
 
 **FK:** `invoice_id` → `invoices.id`, `project_id` → `projects.id`, `vat_code_id` → `vat_codes.id`
 
-**Indexek:** `idx_invoice_items_invoice_id`, `idx_invoice_items_vat_code_id`, `idx_invoice_items_partial_deductible` (`invoice_id` WHERE `deductible_percentage < 100`) — O(1) részleges index nem levonható ÁFA-tételekhez (lásd [A-134](../decisions/A-134-non-deductible-vat-lifecycle-and-partial-indexes.md))
+**Indexek:** `idx_invoice_items_invoice_id`, `idx_invoice_items_vat_code_id`, `idx_invoice_items_project_allocations` (GIN a `project_allocations` oszlopon), `idx_invoice_items_partial_deductible` (`invoice_id` WHERE `deductible_percentage < 100`) — O(1) részleges index nem levonható ÁFA-tételekhez (lásd [A-134](../decisions/A-134-non-deductible-vat-lifecycle-and-partial-indexes.md))
 
 ---
 

@@ -14,6 +14,7 @@ import { usePdfExport } from '@/hooks/usePdfExport';
 import { isNavAndSubmittedInvoiceMatch } from '@/lib/invoiceMatchingUtils';
 import { exportToFile, exportMultiTableDocument } from '@/lib/exportUtils';
 import { supabase } from '@/integrations/supabase/client';
+import type { ItemProjectAllocation } from '@/types/invoices';
 import type {
   NavInvoice,
   SubmittedInvoice,
@@ -169,7 +170,7 @@ export interface InvoiceContextValue
   handleToggleSubmitted: (invoice: NavInvoice) => Promise<void>;
   handleExport: (exportFormat: 'csv' | 'xlsx') => void;
   handleBulkCategoryChange: (categoryId: string | null) => Promise<void>;
-  handleBulkProjectChange: (projectId: string | null) => Promise<void>;
+  handleBulkProjectChange: (projectId: string | ItemProjectAllocation[] | null) => Promise<void>;
   handleBulkDeleteSubmitted: (mode?: 'row_only' | 'row_and_file') => Promise<void>;
 }
 
@@ -853,7 +854,10 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         match_status: inv.match_status,
         paid_amount: inv.paid_amount,
         remaining_amount: inv.remaining_amount,
+        category_id: inv.category_id,
         category_name: getCategoryName(inv.category_id),
+        project_id: inv.project_id,
+        project_allocations: (inv as any).project_allocations,
         project_name: getProjectName(inv.project_id),
         image_url: inv.image_url,
         melleklet_url: inv.melleklet_url,
@@ -885,7 +889,11 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
         paid_amount: inv.paid_amount,
         remaining_amount: inv.remaining_amount,
         submitted: inv.submitted,
-        project_name: getProjectName(inv.project_id),
+        category_id: inv.category_id || pairedSub?.category_id,
+        category_name: getCategoryName(inv.category_id || pairedSub?.category_id),
+        project_id: inv.project_id || pairedSub?.project_id,
+        project_allocations: (inv as any).project_allocations || (pairedSub as any)?.project_allocations,
+        project_name: getProjectName(inv.project_id || pairedSub?.project_id),
         image_url: (inv as any).image_url || pairedSub?.image_url,
         melleklet_url: (inv as any).melleklet_url || pairedSub?.melleklet_url,
         source: 'nav',

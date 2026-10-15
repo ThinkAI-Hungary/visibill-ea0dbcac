@@ -7,6 +7,7 @@ import { SubmittedInvoiceRow } from '../components/table/SubmittedInvoiceRow';
 import type { NavInvoice, SubmittedInvoice } from '../types';
 
 vi.mock('@/integrations/supabase/client', () => ({
+  SUPABASE_URL: 'https://mock.supabase.co',
   supabase: {
     from: () => ({
       update: () => ({ eq: vi.fn().mockResolvedValue({ error: null }) }),

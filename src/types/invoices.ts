@@ -22,6 +22,11 @@ export const INVOICE_TYPE_LABELS: Record<string, string> = {
   penztargep_zaras: 'Pénztárgép zárás',
 };
 
+export interface ItemProjectAllocation {
+  project_id: string;
+  percentage: number;
+}
+
 export interface InvoiceAttachment {
   id?: string;
   url: string;

@@ -3,6 +3,8 @@ import type { InvoiceTab, InvoiceFilters, InvoiceKpiSummary, KpiFilterType } fro
 import type { ExportableInvoice, ExportLevel, ExportSheetLayout } from '@/components/invoices/InvoiceDataExportDialog';
 import type { NettingGroup } from '@/hooks/useNettingDetection';
 
+import type { ItemProjectAllocation } from '@/types/invoices';
+
 export type {
   NavInvoice,
   SubmittedInvoice,
@@ -18,6 +20,7 @@ export type {
   ExportLevel,
   ExportSheetLayout,
   NettingGroup,
+  ItemProjectAllocation,
 };
 
 // ── Tab slug ↔ InvoiceTab mapping ──

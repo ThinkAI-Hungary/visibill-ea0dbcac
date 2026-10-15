@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-15  
-> **Összesen:** 258 döntés (243 egyedi döntési fájl) | ✅ Decided: 256 | ⛔ Superseded: 2
+> **Összesen:** 259 döntés (244 egyedi döntési fájl) | ✅ Decided: 257 | ⛔ Superseded: 2
 
 
 ---
@@ -299,6 +299,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-257 | Főkönyvi Kivonat (get_gl_balances) Szerver-oldali Előaggregáció és Atomi JSON RPC (Upstream 504 Timeout Felszámolás) | ✅ Decided | [A-257](./A-257-general-ledger-balances-preaggregation-and-atomic-json-rpc.md) |
 | A-258 | Főkönyvi Nyitó Tételek Évközi Átgörgetése (GL Rollforward) és Bérszámfejtési Utalási Deduplikáció Integritás | ✅ Decided | [A-258](./A-258-gl-opening-balances-rollforward-and-transfers-dedup-integrity.md) |
 | A-259 | invoice_items Multi-Tenant Denormalizáció, PostgREST Lateral Join Timeout Felszámolása és get_unclassified_gl_items Limit Védelem | ✅ Decided | [A-259](./A-259-invoice-items-denormalization-and-unclassified-gl-rpc-limit.md) |
+| A-260 | Multi-Project Számlatétel Költségmegosztás, Zero-Jitter TanStack Cache és Pénzügyi Számítási Architektúra | ✅ Decided | [A-260](./A-260-multi-project-item-allocations-and-financial-split.md) |
 
 
 

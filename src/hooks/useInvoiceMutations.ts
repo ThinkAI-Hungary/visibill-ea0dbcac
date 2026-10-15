@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { exportToFile } from '@/lib/exportUtils';
 import type { NavInvoice, SubmittedInvoice } from './useInvoiceData';
+import type { ItemProjectAllocation } from '@/types/invoices';
 import { reportError } from '@/lib/errorReporter';
 import { extractNavSyncError, isNavTransientError } from '@/lib/nav/navErrorUtils';
 import type { SyncProgress } from '@/components/nav/NavSyncDialog';
@@ -505,45 +506,102 @@ export function useInvoiceMutations({
     }
   };
 
-  const handleBulkProjectChange = async (projectId: string | null) => {
+  const handleBulkProjectChange = async (
+    projectIdOrAllocations: string | ItemProjectAllocation[] | null
+  ) => {
     if (selectedInvoiceIds.size === 0) {
       toast({ title: t('invoices:mutations.no_selection', 'Nincs kijelölt számla'), variant: 'destructive' });
       return;
     }
     const ids = Array.from(selectedInvoiceIds);
-    const value = projectId === 'none' ? null : projectId;
+
+    let singleProjectId: string | null = null;
+    let allocations: ItemProjectAllocation[] | null = null;
+
+    if (Array.isArray(projectIdOrAllocations)) {
+      allocations = projectIdOrAllocations.length > 0 ? projectIdOrAllocations : null;
+      singleProjectId = (allocations && allocations.length === 1 && Math.abs(allocations[0].percentage - 100) < 0.01)
+        ? allocations[0].project_id
+        : null;
+    } else if (projectIdOrAllocations === 'none' || projectIdOrAllocations === null) {
+      singleProjectId = null;
+      allocations = null;
+    } else {
+      singleProjectId = projectIdOrAllocations;
+      allocations = [{ project_id: projectIdOrAllocations, percentage: 100 }];
+    }
+
     try {
       if (isSubmittedTab) {
-        const { error } = await supabase
+        // 1. Update invoices table
+        const { error: invErr } = await supabase
           .from('invoices')
-          .update({ project_id: value })
+          .update({ project_id: singleProjectId })
           .in('id', ids);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('nav_invoices')
-          .update({ project_id: value })
-          .in('id', ids);
-        if (error) throw error;
+        if (invErr) throw invErr;
 
-        // Also update twin invoices in `invoices` table
+        // 2. Update invoice_items table
+        const { error: itemsErr } = await supabase
+          .from('invoice_items')
+          .update({
+            project_id: singleProjectId,
+            project_allocations: allocations,
+          })
+          .in('invoice_id', ids);
+        if (itemsErr) console.warn('Warning updating invoice_items in bulk:', itemsErr);
+      } else {
+        // 1. Update nav_invoices table
+        const { error: navErr } = await supabase
+          .from('nav_invoices')
+          .update({ project_id: singleProjectId })
+          .in('id', ids);
+        if (navErr) throw navErr;
+
+        // 2. Update nav_invoice_items table
+        const { error: navItemsErr } = await supabase
+          .from('nav_invoice_items')
+          .update({
+            project_id: singleProjectId,
+            project_allocations: allocations,
+          })
+          .in('nav_invoice_id', ids);
+        if (navItemsErr) console.warn('Warning updating nav_invoice_items in bulk:', navItemsErr);
+
+        // 3. Also update twin invoices in `invoices` and `invoice_items`
         const selectedInvoices = filteredAndSortedNavInvoices.filter(inv => selectedInvoiceIds.has(inv.id));
         const invoiceNumbers = selectedInvoices.map(inv => inv.invoice_number).filter(Boolean);
         if (invoiceNumbers.length > 0) {
-          await supabase
+          const { data: twinInvoices } = await supabase
             .from('invoices')
-            .update({ project_id: value })
-            .in('bizonylatsorszam', invoiceNumbers);
+            .update({ project_id: singleProjectId })
+            .in('bizonylatsorszam', invoiceNumbers)
+            .select('id');
+
+          const twinIds = (twinInvoices || []).map(t => t.id);
+          if (twinIds.length > 0) {
+            await supabase
+              .from('invoice_items')
+              .update({
+                project_id: singleProjectId,
+                project_allocations: allocations,
+              })
+              .in('invoice_id', twinIds);
+          }
         }
       }
+
       setSelectedInvoiceIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['invoice-item-projects'] });
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems'] });
       invalidateInvoiceData();
-      toast({
-        title: t('invoices:mutations.bulk_project_success', {
-          count: ids.length,
-          defaultValue: `${ids.length} db számla projektje frissítve`,
-        }),
-      });
+
+      const successMessage = allocations && allocations.length > 1
+        ? `${ids.length} db számla felosztva ${allocations.length} projekt között (100%)`
+        : singleProjectId
+          ? `${ids.length} db számla projektje frissítve`
+          : `${ids.length} db számla projektje törölve`;
+
+      toast({ title: successMessage });
     } catch (error) {
       reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error bulk updating project:', error });
       toast({ title: t('invoices:mutations.bulk_project_error', 'Hiba a csoportos projekt hozzárendelésnél'), variant: 'destructive' });

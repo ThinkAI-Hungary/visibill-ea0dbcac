@@ -145,8 +145,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1791972991.7972836,
-    "ast_hash": "c7a932a261fed9f1208ae542c6a9696b",
+    "mtime": 1792054380.0232003,
+    "ast_hash": "696730c5aa32a9987b4e9ee7f08ec358",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -960,8 +960,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useInvoiceMutations.ts": {
-    "mtime": 1791583293.2293558,
-    "ast_hash": "1402a9a2268a89e57357f13633dde8e4",
+    "mtime": 1792053887.3417487,
+    "ast_hash": "6081855381231b1222b8de8af53fa4cf",
     "semantic_hash": ""
   },
   "src/hooks/useKeyboardShortcuts.ts": {
@@ -1515,8 +1515,8 @@
     "semantic_hash": ""
   },
   "src/pages/Projects.tsx": {
-    "mtime": 1791583293.3442185,
-    "ast_hash": "de9ebe4511d422258ad44a16c33960ae",
+    "mtime": 1792052622.8881958,
+    "ast_hash": "18c9894754efb2a5610fe63c0f680cf4",
     "semantic_hash": ""
   },
   "src/pages/ResetPassword.tsx": {
@@ -1570,8 +1570,8 @@
     "semantic_hash": ""
   },
   "src/types/invoices.ts": {
-    "mtime": 1791583293.3981988,
-    "ast_hash": "77c475b39b35b6595b4a8ca9e54cdeae",
+    "mtime": 1792052302.9051008,
+    "ast_hash": "57210e21ea93e67a3ca9ef8cc945237a",
     "semantic_hash": ""
   },
   "src/utils/seedAccounty.ts": {
@@ -2980,8 +2980,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1792041839.3785784,
-    "ast_hash": "212a62b74cc9456997c44941ea07e451",
+    "mtime": 1792056328.6062143,
+    "ast_hash": "d67915f4edb4a5db4bc1eb01ed0a7cfb",
     "semantic_hash": ""
   },
   "docs/architecture/frontend-auth-onboarding.md": {
@@ -3210,8 +3210,8 @@
     "semantic_hash": ""
   },
   "docs/business/decisions/index.md": {
-    "mtime": 1792041708.4876957,
-    "ast_hash": "dbd3d803f5f2a63ff3798687d6914034",
+    "mtime": 1792056346.2588668,
+    "ast_hash": "bae8289687d78170fc4204934209f62d",
     "semantic_hash": ""
   },
   "docs/business/overview.md": {
@@ -3455,8 +3455,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1792041708.4884007,
-    "ast_hash": "7a315c59684eae6291df752a1bb0d77f",
+    "mtime": 1792056359.2402453,
+    "ast_hash": "ee08e30c816af12b8a320dda94cd3271",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -4905,13 +4905,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/database/04-invoices.md": {
-    "mtime": 1791583290.9096308,
-    "ast_hash": "f9848e69767d173676f5e9a4d7882c87",
+    "mtime": 1792056298.0206387,
+    "ast_hash": "ab549507b98b15c769c828c1d307e543",
     "semantic_hash": ""
   },
   "docs/architecture/database/05-nav.md": {
-    "mtime": 1791583290.9101346,
-    "ast_hash": "d818a0da5e42e4bc41a6c9e5f94cc7da",
+    "mtime": 1792056311.353582,
+    "ast_hash": "f383bff65555d7f59ab8c3d392dc2315",
     "semantic_hash": ""
   },
   "docs/architecture/database/06-transactions-bank.md": {
@@ -5790,8 +5790,8 @@
     "semantic_hash": ""
   },
   "src/components/invoices/InvoiceDataExportDialog.tsx": {
-    "mtime": 1791583293.0902932,
-    "ast_hash": "1326b68793980b5a51fdcf44ef4759d7",
+    "mtime": 1792054845.642178,
+    "ast_hash": "6dd0b4e3b6196095023adcb86ba63756",
     "semantic_hash": ""
   },
   "src/components/nav/EvAlertsCenter.tsx": {
@@ -7005,8 +7005,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/actions/InvoiceBulkActionsBar.tsx": {
-    "mtime": 1791583293.1701636,
-    "ast_hash": "4d05dbcea907c2e39a7658bbfbf16900",
+    "mtime": 1792055937.6756759,
+    "ast_hash": "039b630259b4378efbe9dff4794959d3",
     "semantic_hash": ""
   },
   "src/features/invoices/components/dialogs/BulkDeleteDialog.tsx": {
@@ -7050,13 +7050,13 @@
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceRow.tsx": {
-    "mtime": 1791901839.7719405,
-    "ast_hash": "e01e4a4311e2646ac16d10dc1ac4b7d1",
+    "mtime": 1792054353.1853664,
+    "ast_hash": "d3b91c788940eec53ff234f076fec640",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/NavInvoiceTable.tsx": {
-    "mtime": 1791583293.1771643,
-    "ast_hash": "868de9ca4b6b4af9e6aa862fd4d6f884",
+    "mtime": 1792053636.2377267,
+    "ast_hash": "730a25253912f5b734a6eef1613313f1",
     "semantic_hash": ""
   },
   "src/features/invoices/components/table/SubmittedInvoiceRow.tsx": {
@@ -7070,8 +7070,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/context/InvoiceContext.tsx": {
-    "mtime": 1791972988.5648277,
-    "ast_hash": "0331f4840f55ba70856ed24d48df99ff",
+    "mtime": 1792054861.9243658,
+    "ast_hash": "3ab76dbf4acd4b8b270dadc535437749",
     "semantic_hash": ""
   },
   "src/features/invoices/context/useInvoiceContext.ts": {
@@ -7085,8 +7085,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/types/index.ts": {
-    "mtime": 1791583293.1791627,
-    "ast_hash": "73933f436f16fe8b8d1ed74c049f8310",
+    "mtime": 1792052310.297866,
+    "ast_hash": "dd593baaa9b153342be6be9631511b96",
     "semantic_hash": ""
   },
   "src/features/invoices/utils/invoiceRelations.ts": {
@@ -7585,8 +7585,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/_shared/nav/xml-parser.ts": {
-    "mtime": 1791972991.8368483,
-    "ast_hash": "bab4f144240d3ff1ca44ea1943e9e540",
+    "mtime": 1792050200.337179,
+    "ast_hash": "d4587c90ef6855f94e841e740a30d09f",
     "semantic_hash": ""
   },
   "supabase/functions/generate-company-description/index.ts": {
@@ -8485,8 +8485,8 @@
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/InvoiceBulkActionsBar.test.tsx": {
-    "mtime": 1791583293.1671636,
-    "ast_hash": "94e1fc3570f6746b2c61d5f58630377e",
+    "mtime": 1792056035.048241,
+    "ast_hash": "36e96ccf6eaaf97146b77a08a65a9e5a",
     "semantic_hash": ""
   },
   "src/features/invoices/__tests__/invoicePaginationRecovery.test.tsx": {
@@ -9935,8 +9935,8 @@
     "semantic_hash": ""
   },
   "src/components/ui/floating-bulk-bar.tsx": {
-    "mtime": 1791583293.1475205,
-    "ast_hash": "9867447f8beb0a38fde511e0790f61a9",
+    "mtime": 1792054392.5150578,
+    "ast_hash": "da3415488ed3cfd789975698ec375cbf",
     "semantic_hash": ""
   },
   "src/components/ui/floating-bulk-select.tsx": {
@@ -10720,13 +10720,13 @@
     "semantic_hash": ""
   },
   "src/components/nav/NavInvoiceVatSummaryCard.tsx": {
-    "mtime": 1791583293.1110046,
-    "ast_hash": "989a96652e8920006c77999b2bef83b0",
+    "mtime": 1792050200.3361435,
+    "ast_hash": "18749ec4b269a3c126bb8322e7dfeb56",
     "semantic_hash": ""
   },
   "src/lib/nav/__tests__/invoiceSummaryParser.test.ts": {
-    "mtime": 1791583293.2588537,
-    "ast_hash": "ed6e94b66b6455aea3105ccf5ae9c4fe",
+    "mtime": 1792050200.3366623,
+    "ast_hash": "938ffea85c7e9a84bf164f33ec74f1a5",
     "semantic_hash": ""
   },
   "supabase/migrations/20260920190000_add_vat_summary_to_nav_invoices.sql": {
@@ -16804,6 +16804,86 @@
   "session-summary/\u00c1ron/2026-10-15/summary-011500-gl-opening-rollforward-pettycash-currency-and-szallas-bank.md": {
     "mtime": 1792041708.4884007,
     "ast_hash": "0ad6aca52a461dba762883f40d137e25",
+    "semantic_hash": ""
+  },
+  "src/components/invoices/ItemProjectAllocationPopover.tsx": {
+    "mtime": 1792054331.4110408,
+    "ast_hash": "a9dbdc457e34a573ab4a49d679e9c858",
+    "semantic_hash": ""
+  },
+  "src/lib/projectAllocationValidation.ts": {
+    "mtime": 1792052318.867278,
+    "ast_hash": "35cdbe565b79cd49b7d75678fc72b7ee",
+    "semantic_hash": ""
+  },
+  "src/test/invoices/navInvoiceVatSummaryCard.test.tsx": {
+    "mtime": 1792050200.3366623,
+    "ast_hash": "cd61112ca62ec6f26f4f9e49743eff3b",
+    "semantic_hash": ""
+  },
+  "src/test/invoices/projectAllocationValidation.test.ts": {
+    "mtime": 1792052347.17004,
+    "ast_hash": "84dc2a92ec10b4bd42598736589ec41b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261015100000_fix_nav_invoices_vat_summary_blended_rate_bug.sql": {
+    "mtime": 1792050200.3376956,
+    "ast_hash": "06f4fe486728e6e95e259976a29629c3",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261015110000_cleanup_zero_vat_summary_and_backfill_item_rates.sql": {
+    "mtime": 1792050741.783862,
+    "ast_hash": "89a24497d88ae6b9569ff18792533b58",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261015120000_add_invoice_items_project_allocations.sql": {
+    "mtime": 1792052281.4183326,
+    "ast_hash": "2c407a13a4f0ab0b7c57a3658f8de180",
+    "semantic_hash": ""
+  },
+  "docs/architecture/decisions/A-260-multi-project-item-allocations-and-financial-split.md": {
+    "mtime": 1792056387.747774,
+    "ast_hash": "b7354184042882bc852b1e238ec616de",
+    "semantic_hash": ""
+  },
+  "docs/business/decisions/074-multi-project-item-allocations-and-cost-split.md": {
+    "mtime": 1792056419.2528071,
+    "ast_hash": "a203d09d5ffcc2e98fce08c821fdabe7",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-190-multi-project-item-allocations-ux.md": {
+    "mtime": 1792056403.1565802,
+    "ast_hash": "df16fc170faf11b13ba5c7d3da012aff",
+    "semantic_hash": ""
+  },
+  "session-summary/Jani/2026-10-15/summary-095521-nav-zero-vat-blended-rate-and-item-vat-rates-cleanup.md": {
+    "mtime": 1792051024.8141005,
+    "ast_hash": "35a2bc4c9786e3b4b8b9ef1316e0e2bb",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/__tests__/invoiceRowProjectAllocation.test.tsx": {
+    "mtime": 1792056109.042586,
+    "ast_hash": "74277401e75a2ab11f98fffb5d95671b",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/__tests__/useInvoiceItemProjectAllocations.test.tsx": {
+    "mtime": 1792055692.14777,
+    "ast_hash": "1971aed05855072e39791599ba88cf4b",
+    "semantic_hash": ""
+  },
+  "src/features/invoices/hooks/useInvoiceItemProjectAllocations.ts": {
+    "mtime": 1792055725.4983568,
+    "ast_hash": "c9614f35f9ff21a38ecc3c6c1e271996",
+    "semantic_hash": ""
+  },
+  "src/lib/invoiceProjectSummary.ts": {
+    "mtime": 1792053485.836503,
+    "ast_hash": "5a551b3ccd58bf913c35a32b85776b9d",
+    "semantic_hash": ""
+  },
+  "src/test/invoices/invoiceProjectSummary.test.ts": {
+    "mtime": 1792053494.068882,
+    "ast_hash": "5b06a5440f0959372badec6e1b8196ba",
     "semantic_hash": ""
   }
 }

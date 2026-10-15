@@ -26,7 +26,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn, formatVatRate, is27PercentVatRate, normalizeVatRatePercent } from '@/lib/utils';
 import { validateAndResolveItemVat } from '@/lib/invoiceItemVatValidation';
 import { isValidUUID } from '@/lib/validationUtils';
-import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ArrowLeftRight, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark, CalendarClock } from 'lucide-react';
+import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ArrowLeftRight, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark, CalendarClock, Percent } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
@@ -60,6 +60,8 @@ import { computeLineItemDebitCreditSides } from '@/lib/invoiceGlSides';
 import { InvoiceItemAccrualModal } from '@/components/invoices/InvoiceItemAccrualModal';
 import { extractDateRangeFromText } from '@/lib/accrualMath';
 import { getExistingAccrualForInvoice } from '@/features/journals/services/accrualPostingService';
+import { ItemProjectAllocationPopover } from '@/components/invoices/ItemProjectAllocationPopover';
+import type { ItemProjectAllocation } from '@/types/invoices';
 
 interface InvoiceLineItem {
   id: string;
@@ -76,6 +78,7 @@ interface InvoiceLineItem {
   gl_classifications: any | null;
   exclude_from_accounting?: boolean;
   project_id?: string | null;
+  project_allocations?: ItemProjectAllocation[] | null;
   notes?: string | null;
   deductible_percentage?: number | null;
   net_weight_kg?: number | null;
@@ -375,12 +378,17 @@ export function InvoiceItemsDialog({
     }
   };
 
-  // Update item project handler
+  // Update item project handler (single project)
   const handleUpdateItemProject = async (item: InvoiceLineItem, projectId: string | null) => {
     const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const payload = {
+      project_id: projectId,
+      project_allocations: projectId ? [{ project_id: projectId, percentage: 100 }] : null,
+    };
+
     const { error } = await supabase
       .from(table as any)
-      .update({ project_id: projectId })
+      .update(payload)
       .eq('id', item.id);
 
     if (error) {
@@ -397,7 +405,7 @@ export function InvoiceItemsDialog({
       for (const twin of twins) {
         await supabase
           .from(twin.sourceTable as any)
-          .update({ project_id: projectId })
+          .update(payload)
           .eq('id', twin.id);
       }
     } catch (e) {
@@ -405,9 +413,61 @@ export function InvoiceItemsDialog({
     }
 
     queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+    queryClient.invalidateQueries({ queryKey: ['invoice-item-projects'] });
     toast({
       title: t('invoices:dialogs.items.toast_project_updated'),
       description: t('invoices:dialogs.items.toast_project_updated_desc'),
+    });
+  };
+
+  // Update item project allocations handler (multi-project percentage split)
+  const handleUpdateItemProjectAllocations = async (
+    item: InvoiceLineItem,
+    allocations: ItemProjectAllocation[] | null
+  ) => {
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const singleProjectId = (allocations && allocations.length === 1 && Math.abs(allocations[0].percentage - 100) < 0.01)
+      ? allocations[0].project_id
+      : null;
+
+    const payload = {
+      project_id: singleProjectId,
+      project_allocations: allocations && allocations.length > 0 ? allocations : null,
+    };
+
+    const { error } = await supabase
+      .from(table as any)
+      .update(payload)
+      .eq('id', item.id);
+
+    if (error) {
+      toast({
+        title: t('invoices:dialogs.items.toast_project_error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const twins = await findTwinItems(item);
+      for (const twin of twins) {
+        await supabase
+          .from(twin.sourceTable as any)
+          .update(payload)
+          .eq('id', twin.id);
+      }
+    } catch (e) {
+      console.error("Failed to update twin item project allocations:", e);
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+    queryClient.invalidateQueries({ queryKey: ['invoice-item-projects'] });
+    toast({
+      title: 'Projekt allokáció mentve',
+      description: allocations && allocations.length > 1
+        ? `${allocations.length} projekt között felosztva (100%).`
+        : t('invoices:dialogs.items.toast_project_updated_desc'),
     });
   };
 
@@ -487,7 +547,7 @@ export function InvoiceItemsDialog({
   const { data: items = [], isLoading: loading } = useQuery({
     queryKey: ['invoiceItems', source, invoiceId, parentInvoice?.twinNavId, parentInvoice?.twinSubmittedId],
     queryFn: async () => {
-      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, notes, deductible_percentage, net_weight_kg, vat_code_id, vat_code, is_vat_code_manual';
+      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, project_id, project_allocations, notes, deductible_percentage, net_weight_kg, vat_code_id, vat_code, is_vat_code_manual';
       const fullCols = baseCols + ', exclude_from_accounting';
       const fkCol = source === 'submitted' ? 'invoice_id' : 'nav_invoice_id';
       const fromTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
@@ -2117,7 +2177,7 @@ export function InvoiceItemsDialog({
                         {!isOutbound && renderSortableHeader('deductible_percentage', t('invoices:dialogs.items.table.deductibility'), 'center', 'text-center px-1 w-[105px] whitespace-nowrap')}
                         {renderSortableHeader('gross_amount', t('invoices:dialogs.items.table.gross'), 'right', 'text-right px-2 w-[95px] whitespace-nowrap')}
                         {renderSortableHeader('gl_classifications', t('invoices:dialogs.items.table.gl'), 'center', 'text-center px-1 w-[125px] whitespace-nowrap')}
-                        <TableHead className="font-semibold px-2 w-[145px] whitespace-nowrap">{t('invoices:dialogs.items.table.project')}</TableHead>
+                        <TableHead className="font-semibold px-2 w-[165px] whitespace-nowrap">{t('invoices:dialogs.items.table.project')}</TableHead>
                         <TableHead className="font-semibold text-center w-10 px-1 whitespace-nowrap">{t('invoices:dialogs.items.table.note')}</TableHead>
                         <TableHead className="text-center font-semibold w-14 px-1 whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1">
@@ -2642,51 +2702,117 @@ export function InvoiceItemsDialog({
                             );
                           })()}
                         </TableCell>
-                        <TableCell className="px-1.5 w-[145px]">
-                          <div className="flex items-center gap-1.5">
-                            <Select
-                              value={item.project_id || 'INHERITED'}
-                              onValueChange={(val) => {
-                                handleUpdateItemProject(item, val === 'INHERITED' ? null : val);
-                              }}
-                            >
-                              <SelectTrigger className="h-8 text-xs bg-background border-border/60 hover:bg-muted/30 transition-colors w-full">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="max-w-[200px]">
-                                <SelectItem value="INHERITED" className="text-xs text-muted-foreground italic">
-                                  {parentInvoice?.project_id ? (
-                                    <span>{t('invoices:dialogs.items.inherited_project', { name: projectList.find(p => p.id === parentInvoice.project_id)?.name || t('invoices:dialogs.items.table.project') })}</span>
-                                  ) : (
-                                    '-'
+                        <TableCell className="px-1.5 w-[165px]">
+                          <div className="flex items-center gap-1">
+                            {item.project_allocations && item.project_allocations.length > 1 ? (
+                              <ItemProjectAllocationPopover
+                                currentAllocations={item.project_allocations}
+                                currentProjectId={item.project_id}
+                                parentProjectId={parentInvoice?.project_id}
+                                projectList={projectList}
+                                lineDescription={item.line_description}
+                                lineNumber={item.line_number}
+                                onSave={(allocs) => handleUpdateItemProjectAllocations(item, allocs)}
+                              >
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  role="combobox"
+                                  style={{ outline: 'none' }}
+                                  className={cn(
+                                    "h-8 px-2 text-xs w-full justify-between bg-primary/5 hover:bg-primary/10 border-primary/30 text-primary font-medium",
+                                    "transition-colors duration-150",
+                                    "outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 focus-visible:ring-offset-0",
+                                    "[outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]",
+                                    "[box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]"
                                   )}
-                                </SelectItem>
-                                {projectList.map((p) => (
-                                  <SelectItem key={p.id} value={p.id} className="text-xs">
-                                    {p.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                                  title="Többes projekt költségmegosztás szerkesztése"
+                                >
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <Percent className="w-3.5 h-3.5 text-primary shrink-0" />
+                                    <span className="truncate">{item.project_allocations.length} projekt (100%)</span>
+                                  </div>
+                                  <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-primary/15 text-primary font-mono shrink-0">
+                                    {item.project_allocations.length}
+                                  </Badge>
+                                </Button>
+                              </ItemProjectAllocationPopover>
+                            ) : (
+                              <>
+                                <Select
+                                  value={item.project_id || 'INHERITED'}
+                                  onValueChange={(val) => {
+                                    handleUpdateItemProject(item, val === 'INHERITED' ? null : val);
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-xs bg-background border-border/60 hover:bg-muted/30 transition-colors flex-1 min-w-0">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-w-[200px]">
+                                    <SelectItem value="INHERITED" className="text-xs text-muted-foreground italic">
+                                      {parentInvoice?.project_id ? (
+                                        <span>{t('invoices:dialogs.items.inherited_project', { name: projectList.find(p => p.id === parentInvoice.project_id)?.name || t('invoices:dialogs.items.table.project') })}</span>
+                                      ) : (
+                                        '-'
+                                      )}
+                                    </SelectItem>
+                                    {projectList.map((p) => (
+                                      <SelectItem key={p.id} value={p.id} className="text-xs">
+                                        {p.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
 
-                            {(() => {
-                              const classification = (activePresetId && item.gl_classifications?.[activePresetId])
-                                ? item.gl_classifications[activePresetId]
-                                : null;
-                              
-                              if (!item.project_id || !classification?.gl_number) return null;
+                                <ItemProjectAllocationPopover
+                                  currentAllocations={item.project_allocations}
+                                  currentProjectId={item.project_id}
+                                  parentProjectId={parentInvoice?.project_id}
+                                  projectList={projectList}
+                                  lineDescription={item.line_description}
+                                  lineNumber={item.line_number}
+                                  onSave={(allocs) => handleUpdateItemProjectAllocations(item, allocs)}
+                                >
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    role="combobox"
+                                    style={{ outline: 'none' }}
+                                    className={cn(
+                                      "h-8 w-7 px-0 text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0",
+                                      "transition-colors duration-150",
+                                      "outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 focus-visible:ring-offset-0",
+                                      "[outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]",
+                                      "[box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]"
+                                    )}
+                                    title="Költségmegosztás több projekt között (%)"
+                                  >
+                                    <Percent className="w-3.5 h-3.5" />
+                                  </Button>
+                                </ItemProjectAllocationPopover>
 
-                              const projName = projectList.find(p => p.id === item.project_id)?.name || 'Projekt';
+                                {(() => {
+                                  const classification = (activePresetId && item.gl_classifications?.[activePresetId])
+                                    ? item.gl_classifications[activePresetId]
+                                    : null;
+                                  
+                                  if (!item.project_id || !classification?.gl_number) return null;
 
-                              return (
-                                <ItemProjectRuleButton
-                                  item={item}
-                                  classificationGlNumber={classification.gl_number}
-                                  projectName={projName}
-                                  onSaveRule={handleSaveProjectRule}
-                                />
-                              );
-                            })()}
+                                  const projName = projectList.find(p => p.id === item.project_id)?.name || 'Projekt';
+
+                                  return (
+                                    <ItemProjectRuleButton
+                                      item={item}
+                                      classificationGlNumber={classification.gl_number}
+                                      projectName={projName}
+                                      onSaveRule={handleSaveProjectRule}
+                                    />
+                                  );
+                                })()}
+                              </>
+                            )}
                           </div>
                         </TableCell>
                         <ItemNoteCell

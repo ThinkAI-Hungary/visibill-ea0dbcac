@@ -336,6 +336,15 @@ All colors MUST be HSL.
   button[role="combobox"]:focus,
   button[role="combobox"]:focus-visible,
   button[role="combobox"]:active,
+  button[data-radix-popover-trigger]:focus,
+  button[data-radix-popover-trigger]:focus-visible,
+  button[data-radix-popover-trigger]:active,
+  button[aria-haspopup="dialog"]:focus,
+  button[aria-haspopup="dialog"]:focus-visible,
+  button[aria-haspopup="dialog"]:active,
+  [data-testid="floating-bulk-bar"] button:focus,
+  [data-testid="floating-bulk-bar"] button:focus-visible,
+  [data-testid="floating-bulk-bar"] button:active,
   [cmdk-input]:focus,
   [cmdk-input]:focus-visible {
     outline: none !important;
