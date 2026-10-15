@@ -295,6 +295,10 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-253 | RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Export Motor Architektúra | ✅ Decided | [A-253](./A-253-rlb-general-ledger-basic-and-extended-templates-architecture.md) |
 | A-254 | Házipénztár Egyedi Név, Bizonylatszám Szekvencia és 65-ös ÁFA Bizonylat Architektúra | ✅ Decided | [A-254](./A-254-petty-cash-custom-name-voucher-number-and-vat-entry-architecture.md) |
 | A-255 | Technikai Könyvelési és Bérszámfejtési RPC Jogosultságkezelés, Külső Könyvelői Hozzáférés (has_accounty_company_access) és Folyószámla Típusbiztonság | ✅ Decided | [A-255](./A-255-technical-accounting-and-payroll-accountant-access-and-subledger-type-safety.md) |
+| A-256 | Főkönyvi Napló Nézet (JournalView) Szerver-oldali Pagináció, Window Függvények és Lekérdezési Vihar Megszüntetés | ✅ Decided | [A-256](./A-256-general-ledger-journal-view-server-side-pagination-and-window-aggregates.md) |
+| A-257 | Főkönyvi Kivonat (get_gl_balances) Szerver-oldali Előaggregáció és Atomi JSON RPC (Upstream 504 Timeout Felszámolás) | ✅ Decided | [A-257](./A-257-general-ledger-balances-preaggregation-and-atomic-json-rpc.md) |
+| A-258 | Főkönyvi Nyitó Tételek Évközi Átgörgetése (GL Rollforward) és Bérszámfejtési Utalási Deduplikáció Integritás | ✅ Decided | [A-258](./A-258-gl-opening-balances-rollforward-and-transfers-dedup-integrity.md) |
+| A-259 | invoice_items Multi-Tenant Denormalizáció, PostgREST Lateral Join Timeout Felszámolása és get_unclassified_gl_items Limit Védelem | ✅ Decided | [A-259](./A-259-invoice-items-denormalization-and-unclassified-gl-rpc-limit.md) |
 
 
 

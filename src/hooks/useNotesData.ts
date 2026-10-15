@@ -170,7 +170,7 @@ export function useNotesData(companyId: string | undefined) {
             kibocsatas_datuma
           )
         `)
-        .eq('invoices.company_id', companyId)
+        .eq('company_id', companyId)
         .not('notes', 'is', null);
 
       const mappedNavItems = (navItemNotes || []).map((item: any) => {

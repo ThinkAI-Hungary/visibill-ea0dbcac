@@ -68,6 +68,14 @@ function getVatBadgeVariant(item: InvoiceVatSummaryItem) {
     };
   }
 
+  // Védelem: ha a tétel tényleges ÁFA összege 0 Ft, de a történeti aggregáció tévesen pozitív százalékos kulcsot (pl. 18%, 27%) társított hozzá
+  if ((item.vatAmount === 0 || item.vatAmount == null) && (item.netAmount || 0) > 0 && item.category === 'percentage' && ((item.vatPercentage || 0) > 0 || (item.vatRateLiteral && item.vatRateLiteral !== '0%'))) {
+    return {
+      className: 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30',
+      label: item.outOfScopeCase || item.exemptionCase || 'Hatályon kívüli / Mentes (0%)'
+    };
+  }
+
   // Normál százalékos
   return {
     className: 'bg-primary/15 text-primary border-primary/30',

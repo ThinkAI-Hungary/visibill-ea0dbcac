@@ -308,4 +308,173 @@ describe('NAV Online Számla v3.0 – Hivatalos ÁFA Összesítő (<invoiceSumma
     expect(details.lineItems![0].lineDescription).toBe('Szolgáltatás');
     expect(details.lineItems![0].netAmount).toBe(20000);
   });
+
+  it('correctly parses mixed VAT invoice with vatOutOfScope (ATK) official fees and 27% service (invoice 33657198 scenario)', async () => {
+    const rawXml = `<?xml version="1.0" encoding="UTF-8"?>
+<QueryInvoiceDataResponse xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
+  <invoiceDataResult>
+    <invoiceData>
+      <invoiceMain>
+        <invoice>
+          <invoiceHead>
+            <supplierInfo>
+              <supplierTaxNumber><taxpayerId>10574223</taxpayerId></supplierTaxNumber>
+              <supplierName>Óbudai Autójavító Kft</supplierName>
+            </supplierInfo>
+            <customerInfo>
+              <customerTaxNumber><taxpayerId>14160877</taxpayerId></customerTaxNumber>
+              <customerName>Taxology Kft</customerName>
+            </customerInfo>
+          </invoiceHead>
+          <invoiceLines>
+            <line>
+              <lineNumber>1</lineNumber>
+              <lineDescription>Forgalmi engedély hatósági díj</lineDescription>
+              <quantity>1</quantity>
+              <unitOfMeasure>db</unitOfMeasure>
+              <unitPrice>6000.00</unitPrice>
+              <lineAmountsNormal>
+                <lineNetAmountData><lineNetAmount>6000.00</lineNetAmount></lineNetAmountData>
+                <lineVatRate>
+                  <vatOutOfScope>
+                    <case>ATK</case>
+                    <reason>Hatósági díj</reason>
+                  </vatOutOfScope>
+                </lineVatRate>
+                <lineGrossAmountNormal>6000.00</lineGrossAmountNormal>
+              </lineAmountsNormal>
+            </line>
+            <line>
+              <lineNumber>2</lineNumber>
+              <lineDescription>Rendszám hatósági díj</lineDescription>
+              <quantity>1</quantity>
+              <unitOfMeasure>db</unitOfMeasure>
+              <unitPrice>11475.00</unitPrice>
+              <lineAmountsNormal>
+                <lineNetAmountData><lineNetAmount>11475.00</lineNetAmount></lineNetAmountData>
+                <lineVatRate>
+                  <vatOutOfScope>
+                    <case>ATK</case>
+                  </vatOutOfScope>
+                </lineVatRate>
+                <lineGrossAmountNormal>11475.00</lineGrossAmountNormal>
+              </lineAmountsNormal>
+            </line>
+            <line>
+              <lineNumber>3</lineNumber>
+              <lineDescription>Törzskönyv hatósági díj</lineDescription>
+              <quantity>1</quantity>
+              <unitOfMeasure>db</unitOfMeasure>
+              <unitPrice>8000.00</unitPrice>
+              <lineAmountsNormal>
+                <lineNetAmountData><lineNetAmount>8000.00</lineNetAmount></lineNetAmountData>
+                <lineVatRate>
+                  <vatOutOfScope>
+                    <case>ATK</case>
+                  </vatOutOfScope>
+                </lineVatRate>
+                <lineGrossAmountNormal>8000.00</lineGrossAmountNormal>
+              </lineAmountsNormal>
+            </line>
+            <line>
+              <lineNumber>4</lineNumber>
+              <lineDescription>Vagyonszerzési illeték hatósági díj</lineDescription>
+              <quantity>1</quantity>
+              <unitOfMeasure>db</unitOfMeasure>
+              <unitPrice>23375.00</unitPrice>
+              <lineAmountsNormal>
+                <lineNetAmountData><lineNetAmount>23375.00</lineNetAmount></lineNetAmountData>
+                <lineVatRate>
+                  <vatOutOfScope>
+                    <case>ATK</case>
+                  </vatOutOfScope>
+                </lineVatRate>
+                <lineGrossAmountNormal>23375.00</lineGrossAmountNormal>
+              </lineAmountsNormal>
+            </line>
+            <line>
+              <lineNumber>5</lineNumber>
+              <lineDescription>üzembe helyezés díja</lineDescription>
+              <quantity>1</quantity>
+              <unitOfMeasure>óra</unitOfMeasure>
+              <unitPrice>100000.00</unitPrice>
+              <lineAmountsNormal>
+                <lineNetAmountData><lineNetAmount>100000.00</lineNetAmount></lineNetAmountData>
+                <lineVatRate><vatPercentage>0.27</vatPercentage></lineVatRate>
+                <lineVatData><lineVatAmount>27000.00</lineVatAmount></lineVatData>
+                <lineGrossAmountNormal>127000.00</lineGrossAmountNormal>
+              </lineAmountsNormal>
+            </line>
+          </invoiceLines>
+          <invoiceSummary>
+            <summaryByVatRate>
+              <vatRate>
+                <vatOutOfScope>
+                  <case>ATK</case>
+                  <reason>Hatósági díjak</reason>
+                </vatOutOfScope>
+              </vatRate>
+              <vatRateNetData><vatRateNetAmount>48850.00</vatRateNetAmount></vatRateNetData>
+              <vatRateVatData><vatRateVatAmount>0.00</vatRateVatAmount></vatRateVatData>
+              <vatRateGrossData><vatRateGrossAmount>48850.00</vatRateGrossAmount></vatRateGrossData>
+            </summaryByVatRate>
+            <summaryByVatRate>
+              <vatRate><vatPercentage>0.27</vatPercentage></vatRate>
+              <vatRateNetData><vatRateNetAmount>100000.00</vatRateNetAmount></vatRateNetData>
+              <vatRateVatData><vatRateVatAmount>27000.00</vatRateVatAmount></vatRateVatData>
+              <vatRateGrossData><vatRateGrossAmount>127000.00</vatRateGrossAmount></vatRateGrossData>
+            </summaryByVatRate>
+            <summaryNormal>
+              <invoiceNetAmount>100000.00</invoiceNetAmount>
+              <invoiceVatAmount>27000.00</invoiceVatAmount>
+            </summaryNormal>
+            <summaryGrossData>
+              <invoiceGrossAmount>175850.00</invoiceGrossAmount>
+            </summaryGrossData>
+          </invoiceSummary>
+        </invoice>
+      </invoiceMain>
+    </invoiceData>
+  </invoiceDataResult>
+</QueryInvoiceDataResponse>`;
+
+    const details = await parseInvoiceDataXml(rawXml);
+
+    expect(details.supplierName).toBe('Óbudai Autójavító Kft');
+    expect(details.lineItems?.length).toBe(5);
+
+    // Verify lines 1-4 are parsed as ATK with 0 VAT
+    for (let i = 0; i < 4; i++) {
+      const item = details.lineItems![i];
+      expect(item.vatRate).toBe('ATK');
+      expect(item.vatAmount).toBe(0);
+      expect(item.grossAmount).toBe(item.netAmount);
+    }
+
+    // Line 5 is parsed as 0.27 with 27000 VAT
+    const line5 = details.lineItems![4];
+    expect(line5.vatRate).toBe('0.27');
+    expect(line5.netAmount).toBe(100000);
+    expect(line5.vatAmount).toBe(27000);
+    expect(line5.grossAmount).toBe(127000);
+
+    // Verify summary contains out_of_scope and 27% and NO 18%
+    expect(details.vatSummary).toBeDefined();
+    expect(details.vatSummary?.vatSummaries.length).toBe(2);
+
+    const atkSummary = details.vatSummary?.vatSummaries.find(s => s.category === 'out_of_scope');
+    expect(atkSummary).toBeDefined();
+    expect(atkSummary?.netAmount).toBe(48850);
+    expect(atkSummary?.vatAmount).toBe(0);
+    expect(atkSummary?.outOfScopeCase).toBe('ATK');
+
+    const vat27Summary = details.vatSummary?.vatSummaries.find(s => s.vatPercentage === 0.27);
+    expect(vat27Summary).toBeDefined();
+    expect(vat27Summary?.netAmount).toBe(100000);
+    expect(vat27Summary?.vatAmount).toBe(27000);
+
+    // Assert that NO item or summary has 18%
+    const rate18 = details.vatSummary?.vatSummaries.find(s => s.vatPercentage === 0.18 || s.vatRateLiteral?.includes('18%'));
+    expect(rate18).toBeUndefined();
+  });
 });
