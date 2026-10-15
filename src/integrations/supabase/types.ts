@@ -7706,6 +7706,7 @@ export type Database = {
       }
       invoice_items: {
         Row: {
+          company_id: string | null
           created_at: string | null
           deductible_percentage: number
           exclude_from_accounting: boolean
@@ -7727,6 +7728,7 @@ export type Database = {
           vat_rate: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           deductible_percentage?: number
           exclude_from_accounting?: boolean
@@ -7748,6 +7750,7 @@ export type Database = {
           vat_rate?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           deductible_percentage?: number
           exclude_from_accounting?: boolean
@@ -7769,6 +7772,13 @@ export type Database = {
           vat_rate?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "invoice_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoice_items_invoice_id_fkey"
             columns: ["invoice_id"]
@@ -13055,7 +13065,7 @@ export type Database = {
         }[]
       }
       get_unclassified_gl_items: {
-        Args: { p_company_id: string; p_preset_id: string }
+        Args: { p_company_id: string; p_preset_id: string; p_limit?: number }
         Returns: {
           amount: number
           description: string

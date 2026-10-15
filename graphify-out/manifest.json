@@ -1035,8 +1035,8 @@
     "semantic_hash": ""
   },
   "src/integrations/supabase/types.ts": {
-    "mtime": 1791983164.5229845,
-    "ast_hash": "544c71a37331c2f0d73e72c739aeb2a7",
+    "mtime": 1792041234.256881,
+    "ast_hash": "864ad2964b03ae5fb4dbed1e1e5c9650",
     "semantic_hash": ""
   },
   "src/lib/annualReportPdf.ts": {
@@ -2980,7 +2980,7 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/index.md": {
-    "mtime": 1791983653.8767116,
+    "mtime": 1791984521.6406052,
     "ast_hash": "70654927fc7b7816ea60aeb1b6ba18b2",
     "semantic_hash": ""
   },
@@ -5435,8 +5435,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useNotesData.ts": {
-    "mtime": 1791583293.2303576,
-    "ast_hash": "3924999e2a97166437a491018ba1e0a9",
+    "mtime": 1792041209.9760778,
+    "ast_hash": "39afb88ebdaada0cc5b4d14383b81bef",
     "semantic_hash": ""
   },
   "src/pages/NotesPage.tsx": {
@@ -8560,8 +8560,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/rpc-catalog.md": {
-    "mtime": 1791983164.4533763,
-    "ast_hash": "248cc070c97b7697efba86f1a30d18e7",
+    "mtime": 1792040637.829176,
+    "ast_hash": "4a6ccadc31e54edf8622bbe5820d330c",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-073-ev-bookkeeping-and-cashbook-ux.md": {
@@ -13555,8 +13555,8 @@
     "semantic_hash": ""
   },
   "src/test/rpcPerformanceAndResilience.test.ts": {
-    "mtime": 1791983164.524984,
-    "ast_hash": "244656496ee797a1a224ec7d492fd15d",
+    "mtime": 1792040666.0664568,
+    "ast_hash": "091a0a62ac669bbcb6872da9a8f139fd",
     "semantic_hash": ""
   },
   "supabase/migrations/20261003040000_optimize_gl_and_filter_rpcs_stability_and_tenant_isolation.sql": {
@@ -16712,8 +16712,23 @@
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-257-general-ledger-balances-preaggregation-and-atomic-json-rpc.md": {
-    "mtime": 1791983638.747992,
-    "ast_hash": "d2d37c5d405c13b89d4a028e42eabdf7",
+    "mtime": 1791984521.6395767,
+    "ast_hash": "adf24434a314cc2c5930ae5d861e3a10",
+    "semantic_hash": ""
+  },
+  "scripts/gdrive-sync/ThinkermanGoogleDriveSync.js": {
+    "mtime": 1792038960.0862646,
+    "ast_hash": "6c8a360eaad9181ba96d70ea19476dcc",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261015070000_optimize_get_unclassified_gl_items_limit.sql": {
+    "mtime": 1792040614.8510084,
+    "ast_hash": "b04543e3b6d65bf591405d3b7206ba76",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261015071500_denormalize_invoice_items_company_id.sql": {
+    "mtime": 1792041195.284802,
+    "ast_hash": "1f83b16613f99d3ca04c512c12fcd0d9",
     "semantic_hash": ""
   }
 }

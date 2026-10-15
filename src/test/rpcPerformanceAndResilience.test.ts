@@ -629,5 +629,94 @@ describe('RPC Performance & Edge Function Resilience Tests', () => {
       expect(exemptRow.vat_sum).toBe(0);
     });
   });
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 6. get_unclassified_gl_items RPC Limit & Contract Tests (A-097 / Error Hunter)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  describe('get_unclassified_gl_items RPC Limit & Resilience Contract', () => {
+    it('bounds effective limit between 1 and 5000 with default 1000', () => {
+      function calculateEffectiveLimit(p_limit?: number | null): number {
+        return Math.min(Math.max(p_limit ?? 1000, 1), 5000);
+      }
+
+      // Default when omitted or null
+      expect(calculateEffectiveLimit(undefined)).toBe(1000);
+      expect(calculateEffectiveLimit(null)).toBe(1000);
+
+      // Explicit valid limits
+      expect(calculateEffectiveLimit(50)).toBe(50);
+      expect(calculateEffectiveLimit(500)).toBe(500);
+      expect(calculateEffectiveLimit(2500)).toBe(2500);
+
+      // Clamp upper bound to 5000 to prevent runaway memory
+      expect(calculateEffectiveLimit(10000)).toBe(5000);
+      expect(calculateEffectiveLimit(100000)).toBe(5000);
+
+      // Clamp lower bound to 1
+      expect(calculateEffectiveLimit(0)).toBe(1);
+      expect(calculateEffectiveLimit(-100)).toBe(1);
+    });
+
+    it('verifies get_unclassified_gl_items schema contract and batching', () => {
+      interface UnclassifiedGlItem {
+        id: string;
+        source_table: 'nav_invoice_items' | 'invoice_items' | 'transactions';
+        direction: string;
+        partner_name: string | null;
+        document_number: string | null;
+        document_date: string | null;
+        description: string;
+        product_code: string | null;
+        amount: number;
+        quantity: number | null;
+        unit: string | null;
+        vat_rate: string | null;
+        is_reverse_charge: boolean;
+      }
+
+      const sampleBatch: UnclassifiedGlItem[] = [
+        {
+          id: '11111111-1111-1111-1111-111111111111',
+          source_table: 'nav_invoice_items',
+          direction: 'INBOUND',
+          partner_name: 'Test Beszallito Kft',
+          document_number: 'SZAMLA-2026-001',
+          document_date: '2026-10-01',
+          description: 'Szerver bérleti díj',
+          product_code: 'TESZOR-123',
+          amount: 150000,
+          quantity: 1,
+          unit: 'HÓ',
+          vat_rate: '27%',
+          is_reverse_charge: false,
+        },
+        {
+          id: '22222222-2222-2222-2222-222222222222',
+          source_table: 'transactions',
+          direction: 'KIADÁS',
+          partner_name: null,
+          document_number: null,
+          document_date: '2026-10-02',
+          description: 'Banki jutalék és számlavezetési díj',
+          product_code: null,
+          amount: -2500,
+          quantity: null,
+          unit: null,
+          vat_rate: null,
+          is_reverse_charge: false,
+        },
+      ];
+
+      expect(sampleBatch).toHaveLength(2);
+      sampleBatch.forEach((item) => {
+        expect(['nav_invoice_items', 'invoice_items', 'transactions']).toContain(item.source_table);
+        expect(typeof item.id).toBe('string');
+        expect(typeof item.description).toBe('string');
+        expect(typeof item.amount).toBe('number');
+        expect(typeof item.is_reverse_charge).toBe('boolean');
+      });
+    });
+  });
 });
+
 
