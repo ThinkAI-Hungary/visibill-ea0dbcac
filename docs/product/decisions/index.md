@@ -318,5 +318,6 @@
 | P-190 | Számlatételek Többes Projekt-Költségmegosztása, Lebegő Műveleti Sáv és Zero-Jitter Kiválasztás UX | ✅ Decided | [P-190](./P-190-multi-project-item-allocations-ux.md) |
 | P-190-fakov | Fakov Kft. Infotéka (Kontír.NET) Főkönyvi Rekonciliáció és Összehasonlító Kivonat UX | ✅ Decided | [P-190-fakov-infoteka-general-ledger-reconciliation-ux.md](./P-190-fakov-infoteka-general-ledger-reconciliation-ux.md) |
 | P-191 | Bankkártyás POS és AMEX Göngyölegek Virtuális Banki Feldolgozása, Tételes Tranzakció Generálás és Kereskedői Elszámolási UX | ✅ Decided | [P-191](./P-191-bankcard-pos-settlement-virtual-bank-and-accounting-ux.md) |
+| P-192 | RLB FOKTORZS (.RFT / .DBF) Számlatükör Feltöltési és Importálási Felhasználói Élmény (UX) | ✅ Decided | [P-192-rlb-foktorzs-rft-chart-of-accounts-import-ux.md](./P-192-rlb-foktorzs-rft-chart-of-accounts-import-ux.md) |
 
 

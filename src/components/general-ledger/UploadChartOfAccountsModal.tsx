@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { reportError } from '@/lib/errorReporter';
 import { useTranslation } from "react-i18next";
+import { parseRlbRftChartOfAccounts } from '@/lib/rlb/rlbRftParser';
 
 // Helper to load PDF.js dynamically from CDN
 const loadPdfJs = async (): Promise<any> => {
@@ -158,7 +159,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
   };
 
   const validateAndSetFile = (selectedFile: File) => {
-    const validExensions = ['.csv', '.xlsx', '.xls', '.pdf', '.txt'];
+    const validExensions = ['.csv', '.xlsx', '.xls', '.pdf', '.txt', '.rft', '.dbf'];
     const nameLower = selectedFile.name.toLowerCase();
     if (validExensions.some(ext => nameLower.endsWith(ext))) {
       setFile(selectedFile);
@@ -331,7 +332,20 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
 
     const nameLower = file.name.toLowerCase();
 
-    if (nameLower.endsWith('.pdf')) {
+    if (nameLower.endsWith('.rft') || nameLower.endsWith('.dbf')) {
+      try {
+        const buffer = await file.arrayBuffer();
+        const parsed = parseRlbRftChartOfAccounts(buffer, file.name);
+        await processRows(parsed.accounts);
+      } catch (error: any) {
+        toast({
+          title: "Hibás RLB RFT fájl",
+          description: error.message || "Nem sikerült feldolgozni az RLB RFT számlatükröt.",
+          variant: "destructive"
+        });
+        setLoading(false);
+      }
+    } else if (nameLower.endsWith('.pdf')) {
       try {
         const pdfRows = await parsePdfChartOfAccounts(file);
         await processRows(pdfRows);
@@ -429,7 +443,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
               type="file" 
               ref={fileInputRef} 
               className="hidden" 
-              accept=".csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,text/plain,.xml,text/xml,application/xml"
+              accept=".csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,text/plain,.xml,text/xml,application/xml,.rft,.dbf"
               onChange={handleFileSelect} 
             />
           </div>

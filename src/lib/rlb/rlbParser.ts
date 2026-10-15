@@ -143,7 +143,7 @@ export interface RlbCsvParseResult {
   warnings: string[];
 }
 
-export type RlbDetectedFormat = 'rlb_audit_xml' | 'rlb_csv_ledger' | 'other_audit_xml' | 'unknown';
+export type RlbDetectedFormat = 'rlb_audit_xml' | 'rlb_csv_ledger' | 'rlb_rft_chart_of_accounts' | 'other_audit_xml' | 'unknown';
 
 /**
  * Determines account type from Hungarian standard 1-digit chart of accounts class
@@ -169,11 +169,15 @@ export function determineAccountType(glNumber: string): RlbAccount['accountType'
 }
 
 /**
- * Auto-detects whether the given file or string is an RLB Audit XML or RLB CSV Ledger
+ * Auto-detects whether the given file or string is an RLB Audit XML, RLB CSV Ledger, or RLB RFT Chart of Accounts
  */
 export function detectRlbFileFormat(content: string, fileName: string = ''): RlbDetectedFormat {
   const lowerName = fileName.toLowerCase();
   const trimmed = content.trim().replace(/^\uFEFF/, '');
+
+  if (lowerName.endsWith('.rft') || lowerName.endsWith('.dbf')) {
+    return 'rlb_rft_chart_of_accounts';
+  }
 
   if (lowerName.endsWith('.csv') || trimmed.startsWith('FOKSZAM;FOKNEV')) {
     if (trimmed.includes('FOKSZAM;') && trimmed.includes('NYTART;') && trimmed.includes('NYKOV;')) {

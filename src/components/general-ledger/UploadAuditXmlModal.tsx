@@ -38,8 +38,14 @@ import {
 import {
   importRlbAuditXml,
   importRlbCsvLedger,
+  importRlbRftChartOfAccounts,
   type RlbImportProgress,
 } from '@/lib/rlb/rlbImportService';
+import {
+  parseRlbRftChartOfAccounts,
+  isRlbRftFile,
+  type RlbRftParseResult,
+} from '@/lib/rlb/rlbRftParser';
 
 interface UploadAuditXmlModalProps {
   open: boolean;
@@ -68,6 +74,7 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
   const [detectedFormat, setDetectedFormat] = useState<RlbDetectedFormat>('unknown');
   const [parsedRlbXml, setParsedRlbXml] = useState<RlbXmlParseResult | null>(null);
   const [parsedRlbCsv, setParsedRlbCsv] = useState<RlbCsvParseResult | null>(null);
+  const [parsedRlbRft, setParsedRlbRft] = useState<RlbRftParseResult | null>(null);
   const [importProgress, setImportProgress] = useState<RlbImportProgress | null>(null);
 
   const processSelectedFile = useCallback(async (selectedFile: File) => {
@@ -76,9 +83,22 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
     setErrorMsg('');
     setParsedRlbXml(null);
     setParsedRlbCsv(null);
+    setParsedRlbRft(null);
     setDetectedFormat('unknown');
 
     try {
+      const lowerName = selectedFile.name.toLowerCase();
+      if (lowerName.endsWith('.rft') || lowerName.endsWith('.dbf')) {
+        const buffer = await selectedFile.arrayBuffer();
+        if (isRlbRftFile(buffer, selectedFile.name)) {
+          const parsed = parseRlbRftChartOfAccounts(buffer, selectedFile.name);
+          setParsedRlbRft(parsed);
+          setDetectedFormat('rlb_rft_chart_of_accounts');
+          setStatus('idle');
+          return;
+        }
+      }
+
       const rawText = await readRlbFileAsText(selectedFile);
       const fmt = detectRlbFileFormat(rawText, selectedFile.name);
       setDetectedFormat(fmt);
@@ -98,6 +118,8 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
       setStatus('idle');
       if (selectedFile.name.endsWith('.csv')) {
         setErrorMsg(err.message || 'Nem sikerült feldolgozni az RLB CSV fájlt.');
+      } else if (selectedFile.name.endsWith('.rft') || selectedFile.name.endsWith('.dbf')) {
+        setErrorMsg(err.message || 'Nem sikerült feldolgozni az RLB RFT számlatükröt.');
       }
     }
   }, []);
@@ -106,10 +128,16 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
     e.preventDefault();
     setIsDragging(false);
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && (droppedFile.name.endsWith('.xml') || droppedFile.name.endsWith('.csv'))) {
+    if (
+      droppedFile &&
+      (droppedFile.name.endsWith('.xml') ||
+        droppedFile.name.endsWith('.csv') ||
+        droppedFile.name.endsWith('.rft') ||
+        droppedFile.name.endsWith('.dbf'))
+    ) {
       processSelectedFile(droppedFile);
     } else {
-      toast({ title: 'Csak XML vagy CSV formátumú könyvelési fájl tölthető fel.', variant: 'destructive' });
+      toast({ title: 'Csak XML, CSV vagy RLB RFT/DBF formátumú könyvelési fájl tölthető fel.', variant: 'destructive' });
     }
   }, [processSelectedFile, toast]);
 
@@ -232,6 +260,37 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
         return;
       }
 
+      // CASE C: Client-side parsed RLB RFT Chart of Accounts
+      if (detectedFormat === 'rlb_rft_chart_of_accounts' && parsedRlbRft) {
+        const importResult = await importRlbRftChartOfAccounts({
+          companyId: selectedCompany.id,
+          userId: user?.id,
+          fileName: file.name,
+          rftResult: parsedRlbRft,
+          presetMode,
+          selectedPresetId: presetMode === 'existing' ? selectedPresetId : undefined,
+          onProgress: setImportProgress,
+        });
+
+        if (!importResult.success) {
+          throw new Error(importResult.error || 'Hiba történt az RLB számlatükör importálása közben.');
+        }
+
+        setStatus('done');
+        toast({
+          title: 'RLB Számlatükör sikeresen importálva!',
+          description: `${importResult.accountsImported} db főkönyvi számla elmentve az aktív számlatükörbe.`,
+          className: 'bg-green-50 text-green-900 border-green-200',
+        });
+
+        onSuccess?.();
+        setTimeout(() => {
+          onOpenChange(false);
+          resetState();
+        }, 2000);
+        return;
+      }
+
       // CASE C: Fallback standard backend storage upload + worker queue
       const safeFileName = file.name
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -340,6 +399,7 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
     setDetectedFormat('unknown');
     setParsedRlbXml(null);
     setParsedRlbCsv(null);
+    setParsedRlbRft(null);
     setImportProgress(null);
   };
 
@@ -347,7 +407,7 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) resetState(); }}>
-      <DialogContent className={cn("transition-all duration-200", (parsedRlbXml || parsedRlbCsv) ? "sm:max-w-[560px]" : "sm:max-w-[520px]")}>
+      <DialogContent className={cn("transition-all duration-200", (parsedRlbXml || parsedRlbCsv || parsedRlbRft) ? "sm:max-w-[560px]" : "sm:max-w-[520px]")}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <FileText className="w-5 h-5 text-primary" />
@@ -430,7 +490,7 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".xml,.csv"
+                  accept=".xml,.csv,.rft,.dbf"
                   className="hidden"
                   onChange={handleFileSelect}
                 />
@@ -451,7 +511,7 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
                   <div className="flex flex-col items-center gap-2">
                     <UploadCloud className="w-8 h-8 text-muted-foreground/60" />
                     <p className="text-sm font-medium">Húzd ide a fájlt vagy kattints a tallózáshoz</p>
-                    <p className="text-xs text-muted-foreground">Támogatott: RLB Könyvvizsgálói XML (.xml) vagy RLB Főkönyvi Kivonat (.csv)</p>
+                    <p className="text-xs text-muted-foreground">Támogatott: RLB XML (.xml), RLB CSV (.csv) vagy RLB Számlatükör (.rft / .dbf)</p>
                   </div>
                 )}
               </div>
@@ -557,6 +617,38 @@ export function UploadAuditXmlModal({ open, onOpenChange, onSuccess }: UploadAud
                     <span>Forgalom T: <strong className="text-foreground">{parsedRlbCsv.stats.totalTurnoverDebit.toLocaleString()} Ft</strong></span>
                     <span>Forgalom K: <strong className="text-foreground">{parsedRlbCsv.stats.totalTurnoverCredit.toLocaleString()} Ft</strong></span>
                   </div>
+                </div>
+              )}
+
+              {/* RLB RFT Live Preview Card */}
+              {detectedFormat === 'rlb_rft_chart_of_accounts' && parsedRlbRft && (
+                <div className="rounded-xl border border-indigo-500/20 bg-indigo-50/40 dark:bg-indigo-950/20 p-4 space-y-3 animate-in fade-in-50 duration-200">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <Badge variant="outline" className="bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 gap-1.5 font-semibold py-1">
+                      <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                      RLB Számlatükör (FOKTORZS RFT / DBF)
+                    </Badge>
+                    <span className="text-xs font-semibold text-foreground/80">{file?.name}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1 text-center">
+                    <div className="bg-background/80 rounded-lg p-2 border border-border/50">
+                      <div className="text-[10px] text-muted-foreground">Összes rekord a fájlban</div>
+                      <div className="text-sm font-bold text-foreground tabular-nums">
+                        {parsedRlbRft.recordCount} db
+                      </div>
+                    </div>
+                    <div className="bg-background/80 rounded-lg p-2 border border-border/50">
+                      <div className="text-[10px] text-muted-foreground">Aktív főkönyvi számlák</div>
+                      <div className="text-sm font-bold text-foreground tabular-nums text-emerald-600 dark:text-emerald-400">
+                        {parsedRlbRft.activeAccountsCount} db
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground px-1">
+                    Az importálás automatikusan létrehoz egy új egyedi számlatükör sablont (vagy frissíti a kiválasztott sablont), és feltölti a teljes 1–4 szintű számlatörzset.
+                  </p>
                 </div>
               )}
 

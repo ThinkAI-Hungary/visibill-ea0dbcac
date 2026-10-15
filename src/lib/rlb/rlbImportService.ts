@@ -14,12 +14,23 @@
 import { supabase } from '@/integrations/supabase/client';
 import { reportError } from '@/lib/errorReporter';
 import type { RlbXmlParseResult, RlbCsvParseResult } from './rlbParser';
+import type { RlbRftParseResult } from './rlbRftParser';
 
 export interface RlbImportProgress {
   stage: 'preset' | 'accounts' | 'import_record' | 'partners' | 'entries' | 'completed';
   current: number;
   total: number;
   message: string;
+}
+
+export interface ImportRlbRftParams {
+  companyId: string;
+  userId?: string | null;
+  fileName: string;
+  rftResult: RlbRftParseResult;
+  presetMode: 'original' | 'existing';
+  selectedPresetId?: string;
+  onProgress?: (progress: RlbImportProgress) => void;
 }
 
 export interface ImportRlbXmlParams {
@@ -586,3 +597,139 @@ export async function importRlbCsvLedger({
     };
   }
 }
+
+/**
+ * Imports a fully parsed RLB FOKTORZS (.RFT / .DBF) Chart of Accounts
+ */
+export async function importRlbRftChartOfAccounts({
+  companyId,
+  userId,
+  fileName,
+  rftResult,
+  presetMode,
+  selectedPresetId,
+  onProgress,
+}: ImportRlbRftParams): Promise<RlbImportResult> {
+  try {
+    onProgress?.({
+      stage: 'preset',
+      current: 0,
+      total: 1,
+      message: 'Számlatükör sablon létrehozása / egyeztetése...',
+    });
+
+    const cleanBaseName = fileName.replace(/\.[^/.]+$/, '').trim();
+    const suggestedPresetName = `${cleanBaseName} - RLB Számlatükör`;
+    const presetId = await resolveOrCreatePreset(companyId, suggestedPresetName, presetMode, selectedPresetId);
+
+    onProgress?.({
+      stage: 'accounts',
+      current: 0,
+      total: rftResult.accounts.length,
+      message: `Főkönyvi számlák mentése (${rftResult.accounts.length} db)...`,
+    });
+
+    const seenGlNumbers = new Set<string>();
+    const accountRows: Array<{
+      preset_id: string;
+      gl_number: string;
+      short_name: string;
+      description: string | null;
+      company_id: string;
+      is_multicurrency: boolean;
+    }> = [];
+
+    rftResult.accounts.forEach((a) => {
+      const cleanNum = a.gl_number.trim();
+      if (!cleanNum || seenGlNumbers.has(cleanNum)) return;
+      seenGlNumbers.add(cleanNum);
+
+      accountRows.push({
+        preset_id: presetId,
+        gl_number: cleanNum,
+        short_name: (a.short_name || cleanNum).trim(),
+        description: a.description,
+        company_id: companyId,
+        is_multicurrency: false,
+      });
+    });
+
+    // Ensure mandatory balance sheet accounts 491 and 492
+    if (!seenGlNumbers.has('491')) {
+      accountRows.push({
+        preset_id: presetId,
+        gl_number: '491',
+        short_name: 'Nyitó mérleg számla',
+        description: 'Kötelező technikai számla',
+        company_id: companyId,
+        is_multicurrency: false,
+      });
+    }
+    if (!seenGlNumbers.has('492')) {
+      accountRows.push({
+        preset_id: presetId,
+        gl_number: '492',
+        short_name: 'Záró mérleg számla',
+        description: 'Kötelező technikai számla',
+        company_id: companyId,
+        is_multicurrency: false,
+      });
+    }
+
+    const ACC_CHUNK_SIZE = 500;
+    for (let i = 0; i < accountRows.length; i += ACC_CHUNK_SIZE) {
+      const chunk = accountRows.slice(i, i + ACC_CHUNK_SIZE);
+      const { error: accError } = await supabase
+        .from('gl_accounts')
+        .upsert(chunk, { onConflict: 'preset_id,gl_number' });
+
+      if (accError) {
+        throw new Error(`Hiba a főkönyvi számlák mentésekor: ${accError.message}`);
+      }
+
+      onProgress?.({
+        stage: 'accounts',
+        current: Math.min(i + ACC_CHUNK_SIZE, accountRows.length),
+        total: accountRows.length,
+        message: `Főkönyvi számlák mentése (${Math.min(i + ACC_CHUNK_SIZE, accountRows.length)} / ${accountRows.length})...`,
+      });
+    }
+
+    onProgress?.({
+      stage: 'completed',
+      current: accountRows.length,
+      total: accountRows.length,
+      message: 'RLB számlatükör sikeresen importálva!',
+    });
+
+    return {
+      success: true,
+      presetId,
+      accountsImported: accountRows.length,
+      partnersImported: 0,
+      entriesImported: 0,
+      vouchersImported: 0,
+      dryRun: false,
+    };
+  } catch (err: any) {
+    const errorMsg = err?.message || 'Hiba történt az RLB számlatükör importálásakor.';
+    reportError({
+      type: 'upload',
+      component: 'rlbImportService',
+      action: 'importRlbRftChartOfAccounts',
+      message: errorMsg,
+      error: err,
+    });
+    return {
+      success: false,
+      presetId: selectedPresetId || '',
+      accountsImported: 0,
+      partnersImported: 0,
+      entriesImported: 0,
+      vouchersImported: 0,
+      dryRun: false,
+      error: errorMsg,
+    };
+  }
+}
+

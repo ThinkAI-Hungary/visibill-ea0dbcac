@@ -161,5 +161,6 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 074 | Számlatételek Többes Projekt-Költségmegosztása és 100%-os Érvényesítése | ✅ Decided | [074-multi-project-item-allocations-and-cost-split.md](./074-multi-project-item-allocations-and-cost-split.md) |
 | 074-fakov | Fakov Kft. Infotéka (Kontír.NET) AuditXML Főkönyvi Egyeztetés és Könyvelési Összehangolás | ✅ Decided | [074-fakov-infoteka-auditxml-reconciliation-and-gl-alignment.md](./074-fakov-infoteka-auditxml-reconciliation-and-gl-alignment.md) |
 | 075 | Bankkártyás és AMEX Elfogadói Göngyölegek Feldolgozása Virtuális Bankként és Zéró-Egyenlegű Főkönyvi Elszámolása | ✅ Decided | [075-pos-and-amex-card-settlement-virtual-banking-and-gl-clearing.md](./075-pos-and-amex-card-settlement-virtual-banking-and-gl-clearing.md) |
+| 076 | RLB-60 FOKTORZS (.RFT / .DBF) Számlatükör Formátum Feldolgozása és Importálása | ✅ Decided | [076-rlb-foktorzs-rft-dbf-chart-of-accounts-parsing-and-import.md](./076-rlb-foktorzs-rft-dbf-chart-of-accounts-parsing-and-import.md) |
 
 

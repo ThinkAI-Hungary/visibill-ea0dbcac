@@ -97,4 +97,28 @@ describe('UploadChartOfAccountsModal', () => {
     const submitBtn = screen.getByRole('button', { name: /upload_save/i });
     expect(submitBtn).not.toBeDisabled();
   });
+
+  it('accepts and auto-populates RLB .RFT chart of accounts file', async () => {
+    render(
+      <UploadChartOfAccountsModal open={true} onOpenChange={onOpenChange} onSuccess={onSuccess} />
+    );
+
+    const fileInput = document.body.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput).not.toBeNull();
+    expect(fileInput.accept).toContain('.rft');
+    expect(fileInput.accept).toContain('.dbf');
+
+    const fakeRft = new File(['mock dbf'], 'FOKTORZS_WR  2026.RFT', {
+      type: 'application/octet-stream',
+    });
+
+    fireEvent.change(fileInput, { target: { files: [fakeRft] } });
+
+    const nameInput = screen.getByLabelText(/preset_name/i) as HTMLInputElement;
+    expect(nameInput.value).toBe('FOKTORZS_WR  2026');
+
+    const submitBtn = screen.getByRole('button', { name: /upload_save/i });
+    expect(submitBtn).not.toBeDisabled();
+  });
 });
+

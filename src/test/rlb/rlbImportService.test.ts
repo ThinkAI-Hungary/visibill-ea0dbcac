@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { importRlbAuditXml, importRlbCsvLedger } from '@/lib/rlb/rlbImportService';
+import { importRlbAuditXml, importRlbCsvLedger, importRlbRftChartOfAccounts } from '@/lib/rlb/rlbImportService';
 import type { RlbXmlParseResult, RlbCsvParseResult } from '@/lib/rlb/rlbParser';
+import type { RlbRftParseResult } from '@/lib/rlb/rlbRftParser';
 
 // Supabase table spies
 const mockInsert = vi.fn();
@@ -245,4 +246,36 @@ describe('rlbImportService', () => {
 
     expect(mockUpsert).toHaveBeenCalledWith('gl_accounts', expect.any(Array), { onConflict: 'preset_id,gl_number' });
   });
+
+  it('imports RLB RFT Chart of Accounts successfully', async () => {
+    const mockRftResult: RlbRftParseResult = {
+      format: 'rlb_rft_chart_of_accounts',
+      fileName: 'FOKTORZS_WR  2026.RFT',
+      recordCount: 2,
+      activeAccountsCount: 2,
+      accounts: [
+        { gl_number: '113', short_name: 'Vagyoni értékű jogok', description: 'Jelleg: 1' },
+        { gl_number: '311', short_name: 'Belföldi vevő követelések forintban', description: null },
+      ],
+      rawAccounts: [
+        { glNumber: '113', name: 'Vagyoni értékű jogok', jelleg: '1' },
+        { glNumber: '311', name: 'Belföldi vevő követelések forintban' },
+      ],
+    };
+
+    const result = await importRlbRftChartOfAccounts({
+      companyId: 'company-wr-home',
+      fileName: 'FOKTORZS_WR  2026.RFT',
+      rftResult: mockRftResult,
+      presetMode: 'original',
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.presetId).toBe('mock-preset-123');
+    // 2 accounts + 491 + 492 mandatory accounts = 4 accounts
+    expect(result.accountsImported).toBe(4);
+
+    expect(mockUpsert).toHaveBeenCalledWith('gl_accounts', expect.any(Array), { onConflict: 'preset_id,gl_number' });
+  });
 });
+
