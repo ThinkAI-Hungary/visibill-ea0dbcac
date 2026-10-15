@@ -271,6 +271,31 @@ export async function parseInvoiceDataXml(xmlResponse: string): Promise<InvoiceD
       else if (Math.abs(vatContent - 0.1525) < 0.005) vatRate = '0.18';
       else if (Math.abs(vatContent - 0.0476) < 0.005) vatRate = '0.05';
       else vatRate = String(vatContent);
+    } else if (!vatRate) {
+      if (lChunk.includes('vatExemption')) {
+        const exMatch = lChunk.match(/<(?:\w+:)?vatExemption>([\s\S]*?)<\/(?:\w+:)?vatExemption>/);
+        const exChunk = exMatch ? exMatch[1] : lChunk;
+        vatRate = extractTag(exChunk, 'case') || 'TAM';
+      } else if (lChunk.includes('vatOutOfScope')) {
+        const oosMatch = lChunk.match(/<(?:\w+:)?vatOutOfScope>([\s\S]*?)<\/(?:\w+:)?vatOutOfScope>/);
+        const oosChunk = oosMatch ? oosMatch[1] : lChunk;
+        vatRate = extractTag(oosChunk, 'case') || 'ATK';
+      } else if (lChunk.includes('vatDomesticReverseCharge') || extractTag(lChunk, 'vatDomesticReverseCharge') === 'true') {
+        vatRate = 'FAD';
+      } else if (lChunk.includes('marginSchemeIndicator') || lChunk.includes('marginScheme')) {
+        vatRate = 'Különbözeti';
+      }
+    }
+
+    // Ha adómentes, hatályon kívüli vagy fordított adózású tételről van szó, az ÁFA összege 0
+    if (
+      isNaN(vatAmount) &&
+      !isNaN(netAmount) &&
+      (vatRate === 'ATK' || vatRate === 'TAM' || vatRate === 'AAM' || vatRate === 'FAD' ||
+       lChunk.includes('vatOutOfScope') || lChunk.includes('vatExemption') || lChunk.includes('vatDomesticReverseCharge'))
+    ) {
+      vatAmount = 0;
+      if (isNaN(grossAmount)) grossAmount = netAmount;
     }
 
     // If vatAmount and grossAmount are omitted by NAV Online Számla (e.g. MVM, utility invoices),
