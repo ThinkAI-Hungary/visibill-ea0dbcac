@@ -195,10 +195,13 @@ WITH affected AS (
                  )
             THEN jsonb_set(
                    jsonb_set(
-                     jsonb_set(elem, '{vatPercentage}', '0'::jsonb),
-                     '{vatRateLiteral}', '"0%"'::jsonb
+                     jsonb_set(
+                       jsonb_set(elem, '{vatPercentage}', '0'::jsonb),
+                       '{vatRateLiteral}', '"Hatályon kívüli (ATK)"'::jsonb
+                     ),
+                     '{category}', '"out_of_scope"'::jsonb
                    ),
-                   '{category}', '"out_of_scope"'::jsonb
+                   '{outOfScopeCase}', '"ATK"'::jsonb
                  )
             ELSE elem
           END
