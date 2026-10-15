@@ -158,3 +158,25 @@ export function isWorkDay(date: Date | string): boolean {
 
   return !isHungarianHoliday(year, month, day).isHoliday;
 }
+
+/**
+ * Calculates the number of statutory Hungarian workdays between two dates (inclusive).
+ * Takes into account weekdays and Hungarian statutory holidays.
+ */
+export function getWorkDaysBetween(startDate: Date | string, endDate: Date | string): number {
+  const start = typeof startDate === 'string' ? new Date(startDate) : new Date(startDate.getTime());
+  const end = typeof endDate === 'string' ? new Date(endDate) : new Date(endDate.getTime());
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return 0;
+
+  let count = 0;
+  const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+
+  while (cur <= last) {
+    if (isWorkDay(cur)) {
+      count++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}

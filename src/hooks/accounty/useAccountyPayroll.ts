@@ -244,12 +244,13 @@ export function useTransfers(companyId: string, period?: string) {
 
 // ── Documents ──
 
-export function useAccountyDocuments(companyId: string, docType?: string) {
+export function useAccountyDocuments(companyId: string, docType?: string, period?: string) {
   return useQuery({
-    queryKey: queryKeys.accountyDocuments(companyId, docType),
+    queryKey: queryKeys.accountyDocuments(companyId, docType, period),
     queryFn: async (): Promise<AccountyDocument[]> => {
       let q = supabase.from('accounty_documents').select('*').eq('company_id', companyId);
       if (docType && docType !== 'all') q = q.eq('doc_type', docType);
+      if (period) q = q.eq('period', period);
       const { data, error } = await q.order('title', { ascending: true });
       if (error) throw error;
       return (data || []).map(r => ({
@@ -262,72 +263,143 @@ export function useAccountyDocuments(companyId: string, docType?: string) {
   });
 }
 
+const inFlightGenerations = new Set<string>();
+
 export function useGenerateDocuments() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ companyId, docType }: { companyId: string; docType: string }) => {
-      const { data: cycles } = await supabase.from('accounty_payroll_cycles').select('id, year, month').eq('company_id', companyId).order('year', { ascending: false }).order('month', { ascending: false }).limit(1);
-      if (!cycles || cycles.length === 0) throw new Error('Nincs számfejtési ciklus a céghez.');
-      const currentCycle = cycles[0];
-      const period = `${currentCycle.year}-${String(currentCycle.month).padStart(2, '0')}`;
+    mutationFn: async ({
+      companyId,
+      docType,
+      cycleId,
+      period: customPeriod
+    }: {
+      companyId: string;
+      docType: string;
+      cycleId?: string;
+      period?: string;
+    }) => {
+      const lockKey = `${companyId}:${docType}:${customPeriod || cycleId || 'default'}`;
+      if (inFlightGenerations.has(lockKey)) {
+        throw new Error('A dokumentumok generálása ehhez az időszakhoz már folyamatban van.');
+      }
+      inFlightGenerations.add(lockKey);
 
-      const { data: calculations } = await supabase.from('accounty_payroll_calculations').select('*, accounty_employments(employee_id)').eq('cycle_id', currentCycle.id);
-      if (!calculations || calculations.length === 0) throw new Error('Nincsenek számfejtési adatok a legutóbbi ciklushoz.');
-
-      // Sort calculations alphabetically by employee name
-      const sortedCalculations = [...calculations].sort((a, b) => {
-        const nameA = ((a.metadata as any)?.employee_name as string) || '';
-        const nameB = ((b.metadata as any)?.employee_name as string) || '';
-        return nameA.localeCompare(nameB, 'hu', { sensitivity: 'base' });
-      });
-
-      const typesToGenerate = docType === 'all' ? ['payslip', 'transfer', 'e-payslip', 'cash', 'garnishment', 'cafeteria', 'summary', 'certificate'] : [docType];
-
-      const docs = [];
-      for (const t of typesToGenerate) {
-        if (['summary', 'cash', 'cafeteria', 'garnishment', 'certificate'].includes(t)) {
-          let title = '';
-          if (t === 'summary') title = 'Munkáltatói összesítő';
-          if (t === 'cash') title = 'Készpénzes kifizetési lista';
-          if (t === 'cafeteria') title = 'Cafeteria feltöltési fájlok';
-          if (t === 'garnishment') title = 'Letiltások jegyzéke';
-          if (t === 'certificate') title = 'Igazolások';
-          docs.push({ company_id: companyId, employee_id: null, title: `${title} - ${period}`, doc_type: t, status: 'generated', period, generated_at: new Date().toISOString() });
-        } else {
-          for (const calc of sortedCalculations) {
-            const meta = calc.metadata as Record<string, unknown>;
-            const empName = (meta?.employee_name as string) || 'Ismeretlen';
-            const empId = (calc.accounty_employments as Record<string, unknown>)?.employee_id || meta?.employee_id;
-            if (!empId) continue;
-
-            let title = '';
-            if (t === 'payslip') title = `${empName} - Bérjegyzék`;
-            if (t === 'transfer') title = `${empName} - Utalási lista`;
-            if (t === 'e-payslip') title = `${empName} - E-bérjegyzék`;
-            docs.push({ company_id: companyId, employee_id: empId, title, doc_type: t, status: 'generated', period, generated_at: new Date().toISOString() });
+      try {
+        let targetCycle: { id: string; year: number; month: number } | null = null;
+        if (cycleId) {
+          const { data: cycle } = await supabase.from('accounty_payroll_cycles').select('id, year, month').eq('id', cycleId).maybeSingle();
+          if (cycle) targetCycle = cycle;
+        }
+        if (!targetCycle && customPeriod) {
+          const [yStr, mStr] = customPeriod.split('-');
+          const y = parseInt(yStr, 10);
+          const m = parseInt(mStr, 10);
+          if (y && m) {
+            const { data: cycle } = await supabase.from('accounty_payroll_cycles').select('id, year, month').eq('company_id', companyId).eq('year', y).eq('month', m).maybeSingle();
+            if (cycle) targetCycle = cycle;
           }
         }
+        if (!targetCycle) {
+          const { data: cycles } = await supabase.from('accounty_payroll_cycles').select('id, year, month').eq('company_id', companyId).order('year', { ascending: false }).order('month', { ascending: false }).limit(1);
+          if (!cycles || cycles.length === 0) throw new Error('Nincs számfejtési ciklus a céghez.');
+          targetCycle = cycles[0];
+        }
+
+        const period = customPeriod || `${targetCycle.year}-${String(targetCycle.month).padStart(2, '0')}`;
+
+        const { data: calculations } = await supabase.from('accounty_payroll_calculations').select('*, accounty_employments(employee_id)').eq('cycle_id', targetCycle.id);
+        if (!calculations || calculations.length === 0) throw new Error(`Nincsenek számfejtési adatok a kiválasztott ciklushoz (${period}).`);
+
+        // Sort calculations alphabetically by employee name
+        const sortedCalculations = [...calculations].sort((a, b) => {
+          const nameA = ((a.metadata as any)?.employee_name as string) || '';
+          const nameB = ((b.metadata as any)?.employee_name as string) || '';
+          return nameA.localeCompare(nameB, 'hu', { sensitivity: 'base' });
+        });
+
+        const typesToGenerate = docType === 'all' ? ['payslip', 'transfer', 'e-payslip', 'cash', 'garnishment', 'cafeteria', 'summary', 'certificate'] : [docType];
+
+        const docs = [];
+        for (const t of typesToGenerate) {
+          if (['summary', 'cash', 'cafeteria', 'garnishment', 'certificate'].includes(t)) {
+            let title = '';
+            if (t === 'summary') title = 'Munkáltatói összesítő';
+            if (t === 'cash') title = 'Készpénzes kifizetési lista';
+            if (t === 'cafeteria') title = 'Cafeteria feltöltési fájlok';
+            if (t === 'garnishment') title = 'Letiltások jegyzéke';
+            if (t === 'certificate') title = 'Igazolások';
+            docs.push({ company_id: companyId, employee_id: null, title: `${title} - ${period}`, doc_type: t, status: 'generated', period, generated_at: new Date().toISOString() });
+          } else {
+            for (const calc of sortedCalculations) {
+              const meta = calc.metadata as Record<string, unknown>;
+              const empName = (meta?.employee_name as string) || 'Ismeretlen';
+              const empId = (calc.accounty_employments as Record<string, unknown>)?.employee_id || meta?.employee_id;
+              if (!empId) continue;
+
+              let title = '';
+              if (t === 'payslip') title = `${empName} - Bérjegyzék`;
+              if (t === 'transfer') title = `${empName} - Utalási lista`;
+              if (t === 'e-payslip') title = `${empName} - E-bérjegyzék`;
+              docs.push({ company_id: companyId, employee_id: empId, title, doc_type: t, status: 'generated', period, generated_at: new Date().toISOString() });
+            }
+          }
+        }
+
+        // Deduplicate docs by doc_type + employee_id + period
+        const seenDocKeys = new Set<string>();
+        const uniqueDocs = docs.filter(d => {
+          const key = `${d.doc_type}:${d.employee_id || 'company'}:${d.period}`;
+          if (seenDocKeys.has(key)) return false;
+          seenDocKeys.add(key);
+          return true;
+        });
+
+        await supabase.from('accounty_documents').delete().eq('company_id', companyId).eq('period', period).in('doc_type', typesToGenerate);
+        if (uniqueDocs.length > 0) {
+          const { error } = await supabase.from('accounty_documents').insert(uniqueDocs);
+          if (error) throw error;
+        }
+
+        if (typesToGenerate.includes('transfer')) {
+          await supabase.from('accounty_transfers').delete().eq('company_id', companyId).eq('period', period);
+          const transferRecords = sortedCalculations.map(calc => {
+            const meta = calc.metadata as Record<string, unknown>;
+            return {
+              company_id: companyId,
+              employee_id: (calc.accounty_employments as Record<string, unknown>)?.employee_id || meta?.employee_id || null,
+              employee_name: (meta?.employee_name as string) || 'Ismeretlen',
+              bank_account: (meta?.bank_account as string) || '',
+              net_salary: calc.net_salary || 0,
+              period,
+              status: 'approved'
+            };
+          }).filter(t => t.net_salary > 0);
+
+          // Deduplicate transfers by employee_id/name + period
+          const seenTransferKeys = new Set<string>();
+          const uniqueTransfers = transferRecords.filter(t => {
+            const key = `${t.employee_id || t.employee_name}:${t.period}`;
+            if (seenTransferKeys.has(key)) return false;
+            seenTransferKeys.add(key);
+            return true;
+          });
+
+          if (uniqueTransfers.length > 0) {
+            const { error: transferErr } = await supabase.from('accounty_transfers').insert(uniqueTransfers);
+            if (transferErr) throw transferErr;
+          }
+        }
+
+        return { companyId, docType, period };
+      } finally {
+        inFlightGenerations.delete(lockKey);
       }
-
-      await supabase.from('accounty_documents').delete().eq('company_id', companyId).eq('period', period).in('doc_type', typesToGenerate);
-      const { error } = await supabase.from('accounty_documents').insert(docs);
-      if (error) throw error;
-
-      if (typesToGenerate.includes('transfer')) {
-        await supabase.from('accounty_transfers').delete().eq('company_id', companyId).eq('period', period);
-        const transferRecords = sortedCalculations.map(calc => {
-          const meta = calc.metadata as Record<string, unknown>;
-          return { company_id: companyId, employee_id: (calc.accounty_employments as Record<string, unknown>)?.employee_id || meta?.employee_id || null, employee_name: (meta?.employee_name as string) || 'Ismeretlen', bank_account: (meta?.bank_account as string) || '', net_salary: calc.net_salary || 0, period, status: 'approved' };
-        }).filter(t => t.net_salary > 0);
-        if (transferRecords.length > 0) await supabase.from('accounty_transfers').insert(transferRecords);
-      }
-
-      return { companyId, docType };
     },
     onSuccess: (vars) => {
-      qc.invalidateQueries({ queryKey: queryKeys.accountyDocuments(vars.companyId) });
-      qc.invalidateQueries({ queryKey: queryKeys.accountyTransfers(vars.companyId) });
-      if (vars.docType !== 'all') qc.invalidateQueries({ queryKey: queryKeys.accountyDocuments(vars.companyId, vars.docType) });
+      qc.invalidateQueries({ queryKey: ['accounty-documents', vars.companyId] });
+      qc.invalidateQueries({ queryKey: ['accounty-transfers', vars.companyId] });
+      qc.invalidateQueries({ queryKey: ['transfers', vars.companyId] });
     },
   });
 }

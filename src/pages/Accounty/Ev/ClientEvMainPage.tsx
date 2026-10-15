@@ -5,7 +5,7 @@ import {
   Receipt, ArrowLeft, BookOpen, Calculator, FileText,
   TrendingUp, AlertTriangle, Calendar, Settings, ChevronRight,
   Wallet, BarChart3, Users, Car, Package, Shield,
-  Landmark, ClipboardList, PiggyBank, Scale, Loader2, ChevronLeft
+  Landmark, ClipboardList, PiggyBank, Scale, Loader2, ChevronLeft, Lock, Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
@@ -79,6 +79,74 @@ function formatEvAmount(amount: number, isHr: boolean): string {
   }
   return formatMillionHuf(amount);
 }
+
+function getEvItemEligibility(to: string, form: string, isHr: boolean): { disabled: boolean; reason?: string } {
+  // Adóforma-összehasonlítás mindig elérhető minden adózási formában!
+  if (to.includes('/ev/compare')) {
+    return { disabled: false };
+  }
+
+  // Törzsadatok & életciklus mindig aktív
+  if (to.includes('/ev/master-data') || to.includes('/ev/lifecycle') || to.includes('/ev/setup')) {
+    return { disabled: false };
+  }
+
+  // Keretfigyelő / értékhatár mindig aktív
+  if (to.includes('/ev/thresholds')) {
+    return { disabled: false };
+  }
+
+  // Átalányadó kalkulátor csak átalányadózóknak
+  if (to.includes('/ev/flat-rate')) {
+    if (form !== 'atalany') {
+      return {
+        disabled: true,
+        reason: isHr ? 'Samo za paušal' : 'Csak Átalányadó esetén',
+      };
+    }
+  }
+
+  // Vállalkozói SZJA (VSZJA) adóalap és osztalékalap
+  if (to.includes('/ev/entrepreneurial/')) {
+    if (form !== 'vszja') {
+      return {
+        disabled: true,
+        reason: isHr ? 'Samo za VSZJA' : 'Csak VSZJA esetén',
+      };
+    }
+  }
+
+  // KATA kalkulátor és KATA bevallás
+  if (to.includes('/ev/kata') || to.includes('/ev/returns/kata')) {
+    if (form !== 'kata') {
+      return {
+        disabled: true,
+        reason: isHr ? 'Samo za KATA' : 'Csak KATA esetén',
+      };
+    }
+  }
+
+  // Ha KATA a vállalkozó:
+  if (form === 'kata') {
+    if (to.includes('/ev/depreciation')) {
+      return {
+        disabled: true,
+        reason: isHr ? 'Nije za KATA' : 'KATA-ban nincs ÉCS',
+      };
+    }
+    if (to.includes('/ev/returns') && !to.includes('/ev/returns/kata')) {
+      if (to.includes('/ev/returns?year=') || to.includes('/ev/returns/contrib')) {
+        return {
+          disabled: true,
+          reason: isHr ? 'KATA prijava' : 'KATA bevallás releváns',
+        };
+      }
+    }
+  }
+
+  return { disabled: false };
+}
+
 
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -209,7 +277,7 @@ export default function ClientEvMainPage() {
         { to: `${prefix}/eaisybooks/${companyId}/${dateRange}/ev/org/simplified-report?year=${taxYear}`, label: isHr ? 'Pojednostavljeni izvještaj' : 'Egyszerűsített beszámoló', icon: FileText },
       ],
     },
-  ], [id, taxYear, isHr, prefix, companyId, dateRange]);
+  ], [taxYear, isHr, prefix, companyId, dateRange]);
 
   const visibleSections = useMemo(() => {
     const isOrg = !!evSettings?.org_type;
@@ -219,7 +287,7 @@ export default function ClientEvMainPage() {
       }
       return true;
     });
-  }, [sections, evSettings?.org_type]);
+  }, [sections, evSettings?.org_type, isHr]);
 
   const colorMap: Record<string, string> = {
     indigo: 'from-indigo-500 to-purple-600 shadow-primary/20',
@@ -305,6 +373,24 @@ export default function ClientEvMainPage() {
         </div>
       </div>
 
+      {/* Évközi adónem-váltás információs sáv */}
+      <div className="flex items-center justify-between p-3.5 rounded-lg border border-border bg-card/60 shadow-soft text-xs text-muted-foreground flex-wrap gap-2">
+        <div className="flex items-center gap-2.5">
+          <Info className="w-4 h-4 text-primary shrink-0" />
+          <span>
+            {isHr
+              ? 'Prijelaz poreznog oblika: Ako je obrtnik promijenio porezni status tijekom godine (npr. prelazak s paušala), u Postavkama se može prebaciti aktivni oblik radi pristupa prethodnim obrascima.'
+              : 'Évközi adónem-váltás: Ha az egyéni vállalkozó év közben formát váltott (pl. KATA kiesés, áttérés Átalányadóba vagy VSZJA-ba), a Beállítások varázslóban bármikor módosítható az aktív adózási forma a korábbi időszak kalkulátorainak és bevallásainak eléréséhez.'}
+          </span>
+        </div>
+        <Link
+          to={`${prefix}/eaisybooks/${companyId}/${dateRange}/ev/setup`}
+          className="text-xs font-semibold text-primary hover:underline shrink-0 flex items-center gap-1 ml-auto sm:ml-0"
+        >
+          {isHr ? 'Postavke obrta' : 'Beállítások varázsló'} &rarr;
+        </Link>
+      </div>
+
       {/* YTD Summary */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
@@ -376,27 +462,58 @@ export default function ClientEvMainPage() {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0">
-              {section.items.map((item, idx) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    'flex items-center gap-3 px-5 py-3 transition-all group',
-                    colorHover[section.color],
-                    'hover:bg-muted/50',
-                    idx < section.items.length - (section.items.length % 3 === 0 ? 3 : section.items.length % 3)
-                      ? 'border-b border-border/30'
-                      : '',
-                    (idx + 1) % 3 !== 0 ? 'sm:border-r border-border/30' : ''
-                  )}
-                >
-                  <item.icon className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground/60 transition-colors shrink-0" />
-                  <span className="text-sm text-foreground/90 group-hover:text-foreground dark:group-hover:text-slate-100 transition-colors flex-1">
-                    {item.label}
-                  </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
-                </Link>
-              ))}
+              {section.items.map((item, idx) => {
+                const { disabled, reason } = getEvItemEligibility(item.to, taxpayerForm, isHr);
+
+                if (disabled) {
+                  return (
+                    <div
+                      key={item.to}
+                      className={cn(
+                        'flex items-center gap-3 px-5 py-3 transition-all select-none opacity-40 grayscale-[50%] bg-muted/10 cursor-not-allowed',
+                        idx < section.items.length - (section.items.length % 3 === 0 ? 3 : section.items.length % 3)
+                          ? 'border-b border-border/30'
+                          : '',
+                        (idx + 1) % 3 !== 0 ? 'sm:border-r border-border/30' : ''
+                      )}
+                      title={reason}
+                    >
+                      <item.icon className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+                      <span className="text-sm text-muted-foreground line-clamp-1 flex-1">
+                        {item.label}
+                      </span>
+                      {reason && (
+                        <span className="text-[10px] font-medium text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded border border-border/50 shrink-0">
+                          {reason}
+                        </span>
+                      )}
+                      <Lock className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 ml-1" />
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={cn(
+                      'flex items-center gap-3 px-5 py-3 transition-all group',
+                      colorHover[section.color],
+                      'hover:bg-muted/50',
+                      idx < section.items.length - (section.items.length % 3 === 0 ? 3 : section.items.length % 3)
+                        ? 'border-b border-border/30'
+                        : '',
+                      (idx + 1) % 3 !== 0 ? 'sm:border-r border-border/30' : ''
+                    )}
+                  >
+                    <item.icon className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground/60 transition-colors shrink-0" />
+                    <span className="text-sm text-foreground/90 group-hover:text-foreground dark:group-hover:text-slate-100 transition-colors flex-1">
+                      {item.label}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
+                  </Link>
+                );
+              })}
             </div>
           </div>
         ))}

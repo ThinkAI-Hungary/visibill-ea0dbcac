@@ -1,5 +1,5 @@
 import { useDateRange } from '@/contexts/DateRangeContext';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Link, useParams, useSearchParams , useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -9,7 +9,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAccountyClient, useEvTaxParams } from '@/hooks/accounty';
 import { formatHuf, DEFAULT_2026_PARAMS, DEFAULT_2025_PARAMS } from '@/lib/evCalculations';
-import { useEvTaxReturns, useUpdateEvTaxReturn } from '@/hooks/useEvData';
+import { useEvClientSettings, useEvTaxReturns, useUpdateEvTaxReturn } from '@/hooks/useEvData';
 import { toast } from '@/hooks/use-toast';
 import { parseTaxNumber } from '@/lib/validationUtils';
 
@@ -42,8 +42,11 @@ export default function EvKataReturnPage() {
   const [searchParams] = useSearchParams();
   const { dateFrom, setDateFrom, setDateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const taxYear = dateFrom.getFullYear();
+  const [nowTime] = useState(() => Date.now());
 
   // Real data
+  const { data: evSettings } = useEvClientSettings(id, taxYear);
+  const isNotKata = Boolean(evSettings?.taxpayer_form && evSettings.taxpayer_form !== 'kata');
   const { data: allReturns, isLoading: returnsLoading } = useEvTaxReturns(id, taxYear);
   const { data: dbParams, isLoading: paramsLoading } = useEvTaxParams(taxYear);
   
@@ -55,8 +58,8 @@ export default function EvKataReturnPage() {
     const dbReturns = (allReturns || [])
       .filter((r: any) => r.return_type === 'kata')
       .map((r: any) => {
-        const now = new Date();
-        const isOverdue = r.status !== 'submitted' && r.status !== 'accepted' && r.deadline && new Date(r.deadline) < now;
+        const deadlineTime = r.deadline ? new Date(r.deadline).getTime() : 0;
+        const isOverdue = r.status !== 'submitted' && r.status !== 'accepted' && deadlineTime > 0 && deadlineTime < nowTime;
         const status = isOverdue ? 'overdue'
           : r.status === 'submitted' || r.status === 'accepted' ? 'submitted'
           : r.status === 'draft' ? 'draft' : 'upcoming';
@@ -72,14 +75,13 @@ export default function EvKataReturnPage() {
       });
 
     // Generate expected semi-annual KATA returns and merge with DB records
-    const now = new Date();
     const haviTetel = taxParams.kataHaviTetel;
     const halfYearAmount = haviTetel * 6;
 
     const getStatus = (deadline: string) => {
-      const d = new Date(deadline);
-      if (now > d) return 'overdue';
-      const days = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const dTime = new Date(deadline).getTime();
+      if (nowTime > dTime) return 'overdue';
+      const days = Math.ceil((dTime - nowTime) / (1000 * 60 * 60 * 24));
       return days <= 30 ? 'draft' : 'upcoming';
     };
 
@@ -111,9 +113,9 @@ export default function EvKataReturnPage() {
         xmlData: null,
       };
     });
-  }, [allReturns, taxParams]);
+  }, [allReturns, taxParams, taxYear, nowTime]);
 
-  const handlePrepareAndDownload = async (ret: any) => {
+  const handlePrepareAndDownload = useCallback(async (ret: any) => {
     if (!id) return;
     try {
       // 1. Prepare parameters for the Edge Function
@@ -204,7 +206,7 @@ export default function EvKataReturnPage() {
         variant: 'destructive',
       });
     }
-  };
+  }, [id, taxYear, client, updateReturn]);
 
   const kataHaviTetel = taxParams.kataHaviTetel;
   const kataEvesKeret = taxParams.kataEvesKeret;
@@ -231,6 +233,21 @@ export default function EvKataReturnPage() {
           <p className="text-sm text-muted-foreground">KATA tv. 10. § – féléves tételes adóbevallás</p>
         </div>
       </div>
+
+      {isNotKata && (
+        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <h4 className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+              A vállalkozó nem KATA adóalany!
+            </h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              A vállalkozó nyilvántartott adózási formája jelenleg: <strong className="uppercase">{evSettings?.taxpayer_form || 'egyéb'}</strong>.
+              A KATA bevallás kizárólag a kisadózó vállalkozások tételes adóját választók számára releváns.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-card rounded-lg border border-border p-4 shadow-soft">
@@ -285,8 +302,14 @@ export default function EvKataReturnPage() {
                     {ret.status !== 'submitted' && (
                       <button
                         onClick={() => handlePrepareAndDownload(ret)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
-                        title="Bevallás elkészítése és beküldése"
+                        disabled={isNotKata}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors",
+                          isNotKata
+                            ? "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
+                            : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        )}
+                        title={isNotKata ? "Csak KATA adóalanyoknak engedélyezett" : "Bevallás elkészítése és beküldése"}
                       >
                         <Send className="w-3.5 h-3.5" />
                         Bevallás elkészítése (XML)

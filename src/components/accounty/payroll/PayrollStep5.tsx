@@ -2,6 +2,8 @@ import React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { payrollQueryKeys } from '@/hooks/usePayrollData';
 import { toast } from '@/hooks/use-toast';
+import { calculateHourlyBaseRate } from '@/lib/payroll/premiumCalculator';
+import { isMtEmployment } from '@/lib/payroll/employmentUtils';
 
 interface PayrollStep5Props {
   activeEmployees: any[];
@@ -28,6 +30,7 @@ export default function PayrollStep5({
   const [customServiceChargeMap, setCustomServiceChargeMap] = React.useState<Record<string, number>>({});
   const [localServiceChargeTextMap, setLocalServiceChargeTextMap] = React.useState<Record<string, string>>({});
   const [customNightShiftMap, setCustomNightShiftMap] = React.useState<Record<string, number>>({});
+  const [customNightShiftHoursMap, setCustomNightShiftHoursMap] = React.useState<Record<string, number>>({});
   const [localNightShiftTextMap, setLocalNightShiftTextMap] = React.useState<Record<string, string>>({});
   const [savingMap, setSavingMap] = React.useState<Record<string, boolean>>({});
 
@@ -37,9 +40,11 @@ export default function PayrollStep5({
     onSavingChange?.(isSaving);
   }, [isSaving, onSavingChange]);
 
-  const handleNightShiftChange = async (empId: string, employmentId: string, amount: number) => {
+  const handleNightShiftChange = async (empId: string, employmentId: string, amount: number, hours: number) => {
     const safeAmount = Math.max(0, amount);
+    const safeHours = Math.max(0, hours);
     setCustomNightShiftMap(prev => ({ ...prev, [empId]: safeAmount }));
+    setCustomNightShiftHoursMap(prev => ({ ...prev, [empId]: safeHours }));
 
     if (!cycleId || !employmentId) return;
 
@@ -55,10 +60,19 @@ export default function PayrollStep5({
         .maybeSingle();
 
       if (safeAmount > 0) {
+        const description = safeHours > 0
+          ? `Éjszakai pótlék (15% Mt. 142. § - ${safeHours} h)`
+          : 'Éjszakai pótlék (15% Mt. 142. §)';
+
         if (existing) {
           await supabase
             .from('accounty_payroll_items')
-            .update({ amount: safeAmount })
+            .update({
+              amount: safeAmount,
+              hours: safeHours,
+              rate_pct: 15,
+              description,
+            })
             .eq('id', existing.id);
         } else {
           await supabase
@@ -67,8 +81,10 @@ export default function PayrollStep5({
               cycle_id: cycleId,
               employment_id: employmentId,
               item_type: 'night_shift',
-              description: 'Éjszakai pótlék (15% Mt. 142. §)',
+              description,
               amount: safeAmount,
+              hours: safeHours,
+              rate_pct: 15,
               is_deduction: false,
             });
         }
@@ -224,7 +240,7 @@ export default function PayrollStep5({
               <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Alapbér</th>
               <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Pótlék</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Prémium / Jutalom (Ft)</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Éjszakai pótlék (Ft)</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase" title="Mt. 142. §: 15%-os bérpótlék a 22:00-06:00 közötti éjszakai órákra">Éjszakai órák (h)</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase">Felszolgálási díj (Ft)</th>
               <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Bruttó összesen</th>
             </tr>
@@ -248,6 +264,10 @@ export default function PayrollStep5({
               let leaveAmount = 0;
               let adjustedBase = 0;
 
+              const isMt = isMtEmployment(empEmployment?.employment_type);
+              const effectiveSickDays = isMt ? (att.sickDays || 0) : 0;
+              const effectiveLeaveDays = isMt ? (att.leaveDays || 0) : 0;
+
               if (isHourly) {
                 hourlyRate = rawBaseSalary;
                 dailyRate = hourlyRate * dailyHours;
@@ -255,8 +275,8 @@ export default function PayrollStep5({
                 const actualWorkedHours = (att.workedHours !== undefined && att.workedHours !== null && Number(att.workedHours) > 0)
                   ? Number(att.workedHours)
                   : (att.workDays || 0) * dailyHours;
-                const sickHours = (att.sickDays || 0) * dailyHours;
-                const leaveHours = (att.leaveDays || 0) * dailyHours;
+                const sickHours = effectiveSickDays * dailyHours;
+                const leaveHours = effectiveLeaveDays * dailyHours;
 
                 adjustedBase = Math.round(actualWorkedHours * hourlyRate);
                 overtimeAmount = Math.round(hourlyRate * (att.overtime || 0) * 1.5);
@@ -267,11 +287,11 @@ export default function PayrollStep5({
                 dailyRate = rawBaseSalary / effectiveWorkDays;
                 hourlyRate = rawBaseSalary / (dailyHours * effectiveWorkDays);
 
-                const baseReduction = Math.round(dailyRate * (att.sickDays || 0));
+                const baseReduction = Math.round(dailyRate * effectiveSickDays);
                 adjustedBase = Math.max(0, rawBaseSalary - baseReduction);
 
                 overtimeAmount = Math.round(hourlyRate * (att.overtime || 0) * 1.5);
-                sickLeaveAmount = Math.round(dailyRate * (att.sickDays || 0) * 0.70);
+                sickLeaveAmount = Math.round(dailyRate * effectiveSickDays * 0.70);
                 leaveAmount = 0;
               }
               
@@ -289,8 +309,18 @@ export default function PayrollStep5({
               const storedBonus = empItems.find(i => i.item_type === 'bonus')?.amount || 0;
               const currentBonus = customBonusMap[emp.id] !== undefined ? customBonusMap[emp.id] : storedBonus;
 
-              const storedNightShift = empItems.find(i => i.item_type === 'night_shift')?.amount || 0;
-              const currentNightShift = customNightShiftMap[emp.id] !== undefined ? customNightShiftMap[emp.id] : storedNightShift;
+              const calcNightBaseRate = isHourly ? rawBaseSalary : calculateHourlyBaseRate(rawBaseSalary, weeklyHours);
+              const storedNightShiftItem = empItems.find(i => i.item_type === 'night_shift');
+              const storedNightShiftAmount = storedNightShiftItem?.amount || 0;
+              const storedNightHours = storedNightShiftItem?.hours || (storedNightShiftAmount > 0 && calcNightBaseRate > 0 ? Math.round((storedNightShiftAmount / (calcNightBaseRate * 0.15)) * 10) / 10 : 0);
+
+              const currentNightHours = customNightShiftHoursMap[emp.id] !== undefined
+                ? customNightShiftHoursMap[emp.id]
+                : storedNightHours;
+
+              const currentNightShift = customNightShiftMap[emp.id] !== undefined
+                ? customNightShiftMap[emp.id]
+                : (currentNightHours > 0 && calcNightBaseRate > 0 ? Math.round(currentNightHours * calcNightBaseRate * 0.15) : storedNightShiftAmount);
 
               const storedServiceCharge = empItems.find(i => i.item_type === 'service_charge')?.amount || 0;
               const currentServiceCharge = customServiceChargeMap[emp.id] !== undefined ? customServiceChargeMap[emp.id] : storedServiceCharge;
@@ -333,23 +363,38 @@ export default function PayrollStep5({
                     />
                   </td>
                   <td className="px-4 py-2 text-center">
-                    <input
-                      type="number"
-                      min={0}
-                      placeholder="0"
-                      value={localNightShiftTextMap[emp.id] !== undefined ? localNightShiftTextMap[emp.id] : (currentNightShift ? String(currentNightShift) : '')}
-                      onChange={(e) => {
-                        const strVal = e.target.value.replace(/^-+/, '');
-                        const numVal = Math.max(0, parseInt(strVal) || 0);
-                        setLocalNightShiftTextMap(prev => ({ ...prev, [emp.id]: strVal }));
-                        setCustomNightShiftMap(prev => ({ ...prev, [emp.id]: numVal }));
-                      }}
-                      onBlur={(e) => {
-                        const numVal = Math.max(0, parseInt(e.target.value.replace(/^-+/, '')) || 0);
-                        handleNightShiftChange(emp.id, empEmployment?.id || '', numVal);
-                      }}
-                      className="w-28 text-right rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono font-bold text-indigo-600 dark:text-indigo-400 focus:border-primary focus:outline-none"
-                    />
+                    <div className="flex flex-col items-center justify-center gap-0.5">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={744}
+                          step={0.5}
+                          placeholder="0"
+                          value={localNightShiftTextMap[emp.id] !== undefined ? localNightShiftTextMap[emp.id] : (currentNightHours ? String(currentNightHours) : '')}
+                          onChange={(e) => {
+                            const strVal = e.target.value.replace(/^-+/, '');
+                            const hoursVal = Math.max(0, parseFloat(strVal) || 0);
+                            const computedAmount = Math.round(hoursVal * calcNightBaseRate * 0.15);
+                            setLocalNightShiftTextMap(prev => ({ ...prev, [emp.id]: strVal }));
+                            setCustomNightShiftHoursMap(prev => ({ ...prev, [emp.id]: hoursVal }));
+                            setCustomNightShiftMap(prev => ({ ...prev, [emp.id]: computedAmount }));
+                          }}
+                          onBlur={(e) => {
+                            const hoursVal = Math.max(0, parseFloat(e.target.value.replace(/^-+/, '')) || 0);
+                            const computedAmount = Math.round(hoursVal * calcNightBaseRate * 0.15);
+                            handleNightShiftChange(emp.id, empEmployment?.id || '', computedAmount, hoursVal);
+                          }}
+                          className="w-16 text-center rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono font-bold text-indigo-600 dark:text-indigo-400 focus:border-primary focus:outline-none"
+                        />
+                        <span className="text-xs text-muted-foreground font-mono">h</span>
+                      </div>
+                      {currentNightShift > 0 && (
+                        <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 font-semibold whitespace-nowrap">
+                          = {currentNightShift.toLocaleString('hu-HU')} Ft
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-2 text-center">
                     <input

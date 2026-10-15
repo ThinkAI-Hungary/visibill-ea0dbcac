@@ -327,3 +327,31 @@ export function validateCompanyTaxNumber(taxNumber: string): { valid: boolean; e
 
   return { valid: true };
 }
+
+/**
+ * Születési dátum validáció (Mt. 34. § és naptári határok)
+ * - Formátum vagy parse-olható dátum string
+ * - Nem lehet jövőbeli dátum
+ * - Nem lehet érvénytelen dátum
+ * - Mt. 34. § szerint a munkavállalónak legalább 15 évesnek kell lennie (iskolai szünetben foglalkoztatott diák alsó korhatára)
+ */
+export function validateBirthDate(birthDateStr?: string | null): { valid: boolean; error?: string } {
+  if (!birthDateStr || !birthDateStr.trim()) return { valid: true };
+  const bDate = new Date(birthDateStr);
+  if (isNaN(bDate.getTime())) {
+    return { valid: false, error: 'Érvénytelen születési dátum' };
+  }
+  const now = new Date();
+  if (bDate > now) {
+    return { valid: false, error: 'A születési dátum nem lehet a jövőben' };
+  }
+  let age = now.getFullYear() - bDate.getFullYear();
+  const monthDiff = now.getMonth() - bDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < bDate.getDate())) {
+    age--;
+  }
+  if (age < 15) {
+    return { valid: false, error: 'A munkavállaló még nem töltötte be a 15. életévét (Mt. 34. §)' };
+  }
+  return { valid: true };
+}

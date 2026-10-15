@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { TaxParameters } from '@/lib/payroll/taxEngine';
-import { getStatutoryWorkDays } from '@/lib/payroll/workdayCalculator';
+import { getStatutoryWorkDays, getWorkDaysBetween } from '@/lib/payroll/workdayCalculator';
 
 // ═══════════════════════════════════════════════════════════════
 // TÍPUSOK (DB row típusok)
@@ -1219,9 +1219,30 @@ export function useRunBatchPayroll() {
         const baseSalary = Number(employment.base_salary || 0);
         const isHourly = employment.salary_type === 'hourly';
 
+        // Cycle boundaries and employment period
+        const daysInMonth = new Date(input.year, input.month, 0).getDate();
+        const cycleStartDate = `${input.year}-${String(input.month).padStart(2, '0')}-01`;
+        const cycleEndDate = `${input.year}-${String(input.month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+        const cycleStart = new Date(cycleStartDate);
+        const cycleEnd = new Date(cycleEndDate);
+
+        const empStart = employment.start_date ? new Date(employment.start_date) : new Date(cycleStartDate);
+        const empEnd = employment.end_date ? new Date(employment.end_date) : new Date(cycleEndDate);
+
+        const effectiveStart = empStart > cycleStart ? empStart : cycleStart;
+        const effectiveEnd = empEnd < cycleEnd ? empEnd : cycleEnd;
+
+        let activeCalendarDays = 0;
+        if (effectiveStart <= effectiveEnd) {
+          activeCalendarDays = Math.floor((effectiveEnd.getTime() - effectiveStart.getTime()) / (86400000)) + 1;
+        }
+
+        const isPartialMonth = effectiveStart > cycleStart || effectiveEnd < cycleEnd;
+        const scheduledWorkDaysInPeriod = isPartialMonth ? getWorkDaysBetween(effectiveStart, effectiveEnd) : statutoryWorkDays;
+
         // Fetch timesheet attendance
         const tsRow = (timesheets || []).find((t: any) => t.employment_id === employment.id);
-        const attendance = (tsRow?.ocr_data as any) || { workDays: statutoryWorkDays, overtime: 0, sickDays: 0, leaveDays: 0 };
+        const attendance = (tsRow?.ocr_data as any) || { workDays: scheduledWorkDaysInPeriod, overtime: 0, sickDays: 0, leaveDays: 0 };
 
         // Calculate auto attendance values
         const weeklyHours = employment.weekly_hours || 40;
@@ -1241,7 +1262,7 @@ export function useRunBatchPayroll() {
 
           const actualWorkedHours = (attendance.workedHours !== undefined && attendance.workedHours !== null && Number(attendance.workedHours) > 0)
             ? Number(attendance.workedHours)
-            : (attendance.workDays || 0) * dailyHours;
+            : (attendance.workDays !== undefined ? attendance.workDays : scheduledWorkDaysInPeriod) * dailyHours;
           const sickHours = (attendance.sickDays || 0) * dailyHours;
           const leaveHours = (attendance.leaveDays || 0) * dailyHours;
 
@@ -1251,12 +1272,30 @@ export function useRunBatchPayroll() {
           leaveAmount = Math.round(hourlyRate * leaveHours * 1.0);
         } else {
           // For Monthly employees: baseSalary is the full monthly salary (e.g. 150,000 Ft/month)
-          const effectiveWorkDays = attendance.workDays || statutoryWorkDays;
-          dailyRate = baseSalary / effectiveWorkDays;
-          hourlyRate = baseSalary / (dailyHours * effectiveWorkDays);
+          const isEvEmployment = employment.employment_type === 'ev' || employment.employment_type === 'ev_mellekfogl';
 
-          const baseReduction = Math.round(dailyRate * (attendance.sickDays || 0));
-          adjustedBaseSalary = Math.max(0, baseSalary - baseReduction);
+          if (isPartialMonth) {
+            if (isEvEmployment) {
+              // EV: Tbj. szerint a naptári biztosítási napok arányában arányosít
+              const dayRatio = daysInMonth > 0 ? (activeCalendarDays / daysInMonth) : 1;
+              dailyRate = baseSalary / statutoryWorkDays;
+              hourlyRate = baseSalary / (dailyHours * statutoryWorkDays);
+              adjustedBaseSalary = Math.round(baseSalary * dayRatio);
+            } else {
+              // Munkaviszony / Mt. 136. §: a hónapra eső törvényes munkanapok arányában arányosít
+              dailyRate = baseSalary / statutoryWorkDays;
+              hourlyRate = baseSalary / (dailyHours * statutoryWorkDays);
+              const effectiveWorkedDays = attendance.workDays !== undefined ? attendance.workDays : scheduledWorkDaysInPeriod;
+              adjustedBaseSalary = Math.round(dailyRate * Math.max(0, effectiveWorkedDays - (attendance.sickDays || 0)));
+            }
+          } else {
+            const effectiveWorkDays = attendance.workDays || statutoryWorkDays;
+            dailyRate = baseSalary / effectiveWorkDays;
+            hourlyRate = baseSalary / (dailyHours * effectiveWorkDays);
+
+            const baseReduction = Math.round(dailyRate * (attendance.sickDays || 0));
+            adjustedBaseSalary = Math.max(0, baseSalary - baseReduction);
+          }
 
           overtimeAmount = Math.round(hourlyRate * (attendance.overtime || 0) * 1.5);
           sickLeaveAmount = Math.round(dailyRate * (attendance.sickDays || 0) * 0.70);
@@ -1370,12 +1409,6 @@ export function useRunBatchPayroll() {
           isHousingAllowance: !!c.is_housing_allowance
         }));
 
-        const daysInMonth = new Date(input.year, input.month, 0).getDate();
-        const cycleStartDate = `${input.year}-${String(input.month).padStart(2, '0')}-01`;
-        const cycleEndDate = `${input.year}-${String(input.month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
-        const cycleStart = new Date(cycleStartDate);
-        const cycleEnd = new Date(cycleEndDate);
-
         // Fetch leaves for this employment overlapping this payroll cycle
         const { data: leaveRows } = await supabase
           .from('accounty_leaves')
@@ -1383,17 +1416,6 @@ export function useRunBatchPayroll() {
           .eq('employment_id', employment.id)
           .lte('start_date', cycleEndDate)
           .gte('end_date', cycleStartDate);
-
-        const empStart = employment.start_date ? new Date(employment.start_date) : new Date(cycleStartDate);
-        const empEnd = employment.end_date ? new Date(employment.end_date) : new Date(cycleEndDate);
-
-        const effectiveStart = empStart > cycleStart ? empStart : cycleStart;
-        const effectiveEnd = empEnd < cycleEnd ? empEnd : cycleEnd;
-
-        let activeCalendarDays = 0;
-        if (effectiveStart <= effectiveEnd) {
-          activeCalendarDays = Math.floor((effectiveEnd.getTime() - effectiveStart.getTime()) / (86400000)) + 1;
-        }
 
         let suspensionDays = 0;
         let sickLeaveDays = attendance.sickDays || 0;

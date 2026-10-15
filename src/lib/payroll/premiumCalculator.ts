@@ -265,9 +265,7 @@ export function trackOvertime(
 // ── Órabér kalkulátor ──
 
 /**
- * Havi alapbér → órabér konverzió.
- *
- * Általános havi munkaórák: heti órák × 4.348 (átlagos heti szorzó)
+ * Havi alapbér → órabér konverzió (átlagos havi munkaóra: heti órák × 4.348).
  */
 export function monthlyToHourly(
   monthlySalary: number,
@@ -275,4 +273,37 @@ export function monthlyToHourly(
 ): number {
   const monthlyHours = weeklyHours * 4.348; // 52 hét / 12 hónap ≈ 4.348
   return Math.round((monthlySalary / monthlyHours) * 100) / 100;
+}
+
+/**
+ * Egy órára eső alapbér kiszámítása az Mt. 136. § (3) b) alapján.
+ * Havi alapbérnél az általános törvényes osztó: 174 óra (40 órás heti munkaidőnél),
+ * részmunkaidőnél arányosítva: 174 * (weeklyHours / 40).
+ */
+export function calculateHourlyBaseRate(baseSalary: number, weeklyHours: number = 40): number {
+  if (baseSalary <= 0) return 0;
+  const divisor = 174 * (weeklyHours / 40);
+  if (divisor <= 0) return 0;
+  return baseSalary / divisor;
+}
+
+/**
+ * Éjszakai pótlék (Mt. 142. § - 15%) számítása ledolgozott éjszakai órák alapján.
+ */
+export function calculateNightShiftPremiumFromHours(
+  nightHours: number,
+  baseSalary: number,
+  weeklyHours: number = 40,
+  ratePct: number = 0.15
+): { hours: number; hourlyRate: number; amount: number } {
+  if (nightHours <= 0 || baseSalary <= 0) {
+    return { hours: nightHours, hourlyRate: 0, amount: 0 };
+  }
+  const hourlyRate = calculateHourlyBaseRate(baseSalary, weeklyHours);
+  const amount = Math.round(nightHours * hourlyRate * ratePct);
+  return {
+    hours: nightHours,
+    hourlyRate: Math.round(hourlyRate * 100) / 100,
+    amount,
+  };
 }

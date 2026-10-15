@@ -27,6 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
+import { calculateHourlyBaseRate } from '@/lib/payroll/premiumCalculator';
 import WorksheetLeaveModal from './WorksheetLeaveModal';
 
 export interface WorksheetEmployeeFormProps {
@@ -56,7 +57,7 @@ export interface WorksheetEmployeeFormProps {
   serviceCharge: number;
   onServiceChargeChange: (value: number) => void;
   nightShift?: number;
-  onNightShiftChange?: (value: number) => void;
+  onNightShiftChange?: (value: number, hours?: number) => void;
   homeOffice: number;
   onHomeOfficeChange: (value: number) => void;
   cafeteriaItems?: any[];
@@ -128,6 +129,33 @@ export default function WorksheetEmployeeForm({
   const [homeOfficeDraft, setHomeOfficeDraft] = React.useState<string>(homeOffice ? String(homeOffice) : '');
   const [deductionsDraft, setDeductionsDraft] = React.useState<string>(itemDeductions ? String(itemDeductions) : '');
 
+  const weeklyHours = Number(employment?.weekly_hours) || 40;
+  const rawBaseSalary = Number(employment?.base_salary) || 0;
+  const isHourly = employment?.salary_type === 'hourly';
+  const calcNightHourlyRate = isHourly ? rawBaseSalary : calculateHourlyBaseRate(rawBaseSalary, weeklyHours);
+
+  const initialNightHours = nightShift > 0 && calcNightHourlyRate > 0
+    ? Math.round((nightShift / (calcNightHourlyRate * 0.15)) * 10) / 10
+    : 0;
+  const [nightHoursDraft, setNightHoursDraft] = React.useState<string>(initialNightHours ? String(initialNightHours) : '');
+
+  React.useEffect(() => {
+    if (nightShift > 0 && calcNightHourlyRate > 0) {
+      const calcH = Math.round((nightShift / (calcNightHourlyRate * 0.15)) * 10) / 10;
+      setNightHoursDraft(String(calcH));
+    } else if (!nightShift) {
+      setNightHoursDraft('');
+    }
+  }, [nightShift, calcNightHourlyRate, employee?.id]);
+
+  const commitNightShiftHours = (valStr: string) => {
+    const hours = Math.max(0, parseFloat(valStr) || 0);
+    const computedFt = Math.round(hours * calcNightHourlyRate * 0.15);
+    if (computedFt !== nightShift) {
+      onNightShiftChange?.(computedFt, hours);
+    }
+  };
+
   React.useEffect(() => {
     setBonusDraft(bonus ? String(bonus) : '');
   }, [bonus, employee?.id]);
@@ -196,8 +224,6 @@ export default function WorksheetEmployeeForm({
       </div>
     );
   }
-
-  const isHourly = employment.salary_type === 'hourly';
 
   return (
     <div className="space-y-6">
@@ -631,23 +657,43 @@ export default function WorksheetEmployeeForm({
             <div className="flex items-center justify-between">
               <Label className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
                 <Moon className="w-3 h-3 text-indigo-500" />
-                Éjszakai pótlék (Ft)
+                Éjszakai pótlék (óra)
               </Label>
               <Badge variant="outline" className="text-[10px] bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
                 15% MT. 142. §
               </Badge>
             </div>
-            <Input
-              type="number"
-              min={0}
-              step={1000}
-              value={nightShift || ''}
-              onChange={(e) => onNightShiftChange?.(parseFloat(e.target.value) || 0)}
-              placeholder="0 Ft"
-              className="h-8 text-xs font-mono font-bold text-indigo-700 dark:text-indigo-400"
-            />
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type="number"
+                  min={0}
+                  max={744}
+                  step={0.5}
+                  value={nightHoursDraft}
+                  onChange={(e) => setNightHoursDraft(e.target.value)}
+                  onBlur={() => commitNightShiftHours(nightHoursDraft)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      commitNightShiftHours(nightHoursDraft);
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  placeholder="0"
+                  className="h-8 text-xs font-mono font-bold text-indigo-700 dark:text-indigo-400 pr-7"
+                />
+                <span className="absolute right-2 top-2 text-xs text-muted-foreground font-mono pointer-events-none">
+                  h
+                </span>
+              </div>
+              {nightShift > 0 && (
+                <div className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap px-2 py-1 bg-indigo-500/10 rounded border border-indigo-500/20">
+                  = {nightShift.toLocaleString('hu-HU')} Ft
+                </div>
+              )}
+            </div>
             <p className="text-[10px] text-muted-foreground">
-              22:00 és 06:00 közötti munkavégzés törvényi 15%-os bérpótléka.
+              22:00 és 06:00 közötti ledolgozott órák (alapbérből: {Math.round(calcNightHourlyRate).toLocaleString('hu-HU')} Ft/ó × 15%).
             </p>
           </div>
 

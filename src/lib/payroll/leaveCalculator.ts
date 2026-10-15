@@ -20,11 +20,14 @@ export interface LeaveBalance {
   childSupplement: number;
   disabledChildSupplement: number;
   extraLeave: number;
+  rehabLeave: number;
   totalAnnual: number;
   carriedOver: number;
+  carriedOverSource?: 'previous_year' | 'previous_job';
   totalAvailable: number;
   used: number;
   remaining: number;
+  hasOverrides?: boolean;
 
   // ── Részletes bontás (napokban) ──
   paternityLeave: number;
@@ -38,6 +41,7 @@ export interface LeaveBalance {
   childSupplementHours: number;
   disabledChildSupplementHours: number;
   extraLeaveHours: number;
+  rehabLeaveHours: number;
   totalAnnualHours: number;
   carriedOverHours: number;
   totalAvailableHours: number;
@@ -50,6 +54,7 @@ export interface EmployeeLeaveInput {
   childrenUnder16: number;
   disabledChildren: number;
   carriedOverDays: number;
+  carriedOverSource?: 'previous_year' | 'previous_job';
   extraLeaveDays: number;
   paternityDays?: number;
   parentalDays?: number;
@@ -66,8 +71,23 @@ export interface EmployeeLeaveInput {
   // Szakképzési munkaszerződés / tanulói jogviszony (Szkt. 84. § (6): évi 45 munkanap szabadság)
   isVocationalStudent?: boolean;
 
+  // Megváltozott munkaképesség / rehabilitációs pótszabadság (Mt. 120. §: +5 nap)
+  hasRehabLeave?: boolean;
+  rehabLeaveDays?: number;
+
   // Opcionális egyedi alapszabadság keret
   customBaseLeave?: number;
+
+  // Kézi felülbírálások (ha a könyvelő egyedileg módosította a keretet)
+  customOverrides?: {
+    baseLeave?: number;
+    ageSupplement?: number;
+    childSupplement?: number;
+    disabledChildSupplement?: number;
+    rehabLeave?: number;
+    extraLeave?: number;
+    totalAnnual?: number;
+  };
 }
 
 // ── Szabadság konstansok (Mt. & Szkt.) ──
@@ -138,16 +158,49 @@ function calculateProRata(
 
 export function calculateLeaveBalance(input: EmployeeLeaveInput): LeaveBalance {
   const isVocational = Boolean(input.isVocationalStudent);
-  const effectiveBaseLeave = input.customBaseLeave ?? (isVocational ? VOCATIONAL_LEAVE_DAYS : BASE_LEAVE_DAYS);
-  const ageSupplement = isVocational ? 0 : calculateAgeSupplement(input.ageAtYearStart);
-  const childSupplement = isVocational ? 0 : calculateChildSupplement(input.childrenUnder16);
-  const disabledChildSupplement = isVocational ? 0 : calculateDisabledChildSupplement(input.disabledChildren);
+  const overrides = input.customOverrides;
+  const hasOverrides = Boolean(
+    overrides && (
+      overrides.baseLeave !== undefined ||
+      overrides.ageSupplement !== undefined ||
+      overrides.childSupplement !== undefined ||
+      overrides.disabledChildSupplement !== undefined ||
+      overrides.rehabLeave !== undefined ||
+      overrides.extraLeave !== undefined ||
+      overrides.totalAnnual !== undefined
+    )
+  );
+
+  const defaultBaseLeave = input.customBaseLeave ?? (isVocational ? VOCATIONAL_LEAVE_DAYS : BASE_LEAVE_DAYS);
+  const effectiveBaseLeave = overrides?.baseLeave ?? defaultBaseLeave;
+
+  const defaultAgeSupplement = isVocational ? 0 : calculateAgeSupplement(input.ageAtYearStart);
+  const ageSupplement = overrides?.ageSupplement ?? defaultAgeSupplement;
+
+  const defaultChildSupplement = isVocational ? 0 : calculateChildSupplement(input.childrenUnder16);
+  const childSupplement = overrides?.childSupplement ?? defaultChildSupplement;
+
+  const defaultDisabledChildSupplement = isVocational ? 0 : calculateDisabledChildSupplement(input.disabledChildren);
+  const disabledChildSupplement = overrides?.disabledChildSupplement ?? defaultDisabledChildSupplement;
+
+  // Megváltozott munkaképességű / rehabilitációs pótszabadság (Mt. 120. §: évi 5 munkanap)
+  const defaultRehabLeave = input.hasRehabLeave
+    ? (input.rehabLeaveDays ?? 5)
+    : (input.rehabLeaveDays ?? 0);
+  const rehabLeave = overrides?.rehabLeave ?? defaultRehabLeave;
+
+  // Egyéb rendkívüli pótszabadság (ha a rehab külön van kezelve, a pureExtraLeave az ezen felüli extra napok)
+  const defaultExtraLeave = (input.extraLeaveDays && !input.hasRehabLeave) ? input.extraLeaveDays : 0;
+  const pureExtraLeave = overrides?.extraLeave ?? defaultExtraLeave;
+
   const dailyHours = input.dailyHours || 8;
 
-  let totalAnnual = effectiveBaseLeave + ageSupplement + childSupplement + disabledChildSupplement + input.extraLeaveDays;
+  let totalAnnual = overrides?.totalAnnual ?? (
+    effectiveBaseLeave + ageSupplement + childSupplement + disabledChildSupplement + rehabLeave + pureExtraLeave
+  );
 
-  // Időarányosítás
-  if (input.employmentStartDate || input.employmentEndDate) {
+  // Időarányosítás (ha nincs explicit totalAnnual felülbírálás és van kezdő/záró dátum)
+  if (overrides?.totalAnnual === undefined && (input.employmentStartDate || input.employmentEndDate)) {
     totalAnnual = calculateProRata(
       totalAnnual,
       input.year,
@@ -165,17 +218,23 @@ export function calculateLeaveBalance(input: EmployeeLeaveInput): LeaveBalance {
   const studyLeave = input.studyDays || 0;
   const extraordinaryLeave = input.extraordinaryDays || 0;
 
+  // Kompatibilitás a meglévő tesztekkel/nézetekkel: ha rehabLeave van és pureExtraLeave 0, az extraLeave mező is tükrözi a rehabot
+  const displayExtraLeave = pureExtraLeave > 0 ? pureExtraLeave : rehabLeave;
+
   return {
     baseLeave: effectiveBaseLeave,
     ageSupplement,
     childSupplement,
     disabledChildSupplement,
-    extraLeave: input.extraLeaveDays,
+    extraLeave: displayExtraLeave,
+    rehabLeave,
     totalAnnual,
     carriedOver,
+    carriedOverSource: input.carriedOverSource,
     totalAvailable,
     used: input.usedDays,
     remaining: Math.max(0, remaining),
+    hasOverrides,
 
     // Részletes
     paternityLeave,
@@ -188,7 +247,8 @@ export function calculateLeaveBalance(input: EmployeeLeaveInput): LeaveBalance {
     ageSupplementHours: ageSupplement * dailyHours,
     childSupplementHours: childSupplement * dailyHours,
     disabledChildSupplementHours: disabledChildSupplement * dailyHours,
-    extraLeaveHours: input.extraLeaveDays * dailyHours,
+    extraLeaveHours: displayExtraLeave * dailyHours,
+    rehabLeaveHours: rehabLeave * dailyHours,
     totalAnnualHours: totalAnnual * dailyHours,
     carriedOverHours: carriedOver * dailyHours,
     totalAvailableHours: totalAvailable * dailyHours,
@@ -262,6 +322,7 @@ export interface ResolveLeaveInputParams {
     job_code?: string | null;
     employment_type?: string | null;
     job_title?: string | null;
+    metadata?: any;
   } | null;
   targetYear?: number;
 }
@@ -305,10 +366,11 @@ export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): Empl
     });
 
   const familyDec = relevantDeclarations[0];
-  const decChildren = Array.isArray((familyDec?.parameters as any)?.children)
-    ? (familyDec?.parameters as any).children
+  const familyParams = familyDec?.parameters as any;
+  const decChildren = Array.isArray(familyParams?.children)
+    ? familyParams.children
     : null;
-  const decChildrenCount = (familyDec?.parameters as any)?.children_count;
+  const decChildrenCount = familyParams?.children_count;
 
   let childrenUnder16 = activeChildrenFromDeps.length;
   if (childrenUnder16 === 0) {
@@ -328,7 +390,7 @@ export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): Empl
 
   // Fogyatékos gyermek pótszabadság (Mt. 118. § (2): gyermekenként +2 munkanap, a 16. életév betöltésének évéig az Mt. 118. § (3) szerint)
   const depsDisabledCount = dependents.filter(d => {
-    if (!Boolean(d.is_disabled || d.disabled)) return false;
+    if (!d.is_disabled && !d.disabled) return false;
     if (d.birth_date) {
       const bYear = new Date(d.birth_date).getFullYear();
       return (targetYear - bYear) <= 16;
@@ -338,7 +400,7 @@ export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): Empl
 
   const decDisabledCount = (decChildren && decChildren.length > 0)
     ? decChildren.filter((c: any) => {
-        if (!Boolean(c.is_disabled || c.disabled)) return false;
+        if (!c.is_disabled && !c.disabled) return false;
         if (c.birth_date) {
           const bYear = new Date(c.birth_date).getFullYear();
           return (targetYear - bYear) <= 16;
@@ -349,9 +411,20 @@ export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): Empl
 
   const disabledChildren = Math.max(depsDisabledCount, decDisabledCount);
 
+  // Kézi felülbírálások és áthozott szabadság a munkaviszony metadata mezőjéből
+  const leaveOverrides = primaryEmployment?.metadata?.leave_overrides;
+  const carriedOverDays = leaveOverrides?.carried_over_days !== undefined
+    ? Number(leaveOverrides.carried_over_days)
+    : 0;
+  const carriedOverSource = leaveOverrides?.carried_over_source || 'previous_year';
+
   // Megváltozott munkaképességű / fogyatékossági pótszabadság (Mt. 120. §: évi 5 munkanap)
-  const hasPersonalDisability = declarations.some(d => d.declaration_type === 'personal' && d.status === 'active');
-  const extraLeaveDays = hasPersonalDisability ? 5 : 0;
+  const hasPersonalDisability = declarations.some(
+    d => (d.declaration_type === 'personal' || d.declaration_type === 'personal_disability') && d.status === 'active'
+  );
+  const hasRehabLeave = Boolean(hasPersonalDisability || leaveOverrides?.has_rehab_disability_leave);
+  const rehabLeaveDays = hasRehabLeave ? (Number(leaveOverrides?.rehab_days) || 5) : 0;
+  const extraLeaveDays = hasPersonalDisability ? 5 : (Number(leaveOverrides?.extra_leave_days) || 0);
 
   // Napi munkaóra az időarányos/óraalapú nyilvántartáshoz
   const weeklyHours = primaryEmployment?.weekly_hours ? Number(primaryEmployment.weekly_hours) : 40;
@@ -373,8 +446,12 @@ export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): Empl
     ageAtYearStart: age,
     childrenUnder16,
     disabledChildren,
-    carriedOverDays: 0,
+    carriedOverDays,
+    carriedOverSource,
     extraLeaveDays,
+    hasRehabLeave,
+    rehabLeaveDays,
+    customOverrides: leaveOverrides?.custom_overrides,
     employmentStartDate: primaryEmployment?.start_date ? new Date(primaryEmployment.start_date) : undefined,
     employmentEndDate: primaryEmployment?.end_date ? new Date(primaryEmployment.end_date) : undefined,
     dailyHours,

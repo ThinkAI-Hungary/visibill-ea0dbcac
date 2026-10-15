@@ -12,6 +12,16 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const MAX_RANGE_DAYS = 365;
 
+const MONTH_NAMES_HU = [
+  'Január', 'Február', 'Március', 'Április', 'Május', 'Június',
+  'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'
+];
+
+const MONTH_NAMES_HR = [
+  'Siječanj', 'Veljača', 'Ožujak', 'Travanj', 'Svibanj', 'Lipanj',
+  'Srpanj', 'Kolovoz', 'Rujan', 'Listopad', 'Studeni', 'Prosinac'
+];
+
 export interface GlobalDatePickerProps {
   showLanguageSwitcher?: boolean;
 }
@@ -22,20 +32,23 @@ export function GlobalDatePicker({ showLanguageSwitcher = true }: GlobalDatePick
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
 
-  const isThisMonth = isSameDay(dateFrom, startOfMonth(new Date())) && isSameDay(dateTo, endOfMonth(new Date()));
-  const isPreviousMonth = isSameDay(dateFrom, startOfMonth(subMonths(new Date(), 1))) && isSameDay(dateTo, endOfMonth(subMonths(new Date(), 1)));
-  const isThisYear = isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date()));
+  const [now] = useState(() => new Date());
+  const isThisMonth = isSameDay(dateFrom, startOfMonth(now)) && isSameDay(dateTo, endOfMonth(now));
+  const isPreviousMonth = isSameDay(dateFrom, startOfMonth(subMonths(now, 1))) && isSameDay(dateTo, endOfMonth(subMonths(now, 1)));
+  const isThisYear = isSameDay(dateFrom, startOfYear(now)) && isSameDay(dateTo, endOfYear(now));
 
   const isCustom = !isThisMonth && !isPreviousMonth && !isThisYear;
   const isHr = getActiveLocale() === 'hr';
   const dateFormatPattern = isHr ? 'dd.MM.yyyy.' : 'yyyy. MMM dd.';
 
+  const isFullMonth = isSameDay(dateFrom, startOfMonth(dateFrom)) && isSameDay(dateTo, endOfMonth(dateFrom));
+
   return (
     <div className="flex items-center gap-2 flex-wrap px-6 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <span className="text-sm font-medium text-muted-foreground mr-1">{t('date_picker.period', { defaultValue: 'Időszak:' })}</span>
       
-      {/* Preset buttons */}
-      <div className="flex gap-1">
+      {/* Preset buttons & month selector */}
+      <div className="flex gap-1 items-center flex-wrap">
         <Button
           variant={isThisMonth ? "default" : "outline"}
           size="sm"
@@ -60,6 +73,31 @@ export function GlobalDatePicker({ showLanguageSwitcher = true }: GlobalDatePick
         >
           {t('date_picker.this_year', { defaultValue: 'Ez az év' })}
         </Button>
+
+        {/* Hónap választó */}
+        <select
+          aria-label={t('date_picker.select_month', { defaultValue: 'Hónap választása' })}
+          value={isFullMonth ? dateFrom.getMonth() : ''}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val !== '') {
+              const monthIdx = parseInt(val, 10);
+              const year = dateFrom.getFullYear();
+              setDateFrom(startOfMonth(new Date(year, monthIdx, 1)));
+              setDateTo(endOfMonth(new Date(year, monthIdx, 1)));
+            }
+          }}
+          className="h-7 text-xs px-2.5 rounded-md border border-border bg-card text-foreground font-medium hover:bg-accent transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+        >
+          <option value="" disabled>
+            {isHr ? 'Hónap...' : 'Hónap választó...'}
+          </option>
+          {(isHr ? MONTH_NAMES_HR : MONTH_NAMES_HU).map((name, idx) => (
+            <option key={idx} value={idx}>
+              {name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <span className="text-muted-foreground mx-1 text-xs">|</span>
@@ -84,6 +122,7 @@ export function GlobalDatePicker({ showLanguageSwitcher = true }: GlobalDatePick
             <Calendar
               mode="single"
               selected={dateFrom}
+              defaultMonth={dateFrom}
               onSelect={(date) => {
                 if (date) {
                   setDateFrom(date);
@@ -91,6 +130,9 @@ export function GlobalDatePicker({ showLanguageSwitcher = true }: GlobalDatePick
                 }
               }}
               disabled={{ after: dateTo }}
+              captionLayout="dropdown"
+              fromYear={2020}
+              toYear={2030}
               initialFocus
               className={cn("p-3 pointer-events-auto")}
             />
@@ -117,6 +159,7 @@ export function GlobalDatePicker({ showLanguageSwitcher = true }: GlobalDatePick
             <Calendar
               mode="single"
               selected={dateTo}
+              defaultMonth={dateTo}
               onSelect={(date) => {
                 if (date) {
                   setDateTo(date);
@@ -127,6 +170,9 @@ export function GlobalDatePicker({ showLanguageSwitcher = true }: GlobalDatePick
                 { before: dateFrom },
                 { after: addDays(dateFrom, MAX_RANGE_DAYS) }
               ]}
+              captionLayout="dropdown"
+              fromYear={2020}
+              toYear={2030}
               initialFocus
               className={cn("p-3 pointer-events-auto")}
             />

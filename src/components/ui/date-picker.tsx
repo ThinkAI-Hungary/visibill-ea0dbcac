@@ -76,7 +76,13 @@ export interface DatePickerProps {
   max?: string | Date;
   allowInput?: boolean;
   inputClassName?: string;
+  showYearMonthDropdown?: boolean;
+  fromYear?: number;
+  toYear?: number;
 }
+
+const CURRENT_YEAR = new Date().getFullYear();
+const PARSE_REFERENCE_DATE = new Date();
 
 export function DatePicker({
   value,
@@ -96,6 +102,9 @@ export function DatePicker({
   max,
   allowInput = false,
   inputClassName,
+  showYearMonthDropdown = true,
+  fromYear = 1920,
+  toYear = CURRENT_YEAR + 5,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -104,7 +113,7 @@ export function DatePicker({
     if (!m) return undefined;
     if (m instanceof Date) return isValid(m) ? m : undefined;
     if (typeof m === 'string') {
-      const parsed = parse(m.slice(0, 10), 'yyyy-MM-dd', new Date());
+      const parsed = parse(m.slice(0, 10), 'yyyy-MM-dd', PARSE_REFERENCE_DATE);
       return isValid(parsed) ? parsed : undefined;
     }
     return undefined;
@@ -115,7 +124,7 @@ export function DatePicker({
     if (!m) return undefined;
     if (m instanceof Date) return isValid(m) ? m : undefined;
     if (typeof m === 'string') {
-      const parsed = parse(m.slice(0, 10), 'yyyy-MM-dd', new Date());
+      const parsed = parse(m.slice(0, 10), 'yyyy-MM-dd', PARSE_REFERENCE_DATE);
       return isValid(parsed) ? parsed : undefined;
     }
     return undefined;
@@ -128,7 +137,7 @@ export function DatePicker({
     if (typeof value === 'string') {
       // Try ISO YYYY-MM-DD
       if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
-        const parsed = parse(value.slice(0, 10), 'yyyy-MM-dd', new Date());
+        const parsed = parse(value.slice(0, 10), 'yyyy-MM-dd', PARSE_REFERENCE_DATE);
         return isValid(parsed) ? parsed : undefined;
       }
       const parsed = new Date(value);
@@ -236,6 +245,9 @@ export function DatePicker({
               locale={hu}
               initialFocus
               className="rounded-xl p-3"
+              captionLayout={showYearMonthDropdown ? "dropdown" : undefined}
+              fromYear={fromYear}
+              toYear={toYear}
             />
           </PopoverContent>
         </Popover>
@@ -296,6 +308,9 @@ export function DatePicker({
           locale={hu}
           initialFocus
           className="rounded-xl p-3"
+          captionLayout={showYearMonthDropdown ? "dropdown" : undefined}
+          fromYear={fromYear}
+          toYear={toYear}
         />
       </PopoverContent>
     </Popover>

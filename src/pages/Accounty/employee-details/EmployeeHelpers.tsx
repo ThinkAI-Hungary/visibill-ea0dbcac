@@ -21,14 +21,18 @@ export function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType;
   );
 }
 
-export function EditField({ label, value, onChange, type = 'text', placeholder, required }: {
+const CURRENT_YEAR = new Date().getFullYear();
+
+export function EditField({ label, value, onChange, type = 'text', placeholder, required, toYear }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   type?: string;
   placeholder?: string;
   required?: boolean;
+  toYear?: number;
 }) {
+  const effectiveToYear = toYear ?? (label.toLowerCase().includes('szület') ? CURRENT_YEAR : CURRENT_YEAR + 5);
   return (
     <div>
       <label className="block text-xs font-medium text-muted-foreground mb-1">
@@ -38,9 +42,13 @@ export function EditField({ label, value, onChange, type = 'text', placeholder, 
         <DatePicker
           value={value}
           onChange={onChange}
-          placeholder={placeholder || 'éééé. hh. nn.'}
+          placeholder={placeholder || 'éééé-hh-nn (pl. 1970-05-12)'}
           clearable
-          className="w-full px-3 py-1.5 h-9 rounded-lg border border-border bg-background text-sm"
+          allowInput
+          showYearMonthDropdown
+          fromYear={1920}
+          toYear={effectiveToYear}
+          className="w-full h-9 rounded-lg border border-border bg-background text-sm"
         />
       ) : (
         <input

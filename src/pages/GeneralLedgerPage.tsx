@@ -229,7 +229,7 @@ export default function GeneralLedgerPage() {
         if (stored !== null) return stored === 'true';
       } catch (e) {}
     }
-    return false;
+    return true; // Default: hide 0-balance rows
   });
 
   const [viewLayout, setViewLayout] = useState<'summary' | 'classic'>('summary');
@@ -342,8 +342,12 @@ export default function GeneralLedgerPage() {
         const stored = localStorage.getItem(`visibill_gl_hide_zero_${selectedCompany.id}`);
         if (stored !== null) {
           setHideZeroBalances(stored === 'true');
+        } else {
+          setHideZeroBalances(true);
         }
-      } catch (e) {}
+      } catch (e) {
+        setHideZeroBalances(true);
+      }
     }
   }, [selectedCompany?.id, searchParams]);
 

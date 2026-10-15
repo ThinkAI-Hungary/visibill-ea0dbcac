@@ -1,6 +1,7 @@
 import React from 'react';
 import { Download, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isMtEmployment } from '@/lib/payroll/employmentUtils';
 
 interface PayrollStep3Props {
   activeEmployees: any[];
@@ -11,6 +12,8 @@ interface PayrollStep3Props {
   handleCsvUpload: (file: File) => void;
   csvValidation: any;
   setCsvValidation: (val: any) => void;
+  cycleYear?: number;
+  cycleMonth?: number;
 }
 
 export default function PayrollStep3({
@@ -22,6 +25,8 @@ export default function PayrollStep3({
   handleCsvUpload,
   csvValidation,
   setCsvValidation,
+  cycleYear,
+  cycleMonth,
 }: PayrollStep3Props) {
   return (
     <div className="space-y-4">
@@ -142,8 +147,21 @@ export default function PayrollStep3({
               const isHourly = empEmployment?.salary_type === 'hourly';
               const weeklyHours = Number(empEmployment?.weekly_hours) || 40;
               const dailyHours = weeklyHours / 5;
+              const isMt = isMtEmployment(empEmployment?.employment_type);
+              const isEv = empEmployment?.employment_type === 'ev' || empEmployment?.employment_type === 'ev_mellekfogl';
+              const isContractor = empEmployment?.employment_type?.includes('megbizas');
               const defaultHours = Math.round((att.workDays || 0) * dailyHours * 10) / 10;
               const fromCsv = !!attendanceData[emp.id];
+
+              const isPartialMonth = (() => {
+                if (!cycleYear || !cycleMonth || !empEmployment?.start_date) return false;
+                const start = new Date(empEmployment.start_date);
+                const daysInMonth = new Date(cycleYear, cycleMonth, 0).getDate();
+                const cycleStart = new Date(cycleYear, cycleMonth - 1, 1);
+                const cycleEnd = new Date(cycleYear, cycleMonth - 1, daysInMonth);
+                return start > cycleStart && start <= cycleEnd;
+              })();
+
               return (
                 <tr key={emp.id} className={cn('hover:bg-muted/50', fromCsv && 'bg-green-50/50 dark:bg-green-900/10')}>
                   <td className="px-4 py-2.5 text-sm font-medium text-foreground">
@@ -151,6 +169,21 @@ export default function PayrollStep3({
                     {isHourly && (
                       <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
                         Órabér
+                      </span>
+                    )}
+                    {isEv && (
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" title="Egyéni vállalkozó: nem értelmezett az Mt. szabadság">
+                        EV
+                      </span>
+                    )}
+                    {isContractor && (
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300" title="Megbízási jogviszony: nem értelmezett az Mt. szabadság">
+                        Megbízás
+                      </span>
+                    )}
+                    {isPartialMonth && (
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300" title={`Kezdés dátuma: ${empEmployment?.start_date}`}>
+                        Törthónap (kezdés: {empEmployment?.start_date})
                       </span>
                     )}
                     {fromCsv && <CheckCircle2 className="w-3 h-3 inline ml-1.5 text-green-500" />}
@@ -195,24 +228,32 @@ export default function PayrollStep3({
                     />
                   </td>
                   <td className="px-4 py-2 text-center">
-                    <input
-                      type="number"
-                      min={0}
-                      max={31}
-                      value={att.sickDays}
-                      onChange={(e) => onAttendanceChange?.(emp.id, 'sickDays', parseInt(e.target.value) || 0)}
-                      className="w-16 text-center rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono text-foreground focus:border-primary focus:outline-none"
-                    />
+                    {isMt ? (
+                      <input
+                        type="number"
+                        min={0}
+                        max={31}
+                        value={att.sickDays}
+                        onChange={(e) => onAttendanceChange?.(emp.id, 'sickDays', parseInt(e.target.value) || 0)}
+                        className="w-16 text-center rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono text-foreground focus:border-primary focus:outline-none"
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground font-mono px-2 py-1 select-none" title="Nem Mt. munkaviszony (pl. EV / Megbízás): nincs betegszabadság">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-center">
-                    <input
-                      type="number"
-                      min={0}
-                      max={31}
-                      value={att.leaveDays}
-                      onChange={(e) => onAttendanceChange?.(emp.id, 'leaveDays', parseInt(e.target.value) || 0)}
-                      className="w-16 text-center rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono text-foreground focus:border-primary focus:outline-none"
-                    />
+                    {isMt ? (
+                      <input
+                        type="number"
+                        min={0}
+                        max={31}
+                        value={att.leaveDays}
+                        onChange={(e) => onAttendanceChange?.(emp.id, 'leaveDays', parseInt(e.target.value) || 0)}
+                        className="w-16 text-center rounded border border-border dark:border-slate-600 bg-card px-2 py-1 text-sm font-mono text-foreground focus:border-primary focus:outline-none"
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground font-mono px-2 py-1 select-none" title="Nem Mt. munkaviszony (pl. EV / Megbízás): nincs szabadság">—</span>
+                    )}
                   </td>
                 </tr>
               );

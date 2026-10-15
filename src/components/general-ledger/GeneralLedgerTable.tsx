@@ -258,6 +258,40 @@ export const AGGREGATED_EXPANDED_IDS = new Set<string>([
   '1', '1.', '2', '2.', '3', '3.', '4', '4.', '5', '5.', '8', '8.', '9', '9.', 'UNCLASSIFIED'
 ]);
 
+/**
+ * Automatically computes which classes (1, 2, 3, 4 digits) contain non-zero items
+ * and should be expanded by default down to 3 and 4 digit classes.
+ */
+export function computeDefaultExpandedClasses(dbData: { gl_number?: string; total_balance?: number; item_count?: number }[] | undefined | null): Set<string> {
+  if (!dbData || dbData.length === 0) return new Set<string>();
+
+  const activeClasses = new Set<string>();
+
+  for (const item of dbData) {
+    if (!item.gl_number || item.gl_number === 'UNCLASSIFIED') continue;
+    const hasData = Math.abs(item.total_balance || 0) > 0.001 || (item.item_count || 0) > 0;
+    if (!hasData) continue;
+
+    const raw = item.gl_number.trim();
+    const clean = raw.replace(/\./g, '');
+
+    // Add ancestor classes up to 4 digits (e.g. '1', '13', '131', '1311')
+    for (let len = 1; len <= Math.min(4, clean.length); len++) {
+      const prefix = clean.substring(0, len);
+      activeClasses.add(prefix);
+      activeClasses.add(`${prefix}.`);
+    }
+  }
+
+  // Include UNCLASSIFIED if it contains items
+  const unclass = dbData.find(i => i.gl_number === 'UNCLASSIFIED');
+  if (unclass && (Math.abs(unclass.total_balance || 0) > 0.001 || (unclass.item_count || 0) > 0)) {
+    activeClasses.add('UNCLASSIFIED');
+  }
+
+  return activeClasses;
+}
+
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
   const { t } = useTranslation(['accounting', 'common']);
   const {
@@ -398,6 +432,13 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const isAggregatedMode = defaultViewMode === 'osszevont';
   const initialDefaultIds = isAggregatedMode ? AGGREGATED_EXPANDED_IDS : DEFAULT_EXPANDED_IDS;
 
+  // Track if user explicitly clicked expand/collapse in this session
+  const userHasManuallyToggledRef = useRef(false);
+
+  useEffect(() => {
+    userHasManuallyToggledRef.current = false;
+  }, [presetId, selectedCompany?.id]);
+
   // Cache tree expansion state in localStorage
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(() => {
     try {
@@ -466,6 +507,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     staleTime: 30_000,
     placeholderData: (prev: any) => prev,
   });
+
+  // Dynamically auto-expand classes containing items down to 3 and 4 digits if not manually customized
+  useEffect(() => {
+    if (!dbData || dbData.length === 0 || userHasManuallyToggledRef.current) return;
+    try {
+      const stored = localStorage.getItem(`visibill_gl_expanded_v2_${presetId}_${selectedCompany?.id}`);
+      if (stored) return;
+    } catch (e) {}
+
+    const dynamicExpanded = computeDefaultExpandedClasses(dbData);
+    if (dynamicExpanded.size > 0) {
+      setExpandedRowIds(dynamicExpanded);
+    }
+  }, [dbData, presetId, selectedCompany?.id]);
 
   // Batch categorized items query for 'teteles' mode (prevents N+1 on-demand fetches)
   const { data: batchCategorizedItems, isLoading: isBatchItemsLoading, isError: isBatchItemsError, refetch: refetchBatchItems } = useQuery({
@@ -1893,6 +1948,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   }));
 
   const handleExpandAll = () => {
+    userHasManuallyToggledRef.current = true;
     if (dbData && dbData.length > 0) {
       const allAccountIds = dbData.flatMap(d => [String(d.gl_number), cleanIdVal(d.gl_number)]);
       setExpandedRowIds(new Set(allAccountIds));
@@ -1903,6 +1959,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   };
 
   const handleCollapseAll = () => {
+    userHasManuallyToggledRef.current = true;
     setExpandedRowIds(new Set([])); // Collapse to only root items
   };
 
@@ -2316,6 +2373,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   const toggleRow = (id: string, hasChildren?: boolean) => {
     if (!hasChildren) return;
+    userHasManuallyToggledRef.current = true;
     const cleanTargetId = cleanIdVal(id);
     const isCurrentlyExpanded = expandedRowIds.has(id) || expandedRowIds.has(cleanTargetId);
 

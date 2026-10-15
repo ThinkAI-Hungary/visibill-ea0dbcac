@@ -30,7 +30,12 @@ function RegisterDialogContent({ register, onClose, onSave, saving }: RegisterDi
   const { t } = useTranslation(['pettyCash', 'common']);
   const [name, setName] = useState(register?.name || '');
   const [location, setLocation] = useState(register?.location || '');
-  const [currencies, setCurrencies] = useState<string[]>(register?.currencies || ['HUF']);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(() => {
+    if (register?.currencies && register.currencies.length > 0) {
+      return register.currencies[0];
+    }
+    return 'HUF';
+  });
   const [closingMode, setClosingMode] = useState<'daily' | 'weekly' | 'decade' | 'monthly' | 'custom'>(register?.closing_mode || 'monthly');
   const [customDays, setCustomDays] = useState<number>(register?.custom_days || 30);
   const [cashLimit, setCashLimit] = useState<number>(register?.cash_limit ?? 1500000);
@@ -40,16 +45,12 @@ function RegisterDialogContent({ register, onClose, onSave, saving }: RegisterDi
   const [glAccount, setGlAccount] = useState<string>(register?.gl_account || '381');
   const [isSinglePersonMode, setIsSinglePersonMode] = useState<boolean>(register?.is_single_person_mode ?? false);
 
-  const toggleCurrency = (cur: string) => {
-    setCurrencies(prev => prev.includes(cur) ? prev.filter(c => c !== cur) : [...prev, cur]);
-  };
-
   const handleSave = () => {
     onSave({
       ...(register ? { id: register.id } : {}),
       name: name.trim(),
       location: location.trim() || null,
-      currencies,
+      currencies: [selectedCurrency],
       closing_mode: closingMode,
       custom_days: customDays,
       cash_limit: cashLimit,
@@ -92,19 +93,21 @@ function RegisterDialogContent({ register, onClose, onSave, saving }: RegisterDi
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs">{t('pettyCash:registers_tab.currencies_label', 'Kezelt valuták')}</Label>
-            <div className="flex flex-wrap gap-1.5">
+            <Label className="mb-1.5 block text-xs">{t('pettyCash:registers_tab.currency_label', 'Pénztár devizaneme (kizárólag egy választható)')}</Label>
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Devizanem">
               {COMMON_CURRENCIES.map(cur => (
                 <button
                   key={cur}
                   type="button"
+                  role="radio"
+                  aria-checked={selectedCurrency === cur}
                   className={cn(
                     'px-2.5 py-1 text-xs font-medium rounded-lg border transition-all',
-                    currencies.includes(cur)
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm font-semibold'
+                    selectedCurrency === cur
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm font-semibold ring-2 ring-primary/30'
                       : 'bg-background text-muted-foreground border-border hover:bg-muted/50'
                   )}
-                  onClick={() => toggleCurrency(cur)}
+                  onClick={() => setSelectedCurrency(cur)}
                 >
                   {cur}
                 </button>
@@ -236,7 +239,7 @@ function RegisterDialogContent({ register, onClose, onSave, saving }: RegisterDi
         <Button 
           size="sm"
           onClick={handleSave}
-          disabled={saving || !name || currencies.length === 0}
+          disabled={saving || !name.trim() || !selectedCurrency}
           className="gap-1.5"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

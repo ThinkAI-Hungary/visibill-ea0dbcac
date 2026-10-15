@@ -174,6 +174,8 @@ const BANK_GRADIENTS: Record<string, string> = {
   'CIB Bank': 'from-amber-500 to-yellow-600 text-zinc-950',
   'UniCredit Bank': 'from-red-700 to-rose-900 text-white',
   'MagNet Bank': 'from-green-700 to-emerald-900 text-white',
+  'Szallas.hu (Virtuális)': 'from-emerald-700 via-teal-800 to-cyan-900 text-white border border-teal-600/30',
+  'Szallas.hu': 'from-emerald-700 via-teal-800 to-cyan-900 text-white border border-teal-600/30',
   'default': 'from-indigo-600 to-violet-800 text-white',
 };
 
@@ -190,6 +192,7 @@ const STANDARD_BANKS = [
   'Revolut Bank',
   'Wise (TransferWise)',
   'N26 Bank',
+  'Szallas.hu (Virtuális)',
 ];
 
 export function BankAccountsTab({ companyId }: Props) {
@@ -433,20 +436,25 @@ export function BankAccountsTab({ companyId }: Props) {
     e.preventDefault();
     if (!canManagePayments) return;
 
-    const validation = validateAccountNumber(accountNumber);
-    if (!validation.valid) {
-      toast({
-        title: t('bank_accounts.invalid_account_number', 'Érvénytelen számlaszám'),
-        description: validation.error,
-        variant: 'destructive',
-      });
-      return;
-    }
-
     const finalBankName = bankName === 'other' ? customBankName.trim() : bankName;
     if (!finalBankName) {
       toast({ title: t('common:status.error', 'Hiba'), description: t('bank_accounts.toast_bank_name_required', 'Kérjük, add meg a bank nevét.'), variant: 'destructive' });
       return;
+    }
+
+    const isVirtualBank = finalBankName.toLowerCase().includes('szallas') ||
+                          finalBankName.toLowerCase().includes('virtuális') ||
+                          accountNumber.trim().toUpperCase().startsWith('SZALLAS');
+    if (!isVirtualBank) {
+      const validation = validateAccountNumber(accountNumber);
+      if (!validation.valid) {
+        toast({
+          title: t('bank_accounts.invalid_account_number', 'Érvénytelen számlaszám'),
+          description: validation.error,
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     setSaving(true);

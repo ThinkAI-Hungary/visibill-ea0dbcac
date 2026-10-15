@@ -40,7 +40,7 @@ import { printPayslip, printAllPayslips, type PayslipData } from '@/lib/payroll/
 import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 import { convertToIban } from '@/lib/payroll/validators';
 import { postPayrollCycleToLedger } from '@/lib/payroll/payrollAutoPoster';
-import { getStatutoryWorkDays } from '@/lib/payroll/workdayCalculator';
+import { getStatutoryWorkDays, getWorkDaysBetween } from '@/lib/payroll/workdayCalculator';
 import { resolveEmployeeLeaveInput, calculateLeaveBalance } from '@/lib/payroll/leaveCalculator';
 
 import { useToast } from '@/hooks/use-toast';
@@ -149,10 +149,10 @@ export default function PayrollCyclePage() {
   const [newMonth, setNewMonth] = useState(() => new Date().getMonth() + 1);
 
   const defaultWorkDays = React.useMemo(() => {
-    const year = cycle?.year || new Date().getFullYear();
-    const month = cycle?.month || (new Date().getMonth() + 1);
+    const year = cycle?.year || newYear;
+    const month = cycle?.month || newMonth;
     return getStatutoryWorkDays(year, month);
-  }, [cycle?.year, cycle?.month]);
+  }, [cycle?.year, cycle?.month, newYear, newMonth]);
 
   // Fetch all employments for this company
   const [allEmployments, setAllEmployments] = useState<any[]>([]);
@@ -203,7 +203,7 @@ export default function PayrollCyclePage() {
       .in('employee_id', empIds)
       .eq('is_active', true)
       .then(({ data }) => { if (data) setGarnishments(data); });
-  }, [employees]);
+  }, [activeEmployees]);
 
   const [companyDetails, setCompanyDetails] = useState<any>(null);
   React.useEffect(() => {
@@ -222,11 +222,33 @@ export default function PayrollCyclePage() {
   }
   const [csvValidation, setCsvValidation] = useState<CsvValidationResult | null>(null);
 
-  const getAttendance = (empId: string) => attendanceData[empId] || { workDays: defaultWorkDays, overtime: 0, sickDays: 0, leaveDays: 0 };
+  const getEmployeeDefaultWorkDays = React.useCallback((empId: string) => {
+    const empEmployment = allEmployments.find(e => e.employee_id === empId);
+    if (!cycle?.year || !cycle?.month) return defaultWorkDays;
+    if (!empEmployment?.start_date && !empEmployment?.end_date) return defaultWorkDays;
+    const year = cycle.year;
+    const month = cycle.month;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const cycleStart = new Date(year, month - 1, 1);
+    const cycleEnd = new Date(year, month - 1, daysInMonth);
+    const empStart = empEmployment.start_date ? new Date(empEmployment.start_date) : cycleStart;
+    const empEnd = empEmployment.end_date ? new Date(empEmployment.end_date) : cycleEnd;
+    const effStart = empStart > cycleStart ? empStart : cycleStart;
+    const effEnd = empEnd < cycleEnd ? empEnd : cycleEnd;
+    if (effStart > effEnd) return 0;
+    if (effStart <= cycleStart && effEnd >= cycleEnd) return defaultWorkDays;
+    return getWorkDaysBetween(effStart, effEnd);
+  }, [allEmployments, cycle, defaultWorkDays]);
+
+  const getAttendance = (empId: string) => {
+    const empDefault = getEmployeeDefaultWorkDays(empId);
+    return attendanceData[empId] || { workDays: empDefault, overtime: 0, sickDays: 0, leaveDays: 0 };
+  };
 
   const handleAttendanceChange = (empId: string, field: 'workDays' | 'workedHours' | 'overtime' | 'sickDays' | 'leaveDays', value: number) => {
     setAttendanceData(prev => {
-      const current = prev[empId] || { workDays: defaultWorkDays, overtime: 0, sickDays: 0, leaveDays: 0 };
+      const empDefault = getEmployeeDefaultWorkDays(empId);
+      const current = prev[empId] || { workDays: empDefault, overtime: 0, sickDays: 0, leaveDays: 0 };
       return {
         ...prev,
         [empId]: {
@@ -518,7 +540,6 @@ export default function PayrollCyclePage() {
 
   React.useEffect(() => {
     if (!activeEmploymentIdsKey) {
-      setCafeteriaItems([]);
       return;
     }
 
@@ -528,7 +549,7 @@ export default function PayrollCyclePage() {
       .select('*')
       .in('employment_id', ids)
       .then(({ data }) => {
-        if (data) setCafeteriaItems(data);
+        setCafeteriaItems(data || []);
       });
   }, [activeEmploymentIdsKey]);
 
@@ -665,7 +686,7 @@ export default function PayrollCyclePage() {
         };
       });
 
-    const isKiva = companyDetails?.tax_regime === 'KIVA' || (companyDetails as any)?.tax_regime === 'KIVA';
+    const isKiva = companyDetails?.tax_regime === 'KIVA';
     const rawAccount = emp?.bank_account || '';
     const iban = convertToIban(rawAccount) || (rawAccount.startsWith('HU') ? rawAccount : undefined);
 
@@ -676,7 +697,7 @@ export default function PayrollCyclePage() {
       targetYear: cycle?.year || new Date().getFullYear(),
     });
     const leaveBalance = leaveInput ? calculateLeaveBalance(leaveInput) : null;
-    const annualLeaveTotal = leaveBalance?.totalAnnual || (employment as any)?.annual_leave_days || 20;
+    const annualLeaveTotal = leaveBalance?.totalAvailable || leaveBalance?.totalAnnual || (employment as any)?.annual_leave_days || 20;
     const leaveTakenCurrent = att.leaveDays || 0;
     const leaveTakenPrev = (employment as any)?.leave_taken_ytd || 0;
     const leaveRemaining = Math.max(0, annualLeaveTotal - leaveTakenPrev - leaveTakenCurrent);
@@ -1216,6 +1237,8 @@ export default function PayrollCyclePage() {
               handleCsvUpload={handleCsvUpload}
               csvValidation={csvValidation}
               setCsvValidation={setCsvValidation}
+              cycleYear={cycle?.year}
+              cycleMonth={cycle?.month}
             />
           )}
           {currentStep === 4 && (

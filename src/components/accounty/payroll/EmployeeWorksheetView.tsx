@@ -362,7 +362,14 @@ export default function EmployeeWorksheetView({
   }, [cafeteriaItems, currentEmployment]);
 
   // Handle Item (bonus, service charge, deduction) changes
-  const handleItemChange = async (itemType: string, amount: number, isDeduction: boolean, desc: string) => {
+  const handleItemChange = async (
+    itemType: string,
+    amount: number,
+    isDeduction: boolean,
+    desc: string,
+    hours?: number,
+    ratePct?: number
+  ) => {
     if (!cycle?.id || !currentEmployment) return;
     const safeAmount = Math.max(0, amount);
 
@@ -376,9 +383,14 @@ export default function EmployeeWorksheetView({
 
       if (safeAmount > 0) {
         if (existingList && existingList.length > 0) {
+          const updatePayload: Record<string, unknown> = { amount: safeAmount };
+          if (hours !== undefined) updatePayload.hours = hours;
+          if (ratePct !== undefined) updatePayload.rate_pct = ratePct;
+          if (desc) updatePayload.description = desc;
+
           await supabase
             .from('accounty_payroll_items')
-            .update({ amount: safeAmount })
+            .update(updatePayload)
             .eq('id', existingList[0].id);
 
           // Clean up any extraneous duplicate rows if present
@@ -398,6 +410,8 @@ export default function EmployeeWorksheetView({
               item_type: itemType,
               description: desc,
               amount: safeAmount,
+              hours: hours !== undefined ? hours : null,
+              rate_pct: ratePct !== undefined ? ratePct : null,
               is_deduction: isDeduction,
             });
         }
@@ -666,7 +680,7 @@ export default function EmployeeWorksheetView({
             serviceCharge={currentServiceCharge}
             onServiceChargeChange={(val) => handleItemChange('service_charge', val, false, 'Vendéglátóipari felszolgálási díj (15% SZJA mentes)')}
             nightShift={currentNightShift}
-            onNightShiftChange={(val) => handleItemChange('night_shift', val, false, 'Éjszakai pótlék (15% Mt. 142. §)')}
+            onNightShiftChange={(val, hours) => handleItemChange('night_shift', val, false, hours ? `Éjszakai pótlék (15% Mt. 142. § - ${hours} h)` : 'Éjszakai pótlék (15% Mt. 142. §)', hours, 15)}
             homeOffice={currentHomeOffice}
             onHomeOfficeChange={(val) => handleItemChange('home_office', val, false, 'Home Office adómentes átalánytérítés')}
             cafeteriaItems={currentEmployeeCafeteria}

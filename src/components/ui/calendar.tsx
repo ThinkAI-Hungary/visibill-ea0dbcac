@@ -1,22 +1,115 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, CaptionProps, useNavigation, useDayPicker } from "react-day-picker";
+import { format } from "date-fns";
+import { hu } from "date-fns/locale";
 
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
+function DropdownCaption({ displayMonth }: CaptionProps) {
+  const { goToMonth, nextMonth, previousMonth } = useNavigation();
+  const dayPicker = useDayPicker();
+  const locale = dayPicker.locale || hu;
+  const currentYear = displayMonth.getFullYear();
+  const currentMonth = displayMonth.getMonth();
+
+  const fromYear = dayPicker.fromYear ?? (currentYear - 10);
+  const toYear = dayPicker.toYear ?? (currentYear + 10);
+
+  const years = React.useMemo(() => {
+    const list: number[] = [];
+    for (let y = fromYear; y <= toYear; y++) {
+      list.push(y);
+    }
+    return list;
+  }, [fromYear, toYear]);
+
+  const months = React.useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => ({
+      value: i,
+      label: format(new Date(2026, i, 1), 'LLLL', { locale }),
+    }));
+  }, [locale]);
+
+  return (
+    <div className="flex items-center justify-between px-1 py-1 w-full relative">
+      <Button
+        variant="ghost"
+        size="icon"
+        type="button"
+        disabled={!previousMonth}
+        onClick={() => previousMonth && goToMonth(previousMonth)}
+        className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent p-0"
+        aria-label="Előző hónap"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+
+      <div className="flex items-center gap-1.5 z-10">
+        <select
+          value={currentMonth}
+          onChange={(e) => {
+            const newM = parseInt(e.target.value, 10);
+            goToMonth(new Date(currentYear, newM, 1));
+          }}
+          className="h-7 px-2 rounded-md border border-border bg-card text-foreground text-xs font-medium cursor-pointer hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary capitalize"
+        >
+          {months.map((m) => (
+            <option key={m.value} value={m.value} className="capitalize">
+              {m.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={currentYear}
+          onChange={(e) => {
+            const newY = parseInt(e.target.value, 10);
+            goToMonth(new Date(newY, currentMonth, 1));
+          }}
+          className="h-7 px-2 rounded-md border border-border bg-card text-foreground text-xs font-mono font-medium cursor-pointer hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+        >
+          {years.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        type="button"
+        disabled={!nextMonth}
+        onClick={() => nextMonth && goToMonth(nextMonth)}
+        className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent p-0"
+        aria-label="Következő hónap"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
+function Calendar({ className, classNames, showOutsideDays = true, captionLayout, components, ...props }: CalendarProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      captionLayout={captionLayout}
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
+        caption_dropdowns: "flex justify-center gap-1.5 items-center z-10",
+        dropdown: "h-7 px-2 rounded-md border border-border bg-card text-foreground text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer hover:bg-accent transition-colors",
+        dropdown_month: "min-w-[90px]",
+        dropdown_year: "min-w-[70px]",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
@@ -39,11 +132,14 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         day_disabled: "text-muted-foreground opacity-50",
         day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
         day_hidden: "invisible",
+        vhidden: "sr-only",
         ...classNames,
       }}
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
+        ...(captionLayout === "dropdown" ? { Caption: DropdownCaption } : {}),
+        ...components,
       }}
       {...props}
     />
