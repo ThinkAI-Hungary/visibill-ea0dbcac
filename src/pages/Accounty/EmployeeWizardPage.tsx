@@ -392,7 +392,7 @@ export default function EmployeeWizardPage() {
   const isSaving = createEmployee.isPending || createEmployment.isPending;
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-8 page-animate">
+    <div className="w-full max-w-4xl mx-auto space-y-8 page-animate pb-32">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-9 w-9">
@@ -1116,8 +1116,8 @@ export default function EmployeeWizardPage() {
         )}
       </div>
 
-      {/* Navigation buttons */}
-      <div className="flex items-center justify-between">
+      {/* Navigation buttons — sticky with backdrop blur & ample clearance */}
+      <div className="sticky bottom-0 z-30 bg-background/95 backdrop-blur-md border-t border-border py-4 px-4 sm:px-6 -mx-4 sm:-mx-6 flex items-center justify-between shadow-lg rounded-b-lg mt-8">
         <Button
           variant="outline"
           onClick={step === 0 ? () => navigate(-1) : handleBack}
