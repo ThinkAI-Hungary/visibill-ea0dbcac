@@ -444,7 +444,11 @@ export function BankAccountsTab({ companyId }: Props) {
 
     const isVirtualBank = finalBankName.toLowerCase().includes('szallas') ||
                           finalBankName.toLowerCase().includes('virtuális') ||
-                          accountNumber.trim().toUpperCase().startsWith('SZALLAS');
+                          finalBankName.toLowerCase().includes('pos') ||
+                          finalBankName.toLowerCase().includes('amex') ||
+                          finalBankName.toLowerCase().includes('kártyaelfogadó') ||
+                          accountNumber.trim().toUpperCase().startsWith('SZALLAS') ||
+                          accountNumber.trim().toUpperCase().startsWith('POS');
     if (!isVirtualBank) {
       const validation = validateAccountNumber(accountNumber);
       if (!validation.valid) {

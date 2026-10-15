@@ -285,7 +285,21 @@ export async function generateDraftsFallback(
         glBankId = glAccounts?.[0]?.id;
       }
 
-      if (!glBankId || !validGlIds.has(glBankId) || !validGlIds.has(item.gl_account_id)) {
+      let targetGlId = item.gl_account_id;
+      const descLower = (item.description || '').toLowerCase();
+      if (descLower.includes('10076868') || (descLower.includes('nav') && descLower.includes('áfa'))) {
+        targetGlId = glAccounts?.find(g => glClean(g) === '468')?.id || targetGlId;
+      } else if (descLower.includes('0107196') || (descLower.includes('nav') && descLower.includes('gépjármű'))) {
+        targetGlId = glAccounts?.find(g => glClean(g) === '4696')?.id || targetGlId;
+      } else if (descLower.includes('0706179') || (descLower.includes('nav') && descLower.includes('társasági'))) {
+        targetGlId = glAccounts?.find(g => glClean(g) === '4611')?.id || targetGlId;
+      } else if (descLower.includes('005595') || descLower.includes('065595') || descLower.includes('605595') || (descLower.includes('nav') && descLower.includes('szja'))) {
+        targetGlId = glAccounts?.find(g => glClean(g) === '46219')?.id || glAccounts?.find(g => glClean(g).startsWith('462'))?.id || targetGlId;
+      } else if (descLower.includes('merkantil') || descLower.includes('lízing') || descLower.includes('lizing') || descLower.includes('mflh')) {
+        targetGlId = glAccounts?.find(g => glClean(g) === '4442')?.id || glAccounts?.find(g => glClean(g).startsWith('444'))?.id || targetGlId;
+      }
+
+      if (!glBankId || !validGlIds.has(glBankId) || !targetGlId || !validGlIds.has(targetGlId)) {
         continue;
       }
 
@@ -316,9 +330,9 @@ export async function generateDraftsFallback(
       let line2: any;
       if (item.amount >= 0) {
         line1 = { header_id: header.id, sequence_number: 1, gl_account_id: glBankId, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
-        line2 = { header_id: header.id, sequence_number: 2, gl_account_id: item.gl_account_id, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
+        line2 = { header_id: header.id, sequence_number: 2, gl_account_id: targetGlId, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
       } else {
-        line1 = { header_id: header.id, sequence_number: 1, gl_account_id: item.gl_account_id, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
+        line1 = { header_id: header.id, sequence_number: 1, gl_account_id: targetGlId, dc_type: 'T', amount, foreign_amount: foreignAmount, description: item.description };
         line2 = { header_id: header.id, sequence_number: 2, gl_account_id: glBankId, dc_type: 'K', amount, foreign_amount: foreignAmount, description: item.description };
       }
 

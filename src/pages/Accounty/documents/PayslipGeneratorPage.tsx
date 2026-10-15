@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { exportPdf } from '@/lib/exportPdf';
 import { getPayslipPreviewUrl, downloadPayslipPdf, type PayslipPdfData } from '@/lib/payslipPdf';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useDateRange } from '@/contexts/DateRangeContext';
 
 const CURRENT_DATE = new Date();
 const CURRENT_YEAR = CURRENT_DATE.getFullYear();
@@ -48,51 +48,22 @@ export default function PayslipGeneratorPage() {
   const generateDocs = useGenerateDocuments();
 
   const { data: cycles = [] } = usePayrollCycles(id || '');
+  const { dateFromFormatted } = useDateRange();
 
-  const availablePeriods = useMemo(() => {
-    const list = cycles.map(c => ({
-      period: `${c.year}-${String(c.month).padStart(2, '0')}`,
-      label: formatPeriodLabel(c.year, c.month, c.status),
-      cycleId: c.id,
-    }));
-    if (!list.some(item => item.period === DEFAULT_CALENDAR_PERIOD)) {
-      list.push({
-        period: DEFAULT_CALENDAR_PERIOD,
-        label: formatPeriodLabel(CURRENT_YEAR, CURRENT_MONTH),
-        cycleId: '',
-      });
+  const selectedPeriod = useMemo(() => {
+    if (dateFromFormatted) {
+      return dateFromFormatted.slice(0, 7);
     }
-    return list;
-  }, [cycles]);
-
-  const [selectedPeriod, setSelectedPeriod] = useState<string>(() => {
     return queryPeriod || DEFAULT_CALENDAR_PERIOD;
-  });
+  }, [dateFromFormatted, queryPeriod]);
 
-  const hasAutoSelectedLatest = useRef(false);
-  useEffect(() => {
-    if (!queryPeriod && cycles.length > 0 && !hasAutoSelectedLatest.current) {
-      hasAutoSelectedLatest.current = true;
-      const latest = `${cycles[0].year}-${String(cycles[0].month).padStart(2, '0')}`;
-      setSelectedPeriod(latest);
-    }
-  }, [cycles, queryPeriod]);
-
-  const handlePeriodChange = (newPeriod: string) => {
-    setSelectedPeriod(newPeriod);
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      next.set('period', newPeriod);
-      return next;
-    }, { replace: true });
-  };
+  const [yStr, mStr] = selectedPeriod.split('-');
+  const selectedYear = parseInt(yStr, 10) || CURRENT_YEAR;
+  const selectedMonth = parseInt(mStr, 10) || CURRENT_MONTH;
 
   const selectedCycle = useMemo(() => {
-    const [yStr, mStr] = selectedPeriod.split('-');
-    const y = parseInt(yStr, 10);
-    const m = parseInt(mStr, 10);
-    return cycles.find(c => c.year === y && c.month === m) || cycles[0];
-  }, [cycles, selectedPeriod]);
+    return cycles.find(c => c.year === selectedYear && c.month === selectedMonth);
+  }, [cycles, selectedYear, selectedMonth]);
 
   // Fetch actual data filtered by selectedPeriod
   const { data: docs, isLoading } = useAccountyDocuments(id || '', 'payslip', selectedPeriod);
@@ -183,24 +154,10 @@ export default function PayslipGeneratorPage() {
           <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-blue-500 to-primary rounded-lg shadow-lg shadow-blue-500/25"><FileText className="w-5 h-5 text-white" /></div>
           <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold">Bérjegyzék generálás</h1>
-              <div className="w-56">
-                <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-                  <SelectTrigger className="h-8 text-xs font-semibold bg-background border-border">
-                    <SelectValue placeholder="Időszak választása" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availablePeriods.map(p => (
-                      <SelectItem key={p.period} value={p.period} className="text-xs">
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground">{selectedPeriod} — Mt. 155. § Havi bérjegyzékek</p>
+            <h1 className="text-2xl font-bold">Bérjegyzék generálás</h1>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">{formatPeriodLabel(selectedYear, selectedMonth, selectedCycle?.status)}</span> ({selectedPeriod}) — Mt. 155. § Havi bérjegyzékek
+            </p>
           </div>
         </div>
         <div className={cn('px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5', daysUntil <= 0 ? 'bg-red-100 text-red-700' : daysUntil <= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-emerald-100 text-emerald-700')}>

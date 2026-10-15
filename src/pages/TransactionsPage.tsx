@@ -56,6 +56,8 @@ const BANK_CONFIG: Record<string, { label: string; fullName: string; color: stri
   oberbank:   { label: 'Oberbank',   fullName: 'Oberbank AG Magyarországi Fióktelep', color: 'bg-cyan-600',    bgClass: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20' },
   simplepay:  { label: 'SimplePay',  fullName: 'OTP Mobil Kft. (SimplePay)',          color: 'bg-emerald-600', bgClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' },
   szallas:    { label: 'Szallas.hu', fullName: 'Szallas.hu Zrt. (Virtuális Bank)',     color: 'bg-teal-600',    bgClass: 'bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/20' },
+  otp_pos:    { label: 'OTP POS',    fullName: 'OTP POS Kártyaelfogadó (Virtuális Bank)', color: 'bg-emerald-600', bgClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' },
+  amex_pos:   { label: 'OTP AMEX',   fullName: 'OTP AMEX Elfogadó (Virtuális Bank)',      color: 'bg-blue-600',    bgClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
 };
 
 const FIXED_TABS = ['general', 'gls', 'mpl', 'mixpack'] as const;

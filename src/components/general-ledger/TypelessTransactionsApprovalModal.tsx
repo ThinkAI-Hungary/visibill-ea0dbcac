@@ -139,9 +139,24 @@ export function TypelessTransactionsApprovalModal({
           if (desc.includes('jutalék') || desc.includes('számlavezet') || desc.includes('kártyadíj') || desc.includes('bankköltség') || desc.includes('tranzakciós illeték')) {
             detectedType = 'bankköltség';
             targetAccount = targetAccount || findAccountByPrefix('532');
-          } else if (desc.includes('nav') || desc.includes('adó') || desc.includes('járulék')) {
+          } else if (desc.includes('merkantil') || desc.includes('lízing') || desc.includes('lizing') || desc.includes('mflh')) {
+            detectedType = 'hiteltörlesztés';
+            targetAccount = targetAccount || findAccountByPrefix('4442') || findAccountByPrefix('444') || findAccountByPrefix('448');
+          } else if (desc.includes('nav') || desc.includes('adó') || desc.includes('járulék') || desc.includes('10032000')) {
             detectedType = 'járulékok/adók';
-            targetAccount = targetAccount || findAccountByPrefix('463');
+            if (desc.includes('10076868') || desc.includes('áfa')) {
+              targetAccount = targetAccount || findAccountByPrefix('468') || findAccountByPrefix('463');
+            } else if (desc.includes('0107196') || desc.includes('gépjármű')) {
+              targetAccount = targetAccount || findAccountByPrefix('4696') || findAccountByPrefix('469');
+            } else if (desc.includes('0706179') || desc.includes('társasági') || desc.includes('tao')) {
+              targetAccount = targetAccount || findAccountByPrefix('4611') || findAccountByPrefix('461');
+            } else if (desc.includes('005595') || desc.includes('065595') || desc.includes('605595') || desc.includes('szja')) {
+              targetAccount = targetAccount || findAccountByPrefix('46219') || findAccountByPrefix('462');
+            } else if (desc.includes('iparűzési') || desc.includes('hipa')) {
+              targetAccount = targetAccount || findAccountByPrefix('4695') || findAccountByPrefix('469');
+            } else {
+              targetAccount = targetAccount || findAccountByPrefix('463');
+            }
           } else if (desc.includes('kamat')) {
             detectedType = 'kamatjóváírás';
             targetAccount = targetAccount || findAccountByPrefix('974');

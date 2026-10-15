@@ -314,8 +314,9 @@
 | P-185 | TENY Rekonciliáció, Kivezetés Jóváhagyás és Fejlesztési Tartalék Riasztás UX | ✅ Decided | [P-185](./P-185-fixed-assets-reconciliation-disposal-approval-and-reserve-alerts-ux.md) |
 | P-186 | TENY Raktár és Felelős Kezelés, Kétnyelvű Átadási Bizonylat, Címkenyomtatás, Leltárív és Pályázati Projektlap UX | ✅ Decided | [P-186](./P-186-fixed-assets-phase2-and-phase3-ux.md) |
 | P-187 | RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Exportok UX | ✅ Decided | [P-187](./P-187-rlb-general-ledger-basic-and-extended-templates-ux.md) |
-| P-188 | Házipénztár Egyedi Név, Kézi/Auto Bizonylatszám, Gyors Pénztárkészítés és 65-ös ÁFA Rögzítés UX | ✅ Decided | [P-188](./P-188-petty-cash-custom-name-voucher-number-and-vat-entry-ux.md) |
 | P-189 | Pénztárak Egyetlen Devizaneme, Szallas.hu Virtuális Bank, Főkönyvi Default Nézet (0-szűrés és Dinamikus Osztálybontás), ÁFA Sablon Kiszélesítés és Nyitó Sablon Parser UX | ✅ Decided | [P-189](./P-189-eaisybooks-gl-defaults-petty-cash-currency-and-virtual-bank-ux.md) |
 | P-190 | Számlatételek Többes Projekt-Költségmegosztása, Lebegő Műveleti Sáv és Zero-Jitter Kiválasztás UX | ✅ Decided | [P-190](./P-190-multi-project-item-allocations-ux.md) |
+| P-190-fakov | Fakov Kft. Infotéka (Kontír.NET) Főkönyvi Rekonciliáció és Összehasonlító Kivonat UX | ✅ Decided | [P-190-fakov-infoteka-general-ledger-reconciliation-ux.md](./P-190-fakov-infoteka-general-ledger-reconciliation-ux.md) |
+| P-191 | Bankkártyás POS és AMEX Göngyölegek Virtuális Banki Feldolgozása, Tételes Tranzakció Generálás és Kereskedői Elszámolási UX | ✅ Decided | [P-191](./P-191-bankcard-pos-settlement-virtual-bank-and-accounting-ux.md) |
 
 
