@@ -127,10 +127,31 @@ export function WizardStep3Protocol({
                 <SelectValue placeholder={t('pettyCash:closing_wizard.step3.action_type_placeholder', 'Válassz intézkedést')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="booked_as_shortage">{t('pettyCash:closing_wizard.step3.action_shortage_gl', 'Hiányként lekönyvelendő (3681 ellenszámla)')}</SelectItem>
-                <SelectItem value="booked_as_surplus">{t('pettyCash:closing_wizard.step3.action_surplus_gl', 'Többletként lekönyvelendő (4791 ellenszámla)')}</SelectItem>
-                <SelectItem value="cashier_repays">{t('pettyCash:closing_wizard.step3.action_cashier_repay', 'Pénztáros azonnal megtéríti készpénzben')}</SelectItem>
-                <SelectItem value="pending_investigation">{t('pettyCash:closing_wizard.step3.action_investigation', 'Kivizsgálás alatt, függőben tartva')}</SelectItem>
+                {difference > 0 ? (
+                  <>
+                    <SelectItem value="booked_as_surplus">
+                      {t('pettyCash:closing_wizard.step3.action_surplus_gl', 'Leltártöbblet elszámolása egyéb bevételként (T 381 → K 969)')}
+                    </SelectItem>
+                    <SelectItem value="pending_investigation">
+                      {t('pettyCash:closing_wizard.step3.action_investigation', 'Kivizsgálás alatt, függőben tartva')}
+                    </SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="booked_as_shortage">
+                      {t('pettyCash:closing_wizard.step3.action_shortage_gl', 'Leltárhiány elszámolása egyéb ráfordításként (T 869 → K 381)')}
+                    </SelectItem>
+                    <SelectItem value="shortage_employee_claim">
+                      {t('pettyCash:closing_wizard.step3.action_claim_gl', 'Kártérítés előírása pénztárossal szemben (T 361 → K 969 / K 381)')}
+                    </SelectItem>
+                    <SelectItem value="cashier_repays">
+                      {t('pettyCash:closing_wizard.step3.action_cashier_repay', 'Pénztáros azonnal megtéríti készpénzben (T 381)')}
+                    </SelectItem>
+                    <SelectItem value="pending_investigation">
+                      {t('pettyCash:closing_wizard.step3.action_investigation', 'Kivizsgálás alatt, függőben tartva')}
+                    </SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>

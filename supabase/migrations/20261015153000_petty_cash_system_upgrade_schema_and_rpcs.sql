@@ -201,8 +201,8 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.create_cash_receipt_with_seq FROM anon, PUBLIC;
-GRANT EXECUTE ON FUNCTION public.create_cash_receipt_with_seq TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.create_cash_receipt_with_seq(uuid, uuid, uuid, text, date, text, text, numeric, text, text, text, text, uuid, text, text, text, text) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_cash_receipt_with_seq(uuid, uuid, uuid, text, date, text, text, numeric, text, text, text, text, uuid, text, text, text, text) TO authenticated, service_role;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 4. check_petty_cash_timeline_integrity RPC

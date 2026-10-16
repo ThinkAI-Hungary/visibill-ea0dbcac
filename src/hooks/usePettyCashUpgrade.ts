@@ -118,7 +118,44 @@ export function useCashPartnerMonthlyLimits(companyId: string, year: number, mon
       });
 
       if (error) throw error;
-      return data as CashPartnerMonthlyLimitResult;
+      const raw = (data || {}) as any;
+      const threshold = raw.threshold_huf ?? 1500000;
+      const rawPartners = Array.isArray(raw.partners) ? raw.partners : [];
+      const normalizedPartners = rawPartners.map((p: any) => {
+        const total = Number(p.total_amount_huf ?? p.total_cash_huf ?? 0);
+        const thresh = Number(p.monthly_threshold_huf ?? p.threshold_huf ?? threshold);
+        const excess = Number(p.excess_amount_huf ?? p.excess_amount ?? Math.max(0, total - thresh));
+        const penalty = Number(p.penalty_risk_huf ?? Math.round(excess * 0.2));
+        const isExceeded = Boolean(p.is_exceeded || total > thresh);
+        const status = isExceeded ? 'violating' : (total >= thresh * 0.8 ? 'warning' : 'safe');
+        const taxNo = p.tax_number || p.partner_tax_number || null;
+
+        return {
+          ...p,
+          total_amount_huf: total,
+          total_cash_huf: total,
+          monthly_threshold_huf: thresh,
+          threshold_huf: thresh,
+          excess_amount_huf: excess,
+          excess_amount: excess,
+          penalty_risk_huf: penalty,
+          status,
+          is_exceeded: isExceeded,
+          tax_number: taxNo,
+          partner_tax_number: taxNo,
+        };
+      });
+
+      const violatingCount = raw.violating_partner_count ?? normalizedPartners.filter((p: any) => p.is_exceeded).length;
+      const totalPenalty = raw.total_penalty_risk_huf ?? normalizedPartners.reduce((acc: number, p: any) => acc + (p.penalty_risk_huf || 0), 0);
+
+      return {
+        ...raw,
+        threshold_huf: threshold,
+        violating_partner_count: violatingCount,
+        total_penalty_risk_huf: totalPenalty,
+        partners: normalizedPartners,
+      } as CashPartnerMonthlyLimitResult;
     },
     enabled: !!companyId && !!year && !!month,
     staleTime: 60_000,

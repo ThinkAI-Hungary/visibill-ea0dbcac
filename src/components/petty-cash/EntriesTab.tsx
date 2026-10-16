@@ -21,7 +21,7 @@ import { RegisterDialog } from './RegisterDialog';
 import {
   Save, Plus, ArrowRightLeft, Loader2, Filter, AlertTriangle, BookOpen, FileDown,
   ChevronDown, ChevronUp, Edit2, Trash2, FileText, Check, Eye, Search, ExternalLink, X, HelpCircle,
-  Unlink, AlertCircle, Percent
+  Unlink, AlertCircle, Percent, Paperclip, Pencil, CheckCircle2
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -33,14 +33,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AttachInvoiceDialog } from './AttachInvoiceDialog';
+import AttachSourceDocDialog from './AttachSourceDocDialog';
+import { FilePreviewModal, useFilePreview } from '@/components/ui/FilePreviewModal';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
-import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice, SummaryRow, OpenSettlementInvoice } from './types';
-import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf, sanitizePartnerId, validatePettyCashEntryPayload, parseCleanAmount } from './types';
+import type { PettyCashRegister, PettyCashEntry, OpenOutboundInvoice, SummaryRow, OpenSettlementInvoice, CashContraPreset } from './types';
+import { SOURCE_LABELS, SOURCE_COLORS, fmtAmount, fmtBalance, roundHuf, sanitizePartnerId, validatePettyCashEntryPayload, parseCleanAmount, CASH_CONTRA_PRESETS } from './types';
 import CashClosingDialog from './CashClosingDialog';
 import { CashClosingWizardDialog } from './closing-wizard/CashClosingWizardDialog';
 import TransferDialog from './TransferDialog';
@@ -149,6 +150,8 @@ export default function EntriesTab() {
   const [newlyCreatedRegisterId, setNewlyCreatedRegisterId] = useState<string | null>(null);
   const [timelineErrorResult, setTimelineErrorResult] = useState<TimelineIntegrityResult | null>(null);
   const [showTimelineErrorDialog, setShowTimelineErrorDialog] = useState(false);
+  const { previewFile, openPreview, closePreview } = useFilePreview();
+  const [attachSourceEntry, setAttachSourceEntry] = useState<PettyCashEntry | null>(null);
 
   const createRegisterMutation = useMutation({
     mutationFn: async (regData: Partial<PettyCashRegister>) => {
@@ -300,6 +303,37 @@ export default function EntriesTab() {
     },
     enabled: !!companyId && invoiceIds.length > 0,
   });
+
+  const handleOpenSourceDocPreview = useCallback(async (entry: PettyCashEntry) => {
+    if (entry.attachment_path) {
+      try {
+        const { data, error } = await supabase.storage
+          .from('petty-cash-attachments')
+          .createSignedUrl(entry.attachment_path, 3600);
+        if (error) throw error;
+        if (data?.signedUrl) {
+          openPreview({
+            url: data.signedUrl,
+            name: entry.attachment_path.split('/').pop() || 'bizonylat.pdf',
+          });
+          return;
+        }
+      } catch (err: any) {
+        toast({ title: t('common:error', 'Hiba'), description: err.message, variant: 'destructive' });
+        return;
+      }
+    }
+    if (entry.attachment_url) {
+      openPreview({
+        url: entry.attachment_url,
+        name: 'bizonylat',
+      });
+      return;
+    }
+    if (entry.source_id && invoiceImagesMap[entry.source_id]) {
+      setPreviewInvoice(invoiceImagesMap[entry.source_id]);
+    }
+  }, [openPreview, invoiceImagesMap, t]);
 
   // Fetch pending invoices
   const { data: pendingInvoices = [], refetch: refetchPending } = useQuery({
@@ -817,7 +851,7 @@ export default function EntriesTab() {
                             )}>
                               {entry.receipt_number || receiptNo}
                             </Badge>
-                            {entry.source_id && invoiceImagesMap[entry.source_id] && (
+                            {(entry.attachment_path || entry.attachment_url || (entry.source_id && invoiceImagesMap[entry.source_id])) ? (
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -827,18 +861,45 @@ export default function EntriesTab() {
                                       className="h-5 w-5 text-primary hover:bg-primary/10 hover:text-primary p-0 cursor-pointer"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setPreviewInvoice(invoiceImagesMap[entry.source_id!]);
+                                        handleOpenSourceDocPreview(entry);
                                       }}
                                     >
-                                      <Eye className="w-3 h-3" />
+                                      {entry.attachment_path || entry.attachment_url ? (
+                                        <Paperclip className="w-3 h-3 text-blue-500" />
+                                      ) : (
+                                        <Eye className="w-3 h-3" />
+                                      )}
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top" className="text-xs">
-                                    {t('pettyCash:entries.actions.view_invoice_image', 'Számlakép megtekintése')} ({invoiceImagesMap[entry.source_id].bizonylatsorszam || 'Számla'})
+                                    {entry.attachment_path || entry.attachment_url
+                                      ? `Csatolt forrásdokumentum (${entry.source_doc_type || 'bizonylat'})`
+                                      : `${t('pettyCash:entries.actions.view_invoice_image', 'Számlakép megtekintése')} (${invoiceImagesMap[entry.source_id]?.bizonylatsorszam || 'Számla'})`}
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
-                            )}
+                            ) : writable && !isOpening ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-5 w-5 text-muted-foreground/50 hover:text-primary hover:bg-primary/10 p-0 cursor-pointer"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setAttachSourceEntry(entry);
+                                      }}
+                                    >
+                                      <Paperclip className="w-3 h-3 opacity-40 hover:opacity-100" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs">
+                                    Bizonylat / Számla csatolása
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : null}
                           </div>
                         )}
                       </TableCell>
@@ -944,15 +1005,15 @@ export default function EntriesTab() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-1 justify-end">
-                            {entry.source_id && invoiceImagesMap[entry.source_id] && (
+                            {(entry.attachment_path || entry.attachment_url || (entry.source_id && invoiceImagesMap[entry.source_id])) && (
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7 text-primary hover:bg-primary/10 hover:text-primary"
-                                onClick={() => setPreviewInvoice(invoiceImagesMap[entry.source_id!])}
-                                title={t('pettyCash:entries.actions.view_invoice_image', 'Számlakép megtekintése')}
+                                onClick={() => handleOpenSourceDocPreview(entry)}
+                                title={entry.attachment_path || entry.attachment_url ? 'Csatolt forrásbizonylat megtekintése' : t('pettyCash:entries.actions.view_invoice_image', 'Számlakép megtekintése')}
                               >
-                                <Eye className="w-3.5 h-3.5" />
+                                {entry.attachment_path || entry.attachment_url ? <Paperclip className="w-3.5 h-3.5 text-blue-500" /> : <Eye className="w-3.5 h-3.5" />}
                               </Button>
                             )}
                             {(entry.source_type === 'manual' || entry.source_type === 'transfer') && writable && (
@@ -982,7 +1043,12 @@ export default function EntriesTab() {
                   if (isExpanded) {
                     return [
                       mainRow,
-                      <ExpandedEntryRow key={`expanded-${entry.id}`} entry={entry} colSpan={9} />
+                      <ExpandedEntryRow
+                        key={`expanded-${entry.id}`}
+                        entry={entry}
+                        colSpan={9}
+                        onPreviewSourceDoc={handleOpenSourceDocPreview}
+                      />
                     ];
                   }
 
@@ -1386,8 +1452,10 @@ export default function EntriesTab() {
                   p_partner_id: printingEntry.partner_id || null,
                   p_payer_signature: payerSig || null,
                   p_recipient_signature: recipientSig || null,
-                  p_source_doc_type: (printingEntry as any).source_table === 'invoices' ? 'invoice' : null,
-                  p_source_doc_id: (printingEntry as any).source_id ? String((printingEntry as any).source_id) : null,
+                  p_source_doc_type: (printingEntry as any).source_doc_type || ((printingEntry as any).source_table === 'invoices' ? 'invoice' : null),
+                  p_source_doc_id: (printingEntry as any).source_doc_id || ((printingEntry as any).source_id ? String((printingEntry as any).source_id) : null),
+                  p_attachment_url: (printingEntry as any).attachment_url || null,
+                  p_attachment_path: (printingEntry as any).attachment_path || null,
                 });
                 dbReceipt = created;
               }
@@ -1410,8 +1478,8 @@ export default function EntriesTab() {
                 amount_in_words: numberToWordsHu(absAmount),
                 payer_signature: payerSig || dbReceipt?.payer_signature || null,
                 recipient_signature: recipientSig || dbReceipt?.recipient_signature || null,
-                source_doc_type: (printingEntry as any).source_table === 'invoices' ? 'invoice' : null,
-                source_doc_id: (printingEntry as any).source_id ? String((printingEntry as any).source_id) : null,
+                source_doc_type: (printingEntry as any).source_doc_type || ((printingEntry as any).source_table === 'invoices' ? 'invoice' : null),
+                source_doc_id: (printingEntry as any).source_doc_id || ((printingEntry as any).source_id ? String((printingEntry as any).source_id) : null),
               },
               companyName: selectedCompany?.name || '',
               companyTaxNumber: selectedCompany?.tax_number || undefined,
@@ -1431,6 +1499,18 @@ export default function EntriesTab() {
         onOpenChange={setShowTimelineErrorDialog}
         result={timelineErrorResult}
       />
+      <FilePreviewModal previewFile={previewFile} onClose={closePreview} />
+      {attachSourceEntry && (
+        <AttachSourceDocDialog
+          open={!!attachSourceEntry}
+          onOpenChange={(open) => !open && setAttachSourceEntry(null)}
+          entry={attachSourceEntry}
+          onSuccess={() => {
+            qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(companyId) });
+            qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(companyId) });
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -1439,11 +1519,20 @@ export default function EntriesTab() {
 //  EXPANDED ENTRY ROW  (Lazy query for linked documents)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: number }) {
+function ExpandedEntryRow({
+  entry,
+  colSpan,
+  onPreviewSourceDoc,
+}: {
+  entry: PettyCashEntry;
+  colSpan: number;
+  onPreviewSourceDoc?: (entry: PettyCashEntry) => void;
+}) {
   const { t } = useTranslation(['pettyCash', 'common']);
   const qc = useQueryClient();
   const sourceTable = entry.source_table;
   const sourceId = entry.source_id;
+  const hasAttachment = Boolean(entry.attachment_path || entry.attachment_url);
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
@@ -1522,28 +1611,71 @@ function ExpandedEntryRow({ entry, colSpan }: { entry: PettyCashEntry; colSpan: 
       <>
         <TableRow className="bg-muted/10 hover:bg-muted/10 border-t border-b border-border/30">
           <TableCell colSpan={colSpan} className="py-3 px-8">
-            <div className="flex flex-wrap items-center justify-between gap-3 max-w-2xl bg-card border border-border/50 p-3 rounded-lg shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
-                <AlertCircle className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
-                <span>{t('pettyCash:details.manual_standalone')}</span>
+            {hasAttachment ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 max-w-2xl bg-card border border-border/50 p-3 rounded-lg shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-medium border-primary/30 text-primary bg-primary/5">
+                    {entry.source_doc_type === 'payroll' ? 'Készpénzkifizetési jegyzék (munkabér)'
+                      : entry.source_doc_type === 'travel_order' ? 'Kiküldetési rendelvény'
+                      : entry.source_doc_type === 'bank_withdrawal' ? 'Banki készpénzfelvételi bizonylat'
+                      : entry.source_doc_type === 'owner_loan' ? 'Tagi kölcsön szerződés'
+                      : entry.source_doc_type === 'invoice' ? 'Készpénzes számla'
+                      : 'Csatolt forrásdokumentum'}
+                  </Badge>
+                  {entry.source_doc_id && (
+                    <span className="font-mono text-xs text-muted-foreground">({entry.source_doc_id})</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onPreviewSourceDoc?.(entry)}
+                    className="h-7 text-xs gap-1.5"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Bizonylat megtekintése
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setAttachOpen(true)}
+                    className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <Paperclip className="w-3.5 h-3.5" />
+                    Módosítás
+                  </Button>
+                </div>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setAttachOpen(true)}
-                className="h-7 text-xs gap-1.5 border-dashed border-blue-400 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40 shrink-0"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                {t('pettyCash:details.attach_invoice', 'Számla hozzárendelése')}
-              </Button>
-            </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3 max-w-2xl bg-card border border-border/50 p-3 rounded-lg shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
+                  <AlertCircle className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
+                  <span>{t('pettyCash:details.manual_standalone')}</span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setAttachOpen(true)}
+                  className="h-7 text-xs gap-1.5 border-dashed border-blue-400 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40 shrink-0"
+                >
+                  <Paperclip className="w-3.5 h-3.5" />
+                  Bizonylat / Számla csatolása
+                </Button>
+              </div>
+            )}
           </TableCell>
         </TableRow>
         {attachOpen && (
-          <AttachInvoiceDialog
+          <AttachSourceDocDialog
             open={attachOpen}
             onOpenChange={setAttachOpen}
             entry={entry}
+            onSuccess={() => {
+              qc.invalidateQueries({ queryKey: queryKeys.pettyCashEntries(entry.company_id) });
+              qc.invalidateQueries({ queryKey: queryKeys.pettyCashSummary(entry.company_id) });
+              qc.invalidateQueries({ queryKey: ['petty-cash-entry-source'] });
+            }}
           />
         )}
       </>
@@ -1860,6 +1992,11 @@ function ManualEntryDialogContent({
         partner_id: editingEntry.partner_id || '',
         receipt_number: editingEntry.receipt_number || '',
         payee_name: editingEntry.payee_name || '',
+        gl_contra_account: editingEntry.gl_contra_account || (isExp ? '454' : '311'),
+        payer_signature: (editingEntry as any).payer_signature || '',
+        recipient_signature: (editingEntry as any).recipient_signature || '',
+        attachment_url: (editingEntry as any).attachment_url || '',
+        attachment_path: (editingEntry as any).attachment_path || '',
         source_doc_type: (editingEntry as any).source_doc_type || ((editingEntry as any).source_table === 'invoices' ? 'invoice' : ''),
         source_doc_id: (editingEntry as any).source_doc_id || ((editingEntry as any).source_id ? String((editingEntry as any).source_id) : ''),
         isVat: isVatEntry,
@@ -1882,6 +2019,11 @@ function ManualEntryDialogContent({
       partner_id: '',
       receipt_number: '',
       payee_name: '',
+      gl_contra_account: '311',
+      payer_signature: '',
+      recipient_signature: '',
+      attachment_url: '',
+      attachment_path: '',
       source_doc_type: '',
       source_doc_id: '',
       isVat: false,
@@ -1893,6 +2035,8 @@ function ManualEntryDialogContent({
       customVatRow: '',
     };
   });
+
+  const [signatureModalOpen, setSignatureModalOpen] = useState(false);
 
   // Fetch company's custom vat_codes if configured
   const { data: dbVatCodes = [] } = useQuery({
@@ -2163,10 +2307,16 @@ function ManualEntryDialogContent({
       if (isExpense && f.vatRowOverride === '07') nextVatRow = '66';
       else if (!isExpense && f.vatRowOverride === '66') nextVatRow = '07';
 
+      let nextContra = f.gl_contra_account;
+      if (!f.gl_contra_account || f.gl_contra_account === '311' || f.gl_contra_account === '454') {
+        nextContra = isExpense ? '454' : '311';
+      }
+
       return {
         ...f,
         isExpense,
         vatRowOverride: nextVatRow,
+        gl_contra_account: nextContra,
       };
     });
     if (e?.currentTarget && 'blur' in e.currentTarget) {
@@ -2313,6 +2463,8 @@ function ManualEntryDialogContent({
 
         if (invError) throw invError;
 
+        let savedEntryId: string | null = editingEntry?.id || null;
+
         // 2. Petty cash entry rögzítése a létrejött számlához kötve
         if (editingEntry) {
           const { error: pceError } = await supabase.from('petty_cash_entries')
@@ -2325,6 +2477,11 @@ function ManualEntryDialogContent({
               partner_id: finalPartnerId,
               receipt_number: finalReceiptNumber,
               payee_name: finalPayee,
+              gl_contra_account: form.gl_contra_account?.trim() || null,
+              source_doc_type: form.source_doc_type?.trim() || 'invoice',
+              source_doc_id: form.source_doc_id?.trim() || String(invoiceData.id),
+              attachment_url: form.attachment_url || null,
+              attachment_path: form.attachment_path || null,
               net_amount: signedNet,
               vat_amount: signedVat,
               vat_code_id: form.vatCodeId || null,
@@ -2335,7 +2492,7 @@ function ManualEntryDialogContent({
             .eq('id', editingEntry.id);
           if (pceError) throw pceError;
         } else {
-          const { error: pceError } = await supabase.from('petty_cash_entries')
+          const { data: insertedEntry, error: pceError } = await supabase.from('petty_cash_entries')
             .insert({
               company_id: companyId,
               register_id: validRegisterId,
@@ -2350,14 +2507,24 @@ function ManualEntryDialogContent({
               partner_id: finalPartnerId,
               receipt_number: finalReceiptNumber,
               payee_name: finalPayee,
+              gl_contra_account: form.gl_contra_account?.trim() || null,
+              source_doc_type: form.source_doc_type?.trim() || 'invoice',
+              source_doc_id: form.source_doc_id?.trim() || String(invoiceData.id),
+              attachment_url: form.attachment_url || null,
+              attachment_path: form.attachment_path || null,
               net_amount: signedNet,
               vat_amount: signedVat,
               vat_code_id: form.vatCodeId || null,
               vat_row_override: effectiveVatRow,
-            });
+            })
+            .select('id')
+            .single();
           if (pceError) throw pceError;
+          savedEntryId = insertedEntry?.id || null;
         }
       } else {
+        let savedEntryId: string | null = editingEntry?.id || null;
+
         // Nem ÁFA-s tétel mentése
         if (editingEntry) {
           const { error } = await supabase.from('petty_cash_entries')
@@ -2370,6 +2537,11 @@ function ManualEntryDialogContent({
               partner_id: finalPartnerId,
               receipt_number: finalReceiptNumber,
               payee_name: finalPayee,
+              gl_contra_account: form.gl_contra_account?.trim() || null,
+              source_doc_type: form.source_doc_type?.trim() || null,
+              source_doc_id: form.source_doc_id?.trim() || null,
+              attachment_url: form.attachment_url || null,
+              attachment_path: form.attachment_path || null,
               net_amount: null,
               vat_amount: null,
               vat_code_id: null,
@@ -2378,7 +2550,7 @@ function ManualEntryDialogContent({
             .eq('id', editingEntry.id);
           if (error) throw error;
         } else {
-          const { error } = await supabase.from('petty_cash_entries')
+          const { data: insertedEntry, error } = await supabase.from('petty_cash_entries')
             .insert({
               company_id: companyId,
               register_id: validRegisterId,
@@ -2392,12 +2564,65 @@ function ManualEntryDialogContent({
               partner_id: finalPartnerId,
               receipt_number: finalReceiptNumber,
               payee_name: finalPayee,
+              gl_contra_account: form.gl_contra_account?.trim() || null,
+              source_doc_type: form.source_doc_type?.trim() || null,
+              source_doc_id: form.source_doc_id?.trim() || null,
+              attachment_url: form.attachment_url || null,
+              attachment_path: form.attachment_path || null,
               net_amount: null,
               vat_amount: null,
               vat_code_id: null,
               vat_row_override: null,
-            });
+            })
+            .select('id')
+            .single();
           if (error) throw error;
+          savedEntryId = insertedEntry?.id || null;
+        }
+
+        if (savedEntryId && (form.payer_signature || form.recipient_signature)) {
+          try {
+            const { data: exReceipt } = await supabase
+              .from('cash_receipts')
+              .select('id')
+              .eq('cash_entry_id', savedEntryId)
+              .maybeSingle();
+
+            if (exReceipt) {
+              await supabase.from('cash_receipts').update({
+                payer_signature: form.payer_signature || null,
+                recipient_signature: form.recipient_signature || null,
+                source_doc_type: form.source_doc_type || null,
+                source_doc_id: form.source_doc_id || null,
+                attachment_url: form.attachment_url || null,
+                attachment_path: form.attachment_path || null,
+              }).eq('id', exReceipt.id);
+            } else {
+              await (supabase.rpc as any)('create_cash_receipt_with_seq', {
+                p_company_id: companyId,
+                p_cash_register_id: validRegisterId,
+                p_cash_entry_id: savedEntryId,
+                p_receipt_type: form.isExpense ? 'out' : 'in',
+                p_issued_at: form.entry_date,
+                p_payer_or_payee_name: finalPayee || selectedPartnerName || (form.isExpense ? 'Kedvezményezett' : 'Befizető'),
+                p_payer_or_payee_address: null,
+                p_amount: Math.abs(rounded),
+                p_currency: form.currency,
+                p_amount_in_words: numberToWordsHu(Math.abs(rounded)),
+                p_legal_title: form.description || (form.isExpense ? 'Készpénz kifizetés' : 'Készpénz bevételezés'),
+                p_description: form.description || null,
+                p_partner_id: finalPartnerId || null,
+                p_payer_signature: form.payer_signature || null,
+                p_recipient_signature: form.recipient_signature || null,
+                p_source_doc_type: form.source_doc_type || null,
+                p_source_doc_id: form.source_doc_id || null,
+                p_attachment_url: form.attachment_url || null,
+                p_attachment_path: form.attachment_path || null,
+              });
+            }
+          } catch (rcpErr) {
+            console.warn('Could not auto-create/update signed cash receipt:', rcpErr);
+          }
         }
       }
 
@@ -2948,6 +3173,120 @@ function ManualEntryDialogContent({
                 </div>
               </div>
             </div>
+
+            {/* Row 4.2: Főkönyvi ellenszámla & Kontírozási sablon */}
+            <div className="p-3 bg-muted/30 border border-border/70 rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold flex items-center gap-1.5">
+                  <BookOpen className="h-3.5 w-3.5 text-primary" />
+                  <span>Főkönyvi ellenszámla (Pénztárnapló)</span>
+                </Label>
+                <Badge variant="outline" className="text-[10px] font-mono">
+                  {form.currency === 'HUF' ? '381' : '382'} ↔ {form.gl_contra_account || '—'}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="contra-preset" className="text-[11px] text-muted-foreground mb-1 block">
+                    Kontírozási sablon
+                  </Label>
+                  <Select
+                    value={
+                      CASH_CONTRA_PRESETS.find(
+                        p => p.glAccount === form.gl_contra_account &&
+                        p.direction === (form.isExpense ? 'out' : 'in')
+                      )?.id || 'custom'
+                    }
+                    onValueChange={(val) => {
+                      if (val === 'custom') return;
+                      const p = CASH_CONTRA_PRESETS.find(x => x.id === val);
+                      if (p) {
+                        setForm(f => ({
+                          ...f,
+                          gl_contra_account: p.glAccount,
+                          description: f.description || p.defaultTitle || p.name,
+                          source_doc_type: f.source_doc_type || p.sourceDocType,
+                        }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="contra-preset" className="h-8 text-xs">
+                      <SelectValue placeholder="Válassz sablont..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="custom">Egyedi számlaszám</SelectItem>
+                      {CASH_CONTRA_PRESETS
+                        .filter(p => p.direction === (form.isExpense ? 'out' : 'in'))
+                        .map(p => (
+                          <SelectItem key={p.id} value={p.id} className="text-xs">
+                            {p.glAccount} - {p.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="contra-account" className="text-[11px] text-muted-foreground mb-1 block">
+                    Főkönyvi számlaszám
+                  </Label>
+                  <Input
+                    id="contra-account"
+                    value={form.gl_contra_account}
+                    onChange={e => setForm(f => ({ ...f, gl_contra_account: e.target.value }))}
+                    placeholder={form.isExpense ? 'pl. 454, 511, 471, 389' : 'pl. 311, 453, 451, 389'}
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Row 4.3: Digitális aláírás */}
+            <div className="flex items-center justify-between p-2.5 rounded-lg border border-border/60 bg-muted/20">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Pencil className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-semibold">Digitális aláírás</span>
+                  {(form.recipient_signature || form.payer_signature) && (
+                    <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-500/40 bg-emerald-500/10 flex items-center gap-1 py-0">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Aláírva
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Érintőképernyős vagy táblagépes aláírás rögzítése a bizonylatra
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setSignatureModalOpen(true)}
+                className="h-8 text-xs gap-1.5"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                {form.recipient_signature || form.payer_signature ? 'Aláírás módosítása' : 'Aláírás rögzítése'}
+              </Button>
+            </div>
+
+            {signatureModalOpen && (
+              <SignatureDialog
+                open={signatureModalOpen}
+                onOpenChange={setSignatureModalOpen}
+                isExpense={form.isExpense}
+                onConfirm={({ payerSig, recipientSig }) => {
+                  setForm(f => ({
+                    ...f,
+                    payer_signature: payerSig || f.payer_signature,
+                    recipient_signature: recipientSig || f.recipient_signature,
+                  }));
+                  setSignatureModalOpen(false);
+                  toast({ title: 'Digitális aláírás sikeresen rögzítve' });
+                }}
+              />
+            )}
 
             {/* Row 5: Bevétel / Kiadás Selector */}
             <div className="space-y-1.5">

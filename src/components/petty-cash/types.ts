@@ -62,6 +62,10 @@ export interface PettyCashEntry {
   vat_amount?: number | null;
   vat_code_id?: string | null;
   vat_row_override?: string | null;
+  attachment_url?: string | null;
+  attachment_path?: string | null;
+  source_doc_type?: 'invoice' | 'payroll' | 'travel_order' | 'bank_withdrawal' | 'owner_loan' | 'other' | string | null;
+  source_doc_id?: string | null;
 }
 
 export type CashReportStatus = 'open' | 'closing' | 'closed' | 'posted' | 'reopened';
@@ -116,6 +120,8 @@ export interface CashReceipt {
   recipient_signature?: string | null;
   source_doc_type?: 'invoice' | 'payroll' | 'travel_order' | 'bank_withdrawal' | 'owner_loan' | 'other' | string | null;
   source_doc_id?: string | null;
+  attachment_url?: string | null;
+  attachment_path?: string | null;
   printed_copy_count?: number;
   last_printed_at?: string | null;
   is_cancelled: boolean;
@@ -125,6 +131,34 @@ export interface CashReceipt {
   created_by: string | null;
   created_at: string;
 }
+
+export interface CashContraPreset {
+  id: string;
+  direction: 'in' | 'out';
+  code: string;
+  name: string;
+  glAccount: string;
+  sourceDocType: 'invoice' | 'payroll' | 'travel_order' | 'bank_withdrawal' | 'owner_loan' | 'other';
+  defaultTitle: string;
+}
+
+export const CASH_CONTRA_PRESETS: CashContraPreset[] = [
+  // BPB (Bevételi)
+  { id: 'bpb_customer', direction: 'in', code: '311', name: 'Vevői készpénz fizetés (311)', glAccount: '311', sourceDocType: 'invoice', defaultTitle: 'Vevőkövetelés készpénzes kiegyenlítése' },
+  { id: 'bpb_advance', direction: 'in', code: '453', name: 'Vevőtől kapott előleg (453)', glAccount: '453', sourceDocType: 'invoice', defaultTitle: 'Készpénzes vevőelőleg átvétele' },
+  { id: 'bpb_loan', direction: 'in', code: '451', name: 'Tagi kölcsön befizetés (451)', glAccount: '451', sourceDocType: 'owner_loan', defaultTitle: 'Tagi kölcsön készpénz befizetése' },
+  { id: 'bpb_bank', direction: 'in', code: '389', name: 'Bankból felvett kp átvezetése (389)', glAccount: '389', sourceDocType: 'bank_withdrawal', defaultTitle: 'Banki készpénzfelvétel bevételezése' },
+  { id: 'bpb_other', direction: 'in', code: '969', name: 'Egyéb bevétel / Többlet (969)', glAccount: '969', sourceDocType: 'other', defaultTitle: 'Pénztári egyéb készpénzbevétel' },
+
+  // KPB (Kiadási)
+  { id: 'kpb_supplier', direction: 'out', code: '454', name: 'Szállító készpénzes kiegyenlítése (454)', glAccount: '454', sourceDocType: 'invoice', defaultTitle: 'Szállítói számla készpénzes kifizetése' },
+  { id: 'kpb_expense', direction: 'out', code: '51-53', name: 'Készpénzes költségszámla (51-53)', glAccount: '511', sourceDocType: 'invoice', defaultTitle: 'Készpénzes közvetlen költség' },
+  { id: 'kpb_payroll', direction: 'out', code: '471', name: 'Nettó munkabér kifizetés (471)', glAccount: '471', sourceDocType: 'payroll', defaultTitle: 'Készpénzes munkabér / bérfizetés' },
+  { id: 'kpb_advance', direction: 'out', code: '361', name: 'Dolgozói előleg / kártérítés (361)', glAccount: '361', sourceDocType: 'payroll', defaultTitle: 'Munkavállalói készpénzelőleg felvétele' },
+  { id: 'kpb_travel', direction: 'out', code: '52', name: 'Kiküldetés és üzemanyag elszámolás (52)', glAccount: '52', sourceDocType: 'travel_order', defaultTitle: 'Kiküldetési rendelvény és üzemanyag megtérítés' },
+  { id: 'kpb_bank', direction: 'out', code: '389', name: 'Bankba befizetett kp átvezetése (389)', glAccount: '389', sourceDocType: 'bank_withdrawal', defaultTitle: 'Pénztárból bankszámlára történő befizetés' },
+  { id: 'kpb_other', direction: 'out', code: '869', name: 'Egyéb ráfordítás / Hiány (869)', glAccount: '869', sourceDocType: 'other', defaultTitle: 'Pénztári egyéb készpénzkiadás' },
+];
 
 export interface TimelineIntegrityResult {
   valid: boolean;

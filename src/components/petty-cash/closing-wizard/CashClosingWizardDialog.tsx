@@ -134,6 +134,8 @@ export function CashClosingWizardDialog({
     return `${y}-${m}-${d}`;
   }, [lastClosedReport?.period_end]);
 
+  const [todayIso] = useState(() => new Date().toISOString().split('T')[0]);
+
   // Effective period start ensures we do not overlap with already closed periods
   const effectivePeriodStart = useMemo(() => {
     if (nextDayAfterLastClosed) {
@@ -142,8 +144,8 @@ export function CashClosingWizardDialog({
       }
       return dateFromFormatted;
     }
-    return dateFromFormatted || new Date().toISOString().split('T')[0];
-  }, [nextDayAfterLastClosed, dateFromFormatted]);
+    return dateFromFormatted || todayIso;
+  }, [nextDayAfterLastClosed, dateFromFormatted, todayIso]);
 
   // Effective period end cannot be earlier than start
   const effectivePeriodEnd = useMemo(() => {
@@ -457,7 +459,16 @@ export function CashClosingWizardDialog({
             {step < 3 ? (
               <Button
                 size="sm"
-                onClick={() => setStep((s) => (s + 1) as any)}
+                onClick={() => {
+                  if (step === 2) {
+                    if (difference > 0 && differenceAction === 'booked_as_shortage') {
+                      setDifferenceAction('booked_as_surplus');
+                    } else if (difference < 0 && differenceAction === 'booked_as_surplus') {
+                      setDifferenceAction('booked_as_shortage');
+                    }
+                  }
+                  setStep((s) => (s + 1) as any);
+                }}
                 disabled={step === 1 && !canGoToStep2}
                 className="text-xs gap-1.5"
               >

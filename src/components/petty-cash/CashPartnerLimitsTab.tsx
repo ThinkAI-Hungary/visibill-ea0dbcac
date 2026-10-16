@@ -28,9 +28,11 @@ import {
   Info,
 } from 'lucide-react';
 import { useCashPartnerMonthlyLimits } from '@/hooks/usePettyCashUpgrade';
+import { useCompany } from '@/contexts/CompanyContext';
 import { fmtBalance } from './types';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { Nav40PreviewDialog } from './Nav40PreviewDialog';
 
 interface CashPartnerLimitsTabProps {
   companyId: string;
@@ -38,8 +40,10 @@ interface CashPartnerLimitsTabProps {
 
 export default function CashPartnerLimitsTab({ companyId }: CashPartnerLimitsTabProps) {
   const { t } = useTranslation(['pettyCash', 'common']);
+  const { selectedCompany } = useCompany();
   const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(() => new Date().getMonth() + 1);
+  const [showNav40Dialog, setShowNav40Dialog] = useState(false);
 
   const {
     data: limitData,
@@ -163,6 +167,17 @@ export default function CashPartnerLimitsTab({ companyId }: CashPartnerLimitsTab
                 <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
                 NAV 40 Export (CSV)
               </Button>
+
+              <Button
+                variant="default"
+                size="sm"
+                className="h-8 gap-1.5 text-xs shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                onClick={() => setShowNav40Dialog(true)}
+                disabled={!limitData || !limitData.partners || limitData.partners.length === 0}
+              >
+                <ShieldAlert className="h-3.5 w-3.5" />
+                NAV 40 Adatlap Előkészítés
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -188,13 +203,24 @@ export default function CashPartnerLimitsTab({ companyId }: CashPartnerLimitsTab
                 </div>
               </div>
 
-              <div className="text-right shrink-0">
-                <div className="text-[11px] font-semibold text-muted-foreground uppercase">
-                  20%-os Mulasztási Bírság Kockázat
+              <div className="text-right shrink-0 flex sm:flex-col items-end gap-2">
+                <div>
+                  <div className="text-[11px] font-semibold text-muted-foreground uppercase">
+                    20%-os Mulasztási Bírság Kockázat
+                  </div>
+                  <div className="text-lg font-bold font-mono text-destructive">
+                    {fmtBalance(limitData?.total_penalty_risk_huf || 0, 'HUF')}
+                  </div>
                 </div>
-                <div className="text-lg font-bold font-mono text-destructive">
-                  {fmtBalance(limitData?.total_penalty_risk_huf || 0, 'HUF')}
-                </div>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 text-xs font-semibold shadow-sm"
+                  onClick={() => setShowNav40Dialog(true)}
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 mr-1" />
+                  NAV 40 Bejelentés Megnyitása
+                </Button>
               </div>
             </div>
           ) : warningCount > 0 ? (
@@ -311,8 +337,8 @@ export default function CashPartnerLimitsTab({ companyId }: CashPartnerLimitsTab
                   ) : (
                     limitData.partners.map((p, idx) => {
                       const pct = Math.min((p.total_amount_huf / p.monthly_threshold_huf) * 100, 100);
-                      const isExceeded = p.status === 'exceeded';
-                      const isWarning = p.status === 'warning';
+                      const isExceeded = Boolean(p.is_exceeded || p.status === 'exceeded' || p.status === 'violating');
+                      const isWarning = Boolean(!isExceeded && (p.status === 'warning' || p.total_amount_huf >= p.monthly_threshold_huf * 0.8));
 
                       return (
                         <TableRow key={idx} className={cn("hover:bg-muted/30", isExceeded && "bg-destructive/5")}>
@@ -396,6 +422,17 @@ export default function CashPartnerLimitsTab({ companyId }: CashPartnerLimitsTab
           </div>
         </CardContent>
       </Card>
+
+      {/* NAV 40 Preview & Preparation Dialog */}
+      <Nav40PreviewDialog
+        open={showNav40Dialog}
+        onOpenChange={setShowNav40Dialog}
+        year={selectedYear}
+        month={selectedMonth}
+        companyName={selectedCompany?.name || 'Vállalkozás'}
+        companyTaxNumber={selectedCompany?.tax_number || undefined}
+        partners={(limitData?.partners as any) || []}
+      />
     </div>
   );
 }
