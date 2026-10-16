@@ -47,6 +47,14 @@ export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsP
     totalPlannedPerformance: asset.total_planned_performance,
     depreciationSchedule: asset.depreciation_schedule,
     performanceLogs,
+    taxDepreciationBase: asset.tax_depreciation_base,
+    grantDepreciationBase: asset.grant_depreciation_base,
+    grantDepreciationRate: asset.grant_depreciation_rate,
+    grantDepreciationMethod: asset.grant_depreciation_method,
+    openingAccumulatedDepreciation: asset.opening_accumulated_depreciation,
+    openingTaxDepreciation: asset.opening_tax_depreciation,
+    lastDepreciationDate: asset.last_depreciation_date,
+    depreciationRatePercent: asset.depreciation_rate_percent,
   }), [asset, taoRate, performanceLogs]);
 
   const usefulLifeYears = Math.floor(asset.useful_life_months / 12);
@@ -56,13 +64,28 @@ export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsP
     : t('hr:fixed_assets.cards.years_only', { defaultValue: `${usefulLifeYears} év`, years: usefulLifeYears });
 
   const hasDevReserve = Number(asset.development_reserve_amount) > 0;
+  const hasOpening = Boolean(asset.last_depreciation_date || (asset.opening_accumulated_depreciation && asset.opening_accumulated_depreciation > 0));
+  const hasGrant = Boolean(result.grant);
 
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-        {t('hr:fixed_assets.cards.title', 'Kettős Értékcsökkenés (Amortizáció)')}
-      </h4>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          {hasGrant
+            ? t('hr:fixed_assets.cards.title_triple', 'Hármas Értékcsökkenés (Számviteli, TAO és Pályázati)')
+            : t('hr:fixed_assets.cards.title', 'Kettős Értékcsökkenés (Amortizáció)')}
+        </h4>
+        {hasOpening && (
+          <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+            {t('hr:fixed_assets.cards.opening_badge', {
+              defaultValue: `Átvett nyitó karton (${asset.last_depreciation_date || 'lezárt'})`,
+              date: asset.last_depreciation_date
+            })}
+          </span>
+        )}
+      </div>
+
+      <div className={`grid grid-cols-1 ${hasGrant ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-3`}>
         {/* Számviteli ÉCS */}
         <div className="rounded-lg border border-border/50 p-4 bg-muted/20">
           <h5 className="text-sm font-bold mb-3 text-foreground">{t('hr:fixed_assets.cards.accounting_depr', 'Számviteli ÉCS')}</h5>
@@ -91,6 +114,12 @@ export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsP
               <span className="text-muted-foreground">{t('hr:fixed_assets.cards.rate', 'ÉCS Kulcs:')}</span>
               <span className="font-medium">{result.accounting.ratePercent}%</span>
             </div>
+            {hasOpening && Number(asset.opening_accumulated_depreciation) > 0 && (
+              <div className="flex justify-between text-xs text-blue-600 dark:text-blue-400">
+                <span>{t('hr:fixed_assets.cards.opening_acc_short', 'Átvett nyitó ÉCS:')}</span>
+                <span className="font-medium">{formatCurrency(asset.opening_accumulated_depreciation, asset.currency)}</span>
+              </div>
+            )}
             <div className="h-px bg-border/50 my-2" />
             <div className="flex justify-between">
               <span className="text-foreground font-medium">{t('hr:fixed_assets.cards.book_value', 'Könyvsz. Érték:')}</span>
@@ -120,6 +149,12 @@ export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsP
               <span className="text-muted-foreground">{t('hr:fixed_assets.cards.rate', 'ÉCS Kulcs:')}</span>
               <span className="font-medium">{result.tax.ratePercent}%</span>
             </div>
+            {asset.tax_depreciation_base && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{t('hr:fixed_assets.cards.custom_tax_base', 'Egyedi TAO alap:')}</span>
+                <span className="font-medium text-foreground">{formatCurrency(asset.tax_depreciation_base, asset.currency)}</span>
+              </div>
+            )}
             {hasDevReserve && (
               <>
                 <div className="flex justify-between text-xs text-amber-600">
@@ -131,6 +166,12 @@ export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsP
                   <span className="font-medium">{formatCurrency(result.tax.taxBase || 0, asset.currency)}</span>
                 </div>
               </>
+            )}
+            {hasOpening && Number(asset.opening_tax_depreciation) > 0 && (
+              <div className="flex justify-between text-xs text-blue-600 dark:text-blue-400">
+                <span>{t('hr:fixed_assets.cards.opening_tax_short', 'Átvett nyitó TAO:')}</span>
+                <span className="font-medium">{formatCurrency(asset.opening_tax_depreciation, asset.currency)}</span>
+              </div>
             )}
             <div className="h-px bg-border/50 my-2" />
             <div className="flex justify-between">
@@ -144,6 +185,46 @@ export function DepreciationCards({ asset, performanceLogs }: DepreciationCardsP
             )}
           </div>
         </div>
+
+        {/* Pályázatos ÉCS (3. ág) */}
+        {result.grant && (
+          <div className="rounded-lg border border-purple-500/30 p-4 bg-purple-500/5">
+            <div className="flex items-center justify-between mb-3">
+              <h5 className="text-sm font-bold text-foreground">
+                {t('hr:fixed_assets.cards.grant_depr', 'Pályázatos ÉCS')}
+              </h5>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                {t('hr:fixed_assets.cards.grant_badge', 'Támogatási pálya')}
+              </span>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('hr:fixed_assets.cards.grant_base', 'Támogatott alap:')}</span>
+                <span className="font-medium">{formatCurrency(result.grant.grantBase, asset.currency)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('hr:fixed_assets.cards.rate', 'ÉCS Kulcs:')}</span>
+                <span className="font-medium">{result.grant.ratePercent}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('hr:fixed_assets.cards.monthly_grant', 'Havi elszámolt:')}</span>
+                <span className="font-medium">{formatCurrency(result.grant.monthly, asset.currency)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('hr:fixed_assets.cards.accumulated_grant', 'Halmozott elszámolt:')}</span>
+                <span className="font-medium">{formatCurrency(result.grant.accumulated, asset.currency)}</span>
+              </div>
+              <div className="h-px bg-border/50 my-2" />
+              <div className="flex justify-between">
+                <span className="text-foreground font-medium">{t('hr:fixed_assets.cards.remaining_grant', 'Maradék támogatás:')}</span>
+                <span className="font-bold text-purple-600 dark:text-purple-400">{formatCurrency(result.grant.bookValue, asset.currency)}</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground italic mt-1 leading-tight">
+                {t('hr:fixed_assets.cards.grant_pie_note', 'Halasztott bevételek (4591 → 964) időbeli elhatárolásának feloldásához.')}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

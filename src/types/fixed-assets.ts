@@ -187,6 +187,22 @@ export interface FixedAsset {
   created_at: string;
   updated_at: string;
   grant_project_id?: string | null;
+  // Kiterjesztett törzsadatok (Phase 4)
+  tax_depreciation_base?: number | null;
+  grant_depreciation_base?: number | null;
+  grant_depreciation_rate?: number | null;
+  grant_depreciation_method?: string | null;
+  opening_accumulated_depreciation?: number | null;
+  opening_tax_depreciation?: number | null;
+  last_depreciation_date?: string | null;
+  depreciation_rate_percent?: number | null;
+  property_registry_number?: string | null;
+  license_plate?: string | null;
+  vin_chassis_number?: string | null;
+  // Beruházási adókedvezmény és 4 éves védelem (Phase 5)
+  has_tax_credit?: boolean;
+  tax_credit_type?: 'KKV_BERUHAZAS' | 'FEJLESZTESI_ADOKEDVEZMENY' | 'ENERGIAHATEKONYSAGI' | string | null;
+  tax_credit_retention_until?: string | null;
   // Joined fields
   location?: CompanyLocation;
   sub_location?: CompanySubLocation;
@@ -198,6 +214,7 @@ export interface FixedAsset {
   tao_template?: TaoTemplate;
   gl_account?: { id: string; gl_number: string; short_name: string };
   development_reserve?: DevelopmentReserve;
+  reserve_allocations?: FixedAssetReserveAllocation[];
   // Computed / Analytical fields
   acquisition_date?: string;
   gross_value?: number;
@@ -205,6 +222,16 @@ export interface FixedAsset {
   net_book_value?: number;
   annual_depreciation_rate?: number;
   asset_group?: string;
+}
+
+export interface FixedAssetReserveAllocation {
+  id: string;
+  company_id: string;
+  asset_id: string;
+  reserve_id: string;
+  allocated_amount: number;
+  created_at: string;
+  reserve?: DevelopmentReserve;
 }
 
 export type AssetEventType =
@@ -219,7 +246,12 @@ export type AssetEventType =
   | 'inventory_check'
   | 'value_change'
   | 'document_upload'
-  | 'performance_log';
+  | 'performance_log'
+  | 'unplanned_depreciation'
+  | 'unplanned_depreciation_reversal'
+  | 'contribution_in_kind'
+  | 'free_transfer_out'
+  | 'free_transfer_in';
 
 export interface AssetEvent {
   id: string;
@@ -248,6 +280,13 @@ export interface DepreciationResult {
     ratePercent: number;
     taxBase?: number;
     developmentReserveDeduction?: number;
+  };
+  grant?: {
+    monthly: number;
+    accumulated: number;
+    bookValue: number;
+    ratePercent: number;
+    grantBase: number;
   };
 }
 

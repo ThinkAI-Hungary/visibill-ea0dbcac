@@ -26,7 +26,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn, formatVatRate, is27PercentVatRate, normalizeVatRatePercent } from '@/lib/utils';
 import { validateAndResolveItemVat } from '@/lib/invoiceItemVatValidation';
 import { isValidUUID } from '@/lib/validationUtils';
-import { Package, Package2, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ArrowLeftRight, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark, CalendarClock, Percent } from 'lucide-react';
+import { Package, Package2, PackagePlus, CheckCircle2, Info, Loader2, Check, Pencil, FileSpreadsheet, X, ArrowUpDown, ArrowLeftRight, ChevronUp, ChevronDown, MessageSquare, Sparkles, Wallet, Lock, Landmark, CalendarClock, Percent } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
@@ -40,6 +40,8 @@ import {
   type VatCodeOverrideLogEntry,
 } from '@/utils/vatCodeMatching';
 import { AssetActivationDialog } from '@/components/AssetActivationDialog';
+import { detectAssetCandidate } from '@/lib/fixed-assets/assetInvoiceCandidateService';
+import { CreateAssetFromInvoiceDialog } from '@/components/fixed-assets/CreateAssetFromInvoiceDialog';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
@@ -208,6 +210,9 @@ export function InvoiceItemsDialog({
   // Accrual (Időbeli Elhatárolás) dialog state
   const [accrualModalOpen, setAccrualModalOpen] = useState(false);
   const [accrualTargetItem, setAccrualTargetItem] = useState<InvoiceLineItem | null>(null);
+
+  // Single item Quick Asset Creation (TÉNY Intelligens Varázsló)
+  const [quickAssetItem, setQuickAssetItem] = useState<InvoiceLineItem | null>(null);
 
   // Existing accrual for this invoice
   const { data: existingAccrual, refetch: refetchAccruals } = useQuery({
@@ -2384,6 +2389,46 @@ export function InvoiceItemsDialog({
                                     </Button>
                                   );
                                 })()}
+                                {(() => {
+                                  if (alreadyActivated || isOutbound) return null;
+                                  const candidate = detectAssetCandidate({
+                                    id: item.id,
+                                    line_description: item.line_description,
+                                    net_amount: item.net_amount,
+                                    product_code: item.product_code,
+                                    gl_account_number: item.gl_classifications?.account_number || item.gl_classifications?.gl_number,
+                                  });
+
+                                  if (candidate.isCandidate) {
+                                    return (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setQuickAssetItem(item)}
+                                        className="h-6 px-2 text-[11px] font-medium bg-amber-500/10 text-amber-700 border-amber-400 hover:bg-amber-500/20 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700"
+                                        title={`Tárgyi eszköz javaslat (${candidate.suggestedCategory || 'TÉNY'}): ${candidate.reasons.join(', ')}`}
+                                      >
+                                        <PackagePlus className="h-3 w-3 mr-1 text-amber-600 dark:text-amber-400" />
+                                        TÉNY eszköz ({candidate.confidence === 'high' ? '90%' : '70%'})
+                                      </Button>
+                                    );
+                                  }
+
+                                  return (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setQuickAssetItem(item)}
+                                      className="h-6 px-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted"
+                                      title="Tárgyi eszköz aktiválása ebből a tételből a TÉNY modulban"
+                                    >
+                                      <PackagePlus className="h-3 w-3 mr-1" />
+                                      TÉNY
+                                    </Button>
+                                  );
+                                })()}
                               </div>
                             </div>
                             {alreadyActivated && (
@@ -3466,6 +3511,40 @@ export function InvoiceItemsDialog({
           queryClient.invalidateQueries({ queryKey: ['fixedAssetsForInvoice', invoiceId, source] });
         }}
       />
+
+      {/* Single Item Intelligent Asset Activation Dialog (TÉNY Varázsló) */}
+      {quickAssetItem && (
+        <CreateAssetFromInvoiceDialog
+          open={!!quickAssetItem}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setQuickAssetItem(null);
+          }}
+          item={{
+            id: quickAssetItem.id,
+            line_description: quickAssetItem.line_description,
+            net_amount: quickAssetItem.net_amount,
+            gross_amount: quickAssetItem.gross_amount,
+            unit_price: quickAssetItem.unit_price,
+            quantity: quickAssetItem.quantity,
+            product_code: quickAssetItem.product_code,
+            gl_account_number: quickAssetItem.gl_classifications?.account_number || quickAssetItem.gl_classifications?.gl_number,
+          }}
+          invoice={{
+            id: invoiceId,
+            invoice_number: invoiceNumber || parentInvoice?.invoice_number || (parentInvoice as any)?.bizonylatsorszam || null,
+            supplier_name: supplierName || parentInvoice?.partner_nev || parentInvoice?.supplier_name || null,
+            fulfillment_date: (parentInvoice as any)?.invoice_delivery_date || (parentInvoice as any)?.teljesites_datuma || null,
+            issue_date: invoiceDate || parentInvoice?.invoice_issue_date || (parentInvoice as any)?.kibocsatas_datuma || null,
+            currency: currency || parentInvoice?.currency || parentInvoice?.penznem || 'HUF',
+            source: source === 'submitted' ? 'submitted' : 'nav',
+          }}
+          onSuccess={() => {
+            setQuickAssetItem(null);
+            queryClient.invalidateQueries({ queryKey: ['fixedAssetsForInvoice', invoiceId, source] });
+            queryClient.invalidateQueries({ queryKey: ['fixed_assets'] });
+          }}
+        />
+      )}
 
       {/* Petty Cash Write-off Dialog */}
       <Dialog open={pettyCashWriteOffOpen} onOpenChange={(open) => {

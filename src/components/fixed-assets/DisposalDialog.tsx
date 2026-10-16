@@ -13,8 +13,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
 import { formatCurrency } from '@/lib/utils';
 import { requestAssetDisposal } from '@/lib/fixed-assets/assetDisposalPostingService';
-import { reportError } from '@/lib/errorReporter';
 import { DevelopmentReserveAlienationAlert } from './DevelopmentReserveAlienationAlert';
+import { TaxCreditAlienationAlert } from './TaxCreditAlienationAlert';
+import { checkTaxCreditAlienationRestriction } from '@/lib/fixed-assets/taxCreditRestrictionService';
 import {
   DISPOSAL_REASON_LABELS,
   type DisposalCommittee,
@@ -72,6 +73,17 @@ export function DisposalDialog({ open, onOpenChange, asset }: DisposalDialogProp
   // Térítés nélküli átadás
   const [recipientName, setRecipientName] = useState('');
 
+  // Beruházási adókedvezmény védelmi tudomásulvétel
+  const [taxCreditAcknowledged, setTaxCreditAcknowledged] = useState(false);
+
+  const isTaxCreditRestricted = checkTaxCreditAlienationRestriction({
+    hasTaxCredit: asset.has_tax_credit,
+    taxCreditType: asset.tax_credit_type,
+    taxCreditRetentionUntil: asset.tax_credit_retention_until,
+    activationDate: asset.activation_date,
+    disposalDate,
+  }).restricted;
+
   const validationError = (() => {
     if (!disposalDate) return tt('err_date', 'A kivezetés dátuma kötelező.');
     if (asset.activation_date && disposalDate < asset.activation_date) {
@@ -83,6 +95,9 @@ export function DisposalDialog({ open, onOpenChange, asset }: DisposalDialogProp
     }
     if (reasonType === 'sale' && !(parseFloat(saleValue) > 0)) return tt('err_sale_value', 'Értékesítésnél a nettó eladási ár kötelező.');
     if (reasonType === 'donation' && !recipientName.trim()) return tt('err_recipient', 'Az átvevő megnevezése kötelező.');
+    if (isTaxCreditRestricted && !taxCreditAcknowledged) {
+      return tt('err_tax_credit_ack', 'A beruházási adókedvezmény megtartási tilalmának tudomásul vétele kötelező a kérelem benyújtásához.');
+    }
     return null;
   })();
 
@@ -328,6 +343,13 @@ export function DisposalDialog({ open, onOpenChange, asset }: DisposalDialogProp
           </div>
 
           <DevelopmentReserveAlienationAlert asset={asset} disposalDate={disposalDate} />
+
+          <TaxCreditAlienationAlert
+            asset={asset}
+            disposalDate={disposalDate}
+            acknowledged={taxCreditAcknowledged}
+            onAcknowledgeChange={setTaxCreditAcknowledged}
+          />
 
           {validationError && (
             <p className="text-sm text-destructive" role="alert" id="disposal-validation-error">

@@ -18,7 +18,9 @@ import {
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { useProjectList } from '@/hooks/useProjectList';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { useDevelopmentReserves } from '@/hooks/useDevelopmentReserves';
+import { useDevelopmentReserves, useSaveAssetReserveAllocations } from '@/hooks/useDevelopmentReserves';
+import { DevelopmentReserveAllocationSelector, type AllocationItem } from './DevelopmentReserveAllocationSelector';
+import { calculateDefaultTaxCreditRetentionUntil } from '@/lib/fixed-assets/taxCreditRestrictionService';
 import { useCompanyAccountingRule } from '@/hooks/useAccountingPolicy';
 import { supabase } from '@/integrations/supabase/client';
 import { Package2, Sparkles, RefreshCw, Loader2, Info } from 'lucide-react';
@@ -81,11 +83,14 @@ export function CreateFixedAssetDialog({
   const [activationDate, setActivationDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [usefulLifeYears, setUsefulLifeYears] = useState('3');
   const [usefulLifeMonths, setUsefulLifeMonths] = useState('0');
+  const [depreciationRatePercent, setDepreciationRatePercent] = useState('33.33');
   const [depreciationMethod, setDepreciationMethod] = useState('linear');
   const [performanceUnit, setPerformanceUnit] = useState('');
   const [totalPlannedPerformance, setTotalPlannedPerformance] = useState('');
   const [depreciationScheduleString, setDepreciationScheduleString] = useState('');
   const [taoTemplateId, setTaoTemplateId] = useState('');
+  const [taoRateOverride, setTaoRateOverride] = useState('');
+  const [taxDepreciationBase, setTaxDepreciationBase] = useState<number | ''>('');
   const [locationId, setLocationId] = useState('');
   const [projectId, setProjectId] = useState('');
   const [glAccountId, setGlAccountId] = useState('');
@@ -94,12 +99,75 @@ export function CreateFixedAssetDialog({
   const [isOpeningAsset, setIsOpeningAsset] = useState(false);
   const [hasManuallyToggledOpening, setHasManuallyToggledOpening] = useState(false);
 
-  // Development reserve allocation
+  // Átvett nyitó karton adatok
+  const [lastDepreciationDate, setLastDepreciationDate] = useState(() => `${new Date().getFullYear() - 1}-12-31`);
+  const [openingAccumulatedDepreciation, setOpeningAccumulatedDepreciation] = useState<number | ''>('');
+  const [openingTaxDepreciation, setOpeningTaxDepreciation] = useState<number | ''>('');
+
+  // Ingatlan és jármű törzsadatok
+  const [propertyRegistryNumber, setPropertyRegistryNumber] = useState('');
+  const [licensePlate, setLicensePlate] = useState('');
+  const [vinChassisNumber, setVinChassisNumber] = useState('');
+
+  // Pályázatos ÉCS
+  const [hasGrantFunding, setHasGrantFunding] = useState(false);
+  const [grantDepreciationBase, setGrantDepreciationBase] = useState<number | ''>('');
+  const [grantDepreciationRate, setGrantDepreciationRate] = useState('20');
+  const [grantDepreciationMethod, setGrantDepreciationMethod] = useState('linear');
+
+  // Development reserve allocation (Multi-year FIFO or custom allocation)
   const [useDevReserve, setUseDevReserve] = useState(false);
-  const [devReserveId, setDevReserveId] = useState('');
-  const [devReserveAmount, setDevReserveAmount] = useState<number | ''>('');
+  const [reserveAllocations, setReserveAllocations] = useState<AllocationItem[]>([]);
+  const saveReserveAllocations = useSaveAssetReserveAllocations();
+
+  // Beruházási adókedvezmény és 4 éves megtartási kötelezettség
+  const [hasTaxCredit, setHasTaxCredit] = useState(false);
+  const [taxCreditType, setTaxCreditType] = useState('KKV_BERUHAZAS');
+  const [taxCreditRetentionUntil, setTaxCreditRetentionUntil] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
+
+  // Kétirányú leírási kulcs ↔ Hasznos élettartam kalkuláció
+  const handleUsefulLifeChange = (years: string, months: string) => {
+    setUsefulLifeYears(years);
+    setUsefulLifeMonths(months);
+    const totalMonths = (parseInt(years || '0', 10) * 12) + parseInt(months || '0', 10);
+    if (totalMonths > 0) {
+      const annualPct = (12 / totalMonths) * 100;
+      setDepreciationRatePercent(parseFloat(annualPct.toFixed(2)).toString());
+    } else {
+      setDepreciationRatePercent('');
+    }
+  };
+
+  const handleRatePercentChange = (rateStr: string) => {
+    setDepreciationRatePercent(rateStr);
+    const rate = parseFloat(rateStr);
+    if (!isNaN(rate) && rate > 0) {
+      const totalMonths = Math.round(12 / (rate / 100));
+      const y = Math.floor(totalMonths / 12);
+      const m = totalMonths % 12;
+      setUsefulLifeYears(y.toString());
+      setUsefulLifeMonths(m.toString());
+    }
+  };
+
+  const handleTaoTemplateChange = (tplId: string) => {
+    const val = tplId === '_none' ? '' : tplId;
+    setTaoTemplateId(val);
+    if (val) {
+      const tpl = taoTemplates.find(t => t.id === val);
+      if (tpl) {
+        setTaoRateOverride(tpl.tao_rate_percent.toString());
+      }
+    }
+  };
+
+  // Dinamikus számlaszám észlelés
+  const selectedGlAccount = glAccounts.find((a: any) => a.id === glAccountId);
+  const glNumber = selectedGlAccount?.gl_number || '';
+  const isRealEstate = glNumber.startsWith('12');
+  const isVehicle = glNumber.startsWith('142') || glNumber.startsWith('143');
 
   // Auto-generate inventory number when dialog opens or when user clicks regenerate
   const handleGenerateInventoryNumber = async () => {
@@ -129,11 +197,14 @@ export function CreateFixedAssetDialog({
       setActivationDate(today);
       setUsefulLifeYears('3');
       setUsefulLifeMonths('0');
+      setDepreciationRatePercent('33.33');
       setDepreciationMethod('linear');
       setPerformanceUnit('');
       setTotalPlannedPerformance('');
       setDepreciationScheduleString('');
       setTaoTemplateId('');
+      setTaoRateOverride('');
+      setTaxDepreciationBase('');
       setLocationId(locations[0]?.id || '');
       setProjectId('');
       setGlAccountId(glAccounts[0]?.id || '');
@@ -141,9 +212,21 @@ export function CreateFixedAssetDialog({
       setSourceInvoiceNumber('');
       setIsOpeningAsset(false);
       setHasManuallyToggledOpening(false);
+      setLastDepreciationDate(`${new Date().getFullYear() - 1}-12-31`);
+      setOpeningAccumulatedDepreciation('');
+      setOpeningTaxDepreciation('');
+      setPropertyRegistryNumber('');
+      setLicensePlate('');
+      setVinChassisNumber('');
+      setHasGrantFunding(false);
+      setGrantDepreciationBase('');
+      setGrantDepreciationRate('20');
+      setGrantDepreciationMethod('linear');
       setUseDevReserve(false);
-      setDevReserveId(activeReserves[0]?.id || '');
-      setDevReserveAmount('');
+      setReserveAllocations([]);
+      setHasTaxCredit(false);
+      setTaxCreditType('KKV_BERUHAZAS');
+      setTaxCreditRetentionUntil('');
       handleGenerateInventoryNumber();
     }
   }, [open, selectedCompany?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -203,13 +286,35 @@ export function CreateFixedAssetDialog({
       return;
     }
 
+    if (isOpeningAsset) {
+      const numOpeningAcc = Number(openingAccumulatedDepreciation) || 0;
+      const numResidual = Number(residualValue) || 0;
+      const maxAllowedOpening = Math.max(0, numAcquisition - numResidual);
+
+      if (numOpeningAcc > maxAllowedOpening) {
+        toast({
+          title: t('common:status.error'),
+          description: `Az átvett halmozott ÉCS (${numOpeningAcc.toLocaleString('hu-HU')} Ft) nem haladhatja meg a bekerülési érték maradványérték feletti részét (${maxAllowedOpening.toLocaleString('hu-HU')} Ft)!`,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const schedule = (depreciationMethod === 'absolute' || depreciationMethod === 'multiplier')
         ? depreciationScheduleString.split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v))
         : null;
 
-      await createAsset.mutateAsync({
+      const totalDevReserveAmount = useDevReserve
+        ? reserveAllocations.reduce((sum, a) => sum + (Number(a.amount) || 0), 0)
+        : 0;
+      const primaryReserveId = useDevReserve && reserveAllocations.length > 0
+        ? reserveAllocations[0].reserveId
+        : null;
+
+      const createdAsset = await createAsset.mutateAsync({
         companyId: selectedCompany.id,
         userId: user.id,
         inventoryNumber: inventoryNumber.trim(),
@@ -221,12 +326,13 @@ export function CreateFixedAssetDialog({
         currency,
         purchaseDate,
         activationDate,
-        usefulLifeMonths: parseInt(usefulLifeMonths, 10) || 0,
+        usefulLifeMonths: usefulMonths,
         depreciationMethod,
         performanceUnit: depreciationMethod === 'performance' ? performanceUnit || null : null,
         totalPlannedPerformance: depreciationMethod === 'performance' ? parseFloat(totalPlannedPerformance) || null : null,
         depreciationSchedule: schedule,
         taoTemplateId: taoTemplateId || null,
+        taoRateOverride: taoRateOverride !== '' ? parseFloat(taoRateOverride) : null,
         locationId: locationId || null,
         projectId: projectId || null,
         activatedByUserId: user.id,
@@ -236,10 +342,44 @@ export function CreateFixedAssetDialog({
         sourceInvoiceNumber: sourceInvoiceNumber.trim() || null,
         supplierName: supplierName.trim() || null,
         glAccountId: glAccountId || null,
-        developmentReserveId: useDevReserve ? devReserveId || null : null,
-        developmentReserveAmount: useDevReserve ? Number(devReserveAmount) || 0 : 0,
+        developmentReserveId: primaryReserveId,
+        developmentReserveAmount: totalDevReserveAmount,
         skipLedgerPosting: isOpeningAsset, // Bypasses duplicate 161 ledger posting for opening/historical assets
+        // Phase 4 extended fields
+        taxDepreciationBase: taxDepreciationBase !== '' ? Number(taxDepreciationBase) : null,
+        grantDepreciationBase: hasGrantFunding && grantDepreciationBase !== '' ? Number(grantDepreciationBase) : null,
+        grantDepreciationRate: hasGrantFunding && grantDepreciationRate !== '' ? parseFloat(grantDepreciationRate) : null,
+        grantDepreciationMethod: hasGrantFunding ? grantDepreciationMethod : null,
+        openingAccumulatedDepreciation: isOpeningAsset && openingAccumulatedDepreciation !== '' ? Number(openingAccumulatedDepreciation) : 0,
+        openingTaxDepreciation: isOpeningAsset && openingTaxDepreciation !== '' ? Number(openingTaxDepreciation) : 0,
+        lastDepreciationDate: isOpeningAsset && lastDepreciationDate ? lastDepreciationDate : null,
+        depreciationRatePercent: depreciationRatePercent !== '' ? parseFloat(depreciationRatePercent) : null,
+        propertyRegistryNumber: propertyRegistryNumber.trim() || null,
+        licensePlate: licensePlate.trim() ? licensePlate.trim().toUpperCase() : null,
+        vinChassisNumber: vinChassisNumber.trim() ? vinChassisNumber.trim().toUpperCase() : null,
+        hasTaxCredit,
+        taxCreditType: hasTaxCredit ? taxCreditType : null,
+        taxCreditRetentionUntil: hasTaxCredit && taxCreditRetentionUntil ? taxCreditRetentionUntil : null,
       });
+
+      // Ha többéves allokáció van megadva, mentsük el a kapcsolótáblába
+      if (useDevReserve && reserveAllocations.length > 0 && selectedCompany && createdAsset?.id) {
+        try {
+          await saveReserveAllocations.mutateAsync({
+            companyId: selectedCompany.id,
+            assetId: createdAsset.id,
+            allocations: reserveAllocations,
+          });
+        } catch (allocErr) {
+          reportError({
+            type: 'db_query',
+            component: 'CreateFixedAssetDialog',
+            action: 'saveReserveAllocations',
+            message: 'Failed to save multi-year reserve allocations',
+            error: allocErr,
+          });
+        }
+      }
 
       toast({
         title: t('common:status.success'),
@@ -361,6 +501,72 @@ export function CreateFixedAssetDialog({
                   />
                 </div>
               </div>
+
+              {/* Dinamikus azonosítók (Hrsz., Rendszám, Alvázszám) */}
+              {(isRealEstate || isVehicle || propertyRegistryNumber || licensePlate || vinChassisNumber) ? (
+                <div className="p-3 bg-muted/40 rounded-lg border border-border/60 space-y-3 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                      {isRealEstate
+                        ? t('hr:fixed_assets.create_dialog.real_estate_identifiers', 'Ingatlan Törzsadatok (12-es főkönyv)')
+                        : isVehicle
+                        ? t('hr:fixed_assets.create_dialog.vehicle_identifiers', 'Gépjármű Törzsadatok (142/143 főkönyv)')
+                        : t('hr:fixed_assets.create_dialog.custom_identifiers', 'Egyedi Nyilvántartási Törzsadatok')}
+                    </span>
+                    {(isRealEstate || isVehicle) && (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                        {isRealEstate ? '12xx Ingatlan' : '14x Jármű'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {(isRealEstate || propertyRegistryNumber || (!isRealEstate && !isVehicle)) && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="asset-registry-num">
+                          {t('hr:fixed_assets.create_dialog.property_registry_number', 'Helyrajzi szám (Hrsz.)')}
+                          {isRealEstate && <span className="text-destructive ml-0.5">*</span>}
+                        </Label>
+                        <Input
+                          id="asset-registry-num"
+                          value={propertyRegistryNumber}
+                          onChange={e => setPropertyRegistryNumber(e.target.value)}
+                          placeholder="pl. 12345/6/A/2"
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                    )}
+                    {(isVehicle || licensePlate || (!isRealEstate && !isVehicle)) && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="asset-license-plate">
+                          {t('hr:fixed_assets.create_dialog.license_plate', 'Forgalmi rendszám')}
+                          {isVehicle && <span className="text-destructive ml-0.5">*</span>}
+                        </Label>
+                        <Input
+                          id="asset-license-plate"
+                          value={licensePlate}
+                          onChange={e => setLicensePlate(e.target.value.toUpperCase())}
+                          placeholder="pl. AA-BB-123"
+                          className="font-mono text-sm uppercase"
+                        />
+                      </div>
+                    )}
+                    {(isVehicle || vinChassisNumber) && (
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label htmlFor="asset-vin">
+                          {t('hr:fixed_assets.create_dialog.vin_chassis_number', 'Alvázszám (VIN)')}
+                        </Label>
+                        <Input
+                          id="asset-vin"
+                          value={vinChassisNumber}
+                          onChange={e => setVinChassisNumber(e.target.value.toUpperCase())}
+                          placeholder="pl. WBA31AY08NFP12345"
+                          className="font-mono text-xs uppercase"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             {/* 2. Érték & Dátumok */}
@@ -507,14 +713,73 @@ export function CreateFixedAssetDialog({
                   </div>
                 </div>
                 {isOpeningAsset && (
-                  <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded border border-blue-500/20">
-                    <Info className="h-3.5 w-3.5 shrink-0" />
-                    <span>
-                      {t(
-                        'hr:fixed_assets.create_dialog.is_opening_alert',
-                        'Nyitó eszköz mód aktív: Nem keletkezik beruházási feladás (161-es számla nem érintett). Az értékcsökkenési leírások ettől függetlenül pontosan fognak kalkulálni.'
-                      )}
-                    </span>
+                  <div className="space-y-3 pt-2 border-t border-border/40 animate-in slide-in-from-top-1 duration-200">
+                    <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-500/10 p-2 rounded border border-blue-500/20">
+                      <Info className="h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        {t(
+                          'hr:fixed_assets.create_dialog.is_opening_alert',
+                          'Nyitó eszköz mód aktív: Nem keletkezik beruházási feladás (161-es számla nem érintett). Az értékcsökkenési leírás a megadott záró dátum utáni naptári hónaptól indul.'
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="asset-last-dep-date" className="text-xs font-medium">
+                          {t('hr:fixed_assets.create_dialog.last_dep_date', 'Utolsó leírt hó határa')} <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="asset-last-dep-date"
+                          type="date"
+                          value={lastDepreciationDate}
+                          onChange={e => setLastDepreciationDate(e.target.value)}
+                          className="font-mono text-xs"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="asset-opening-acc-dep" className="text-xs font-medium">
+                          {t('hr:fixed_assets.create_dialog.opening_acc_dep', 'Átvett számviteli halmozott ÉCS (Ft)')}
+                        </Label>
+                        <Input
+                          id="asset-opening-acc-dep"
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={openingAccumulatedDepreciation}
+                          onChange={e => setOpeningAccumulatedDepreciation(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="0"
+                          className="font-mono text-xs"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="asset-opening-tax-dep" className="text-xs font-medium">
+                          {t('hr:fixed_assets.create_dialog.opening_tax_dep', 'Átvett TAO halmozott ÉCS (Ft)')}
+                        </Label>
+                        <Input
+                          id="asset-opening-tax-dep"
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={openingTaxDepreciation}
+                          onChange={e => setOpeningTaxDepreciation(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="0"
+                          className="font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    {numAcquisition > 0 && (
+                      <div className="text-xs text-muted-foreground bg-background/50 p-2 rounded border border-border/40 flex justify-between items-center">
+                        <span>Átvételkori induló könyv szerinti nettó érték:</span>
+                        <span className="font-bold text-foreground font-mono">
+                          {Math.max(0, numAcquisition - (Number(openingAccumulatedDepreciation) || 0)).toLocaleString('hu-HU')} {currency}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -547,30 +812,49 @@ export function CreateFixedAssetDialog({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label>{t('hr:fixed_assets.create_dialog.useful_life', 'Hasznos élettartam')}</Label>
-                  <div className="flex gap-2">
-                    <div className="flex items-center gap-1.5 flex-1">
+                  <div className="flex items-center justify-between">
+                    <Label>{t('hr:fixed_assets.create_dialog.useful_life', 'Hasznos élettartam & Kulcs')}</Label>
+                    <span className="text-[11px] text-muted-foreground">Kétirányú kalkuláció</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="flex items-center gap-1">
                       <Input
                         type="number"
                         min="0"
                         value={usefulLifeYears}
-                        onChange={e => setUsefulLifeYears(e.target.value)}
+                        onChange={e => handleUsefulLifeChange(e.target.value, usefulLifeMonths)}
                         disabled={depreciationMethod === 'immediate'}
                         className="w-full font-mono text-sm"
+                        placeholder="0"
                       />
                       <span className="text-xs text-muted-foreground whitespace-nowrap">{t('hr:fixed_assets.create_dialog.years', 'év')}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-1">
+                    <div className="flex items-center gap-1">
                       <Input
                         type="number"
                         min="0"
                         max="11"
                         value={usefulLifeMonths}
-                        onChange={e => setUsefulLifeMonths(e.target.value)}
+                        onChange={e => handleUsefulLifeChange(usefulLifeYears, e.target.value)}
                         disabled={depreciationMethod === 'immediate'}
                         className="w-full font-mono text-sm"
+                        placeholder="0"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">{t('hr:fixed_assets.create_dialog.months', 'hónap')}</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">{t('hr:fixed_assets.create_dialog.months', 'hó')}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={depreciationRatePercent}
+                        onChange={e => handleRatePercentChange(e.target.value)}
+                        disabled={depreciationMethod === 'immediate'}
+                        placeholder="33.33"
+                        className="w-full font-mono text-sm font-semibold text-primary"
+                      />
+                      <span className="text-xs font-semibold text-primary whitespace-nowrap">%/év</span>
                     </div>
                   </div>
                 </div>
@@ -632,20 +916,38 @@ export function CreateFixedAssetDialog({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>{t('hr:fixed_assets.create_dialog.tao_template', 'Társasági Adó (TAO) kulcs sablon')}</Label>
-                  <Select value={taoTemplateId || '_none'} onValueChange={v => setTaoTemplateId(v === '_none' ? '' : v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('hr:fixed_assets.create_dialog.tao_template_placeholder', 'Válassz TAO kulcsot...')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none">{t('hr:fixed_assets.create_dialog.no_tao_template', 'Nincs TAO sablon hozzárendelve')}</SelectItem>
-                      {taoTemplates.map(t => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.name} ({t.tao_rate_percent}%)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center justify-between">
+                    <Label>{t('hr:fixed_assets.create_dialog.tao_template', 'Társasági Adó (TAO) kulcs')}</Label>
+                    <span className="text-[11px] text-muted-foreground">Sablon / egyedi</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select value={taoTemplateId || '_none'} onValueChange={handleTaoTemplateChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('hr:fixed_assets.create_dialog.tao_template_placeholder', 'Válassz TAO kulcsot...')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none">{t('hr:fixed_assets.create_dialog.no_tao_template', 'Egyedi kulcs')}</SelectItem>
+                        {taoTemplates.map(t => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.name} ({t.tao_rate_percent}%)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={taoRateOverride}
+                        onChange={e => setTaoRateOverride(e.target.value)}
+                        placeholder="pl. 14.5"
+                        className="w-full font-mono text-sm font-semibold text-amber-600"
+                      />
+                      <span className="text-xs font-semibold text-amber-600 whitespace-nowrap">TAO%</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -664,7 +966,152 @@ export function CreateFixedAssetDialog({
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="asset-tax-base" className="text-xs text-muted-foreground">
+                    {t('hr:fixed_assets.create_dialog.tax_base_label', 'Eltérő TAO ÉCS alap (opcionális, ha a TAO leírási alap eltér a bekerülési értéktől, Ft)')}
+                  </Label>
+                  <Input
+                    id="asset-tax-base"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={taxDepreciationBase}
+                    onChange={e => setTaxDepreciationBase(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder={`Alapértelmezett: ${numAcquisition > 0 ? numAcquisition.toLocaleString('hu-HU') + ' Ft (bekerülési érték)' : 'Bekerülési érték'}`}
+                    className="font-mono text-sm"
+                  />
+                </div>
               </div>
+            </div>
+
+            {/* 5. Pályázatos / Támogatási Amortizáció (3. ÉCS pálya) */}
+            <div className="space-y-3 border-t border-border/50 pt-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="asset-grant-toggle"
+                  checked={hasGrantFunding}
+                  onChange={e => {
+                    const checked = e.target.checked;
+                    setHasGrantFunding(checked);
+                    if (checked && !grantDepreciationBase && numAcquisition > 0) {
+                      setGrantDepreciationBase(numAcquisition);
+                    }
+                  }}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                />
+                <Label htmlFor="asset-grant-toggle" className="text-sm font-semibold cursor-pointer">
+                  {t('hr:fixed_assets.create_dialog.grant_toggle', 'Pályázati támogatás terhére vásárolt eszköz (3. ÉCS pálya)')}
+                </Label>
+              </div>
+
+              {hasGrantFunding && (
+                <div className="p-3.5 bg-purple-500/10 border border-purple-500/20 rounded-lg space-y-3 animate-in slide-in-from-top-1 duration-200">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t(
+                      'hr:fixed_assets.create_dialog.grant_desc',
+                      'Önálló kalkulációs ág a halasztott bevételek (4591 → 964 PIE) feloldásához. A támogatási szerződés szerinti elszámolható költség és támogatási intenzitás alapján.'
+                    )}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t('hr:fixed_assets.create_dialog.grant_base', 'Támogatott ÉCS alap (Ft)')}</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={grantDepreciationBase}
+                        onChange={e => setGrantDepreciationBase(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="pl. 5000000"
+                        className="h-8 text-xs bg-background font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t('hr:fixed_assets.create_dialog.grant_rate', 'Támogatási éves kulcs (%)')}</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={grantDepreciationRate}
+                        onChange={e => setGrantDepreciationRate(e.target.value)}
+                        placeholder="pl. 20"
+                        className="h-8 text-xs bg-background font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t('hr:fixed_assets.create_dialog.grant_method', 'Módszer')}</Label>
+                      <Select value={grantDepreciationMethod} onValueChange={setGrantDepreciationMethod}>
+                        <SelectTrigger className="h-8 text-xs bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="linear">Lineáris</SelectItem>
+                          <SelectItem value="immediate">Azonnali</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 6. Beruházási Adókedvezmény és 4 Éves Megtartási Kötelezettség */}
+            <div className="space-y-3 border-t border-border/50 pt-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="asset-tax-credit-toggle"
+                  checked={hasTaxCredit}
+                  onChange={e => {
+                    const checked = e.target.checked;
+                    setHasTaxCredit(checked);
+                    if (checked && !taxCreditRetentionUntil && activationDate) {
+                      setTaxCreditRetentionUntil(calculateDefaultTaxCreditRetentionUntil(activationDate));
+                    }
+                  }}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                />
+                <Label htmlFor="asset-tax-credit-toggle" className="text-sm font-semibold cursor-pointer">
+                  {t('hr:fixed_assets.create_dialog.tax_credit_toggle', 'Beruházási adókedvezménnyel érintett eszköz (4 éves megtartási kötelezettség)')}
+                </Label>
+              </div>
+
+              {hasTaxCredit && (
+                <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-lg space-y-3 animate-in slide-in-from-top-1 duration-200">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t(
+                      'hr:fixed_assets.create_dialog.tax_credit_desc',
+                      'A Tao. tv. szerinti beruházási adókedvezmény igénybevétele esetén az eszköz a megtartási időszak végéig nem idegeníthető el és nem selejtezhető jogkövetkezmény (visszafizetés és késedelmi pótlék) nélkül.'
+                    )}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t('hr:fixed_assets.create_dialog.tax_credit_type_label', 'Adókedvezmény jogcíme')}</Label>
+                      <Select value={taxCreditType} onValueChange={setTaxCreditType}>
+                        <SelectTrigger className="h-8 text-xs bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="KKV_BERUHAZAS">Kisvállalkozások beruházási kedvezménye (Tao. tv. 7. § (1) zs))</SelectItem>
+                          <SelectItem value="FEJLESZTESI_ADOKEDVEZMENY">Fejlesztési adókedvezmény (Tao. tv. 22/B. §)</SelectItem>
+                          <SelectItem value="ENERGIAHATEKONYSAGI">Energiahatékonysági célú beruházás (Tao. tv. 22/E. §)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t('hr:fixed_assets.create_dialog.retention_until_label', 'Megtartási kötelezettség záródátuma')}</Label>
+                      <Input
+                        type="date"
+                        value={taxCreditRetentionUntil}
+                        onChange={e => setTaxCreditRetentionUntil(e.target.value)}
+                        className="h-8 text-xs bg-background font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 5. Telephely, Projekt & Szervezet */}
@@ -710,7 +1157,7 @@ export function CreateFixedAssetDialog({
               </div>
             </div>
 
-            {/* 6. Fejlesztési Tartalék (opcionális) */}
+            {/* 6. Fejlesztési Tartalék (opcionális, FIFO vagy egyedi többéves keretbontás) */}
             {activeReserves.length > 0 && !isOpeningAsset && (
               <div className="space-y-3 border-t border-border/50 pt-4">
                 <div className="flex items-center space-x-2">
@@ -721,11 +1168,8 @@ export function CreateFixedAssetDialog({
                     onChange={e => {
                       const checked = e.target.checked;
                       setUseDevReserve(checked);
-                      if (checked && !devReserveId && activeReserves.length > 0) {
-                        setDevReserveId(activeReserves[0].id);
-                        if (numAcquisition > 0) {
-                          setDevReserveAmount(Math.min(numAcquisition, activeReserves[0].remaining_amount || 0));
-                        }
+                      if (!checked) {
+                        setReserveAllocations([]);
                       }
                     }}
                     className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
@@ -735,39 +1179,15 @@ export function CreateFixedAssetDialog({
                   </Label>
                 </div>
 
-                {useDevReserve && (
+                {useDevReserve && selectedCompany && (
                   <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-lg space-y-3 animate-in slide-in-from-top-1 duration-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">{t('hr:fixed_assets.create_dialog.dev_reserve_frame', 'Fejlesztési Tartalék Keret')}</Label>
-                        <Select value={devReserveId} onValueChange={setDevReserveId}>
-                          <SelectTrigger className="h-8 text-xs bg-background">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {activeReserves.map(r => (
-                              <SelectItem key={r.id} value={r.id} className="text-xs">
-                                {t('hr:fixed_assets.create_dialog.dev_reserve_frame_option', {
-                                  defaultValue: `${r.creation_year}. évi keret (Szabad: ${(r.remaining_amount || 0).toLocaleString('hu-HU')} Ft)`,
-                                  year: r.creation_year,
-                                  amount: (r.remaining_amount || 0).toLocaleString('hu-HU')
-                                })}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">{t('hr:fixed_assets.create_dialog.dev_reserve_used_amount', 'Felhasznált összeg (Ft)')}</Label>
-                        <Input
-                          type="number"
-                          value={devReserveAmount}
-                          onChange={e => setDevReserveAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                          max={numAcquisition}
-                          className="h-8 text-xs bg-background font-mono"
-                        />
-                      </div>
-                    </div>
+                    <DevelopmentReserveAllocationSelector
+                      acquisitionValue={numAcquisition}
+                      reserves={activeReserves}
+                      allocations={reserveAllocations}
+                      onChange={setReserveAllocations}
+                      currency={currency}
+                    />
                   </div>
                 )}
               </div>

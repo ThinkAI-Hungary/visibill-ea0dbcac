@@ -1,45 +1,78 @@
 import type { DepreciationResult } from '@/types/fixed-assets';
 
+function toLocalDate(d: Date | string): Date {
+  if (d instanceof Date) return d;
+  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}/.test(d)) {
+    const [y, m, day] = d.slice(0, 10).split('-').map(Number);
+    return new Date(y, m - 1, day);
+  }
+  return new Date(d);
+}
+
 /**
  * Lineáris, degresszív, progresszív, teljesítményarányos, abszolút, szorzószámos és azonnali ÉCS kalkulátor.
  *
  * - Számviteli: a kiválasztott módszer alapján (linear, degressive_syd, degressive_declining, progressive, performance, absolute, multiplier, immediate)
- * - Tao: bekerülési * (tao_kulcs% / 100) / 12 per hónap (mindig lineáris)
- * - Mindkettő megáll disposalDate-nél vagy ha eléri a maradványértéket
+ * - Tao: bekerülési (vagy eltérő tax_depreciation_base) * (tao_kulcs% / 100) / 12 per hónap (mindig lineáris)
+ * - Pályázatos (Grant): ha grantDepreciationBase > 0, önálló 3. ág a támogatott alap és kulcs szerint
+ * - Átvett nyitó karton: ha lastDepreciationDate adott, a jövőbeli ÉCS szigorúan a következő naptári hónaptól indul,
+ *   a nyitó halmozott ÉCS-t hozzáadva és a nyitó nettó értéket csökkentve.
  */
 export function calculateDepreciation(params: {
   acquisitionValue: number;
   residualValue: number;
-  activationDate: Date;
+  activationDate: Date | string;
   usefulLifeMonths: number;
   taoRatePercent: number;
   developmentReserveAmount?: number;
-  calculationDate?: Date;
-  disposalDate?: Date;
+  calculationDate?: Date | string;
+  disposalDate?: Date | string;
   depreciationMethod?: string;
   performanceUnit?: string | null;
   totalPlannedPerformance?: number | null;
   depreciationSchedule?: number[] | null;
   performanceLogs?: Array<{ date: string | Date; amount: number }> | null;
+  taxDepreciationBase?: number | null;
+  grantDepreciationBase?: number | null;
+  grantDepreciationRate?: number | null;
+  grantDepreciationMethod?: string | null;
+  openingAccumulatedDepreciation?: number | null;
+  openingTaxDepreciation?: number | null;
+  lastDepreciationDate?: Date | string | null;
+  depreciationRatePercent?: number | null;
 }): DepreciationResult {
   const {
     acquisitionValue,
     residualValue,
-    activationDate,
     usefulLifeMonths,
     taoRatePercent,
     developmentReserveAmount,
-    calculationDate = new Date(),
-    disposalDate,
     depreciationMethod = 'linear',
     totalPlannedPerformance,
     depreciationSchedule,
     performanceLogs,
+    taxDepreciationBase,
+    grantDepreciationBase,
+    grantDepreciationRate,
+    openingAccumulatedDepreciation,
+    openingTaxDepreciation,
+    lastDepreciationDate,
+    depreciationRatePercent,
   } = params;
+
+  const activationDate = toLocalDate(params.activationDate);
+  const calculationDate = params.calculationDate ? toLocalDate(params.calculationDate) : new Date();
+  const disposalDate = params.disposalDate ? toLocalDate(params.disposalDate) : undefined;
 
   const endDate = disposalDate && disposalDate < calculationDate ? disposalDate : calculationDate;
 
-  // Eltelt hónapok kiszámítása (naptári alapú, napra pontos törtrésszel)
+  // Átvett nyitó karton adatok ellenőrzése
+  const lastDepDate = lastDepreciationDate ? toLocalDate(lastDepreciationDate) : null;
+  const hasHistoricalDepreciation = Boolean(lastDepDate && !isNaN(lastDepDate.getTime()));
+  const openingAcc = Math.max(0, Number(openingAccumulatedDepreciation) || 0);
+  const openingTax = Math.max(0, Number(openingTaxDepreciation) || 0);
+
+  // Eltelt idő kiszámítása alapesetben (aktiválás dátumától)
   const startYear = activationDate.getFullYear();
   const startMonth = activationDate.getMonth();
   const startDay = activationDate.getDate();
@@ -53,16 +86,52 @@ export function calculateDepreciation(params: {
   const elapsedMonths = Math.max(0, (endYear - startYear) * 12 + (endMonth - startMonth) + dayDifference / daysInEndMonth);
   const elapsedYears = elapsedMonths / 12;
 
+  // Átvett karton esetén: a jövőbeli amortizáció szigorúan a záró dátumot követő naptári hónaptól indul
+  let postElapsedMonths = 0;
+  if (hasHistoricalDepreciation && lastDepDate) {
+    const nextMonthStart = new Date(lastDepDate.getFullYear(), lastDepDate.getMonth() + 1, 1);
+    if (endDate >= nextMonthStart) {
+      const postStartYear = nextMonthStart.getFullYear();
+      const postStartMonth = nextMonthStart.getMonth();
+      const postEndYear = endDate.getFullYear();
+      const postEndMonth = endDate.getMonth();
+      const postEndDay = endDate.getDate();
+      const daysInPostEndMonth = new Date(postEndYear, postEndMonth + 1, 0).getDate();
+
+      if (postEndDay === daysInPostEndMonth) {
+        postElapsedMonths = Math.max(0, (postEndYear - postStartYear) * 12 + (postEndMonth - postStartMonth) + 1);
+      } else {
+        postElapsedMonths = Math.max(
+          0,
+          (postEndYear - postStartYear) * 12 + (postEndMonth - postStartMonth) + Math.max(0, postEndDay - 1) / daysInPostEndMonth
+        );
+      }
+    }
+  }
+
   const accountingDepreciableBase = Math.max(0, acquisitionValue - residualValue);
   let accountingAccumulated = 0;
   let accountingMonthly = 0;
-  let accountingRatePercent = usefulLifeMonths > 0 ? (12 / usefulLifeMonths) * 100 : 0;
+
+  // Leírási kulcs: ha explicit depreciationRatePercent adott, az érvényesül, egyébként hasznos élettartamból számított
+  let accountingRatePercent = (depreciationRatePercent && depreciationRatePercent > 0)
+    ? depreciationRatePercent
+    : (usefulLifeMonths > 0 ? (12 / usefulLifeMonths) * 100 : 0);
 
   // ── Számviteli ÉCS számítások ──
   if (endDate >= activationDate && accountingDepreciableBase > 0) {
     if (depreciationMethod === 'linear') {
-      accountingMonthly = usefulLifeMonths > 0 ? accountingDepreciableBase / usefulLifeMonths : 0;
-      accountingAccumulated = accountingMonthly * elapsedMonths;
+      accountingMonthly = (accountingRatePercent > 0)
+        ? (accountingDepreciableBase * (accountingRatePercent / 100)) / 12
+        : (usefulLifeMonths > 0 ? accountingDepreciableBase / usefulLifeMonths : 0);
+
+      if (hasHistoricalDepreciation) {
+        const maxAdditional = Math.max(0, accountingDepreciableBase - openingAcc);
+        const additionalAccumulated = Math.min(maxAdditional, accountingMonthly * postElapsedMonths);
+        accountingAccumulated = openingAcc + additionalAccumulated;
+      } else {
+        accountingAccumulated = accountingMonthly * elapsedMonths;
+      }
     } 
     else if (depreciationMethod === 'degressive_syd' || depreciationMethod === 'sum_of_years_digits') {
       const nYears = Math.ceil(usefulLifeMonths / 12) || 1;
@@ -132,7 +201,7 @@ export function calculateDepreciation(params: {
       const totalPlanned = Number(totalPlannedPerformance) || 1;
       const relevantLogs = performanceLogs || [];
       const totalActual = relevantLogs
-        .filter(log => new Date(log.date) <= endDate)
+        .filter(log => toLocalDate(log.date) <= endDate)
         .reduce((sum, log) => sum + Number(log.amount), 0);
         
       accountingAccumulated = accountingDepreciableBase * (totalActual / totalPlanned);
@@ -190,13 +259,44 @@ export function calculateDepreciation(params: {
   accountingAccumulated = Math.min(accountingAccumulated, accountingDepreciableBase);
   const accountingBookValue = Math.max(residualValue, acquisitionValue - accountingAccumulated);
 
-  // ── Tao ÉCS (Tax) — Mindig lineáris, a fejlesztési tartalékkal csökkentett alap alapján (Tao. tv. 7. § (15)) ──
+  // ── Tao ÉCS (Tax) — Mindig lineáris, az eltérő adóalapból és fejlesztési tartalékkal csökkentve (Tao. tv. 7. § (15)) ──
   const devReserveDeduction = Math.max(0, developmentReserveAmount || 0);
-  const taxBase = Math.max(0, acquisitionValue - devReserveDeduction);
+  const baseForTax = (taxDepreciationBase !== undefined && taxDepreciationBase !== null && !isNaN(Number(taxDepreciationBase)))
+    ? Number(taxDepreciationBase)
+    : acquisitionValue;
+  const taxBase = Math.max(0, baseForTax - devReserveDeduction);
   const taxMonthly = taxBase > 0 ? (taxBase * (taoRatePercent / 100)) / 12 : 0;
-  const rawTaxAccumulated = taxMonthly * elapsedMonths;
-  const taxAccumulated = Math.min(rawTaxAccumulated, taxBase);
+
+  let taxAccumulated = 0;
+  if (hasHistoricalDepreciation) {
+    const maxAdditionalTax = Math.max(0, taxBase - openingTax);
+    const additionalTax = Math.min(maxAdditionalTax, taxMonthly * postElapsedMonths);
+    taxAccumulated = Math.min(taxBase, openingTax + additionalTax);
+  } else {
+    const rawTaxAccumulated = taxMonthly * elapsedMonths;
+    taxAccumulated = Math.min(rawTaxAccumulated, taxBase);
+  }
   const taxBookValue = Math.max(0, taxBase - taxAccumulated);
+
+  // ── Pályázatos / Támogatási ÉCS (Grant) — 3. ág, ha grantDepreciationBase > 0 ──
+  let grantResult: DepreciationResult['grant'] = undefined;
+  const grantBase = Number(grantDepreciationBase) || 0;
+  if (grantBase > 0) {
+    const grantRate = Number(grantDepreciationRate) || (usefulLifeMonths > 0 ? (12 / usefulLifeMonths) * 100 : 0);
+    const grantMonthly = (grantBase * (grantRate / 100)) / 12;
+    const effectiveMonths = hasHistoricalDepreciation ? postElapsedMonths : elapsedMonths;
+    const rawGrantAccumulated = grantMonthly * effectiveMonths;
+    const grantAccumulated = Math.min(grantBase, rawGrantAccumulated);
+    const grantBookValue = Math.max(0, grantBase - grantAccumulated);
+
+    grantResult = {
+      monthly: Math.round(grantMonthly),
+      accumulated: Math.round(grantAccumulated),
+      bookValue: Math.round(grantBookValue),
+      ratePercent: Math.round(grantRate * 100) / 100,
+      grantBase: Math.round(grantBase),
+    };
+  }
 
   return {
     accounting: {
@@ -213,11 +313,12 @@ export function calculateDepreciation(params: {
       taxBase: Math.round(taxBase),
       developmentReserveDeduction: Math.round(devReserveDeduction),
     },
+    grant: grantResult,
   };
 }
 
 /**
- * Egy adott adóévre (naptári évre) vonatkozó számviteli és Tao ÉCS kiszámítása.
+ * Egy adott adóévre (naptári évre) vonatkozó számviteli, Tao és Pályázatos ÉCS kiszámítása.
  * Figyelembe veszi a fejlesztési tartalék miatti adóalap-csökkentést (Tao. tv. 7. § (15)).
  */
 export function calculateAnnualDepreciation(params: {
@@ -233,14 +334,17 @@ export function calculateAnnualDepreciation(params: {
   totalPlannedPerformance?: number | null;
   depreciationSchedule?: number[] | null;
   performanceLogs?: Array<{ date: string | Date; amount: number }> | null;
-}): { accounting: number; tax: number } {
-  const actDate = typeof params.activationDate === 'string'
-    ? new Date(params.activationDate)
-    : params.activationDate;
-
-  const dispDate = params.disposalDate
-    ? (typeof params.disposalDate === 'string' ? new Date(params.disposalDate) : params.disposalDate)
-    : undefined;
+  taxDepreciationBase?: number | null;
+  grantDepreciationBase?: number | null;
+  grantDepreciationRate?: number | null;
+  grantDepreciationMethod?: string | null;
+  openingAccumulatedDepreciation?: number | null;
+  openingTaxDepreciation?: number | null;
+  lastDepreciationDate?: Date | string | null;
+  depreciationRatePercent?: number | null;
+}): { accounting: number; tax: number; grant?: number } {
+  const actDate = toLocalDate(params.activationDate);
+  const dispDate = params.disposalDate ? toLocalDate(params.disposalDate) : undefined;
 
   const startOfYear = new Date(params.year, 0, 1);
   const endOfYear = new Date(params.year + 1, 0, 1);
@@ -257,7 +361,7 @@ export function calculateAnnualDepreciation(params: {
   });
 
   const atStart = actDate >= startOfYear
-    ? { accounting: { accumulated: 0 }, tax: { accumulated: 0 } }
+    ? { accounting: { accumulated: 0 }, tax: { accumulated: 0 }, grant: atEnd.grant ? { accumulated: 0 } : undefined }
     : calculateDepreciation({
         ...params,
         activationDate: actDate,
@@ -266,8 +370,11 @@ export function calculateAnnualDepreciation(params: {
       });
 
   return {
-    accounting: Math.max(0, atEnd.accounting.accumulated - atStart.accounting.accumulated),
-    tax: Math.max(0, atEnd.tax.accumulated - atStart.tax.accumulated),
+    accounting: Math.max(0, atEnd.accounting.accumulated - (atStart.accounting?.accumulated || 0)),
+    tax: Math.max(0, atEnd.tax.accumulated - (atStart.tax?.accumulated || 0)),
+    grant: atEnd.grant
+      ? Math.max(0, atEnd.grant.accumulated - (atStart.grant?.accumulated ?? 0))
+      : undefined,
   };
 }
 

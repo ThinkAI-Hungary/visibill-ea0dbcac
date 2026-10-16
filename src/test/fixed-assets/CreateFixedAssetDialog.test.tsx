@@ -66,6 +66,10 @@ vi.mock('@/hooks/useDevelopmentReserves', () => ({
   useDevelopmentReserves: () => ({
     data: [],
   }),
+  useSaveAssetReserveAllocations: () => ({
+    mutateAsync: vi.fn().mockResolvedValue(true),
+    isPending: false,
+  }),
 }));
 
 vi.mock('@/hooks/useAccountingPolicy', () => ({

@@ -34,6 +34,7 @@ import {
 } from '@/lib/fixed-assets/assetDisposalPostingService';
 import { downloadDisposalProtocol } from '@/lib/fixed-assets/assetDisposalProtocolService';
 import { DevelopmentReserveAlienationAlert } from './DevelopmentReserveAlienationAlert';
+import { TaxCreditAlienationAlert } from './TaxCreditAlienationAlert';
 import { DISPOSAL_REASON_LABELS, type FixedAsset } from '@/types/fixed-assets';
 
 interface DisposalApprovalDialogProps {
@@ -190,6 +191,7 @@ export function DisposalApprovalDialog({ open, onOpenChange, asset, canApprove }
 
           <div className="space-y-4 py-2">
             <DevelopmentReserveAlienationAlert asset={asset} disposalDate={disposalDate} />
+            <TaxCreditAlienationAlert asset={asset} disposalDate={disposalDate} />
             {details?.reason && (
               <div className="rounded-lg border p-3 text-sm">
                 <p className="text-xs text-muted-foreground mb-1">{tt('reason', 'Indoklás')}</p>

@@ -313,6 +313,23 @@ export function useCreateFixedAsset() {
       developmentReserveId?: string | null;
       developmentReserveAmount?: number;
       skipLedgerPosting?: boolean;
+      // Phase 4 extended fields
+      taxDepreciationBase?: number | null;
+      grantDepreciationBase?: number | null;
+      grantDepreciationRate?: number | null;
+      grantDepreciationMethod?: string | null;
+      openingAccumulatedDepreciation?: number;
+      openingTaxDepreciation?: number;
+      lastDepreciationDate?: string | null;
+      depreciationRatePercent?: number | null;
+      propertyRegistryNumber?: string | null;
+      licensePlate?: string | null;
+      vinChassisNumber?: string | null;
+      taoRateOverride?: number | null;
+      // Phase 5 tax credit fields
+      hasTaxCredit?: boolean;
+      taxCreditType?: string | null;
+      taxCreditRetentionUntil?: string | null;
     }) => {
       // 1. Insert fixed asset
       const { data: asset, error: assetError } = await supabase
@@ -335,6 +352,7 @@ export function useCreateFixedAsset() {
           total_planned_performance: params.totalPlannedPerformance || null,
           depreciation_schedule: params.depreciationSchedule || null,
           tao_template_id: params.taoTemplateId,
+          tao_rate_override: params.taoRateOverride ?? null,
           location_id: params.locationId,
           project_id: params.projectId || null,
           activated_by_user_id: params.activatedByUserId,
@@ -346,6 +364,20 @@ export function useCreateFixedAsset() {
           gl_account_id: params.glAccountId,
           development_reserve_id: params.developmentReserveId || null,
           development_reserve_amount: params.developmentReserveAmount || 0,
+          tax_depreciation_base: params.taxDepreciationBase ?? null,
+          grant_depreciation_base: params.grantDepreciationBase ?? null,
+          grant_depreciation_rate: params.grantDepreciationRate ?? null,
+          grant_depreciation_method: params.grantDepreciationMethod || 'linear',
+          opening_accumulated_depreciation: params.openingAccumulatedDepreciation || 0,
+          opening_tax_depreciation: params.openingTaxDepreciation || 0,
+          last_depreciation_date: params.lastDepreciationDate || null,
+          depreciation_rate_percent: params.depreciationRatePercent ?? null,
+          property_registry_number: params.propertyRegistryNumber ? params.propertyRegistryNumber.trim() : null,
+          license_plate: params.licensePlate ? params.licensePlate.trim().toUpperCase() : null,
+          vin_chassis_number: params.vinChassisNumber ? params.vinChassisNumber.trim().toUpperCase() : null,
+          has_tax_credit: params.hasTaxCredit ?? false,
+          tax_credit_type: params.hasTaxCredit ? (params.taxCreditType || 'KKV_BERUHAZAS') : null,
+          tax_credit_retention_until: params.hasTaxCredit ? (params.taxCreditRetentionUntil || null) : null,
         })
         .select()
         .single();

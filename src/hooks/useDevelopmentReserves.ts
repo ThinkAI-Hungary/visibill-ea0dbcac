@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { DevelopmentReserve } from '@/types/fixed-assets';
+import type { DevelopmentReserve, FixedAssetReserveAllocation } from '@/types/fixed-assets';
 import { reportError } from '@/lib/errorReporter';
 import { postDevelopmentReserveReleaseToLedger, removeDevelopmentReservePosting } from '@/lib/fixed-assets/developmentReserveAutoPoster';
 import { generateAndAttachAssetProtocolPdf } from '@/hooks/useFixedAssets';
@@ -21,23 +21,34 @@ export function useDevelopmentReserves(companyId?: string) {
       if (reservesError) throw reservesError;
       if (!reserves || reserves.length === 0) return [];
 
-      // 2. Fetch utilized amounts from fixed_assets
-      const { data: assets, error: assetsError } = await supabase
-        .from('fixed_assets')
-        .select('development_reserve_id, development_reserve_amount')
-        .eq('company_id', companyId)
-        .not('development_reserve_id', 'is', null);
+      // 2. Fetch utilized amounts from fixed_asset_reserve_allocations table
+      const { data: allocations, error: allocError } = await supabase
+        .from('fixed_asset_reserve_allocations')
+        .select('reserve_id, allocated_amount')
+        .eq('company_id', companyId);
 
-      if (assetsError) throw assetsError;
-
-      // Group utilized amounts by reserve id
       const utilizedMap = new Map<string, number>();
-      (assets || []).forEach((a) => {
-        if (a.development_reserve_id) {
-          const prev = utilizedMap.get(a.development_reserve_id) || 0;
-          utilizedMap.set(a.development_reserve_id, prev + (Number(a.development_reserve_amount) || 0));
-        }
-      });
+
+      if (!allocError && allocations && allocations.length > 0) {
+        allocations.forEach((a) => {
+          const prev = utilizedMap.get(a.reserve_id) || 0;
+          utilizedMap.set(a.reserve_id, prev + (Number(a.allocated_amount) || 0));
+        });
+      } else {
+        // Fallback to legacy fixed_assets
+        const { data: assets } = await supabase
+          .from('fixed_assets')
+          .select('development_reserve_id, development_reserve_amount')
+          .eq('company_id', companyId)
+          .not('development_reserve_id', 'is', null);
+
+        (assets || []).forEach((a) => {
+          if (a.development_reserve_id) {
+            const prev = utilizedMap.get(a.development_reserve_id) || 0;
+            utilizedMap.set(a.development_reserve_id, prev + (Number(a.development_reserve_amount) || 0));
+          }
+        });
+      }
 
       const todayStr = new Date().toISOString().split('T')[0];
 
@@ -242,4 +253,90 @@ export function useAssignDevelopmentReserve() {
     },
   });
 }
+
+/**
+ * Egy tárgyi eszközhöz rendelt többéves fejlesztési tartalék allokációk lekérdezése
+ */
+export function useAssetReserveAllocations(assetId?: string) {
+  return useQuery({
+    queryKey: ['assetReserveAllocations', assetId],
+    queryFn: async (): Promise<FixedAssetReserveAllocation[]> => {
+      if (!assetId) return [];
+      const { data, error } = await supabase
+        .from('fixed_asset_reserve_allocations')
+        .select(`
+          *,
+          reserve:development_reserves(*)
+        `)
+        .eq('asset_id', assetId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as FixedAssetReserveAllocation[];
+    },
+    enabled: !!assetId,
+  });
+}
+
+/**
+ * Egy tárgyi eszköz többéves fejlesztési tartalék allokációinak mentése (FIFO vagy kézi felosztás)
+ */
+export function useSaveAssetReserveAllocations() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      companyId: string;
+      assetId: string;
+      allocations: Array<{ reserveId: string; amount: number }>;
+    }) => {
+      // 1. Töröljük a meglévő sorokat ehhez az eszközhöz
+      const { error: delError } = await supabase
+        .from('fixed_asset_reserve_allocations')
+        .delete()
+        .eq('asset_id', params.assetId);
+
+      if (delError) throw delError;
+
+      // 2. Új sorok beszúrása
+      const validRows = params.allocations
+        .filter(a => Number(a.amount) > 0)
+        .map(a => ({
+          company_id: params.companyId,
+          asset_id: params.assetId,
+          reserve_id: a.reserveId,
+          allocated_amount: Number(a.amount),
+        }));
+
+      if (validRows.length > 0) {
+        const { error: insError } = await supabase
+          .from('fixed_asset_reserve_allocations')
+          .insert(validRows);
+
+        if (insError) throw insError;
+      }
+
+      // 3. Visszamenőleges kompatibilitási frissítés a fixed_assets táblán
+      const totalAmount = validRows.reduce((sum, r) => sum + r.allocated_amount, 0);
+      const primaryReserveId = validRows[0]?.reserve_id || null;
+
+      const { error: updateAssetError } = await supabase
+        .from('fixed_assets')
+        .update({
+          development_reserve_id: primaryReserveId,
+          development_reserve_amount: totalAmount,
+        })
+        .eq('id', params.assetId);
+
+      if (updateAssetError) throw updateAssetError;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['developmentReserves', variables.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['assetReserveAllocations', variables.assetId] });
+      queryClient.invalidateQueries({ queryKey: ['fixedAssetDetail', variables.assetId] });
+      queryClient.invalidateQueries({ queryKey: ['fixedAssets', variables.companyId] });
+    },
+  });
+}
+
 

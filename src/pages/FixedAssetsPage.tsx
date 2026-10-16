@@ -10,7 +10,7 @@ import { AssetReconciliationTab } from '@/components/fixed-assets/AssetReconcili
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
-import { Package2, ShieldCheck, PiggyBank, Calculator, Plus, Upload, Scale, BarChart3, FolderKanban } from 'lucide-react';
+import { Package2, ShieldCheck, PiggyBank, Calculator, Plus, Upload, Scale, BarChart3, FolderKanban, Car } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 // Lazy-load heavy dialogs and tabs to keep initial chunk small
@@ -31,6 +31,9 @@ const AssetAnalyticsDashboard = lazy(() =>
 );
 const GrantProjectsTab = lazy(() =>
   import('@/components/fixed-assets/GrantProjectsTab').then(m => ({ default: m.GrantProjectsTab }))
+);
+const CompanyCarTaxTab = lazy(() =>
+  import('@/components/fixed-assets/CompanyCarTaxTab').then(m => ({ default: m.CompanyCarTaxTab }))
 );
 
 export default function FixedAssetsPage() {
@@ -184,6 +187,14 @@ export default function FixedAssetsPage() {
                 <FolderKanban className="h-3.5 w-3.5 text-blue-500" />
                 {t('hr:fixed_assets.tab_grants', 'Pályázatok & Támogatások')}
               </button>
+              <button
+                id="fixed-assets-tab-company-cars"
+                onClick={() => handleTabChange('company_cars')}
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'company_cars' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Car className="h-3.5 w-3.5 text-emerald-500" />
+                {t('hr:fixed_assets.tab_company_cars', 'Cégautóadó')}
+              </button>
             </div>
 
             {currentTab === 'assets' && (
@@ -261,6 +272,17 @@ export default function FixedAssetsPage() {
             <GrantProjectsTab
               companyId={selectedCompany.id}
               currency={assets[0]?.currency || 'HUF'}
+              assets={assets}
+              writable={writable}
+              onOpenAsset={handleOpenAssetFromReconciliation}
+            />
+          </Suspense>
+        </div>
+      ) : currentTab === 'company_cars' ? (
+        <div className="flex-1 overflow-y-auto">
+          <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground"><LoadingSpinner /></div>}>
+            <CompanyCarTaxTab
+              companyId={selectedCompany.id}
               assets={assets}
               writable={writable}
               onOpenAsset={handleOpenAssetFromReconciliation}

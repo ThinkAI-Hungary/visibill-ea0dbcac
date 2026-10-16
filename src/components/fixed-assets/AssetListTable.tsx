@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Package2, FolderKanban, Plus, Upload } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import type { FixedAsset } from '@/types/fixed-assets';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -99,77 +99,114 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead className="w-[30px] font-semibold">#</TableHead>
-                <TableHead className="w-[16%] font-semibold">{t('hr:fixed_assets.table.inventory_number', 'Leltári Szám')}</TableHead>
-                <TableHead className="w-[28%] font-semibold">{t('hr:fixed_assets.table.name', 'Megnevezés')}</TableHead>
-                <TableHead className="w-[65px] font-semibold text-center">{t('hr:fixed_assets.table.status', 'Státusz')}</TableHead>
-                <TableHead className="w-[18%] font-semibold">{t('hr:fixed_assets.table.project', 'Projekt')}</TableHead>
-                <TableHead className="w-[18%] font-semibold">{t('hr:fixed_assets.table.location', 'Helyszín')}</TableHead>
-                <TableHead className="w-[14%] font-semibold">{t('hr:fixed_assets.table.responsible', 'Felelős')}</TableHead>
+                <TableHead className="w-[12%] font-semibold">{t('hr:fixed_assets.table.inventory_number', 'Leltári Szám')}</TableHead>
+                <TableHead className="w-[20%] font-semibold">{t('hr:fixed_assets.table.name', 'Megnevezés')}</TableHead>
+                <TableHead className="w-[60px] font-semibold text-center">{t('hr:fixed_assets.table.status', 'Státusz')}</TableHead>
+                <TableHead className="w-[12%] font-semibold text-right">{t('hr:fixed_assets.table.acquisition_value', 'Bekerülési érték')}</TableHead>
+                <TableHead className="w-[11%] font-semibold text-right">{t('hr:fixed_assets.table.dev_reserve', 'Fejlesztési tart.')}</TableHead>
+                <TableHead className="w-[12%] font-semibold text-right">{t('hr:fixed_assets.table.tao_base', 'TAO ÉCS alap')}</TableHead>
+                <TableHead className="w-[15%] font-semibold">{t('hr:fixed_assets.table.project', 'Projekt')}</TableHead>
+                <TableHead className="w-[14%] font-semibold">{t('hr:fixed_assets.table.location', 'Helyszín')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((asset, index) => (
-                <TableRow
-                  key={asset.id}
-                  className={cn(
-                    'cursor-pointer transition-colors border-l-2',
-                    selectedAssetId === asset.id
-                      ? 'bg-primary/10 border-l-primary'
-                      : 'border-l-transparent hover:bg-muted/20'
-                  )}
-                  onClick={() => onSelectAsset(asset.id)}
-                >
-                  <TableCell className="font-mono text-muted-foreground text-xs">{index + 1}.</TableCell>
-                  <TableCell className="font-mono text-xs font-semibold text-foreground truncate max-w-[130px]" title={asset.inventory_number}>
-                    {asset.inventory_number}
-                  </TableCell>
-                  <TableCell className="font-medium max-w-[240px]" title={asset.name}>
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">{asset.name}</span>
-                      {Number(asset.development_reserve_amount) > 0 && (
-                        <span
-                          className="shrink-0 text-[10px] font-semibold px-1 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30"
-                          title={`Fejlesztési tartalék: ${Number(asset.development_reserve_amount).toLocaleString('hu-HU')} Ft`}
-                        >
-                          FT
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ASSET_STATUS_COLORS[asset.status]}`}>
-                      {t(`hr:fixed_assets.status.${asset.status}`, { defaultValue: ASSET_STATUS_LABELS[asset.status] })}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {asset.project ? (
-                      <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary truncate max-w-[140px] border border-primary/20"
-                        style={asset.project.color ? { borderColor: asset.project.color, color: asset.project.color } : undefined}
-                        title={asset.project.project_code ? `${asset.project.name} (${asset.project.project_code})` : asset.project.name}
-                      >
-                        <FolderKanban className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{asset.project.name}</span>
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
+              {filtered.map((asset, index) => {
+                const devReserveAmount = Number(asset.development_reserve_amount) || 0;
+                const taoBase = asset.tax_depreciation_base != null
+                  ? Number(asset.tax_depreciation_base)
+                  : Math.max(0, Number(asset.acquisition_value) - devReserveAmount);
+
+                return (
+                  <TableRow
+                    key={asset.id}
+                    className={cn(
+                      'cursor-pointer transition-colors border-l-2',
+                      selectedAssetId === asset.id
+                        ? 'bg-primary/10 border-l-primary'
+                        : 'border-l-transparent hover:bg-muted/20'
                     )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {asset.location ? (
-                      <span title={asset.location.address || ''}>
-                        {asset.location.name}
-                        {asset.location.address && (
-                          <span className="block text-xs opacity-75 truncate max-w-[150px]">{asset.location.address}</span>
+                    onClick={() => onSelectAsset(asset.id)}
+                  >
+                    <TableCell className="font-mono text-muted-foreground text-xs">{index + 1}.</TableCell>
+                    <TableCell className="font-mono text-xs font-semibold text-foreground truncate max-w-[110px]" title={asset.inventory_number}>
+                      {asset.inventory_number}
+                    </TableCell>
+                    <TableCell className="font-medium max-w-[200px]" title={asset.name}>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="truncate">{asset.name}</span>
+                        {devReserveAmount > 0 && (
+                          <span
+                            className="shrink-0 text-[10px] font-semibold px-1 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30"
+                            title={`Fejlesztési tartalék: ${devReserveAmount.toLocaleString('hu-HU')} Ft`}
+                          >
+                            FT
+                          </span>
                         )}
+                        {asset.grant_depreciation_base != null && (
+                          <span
+                            className="shrink-0 text-[10px] font-semibold px-1 py-0.5 rounded bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30"
+                            title={`Pályázati ÉCS: ${Number(asset.grant_depreciation_base).toLocaleString('hu-HU')} Ft`}
+                          >
+                            PÁLY
+                          </span>
+                        )}
+                        {asset.has_tax_credit && (
+                          <span
+                            className="shrink-0 text-[10px] font-semibold px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+                            title={`Beruházási adókedvezmény: megtartási gát ${asset.tax_credit_retention_until || '4 év'}`}
+                          >
+                            ADÓKEDV
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ASSET_STATUS_COLORS[asset.status]}`}>
+                        {t(`hr:fixed_assets.status.${asset.status}`, { defaultValue: ASSET_STATUS_LABELS[asset.status] })}
                       </span>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm truncate max-w-[120px]" title={asset.activated_by_name || ''}>
-                    {asset.activated_by_name || '-'}
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs font-semibold text-foreground">
+                      {formatCurrency(asset.acquisition_value, asset.currency)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs">
+                      {devReserveAmount > 0 ? (
+                        <span className="text-amber-700 dark:text-amber-400 font-semibold" title={`Levonás: ${devReserveAmount.toLocaleString('hu-HU')} Ft`}>
+                          -{formatCurrency(devReserveAmount, asset.currency)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs font-semibold text-primary">
+                      {formatCurrency(taoBase, asset.currency)}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {asset.project ? (
+                        <span
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary truncate max-w-[120px] border border-primary/20"
+                          style={asset.project.color ? { borderColor: asset.project.color, color: asset.project.color } : undefined}
+                          title={asset.project.project_code ? `${asset.project.name} (${asset.project.project_code})` : asset.project.name}
+                        >
+                          <FolderKanban className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{asset.project.name}</span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {asset.location ? (
+                        <span title={asset.location.address || ''}>
+                          {asset.location.name}
+                          {asset.location.address && (
+                            <span className="block text-xs opacity-75 truncate max-w-[130px]">{asset.location.address}</span>
+                          )}
+                        </span>
+                      ) : '-'}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense, useRef } from 'react';
+import { useState, useEffect, lazy, Suspense, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { getDateFnsLocale } from '@/lib/locale/formatters';
@@ -6,7 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import { DepreciationCards } from './DepreciationCards';
 import type { FixedAsset, AssetEvent } from '@/types/fixed-assets';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
-import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt, FolderKanban, RefreshCw, FileCheck, Landmark, FileDown } from 'lucide-react';
+import { QrCode, FileText, ShieldCheck, ArrowRightLeft, Trash2, PlusCircle, CheckCircle, Upload, ExternalLink, Loader2, ShieldOff, Receipt, FolderKanban, RefreshCw, FileCheck, Landmark, FileDown, TrendingDown, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -31,6 +31,7 @@ const QrLabelDialog = lazy(() => import('./QrLabelDialog').then(m => ({ default:
 const DevelopmentReserveAssignDialog = lazy(() => import('./DevelopmentReserveAssignDialog').then(m => ({ default: m.DevelopmentReserveAssignDialog })));
 const MultiYearMovementTable = lazy(() => import('./MultiYearMovementTable').then(m => ({ default: m.MultiYearMovementTable })));
 const AssetComponentsView = lazy(() => import('./AssetComponentsView').then(m => ({ default: m.AssetComponentsView })));
+const UnplannedDepreciationDialog = lazy(() => import('./UnplannedDepreciationDialog').then(m => ({ default: m.UnplannedDepreciationDialog })));
 
 function parseLocalDate(ymdStr: string): Date {
   const parts = ymdStr.split('-');
@@ -38,6 +39,14 @@ function parseLocalDate(ymdStr: string): Date {
   const m = parseInt(parts[1], 10) - 1; // 0-indexed
   const d = parseInt(parts[2], 10);
   return new Date(y, m, d);
+}
+
+function getTodayDateString(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 interface AssetDetailPanelProps {
@@ -58,6 +67,11 @@ const EVENT_ICONS: Record<string, React.ReactNode> = {
   value_change: <PlusCircle className="h-3.5 w-3.5 text-warning" />,
   document_upload: <Upload className="h-3.5 w-3.5 text-muted-foreground" />,
   performance_log: <PlusCircle className="h-3.5 w-3.5 text-success" />,
+  unplanned_depreciation: <TrendingDown className="h-3.5 w-3.5 text-destructive" />,
+  unplanned_depreciation_reversal: <TrendingUp className="h-3.5 w-3.5 text-success" />,
+  contribution_in_kind: <PlusCircle className="h-3.5 w-3.5 text-indigo-500" />,
+  free_transfer_out: <ArrowRightLeft className="h-3.5 w-3.5 text-destructive" />,
+  free_transfer_in: <ArrowRightLeft className="h-3.5 w-3.5 text-success" />,
 };
 
 const EVENT_LABELS: Record<string, string> = {
@@ -73,6 +87,11 @@ const EVENT_LABELS: Record<string, string> = {
   value_change: 'Értékváltozás',
   document_upload: 'Dokumentum feltöltés',
   performance_log: 'Teljesítmény rögzítés',
+  unplanned_depreciation: 'Terven felüli ÉCS elszámolás',
+  unplanned_depreciation_reversal: 'Terven felüli ÉCS visszaírás',
+  contribution_in_kind: 'Apportálás',
+  free_transfer_out: 'Térítés nélküli átadás',
+  free_transfer_in: 'Térítés nélküli átvétel',
 };
 
 export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
@@ -85,6 +104,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
   const { canWriteLedger } = useCompanyCapabilities();
   const [qrOpen, setQrOpen] = useState(false);
   const [reserveAssignOpen, setReserveAssignOpen] = useState(false);
+  const [unplannedDepOpen, setUnplannedDepOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [sourceInvoiceUrl, setSourceInvoiceUrl] = useState<string | null>(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -93,6 +113,8 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+
+  const isUnderRetention = asset.tax_credit_retention_until ? getTodayDateString() < asset.tax_credit_retention_until : false;
 
   // Protocol PDF Generation state
   const [generatingProtocol, setGeneratingProtocol] = useState(false);
@@ -454,6 +476,108 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
             <p className="font-semibold">{format(parseLocalDate(asset.disposal_date), 'yyyy.MM.dd.', { locale: getDateFnsLocale() })}</p>
           </div>
         )}
+
+        {/* Ingatlan és Gépjármű azonosítók */}
+        {asset.property_registry_number && (
+          <div>
+            <span className="text-muted-foreground">{t('fixed_assets.detail.property_registry_number', 'Helyrajzi szám (Hrsz.)')}</span>
+            <p className="font-semibold font-mono text-sm">{asset.property_registry_number}</p>
+          </div>
+        )}
+        {asset.license_plate && (
+          <div>
+            <span className="text-muted-foreground">{t('fixed_assets.detail.license_plate', 'Forgalmi rendszám')}</span>
+            <p className="font-semibold font-mono text-sm uppercase tracking-wider">{asset.license_plate}</p>
+          </div>
+        )}
+        {asset.vin_chassis_number && (
+          <div>
+            <span className="text-muted-foreground">{t('fixed_assets.detail.vin_chassis_number', 'Alvázszám (VIN)')}</span>
+            <p className="font-semibold font-mono text-xs uppercase tracking-wider">{asset.vin_chassis_number}</p>
+          </div>
+        )}
+
+        {/* Átvett nyitó karton adatok */}
+        {(asset.last_depreciation_date || Number(asset.opening_accumulated_depreciation) > 0) && (
+          <div className="col-span-2 p-2.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-xs space-y-1">
+            <span className="font-semibold text-blue-600 dark:text-blue-400 block">
+              {t('fixed_assets.detail.opening_header', 'Átvett Nyitó Karton Paraméterek')}
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <span className="text-muted-foreground">Utolsó leírt hó:</span>
+                <p className="font-semibold font-mono">{asset.last_depreciation_date || '-'}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Átvett számviteli ÉCS:</span>
+                <p className="font-semibold font-mono">{formatCurrency(asset.opening_accumulated_depreciation || 0, asset.currency)}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Átvett TAO ÉCS:</span>
+                <p className="font-semibold font-mono">{formatCurrency(asset.opening_tax_depreciation || 0, asset.currency)}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pályázatos ÉCS adatok */}
+        {Number(asset.grant_depreciation_base) > 0 && (
+          <div className="col-span-2 p-2.5 rounded-md bg-purple-500/10 border border-purple-500/20 text-xs space-y-1">
+            <span className="font-semibold text-purple-600 dark:text-purple-400 block">
+              {t('fixed_assets.detail.grant_header', 'Pályázati Támogatási Adatok')}
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-muted-foreground">Támogatott amortizációs alap:</span>
+                <p className="font-semibold font-mono">{formatCurrency(asset.grant_depreciation_base, asset.currency)}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Támogatási éves kulcs:</span>
+                <p className="font-semibold font-mono">{asset.grant_depreciation_rate || '-'}%</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Beruházási Adókedvezmény és Megtartási Időszak */}
+        {asset.has_tax_credit && (
+          <div className="col-span-2 p-2.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-xs space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-blue-600 dark:text-blue-400">
+                {t('fixed_assets.detail.tax_credit_header', 'Beruházási Adókedvezmény (Tao. tv. 22/B. §)')}
+              </span>
+              {asset.tax_credit_retention_until && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                  isUnderRetention
+                    ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                    : 'bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/30'
+                }`}>
+                  {isUnderRetention
+                    ? 'Megtartási tilalom alatt'
+                    : 'Megtartási időszak letelt'}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div>
+                <span className="text-muted-foreground">Kedvezmény jogcíme:</span>
+                <p className="font-semibold">{
+                  asset.tax_credit_type === 'KKV_BERUHAZAS'
+                    ? 'Kisvállalkozói beruházási kedvezmény'
+                    : asset.tax_credit_type === 'FEJLESZTESI_ADOKEDVEZMENY'
+                    ? 'Fejlesztési adókedvezmény'
+                    : asset.tax_credit_type === 'ENERGIAHATEKONYSAGI'
+                    ? 'Energiahatékonysági célú beruházás'
+                    : asset.tax_credit_type || 'Beruházási adókedvezmény'
+                }</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Megtartási kötelezettség vége:</span>
+                <p className="font-semibold font-mono">{asset.tax_credit_retention_until || '-'}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Depreciation Cards */}
@@ -680,6 +804,18 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
           <Landmark className="h-4 w-4" />
           {t('fixed_assets.detail.dev_reserve', 'Fejlesztési tartalék')}
         </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 border-rose-300 text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/40"
+          disabled={!isActive}
+          onClick={() => setUnplannedDepOpen(true)}
+          title="Terven felüli értékcsökkenés elszámolása (866) vagy visszaírása (966)"
+        >
+          <TrendingDown className="h-4 w-4" />
+          {t('fixed_assets.detail.dev_unplanned_dep', 'Terven felüli ÉCS')}
+        </Button>
       </div>
 
       {/* Timeline */}
@@ -891,6 +1027,14 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
             open={reserveAssignOpen}
             onOpenChange={setReserveAssignOpen}
             asset={asset}
+          />
+        )}
+        {unplannedDepOpen && (
+          <UnplannedDepreciationDialog
+            open={unplannedDepOpen}
+            onOpenChange={setUnplannedDepOpen}
+            asset={asset}
+            events={events}
           />
         )}
       </Suspense>
