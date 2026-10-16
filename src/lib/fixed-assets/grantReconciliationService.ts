@@ -206,8 +206,7 @@ export async function fetchGrantGlBalances(companyId: string): Promise<{ gl483Ba
     const { data: accounts } = await supabase
       .from('gl_accounts')
       .select('id, gl_number')
-      .or(`company_id.eq.${companyId},company_id.is.null`)
-      .eq('is_active', true);
+      .or(`company_id.eq.${companyId},company_id.is.null`);
 
     if (!accounts || accounts.length === 0) {
       return { gl483Balance: 0, gl964Turnover: 0 };

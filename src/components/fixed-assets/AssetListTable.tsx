@@ -54,7 +54,7 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
       <div className="flex-1 overflow-auto">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <LoadingSpinner />
+            <LoadingSpinner fullPage={false} size="md" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">

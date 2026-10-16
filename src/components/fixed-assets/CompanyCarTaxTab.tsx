@@ -20,6 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   fetchCompanyCars,
   fetchCompanyCarTaxPayments,
@@ -137,11 +138,7 @@ export function CompanyCarTaxTab({
   }, [carCalculations, selectedYear, selectedQuarter]);
 
   if (carsLoading || paymentsLoading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <LoadingSpinner />
-      </div>
-    );
+    return <CompanyCarTaxSkeleton />;
   }
 
   return (
@@ -476,6 +473,40 @@ export function CompanyCarTaxTab({
           }}
         />
       )}
+    </div>
+  );
+}
+
+export function CompanyCarTaxSkeleton() {
+  return (
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Fejléc placeholder */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Car className="h-6 w-6 text-primary" />
+            Cégautóadó Modul (Gjt. 17/A. §)
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Negyedéves adókalkuláció, gépjárműadó (súlyadó) levonási automatizmus és NAV tervezet
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-28 h-9 rounded-md" />
+          <Skeleton className="w-32 h-9 rounded-md" />
+        </div>
+      </div>
+
+      {/* Összesítő kártyák placeholder */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+      </div>
+
+      {/* Táblázat / Tartalom placeholder */}
+      <Skeleton className="h-72 w-full rounded-xl" />
     </div>
   );
 }

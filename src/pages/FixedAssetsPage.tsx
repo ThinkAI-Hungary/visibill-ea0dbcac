@@ -8,6 +8,7 @@ import { AssetDetailPanel } from '@/components/fixed-assets/AssetDetailPanel';
 import { DevelopmentReservesTab } from '@/components/fixed-assets/DevelopmentReservesTab';
 import { AssetReconciliationTab } from '@/components/fixed-assets/AssetReconciliationTab';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Package2, ShieldCheck, PiggyBank, Calculator, Plus, Upload, Scale, BarChart3, FolderKanban, Car } from 'lucide-react';
@@ -276,13 +277,32 @@ export default function FixedAssetsPage() {
         </div>
       ) : currentTab === 'analytics' ? (
         <div className="flex-1 overflow-y-auto">
-          <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-muted-foreground"><LoadingSpinner fullPage={false} size="md" /></div>}>
+          <Suspense fallback={
+            <div className="p-6 space-y-6 max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Skeleton className="h-28 rounded-xl" />
+                <Skeleton className="h-28 rounded-xl" />
+                <Skeleton className="h-28 rounded-xl" />
+              </div>
+              <Skeleton className="h-80 w-full rounded-xl" />
+            </div>
+          }>
             <AssetAnalyticsDashboard assets={assets} writable={writable} />
           </Suspense>
         </div>
       ) : currentTab === 'grant_projects' ? (
         <div className="flex-1 overflow-y-auto">
-          <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-muted-foreground"><LoadingSpinner fullPage={false} size="md" /></div>}>
+          <Suspense fallback={
+            <div className="p-6 space-y-6 max-w-7xl mx-auto">
+              <Skeleton className="h-24 w-full rounded-xl" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Skeleton className="h-28 w-full rounded-xl" />
+                <Skeleton className="h-28 w-full rounded-xl" />
+                <Skeleton className="h-28 w-full rounded-xl" />
+                <Skeleton className="h-28 w-full rounded-xl" />
+              </div>
+            </div>
+          }>
             <GrantProjectsTab
               companyId={selectedCompany.id}
               currency={assets[0]?.currency || 'HUF'}
@@ -294,7 +314,32 @@ export default function FixedAssetsPage() {
         </div>
       ) : currentTab === 'company_cars' ? (
         <div className="flex-1 overflow-y-auto">
-          <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-muted-foreground"><LoadingSpinner fullPage={false} size="md" /></div>}>
+          <Suspense fallback={
+            <div className="p-6 space-y-6 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Car className="h-6 w-6 text-primary" />
+                    Cégautóadó Modul (Gjt. 17/A. §)
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Negyedéves adókalkuláció, gépjárműadó (súlyadó) levonási automatizmus és NAV tervezet
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-28 h-9 rounded-md" />
+                  <Skeleton className="w-32 h-9 rounded-md" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Skeleton className="h-28 rounded-xl" />
+                <Skeleton className="h-28 rounded-xl" />
+                <Skeleton className="h-28 rounded-xl" />
+                <Skeleton className="h-28 rounded-xl" />
+              </div>
+              <Skeleton className="h-72 w-full rounded-xl" />
+            </div>
+          }>
             <CompanyCarTaxTab
               companyId={selectedCompany.id}
               assets={assets}

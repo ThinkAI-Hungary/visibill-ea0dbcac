@@ -70,7 +70,6 @@ export async function fetchAvailableGrantAccounts(companyId: string): Promise<Av
     .from('gl_accounts')
     .select('id, gl_number, short_name, company_id')
     .or(`company_id.eq.${companyId},company_id.is.null`)
-    .eq('is_active', true)
     .order('gl_number', { ascending: true });
 
   if (error || !data) {
@@ -104,7 +103,6 @@ export async function resolveGrantDeferralAccounts(companyId: string): Promise<G
     .from('gl_accounts')
     .select('id, gl_number, short_name, company_id')
     .or(`company_id.eq.${companyId},company_id.is.null`)
-    .eq('is_active', true)
     .order('company_id', { ascending: false, nullsFirst: false });
 
   if (error || !data) {
