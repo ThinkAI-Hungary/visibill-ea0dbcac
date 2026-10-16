@@ -131,118 +131,117 @@ export default function FixedAssetsPage() {
   return (
     <div className="h-full flex flex-col page-animate">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border/50 flex-shrink-0">
-        <div className="flex items-center justify-between">
+      <div className="px-6 pt-4 pb-3 border-b border-border/50 flex-shrink-0 space-y-3">
+        {/* Top row: Fejléc cím + Műveleti gombok mellette */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Package2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{t('hr:fixed_assets.title', 'Tárgyi Eszköz Nyilvántartó')}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{t('hr:fixed_assets.title', 'Tárgyi Eszköz Nyilvántartó')}</h1>
               <p className="text-sm text-muted-foreground">
                 {t('hr:fixed_assets.subtitle', { company: selectedCompany.name, total: assets.length, active: activeCount, defaultValue: `${selectedCompany.name} — ${assets.length} eszköz (${activeCount} aktív)` })}
               </p>
             </div>
           </div>
 
-          {/* Header actions */}
-          <div className="flex items-center gap-3">
-            {/* Tabs Pill */}
-            <div className="flex rounded-lg border border-border/60 bg-muted/30 p-1">
-              <button
-                onClick={() => handleTabChange('assets')}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'assets' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <Package2 className="h-3.5 w-3.5" />
-                {t('hr:fixed_assets.tab_assets', { count: assets.length, defaultValue: `Eszközök (${assets.length})` })}
-              </button>
-              <button
-                onClick={() => handleTabChange('development_reserves')}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'development_reserves' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <PiggyBank className="h-3.5 w-3.5 text-amber-500" />
-                {t('hr:fixed_assets.tab_dev_reserves', 'Fejlesztési Tartalékok')}
-              </button>
-              <button
-                id="fixed-assets-tab-reconciliation"
-                onClick={() => handleTabChange('reconciliation')}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'reconciliation' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <Scale className="h-3.5 w-3.5 text-primary" />
-                {t('hr:fixed_assets.tab_reconciliation', 'Rekonciliació & Főkönyv')}
-              </button>
-              <button
-                id="fixed-assets-tab-analytics"
-                onClick={() => handleTabChange('analytics')}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'analytics' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <BarChart3 className="h-3.5 w-3.5 text-indigo-500" />
-                {t('hr:fixed_assets.tab_analytics', 'Vagyonkimutatás & Elemzés')}
-              </button>
-              <button
-                id="fixed-assets-tab-grants"
-                onClick={() => handleTabChange('grant_projects')}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'grant_projects' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <FolderKanban className="h-3.5 w-3.5 text-blue-500" />
-                {t('hr:fixed_assets.tab_grants', 'Pályázatok & Támogatások')}
-              </button>
-              <button
-                id="fixed-assets-tab-company-cars"
-                onClick={() => handleTabChange('company_cars')}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'company_cars' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                <Car className="h-3.5 w-3.5 text-emerald-500" />
-                {t('hr:fixed_assets.tab_company_cars', 'Cégautóadó')}
-              </button>
-            </div>
+          {/* Header actions mellette */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-xs"
+              onClick={() => setCreateAssetOpen(true)}
+              disabled={!writable}
+            >
+              <Plus className="h-4 w-4" />
+              {t('hr:fixed_assets.create_asset', 'Új eszköz felvétele')}
+            </Button>
 
-            {currentTab === 'assets' && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-xs"
-                  onClick={() => setCreateAssetOpen(true)}
-                  disabled={!writable}
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('hr:fixed_assets.create_asset', 'Új eszköz felvétele')}
-                </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 font-medium"
+              onClick={() => setImportModalOpen(true)}
+              disabled={!writable}
+            >
+              <Upload className="h-4 w-4" />
+              {t('hr:fixed_assets.import_assets', 'Eszközök importálása')}
+            </Button>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 font-medium"
-                  onClick={() => setImportModalOpen(true)}
-                  disabled={!writable}
-                >
-                  <Upload className="h-4 w-4" />
-                  {t('hr:fixed_assets.import_assets', 'Eszközök importálása')}
-                </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-primary hover:text-primary font-medium"
+              onClick={() => setDepreciationDialogOpen(true)}
+              disabled={activeCount === 0 || !writable}
+            >
+              <Calculator className="h-4 w-4" />
+              {t('hr:fixed_assets.depreciation_run', 'ÉCS elszámolás')}
+            </Button>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 text-primary hover:text-primary font-medium"
-                  onClick={() => setDepreciationDialogOpen(true)}
-                  disabled={activeCount === 0 || !writable}
-                >
-                  <Calculator className="h-4 w-4" />
-                  {t('hr:fixed_assets.depreciation_run', 'ÉCS elszámolás')}
-                </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={handleOpenInventory}
+              disabled={activeCount === 0 || !writable}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              {t('hr:fixed_assets.inventory_check', 'Leltár ellenőrzés')}
+            </Button>
+          </div>
+        </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={handleOpenInventory}
-                  disabled={activeCount === 0 || !writable}
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  {t('hr:fixed_assets.inventory_check', 'Leltár ellenőrzés')}
-                </Button>
-              </div>
-            )}
+        {/* Bottom row: Tabok alatta */}
+        <div className="flex items-center overflow-x-auto">
+          <div className="flex rounded-lg border border-border/60 bg-muted/30 p-1 shrink-0">
+            <button
+              onClick={() => handleTabChange('assets')}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'assets' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Package2 className="h-3.5 w-3.5" />
+              {t('hr:fixed_assets.tab_assets', { count: assets.length, defaultValue: `Eszközök (${assets.length})` })}
+            </button>
+            <button
+              onClick={() => handleTabChange('development_reserves')}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'development_reserves' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <PiggyBank className="h-3.5 w-3.5 text-amber-500" />
+              {t('hr:fixed_assets.tab_dev_reserves', 'Fejlesztési Tartalékok')}
+            </button>
+            <button
+              id="fixed-assets-tab-reconciliation"
+              onClick={() => handleTabChange('reconciliation')}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'reconciliation' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Scale className="h-3.5 w-3.5 text-primary" />
+              {t('hr:fixed_assets.tab_reconciliation', 'Rekonciliáció & Főkönyv')}
+            </button>
+            <button
+              id="fixed-assets-tab-analytics"
+              onClick={() => handleTabChange('analytics')}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'analytics' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <BarChart3 className="h-3.5 w-3.5 text-indigo-500" />
+              {t('hr:fixed_assets.tab_analytics', 'Vagyonkimutatás & Elemzés')}
+            </button>
+            <button
+              id="fixed-assets-tab-grants"
+              onClick={() => handleTabChange('grant_projects')}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'grant_projects' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <FolderKanban className="h-3.5 w-3.5 text-blue-500" />
+              {t('hr:fixed_assets.tab_grants', 'Pályázatok & Támogatások')}
+            </button>
+            <button
+              id="fixed-assets-tab-company-cars"
+              onClick={() => handleTabChange('company_cars')}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'company_cars' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Car className="h-3.5 w-3.5 text-emerald-500" />
+              {t('hr:fixed_assets.tab_company_cars', 'Cégautóadó')}
+            </button>
           </div>
         </div>
       </div>
