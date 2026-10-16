@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { PlusCircle, Search, PiggyBank, Calendar, Clock, AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
+import { PlusCircle, Search, Coins, Calendar, Clock, AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
 import type { DevelopmentReserve } from '@/types/fixed-assets';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { formatDateLocale } from '@/lib/locale/formatters';
@@ -202,7 +202,7 @@ export function DevelopmentReservesTab() {
               {t('hr:fixed_assets.dev_reserves.kpi_total', 'Képzett Tartalékok')}
             </span>
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <PiggyBank className="h-4 w-4 text-primary" />
+              <Coins className="h-4 w-4 text-primary" />
             </div>
           </div>
           <p className="text-2xl font-bold mt-2 text-foreground">
@@ -376,7 +376,7 @@ export function DevelopmentReservesTab() {
       <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-xs">
         {filtered.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <PiggyBank className="h-10 w-10 mx-auto opacity-30 mb-3" />
+            <Coins className="h-10 w-10 mx-auto opacity-30 mb-3" />
             <p className="font-medium">{t('hr:fixed_assets.dev_reserves.empty_title', 'Nincs megjeleníthető fejlesztési tartalék')}</p>
             <p className="text-xs mt-1">{t('hr:fixed_assets.dev_reserves.empty_desc', 'Rögzítsen egy új tartalék keretet a fenti gombra kattintva.')}</p>
           </div>

@@ -11,7 +11,7 @@ import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
-import { Package2, ShieldCheck, PiggyBank, Calculator, Plus, Upload, Scale, BarChart3, FolderKanban, Car } from 'lucide-react';
+import { Package2, ShieldCheck, Coins, Calculator, Plus, Upload, Scale, BarChart3, FolderKanban, Car } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 // Lazy-load heavy dialogs and tabs to keep initial chunk small
@@ -223,7 +223,7 @@ export default function FixedAssetsPage() {
               onClick={() => handleTabChange('development_reserves')}
               className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${currentTab === 'development_reserves' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <PiggyBank className="h-3.5 w-3.5 text-amber-500" />
+              <Coins className="h-3.5 w-3.5 text-amber-500" />
               {t('hr:fixed_assets.tab_dev_reserves', 'Fejlesztési Tartalékok')}
             </button>
             <button
