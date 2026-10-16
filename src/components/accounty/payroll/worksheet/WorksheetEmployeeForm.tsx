@@ -19,6 +19,7 @@ import {
   CreditCard,
   Moon,
   GraduationCap,
+  Edit3,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +29,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { cn } from '@/lib/utils';
 import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 import { calculateHourlyBaseRate } from '@/lib/payroll/premiumCalculator';
+import { supportsLeaveAndSickPay, getNonMtNotice, NON_MT_ENTREPRENEUR_TYPES } from '@/lib/payroll/employmentUtils';
 import WorksheetLeaveModal from './WorksheetLeaveModal';
+import WorksheetEmployeeEditModal from './WorksheetEmployeeEditModal';
 
 export interface WorksheetEmployeeFormProps {
   employee: any;
@@ -76,6 +79,7 @@ export interface WorksheetEmployeeFormProps {
   onCostCenterChange?: (value: string) => void;
   onSaveCostCenter?: () => Promise<void>;
   isSavingCostCenter?: boolean;
+  onEmployeeUpdated?: () => void;
 }
 
 export default function WorksheetEmployeeForm({
@@ -112,6 +116,7 @@ export default function WorksheetEmployeeForm({
   isSavingCostCenter = false,
   defaultWorkDays = 21,
   cycle,
+  onEmployeeUpdated,
 }: WorksheetEmployeeFormProps) {
   const isVocational = Boolean(
     employment?.job_code === '1131' ||
@@ -122,6 +127,7 @@ export default function WorksheetEmployeeForm({
   );
 
   const [isLeaveModalOpen, setIsLeaveModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
 
   // Local draft states for free-form currency input editing with onBlur / debounced commit
   const [bonusDraft, setBonusDraft] = React.useState<string>(bonus ? String(bonus) : '');
@@ -200,10 +206,16 @@ export default function WorksheetEmployeeForm({
     }
   };
 
-  const actualWorkedDays = Math.max(
-    0,
-    (attendance?.workDays || defaultWorkDays) - (attendance?.sickDays || 0) - (attendance?.leaveDays || 0)
-  );
+  const isMt = supportsLeaveAndSickPay(employment?.employment_type);
+  const normalizedEmpType = (employment?.employment_type || '').toLowerCase().trim();
+  const isEv = normalizedEmpType === 'ev' || 
+               normalizedEmpType === 'ev_mellekfogl' || 
+               normalizedEmpType === 'egyeni_vallalkozo' ||
+               NON_MT_ENTREPRENEUR_TYPES.has(normalizedEmpType);
+
+  const actualWorkedDays = isMt
+    ? Math.max(0, (attendance?.workDays || defaultWorkDays) - (attendance?.sickDays || 0) - (attendance?.leaveDays || 0))
+    : (attendance?.workDays || defaultWorkDays);
 
   const calculatedCommuteAmount = React.useMemo(() => {
     if (!employee || !employment) return 0;
@@ -261,6 +273,11 @@ export default function WorksheetEmployeeForm({
                   Szakképzési munkaszerződés (45 nap szabi)
                 </Badge>
               )}
+              {isEv && (
+                <Badge variant="outline" className="h-5 px-2 text-[10px] bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30 font-semibold">
+                  Egyéni vállalkozó (EV)
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
               <span className="flex items-center gap-1 font-medium text-foreground">
@@ -316,6 +333,17 @@ export default function WorksheetEmployeeForm({
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setIsEditModalOpen(true)}
+            className="h-8 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+            title="Dolgozó alapbérének, adatainak és jogviszonyának szerkesztése"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            Adatok szerkesztése
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onPrintPayslip}
             className="h-8 text-xs gap-1.5"
             title="Bérlap nyomtatása"
@@ -343,17 +371,24 @@ export default function WorksheetEmployeeForm({
       {/* 1. Szekció: Havi jelenlét és munkaórák */}
       <Card className="border-border">
         <CardHeader className="p-4 pb-2 border-b border-border/50">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-primary" />
               <CardTitle className="text-sm font-bold">1. Havi Jelenlét & Munkaórák</CardTitle>
             </div>
-            <span className="text-xs text-muted-foreground">
-              Ledolgozott napok: <strong className="text-foreground font-mono">{actualWorkedDays} nap</strong>
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {!isMt && (
+                <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 font-medium">
+                  {getNonMtNotice(employment?.employment_type) || 'Nem Mt. jogviszony: nincs szabadság és betegszabadság'}
+                </Badge>
+              )}
+              <span className="text-xs text-muted-foreground">
+                Ledolgozott napok: <strong className="text-foreground font-mono">{actualWorkedDays} nap</strong>
+              </span>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <CardContent className={cn('p-4 grid gap-4', isMt ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2')}>
           <div className="space-y-1.5">
             <Label className="text-xs">Havi munkanapok (keret)</Label>
             <Input
@@ -386,63 +421,69 @@ export default function WorksheetEmployeeForm({
               <div className="h-8 px-3 rounded-md bg-muted flex items-center text-xs font-mono font-semibold text-foreground">
                 {actualWorkedDays} nap
               </div>
-              <p className="text-[10px] text-muted-foreground">Levonva betegszabi & szabi</p>
+              <p className="text-[10px] text-muted-foreground">{isMt ? 'Levonva betegszabi & szabi' : 'Elszámolt napok'}</p>
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">Túlóra (órában)</Label>
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              value={attendance.overtime ?? 0}
-              onChange={(e) => onAttendanceChange('overtime', parseInt(e.target.value) || 0)}
-              className="h-8 text-xs font-mono"
-            />
-            <p className="text-[10px] text-muted-foreground">150%-os pótlékalap</p>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs">Betegszabadság (nap)</Label>
-            <Input
-              type="number"
-              min={0}
-              max={25}
-              value={attendance.sickDays ?? 0}
-              onChange={(e) => onAttendanceChange('sickDays', parseInt(e.target.value) || 0)}
-              className="h-8 text-xs font-mono"
-            />
-            <p className="text-[10px] text-muted-foreground">70%-os távolléti díj</p>
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">Fizetett szabadság (nap)</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-5 px-1.5 text-[10px] text-primary hover:text-primary/80 gap-1 font-medium"
-                onClick={() => setIsLeaveModalOpen(true)}
-                title="Konkrét időtartam és dátumok rögzítése a bérszámfejtéshez"
-              >
-                <Calendar className="w-3 h-3" />
-                Dátumok (tól-ig)
-              </Button>
+          {isMt && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Túlóra (órában)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={attendance.overtime ?? 0}
+                onChange={(e) => onAttendanceChange('overtime', parseInt(e.target.value) || 0)}
+                className="h-8 text-xs font-mono"
+              />
+              <p className="text-[10px] text-muted-foreground">150%-os pótlékalap</p>
             </div>
-            <Input
-              type="number"
-              min={0}
-              max={isVocational ? 45 : 35}
-              value={attendance.leaveDays ?? 0}
-              onChange={(e) => onAttendanceChange('leaveDays', parseInt(e.target.value) || 0)}
-              className="h-8 text-xs font-mono"
-            />
-            <p className="text-[10px] text-muted-foreground">
-              {isVocational ? 'Szkt. alapján évi 45 napos tanulói keretből' : 'Alapbérbe építve (Mt.)'}
-            </p>
-          </div>
+          )}
+
+          {isMt && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Betegszabadság (nap)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={25}
+                value={attendance.sickDays ?? 0}
+                onChange={(e) => onAttendanceChange('sickDays', parseInt(e.target.value) || 0)}
+                className="h-8 text-xs font-mono"
+              />
+              <p className="text-[10px] text-muted-foreground">70%-os távolléti díj</p>
+            </div>
+          )}
+
+          {isMt && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Fizetett szabadság (nap)</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1.5 text-[10px] text-primary hover:text-primary/80 gap-1 font-medium"
+                  onClick={() => setIsLeaveModalOpen(true)}
+                  title="Konkrét időtartam és dátumok rögzítése a bérszámfejtéshez"
+                >
+                  <Calendar className="w-3 h-3" />
+                  Dátumok (tól-ig)
+                </Button>
+              </div>
+              <Input
+                type="number"
+                min={0}
+                max={isVocational ? 45 : 35}
+                value={attendance.leaveDays ?? 0}
+                onChange={(e) => onAttendanceChange('leaveDays', parseInt(e.target.value) || 0)}
+                className="h-8 text-xs font-mono"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                {isVocational ? 'Szkt. alapján évi 45 napos tanulói keretből' : 'Alapbérbe építve (Mt.)'}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -899,15 +940,27 @@ export default function WorksheetEmployeeForm({
         </div>
       </div>
 
-      {/* Leave Date Range Modal */}
-      <WorksheetLeaveModal
-        isOpen={isLeaveModalOpen}
-        onClose={() => setIsLeaveModalOpen(false)}
+      {/* Leave Date Range Modal - kizárólag Mt. munkaviszony esetén */}
+      {isMt && (
+        <WorksheetLeaveModal
+          isOpen={isLeaveModalOpen}
+          onClose={() => setIsLeaveModalOpen(false)}
+          employee={employee}
+          employment={employment}
+          cycle={cycle}
+          currentLeaveDays={attendance.leaveDays ?? 0}
+          onSyncLeaveDays={(newDays) => onAttendanceChange('leaveDays', newDays)}
+        />
+      )}
+
+      {/* Dolgozói törzsadat és bér szerkesztő modál */}
+      <WorksheetEmployeeEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
         employee={employee}
         employment={employment}
-        cycle={cycle}
-        currentLeaveDays={attendance.leaveDays ?? 0}
-        onSyncLeaveDays={(newDays) => onAttendanceChange('leaveDays', newDays)}
+        companyId={cycle?.company_id || employment?.company_id || ''}
+        onSuccess={onEmployeeUpdated}
       />
     </div>
   );

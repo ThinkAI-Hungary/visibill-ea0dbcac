@@ -298,8 +298,8 @@ export default function PayrollDashboardPage({ defaultTab }: PayrollDashboardPag
     return { activeEmployees, pendingCycles, pendingFilings, hasCurrent };
   }, [employees, cycles, filings, dateFrom]);
 
-  // ── Recent cycles (last 6) ──
-  const recentCycles = useMemo(() => cycles.slice(0, 6), [cycles]);
+  // ── Displayed cycles (all cycles for company, scrollable) ──
+  const displayCycles = useMemo(() => cycles, [cycles]);
 
   // ── Filtered regular employees ──
   const filteredRegularEmployees = useMemo(() => {
@@ -573,13 +573,13 @@ export default function PayrollDashboardPage({ defaultTab }: PayrollDashboardPag
           </div>
 
           <div className="divide-y divide-border/50 max-h-[520px] overflow-y-auto flex-1">
-            {recentCycles.length === 0 ? (
+            {displayCycles.length === 0 ? (
               <div className="py-12 text-center text-sm text-muted-foreground">
                 <Calendar className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
                 {t('payroll_dashboard.panel_cycles_empty')}
               </div>
             ) : (
-              recentCycles.map((cycle) => (
+              displayCycles.map((cycle) => (
                 <div
                   key={cycle.id}
                   onClick={() => navigate(`${prefix}/eaisybooks/${companyId}/${effectiveDateRange}/payroll/cycle/${cycle.id}`)}

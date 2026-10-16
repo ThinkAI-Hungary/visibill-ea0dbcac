@@ -98,7 +98,60 @@ export function CashClosingWizardDialog({
     }
   }, [open, selectedRegisterId, currency]);
 
-  // Query opening balances configured for register
+  // Query previous closed report to guarantee sequential period & opening balance continuity (Sztv. 165-168. §)
+  const { data: lastClosedReport } = useQuery({
+    queryKey: ['cash-closing-last-closed', companyId, selectedRegisterId],
+    queryFn: async () => {
+      if (!companyId || !selectedRegisterId) return null;
+      const { data, error } = await supabase
+        .from('cash_reports' as any)
+        .select('id, report_number, period_end, closing_balance_actual, closing_balance_book')
+        .eq('company_id', companyId)
+        .eq('cash_register_id', selectedRegisterId)
+        .in('status', ['closed', 'posted'])
+        .order('period_end', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching last closed cash report:', error);
+        return null;
+      }
+      return (data as any) || null;
+    },
+    enabled: open && !!companyId && !!selectedRegisterId,
+  });
+
+  // Earliest allowable start date based on previous closed period
+  const nextDayAfterLastClosed = useMemo(() => {
+    if (!lastClosedReport?.period_end) return null;
+    const [yStr, mStr, dStr] = String(lastClosedReport.period_end).split('-');
+    const dt = new Date(parseInt(yStr, 10), parseInt(mStr, 10) - 1, parseInt(dStr, 10));
+    dt.setDate(dt.getDate() + 1);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const d = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, [lastClosedReport?.period_end]);
+
+  // Effective period start ensures we do not overlap with already closed periods
+  const effectivePeriodStart = useMemo(() => {
+    if (nextDayAfterLastClosed) {
+      if (!dateFromFormatted || dateFromFormatted < nextDayAfterLastClosed) {
+        return nextDayAfterLastClosed;
+      }
+      return dateFromFormatted;
+    }
+    return dateFromFormatted || new Date().toISOString().split('T')[0];
+  }, [nextDayAfterLastClosed, dateFromFormatted]);
+
+  // Effective period end cannot be earlier than start
+  const effectivePeriodEnd = useMemo(() => {
+    const candidate = dateToFormatted || effectivePeriodStart;
+    return candidate < effectivePeriodStart ? effectivePeriodStart : candidate;
+  }, [dateToFormatted, effectivePeriodStart]);
+
+  // Query opening balances configured for register (fallback when no prior closed report)
   const { data: configuredOpening = 0 } = useQuery({
     queryKey: ['cash-closing-reg-opening', companyId, selectedRegisterId, currency],
     queryFn: async () => {
@@ -114,19 +167,26 @@ export function CashClosingWizardDialog({
     enabled: open && !!companyId && !!selectedRegisterId,
   });
 
-  // Query prior entries to compute initial balance before dateFrom
+  // Query prior entries to compute initial balance before effectivePeriodStart
   const { data: priorSum = 0 } = useQuery({
-    queryKey: ['cash-closing-prior-sum', companyId, selectedRegisterId, dateFromFormatted],
+    queryKey: ['cash-closing-prior-sum', companyId, selectedRegisterId, effectivePeriodStart, nextDayAfterLastClosed],
     queryFn: async () => {
-      if (!companyId || !selectedRegisterId || !dateFromFormatted) return 0;
-      const { data } = await supabase
+      if (!companyId || !selectedRegisterId || !effectivePeriodStart) return 0;
+      let q = supabase
         .from('petty_cash_entries')
         .select('amount')
         .eq('company_id', companyId)
         .eq('register_id', selectedRegisterId)
         .eq('currency', currency)
-        .lt('entry_date', dateFromFormatted)
+        .lt('entry_date', effectivePeriodStart)
         .neq('status', 'cancelled');
+
+      // Only sum entries strictly after the last closed report's period_end
+      if (lastClosedReport?.period_end) {
+        q = q.gt('entry_date', lastClosedReport.period_end);
+      }
+
+      const { data } = await q;
       return (data || []).reduce((acc, row) => acc + (Number(row.amount) || 0), 0);
     },
     enabled: open && !!companyId && !!selectedRegisterId,
@@ -134,7 +194,7 @@ export function CashClosingWizardDialog({
 
   // Query current period entries
   const { data: periodEntries = [] } = useQuery({
-    queryKey: ['cash-closing-period-entries', companyId, selectedRegisterId, dateFromFormatted, dateToFormatted],
+    queryKey: ['cash-closing-period-entries', companyId, selectedRegisterId, effectivePeriodStart, effectivePeriodEnd],
     queryFn: async () => {
       if (!companyId || !selectedRegisterId) return [];
       let q = supabase
@@ -145,8 +205,8 @@ export function CashClosingWizardDialog({
         .eq('currency', currency)
         .neq('status', 'cancelled');
 
-      if (dateFromFormatted) q = q.gte('entry_date', dateFromFormatted);
-      if (dateToFormatted) q = q.lte('entry_date', dateToFormatted);
+      if (effectivePeriodStart) q = q.gte('entry_date', effectivePeriodStart);
+      if (effectivePeriodEnd) q = q.lte('entry_date', effectivePeriodEnd);
 
       const { data, error } = await q;
       if (error) throw error;
@@ -171,8 +231,14 @@ export function CashClosingWizardDialog({
     enabled: open && !!companyId,
   });
 
-  // Calculate accounting amounts
-  const openingBalance = activeReport?.opening_balance ?? (configuredOpening + priorSum);
+  // Calculate opening balance ensuring accounting continuity
+  const openingBalance = useMemo(() => {
+    if (lastClosedReport) {
+      const base = Number(lastClosedReport.closing_balance_actual ?? lastClosedReport.closing_balance_book ?? 0);
+      return base + priorSum;
+    }
+    return configuredOpening + priorSum;
+  }, [lastClosedReport, configuredOpening, priorSum]);
   const totalIncome = useMemo(() => {
     return periodEntries
       .filter(e => Number(e.amount) > 0)
@@ -216,8 +282,8 @@ export function CashClosingWizardDialog({
         const ensured = await ensureOpenReport.mutateAsync({
           companyId,
           cashRegisterId: selectedRegisterId,
-          periodStart: dateFromFormatted || new Date().toISOString().split('T')[0],
-          periodEnd: dateToFormatted || new Date().toISOString().split('T')[0],
+          periodStart: effectivePeriodStart,
+          periodEnd: effectivePeriodEnd,
           openingBalance,
           currency,
         });
@@ -226,8 +292,8 @@ export function CashClosingWizardDialog({
         await supabase
           .from('cash_reports' as any)
           .update({
-            period_start: dateFromFormatted || activeReport.period_start,
-            period_end: dateToFormatted || activeReport.period_end,
+            period_start: effectivePeriodStart,
+            period_end: effectivePeriodEnd,
             opening_balance: openingBalance,
             currency,
           })
@@ -316,8 +382,8 @@ export function CashClosingWizardDialog({
               registers={registers}
               selectedRegisterId={selectedRegisterId}
               onSelectRegister={setSelectedRegisterId}
-              periodStart={dateFromFormatted || '2026-01-01'}
-              periodEnd={dateToFormatted || '2026-01-31'}
+              periodStart={effectivePeriodStart}
+              periodEnd={effectivePeriodEnd}
               openingBalance={openingBalance}
               totalIncome={totalIncome}
               totalExpense={totalExpense}
@@ -346,8 +412,8 @@ export function CashClosingWizardDialog({
           {step === 3 && (
             <WizardStep3Protocol
               registerName={activeRegister?.name || t('pettyCash:closing_dialog.all_registers', 'Pénztár')}
-              periodStart={dateFromFormatted || '2026-01-01'}
-              periodEnd={dateToFormatted || '2026-01-31'}
+              periodStart={effectivePeriodStart}
+              periodEnd={effectivePeriodEnd}
               currency={currency}
               openingBalance={openingBalance}
               totalIncome={totalIncome}

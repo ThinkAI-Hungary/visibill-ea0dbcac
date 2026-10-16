@@ -4,6 +4,7 @@ import { payrollQueryKeys } from '@/hooks/usePayrollData';
 import { toast } from '@/hooks/use-toast';
 import { calculateHourlyBaseRate } from '@/lib/payroll/premiumCalculator';
 import { isMtEmployment } from '@/lib/payroll/employmentUtils';
+import { calculateProRataSalary } from '@/lib/payroll/workdayCalculator';
 
 interface PayrollStep5Props {
   activeEmployees: any[];
@@ -12,6 +13,7 @@ interface PayrollStep5Props {
   attendanceData?: Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number; workedHours?: number }>;
   defaultWorkDays?: number;
   cycleId?: string;
+  cycle?: any;
   onSavingChange?: (isSaving: boolean) => void;
 }
 
@@ -22,6 +24,7 @@ export default function PayrollStep5({
   attendanceData = {},
   defaultWorkDays = 21,
   cycleId,
+  cycle,
   onSavingChange,
 }: PayrollStep5Props) {
   const queryClient = useQueryClient();
@@ -257,43 +260,31 @@ export default function PayrollStep5({
               const weeklyHours = empEmployment?.weekly_hours || 40;
               const dailyHours = weeklyHours / 5;
               
-              let hourlyRate = 0;
-              let dailyRate = 0;
-              let overtimeAmount = 0;
-              let sickLeaveAmount = 0;
-              let leaveAmount = 0;
-              let adjustedBase = 0;
+              const cycleYear = cycle?.year || new Date().getFullYear();
+              const cycleMonth = cycle?.month || (new Date().getMonth() + 1);
 
-              const isMt = isMtEmployment(empEmployment?.employment_type);
-              const effectiveSickDays = isMt ? (att.sickDays || 0) : 0;
-              const effectiveLeaveDays = isMt ? (att.leaveDays || 0) : 0;
+              const prorated = calculateProRataSalary({
+                baseSalary: rawBaseSalary,
+                salaryType: empEmployment?.salary_type,
+                employmentType: empEmployment?.employment_type,
+                startDate: empEmployment?.start_date,
+                endDate: empEmployment?.end_date,
+                weeklyHours,
+                cycleYear,
+                cycleMonth,
+                workDays: att.workDays,
+                workedHours: att.workedHours,
+                sickDays: att.sickDays,
+                leaveDays: att.leaveDays,
+                overtimeHours: att.overtime,
+              });
 
-              if (isHourly) {
-                hourlyRate = rawBaseSalary;
-                dailyRate = hourlyRate * dailyHours;
-
-                const actualWorkedHours = (att.workedHours !== undefined && att.workedHours !== null && Number(att.workedHours) > 0)
-                  ? Number(att.workedHours)
-                  : (att.workDays || 0) * dailyHours;
-                const sickHours = effectiveSickDays * dailyHours;
-                const leaveHours = effectiveLeaveDays * dailyHours;
-
-                adjustedBase = Math.round(actualWorkedHours * hourlyRate);
-                overtimeAmount = Math.round(hourlyRate * (att.overtime || 0) * 1.5);
-                sickLeaveAmount = Math.round(hourlyRate * sickHours * 0.70);
-                leaveAmount = Math.round(hourlyRate * leaveHours * 1.0);
-              } else {
-                const effectiveWorkDays = att.workDays || defaultWorkDays;
-                dailyRate = rawBaseSalary / effectiveWorkDays;
-                hourlyRate = rawBaseSalary / (dailyHours * effectiveWorkDays);
-
-                const baseReduction = Math.round(dailyRate * effectiveSickDays);
-                adjustedBase = Math.max(0, rawBaseSalary - baseReduction);
-
-                overtimeAmount = Math.round(hourlyRate * (att.overtime || 0) * 1.5);
-                sickLeaveAmount = Math.round(dailyRate * effectiveSickDays * 0.70);
-                leaveAmount = 0;
-              }
+              const hourlyRate = prorated.hourlyRate;
+              const dailyRate = prorated.dailyRate;
+              const adjustedBase = prorated.calculatedBase;
+              const overtimeAmount = prorated.calculatedOvertime;
+              const sickLeaveAmount = prorated.calculatedSickLeave;
+              const leaveAmount = prorated.calculatedLeave;
               
               const base = empItems.find(i => i.item_type === 'base_salary')?.amount 
                 || adjustedBase;

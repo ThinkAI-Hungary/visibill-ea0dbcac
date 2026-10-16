@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, User, Briefcase, CreditCard, Calendar, FileText,
@@ -33,6 +33,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { payrollQueryKeys } from '@/hooks/usePayrollData';
 import { calculatePayroll, calculateGarnishments, isEligibleForYoung25, DEFAULT_2026_PARAMS } from '@/lib/payroll/taxEngine';
+import { supportsLeaveAndSickPay } from '@/lib/payroll/employmentUtils';
 
 // ── Tab definíciók ──
 const TABS = [
@@ -78,6 +79,15 @@ export default function EmployeeDetailsPage() {
 
   // Get first employment for leave calc
   const primaryEmployment = employments.find(e => e.status === 'active') || employments[0];
+  const isMt = supportsLeaveAndSickPay(primaryEmployment?.employment_type);
+  const visibleTabs = TABS.filter(t => t.id !== 'leave' || isMt);
+
+  useEffect(() => {
+    if (!isMt && activeTab === 'leave') {
+      setActiveTab('overview');
+    }
+  }, [isMt, activeTab]);
+
   const { data: leaves = [] } = usePayrollLeaves(primaryEmployment?.id || '');
 
   if (empError) {
@@ -211,7 +221,7 @@ export default function EmployeeDetailsPage() {
 
       {/* Tab bar */}
       <div className="flex items-center gap-1 overflow-x-auto bg-muted/80 p-1 rounded-lg border border-border/60">
-        {TABS.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
