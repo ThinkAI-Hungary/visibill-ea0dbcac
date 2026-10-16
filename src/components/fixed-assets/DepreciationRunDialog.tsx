@@ -223,7 +223,7 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-6 overflow-hidden">
+      <DialogContent className="max-w-6xl xl:max-w-7xl w-[95vw] max-h-[90vh] flex flex-col p-6 overflow-hidden">
         {/* Header */}
         <DialogHeader className="flex-shrink-0 border-b pb-4">
           <div className="flex items-center gap-3">
@@ -516,20 +516,20 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow>
-                    <TableHead className="w-[140px]">{t('hr:fixed_assets.depreciation_run_dialog.col_inv_number', 'Leltári szám')}</TableHead>
-                    <TableHead>{t('hr:fixed_assets.depreciation_run_dialog.col_name', 'Eszköz megnevezése')}</TableHead>
-                    <TableHead className="text-right">{t('hr:fixed_assets.depreciation_run_dialog.col_acq_value', 'Bekerülési érték')}</TableHead>
-                    <TableHead className="text-center">{t('hr:fixed_assets.depreciation_run_dialog.col_period', 'Időszak')}</TableHead>
-                    <TableHead className="text-right font-semibold">{t('hr:fixed_assets.depreciation_run_dialog.col_period_depr', 'Időszaki ÉCS')}</TableHead>
-                    <TableHead className="text-right">{t('hr:fixed_assets.depreciation_run_dialog.col_residual', 'Maradványérték')}</TableHead>
-                    <TableHead className="text-center">{t('hr:fixed_assets.depreciation_run_dialog.col_gl', 'Főkönyv (T / K)')}</TableHead>
-                    <TableHead className="text-center">{t('hr:fixed_assets.depreciation_run_dialog.col_status', 'Státusz')}</TableHead>
+                    <TableHead className="w-[160px] whitespace-nowrap">{t('hr:fixed_assets.depreciation_run_dialog.col_inv_number', 'Leltári szám')}</TableHead>
+                    <TableHead className="min-w-[200px]">{t('hr:fixed_assets.depreciation_run_dialog.col_name', 'Eszköz megnevezése')}</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">{t('hr:fixed_assets.depreciation_run_dialog.col_acq_value', 'Bekerülési érték')}</TableHead>
+                    <TableHead className="text-center whitespace-nowrap">{t('hr:fixed_assets.depreciation_run_dialog.col_period', 'Időszak')}</TableHead>
+                    <TableHead className="text-right font-semibold whitespace-nowrap">{t('hr:fixed_assets.depreciation_run_dialog.col_period_depr', 'Időszaki ÉCS')}</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">{t('hr:fixed_assets.depreciation_run_dialog.col_residual', 'Maradványérték')}</TableHead>
+                    <TableHead className="text-center whitespace-nowrap">{t('hr:fixed_assets.depreciation_run_dialog.col_gl', 'Főkönyv (T / K)')}</TableHead>
+                    <TableHead className="text-center whitespace-nowrap w-[130px]">{t('hr:fixed_assets.depreciation_run_dialog.col_status', 'Státusz')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredItems.map(item => (
                     <TableRow key={item.assetId} className={item.periodAmount > 0 ? '' : 'opacity-60'}>
-                      <TableCell className="font-mono text-xs font-medium">
+                      <TableCell className="font-mono text-xs font-medium whitespace-nowrap">
                         {item.inventoryNumber}
                       </TableCell>
                       <TableCell className="font-medium">
@@ -538,25 +538,25 @@ export function DepreciationRunDialog({ open, onOpenChange }: DepreciationRunDia
                           <div className="text-[11px] text-muted-foreground">{item.reason}</div>
                         )}
                       </TableCell>
-                      <TableCell className="text-right text-xs">
+                      <TableCell className="text-right text-xs whitespace-nowrap">
                         {item.acquisitionValue.toLocaleString('hu-HU')} Ft
                       </TableCell>
-                      <TableCell className="text-center text-xs">
+                      <TableCell className="text-center text-xs whitespace-nowrap">
                         <Badge variant="outline" className="font-normal text-[11px]">
                           {item.activeMonths} hó
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-mono font-semibold text-primary">
+                      <TableCell className="text-right font-mono font-semibold text-primary whitespace-nowrap">
                         {item.periodAmount > 0 ? `${item.periodAmount.toLocaleString('hu-HU')} Ft` : '0 Ft'}
                       </TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">
+                      <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
                         {item.remainingBookValue.toLocaleString('hu-HU')} Ft
                       </TableCell>
-                      <TableCell className="text-center font-mono text-[11px]">
+                      <TableCell className="text-center font-mono text-[11px] whitespace-nowrap">
                         <span className="text-emerald-600 font-semibold">{item.debitGlNumber}</span> /{' '}
                         <span className="text-blue-600 font-semibold">{item.creditGlNumber}</span>
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center whitespace-nowrap">
                         {item.status === 'ready' && item.periodAmount > 0 ? (
                           <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 text-[10px]">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
