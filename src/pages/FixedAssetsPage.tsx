@@ -124,6 +124,21 @@ export default function FixedAssetsPage() {
     if (actionFromUrl === 'inventory' && !inventoryCheckOpen) setInventoryCheckOpen(true);
   }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Háttérbeli előtöltés a lazy tabokhoz az azonnali váltásért
+  useEffect(() => {
+    const idle = (cb: () => void) => {
+      if (typeof window === 'undefined') return;
+      const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+      if (w.requestIdleCallback) w.requestIdleCallback(cb, { timeout: 1500 });
+      else setTimeout(cb, 1000);
+    };
+    idle(() => {
+      void import('@/components/fixed-assets/AssetAnalyticsDashboard');
+      void import('@/components/fixed-assets/GrantProjectsTab');
+      void import('@/components/fixed-assets/CompanyCarTaxTab');
+    });
+  }, []);
+
   if (!selectedCompany) return null;
 
   const activeCount = assets.filter(a => a.status === 'active').length;
@@ -261,13 +276,13 @@ export default function FixedAssetsPage() {
         </div>
       ) : currentTab === 'analytics' ? (
         <div className="flex-1 overflow-y-auto">
-          <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground"><LoadingSpinner /></div>}>
+          <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-muted-foreground"><LoadingSpinner fullPage={false} size="md" /></div>}>
             <AssetAnalyticsDashboard assets={assets} writable={writable} />
           </Suspense>
         </div>
       ) : currentTab === 'grant_projects' ? (
         <div className="flex-1 overflow-y-auto">
-          <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground"><LoadingSpinner /></div>}>
+          <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-muted-foreground"><LoadingSpinner fullPage={false} size="md" /></div>}>
             <GrantProjectsTab
               companyId={selectedCompany.id}
               currency={assets[0]?.currency || 'HUF'}
@@ -279,7 +294,7 @@ export default function FixedAssetsPage() {
         </div>
       ) : currentTab === 'company_cars' ? (
         <div className="flex-1 overflow-y-auto">
-          <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground"><LoadingSpinner /></div>}>
+          <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-muted-foreground"><LoadingSpinner fullPage={false} size="md" /></div>}>
             <CompanyCarTaxTab
               companyId={selectedCompany.id}
               assets={assets}
