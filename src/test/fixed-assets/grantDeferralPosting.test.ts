@@ -54,6 +54,7 @@ describe('Grant Deferral Posting Service (M3.3)', () => {
       (supabase.from as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
           or: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: mockAccounts, error: null }),
             eq: vi.fn().mockReturnValue({
               order: vi.fn().mockResolvedValue({ data: mockAccounts, error: null }),
             }),

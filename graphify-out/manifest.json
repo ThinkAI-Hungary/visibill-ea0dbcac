@@ -315,8 +315,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetListTable.tsx": {
-    "mtime": 1792157642.559045,
-    "ast_hash": "6feac44d576fe1c84321af9ba0f479ec",
+    "mtime": 1792163754.6789024,
+    "ast_hash": "d0484160b58ac6ed3d3b377e8dd5c620",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DepreciationCards.tsx": {
@@ -1450,8 +1450,8 @@
     "semantic_hash": ""
   },
   "src/pages/FixedAssetsPage.tsx": {
-    "mtime": 1792154204.758245,
-    "ast_hash": "07aa1ed90d008b4d6e52988a8a535d1b",
+    "mtime": 1792162889.0654252,
+    "ast_hash": "3804d31285d6e8582e8132a9081416d4",
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
@@ -12026,8 +12026,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DevelopmentReservesTab.tsx": {
-    "mtime": 1791972991.7997868,
-    "ast_hash": "6c8256fb0c1f95e69de9e088b0ff497e",
+    "mtime": 1792162944.5810328,
+    "ast_hash": "cbcde0fceaa3052f90d4850e652b6498",
     "semantic_hash": ""
   },
   "src/components/partners/RelatedPartyTurnoverTab.tsx": {
@@ -16282,8 +16282,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/GrantProjectsTab.tsx": {
-    "mtime": 1791972991.8013012,
-    "ast_hash": "752d5eae4c6a7d544b1583ef83700549",
+    "mtime": 1792162488.7196834,
+    "ast_hash": "645291e6ba0b0167447f9c7550cd490f",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/MultiYearMovementTable.tsx": {
@@ -16322,13 +16322,13 @@
     "semantic_hash": ""
   },
   "src/lib/fixed-assets/grantDeferralPostingService.ts": {
-    "mtime": 1791972991.825286,
-    "ast_hash": "1f1cffebd13a4bb644afcceb6f0353df",
+    "mtime": 1792161681.082885,
+    "ast_hash": "e8dd1fec420fd4933c8627bf48b47ea9",
     "semantic_hash": ""
   },
   "src/lib/fixed-assets/grantReconciliationService.ts": {
-    "mtime": 1791972991.825286,
-    "ast_hash": "9bb16df0e035ca9a03f4abeaad620ae2",
+    "mtime": 1792161672.2849345,
+    "ast_hash": "18bca87d143ea7542d496f4f8842cecd",
     "semantic_hash": ""
   },
   "src/lib/fixed-assets/inventoryReportExport.ts": {
@@ -16342,8 +16342,8 @@
     "semantic_hash": ""
   },
   "src/test/fixed-assets/GrantProjectsTab.test.tsx": {
-    "mtime": 1791972991.8312984,
-    "ast_hash": "7e71a082b3f9a44ce09007fed967b722",
+    "mtime": 1792162469.0870366,
+    "ast_hash": "8ed64cd1d6797bee7a0f0ffb51335660",
     "semantic_hash": ""
   },
   "src/test/fixed-assets/InventoryCheckDialog.test.tsx": {
@@ -16372,8 +16372,8 @@
     "semantic_hash": ""
   },
   "src/test/fixed-assets/grantDeferralPosting.test.ts": {
-    "mtime": 1791972991.8343036,
-    "ast_hash": "91fe5bac3edc5f0ef1fc781ea15241ab",
+    "mtime": 1792163825.6694343,
+    "ast_hash": "4c0671ac3e7fa89caf797d122686d79c",
     "semantic_hash": ""
   },
   "src/test/fixed-assets/grantProjectsAndComponents.test.ts": {
@@ -17062,8 +17062,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/CompanyCarTaxTab.tsx": {
-    "mtime": 1792154161.5161085,
-    "ast_hash": "e9d2b783ca4600302a7df48a21cc5aff",
+    "mtime": 1792161549.6592588,
+    "ast_hash": "da2d62aff58648669e8e404c373f14e0",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/CreateAssetFromInvoiceDialog.tsx": {
@@ -17189,6 +17189,11 @@
   "implementation-plans/teny_extended_fejlesztesi_doksi.md": {
     "mtime": 1792131476.22487,
     "ast_hash": "fc0ceb127f85af9b9203ace2703d87c0",
+    "semantic_hash": ""
+  },
+  "src/test/fixed-assets/AssetListTable.test.tsx": {
+    "mtime": 1792163769.4208262,
+    "ast_hash": "6681b99704e8e14a109f98f4c5b51d53",
     "semantic_hash": ""
   }
 }
