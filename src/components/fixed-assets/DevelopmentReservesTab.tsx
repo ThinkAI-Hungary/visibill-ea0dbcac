@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { PlusCircle, Search, PiggyBank, Calendar, Clock, AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
 import type { DevelopmentReserve } from '@/types/fixed-assets';
@@ -170,8 +170,23 @@ export function DevelopmentReservesTab() {
 
   if (isLoading) {
     return (
-      <div className="p-6">
-        <ContentSkeleton  />
+      <div className="p-6 space-y-6">
+        {/* 1. Metrics Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+        </div>
+
+        {/* 2. Filter Bar Skeleton */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Skeleton className="h-10 w-72 rounded-lg" />
+          <Skeleton className="h-10 w-44 rounded-lg" />
+        </div>
+
+        {/* 3. Table / Content Placeholder */}
+        <Skeleton className="h-44 w-full rounded-xl" />
       </div>
     );
   }
