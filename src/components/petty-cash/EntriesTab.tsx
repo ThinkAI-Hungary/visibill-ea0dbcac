@@ -1833,25 +1833,42 @@ function ManualEntryDialogContent({
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
 
-  // Fetch open unpaid invoices for this company
+  // Fetch open unpaid invoices for this company (excluding invoices already attached to cash entries)
   const { data: openInvoices = [] } = useQuery({
     queryKey: ['open-settlement-invoices', companyId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('id, bizonylatsorszam, invoice_direction, vevo_nev, elado_nev, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem')
-        .eq('company_id', companyId)
-        .eq('fizetve', false)
-        .is('transaction_id', null)
-        .not('exclude_from_accounting', 'is', true)
-        .order('fizetesi_hatarido', { ascending: true });
-      if (error) throw error;
-      return (data || []).map((inv: any) => ({
-        ...inv,
-        partner_name: inv.invoice_direction?.toUpperCase() === 'INBOUND'
-          ? (inv.elado_nev || 'Ismeretlen szállító')
-          : (inv.vevo_nev || 'Ismeretlen vevő')
-      })) as OpenSettlementInvoice[];
+      const [invRes, pceRes] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, invoice_direction, vevo_nev, elado_nev, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem')
+          .eq('company_id', companyId)
+          .eq('fizetve', false)
+          .is('transaction_id', null)
+          .not('exclude_from_accounting', 'is', true)
+          .order('fizetesi_hatarido', { ascending: true }),
+        supabase
+          .from('petty_cash_entries')
+          .select('source_id')
+          .eq('company_id', companyId)
+          .eq('source_table', 'invoices')
+          .not('source_id', 'is', null)
+          .neq('status', 'cancelled'),
+      ]);
+
+      if (invRes.error) throw invRes.error;
+
+      const attachedInvoiceIds = new Set(
+        (pceRes.data || []).map((p: any) => p.source_id).filter(Boolean)
+      );
+
+      return (invRes.data || [])
+        .filter((inv: any) => !attachedInvoiceIds.has(inv.id))
+        .map((inv: any) => ({
+          ...inv,
+          partner_name: inv.invoice_direction?.toUpperCase() === 'INBOUND'
+            ? (inv.elado_nev || 'Ismeretlen szállító')
+            : (inv.vevo_nev || 'Ismeretlen vevő')
+        })) as OpenSettlementInvoice[];
     },
     enabled: !!companyId,
   });
