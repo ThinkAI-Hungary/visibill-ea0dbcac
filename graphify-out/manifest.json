@@ -145,8 +145,8 @@
     "semantic_hash": ""
   },
   "src/components/InvoiceItemsDialog.tsx": {
-    "mtime": 1792130122.7562194,
-    "ast_hash": "252b1a8cf32b4df682f093bfac2d287c",
+    "mtime": 1792155312.9076624,
+    "ast_hash": "ef9020f6da8917f96e1641ca51e2ffd3",
     "semantic_hash": ""
   },
   "src/components/LiveNotificationProvider.tsx": {
@@ -310,23 +310,23 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetDetailPanel.tsx": {
-    "mtime": 1791972991.7997868,
-    "ast_hash": "474ec9bcc964d7ef2b741a9b425a18f3",
+    "mtime": 1792151381.1696413,
+    "ast_hash": "ac5e17ffa9b4b2c0515e3d9522458ab6",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetListTable.tsx": {
-    "mtime": 1791583293.0684233,
-    "ast_hash": "0ef7c965e87cd9a21f29fb2b4bb1f062",
+    "mtime": 1792157642.559045,
+    "ast_hash": "6feac44d576fe1c84321af9ba0f479ec",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DepreciationCards.tsx": {
-    "mtime": 1791583293.0704224,
-    "ast_hash": "f5262f11b5c5a34760ae7fe770f98a98",
+    "mtime": 1792132347.4251766,
+    "ast_hash": "601d527f7c4a20d55fd8866e6f50e74a",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DisposalDialog.tsx": {
-    "mtime": 1791972991.8013012,
-    "ast_hash": "050e2ca2647a65a4fe5191ad8d371aac",
+    "mtime": 1792133458.9978335,
+    "ast_hash": "3a51a26b867e43b5786b32a95a223074",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/InventoryCheckDialog.tsx": {
@@ -920,8 +920,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useDepreciation.ts": {
-    "mtime": 1791583293.224826,
-    "ast_hash": "483f0321f4b9767fc9c6b3b56b9c8749",
+    "mtime": 1792157257.6702626,
+    "ast_hash": "32e82709c7a461943552e55319fcaca2",
     "semantic_hash": ""
   },
   "src/hooks/useEmployeeRates.ts": {
@@ -940,8 +940,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useFixedAssets.ts": {
-    "mtime": 1791972991.8182333,
-    "ast_hash": "6a60899a6f4faa0ed5c3a0fffa4330a5",
+    "mtime": 1792133495.7098742,
+    "ast_hash": "6954a6ed15ce030312d443d4f7438147",
     "semantic_hash": ""
   },
   "src/hooks/useIdleTimeout.ts": {
@@ -1450,8 +1450,8 @@
     "semantic_hash": ""
   },
   "src/pages/FixedAssetsPage.tsx": {
-    "mtime": 1791972991.8277948,
-    "ast_hash": "fff541548bf03aab4a26a73330549128",
+    "mtime": 1792154204.758245,
+    "ast_hash": "07aa1ed90d008b4d6e52988a8a535d1b",
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
@@ -1565,8 +1565,8 @@
     "semantic_hash": ""
   },
   "src/types/fixed-assets.ts": {
-    "mtime": 1791972991.8368483,
-    "ast_hash": "095ad017762bbd71709f4f22cc38afcb",
+    "mtime": 1792144971.4439704,
+    "ast_hash": "f85c31e5aba2a1f4d65aa0c58fd3b421",
     "semantic_hash": ""
   },
   "src/types/invoices.ts": {
@@ -12021,8 +12021,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DevelopmentReserveAssignDialog.tsx": {
-    "mtime": 1791583293.072423,
-    "ast_hash": "effbb2a0417ec178cab4c82813f71c05",
+    "mtime": 1792133219.8614626,
+    "ast_hash": "aa685feebd4c0637ff8691db2cff407c",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DevelopmentReservesTab.tsx": {
@@ -12106,8 +12106,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useDevelopmentReserves.ts": {
-    "mtime": 1791583293.224826,
-    "ast_hash": "a3c5c620ac3c5098d271d60a5957994e",
+    "mtime": 1792132779.8348324,
+    "ast_hash": "1fe85c4d64b32cdf2123a4084c0e8f9f",
     "semantic_hash": ""
   },
   "src/hooks/useRelatedPartyTurnover.ts": {
@@ -13330,8 +13330,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/CreateFixedAssetDialog.tsx": {
-    "mtime": 1791583293.0694242,
-    "ast_hash": "c0d2efb94fe4cc7e467ff6166caa6252",
+    "mtime": 1792157656.877766,
+    "ast_hash": "e327423204df09d80b0d9fa61badc314",
     "semantic_hash": ""
   },
   "src/components/general-ledger/__tests__/UploadChartOfAccountsModal.test.tsx": {
@@ -13345,8 +13345,8 @@
     "semantic_hash": ""
   },
   "src/test/fixed-assets/CreateFixedAssetDialog.test.tsx": {
-    "mtime": 1791583293.3712397,
-    "ast_hash": "409f8fe5e398b4c8008bbe5b9e267851",
+    "mtime": 1792133285.999717,
+    "ast_hash": "786c08e375e06697dac72f4dce83ea95",
     "semantic_hash": ""
   },
   "src/test/missingInvoicesExport.test.tsx": {
@@ -16107,8 +16107,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DisposalApprovalDialog.tsx": {
-    "mtime": 1791972991.7997868,
-    "ast_hash": "11668b1a04946ee43d38b12c7a65389f",
+    "mtime": 1792133478.7448812,
+    "ast_hash": "bdcf92ae82bc34100b791c5187947f95",
     "semantic_hash": ""
   },
   "src/components/salaries/PayoutsTab.tsx": {
@@ -17059,6 +17059,136 @@
   "session-summary/\u00c1ron/2026-10-15/summary-142500-pos-amex-card-settlement-virtual-bank-and-fakov-reconciliation.md": {
     "mtime": 1792129754.7526882,
     "ast_hash": "582323798298d2be1028b29f3bc22920",
+    "semantic_hash": ""
+  },
+  "src/components/fixed-assets/CompanyCarTaxTab.tsx": {
+    "mtime": 1792154161.5161085,
+    "ast_hash": "e9d2b783ca4600302a7df48a21cc5aff",
+    "semantic_hash": ""
+  },
+  "src/components/fixed-assets/CreateAssetFromInvoiceDialog.tsx": {
+    "mtime": 1792155712.0929427,
+    "ast_hash": "fa90e4d1190faf6f44e79298fb3f4eba",
+    "semantic_hash": ""
+  },
+  "src/components/fixed-assets/CreateCompanyCarDialog.tsx": {
+    "mtime": 1792154132.547481,
+    "ast_hash": "223ec79aab848a1110d2f2584c57b988",
+    "semantic_hash": ""
+  },
+  "src/components/fixed-assets/DevelopmentReserveAllocationSelector.tsx": {
+    "mtime": 1792132880.2245135,
+    "ast_hash": "83d4caca513b1c143394aace71707eab",
+    "semantic_hash": ""
+  },
+  "src/components/fixed-assets/RecordVehicleTaxDialog.tsx": {
+    "mtime": 1792157700.3215578,
+    "ast_hash": "e903181ad024aab0c12ff5e2f48cc135",
+    "semantic_hash": ""
+  },
+  "src/components/fixed-assets/TaxCreditAlienationAlert.tsx": {
+    "mtime": 1792133425.3105457,
+    "ast_hash": "2800d36d719d2bef9d4efa0cccffb9f3",
+    "semantic_hash": ""
+  },
+  "src/components/fixed-assets/UnplannedDepreciationDialog.tsx": {
+    "mtime": 1792151363.7344773,
+    "ast_hash": "27f938d6642be85bf7cfb873e8018afd",
+    "semantic_hash": ""
+  },
+  "src/lib/fixed-assets/assetInvoiceCandidateService.ts": {
+    "mtime": 1792154966.6106248,
+    "ast_hash": "03daeefe3a145e8189efdafde580c070",
+    "semantic_hash": ""
+  },
+  "src/lib/fixed-assets/companyCarTaxService.ts": {
+    "mtime": 1792153598.7734783,
+    "ast_hash": "21d54301a7df251a28421fbbef4f3714",
+    "semantic_hash": ""
+  },
+  "src/lib/fixed-assets/developmentReserveAllocationService.ts": {
+    "mtime": 1792132667.1784632,
+    "ast_hash": "063bf83c2001413201ebee4f8fd15ee2",
+    "semantic_hash": ""
+  },
+  "src/lib/fixed-assets/taxCreditRestrictionService.ts": {
+    "mtime": 1792133374.0190554,
+    "ast_hash": "7d82959a0fcd9c7c18724dde374d2d42",
+    "semantic_hash": ""
+  },
+  "src/lib/fixed-assets/unplannedDepreciationService.ts": {
+    "mtime": 1792144999.0788214,
+    "ast_hash": "c7fffa74a2d38621678f6a82996203f7",
+    "semantic_hash": ""
+  },
+  "src/test/fixed-assets/assetDepreciationExtended.test.ts": {
+    "mtime": 1792132169.462931,
+    "ast_hash": "0f9176d1aed07aa32d53f6f666f303a8",
+    "semantic_hash": ""
+  },
+  "src/test/fixed-assets/assetInvoiceCandidate.test.ts": {
+    "mtime": 1792154945.4059498,
+    "ast_hash": "4602ace6539c18d1d4e2f431c142caae",
+    "semantic_hash": ""
+  },
+  "src/test/fixed-assets/companyCarTax.test.ts": {
+    "mtime": 1792153609.802586,
+    "ast_hash": "d07b08c662ea6998fbeb9c899e6b0501",
+    "semantic_hash": ""
+  },
+  "src/test/fixed-assets/developmentReserveAllocation.test.ts": {
+    "mtime": 1792132676.8426235,
+    "ast_hash": "95d617e550d713e46a08ecce80117a7e",
+    "semantic_hash": ""
+  },
+  "src/test/fixed-assets/taxCreditDisposalProtection.test.ts": {
+    "mtime": 1792133383.5326848,
+    "ast_hash": "38dd4a0e5e94803ec50d584a7cce4d10",
+    "semantic_hash": ""
+  },
+  "src/test/fixed-assets/unplannedDepreciation.test.ts": {
+    "mtime": 1792145007.742962,
+    "ast_hash": "7781c443ab862b0b04e0c0a3aa6e81b8",
+    "semantic_hash": ""
+  },
+  "src/types/company-car-tax.ts": {
+    "mtime": 1792153586.549867,
+    "ast_hash": "9bdf54686c2691bca12b9b1a025f60eb",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261016100000_teny_extended_fields.sql": {
+    "mtime": 1792131736.5169554,
+    "ast_hash": "5c2ee0230d5d5848cc2f65dd61c2f9a6",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261016110000_fixed_asset_reserve_allocations.sql": {
+    "mtime": 1792132618.5112102,
+    "ast_hash": "008458c9ae3c62751e23586902ecaa3c",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261016120000_tax_credit_retention.sql": {
+    "mtime": 1792133339.4458196,
+    "ast_hash": "796695592b59deae48779228b14a7e59",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261016130000_unplanned_depreciation_and_dimensions.sql": {
+    "mtime": 1792144895.9430711,
+    "ast_hash": "2ef80201ceac48241c60226da139ff2f",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261016140000_company_car_tax.sql": {
+    "mtime": 1792153568.9751587,
+    "ast_hash": "2dbe95f604c3068a0af539aec7bd9c84",
+    "semantic_hash": ""
+  },
+  "implementation-plans/TENY_extended_implementacios_terv.md": {
+    "mtime": 1792131676.9423325,
+    "ast_hash": "645e255139b02d0422c65344f095c810",
+    "semantic_hash": ""
+  },
+  "implementation-plans/teny_extended_fejlesztesi_doksi.md": {
+    "mtime": 1792131476.22487,
+    "ast_hash": "fc0ceb127f85af9b9203ace2703d87c0",
     "semantic_hash": ""
   }
 }
