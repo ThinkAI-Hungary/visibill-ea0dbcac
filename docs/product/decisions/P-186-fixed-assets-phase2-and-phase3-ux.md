@@ -33,7 +33,7 @@ A vállalkozások és könyvelőirodák számára a tárgyi eszközök nem csup�
 
 ### 4. Pályázati Projektek és Négyoldalú Rekonciliáció Fül (`GrantProjectsTab.tsx`)
 - A `FixedAssetsPage.tsx` 5. fülén helyezkedik el (`tab=grant_projects`).
-- **Négyoldalú Rekonciliációs Banner:** Zöld "Zero-Error" státusz, ha a 4 pillér (Pályázati keret ↔ TÉNY analitika ↔ Főkönyv 964 ↔ Elhatárolás 483) tökéletesen egyezik; sárga/piros riasztás diszkrepancia vagy kerettúllépés esetén.
+- **Négyoldalú Rekonciliációs Banner:** Zöld egyezőségi státusz, ha a 4 pillér (Pályázati keret ↔ TÉNY analitika ↔ Főkönyv 964 ↔ Elhatárolás 483) egyezik; sárga/piros riasztás diszkrepancia vagy kerettúllépés esetén.
 - **KPI Kártyák:** Összes pályázati keret, Lehívott támogatás, TÉNY eszközökben lekötött támogatás, Feloldásra váró PIE egyenleg.
 - **Projekt Kártyák:** Szerződés adatok, intenzitás progress bar, fenntartási időszak visszaszámláló.
 - **PIE Feloldás Gomb és Dialógus:**

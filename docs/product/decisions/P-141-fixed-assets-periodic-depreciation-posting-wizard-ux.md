@@ -15,7 +15,7 @@ A `FixedAssetsPage` (Tárgyi Eszköz Nyilvántartás) fejlécében, az „Új es
 ```text
 [ 🧮 ÉCS elszámolás ]
 ```
-gomb. A gombra kattintva felugrik a `DepreciationRunDialog` modál.
+gomb. A gombra kattintva felugrik a kibővített szélességű (`max-w-6xl xl:max-w-7xl`), vízszintes görgetésmentes `DepreciationRunDialog` modál.
 
 ---
 

@@ -325,5 +325,6 @@
 | P-193 | Számlák Tömeges Könyvelésből Való Kizárása és Visszavonása Lebegő Műveleti Sávval UX | ✅ Decided | [P-193](./P-193-invoices-bulk-exclude-from-accounting-ux.md) |
 | P-194 | Számlák Kontírozási Státusz Gyorsszűrő Chip és Valós Idejű Kontírozatlansági Szűrés UX | ✅ Decided | [P-194](./P-194-invoices-gl-classification-quick-filter-chip.md) |
 | P-195 | Készpénzes Számlák Házipénztár Kiválasztása és Gyors Szabálymentés UX | ✅ Decided | [P-195](./P-195-cash-invoice-petty-cash-assignment-and-rule-prompt.md) |
+| P-196 | Tárgyi Eszközök Ergonómia, Content Splitting (38/62%), Név Csonkolás és Többéves Mozgástábla UX | ✅ Decided | [P-196](./P-196-fixed-assets-ergonomics-pagination-and-skeleton-ux.md) |
 
 
