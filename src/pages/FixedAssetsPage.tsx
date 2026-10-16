@@ -5,6 +5,7 @@ import { useFixedAssets, useFixedAssetDetail } from '@/hooks/useFixedAssets';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { AssetListTable } from '@/components/fixed-assets/AssetListTable';
 import { AssetDetailPanel } from '@/components/fixed-assets/AssetDetailPanel';
+import { AssetDetailSkeleton } from '@/components/fixed-assets/AssetDetailSkeleton';
 import { DevelopmentReservesTab } from '@/components/fixed-assets/DevelopmentReservesTab';
 import { AssetReconciliationTab } from '@/components/fixed-assets/AssetReconciliationTab';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
@@ -363,20 +364,18 @@ export default function FixedAssetsPage() {
             />
           </div>
 
-        {/* Right panel: Asset Detail (40%) — full height, no scroll */}
-        <div className="w-[40%] shrink-0 grow-0 overflow-hidden">
-          {selectedAssetId && detailData?.asset ? (
+        {/* Right panel: Asset Detail (40%) — stable panel height with independent scrolling */}
+        <div className="w-[40%] shrink-0 grow-0 overflow-hidden flex flex-col sticky top-0 self-start min-h-0 max-h-[calc(100vh-8rem)]">
+          {selectedAssetId && detailData?.asset && detailData.asset.id === selectedAssetId ? (
             <AssetDetailPanel
               asset={detailData.asset}
               events={detailData.events}
             />
           ) : selectedAssetId ? (
             /* Loading state — asset selected but data not yet ready */
-            <div className="flex items-center justify-center min-h-[400px]">
-              <LoadingSpinner fullPage={false} size="md" />
-            </div>
+            <AssetDetailSkeleton />
           ) : (
-            <div className="flex items-center justify-center min-h-[400px] text-muted-foreground">
+            <div className="flex items-center justify-center min-h-[400px] h-full text-muted-foreground">
               <div className="text-center">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/30 flex items-center justify-center">
                   <Package2 className="h-10 w-10 opacity-30" />

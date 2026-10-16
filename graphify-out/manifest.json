@@ -315,8 +315,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetListTable.tsx": {
-    "mtime": 1792163754.6789024,
-    "ast_hash": "d0484160b58ac6ed3d3b377e8dd5c620",
+    "mtime": 1792164118.6217885,
+    "ast_hash": "e573cd49ca97becaa776318bbde76c00",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DepreciationCards.tsx": {
@@ -940,8 +940,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useFixedAssets.ts": {
-    "mtime": 1792133495.7098742,
-    "ast_hash": "6954a6ed15ce030312d443d4f7438147",
+    "mtime": 1792164403.929192,
+    "ast_hash": "3ec2530ee3590bdf77aa4c5567c69532",
     "semantic_hash": ""
   },
   "src/hooks/useIdleTimeout.ts": {
@@ -1450,8 +1450,8 @@
     "semantic_hash": ""
   },
   "src/pages/FixedAssetsPage.tsx": {
-    "mtime": 1792162889.0654252,
-    "ast_hash": "3804d31285d6e8582e8132a9081416d4",
+    "mtime": 1792164433.3510807,
+    "ast_hash": "a386b58a0f57f22b1d2f5c971ec152f7",
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
@@ -17192,8 +17192,13 @@
     "semantic_hash": ""
   },
   "src/test/fixed-assets/AssetListTable.test.tsx": {
-    "mtime": 1792163769.4208262,
-    "ast_hash": "6681b99704e8e14a109f98f4c5b51d53",
+    "mtime": 1792164182.856718,
+    "ast_hash": "b0c905c17646ebafe1798e8df404e070",
+    "semantic_hash": ""
+  },
+  "src/components/fixed-assets/AssetDetailSkeleton.tsx": {
+    "mtime": 1792164392.3922634,
+    "ast_hash": "3e8711689741ff5c1b47dbd802b79e81",
     "semantic_hash": ""
   }
 }

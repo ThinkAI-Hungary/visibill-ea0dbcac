@@ -119,7 +119,7 @@ describe('AssetListTable', () => {
     expect(screen.getByText('Helyszín')).toBeInTheDocument();
   });
 
-  it('displays full inventory number without cutoff and decodes HTML entities', () => {
+  it('displays inventory number, decodes HTML entities and truncates long names', () => {
     render(
       <AssetListTable
         assets={mockAssets}
@@ -133,9 +133,9 @@ describe('AssetListTable', () => {
     expect(screen.getByText('250702579865 - 2024')).toBeInTheDocument();
     expect(screen.getByText('S2026/297971 - 2026')).toBeInTheDocument();
 
-    // Decoded name: "&amp;" must be displayed as "&"
-    expect(screen.getByText('Pur Raspberry & Red Currant Mosogatószer')).toBeInTheDocument();
-    expect(screen.getByText('Irattartó tasak, A4, PP, patentos')).toBeInTheDocument();
+    // Name is truncated after 28 chars with ellipsis, but decoded
+    expect(screen.getByText('Pur Raspberry & Red Currant…')).toBeInTheDocument();
+    expect(screen.getByText('Irattartó tasak, A4, PP, pat…')).toBeInTheDocument();
 
     // Decoded project name
     expect(screen.getByText('Iroda & Üzemeltetés')).toBeInTheDocument();
@@ -179,12 +179,49 @@ describe('AssetListTable', () => {
 
     // Search by decoded entity text
     fireEvent.change(searchInput, { target: { value: 'Raspberry &' } });
-    expect(screen.getByText('Pur Raspberry & Red Currant Mosogatószer')).toBeInTheDocument();
-    expect(screen.queryByText('Irattartó tasak, A4, PP, patentos')).not.toBeInTheDocument();
+    expect(screen.getByText('Pur Raspberry & Red Currant…')).toBeInTheDocument();
+    expect(screen.queryByText('Irattartó tasak, A4, PP, pa…')).not.toBeInTheDocument();
 
     // Clear search
     const clearBtn = screen.getByTitle('Törlés');
     fireEvent.click(clearBtn);
-    expect(screen.getByText('Irattartó tasak, A4, PP, patentos')).toBeInTheDocument();
+    expect(screen.getByText('Irattartó tasak, A4, PP, pat…')).toBeInTheDocument();
+  });
+
+  it('paginates assets with default 50 items per page', () => {
+    // Generate 55 assets
+    const manyAssets: FixedAsset[] = Array.from({ length: 55 }, (_, i) => ({
+      ...mockAssets[0],
+      id: `asset-${i + 1}`,
+      inventory_number: `INV-2026-${String(i + 1).padStart(3, '0')}`,
+      name: `Tárgyi Eszköz #${i + 1}`,
+    }));
+
+    const { container } = render(
+      <AssetListTable
+        assets={manyAssets}
+        loading={false}
+        selectedAssetId={null}
+        onSelectAsset={vi.fn()}
+      />
+    );
+
+    // Page 1: only 50 rows rendered
+    const rows = container.querySelectorAll('tbody tr');
+    expect(rows.length).toBe(50);
+    expect(screen.getByText('INV-2026-001')).toBeInTheDocument();
+    expect(screen.getByText('INV-2026-050')).toBeInTheDocument();
+    expect(screen.queryByText('INV-2026-051')).not.toBeInTheDocument();
+
+    // Navigate to page 2
+    const nextBtn = screen.getByLabelText('Következő oldal');
+    fireEvent.click(nextBtn);
+
+    // Page 2: remaining 5 rows rendered (51 to 55)
+    const rowsPage2 = container.querySelectorAll('tbody tr');
+    expect(rowsPage2.length).toBe(5);
+    expect(screen.getByText('INV-2026-051')).toBeInTheDocument();
+    expect(screen.getByText('INV-2026-055')).toBeInTheDocument();
+    expect(screen.queryByText('INV-2026-001')).not.toBeInTheDocument();
   });
 });

@@ -238,6 +238,7 @@ export function useFixedAssetDetail(assetId: string | null) {
       };
     },
     enabled: !!assetId,
+    staleTime: 60_000,
   });
 }
 
