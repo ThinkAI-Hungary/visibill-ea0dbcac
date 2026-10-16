@@ -148,7 +148,7 @@ describe('GrantProjectsTab Component (M3.4)', () => {
       </QueryClientProvider>
     );
 
-    expect(screen.getByText('Négyoldalú Rekonciliáció: Egyensúlyban (Zero-Error)')).toBeInTheDocument();
+    expect(screen.getByText('Négyoldalú Rekonciliáció: Egyensúlyban')).toBeInTheDocument();
     expect(screen.getByText('Összes Pályázati Keret')).toBeInTheDocument();
     expect(screen.getByText('Folyósított Támogatás')).toBeInTheDocument();
     expect(screen.getByText('Eszközökhöz Allokált Támogatás')).toBeInTheDocument();

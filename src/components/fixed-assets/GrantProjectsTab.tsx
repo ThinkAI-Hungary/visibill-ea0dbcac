@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   FolderKanban,
   Plus,
@@ -107,45 +108,39 @@ export const GrantProjectsTab: React.FC<GrantProjectsTabProps> = ({
   // Reference date for purity compliance
   const [todayStr] = useState(() => new Date().toISOString().slice(0, 10));
 
-  // GL Balances state for 4-way reconciliation
-  const [gl483Balance, setGl483Balance] = useState<number>(0);
-  const [gl964Turnover, setGl964Turnover] = useState<number>(0);
-  const [glLoading, setGlLoading] = useState(true);
+  // GL Balances state for 4-way reconciliation (cached via React Query across tab navigation)
+  const {
+    data: glBalances = { gl483Balance: 0, gl964Turnover: 0 },
+    refetch: refetchGlBalances,
+  } = useQuery({
+    queryKey: ['grant_gl_balances', companyId],
+    queryFn: () => fetchGrantGlBalances(companyId),
+    enabled: !!companyId,
+    staleTime: 60_000,
+  });
 
-  // Load GL balances on mount
-  React.useEffect(() => {
-    let mounted = true;
-    fetchGrantGlBalances(companyId)
-      .then(res => {
-        if (mounted) {
-          setGl483Balance(res.gl483Balance);
-          setGl964Turnover(res.gl964Turnover);
-        }
-      })
-      .finally(() => {
-        if (mounted) setGlLoading(false);
-      });
-    return () => { mounted = false; };
-  }, [companyId]);
+  const { gl483Balance, gl964Turnover } = glBalances;
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefreshGl = async () => {
-    setGlLoading(true);
+    setIsRefreshing(true);
     try {
-      const res = await fetchGrantGlBalances(companyId);
-      setGl483Balance(res.gl483Balance);
-      setGl964Turnover(res.gl964Turnover);
-      await refetchProjects();
-      await refetchComponents();
+      await Promise.all([
+        refetchGlBalances(),
+        refetchProjects(),
+        refetchComponents(),
+      ]);
       toast({ title: 'Főkönyvi egyenlegek és rekonciliáció frissítve' });
     } finally {
-      setGlLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   // Négyoldalú rekonciliáció számítása
   const reconciliation = useMemo(() => {
-    return calculateGrantReconciliation(projects, assets, allComponents, gl483Balance, gl964Turnover);
-  }, [projects, assets, allComponents, gl483Balance, gl964Turnover]);
+    return calculateGrantReconciliation(projects, assets, allComponents, glBalances.gl483Balance, glBalances.gl964Turnover);
+  }, [projects, assets, allComponents, glBalances.gl483Balance, glBalances.gl964Turnover]);
 
   // Project Dialog State
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
@@ -395,7 +390,7 @@ export const GrantProjectsTab: React.FC<GrantProjectsTabProps> = ({
             <div className="flex items-center gap-2">
               <h4 className="font-semibold text-sm">
                 {reconciliation.isBalanced
-                  ? 'Négyoldalú Rekonciliáció: Egyensúlyban (Zero-Error)'
+                  ? 'Négyoldalú Rekonciliáció: Egyensúlyban'
                   : 'Négyoldalú Rekonciliáció: Eltérés vagy Ellenőrzendő Elem'}
               </h4>
               <Badge variant="outline" className="text-[11px] bg-background/50">
@@ -415,10 +410,10 @@ export const GrantProjectsTab: React.FC<GrantProjectsTabProps> = ({
             variant="outline"
             size="sm"
             onClick={handleRefreshGl}
-            disabled={glLoading}
+            disabled={isRefreshing}
             className="gap-1.5 bg-background/70 hover:bg-background text-xs h-8"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${glLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             Egyeztetés frissítése
           </Button>
           {writable && (
