@@ -3,8 +3,8 @@ import { TICKET_CATEGORIES, isValidTicketCategory } from '@/utils/ticketCategori
 import type { Ticket } from '@/hooks/useTickets';
 
 describe('Ticket Categories Validation & Filtering', () => {
-  it('contains exactly the 37 predefined categories requested by the user', () => {
-    expect(TICKET_CATEGORIES).toHaveLength(37);
+  it('contains exactly the 38 predefined categories requested by the user', () => {
+    expect(TICKET_CATEGORIES).toHaveLength(38);
     expect(TICKET_CATEGORIES).toContain('áfa');
     expect(TICKET_CATEGORIES).toContain('bank napló');
     expect(TICKET_CATEGORIES).toContain('banki tranzakciók');
@@ -28,6 +28,7 @@ describe('Ticket Categories Validation & Filtering', () => {
     expect(TICKET_CATEGORIES).toContain('pénztár napló');
     expect(TICKET_CATEGORIES).toContain('záró tételek napló');
     expect(TICKET_CATEGORIES).toContain('vevő-szállító analitika');
+    expect(TICKET_CATEGORIES).toContain('folyószámla');
     expect(TICKET_CATEGORIES).toContain('előleg analitika');
     expect(TICKET_CATEGORIES).toContain('árfolyam elszámolás');
     expect(TICKET_CATEGORIES).toContain('elhatárolások');

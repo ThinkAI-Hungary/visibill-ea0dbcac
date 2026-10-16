@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deriveItemForeignAmounts, groupSubledgerItems } from '../subledgerGrouping';
+import { deriveItemForeignAmounts, groupSubledgerItems, formatSubledgerDescription } from '../subledgerGrouping';
 import type { SubledgerItem } from '@/types/subledger';
 
 describe('subledgerGrouping', () => {
@@ -184,4 +184,40 @@ describe('subledgerGrouping', () => {
       expect(inv.exchange_rate).toBe(385.4);
     });
   });
+
+  describe('formatSubledgerDescription', () => {
+    it('shortens supplier debt settlement prefix', () => {
+      expect(formatSubledgerDescription('Szállító tartozás kiegyenlítése - SZZJ-2026-3'))
+        .toBe('száll.tart.rend: SZZJ-2026-3');
+      expect(formatSubledgerDescription('Szállító tartozás kiegyenlítése: INV-100'))
+        .toBe('száll.tart.rend: INV-100');
+    });
+
+    it('shortens customer claim settlement prefix', () => {
+      expect(formatSubledgerDescription('Vevő követelés kiegyenlítése - VEV-2026-001'))
+        .toBe('vevő köv.rend: VEV-2026-001');
+    });
+
+    it('shortens cash settlement prefixes', () => {
+      expect(formatSubledgerDescription('Készpénzes szállítói kiegyenlítés - KP-01'))
+        .toBe('száll.tart.rend (KP): KP-01');
+      expect(formatSubledgerDescription('Utalásos számla KP-ban rendezve: SZZJ-2026-3'))
+        .toBe('számla (KP): SZZJ-2026-3');
+    });
+
+    it('leaves standard invoice item descriptions untouched', () => {
+      expect(formatSubledgerDescription('Adminisztratív szolgáltatás'))
+        .toBe('Adminisztratív szolgáltatás');
+      expect(formatSubledgerDescription('Ügyvédi munkadíj'))
+        .toBe('Ügyvédi munkadíj');
+    });
+
+    it('handles null, undefined and empty strings safely', () => {
+      expect(formatSubledgerDescription(null)).toBe('');
+      expect(formatSubledgerDescription(undefined)).toBe('');
+      expect(formatSubledgerDescription('')).toBe('');
+      expect(formatSubledgerDescription('   ')).toBe('');
+    });
+  });
 });
+
