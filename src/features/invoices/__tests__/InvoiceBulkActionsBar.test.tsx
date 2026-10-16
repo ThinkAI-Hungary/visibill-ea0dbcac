@@ -8,6 +8,7 @@ const mockClearSelection = vi.fn();
 const mockSetBulkDeleteDialogOpen = vi.fn();
 const mockHandleBulkCategoryChange = vi.fn();
 const mockHandleBulkProjectChange = vi.fn();
+const mockHandleBulkExcludeFromAccounting = vi.fn();
 
 let mockActiveSelection = new Set(['inv-1', 'inv-2']);
 let mockIsSubmittedTab = true;
@@ -26,11 +27,14 @@ vi.mock('../hooks/useInvoiceItemProjectAllocations', () => ({
   }),
 }));
 
+let mockItemsDialogOpen = false;
+
 vi.mock('../context/useInvoiceContext', () => ({
   useInvoiceContext: () => ({
     companyId: 'comp-1',
     activeSelection: mockActiveSelection,
     isSubmittedTab: mockIsSubmittedTab,
+    itemsDialogOpen: mockItemsDialogOpen,
     categories: [
       { id: 'cat-1', name: 'Irodaszer' },
       { id: 'cat-2', name: 'Informatika' },
@@ -42,6 +46,7 @@ vi.mock('../context/useInvoiceContext', () => ({
     exportableInvoices: mockExportableInvoices,
     handleBulkCategoryChange: mockHandleBulkCategoryChange,
     handleBulkProjectChange: mockHandleBulkProjectChange,
+    handleBulkExcludeFromAccounting: mockHandleBulkExcludeFromAccounting,
     setBulkDeleteDialogOpen: mockSetBulkDeleteDialogOpen,
     clearSelection: mockClearSelection,
   }),
@@ -50,6 +55,11 @@ vi.mock('../context/useInvoiceContext', () => ({
 describe('InvoiceBulkActionsBar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
+    window.HTMLElement.prototype.setPointerCapture = vi.fn();
+    window.HTMLElement.prototype.releasePointerCapture = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+
     mockActiveSelection = new Set(['inv-1', 'inv-2']);
     mockIsSubmittedTab = true;
     mockExportableInvoices = [
@@ -67,6 +77,7 @@ describe('InvoiceBulkActionsBar', () => {
     expect(screen.getByText(/35 000 Ft/i)).toBeInTheDocument();
     expect(screen.getByText('Kategória...')).toBeInTheDocument();
     expect(screen.getByText('Projekt...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Nem könyvelem/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Mentés/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Törlés/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Mégse/i })).toBeInTheDocument();
@@ -220,5 +231,68 @@ describe('InvoiceBulkActionsBar', () => {
     expect(screen.getByText('Projekt...')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Megosztás/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /2 projekt \(100%\)/i })).not.toBeInTheDocument();
+  });
+
+  it('handles bulk permanent accounting exclusion when selected from dropdown', async () => {
+    render(<InvoiceBulkActionsBar />);
+
+    const excludeBtn = screen.getByRole('button', { name: /Nem könyvelem/i });
+    fireEvent.pointerDown(excludeBtn, { pointerType: 'mouse', button: 0 });
+    fireEvent.keyDown(excludeBtn, { key: 'ArrowDown', code: 'ArrowDown' });
+
+    const permanentItem = await screen.findByText(/Végleges kizárás \(Nem könyvelem\)/i);
+    expect(permanentItem).toBeInTheDocument();
+
+    fireEvent.click(permanentItem);
+    expect(mockHandleBulkExcludeFromAccounting).toHaveBeenCalledWith('PERMANENT');
+  });
+
+  it('opens BulkExclusionDialog for deferred VAT and confirms with reason', async () => {
+    render(<InvoiceBulkActionsBar />);
+
+    const excludeBtn = screen.getByRole('button', { name: /Nem könyvelem/i });
+    fireEvent.pointerDown(excludeBtn, { pointerType: 'mouse', button: 0 });
+    fireEvent.keyDown(excludeBtn, { key: 'ArrowDown', code: 'ArrowDown' });
+
+    const deferredItem = await screen.findByText(/Kérdéses számla \(Halasztott ÁFA\)/i);
+    fireEvent.click(deferredItem);
+
+    // Dialog appears
+    expect(await screen.findByText(/Számlák megjelölése kérdésesként/i)).toBeInTheDocument();
+
+    const textarea = screen.getByPlaceholderText(/pl\. Vitatott teljesítés/i);
+    fireEvent.change(textarea, { target: { value: 'Vitatott műszaki átadás' } });
+
+    const confirmBtn = screen.getByRole('button', { name: /Kérdésesként rögzítés/i });
+    fireEvent.click(confirmBtn);
+
+    expect(mockHandleBulkExcludeFromAccounting).toHaveBeenCalledWith('DEFERRED_VAT', 'Vitatott műszaki átadás');
+  });
+
+  it('shows Kizárva label and offers Könyvelésbe visszaállítás when invoices are excluded', async () => {
+    mockExportableInvoices = [
+      { id: 'inv-1', currency: 'HUF', gross_amount: 10000, exclude_from_accounting: true },
+      { id: 'inv-2', currency: 'HUF', gross_amount: 25000, exclude_from_accounting: true },
+    ];
+
+    render(<InvoiceBulkActionsBar />);
+
+    const excludedBtn = screen.getByRole('button', { name: /Kizárva/i });
+    expect(excludedBtn).toBeInTheDocument();
+
+    fireEvent.pointerDown(excludedBtn, { pointerType: 'mouse', button: 0 });
+    fireEvent.keyDown(excludedBtn, { key: 'ArrowDown', code: 'ArrowDown' });
+
+    const restoreItem = await screen.findByText(/Könyvelésbe visszaállítás/i);
+    expect(restoreItem).toBeInTheDocument();
+
+    fireEvent.click(restoreItem);
+    expect(mockHandleBulkExcludeFromAccounting).toHaveBeenCalledWith(null);
+  });
+
+  it('renders null when a modal dialog is open (e.g. itemsDialogOpen)', () => {
+    mockItemsDialogOpen = true;
+    const { container } = render(<InvoiceBulkActionsBar />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

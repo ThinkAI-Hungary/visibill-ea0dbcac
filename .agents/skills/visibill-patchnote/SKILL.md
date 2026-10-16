@@ -18,6 +18,7 @@ A skill egy **kimerítő alaposságú tényfeltáró és kontextus-kiértékelő
 3. **Dinamikus Kontextus & Terjedelem szerinti Felbontás (Multi-Entry Chunking):** 
    Ha az időszak több független témát, modult vagy nagyobb mennyiségű módosítást ölel fel, **szigorúan tilos mindent egyetlen gigantikus bejegyzésbe sűríteni**. A skillnek a kontextus mérete és logikai összefüggései alapján **akár 2, 3 vagy több különálló, önálló changelog bejegyzést** kell terveznie, szekvenciális SemVer számozással.
 4. **Futási garancia:** A skill addig nem zárhatja le a tervezési folyamatot, amíg a kiválasztott időszak összes érdemi módosítását fel nem dolgozta és igazolta a források alapján.
+5. **Univerzális Transzformáció (Ügyfélnév-mentesség):** Az egyedi ügyféligényekből, cégspecifikus hibajegyekből vagy partnerekhez köthető anomáliákból származó módosításokat kötelező átültetni általános, platform-szintű fejlesztésekké, amelyek bármely vállalkozás és könyvelő hasznára válnak, szigorúan kizárva a cégneveket és személyneveket.
 
 ---
 
@@ -179,6 +180,18 @@ Amennyiben a skill 2 vagy több bejegyzésre bontja a napi termést, a verziósz
    - `perf` / `improvement` (Gyorsítás & Fejlesztés): gördülékenyebb működés, kényelmi finomhangolás. (Lucide: `Zap`)
 5. **Zero Silent Decisions:**
    - Az adatbázisba szúrás és kódmódosítás előtt a generált szövegtervezeteket, a darabolási struktúrát és a verziószámokat **mindig mutasd be a felhasználónak jóváhagyásra**.
+6. **Univerzális és Ügyfélnév-mentes Fogalmazás (Universal Framing & Zero Client Names):**
+   - **Szigorúan tilos ügyfélnevek és személynevek használata:** A publikus changelog címekben, összefoglalókban és tételes listákban KIZÁRÓLAG általános megfogalmazás szerepelhet. Szigorúan tilos bármilyen konkrét ügyfélcéget (pl. cégnevek), egyéni vállalkozót, személynevet (pl. könyvelő, adminisztrátor, fejlesztő neve) vagy egyedi hibajegy- és cégazonosítót (UUID) feltüntetni!
+   - **Átfogalmazás általános funkciófejlesztésre:** Ha egy javítás vagy új képesség egy konkrét ügyfélnél vagy hibajegyben felmerült probléma kapcsán született (pl. egyedi számlaszerkezet, vegyes adókulcsok, devizás pénztár, speciális könyvelési sablon), azt kötelező **univerzális platform-szintű fejlesztésként** megfogalmazni, amely minden vállalkozás, könyvelőiroda és cégvezető hasznára válik.
+   - *Rossz példa:* "Javítottuk a Fakov Kft.-nél tapasztalt hiányzó nyitó sorokat és Kilner Gábor Ev. tripla utalási tételét."
+   - *Helyes példa:* "Kiterjesztettük a főkönyvi nyitó mérlegtételek évközi átgörgetését, így bármilyen időszaki szűrésnél automatikusan megjelennek a nyitó adatok minden vállalkozási formánál, valamint egyedi adatbázis-védelemmel láttuk el a bérszámfejtési utalási listák újragenerálását a tételek többszöröződése ellen."
+7. **Magyar Helyesírású Mondatkezdő Kis-/Nagybetűzés (Sentence Case Invariant - Nincs Angolszász Title Case):**
+   - **Tilos a Title Case:** A címekben, alcímekben és tételes pontokban szigorúan tilos az angolszász stílusú Title Case használata (amikor minden szót nagybetűvel kezdenek)!
+   - **Mondatkezdő nagybetűzés:** Kizárólag a természetes magyar helyesírás szabályai szerinti mondatkezdő nagybetűzést (Sentence case) használjuk: csak a legelső szó és a tulajdonnevek, intézménynevek, illetve hivatalos szabványos mozaikszók (pl. NAV, ÁFA, XML, MKVK, RLB-60, PROCONT, GIRO, RBAC, Szallas.hu) kezdődnek nagybetűvel, minden más köznév és melléknév kisbetűs!
+   - *Rossz példa:* "Könyvelési Feladási Varázsló, Bérszámfejtési Modul és Házipénztár Bővítés"
+   - *Helyes példa:* "Könyvelési feladási varázsló, bérszámfejtési modul és házipénztár bővítése"
+   - *Rossz tételpont:* "Hivatalos MKVK Könyvvizsgálói XML és 20-oszlopos Karton"
+   - *Helyes tételpont:* "Hivatalos MKVK könyvvizsgálói XML és 20-oszlopos karton"
 
 ---
 

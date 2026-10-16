@@ -35,6 +35,7 @@ export interface InvoiceFilters {
   continuous: string; // 'all' | 'yes' | 'no'
   navStatus: string;  // 'all' | 'verified' | 'missing_nav' | 'not_applicable'
   vatRate: string;    // 'all' | '27%' | '18%' | '5%' | '0%' | 'AAM' | 'TAM' | 'FAD'
+  glStatus: string;   // 'all' | 'unclassified' | 'classified'
 }
 
 export const defaultFilters: InvoiceFilters = {
@@ -55,6 +56,7 @@ export const defaultFilters: InvoiceFilters = {
   continuous: 'all',
   navStatus: 'all',
   vatRate: 'all',
+  glStatus: 'all',
 };
 
 // URL query param keys for each filter (short keys for clean URLs)
@@ -76,6 +78,7 @@ export const FILTER_URL_KEYS: Record<keyof InvoiceFilters, string> = {
   continuous: 'cont',
   navStatus: 'navs',
   vatRate: 'vr',
+  glStatus: 'gl',
 };
 
 export function useInvoiceFilters(
@@ -351,7 +354,7 @@ export function useInvoiceFilters(
         filters.paymentMethod, filters.amountMin, filters.amountMax,
         sortField, sortDirection, 1, navPageSize,
         issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-        activePresetId, filters.continuous, kpiFilter, filters.vatRate
+        activePresetId, filters.continuous, kpiFilter, filters.vatRate, filters.glStatus
       ],
       queryFn: async () => {
         const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -381,6 +384,7 @@ export function useInvoiceFilters(
           p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
           p_kpi_filter: kpiFilter,
           p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
+          p_gl_status: filters.glStatus === 'all' ? undefined : filters.glStatus,
         });
         if (error) throw error;
         return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
@@ -404,11 +408,16 @@ export function useInvoiceFilters(
     filters.amountMin,
     filters.amountMax,
     filters.continuous,
+    filters.vatRate,
+    filters.glStatus,
     sortField,
     sortDirection,
     navPageSize,
     issueDateFrom,
     issueDateTo,
+    deliveryDateFrom,
+    deliveryDateTo,
+    dateBasis,
     activePresetId,
     kpiFilter,
     queryClient,
@@ -423,7 +432,7 @@ export function useInvoiceFilters(
       filters.paymentMethod, filters.amountMin, filters.amountMax,
       sortField, sortDirection, navCurrentPage, navPageSize,
       issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-      activePresetId, filters.continuous, kpiFilter, filters.vatRate
+      activePresetId, filters.continuous, kpiFilter, filters.vatRate, filters.glStatus
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -453,6 +462,7 @@ export function useInvoiceFilters(
         p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
         p_kpi_filter: kpiFilter,
         p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
+        p_gl_status: filters.glStatus === 'all' ? undefined : filters.glStatus,
       });
       if (error) throw error;
       return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
@@ -477,7 +487,7 @@ export function useInvoiceFilters(
       filters.amountMin, filters.amountMax, filters.navStatus,
       sortField, sortDirection, submittedCurrentPage, submittedPageSize,
       issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-      kpiFilter, filters.vatRate
+      activePresetId, kpiFilter, filters.vatRate, filters.glStatus
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
@@ -504,6 +514,8 @@ export function useInvoiceFilters(
         p_kpi_filter: kpiFilter,
         p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
         p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
+        p_preset_id: activePresetId || undefined,
+        p_gl_status: filters.glStatus === 'all' ? undefined : filters.glStatus,
       });
       if (error) throw error;
       return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
@@ -592,7 +604,7 @@ export function useInvoiceFilters(
             filters.paymentMethod, filters.amountMin, filters.amountMax,
             sortField, sortDirection, nextPage, navPageSize,
             issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-            activePresetId, filters.continuous, kpiFilter, filters.vatRate
+            activePresetId, filters.continuous, kpiFilter, filters.vatRate, filters.glStatus
           ],
           queryFn: async () => {
             const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -622,6 +634,7 @@ export function useInvoiceFilters(
               p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
               p_kpi_filter: kpiFilter,
               p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
+              p_gl_status: filters.glStatus === 'all' ? undefined : filters.glStatus,
             });
             if (error) throw error;
             return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
@@ -640,7 +653,7 @@ export function useInvoiceFilters(
             filters.paymentMethod, filters.amountMin, filters.amountMax,
             sortField, sortDirection, prevPage, navPageSize,
             issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-            activePresetId, filters.continuous, kpiFilter, filters.vatRate
+            activePresetId, filters.continuous, kpiFilter, filters.vatRate, filters.glStatus
           ],
           queryFn: async () => {
             const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -670,6 +683,7 @@ export function useInvoiceFilters(
               p_continuous: filters.continuous === 'all' ? undefined : filters.continuous,
               p_kpi_filter: kpiFilter,
               p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
+              p_gl_status: filters.glStatus === 'all' ? undefined : filters.glStatus,
             });
             if (error) throw error;
             return (data || []) as (NavInvoice & { match_status: string; total_count: number })[];
@@ -690,7 +704,7 @@ export function useInvoiceFilters(
             filters.amountMin, filters.amountMax, filters.navStatus,
             sortField, sortDirection, nextPage, submittedPageSize,
             issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-            kpiFilter, filters.vatRate
+            activePresetId, kpiFilter, filters.vatRate, filters.glStatus
           ],
           queryFn: async () => {
             const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
@@ -717,6 +731,8 @@ export function useInvoiceFilters(
               p_kpi_filter: kpiFilter,
               p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
               p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
+              p_preset_id: activePresetId || undefined,
+              p_gl_status: filters.glStatus === 'all' ? undefined : filters.glStatus,
             });
             if (error) throw error;
             return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
@@ -735,7 +751,7 @@ export function useInvoiceFilters(
             filters.amountMin, filters.amountMax, filters.navStatus,
             sortField, sortDirection, prevPage, submittedPageSize,
             issueDateFrom, issueDateTo, deliveryDateFrom, deliveryDateTo, dateBasis,
-            kpiFilter, filters.vatRate
+            activePresetId, kpiFilter, filters.vatRate, filters.glStatus
           ],
           queryFn: async () => {
             const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
@@ -762,6 +778,8 @@ export function useInvoiceFilters(
               p_kpi_filter: kpiFilter,
               p_nav_status: filters.navStatus === 'all' ? undefined : filters.navStatus,
               p_vat_rate: filters.vatRate === 'all' ? undefined : filters.vatRate,
+              p_preset_id: activePresetId || undefined,
+              p_gl_status: filters.glStatus === 'all' ? undefined : filters.glStatus,
             });
             if (error) throw error;
             return (data || []) as (SubmittedInvoice & { match_status: string; total_count: number })[];
@@ -795,6 +813,7 @@ export function useInvoiceFilters(
     filters.continuous,
     filters.navStatus,
     filters.vatRate,
+    filters.glStatus,
     sortField,
     sortDirection,
     navPageSize,

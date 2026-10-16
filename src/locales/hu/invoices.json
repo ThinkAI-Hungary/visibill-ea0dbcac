@@ -558,7 +558,12 @@
     "continuous_badge": "🔄 Foly.",
     "ti_label": "TI:",
     "ti_method_manual": "kézi",
-    "ti_method_nav": "NAV"
+    "ti_method_nav": "NAV",
+    "petty_cash_register": "Házipénztár",
+    "select_petty_cash": "Pénztár kiválasztása...",
+    "no_register_assigned": "Nincs pénztár rendelve",
+    "register_assigned_toast": "Pénztárhoz rendelve",
+    "register_removed_toast": "Pénztár kapcsolat eltávolítva"
   },
   "nav_sync": {
     "sync": "Szinkronizálás",

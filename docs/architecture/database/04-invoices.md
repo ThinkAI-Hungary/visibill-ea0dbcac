@@ -82,13 +82,20 @@
 | deferred_vat_reason | text | ✓ | NULL | Halasztás felhasználó/könyvelő által megadott indoka |
 | deferred_vat_since | timestamp with time zone | ✓ | NULL | Halasztott státuszba helyezés időpontja |
 | deferred_vat_target_period | text | ✓ | NULL | Célidőszak `'YYYY-MM'` formátumban, amelyik ÁFA bevallásba beemelésre került |
+| petty_cash_register_id | uuid | ✓ | NULL | Hozzárendelt házipénztár FK a `petty_cash_registers(id)` táblához (lásd [A-263](../decisions/A-263-cash-invoices-gl381-and-petty-cash-routing.md)) |
 
-**FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `invoice_uploads_id` → `invoice_uploads.id`, `project_id` → `projects.id`, `transaction_id` → `transactions.id`, `approved_by` → `auth.users.id`
+**FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `invoice_uploads_id` → `invoice_uploads.id`, `petty_cash_register_id` → `petty_cash_registers.id`, `project_id` → `projects.id`, `transaction_id` → `transactions.id`, `approved_by` → `auth.users.id`
 
-**Indexek:** `idx_invoices_bizonylatsorszam_company`, `idx_invoices_cash_fizmod`, `idx_invoices_category_id`, `idx_invoices_chain_lookup`, `idx_invoices_company_date`, `idx_invoices_company_direction_date`, `idx_invoices_company_dir_date_desc`, `idx_invoices_company_fizmod`, `idx_invoices_company_nav_status`, `idx_invoices_exclude`, `idx_invoices_gl_account_id`, `idx_invoices_invoice_uploads_id`, `idx_invoices_outbound_unpaid`, `idx_invoices_project_id`, `idx_invoices_reference_number`, `idx_invoices_search_trgm` (GIN trigram), `idx_invoices_statusz`, `idx_invoices_transaction_id`, `idx_invoices_user_id`, `invoices_company_id_bizonylatsorszam_key`
+**Indexek:** `idx_invoices_bizonylatsorszam_company`, `idx_invoices_cash_fizmod`, `idx_invoices_category_id`, `idx_invoices_chain_lookup`, `idx_invoices_company_date`, `idx_invoices_company_direction_date`, `idx_invoices_company_dir_date_desc`, `idx_invoices_company_fizmod`, `idx_invoices_company_nav_status`, `idx_invoices_exclude`, `idx_invoices_gl_account_id`, `idx_invoices_invoice_uploads_id`, `idx_invoices_outbound_unpaid`, `idx_invoices_petty_cash_register_id`, `idx_invoices_project_id`, `idx_invoices_reference_number`, `idx_invoices_search_trgm` (GIN trigram), `idx_invoices_statusz`, `idx_invoices_transaction_id`, `idx_invoices_user_id`, `invoices_company_id_bizonylatsorszam_key`
 
 > **Párosítási és Fizetettségi Szabály (A-098):**
 > A szerveroldali lekérdező RPC-k (`get_filtered_submitted_invoices`, `get_invoice_kpis`, `get_filtered_nav_invoices`) a készpénzes (`LOWER(fizetesi_mod) IN ('készpénz', 'keszpenz', 'cash')` vagy `ILIKE`) és a manuálisan lezárt (`is_manual_payment = true`) számlákat automatikusan teljes mértékben kiegyenlítettnek minősítik (`paid_amount = gross_abs`, `remaining_amount = 0`, `match_status = 'matched'`), függetlenül attól, hogy van-e hozzájuk banki bankszámlakivonat-tranzakció.
+
+> **Könyvelési Kizárás és Halasztott ÁFA Életciklus (A-234, A-261):**
+> A számlák egyedi és csoportos könyvelési kizárását a `public.set_invoice_accounting_exclusion` és a `public.bulk_set_invoice_accounting_exclusion` atomi tárolt eljárások kezelik. A beállítás kiterjed a számla fejlécére (`invoices`) és összes tételsorára (`invoice_items`), kizáráskor törli a kapcsolódó nyitott naplóbejegyzéseket (`acc_journal_headers`), visszaállításkor pedig (`p_exclusion_type IS NULL`) visszaállítja a normál könyvelési állapotot.
+
+> **Készpénzes Számlák, 381-es Kontírozás és Házipénztár Routing (A-263):**
+> Kimenő készpénzes számlák esetén a `trg_auto_cash_invoice_gl_and_register` trigger automatikusan `381`-re állítja a `partner_gl_number` értékét (ha korábban nem volt manuálisan felülbírálva). A számlák `petty_cash_register_id` mezőjét az `assign_invoice_to_petty_cash_register` RPC kezeli atomi szinkronban a `petty_cash_entries` táblával, és a hozzárendelés után felajánlott `create_petty_cash_routing_rule` szabállyal jövőbeli számlák automatikusan pénztárhoz rendelődnek.
 
 
 ---

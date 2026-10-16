@@ -99,7 +99,7 @@ export function FloatingBulkSelect({
         onCloseAutoFocus={(e) => {
           e.preventDefault();
         }}
-        className={cn('z-[10001] p-0 bg-popover border border-border shadow-2xl rounded-lg', popoverWidth)}
+        className={cn('z-50 p-0 bg-popover border border-border shadow-2xl rounded-lg', popoverWidth)}
       >
         <Command>
           <CommandInput

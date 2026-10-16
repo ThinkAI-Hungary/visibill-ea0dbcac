@@ -12,6 +12,7 @@ describe('useInvoiceFilters', () => {
     expect(defaultFilters.category).toBe('all');
     expect(defaultFilters.paymentMethod).toBe('all');
     expect(defaultFilters.continuous).toBe('all');
+    expect(defaultFilters.glStatus).toBe('all');
   });
 
   it('maps all filter keys to URL param names', () => {
@@ -27,6 +28,7 @@ describe('useInvoiceFilters', () => {
     expect(FILTER_URL_KEYS.category).toBe('cat');
     expect(FILTER_URL_KEYS.paymentMethod).toBe('pm');
     expect(FILTER_URL_KEYS.continuous).toBe('cont');
+    expect(FILTER_URL_KEYS.glStatus).toBe('gl');
   });
 
   it('correctly handles all KPI filter types', () => {

@@ -760,6 +760,10 @@ export function SubmittedInvoiceRow({
           invoiceType={activeTab === 'SUBMITTED_OUTBOUND' ? 'outbound' : 'inbound'}
           isForeign={isForeign}
           nonDeductibleInfo={nonDeductibleInfo}
+          paymentMethod={invoice.fizetesi_mod}
+          pettyCashRegisterId={(invoice as any).petty_cash_register_id}
+          partnerName={invoice.invoice_direction === 'OUTBOUND' ? invoice.vevo_nev : invoice.elado_nev}
+          partnerTaxNumber={invoice.invoice_direction === 'OUTBOUND' ? invoice.vevo_vat_id : invoice.elado_vat_id}
         />
       )}
     </React.Fragment>

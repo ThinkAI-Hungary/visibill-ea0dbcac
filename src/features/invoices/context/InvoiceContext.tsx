@@ -171,6 +171,7 @@ export interface InvoiceContextValue
   handleExport: (exportFormat: 'csv' | 'xlsx') => void;
   handleBulkCategoryChange: (categoryId: string | null) => Promise<void>;
   handleBulkProjectChange: (projectId: string | ItemProjectAllocation[] | null) => Promise<void>;
+  handleBulkExcludeFromAccounting: (exclusionType: 'PERMANENT' | 'DEFERRED_VAT' | null, reason?: string | null) => Promise<void>;
   handleBulkDeleteSubmitted: (mode?: 'row_only' | 'row_and_file') => Promise<void>;
 }
 
@@ -410,6 +411,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       filters.paymentMethod !== 'all' ||
       filters.continuous !== 'all' ||
       (filters.vatRate && filters.vatRate !== 'all') ||
+      (filters.glStatus && filters.glStatus !== 'all') ||
       (filters.dateBasis && filters.dateBasis !== defaultDateBasis)
     );
   }, [filters, defaultDateBasis]);
@@ -802,6 +804,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     handleExport,
     handleBulkCategoryChange,
     handleBulkProjectChange,
+    handleBulkExcludeFromAccounting,
     handleBulkDeleteSubmitted,
   } = useInvoiceMutations({
     companyId,
@@ -1516,6 +1519,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       handleExport,
       handleBulkCategoryChange,
       handleBulkProjectChange,
+      handleBulkExcludeFromAccounting,
       handleBulkDeleteSubmitted,
     }),
     [
@@ -1605,6 +1609,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       handleExport,
       handleBulkCategoryChange,
       handleBulkProjectChange,
+      handleBulkExcludeFromAccounting,
       handleBulkDeleteSubmitted,
     ]
   );

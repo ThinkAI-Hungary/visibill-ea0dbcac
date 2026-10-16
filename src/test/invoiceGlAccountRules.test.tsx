@@ -47,10 +47,15 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 describe('Brief Requirement: Customer Account Selection & Fixed VAT Account', () => {
   describe('ALLOWED_CUSTOMER_GL_OPTIONS', () => {
-    it('contains strictly and only the 5 required customer accounts: 311, 312, 315, 316, 317', () => {
+    it('contains the allowed customer and cash accounts: 381, 311, 312, 315, 316, 317', () => {
       const codes = ALLOWED_CUSTOMER_GL_OPTIONS.map(opt => opt.code);
-      expect(codes).toHaveLength(5);
-      expect(codes).toEqual(['311', '312', '315', '316', '317']);
+      expect(codes).toHaveLength(6);
+      expect(codes).toContain('381');
+      expect(codes).toContain('311');
+      expect(codes).toContain('312');
+      expect(codes).toContain('315');
+      expect(codes).toContain('316');
+      expect(codes).toContain('317');
     });
   });
 

@@ -1,13 +1,21 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Trash2, Tag, Folder, Percent, X } from 'lucide-react';
+import { Trash2, Tag, Folder, Percent, X, Ban, Clock, RotateCcw, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { formatCurrencyLocale } from '@/lib/locale/formatters';
 import { useInvoiceContext } from '../../context/useInvoiceContext';
 import { FloatingBulkBar } from '@/components/ui/floating-bulk-bar';
 import { cn } from '@/lib/utils';
 import { ItemProjectAllocationPopover } from '@/components/invoices/ItemProjectAllocationPopover';
 import { useInvoiceItemProjectAllocations } from '../../hooks/useInvoiceItemProjectAllocations';
+import { BulkExclusionDialog } from '../dialogs/BulkExclusionDialog';
 import type { ItemProjectAllocation } from '@/types/invoices';
 
 interface InheritedProjectInfo {
@@ -90,8 +98,23 @@ export function InvoiceBulkActionsBar() {
     exportableInvoices,
     handleBulkCategoryChange,
     handleBulkProjectChange,
+    handleBulkExcludeFromAccounting,
     setBulkDeleteDialogOpen,
     clearSelection,
+    itemsDialogOpen,
+    submittedItemsDialogOpen,
+    imageDialogOpen,
+    editDialogOpen,
+    createDialogOpen,
+    filesDialogOpen,
+    syncDialogOpen,
+    bulkDeleteDialogOpen,
+    approvalDialogOpen,
+    suggestedLinkDialogOpen,
+    dataExportDialogOpen,
+    selectedNavInvoice,
+    selectedSubmittedForItems,
+    pdfExport,
   } = useInvoiceContext();
 
   const [stagedCategory, setStagedCategory] = React.useState<string | null>(null);
@@ -99,6 +122,11 @@ export function InvoiceBulkActionsBar() {
   const [stagedAllocations, setStagedAllocations] = React.useState<ItemProjectAllocation[] | null>(null);
   const [isMultiProjectOpen, setIsMultiProjectOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+
+  // Accounting Exclusion Dialog state
+  const [exclusionDialogOpen, setExclusionDialogOpen] = React.useState(false);
+  const [exclusionDialogType, setExclusionDialogType] = React.useState<'PERMANENT' | 'DEFERRED_VAT'>('DEFERRED_VAT');
+  const [isExclusionLoading, setIsExclusionLoading] = React.useState(false);
 
   // Selected invoices list
   const selectedItems = React.useMemo(
@@ -174,7 +202,26 @@ export function InvoiceBulkActionsBar() {
     ...projects.map((p) => ({ value: p.id, label: p.name })),
   ], [projects, t]);
 
-  if (activeSelection.size === 0) return null;
+  const isAnyModalOpen =
+    Boolean(itemsDialogOpen) ||
+    Boolean(submittedItemsDialogOpen) ||
+    Boolean(imageDialogOpen) ||
+    Boolean(editDialogOpen) ||
+    Boolean(createDialogOpen) ||
+    Boolean(filesDialogOpen) ||
+    Boolean(syncDialogOpen) ||
+    Boolean(bulkDeleteDialogOpen) ||
+    Boolean(approvalDialogOpen) ||
+    Boolean(suggestedLinkDialogOpen) ||
+    Boolean(dataExportDialogOpen) ||
+    Boolean(selectedNavInvoice) ||
+    Boolean(selectedSubmittedForItems) ||
+    Boolean(pdfExport?.dialogOpen);
+
+  if (activeSelection.size === 0 || isAnyModalOpen) return null;
+
+  const anyExcluded = selectedItems.some((inv: any) => !!inv.exclude_from_accounting);
+  const allExcluded = selectedItems.length > 0 && selectedItems.every((inv: any) => !!inv.exclude_from_accounting);
 
   const sums: Record<string, number> = {};
   selectedItems.forEach((inv) => {
@@ -345,6 +392,114 @@ export function InvoiceBulkActionsBar() {
           </Button>
         )}
       </div>
+
+      {/* Accounting Exclusion Action (Nem könyvelem ▾) */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            style={{ outline: 'none' }}
+            className={cn(
+              "h-9 px-2.5 text-xs font-medium gap-1.5 rounded-lg shrink-0",
+              allExcluded
+                ? "bg-amber-500/10 hover:bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-400 font-semibold"
+                : anyExcluded
+                  ? "bg-primary/5 hover:bg-primary/10 border-primary/30 text-foreground"
+                  : "bg-background border-border/80 hover:border-primary/50 hover:bg-accent/40 text-foreground",
+              "transition-colors duration-150",
+              "outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 focus-visible:ring-offset-0",
+              "[outline:none!important] focus:[outline:none!important] focus-visible:[outline:none!important]",
+              "[box-shadow:none!important] focus:[box-shadow:none!important] focus-visible:[box-shadow:none!important]"
+            )}
+            title={t('invoices:bulk_actions.accounting_title', 'Könyvelési státusz csoportos módosítása')}
+          >
+            <Ban className={cn("w-3.5 h-3.5 shrink-0", allExcluded ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")} />
+            <span className="hidden sm:inline">
+              {allExcluded
+                ? t('invoices:bulk_actions.excluded_all', 'Kizárva')
+                : t('invoices:bulk_actions.not_accounting', 'Nem könyvelem')}
+            </span>
+            <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
+          </Button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent
+          side="top"
+          sideOffset={8}
+          align="start"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          className="z-50 w-64 p-1 bg-popover border border-border shadow-2xl rounded-lg text-xs"
+        >
+          <DropdownMenuItem
+            className="flex items-center gap-2 py-2 px-2.5 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-md font-medium"
+            onClick={async () => {
+              await handleBulkExcludeFromAccounting('PERMANENT');
+            }}
+          >
+            <Ban className="w-4 h-4 shrink-0 text-destructive" />
+            <div className="flex flex-col">
+              <span>{t('invoices:bulk_actions.exclude_permanent', 'Végleges kizárás (Nem könyvelem)')}</span>
+              <span className="text-[10px] text-muted-foreground font-normal">
+                {t('invoices:bulk_actions.exclude_permanent_hint', 'Magánjellegű, nem a cég költsége')}
+              </span>
+            </div>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            className="flex items-center gap-2 py-2 px-2.5 cursor-pointer focus:bg-amber-500/10 focus:text-amber-700 dark:focus:text-amber-300 rounded-md font-medium"
+            onClick={() => {
+              setExclusionDialogType('DEFERRED_VAT');
+              setExclusionDialogOpen(true);
+            }}
+          >
+            <Clock className="w-4 h-4 shrink-0 text-amber-500" />
+            <div className="flex flex-col">
+              <span>{t('invoices:bulk_actions.exclude_deferred', 'Kérdéses számla (Halasztott ÁFA)...')}</span>
+              <span className="text-[10px] text-muted-foreground font-normal">
+                {t('invoices:bulk_actions.exclude_deferred_hint', '2 éves határidővel, indoklással')}
+              </span>
+            </div>
+          </DropdownMenuItem>
+
+          {(anyExcluded || allExcluded) && (
+            <>
+              <DropdownMenuSeparator className="my-1" />
+              <DropdownMenuItem
+                className="flex items-center gap-2 py-2 px-2.5 cursor-pointer text-emerald-600 dark:text-emerald-400 focus:bg-emerald-500/10 rounded-md font-medium"
+                onClick={async () => {
+                  await handleBulkExcludeFromAccounting(null);
+                }}
+              >
+                <RotateCcw className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex flex-col">
+                  <span>{t('invoices:bulk_actions.restore_accounting', 'Könyvelésbe visszaállítás')}</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    {t('invoices:bulk_actions.restore_accounting_hint', 'Szerepeljen a feladásokban és az ÁFA-ban')}
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <BulkExclusionDialog
+        open={exclusionDialogOpen}
+        onOpenChange={setExclusionDialogOpen}
+        count={activeSelection.size}
+        exclusionType={exclusionDialogType}
+        onConfirm={async (reason) => {
+          setIsExclusionLoading(true);
+          try {
+            await handleBulkExcludeFromAccounting(exclusionDialogType, reason);
+          } finally {
+            setIsExclusionLoading(false);
+          }
+        }}
+        isSubmitting={isExclusionLoading}
+      />
 
       {/* Delete action on submitted tab */}
       {isSubmittedTab && (

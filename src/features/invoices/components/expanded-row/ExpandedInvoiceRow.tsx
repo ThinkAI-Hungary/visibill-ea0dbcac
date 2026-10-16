@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck, Tag, Sparkles, Landmark, Clock, Ban } from 'lucide-react';
+import { Link2, Plus, CreditCard, RotateCcw, XCircle, AlertTriangle, CheckCircle2, ShieldCheck, Tag, Sparkles, Landmark, Clock, Ban, Wallet } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
+import { queryKeys } from '@/lib/queryKeys';
 import { useTransactionMatcher } from '@/hooks/useTransactionMatcher';
 import { unmatchTransaction } from '@/lib/matching/matchingService';
 import { invalidateMatchingQueries } from '@/lib/matching/matchingKeys';
@@ -19,6 +20,8 @@ import { StornoSettleDialog } from '@/components/invoices/StornoSettleDialog';
 import { GeneralLedgerBadgeSection } from './GeneralLedgerBadgeSection';
 import { InvoiceVatCodeSelector } from '@/components/vat/InvoiceVatCodeSelector';
 import { InvoiceGlAccountSelector } from '@/components/invoices/InvoiceGlAccountSelector';
+import { PettyCashRegisterSelect } from '@/components/petty-cash/PettyCashRegisterSelect';
+import { PettyCashRuleQuickSaveDialog } from '@/components/invoices/PettyCashRuleQuickSaveDialog';
 import { NettingCardSection } from './NettingCardSection';
 import { ContinuousServiceCardSection } from './ContinuousServiceCardSection';
 import { LinkedInvoicesSection } from './LinkedInvoicesSection';
@@ -85,6 +88,10 @@ export function ExpandedInvoiceRow({
   vatSummary: _propVatSummary,
   isReverseCharge: _propIsReverseCharge,
   nonDeductibleInfo: propNonDeductibleInfo,
+  paymentMethod,
+  pettyCashRegisterId,
+  partnerName,
+  partnerTaxNumber,
 }: ExpandedInvoiceRowProps) {
   const { t } = useTranslation(['invoices', 'common']);
   const queryClient = useQueryClient();
@@ -144,6 +151,99 @@ export function ExpandedInvoiceRow({
   });
 
   const effectiveDeductibility = propNonDeductibleInfo !== undefined ? propNonDeductibleInfo : fetchedDeductibility;
+
+  // Petty Cash query if not provided via props
+  const { data: invoiceCashData } = useQuery({
+    queryKey: ['expanded-row-cash-info', invoiceSource, invoiceId],
+    queryFn: async () => {
+      if (!invoiceId) return null;
+      if (invoiceSource === 'submitted') {
+        const { data } = await supabase
+          .from('invoices')
+          .select('fizetesi_mod, petty_cash_register_id, elado_nev, vevo_nev, elado_vat_id, vevo_vat_id, invoice_direction')
+          .eq('id', invoiceId)
+          .maybeSingle();
+        return data as any;
+      } else {
+        const { data } = await supabase
+          .from('nav_invoices')
+          .select('payment_method, petty_cash_register_id, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_direction')
+          .eq('id', invoiceId)
+          .maybeSingle();
+        return data as any;
+      }
+    },
+    enabled: (!paymentMethod || pettyCashRegisterId === undefined) && !!invoiceId,
+    staleTime: 30_000,
+  });
+
+  const effectivePaymentMethod = paymentMethod || invoiceCashData?.payment_method || invoiceCashData?.fizetesi_mod;
+  const isCashInvoice = !!(
+    effectivePaymentMethod && (
+      effectivePaymentMethod.toUpperCase() === 'CASH' ||
+      effectivePaymentMethod.toUpperCase() === 'KÉSZPÉNZ' ||
+      effectivePaymentMethod.toUpperCase() === 'KESZPENZ' ||
+      effectivePaymentMethod.toLowerCase().includes('készpénz') ||
+      effectivePaymentMethod.toLowerCase().includes('keszpenz')
+    )
+  );
+
+  const effectiveRegisterId = pettyCashRegisterId !== undefined ? pettyCashRegisterId : invoiceCashData?.petty_cash_register_id;
+  const effectivePartnerName = partnerName || (
+    isInbound
+      ? (invoiceCashData?.supplier_name || invoiceCashData?.elado_nev)
+      : (invoiceCashData?.customer_name || invoiceCashData?.vevo_nev)
+  ) || 'Partner';
+  const effectivePartnerTax = partnerTaxNumber || (
+    isInbound
+      ? (invoiceCashData?.supplier_tax_number || invoiceCashData?.elado_vat_id)
+      : (invoiceCashData?.customer_tax_number || invoiceCashData?.vevo_vat_id)
+  );
+
+  const [isAssigningRegister, setIsAssigningRegister] = useState(false);
+  const [pettyCashRuleOpen, setPettyCashRuleOpen] = useState(false);
+  const [assignedRegisterForRule, setAssignedRegisterForRule] = useState<{ id: string; name: string } | null>(null);
+
+  const handleRegisterChange = async (newRegisterId: string | null, newRegisterName?: string) => {
+    if (!companyId || !invoiceId) return;
+    setIsAssigningRegister(true);
+    try {
+      const { error } = await supabase.rpc('assign_invoice_to_petty_cash_register', {
+        p_company_id: companyId,
+        p_invoice_id: invoiceId,
+        p_is_submitted: invoiceSource === 'submitted',
+        p_register_id: newRegisterId,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: newRegisterId ? t('invoices:expanded.register_assigned_toast', 'Pénztárhoz rendelve') : t('invoices:expanded.register_removed_toast', 'Pénztár kapcsolat eltávolítva'),
+        description: newRegisterName ? `${effectivePartnerName} → ${newRegisterName}` : undefined,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['expanded-row-cash-info', invoiceSource, invoiceId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pettyCashRegisters(companyId) });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['navInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-gl-account'] });
+      onMatchUpdate?.();
+
+      // Trigger rule recommendation dialog if a register was assigned
+      if (newRegisterId && newRegisterName) {
+        setAssignedRegisterForRule({ id: newRegisterId, name: newRegisterName });
+        setPettyCashRuleOpen(true);
+      }
+    } catch (err: any) {
+      toast({
+        title: t('common:error', 'Hiba történt'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAssigningRegister(false);
+    }
+  };
 
   const [showManualPayment, setShowManualPayment] = useState(false);
   const [showStornoSettle, setShowStornoSettle] = useState(false);
@@ -390,7 +490,7 @@ export function ExpandedInvoiceRow({
                     </div>
                   </div>
 
-                  {/* Kettős könyvviteli kontírozás: Vevő (311-317) / Szállító (454) + ÁFA (467/466) */}
+                  {/* Kettős könyvviteli kontírozás: Vevő (311-317, 381) / Szállító (454) + ÁFA (467/466) */}
                   <div className="mb-4 expand-animate bg-card border border-border/40 p-3 rounded-lg flex flex-col gap-2 min-w-[260px]">
                     <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       <Landmark className="h-3.5 w-3.5 text-primary" />
@@ -404,11 +504,31 @@ export function ExpandedInvoiceRow({
                         companyId={companyId}
                         direction={invoiceType ? (invoiceType.toUpperCase() as 'INBOUND' | 'OUTBOUND') : 'INBOUND'}
                         currency={invoiceCurrency}
+                        paymentMethod={effectivePaymentMethod}
+                        isCash={isCashInvoice}
                         onUpdated={onMatchUpdate}
                         disabled={readOnly}
                       />
                     </div>
                   </div>
+
+                  {/* Házipénztár választó kártya készpénzes számlákhoz */}
+                  {isCashInvoice && (
+                    <div className="mb-4 expand-animate bg-card border border-amber-500/30 p-3 rounded-lg flex flex-col gap-2 min-w-[240px]">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                        <Wallet className="h-3.5 w-3.5 text-amber-500" />
+                        <span>{t('invoices:expanded.petty_cash_register', 'Házipénztár')}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <PettyCashRegisterSelect
+                          companyId={companyId || ''}
+                          value={effectiveRegisterId}
+                          onChange={handleRegisterChange}
+                          disabled={readOnly || isAssigningRegister}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Non-deductible VAT card (Option 3) */}
                   {effectiveDeductibility && effectiveDeductibility.nonDeductibleVat > 0 && (
@@ -877,6 +997,19 @@ export function ExpandedInvoiceRow({
                     }}
                   />
                 )}
+
+                {/* Petty Cash Rule Quick Save Dialog */}
+                <PettyCashRuleQuickSaveDialog
+                  open={pettyCashRuleOpen}
+                  onOpenChange={setPettyCashRuleOpen}
+                  companyId={companyId || ''}
+                  partnerName={effectivePartnerName}
+                  partnerTaxNumber={effectivePartnerTax}
+                  targetRegisterId={assignedRegisterForRule?.id || ''}
+                  targetRegisterName={assignedRegisterForRule?.name || ''}
+                  direction={invoiceType ? (invoiceType.toUpperCase() as 'INBOUND' | 'OUTBOUND') : 'INBOUND'}
+                  onRuleCreated={onMatchUpdate}
+                />
               </div>
             </div>
           </div>

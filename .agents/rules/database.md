@@ -40,6 +40,11 @@ description: Apply when touching database schemas, writing migrations, RPC funct
   2. Belső korlát: `v_effective_limit := LEAST(GREATEST(COALESCE(p_limit, 1000), 1), 5000);`.
   3. Belső `RETURN QUERY (...) LIMIT v_effective_limit;` elhelyezése a korai indexscan leálláshoz ([ADR A-259](file:///d:/ThinkAI/Visibill/eaisybill/docs/architecture/decisions/A-259-invoice-items-denormalization-and-unclassified-gl-rpc-limit.md)).
 * **Kötelező Vitest Regressziós Teszt:** Minden új vagy módosított RPC-hez kötelező automatizált tesztet írni a `src/test/` alatt és zölden futtatni.
+* **⚠️ `plpgsql_check` Statikus Elemzés (Late-Binding Trap Kivédése):** A PostgreSQL a `CREATE FUNCTION` során nem ellenőrzi a belső SQL utasítások oszlopneveit. Minden új vagy módosított PL/pgSQL függvény és trigger esetén kötelező a `plpgsql_check_function` futtatása, amely azonnal kiszűri a nem létező oszlopokat (`error:42703`), táblákat vagy típusinkompatibilitásokat a törzsben:
+  `SELECT * FROM plpgsql_check_function('public.<rpc_nev>(<argumentum_tipusok>)');`
+* **⚠️ Többágú Tranzakciós Próbahívás (`BEGIN ... ROLLBACK;`):** Ha egy RPC-ben `IF/ELSE` elágazások vagy opciók vannak (pl. submitted vs nav, hozzárendelés vs `NULL` leválasztás), visszagörgetett tranzakcióban kötelező minden ágra valós hívást tesztelni.
+* **Check Constraint & Literál Egyezőség:** Konstans literálok (pl. `'in'`, `'out'`, `'posted'`) beszúrásakor a mező értékkészletét kötelező ellenőrizni a tábla `pg_constraint` szabályaival szemben (kisbetű/nagybetű érzékenység).
+* **Trigger Override Védelem:** `BEFORE UPDATE` triggerek nem írhatják felül a felhasználó szándékos leválasztását (`NULL`), automatikus hozzárendelés kizárólag `TG_OP = 'INSERT'` esetén futhat le.
 * **Batch Upsert Védelem (Hiba 21000):** `ON CONFLICT DO UPDATE` előtt kötelező kliensoldali deduplikáció és tárolt eljárás szintű `WITH ORDINALITY` normalizáció ([ADR A-193](file:///d:/ThinkAI/Visibill/eaisybill/docs/architecture/decisions/A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md)).
 
 ---

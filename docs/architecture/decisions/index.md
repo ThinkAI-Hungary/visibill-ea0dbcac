@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-10-15  
-> **Összesen:** 259 döntés (244 egyedi döntési fájl) | ✅ Decided: 257 | ⛔ Superseded: 2
+> **Összesen:** 263 döntés (248 egyedi döntési fájl) | ✅ Decided: 261 | ⛔ Superseded: 2
 
 
 ---
@@ -109,7 +109,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-016 | PostgreSQL query stratégia — 133 RPC + 74 trigger function teljes katalógus | ✅ Decided | [A-016](./A-016-postgresql-query-strategy.md) |
+| A-016 | PostgreSQL query stratégia — 159 RPC + 75 trigger function teljes katalógus | ✅ Decided | [A-016](./A-016-postgresql-query-strategy.md) |
 | A-022 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [A-022](./A-022-categories-projects-sync.md) |
 | A-036 | Pénztárbizonylat (Cash Voucher) Processing | ✅ Decided | [A-036](./A-036-penztarbizonylat-processing.md) |
 | A-037 | Jegyzetek Rendszer Architektúra (Notes System Architecture) | ✅ Decided | [A-037](./A-037-notes-architecture.md) |
@@ -300,6 +300,9 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-258 | Főkönyvi Nyitó Tételek Évközi Átgörgetése (GL Rollforward) és Bérszámfejtési Utalási Deduplikáció Integritás | ✅ Decided | [A-258](./A-258-gl-opening-balances-rollforward-and-transfers-dedup-integrity.md) |
 | A-259 | invoice_items Multi-Tenant Denormalizáció, PostgREST Lateral Join Timeout Felszámolása és get_unclassified_gl_items Limit Védelem | ✅ Decided | [A-259](./A-259-invoice-items-denormalization-and-unclassified-gl-rpc-limit.md) |
 | A-260 | Multi-Project Számlatétel Költségmegosztás, Zero-Jitter TanStack Cache és Pénzügyi Számítási Architektúra | ✅ Decided | [A-260](./A-260-multi-project-item-allocations-and-financial-split.md) |
+| A-261 | Csoportos Számla Könyvelési Kizárás Atomi RPC és Reaktivitás | ✅ Decided | [A-261](./A-261-bulk-invoice-accounting-exclusion-rpc-and-cache-invalidation.md) |
+| A-262 | Számlák Kontírozási Státusz Szerveroldali Szűrése (get_filtered_nav_invoices és get_filtered_submitted_invoices p_gl_status) | ✅ Decided | [A-262](./A-262-invoice-gl-classification-status-filter-rpc.md) |
+| A-263 | Készpénzes Számlák 381-es Kontírozása, Házipénztár Hozzárendelés és Routing Szabály Létrehozás | ✅ Decided | [A-263](./A-263-cash-invoices-gl381-and-petty-cash-routing.md) |
 
 
 

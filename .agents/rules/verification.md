@@ -59,15 +59,19 @@ Mielőtt bármilyen kódolási feladatot befejezettnek jelentesz a felhasználó
         npm run vat:guard
         ```
      * **Szigorúan tilos késznek nyilvánítani a feladatot**, ha a Taxology baseline-hoz képest elmozdulás történt, vagy a tesztek nem futottak le 100%-os egyezéssel!
-5. **RPC és Adatbázis Katalógus Ellenőrzés (Élő DB):**
-   * Ha RPC-t módosítottál, a katalógus lekérdezéssel (`pg_proc`) igazolni kell a volatilitást (`provolatile = 's'`) és a jogosultság-megvonást (`anon_can_execute = false`), valamint teszthívást kell futtatni egy valós adathalmazon.
-5. **Konzol- és Kódtisztaság:**
+5. **RPC és Adatbázis Katalógus Ellenőrzés (Élő DB & plpgsql_check Gate):**
+   * Ha RPC-t vagy triggert módosítottál:
+     1. **`plpgsql_check` Statikus Elemzés:** Kötelező lefuttatni a `SELECT * FROM plpgsql_check_function('public.<rpc>(<args>)');` lekérdezést (megelőzve a late-binding hibákat, nem létező oszlopokat és típuseltéréseket).
+     2. **Katalógus ellenőrzés (`pg_proc`):** Igazolni kell a volatilitást (`provolatile = 's'`) és a jogosultság-megvonást (`anon_can_execute = false`).
+     3. **Többágú Tranzakciós Próbahívás (`BEGIN ... ROLLBACK;`):** Valós adathalmazon minden releváns `IF/ELSE` ágra és unassign (`NULL`) esetre teszthívást kell futtatni.
+     4. **Check Constraint Ellenőrzés (`pg_constraint`):** Literál konstansok (irány, státusz) betűérzékenységének és értékkészletének igazolása.
+6. **Konzol- és Kódtisztaság:**
    * Ellenőrizd, hogy nem hagytál hátra elfelejtett `console.log` debug sorokat, fel nem használt importokat vagy szintaktikai hibákat.
-6. **Windows PowerShell Szintaxis Fegyelem:**
+7. **Windows PowerShell Szintaxis Fegyelem:**
    * A projekt Windows alatt fut PowerShell shellben. Szigorúan tilos POSIX / Bash stílusú `&&` parancsláncolást használni, mert szintaktikai hibát dob! Mindig a pontosvesszőt (`;`) használd parancsok egymás utáni futtatásakor (pl. `git add . ; git commit -m '...' ; git push`).
-7. **UI és Működési Útmutatás:**
+8. **UI és Működési Útmutatás:**
    * Ha felületet módosítottál, pontosan írd le, hogy a felhasználó hol (melyik útvonalon, melyik gombra kattintva) és hogyan tudja ellenőrizni az eredményt.
-8. **Scratch Mappa és Gyökérkönyvtár Fegyelem (Zero Workspace Clutter):**
+9. **Scratch Mappa és Gyökérkönyvtár Fegyelem (Zero Workspace Clutter):**
    * Minden átmeneti segéd- vagy tesztszkriptet (`.js`, `.cjs`, `.ts`, `.py`), ideiglenes adatdumpot (`.sql`), vizsgálati kimenetet vagy szövegfájlt kötelezően a `scratch/` mappába (`d:\ThinkAI\Visibill\eaisybill-prod\scratch\`) kell elhelyezni.
    * Szigorúan tilos bármilyen egyszer használatos vagy vizsgálati fájlt a projekt gyökérkönyvtárába menteni vagy ott hagyni. A munkakönyvtárnak és a git státusznak mindig rendezettnek és tisztának kell maradnia.
 

@@ -125,7 +125,7 @@ export function FloatingBulkBar({
       className={cn(
         'fixed bottom-6 left-1/2 -translate-x-1/2 w-max max-w-[calc(100vw-2rem)] sm:max-w-6xl xl:max-w-7xl',
         'bg-card/95 backdrop-blur-md border border-border/80 shadow-2xl rounded-xl',
-        'px-4 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-3 sm:gap-4 z-[9999]',
+        'px-4 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-3 sm:gap-4 z-40',
         'animate-in fade-in slide-in-from-bottom-4 duration-300',
         className
       )}

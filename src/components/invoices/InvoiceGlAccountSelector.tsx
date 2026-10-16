@@ -16,12 +16,13 @@ import { Lock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface CustomerGlOption {
-  code: '311' | '312' | '315' | '316' | '317';
+  code: '311' | '312' | '315' | '316' | '317' | '381';
   label: string;
   description: string;
 }
 
 export const ALLOWED_CUSTOMER_GL_OPTIONS: CustomerGlOption[] = [
+  { code: '381', label: '381 - Készpénz / Házipénztár', description: 'Közvetlen készpénzes értékesítés pénztári ellenoldala' },
   { code: '311', label: '311 - Belföldi vevők', description: 'Standard belföldi forintos vevőkövetelés' },
   { code: '312', label: '312 - Külföldi vevők', description: 'Exportértékesítés, devizás külföldi követelés' },
   { code: '315', label: '315 - Kapcsolt vállalkozások', description: 'Cégcsoporton belüli vevőkövetelés' },
@@ -57,6 +58,8 @@ interface InvoiceGlAccountSelectorProps {
   companyId?: string;
   direction?: 'inbound' | 'outbound' | 'INBOUND' | 'OUTBOUND';
   currency?: string | null;
+  paymentMethod?: string | null;
+  isCash?: boolean;
   currentPartnerGlNumber?: string | null;
   currentVatGlNumber?: string | null;
   onUpdated?: () => void;
@@ -72,6 +75,8 @@ export function InvoiceGlAccountSelector({
   companyId,
   direction = 'INBOUND',
   currency = 'HUF',
+  paymentMethod,
+  isCash: propIsCash,
   currentPartnerGlNumber,
   currentVatGlNumber,
   onUpdated,
@@ -89,6 +94,7 @@ export function InvoiceGlAccountSelector({
 
   // Dynamic localized options
   const localizedCustomerOptions = useMemo(() => [
+    { code: '381', label: `381 - ${t('invoices:gl_selector.opt_381', 'Készpénz / Házipénztár')}` },
     { code: '311', label: `311 - ${t('invoices:gl_selector.opt_311', 'Belföldi vevők')}` },
     { code: '312', label: `312 - ${t('invoices:gl_selector.opt_312', 'Külföldi vevők')}` },
     { code: '315', label: `315 - ${t('invoices:gl_selector.opt_315', 'Kapcsolt vállalkozások')}` },
@@ -112,35 +118,48 @@ export function InvoiceGlAccountSelector({
     queryKey: ['invoice-gl-account', invoiceId || navInvoiceId || invoiceNumber],
     queryFn: async () => {
       if (invoiceId) {
-        const { data } = await supabase.from('invoices').select('partner_gl_number, vat_gl_number').eq('id', invoiceId).maybeSingle();
-        if ((data as any)?.partner_gl_number || (data as any)?.vat_gl_number) return data as any;
+        const { data } = await supabase.from('invoices').select('partner_gl_number, vat_gl_number, fizetesi_mod').eq('id', invoiceId).maybeSingle();
+        if (data) return data as any;
       }
       if (navInvoiceId) {
-        const { data } = await supabase.from('nav_invoices').select('partner_gl_number, vat_gl_number').eq('id', navInvoiceId).maybeSingle();
-        if ((data as any)?.partner_gl_number || (data as any)?.vat_gl_number) return data as any;
+        const { data } = await supabase.from('nav_invoices').select('partner_gl_number, vat_gl_number, payment_method').eq('id', navInvoiceId).maybeSingle();
+        if (data) return data as any;
       }
       if (invoiceNumber) {
-        const { data } = await supabase.from('nav_invoices').select('partner_gl_number, vat_gl_number').eq('invoice_number', invoiceNumber).maybeSingle();
-        if ((data as any)?.partner_gl_number || (data as any)?.vat_gl_number) return data as any;
-        const { data: invData } = await supabase.from('invoices').select('partner_gl_number, vat_gl_number').eq('bizonylatsorszam', invoiceNumber).maybeSingle();
-        if ((invData as any)?.partner_gl_number || (invData as any)?.vat_gl_number) return invData as any;
+        const { data } = await supabase.from('nav_invoices').select('partner_gl_number, vat_gl_number, payment_method').eq('invoice_number', invoiceNumber).maybeSingle();
+        if (data) return data as any;
+        const { data: invData } = await supabase.from('invoices').select('partner_gl_number, vat_gl_number, fizetesi_mod').eq('bizonylatsorszam', invoiceNumber).maybeSingle();
+        if (invData) return invData as any;
       }
       return null;
     },
-    enabled: (!currentPartnerGlNumber || !currentVatGlNumber) && !!(invoiceId || navInvoiceId || invoiceNumber),
+    enabled: (!currentPartnerGlNumber || !currentVatGlNumber || propIsCash === undefined) && !!(invoiceId || navInvoiceId || invoiceNumber),
     staleTime: 30_000,
   });
   const dbInvoiceGl = queryResult?.data;
 
-  // Determine active partner GL code
+  // Determine if cash payment
+  const effectivePayment = paymentMethod || dbInvoiceGl?.payment_method || dbInvoiceGl?.fizetesi_mod;
+  const isCashPayment = propIsCash ?? (
+    effectivePayment ? (
+      effectivePayment.toUpperCase() === 'CASH' ||
+      effectivePayment.toUpperCase() === 'KÉSZPÉNZ' ||
+      effectivePayment.toUpperCase() === 'KESZPENZ' ||
+      effectivePayment.toLowerCase().includes('készpénz') ||
+      effectivePayment.toLowerCase().includes('keszpenz')
+    ) : false
+  );
+
+  // Determine active partner GL code (Default to 381 for outbound cash invoices)
   const resolvedPartnerGl = currentPartnerGlNumber || dbInvoiceGl?.partner_gl_number;
   const activePartnerGl = useMemo(() => {
     if (resolvedPartnerGl) return resolvedPartnerGl;
     if (isOutbound) {
+      if (isCashPayment) return '381';
       return (currency && currency.toUpperCase() !== 'HUF') ? '312' : '311';
     }
     return (currency && currency.toUpperCase() !== 'HUF') ? '4542' : '4541';
-  }, [resolvedPartnerGl, isOutbound, currency]);
+  }, [resolvedPartnerGl, isOutbound, isCashPayment, currency]);
 
   // Determine active VAT GL code (support 466, 4668 for inbound, 467 for outbound)
   const resolvedVatGl = currentVatGlNumber || dbInvoiceGl?.vat_gl_number;

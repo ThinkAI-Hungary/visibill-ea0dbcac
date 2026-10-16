@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
 > **Utoljára frissítve:** 2026-10-15  
-> **Összesen:** 206 döntés (189 egyedi döntési fájl) | ✅ Decided: 202 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Összesen:** 188 egyedi döntés (188 döntési fájl, 220 kategória-bejegyzés) | ✅ Decided: 184 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -58,6 +58,9 @@
 | P-171 | Utalások Tömeges Rendezés, Kiállítási Dátum Alapértelmezés és Alsó Akciósáv UX | ✅ Decided | [P-171](./P-171-transfers-bulk-settlement-date-defaulting-and-sticky-action-bar-ux.md) |
 | P-183 | Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX | ✅ Decided | [P-183](./P-183-petty-cash-invoice-attachment-and-unlink-ux.md) |
 | P-188 | Házipénztár Egyedi Név, Kézi/Auto Bizonylatszám, Gyors Pénztárkészítés és 65-ös ÁFA Rögzítés UX | ✅ Decided | [P-188](./P-188-petty-cash-custom-name-voucher-number-and-vat-entry-ux.md) |
+| P-193 | Számlák Tömeges Könyvelésből Való Kizárása és Visszavonása Lebegő Műveleti Sávval UX | ✅ Decided | [P-193](./P-193-invoices-bulk-exclude-from-accounting-ux.md) |
+| P-194 | Számlák Kontírozási Státusz Gyorsszűrő Chip és Valós Idejű Kontírozatlansági Szűrés UX | ✅ Decided | [P-194](./P-194-invoices-gl-classification-quick-filter-chip.md) |
+| P-195 | Készpénzes Számlák Házipénztár Kiválasztása és Gyors Szabálymentés UX | ✅ Decided | [P-195](./P-195-cash-invoice-petty-cash-assignment-and-rule-prompt.md) |
 
 ## 🔄 Tranzakció & Párosítás
 
@@ -319,5 +322,8 @@
 | P-190-fakov | Fakov Kft. Infotéka (Kontír.NET) Főkönyvi Rekonciliáció és Összehasonlító Kivonat UX | ✅ Decided | [P-190-fakov-infoteka-general-ledger-reconciliation-ux.md](./P-190-fakov-infoteka-general-ledger-reconciliation-ux.md) |
 | P-191 | Bankkártyás POS és AMEX Göngyölegek Virtuális Banki Feldolgozása, Tételes Tranzakció Generálás és Kereskedői Elszámolási UX | ✅ Decided | [P-191](./P-191-bankcard-pos-settlement-virtual-bank-and-accounting-ux.md) |
 | P-192 | RLB FOKTORZS (.RFT / .DBF) Számlatükör Feltöltési és Importálási Felhasználói Élmény (UX) | ✅ Decided | [P-192-rlb-foktorzs-rft-chart-of-accounts-import-ux.md](./P-192-rlb-foktorzs-rft-chart-of-accounts-import-ux.md) |
+| P-193 | Számlák Tömeges Könyvelésből Való Kizárása és Visszavonása Lebegő Műveleti Sávval UX | ✅ Decided | [P-193](./P-193-invoices-bulk-exclude-from-accounting-ux.md) |
+| P-194 | Számlák Kontírozási Státusz Gyorsszűrő Chip és Valós Idejű Kontírozatlansági Szűrés UX | ✅ Decided | [P-194](./P-194-invoices-gl-classification-quick-filter-chip.md) |
+| P-195 | Készpénzes Számlák Házipénztár Kiválasztása és Gyors Szabálymentés UX | ✅ Decided | [P-195](./P-195-cash-invoice-petty-cash-assignment-and-rule-prompt.md) |
 
 

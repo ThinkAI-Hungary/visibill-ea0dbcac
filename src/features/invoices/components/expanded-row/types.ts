@@ -174,5 +174,10 @@ export interface ExpandedInvoiceRowProps {
     nonDeductibleVat: number;
     minPercentage: number;
   } | null;
+  // ── Petty Cash (Házipénztár) props ──
+  paymentMethod?: string | null;
+  pettyCashRegisterId?: string | null;
+  partnerName?: string | null;
+  partnerTaxNumber?: string | null;
 }
 

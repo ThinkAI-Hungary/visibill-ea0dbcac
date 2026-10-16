@@ -1052,6 +1052,10 @@ function NavInvoiceRowComponent({
           invoiceType={(invoice.invoice_direction?.toLowerCase() as 'inbound' | 'outbound') || (activeTab === 'OUTBOUND' ? 'outbound' : 'inbound')}
           vatSummary={(invoice as any).vat_summary}
           nonDeductibleInfo={nonDeductibleInfo}
+          paymentMethod={invoice.payment_method}
+          pettyCashRegisterId={(invoice as any).petty_cash_register_id}
+          partnerName={invoice.invoice_direction === 'OUTBOUND' ? invoice.customer_name : invoice.supplier_name}
+          partnerTaxNumber={invoice.invoice_direction === 'OUTBOUND' ? invoice.customer_tax_number : invoice.supplier_tax_number}
         />
       )}
     </React.Fragment>

@@ -108,6 +108,7 @@ Reviewers must actively reject these common traps and rationalizations:
 | *"The variable has a value or falls back to default."* | **The Falsy Zero Trap:** `val || fallback` or `if (val && val > 0)` treats `0` or `false` as non-existent. In any software system, 0 is often a completely legitimate business state that gets silently destroyed or overwritten by naive falsy checks. |
 | *"The migration file is committed in `migrations/`, so the DB is updated."* | **Migration Illusion Trap:** A SQL file in Git is just text on disk. The live database knows nothing about it until it is executed (`supabase db push`, `apply_migration`, migration runner). Always inspect the live database catalog (`information_schema.columns`, `pg_tables`) to prove it is live and active. |
 | *"The types.ts file was updated and tsc passes, so RPC calls are guaranteed to work."* | **The Compile-Time RPC Illusion Trap:** TypeScript only verifies calls against `src/integrations/supabase/types.ts`. If `types.ts` was copied or generated ahead of the target database, `tsc -b` passes 100% even when the live DB has an obsolete SQL function signature missing parameters. At runtime, PostgREST throws `PGRST202` (404 Schema Cache error). The reviewer MUST query `pg_proc` in the live DB to prove that function signatures accept all passed arguments. |
+| *"The migration ran without errors, types.ts is synced, and pg_proc has the function, so the RPC SQL is valid."* | **The PL/pgSQL Late-Binding & Phantom Column Trap:** In PostgreSQL, `CREATE FUNCTION` parses only basic block syntax; it does NOT validate embedded SQL queries (`SELECT`, `UPDATE`) against physical table columns until execution time. If an RPC branch (e.g. `IF NOT p_is_submitted`) is never invoked, non-existent columns (`column "gross_amount" does not exist`) stay undetected! The reviewer MUST run `plpgsql_check_function` AST static analysis and execute multi-branch transactional dry-runs (`BEGIN ... ROLLBACK;`). |
 | *"Vite build passed, so the codebase is type-safe."* | **Vite SWC/esbuild Type-Stripping Trap:** Modern bundlers using `@vitejs/plugin-react-swc` or esbuild strip TypeScript types without performing semantic type-checking. A missing export, non-existent function call, or invalid prop type will pass `npm run build` without error. The reviewer MUST mandate strict typechecking (`tsc -b` or `tsc -p tsconfig.app.json --noEmit`). |
 | *"All unit tests passed, so all UI views and tabs work."* | **Unmounted UI & Lazy-Tab Blind Spot:** Test suites can have 900+ passing tests while leaving critical tabs or sub-pages unmounted. When a component is not mounted in tests, runtime hook failures (e.g. `TypeError: queryKeys.emailAccounts is not a function`) remain completely invisible until clicked in a browser. The reviewer MUST require mounted smoke tests or browser dev server audit. |
 | *"The build passed because the stub file satisfies the import."* | **The Dummy Stub & Scope Leak Trap:** An empty shim or dummy stub created to silence a compiler error often hides dead code or an excluded feature. If a feature was opted out by user requirements, residual imports and dummy stubs are technical debt and must be deleted from consumers, not patched over with dummy files. |
@@ -309,6 +310,7 @@ The reviewer must step out of the author's mindset and actively interrogate the 
 - **Downstream Consumer Gaps (Diff-Only Blindness):** If a calculation engine, data model, or form field was added or altered, did the reviewer inspect ALL downstream consumers outside the diff? (e.g. Later wizard steps, summary KPI cards, detail tables, PDF/document generators, GL journal postings, regulatory XML exports). Code changes in core engines are completely broken for users if downstream views ignore or misrepresent them.
 - **Orphaned records:** When a parent record is updated, archived, or deleted, what happens to dependent child records, joins, or file blobs?
 - **Transactional atomicity:** Are multi-record modifications executed in a single atomic transaction, or can a crash leave inconsistent data?
+- **Trigger Interception & Override Blind-Spot:** When a trigger watches a column (`BEFORE UPDATE OF ...`), does it interfere with intentional user modifications? For example, if a user deliberately unassigns an entity or sets a field to `NULL`, does an auto-resolution trigger silently overwrite it with an unwanted default? Ensure triggers differentiate `TG_OP = 'INSERT'` from user-driven `UPDATE`!
 - **Unintended side effects:** Does a seemingly isolated change trigger unexpected cascades in event listeners, triggers, or shared state stores?
 
 #### 6. 🛡️ Security, Authorization & Untrusted Inputs
@@ -378,6 +380,44 @@ A review is invalid without direct verification. The reviewer MUST execute the a
         AND p.proname IN ('<rpc_name_1>', '<rpc_name_2>');
       ```
       - Cross-reference every parameter sent by the client against `arguments`. If a parameter sent by the frontend is missing from the live function signature (or lacks an appropriate default value in Postgres), declare an immediate **🔴 Critical Blocker**! (Prevents PostgREST `PGRST202` schema cache failures).
+    - **Step 3b - Deep PL/pgSQL Static Analysis (`plpgsql_check` AST Analysis Gate)**:
+      - **PostgreSQL Late-Binding Trap Protection**: In PostgreSQL, `CREATE OR REPLACE FUNCTION ... LANGUAGE plpgsql` only checks outer syntax; it does **NOT** validate column names in embedded `SELECT` / `UPDATE` queries until runtime execution.
+      - For EVERY modified or newly introduced PL/pgSQL function or trigger function, the reviewer MUST execute `plpgsql_check_function` against the live database:
+        ```sql
+        CREATE EXTENSION IF NOT EXISTS plpgsql_check;
+        SELECT * FROM plpgsql_check_function('public.<function_name>(<argument_types>)');
+        ```
+      - This statically parses the PL/pgSQL abstract syntax tree (AST) against the live database catalog and immediately flags:
+        1. Non-existent table columns (`error:42703: column "..." does not exist`)
+        2. Non-existent tables or views (`error:42P01`)
+        3. Mismatched variable count or types in `INTO ...` assignments
+        4. Incompatible record assignments and ambiguous names
+      - **🔴 Critical Merge Blocker**: If `plpgsql_check_function` returns ANY error rows, declare an immediate critical blocker. Never approve an RPC that fails static AST checks!
+    - **Step 3c - Table Constraint & Literal Value Guard (`pg_constraint` / Check Constraints)**:
+      - When an RPC, trigger, or worker writes hardcoded literal values into constrained columns (e.g. `direction`, `status`, `source_type`), the reviewer MUST query the target table's check constraints:
+        ```sql
+        SELECT conname, pg_get_constraintdef(c.oid)
+        FROM pg_constraint c
+        JOIN pg_class t ON c.conrelid = t.oid
+        WHERE t.relname = '<target_table>' AND c.contype = 'c';
+        ```
+      - Verify that literal values match exact casing (e.g. `'in'` / `'out'` lowercase vs `'IN'` / `'OUT'`) and are members of the permitted constraint array before approving.
+    - **Step 3d - Full-Branch Transactional Live Dry-Run Gate (`BEGIN ... ROLLBACK;`)**:
+      - If an RPC contains conditional execution branches (e.g. `IF p_is_submitted THEN ... ELSE ... END IF` or `IF p_register_id IS NULL THEN ...`), the reviewer MUST execute live test calls against the live database covering **ALL major branches** within a safe, rolled-back transaction:
+        ```sql
+        BEGIN;
+        -- Test Branch A (e.g. submitted = false / NAV invoices)
+        SELECT public.<function_name>('<company_id>', '<test_id_a>', false, '<target_id>');
+        -- Test Branch B (e.g. submitted = true / submitted invoices)
+        SELECT public.<function_name>('<company_id>', '<test_id_b>', true, '<target_id>');
+        -- Test Branch C (e.g. unassigning / clearing register with NULL)
+        SELECT public.<function_name>('<company_id>', '<test_id_a>', false, NULL);
+        ROLLBACK;
+        ```
+      - This exposes real runtime constraint violations (`23514`), foreign key violations (`23503`), and trigger exceptions without polluting development or production data.
+    - **Step 3e - Trigger Interception & Re-Assignment Override Audit**:
+      - If a trigger watches an updated column (`BEFORE UPDATE OF ...`), verify that the trigger does not inadvertently overwrite manual user changes.
+      - In particular, verify that unassigning or setting a column to `NULL` is not intercepted by an eager fallback trigger that re-forces a default value. Triggers providing automated defaults must strictly guard on `TG_OP = 'INSERT'`.
     - **Step 4 - Mandatory pgTAP Database RPC & Regression Test Gate**:
       - For every modified or newly introduced database migration, RPC function, trigger, or accounting/financial logic (`acc_*`, VAT/2665, general ledger, balance sheet, subledgers):
       - **Frontend/Vite tests alone are strictly insufficient**: Client-side mock tests cannot prove that PostgreSQL code won't crash on NULL values, violation of double-entry rules ($T \neq K$), or timeout (57014) on real data.

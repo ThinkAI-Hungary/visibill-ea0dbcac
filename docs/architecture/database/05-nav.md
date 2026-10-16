@@ -65,10 +65,11 @@
 | deferred_vat_reason | text | ✓ | NULL | Halasztás felhasználó/könyvelő által megadott indoka |
 | deferred_vat_since | timestamp with time zone | ✓ | NULL | Halasztott státuszba helyezés időpontja |
 | deferred_vat_target_period | text | ✓ | NULL | Célidőszak `'YYYY-MM'` formátumban, amelyik ÁFA bevallásba beemelésre került |
+| petty_cash_register_id | uuid | ✓ | NULL | Hozzárendelt házipénztár FK a `petty_cash_registers(id)` táblához (lásd [A-263](../decisions/A-263-cash-invoices-gl381-and-petty-cash-routing.md)) |
 
-**FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `project_id` → `projects.id`, `supplier_partner_id` → `partners.id`, `transaction_id` → `transactions.id`, `user_id` → `auth.users.id`
+**FK:** `category_id` → `categories.id`, `company_id` → `companies.id`, `gl_account_id` → `gl_accounts.id`, `petty_cash_register_id` → `petty_cash_registers.id`, `project_id` → `projects.id`, `supplier_partner_id` → `partners.id`, `transaction_id` → `transactions.id`, `user_id` → `auth.users.id`
 
-**Indexek:** `idx_nav_invoices_cash_payment`, `idx_nav_invoices_category_id`, `idx_nav_invoices_chain_lookup`, `idx_nav_invoices_company_date`, `idx_nav_invoices_company_direction_date`, `idx_nav_invoices_company_dir_date_desc`, `idx_nav_invoices_company_payment`, `idx_nav_invoices_exclude`, `idx_nav_invoices_gl_account_id`, `idx_nav_invoices_original_invoice_number`, `idx_nav_invoices_outbound_unpaid`, `idx_nav_invoices_project_id`, `idx_nav_invoices_reverse_charge`, `idx_nav_invoices_search_trgm` (GIN trigram), `idx_nav_invoices_supplier_partner`, `idx_nav_invoices_transaction_id`, `idx_nav_invoices_user_id`, `idx_nav_invoices_vat_summary` (GIN), `nav_invoices_company_id_invoice_number_key`
+**Indexek:** `idx_nav_invoices_cash_payment`, `idx_nav_invoices_category_id`, `idx_nav_invoices_chain_lookup`, `idx_nav_invoices_company_date`, `idx_nav_invoices_company_direction_date`, `idx_nav_invoices_company_dir_date_desc`, `idx_nav_invoices_company_payment`, `idx_nav_invoices_exclude`, `idx_nav_invoices_gl_account_id`, `idx_nav_invoices_original_invoice_number`, `idx_nav_invoices_outbound_unpaid`, `idx_nav_invoices_petty_cash_register_id`, `idx_nav_invoices_project_id`, `idx_nav_invoices_reverse_charge`, `idx_nav_invoices_search_trgm` (GIN trigram), `idx_nav_invoices_supplier_partner`, `idx_nav_invoices_transaction_id`, `idx_nav_invoices_user_id`, `idx_nav_invoices_vat_summary` (GIN), `nav_invoices_company_id_invoice_number_key`
 
 **Számlalánc-öröklési és Tranzakció-propagációs Triggerek (A-173):**
 - `mark_nav_invoice_paid_on_transaction_match` (`BEFORE UPDATE`): Ha a NAV számlán beállítódik a `transaction_id`, automatikusan meghívja a `propagate_transaction_to_invoice_chain` eljárást a lánc további tagjainak kiegyenlítésére.
@@ -77,6 +78,12 @@
 **Kézi fizetés logika (`is_manual_payment`):**  
 - Ha `manual_payment_type = 'storno_settled'` → a sztornó láncolatot a user manuálisan zárta le (`mark_storno_group_settled` RPC). A sor zöldre vált a frontenden, visszavonható (`unmark_storno_group_settled`). Lásd: [A-042: Sztornó Settle Architektúra](../decisions/A-042-storno-settle-architecture.md)
 - Ha `manual_payment_type = 'compensation'` → futárszolgálati kompenzációs értesítő (pl. GLS beszámítási jegyzőkönyv) alapján automatikusan kiegyenlített bejövő számla. A `trg_courier_reports_auto_settle_compensation` trigger hozza létre. A számla fizetettként jelenik meg banki utalás nélkül. Lásd: [A-112: Futár Kompenzációs Értesítő Automatikus Beszámítás](../decisions/A-112-courier-compensation-inbound-invoice-auto-settlement.md)
+
+**Könyvelési Kizárás és Halasztott ÁFA Életciklus (A-234, A-261):**
+A NAV számlák egyedi és csoportos könyvelési kizárását a `public.set_invoice_accounting_exclusion` és a `public.bulk_set_invoice_accounting_exclusion` atomi tárolt eljárások kezelik (`p_is_submitted = false`). A művelet lefut a fejléceken (`nav_invoices`) és a tételsorokon (`nav_invoice_items`), kizáráskor törli a kapcsolódó naplótételeket (`acc_journal_headers`), visszaállításkor pedig (`p_exclusion_type IS NULL`) visszaállítja a normál könyvelési állapotot.
+
+**Készpénzes Számlák, 381-es Kontírozás és Házipénztár Routing (A-263):**
+Kimenő készpénzes számlák esetén a `trg_auto_cash_invoice_gl_and_register` trigger automatikusan `381`-re állítja a `partner_gl_number` mezőt (ha korábban nem volt manuálisan beállítva). A NAV számla `petty_cash_register_id` mezője alapján rendeli a bizonylatot adott házipénztárhoz az `assign_invoice_to_petty_cash_register` RPC atomi tranzakcióban a `petty_cash_entries` táblával.
 
 ---
 

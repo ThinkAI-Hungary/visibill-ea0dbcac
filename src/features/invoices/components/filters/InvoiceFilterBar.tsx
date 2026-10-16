@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Search, CalendarIcon, CalendarCheck, Calendar as CalendarGlyph, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -464,6 +465,39 @@ export function InvoiceFilterBar() {
           <SelectItem value="FAD">{t('invoices:filters.vat_fad', { defaultValue: 'FAD (fordított adózás)' })}</SelectItem>
         </SelectContent>
       </Select>
+
+      {/* GL Status Checkbox Filter */}
+      <label
+        htmlFor="filter-gl-classified"
+        className={cn(
+          "inline-flex h-9 items-center gap-2 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer border select-none",
+          filters.glStatus === 'classified'
+            ? "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 border-emerald-400/60 dark:border-emerald-500/50 shadow-2xs font-semibold"
+            : "bg-background text-muted-foreground hover:text-foreground border-border/80 hover:bg-muted/40"
+        )}
+        title={
+          filters.glStatus === 'classified'
+            ? t('invoices:filters.gl_classified_active_tooltip', { defaultValue: 'Szűrve: Csak a kontírozott tételekkel rendelkező számlák láthatók. Kattints a pipa levételéhez!' })
+            : t('invoices:filters.gl_classified_inactive_tooltip', { defaultValue: 'Pipáld be, hogy csak a már kontírozott tételekkel rendelkező számlák jelenjenek meg!' })
+        }
+      >
+        <Checkbox
+          id="filter-gl-classified"
+          checked={filters.glStatus === 'classified'}
+          onCheckedChange={(checked) => {
+            setFilters(prev => ({
+              ...prev,
+              glStatus: checked ? 'classified' : 'all',
+            }));
+          }}
+          className={cn(
+            "data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 dark:data-[state=checked]:bg-emerald-500 dark:data-[state=checked]:border-emerald-500"
+          )}
+        />
+        <span className="cursor-pointer">
+          {t('invoices:filters.only_classified', { defaultValue: 'Csak kontírozott tételek' })}
+        </span>
+      </label>
 
       {/* Clear Filters Button */}
       {hasAnyActiveFilter && (

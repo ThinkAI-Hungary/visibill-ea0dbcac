@@ -506,6 +506,91 @@ export function useInvoiceMutations({
     }
   };
 
+  const handleBulkExcludeFromAccounting = async (
+    exclusionType: 'PERMANENT' | 'DEFERRED_VAT' | null,
+    reason?: string | null
+  ) => {
+    if (selectedInvoiceIds.size === 0) {
+      toast({ title: t('invoices:mutations.no_selection', 'Nincs kijelölt számla'), variant: 'destructive' });
+      return;
+    }
+    const ids = Array.from(selectedInvoiceIds);
+
+    // Optimistically update React Query caches so the UI updates instantly with zero flicker
+    const updateList = (old: any) => {
+      if (!Array.isArray(old)) return old;
+      return old.map((inv: any) =>
+        selectedInvoiceIds.has(inv.id)
+          ? {
+              ...inv,
+              exclude_from_accounting: exclusionType !== null,
+              accounting_exclusion_type: exclusionType,
+              deferred_vat_reason: exclusionType ? (reason?.trim() || null) : null,
+            }
+          : inv
+      );
+    };
+
+    if (companyId) {
+      queryClient.setQueriesData({ queryKey: ['filteredNavInvoices', companyId] }, updateList);
+      queryClient.setQueriesData({ queryKey: ['filteredSubmittedInvoices', companyId] }, updateList);
+      queryClient.setQueriesData({ queryKey: ['submittedInvoices', companyId] }, updateList);
+      queryClient.setQueriesData({ queryKey: ['page-matched-nav-invoices', companyId] }, updateList);
+    }
+
+    try {
+      const { error } = await supabase.rpc('bulk_set_invoice_accounting_exclusion', {
+        p_company_id: companyId,
+        p_invoice_ids: ids,
+        p_is_submitted: isSubmittedTab,
+        p_exclusion_type: exclusionType,
+        p_reason: exclusionType ? (reason?.trim() || null) : null,
+      });
+
+      if (error) throw error;
+
+      setSelectedInvoiceIds(new Set());
+      invalidateInvoiceData();
+      queryClient.invalidateQueries({ queryKey: ['questionable_invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return_lines'] });
+      queryClient.invalidateQueries({ queryKey: ['vat_return_m_lines'] });
+      queryClient.invalidateQueries({ queryKey: ['gl_balances'] });
+      queryClient.invalidateQueries({ queryKey: ['gl_categorized_items'] });
+      queryClient.invalidateQueries({ queryKey: ['acc_journal_headers'] });
+
+      toast({
+        title: exclusionType === null
+          ? t('invoices:exclusion.restored_title', 'Visszaállítva a könyvelésbe')
+          : exclusionType === 'DEFERRED_VAT'
+            ? t('invoices:exclusion.deferred_success_title', 'ÁFA levonás elhalasztva')
+            : t('invoices:exclusion.permanent_success_title', 'Kizárva a könyvelésből'),
+        description: exclusionType === null
+          ? t('invoices:mutations.bulk_restored_desc', {
+              count: ids.length,
+              defaultValue: `${ids.length} db számla sikeresen visszaállítva a könyvelésbe és az ÁFA levonásba.`,
+            })
+          : exclusionType === 'DEFERRED_VAT'
+            ? t('invoices:mutations.bulk_deferred_desc', {
+                count: ids.length,
+                defaultValue: `${ids.length} db számla sikeresen kérdésesként rögzítve (halasztott ÁFA levonással).`,
+              })
+            : t('invoices:mutations.bulk_permanent_desc', {
+                count: ids.length,
+                defaultValue: `${ids.length} db számla véglegesen kizárva a könyvelésből és az ÁFA levonásból.`,
+              }),
+      });
+    } catch (error: any) {
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error bulk updating accounting exclusion:', error });
+      toast({
+        title: t('invoices:mutations.bulk_exclusion_error', 'Hiba a könyvelési státusz csoportos módosításakor'),
+        description: error?.message,
+        variant: 'destructive',
+      });
+      invalidateInvoiceData();
+    }
+  };
+
   const handleBulkProjectChange = async (
     projectIdOrAllocations: string | ItemProjectAllocation[] | null
   ) => {
@@ -740,6 +825,7 @@ export function useInvoiceMutations({
     handleExport,
     handleBulkCategoryChange,
     handleBulkProjectChange,
+    handleBulkExcludeFromAccounting,
     handleBulkDeleteSubmitted,
   };
 }

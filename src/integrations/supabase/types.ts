@@ -7939,6 +7939,7 @@ export type Database = {
           transaction_id: string | null
           user_id: string
           partner_gl_number: string | null
+          petty_cash_register_id: string | null
           vat_code_id: string | null
           vat_gl_number: string | null
           vat_row_override: string | null
@@ -8021,6 +8022,7 @@ export type Database = {
           transaction_id?: string | null
           user_id: string
           partner_gl_number?: string | null
+          petty_cash_register_id?: string | null
           vat_code_id?: string | null
           vat_gl_number?: string | null
           vat_row_override?: string | null
@@ -8103,6 +8105,7 @@ export type Database = {
           transaction_id?: string | null
           user_id?: string
           partner_gl_number?: string | null
+          petty_cash_register_id?: string | null
           vat_code_id?: string | null
           vat_gl_number?: string | null
           vat_row_override?: string | null
@@ -8665,6 +8668,7 @@ export type Database = {
           transaction_id: string | null
           user_id: string | null
           partner_gl_number: string | null
+          petty_cash_register_id: string | null
           vat_code_id: string | null
           vat_gl_number: string | null
           vat_row_override: string | null
@@ -8733,6 +8737,7 @@ export type Database = {
           transaction_id?: string | null
           user_id?: string | null
           partner_gl_number?: string | null
+          petty_cash_register_id?: string | null
           vat_code_id?: string | null
           vat_gl_number?: string | null
           vat_row_override?: string | null
@@ -8801,6 +8806,7 @@ export type Database = {
           transaction_id?: string | null
           user_id?: string | null
           partner_gl_number?: string | null
+          petty_cash_register_id?: string | null
           vat_code_id?: string | null
           vat_gl_number?: string | null
           vat_row_override?: string | null
@@ -12543,9 +12549,13 @@ export type Database = {
           p_company_id: string
           p_continuous?: string
           p_currency?: string
+          p_date_basis?: string
           p_date_from: string
           p_date_to: string
+          p_delivery_date_from?: string
+          p_delivery_date_to?: string
           p_direction: string
+          p_gl_status?: string
           p_issue_date_from?: string
           p_issue_date_to?: string
           p_kpi_filter?: string
@@ -12559,6 +12569,7 @@ export type Database = {
           p_sort_dir?: string
           p_sort_field?: string
           p_submitted?: string
+          p_vat_rate?: string
         }
         Returns: {
           calculated_ti: string
@@ -12617,9 +12628,13 @@ export type Database = {
           p_category_id?: string
           p_company_id: string
           p_currency?: string
+          p_date_basis?: string
           p_date_from: string
           p_date_to: string
+          p_delivery_date_from?: string
+          p_delivery_date_to?: string
           p_direction: string
+          p_gl_status?: string
           p_issue_date_from?: string
           p_issue_date_to?: string
           p_kpi_filter?: string
@@ -12627,10 +12642,12 @@ export type Database = {
           p_page?: number
           p_page_size?: number
           p_payment_method?: string
+          p_preset_id?: string
           p_project_id?: string
           p_search?: string
           p_sort_dir?: string
           p_sort_field?: string
+          p_vat_rate?: string
         }
         Returns: {
           adoalap_osszesen: number
@@ -13541,6 +13558,26 @@ export type Database = {
           day_key: string
           pipeline: string
         }[]
+      }
+      assign_invoice_to_petty_cash_register: {
+        Args: {
+          p_company_id: string
+          p_invoice_id: string
+          p_is_submitted: boolean
+          p_register_id: string | null
+        }
+        Returns: Json
+      }
+      create_petty_cash_routing_rule: {
+        Args: {
+          p_company_id: string
+          p_target_register_id: string
+          p_partner_pattern: string
+          p_source_type?: string
+          p_currency?: string | null
+          p_priority?: number
+        }
+        Returns: Json
       }
       worker_pipeline_stats: {
         Args: { since_ts?: string }

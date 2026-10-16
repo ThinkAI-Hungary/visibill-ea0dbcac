@@ -90,6 +90,10 @@ Az AI **KÖTELES** első lépésként megnyitni és elolvasni:
 | F-9 | **🔴 Trigger: SECURITY DEFINER + extensions (A-020)** | Trigger function → SECURITY DEFINER + `SET search_path TO 'public', 'extensions'` ha extension-t használ. Részletek: [A-020](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-020-auth-trigger-chain-incident.md) |
 | F-10 | **🔴 pgTAP Egységteszt** | `supabase/tests/database/{function_name}.test.sql` tesztfájl létrehozása |
 | F-11 | **🔴 Buffer & Timeout Budget** | EXPLAIN (ANALYZE, BUFFERS) futtatás nagy adathalmazon: futásidő < 500ms, nincs felesleges N-szeres CTE kiértékelés (`MATERIALIZED` használata indokolt esetben) |
+| F-12 | **🔴 plpgsql_check Statikus Elemzés** | `SELECT * FROM plpgsql_check_function('public.<function_name>(<types>)');` futtatása kötelező minden új/módosított RPC-re (late-binding oszlop és táblahiányok kiszűrésére) |
+| F-13 | **🔴 Többágú Tranzakciós Próbahívás** | `BEGIN; SELECT public.<func>(...); ROLLBACK;` futtatása minden `IF/ELSE` és `NULL` ágra valós rekordokkal |
+| F-14 | **Check Constraint & Literál Egyezőség** | Táblába írt konstans értékek (irány, státusz) összevetése a céltábla `pg_constraint` szabályaival (kisbetű/nagybetű) |
+| F-15 | **Trigger Override Védelem** | `BEFORE UPDATE` triggerek ne írják felül a felhasználó szándékos leválasztását (`NULL`), automatizmus csak `TG_OP = 'INSERT'` esetén fusson |
 ```
 
 ---

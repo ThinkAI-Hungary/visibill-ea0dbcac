@@ -56,6 +56,8 @@ import { Badge } from '@/components/ui/badge';
 import { NavInvoiceVatSummaryCard } from '@/components/nav/NavInvoiceVatSummaryCard';
 import { InvoiceRuleQuickSaveDialog, type InvoiceRuleQuickSaveItem } from '@/components/invoices/InvoiceRuleQuickSaveDialog';
 import { InvoiceGlAccountSelector } from '@/components/invoices/InvoiceGlAccountSelector';
+import { PettyCashRegisterSelect } from '@/components/petty-cash/PettyCashRegisterSelect';
+import { PettyCashRuleQuickSaveDialog } from '@/components/invoices/PettyCashRuleQuickSaveDialog';
 import { computeLineItemDebitCreditSides } from '@/lib/invoiceGlSides';
 import { InvoiceItemAccrualModal } from '@/components/invoices/InvoiceItemAccrualModal';
 import { extractDateRangeFromText } from '@/lib/accrualMath';
@@ -194,6 +196,11 @@ export function InvoiceItemsDialog({
   const [pettyCashRegisters, setPettyCashRegisters] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>('');
 
+  // Petty cash routing & rule prompt state
+  const [pettyCashRuleOpen, setPettyCashRuleOpen] = useState(false);
+  const [assignedRegisterForRule, setAssignedRegisterForRule] = useState<{ id: string; name: string } | null>(null);
+  const [isAssigningRegister, setIsAssigningRegister] = useState(false);
+
   // Sorting state
   const [sortField, setSortField] = useState<keyof InvoiceLineItem | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
@@ -216,8 +223,8 @@ export function InvoiceItemsDialog({
   const { data: parentInvoice } = useQuery({
     queryKey: ['parentInvoice', source, invoiceId],
     queryFn: async () => {
-      const submittedFields = 'company_id, project_id, invoice_direction, kibocsatas_datuma, teljesites_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number, gl_account_id, gl_classifications';
-      const navFields = 'company_id, project_id, invoice_direction, invoice_issue_date, invoice_delivery_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched, gl_account_id, gl_classifications';
+      const submittedFields = 'company_id, project_id, invoice_direction, kibocsatas_datuma, teljesites_datuma, penznem, bizonylatsorszam, elado_vat_id, elado_nev, vevo_vat_id, vevo_nev, forditott_adozas, partner_gl_number, vat_gl_number, gl_account_id, gl_classifications, fizetesi_mod, petty_cash_register_id';
+      const navFields = 'company_id, project_id, invoice_direction, invoice_issue_date, invoice_delivery_date, currency, vat_summary, is_reverse_charge, supplier_tax_number, supplier_name, customer_tax_number, customer_name, partner_gl_number, vat_gl_number, invoice_number, details_fetched, gl_account_id, gl_classifications, payment_method, petty_cash_register_id';
 
       let effectiveSource = source;
       let record: any = null;
@@ -324,6 +331,8 @@ export function InvoiceItemsDialog({
         gl_classifications: record.gl_classifications || null,
         invoice_number: record.invoice_number || record.bizonylatsorszam || null,
         details_fetched: record.details_fetched ?? null,
+        payment_method: record.payment_method || record.fizetesi_mod || null,
+        petty_cash_register_id: record.petty_cash_register_id || null,
         twinNavId,
         twinNavNumber,
         twinNavNetAmount,
@@ -354,6 +363,8 @@ export function InvoiceItemsDialog({
         bizonylatsorszam?: string | null;
         invoice_number?: string | null;
         details_fetched?: boolean | null;
+        payment_method?: string | null;
+        petty_cash_register_id?: string | null;
         twinNavId?: string | null;
         twinNavNumber?: string | null;
         twinNavNetAmount?: number | null;
@@ -364,6 +375,57 @@ export function InvoiceItemsDialog({
     },
     enabled: open && !!invoiceId,
   });
+
+  const invoicePaymentMethod = parentInvoice?.payment_method || (source === 'submitted' ? (parentInvoice as any)?.fizetesi_mod : (parentInvoice as any)?.payment_method);
+  const isCashInvoice = !!(
+    invoicePaymentMethod && (
+      invoicePaymentMethod.toUpperCase() === 'CASH' ||
+      invoicePaymentMethod.toUpperCase() === 'KÉSZPÉNZ' ||
+      invoicePaymentMethod.toUpperCase() === 'KESZPENZ' ||
+      invoicePaymentMethod.toLowerCase().includes('készpénz') ||
+      invoicePaymentMethod.toLowerCase().includes('keszpenz')
+    )
+  );
+
+  const handlePettyCashChange = async (newRegisterId: string | null, newRegisterName?: string) => {
+    const effectiveCompanyId = selectedCompany?.id || parentInvoice?.company_id;
+    if (!effectiveCompanyId || !invoiceId) return;
+
+    setIsAssigningRegister(true);
+    try {
+      const { error } = await supabase.rpc('assign_invoice_to_petty_cash_register', {
+        p_company_id: effectiveCompanyId,
+        p_invoice_id: invoiceId,
+        p_is_submitted: source === 'submitted',
+        p_register_id: newRegisterId,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: newRegisterId ? t('invoices:expanded.register_assigned_toast', 'Pénztárhoz rendelve') : t('invoices:expanded.register_removed_toast', 'Pénztár kapcsolat eltávolítva'),
+        description: newRegisterName ? `${parentInvoice?.partner_nev || 'Partner'} → ${newRegisterName}` : undefined,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['parentInvoice', source, invoiceId] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['navInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-gl-account'] });
+
+      if (newRegisterId && newRegisterName) {
+        setAssignedRegisterForRule({ id: newRegisterId, name: newRegisterName });
+        setPettyCashRuleOpen(true);
+      }
+    } catch (err: any) {
+      toast({
+        title: t('common:error', 'Hiba történt'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAssigningRegister(false);
+    }
+  };
 
   // Sort toggle handler
   const handleSort = (field: keyof InvoiceLineItem) => {
@@ -2035,29 +2097,50 @@ export function InvoiceItemsDialog({
                   </div>
                 </DialogTitle>
 
-                {/* Vevői & ÁFA kontír card */}
-                <div className="bg-card border border-border/50 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-xs">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1 shrink-0">
-                    <Landmark className="h-3.5 w-3.5 text-primary" />
-                    <span>{isOutbound ? 'Vevői & ÁFA kontír' : 'Szállítói & ÁFA kontír'}</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Vevői & ÁFA kontír card */}
+                  <div className="bg-card border border-border/50 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1 shrink-0">
+                      <Landmark className="h-3.5 w-3.5 text-primary" />
+                      <span>{isOutbound ? 'Vevői & ÁFA kontír' : 'Szállítói & ÁFA kontír'}</span>
+                    </div>
+                    <InvoiceGlAccountSelector
+                      invoiceId={source === 'submitted' ? invoiceId : undefined}
+                      navInvoiceId={source === 'nav' ? invoiceId : undefined}
+                      invoiceNumber={invoiceNumber}
+                      companyId={selectedCompany?.id}
+                      direction={isOutbound ? 'OUTBOUND' : 'INBOUND'}
+                      currency={currency || parentInvoice?.currency || parentInvoice?.penznem || 'HUF'}
+                      paymentMethod={parentInvoice?.payment_method}
+                      isCash={isCashInvoice}
+                      currentPartnerGlNumber={parentInvoice?.partner_gl_number}
+                      currentVatGlNumber={parentInvoice?.vat_gl_number}
+                      onUpdated={() => {
+                        queryClient.invalidateQueries({ queryKey: ['parentInvoice', source, invoiceId] });
+                        queryClient.invalidateQueries({ queryKey: ['invoice-gl-account'] });
+                        queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+                        queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+                      }}
+                      compact
+                    />
                   </div>
-                  <InvoiceGlAccountSelector
-                    invoiceId={source === 'submitted' ? invoiceId : undefined}
-                    navInvoiceId={source === 'nav' ? invoiceId : undefined}
-                    invoiceNumber={invoiceNumber}
-                    companyId={selectedCompany?.id}
-                    direction={isOutbound ? 'OUTBOUND' : 'INBOUND'}
-                    currency={currency || parentInvoice?.currency || parentInvoice?.penznem || 'HUF'}
-                    currentPartnerGlNumber={parentInvoice?.partner_gl_number}
-                    currentVatGlNumber={parentInvoice?.vat_gl_number}
-                    onUpdated={() => {
-                      queryClient.invalidateQueries({ queryKey: ['parentInvoice', source, invoiceId] });
-                      queryClient.invalidateQueries({ queryKey: ['invoice-gl-account'] });
-                      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
-                      queryClient.invalidateQueries({ queryKey: ['glBalances'] });
-                    }}
-                    compact
-                  />
+
+                  {/* Házipénztár hozzárendelés kártya készpénzes számlákhoz */}
+                  {isCashInvoice && (
+                    <div className="bg-card border border-amber-500/30 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-xs">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mr-1 shrink-0">
+                        <Wallet className="h-3.5 w-3.5 text-amber-500" />
+                        <span>{t('invoices:expanded.petty_cash_register', 'Házipénztár')}</span>
+                      </div>
+                      <PettyCashRegisterSelect
+                        companyId={selectedCompany?.id || parentInvoice?.company_id || ''}
+                        value={parentInvoice?.petty_cash_register_id}
+                        onChange={handlePettyCashChange}
+                        disabled={isAssigningRegister}
+                        compact
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </DialogHeader>
@@ -3508,6 +3591,23 @@ export function InvoiceItemsDialog({
         item={bookedRuleItem}
         glAccount={bookedGlForRule}
         vatCode={bookedVatForRule}
+      />
+
+      {/* Petty Cash Rule Quick Save Dialog */}
+      <PettyCashRuleQuickSaveDialog
+        open={pettyCashRuleOpen}
+        onOpenChange={setPettyCashRuleOpen}
+        companyId={selectedCompany?.id || parentInvoice?.company_id || ''}
+        partnerName={parentInvoice?.partner_nev || supplierName || parentInvoice?.supplier_name || parentInvoice?.customer_name || ''}
+        partnerTaxNumber={parentInvoice?.partner_adoszam || parentInvoice?.supplier_tax_number || parentInvoice?.customer_tax_number || undefined}
+        targetRegisterId={assignedRegisterForRule?.id || ''}
+        targetRegisterName={assignedRegisterForRule?.name || ''}
+        direction={isOutbound ? 'OUTBOUND' : 'INBOUND'}
+        onRuleCreated={() => {
+          queryClient.invalidateQueries({ queryKey: ['parentInvoice', source, invoiceId] });
+          queryClient.invalidateQueries({ queryKey: ['invoices'] });
+          queryClient.invalidateQueries({ queryKey: ['navInvoices'] });
+        }}
       />
 
       {/* Invoice Item Accrual (Időbeli Elhatárolás) Modal */}
