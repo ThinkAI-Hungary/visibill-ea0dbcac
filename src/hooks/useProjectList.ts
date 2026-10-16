@@ -15,24 +15,25 @@ export interface SimpleProject {
  * Lightweight hook for project dropdowns (name + id + project_code).
  * Filters to active projects for the selected company.
  */
-export function useProjectList() {
+export function useProjectList(targetCompanyId?: string) {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const effectiveCompanyId = targetCompanyId || selectedCompany?.id;
 
-  const { data: projects = [], isLoading } = useQuery({
-    queryKey: queryKeys.projectList(selectedCompany?.id || ''),
+  const { data: projects = [], isLoading, refetch } = useQuery({
+    queryKey: queryKeys.projectList(effectiveCompanyId || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
         .select('id, name, status, project_code')
-        .eq('company_id', selectedCompany!.id)
+        .eq('company_id', effectiveCompanyId!)
         .order('name', { ascending: true });
 
       if (error) throw error;
       return (data || []) as SimpleProject[];
     },
-    enabled: !!user && !!selectedCompany?.id,
+    enabled: !!user && !!effectiveCompanyId,
   });
 
-  return { projects, isLoading };
+  return { projects, isLoading, refetch };
 }

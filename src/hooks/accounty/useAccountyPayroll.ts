@@ -127,7 +127,7 @@ export function useDeleteEmployeeJob() {
 export function useAddJobModification() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (mods: { companyId: string; employeeId: string; changeType: string; effectiveDate: string; oldValue: string; newValue: string; reason: string; generate08e: boolean }[]) => {
+    mutationFn: async (mods: { companyId: string; employeeId: string; changeType: string; effectiveDate: string; oldValue: string; newValue: string; reason: string; generate08e: boolean; projectId?: string | null }[]) => {
       const { data: empRows } = await supabase.from('accounty_employments').select('id').eq('employee_id', mods[0].employeeId).eq('status', 'active').limit(1);
       const employmentId = empRows?.[0]?.id;
 
@@ -138,7 +138,12 @@ export function useAddJobModification() {
           case 'feor': updatePayload.feor_code = mod.newValue; break;
           case 'salary': updatePayload.base_salary = Number(mod.newValue) || 0; break;
           case 'position': updatePayload.job_title = mod.newValue; break;
-          case 'costcenter': updatePayload.cost_center = mod.newValue; break;
+          case 'costcenter':
+            updatePayload.cost_center = mod.newValue;
+            if (mod.projectId !== undefined) {
+              updatePayload.project_id = mod.projectId || null;
+            }
+            break;
           case 'site': break;
         }
 

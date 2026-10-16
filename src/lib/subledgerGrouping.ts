@@ -204,3 +204,35 @@ export function groupSubledgerItems(items: SubledgerItem[]): GroupedSubledgerInv
 
   return Array.from(map.values());
 }
+
+/**
+ * Intelligensen lerövidíti a gyakori, hosszú könyvelési megjegyzés-előtagokat a folyószámla táblázatban,
+ * hogy a rendezett/kifizetett számlasorszám (pl. SZZJ-2026-3) ne vágódjon le a szűk cellákban.
+ */
+export function formatSubledgerDescription(desc: string | null | undefined): string {
+  if (!desc) return '';
+  const trimmed = desc.trim();
+
+  // Szállító tartozás kiegyenlítése - SZZJ-2026-3 -> száll.tart.rend: SZZJ-2026-3
+  if (/^szállító tartozás kiegyenlítése\s*[-–:]\s*/i.test(trimmed)) {
+    return trimmed.replace(/^szállító tartozás kiegyenlítése\s*[-–:]\s*/i, 'száll.tart.rend: ');
+  }
+
+  // Vevő követelés kiegyenlítése - VEV-2026-12 -> vevő köv.rend: VEV-2026-12
+  if (/^vevő követelés kiegyenlítése\s*[-–:]\s*/i.test(trimmed)) {
+    return trimmed.replace(/^vevő követelés kiegyenlítése\s*[-–:]\s*/i, 'vevő köv.rend: ');
+  }
+
+  // Készpénzes szállítói kiegyenlítés - KP-01 -> száll.tart.rend (KP): KP-01
+  if (/^készpénzes szállítói kiegyenlítés\s*[-–:]\s*/i.test(trimmed)) {
+    return trimmed.replace(/^készpénzes szállítói kiegyenlítés\s*[-–:]\s*/i, 'száll.tart.rend (KP): ');
+  }
+
+  // Utalásos számla KP-ban rendezve: SZZJ-2026-3 -> számla (KP): SZZJ-2026-3
+  if (/^utalásos számla kp-ban rendezve\s*[-–:]\s*/i.test(trimmed)) {
+    return trimmed.replace(/^utalásos számla kp-ban rendezve\s*[-–:]\s*/i, 'számla (KP): ');
+  }
+
+  return trimmed;
+}
+

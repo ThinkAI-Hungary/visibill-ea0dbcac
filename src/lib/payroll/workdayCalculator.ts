@@ -5,6 +5,8 @@
  * and calculates monthly working days and hours for Hungarian payroll.
  */
 
+import { supportsLeaveAndSickPay, NON_MT_ENTREPRENEUR_TYPES } from './employmentUtils';
+
 export interface HungarianHoliday {
   date: string; // YYYY-MM-DD
   name: string;
@@ -159,13 +161,27 @@ export function isWorkDay(date: Date | string): boolean {
   return !isHungarianHoliday(year, month, day).isHoliday;
 }
 
+export function parseLocalDate(date: Date | string): Date {
+  if (typeof date === 'string') {
+    const parts = date.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      return new Date(y, m, d);
+    }
+    return new Date(date);
+  }
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 /**
  * Calculates the number of statutory Hungarian workdays between two dates (inclusive).
  * Takes into account weekdays and Hungarian statutory holidays.
  */
 export function getWorkDaysBetween(startDate: Date | string, endDate: Date | string): number {
-  const start = typeof startDate === 'string' ? new Date(startDate) : new Date(startDate.getTime());
-  const end = typeof endDate === 'string' ? new Date(endDate) : new Date(endDate.getTime());
+  const start = parseLocalDate(startDate);
+  const end = parseLocalDate(endDate);
   if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return 0;
 
   let count = 0;
@@ -179,4 +195,173 @@ export function getWorkDaysBetween(startDate: Date | string, endDate: Date | str
     cur.setDate(cur.getDate() + 1);
   }
   return count;
+}
+
+export interface SalaryProrationInput {
+  baseSalary: number;
+  salaryType?: 'monthly' | 'hourly' | string | null;
+  employmentType?: string | null;
+  startDate?: string | Date | null;
+  endDate?: string | Date | null;
+  weeklyHours?: number | string | null;
+  cycleYear: number;
+  cycleMonth: number;
+  workDays?: number | null;
+  workedHours?: number | null;
+  sickDays?: number | null;
+  leaveDays?: number | null;
+  overtimeHours?: number | null;
+}
+
+export interface SalaryProrationResult {
+  isPartialMonth: boolean;
+  statutoryWorkDays: number;
+  scheduledWorkDaysInPeriod: number;
+  daysInMonth: number;
+  activeCalendarDays: number;
+  dailyHours: number;
+  dailyRate: number;
+  hourlyRate: number;
+  calculatedBase: number;
+  calculatedOvertime: number;
+  calculatedSickLeave: number;
+  calculatedLeave: number;
+  isMt: boolean;
+  isEv: boolean;
+}
+
+/**
+ * Számfejtési arányosítás és havi alapbér / pótlékok kalkulátora.
+ * 
+ * Kezeli:
+ * 1. Törthónapokat (hóközi belépés és kilépés)
+ * 2. Egyéni vállalkozók (EV) naptári napos arányosítását (Tbj. 41. § (3))
+ * 3. Munkaviszony (Mt. 136. §) munkanap-arányosítását és hiányzásait
+ * 4. Órabéres elszámolást
+ * 5. Mt. vs. Nem-Mt. jogosultságokat (szabadság, betegszabadság, túlóra kizárása EV-nél)
+ */
+export function calculateProRataSalary(input: SalaryProrationInput): SalaryProrationResult {
+  const baseSalary = Number(input.baseSalary || 0);
+  const isHourly = input.salaryType === 'hourly';
+  const weeklyHours = Number(input.weeklyHours || 40);
+  const dailyHours = weeklyHours > 0 ? weeklyHours / 5 : 8;
+  const isMt = supportsLeaveAndSickPay(input.employmentType);
+  const normalizedType = (input.employmentType || '').toLowerCase().trim();
+  const isEv = normalizedType === 'ev' || 
+               normalizedType === 'ev_mellekfogl' || 
+               normalizedType === 'egyeni_vallalkozo' ||
+               NON_MT_ENTREPRENEUR_TYPES.has(normalizedType);
+
+  const year = input.cycleYear;
+  const month = input.cycleMonth;
+  const statutoryWorkDays = getStatutoryWorkDays(year, month);
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  // Időszaki határok
+  const cycleStart = new Date(year, month - 1, 1);
+  const cycleEnd = new Date(year, month - 1, daysInMonth);
+
+  const empStart = input.startDate ? parseLocalDate(input.startDate) : cycleStart;
+  const empEnd = input.endDate ? parseLocalDate(input.endDate) : cycleEnd;
+
+  const effectiveStart = empStart > cycleStart ? empStart : cycleStart;
+  const effectiveEnd = empEnd < cycleEnd ? empEnd : cycleEnd;
+
+  let activeCalendarDays = 0;
+  if (effectiveStart <= effectiveEnd) {
+    activeCalendarDays = Math.round((effectiveEnd.getTime() - effectiveStart.getTime()) / 86400000) + 1;
+  }
+
+  const isPartialMonth = effectiveStart > cycleStart || effectiveEnd < cycleEnd;
+  const scheduledWorkDaysInPeriod = isPartialMonth
+    ? getWorkDaysBetween(effectiveStart, effectiveEnd)
+    : statutoryWorkDays;
+
+  // Órabéres dolgozó
+  if (isHourly) {
+    const hourlyRate = baseSalary;
+    const dailyRate = hourlyRate * dailyHours;
+    const actualWorkedHours = (input.workedHours !== undefined && input.workedHours !== null && Number(input.workedHours) > 0)
+      ? Number(input.workedHours)
+      : (input.workDays !== undefined && input.workDays !== null ? Number(input.workDays) : scheduledWorkDaysInPeriod) * dailyHours;
+
+    const calculatedBase = Math.round(actualWorkedHours * hourlyRate);
+    const calculatedOvertime = isMt ? Math.round(hourlyRate * Number(input.overtimeHours || 0) * 1.5) : 0;
+    const calculatedSickLeave = isMt ? Math.round(hourlyRate * Number(input.sickDays || 0) * dailyHours * 0.70) : 0;
+    const calculatedLeave = isMt ? Math.round(hourlyRate * Number(input.leaveDays || 0) * dailyHours) : 0;
+
+    return {
+      isPartialMonth,
+      statutoryWorkDays,
+      scheduledWorkDaysInPeriod,
+      daysInMonth,
+      activeCalendarDays,
+      dailyHours,
+      dailyRate,
+      hourlyRate,
+      calculatedBase,
+      calculatedOvertime,
+      calculatedSickLeave,
+      calculatedLeave,
+      isMt,
+      isEv,
+    };
+  }
+
+  // Havibéres dolgozó
+  const dailyRate = statutoryWorkDays > 0 ? (baseSalary / statutoryWorkDays) : 0;
+  const hourlyRate = (dailyHours * statutoryWorkDays) > 0 ? (baseSalary / (dailyHours * statutoryWorkDays)) : 0;
+
+  let calculatedBase = baseSalary;
+  const effectiveSickDays = isMt ? Number(input.sickDays || 0) : 0;
+
+  if (isPartialMonth) {
+    if (isEv) {
+      // EV: Tbj. 41. § (3) szerint a naptári biztosítási napok arányában arányosít
+      const dayRatio = daysInMonth > 0 ? (activeCalendarDays / daysInMonth) : 1;
+      calculatedBase = Math.round(baseSalary * dayRatio);
+    } else {
+      // Munkaviszony / Mt. 136. §: a hónapra eső törvényes munkanapok arányában arányosít
+      const effectiveWorkedDays = input.workDays !== undefined && input.workDays !== null
+        ? Number(input.workDays)
+        : scheduledWorkDaysInPeriod;
+      calculatedBase = Math.round(dailyRate * Math.max(0, effectiveWorkedDays - effectiveSickDays));
+    }
+  } else {
+    // Teljes havi jogviszony
+    const effectiveWorkDays = input.workDays !== undefined && input.workDays !== null
+      ? Number(input.workDays)
+      : statutoryWorkDays;
+
+    if (effectiveWorkDays < statutoryWorkDays) {
+      // Igazolatlan vagy fizetés nélküli távollét miatti csökkentés
+      const absentDays = statutoryWorkDays - effectiveWorkDays;
+      const baseReduction = Math.round(dailyRate * (absentDays + effectiveSickDays));
+      calculatedBase = Math.max(0, baseSalary - baseReduction);
+    } else {
+      const baseReduction = Math.round(dailyRate * effectiveSickDays);
+      calculatedBase = Math.max(0, baseSalary - baseReduction);
+    }
+  }
+
+  const calculatedOvertime = isMt ? Math.round(hourlyRate * Number(input.overtimeHours || 0) * 1.5) : 0;
+  const calculatedSickLeave = isMt ? Math.round(dailyRate * effectiveSickDays * 0.70) : 0;
+  const calculatedLeave = 0; // Havi bérnél a fizetett szabadság benne van az alapbérben
+
+  return {
+    isPartialMonth,
+    statutoryWorkDays,
+    scheduledWorkDaysInPeriod,
+    daysInMonth,
+    activeCalendarDays,
+    dailyHours,
+    dailyRate,
+    hourlyRate,
+    calculatedBase,
+    calculatedOvertime,
+    calculatedSickLeave,
+    calculatedLeave,
+    isMt,
+    isEv,
+  };
 }

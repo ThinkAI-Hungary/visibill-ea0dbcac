@@ -96,6 +96,12 @@ Hogyan jelenjen meg a Könyvelési Napló (Accounting Journals) felülete az eai
    - **Pénztár Javaslatgeneráló Időrend és Partnerkapcsolat (`draftFallbackGenerator.ts`):**
      - A pénztárbizonylatokból történő naplótervezet-képzés (`generatePettyCashDrafts`) explicit `.order('entry_date', { ascending: true })` rendezést kapott, továbbá a kapcsolt számlákból (`invoices`) automatikusan feloldja és örökíti a `partner_id`-t a kézi rögzítésű tételeknél is.
 
+7. **Bizonylatszám Duplikáció-védelem és Előző Évi Könyvelési Figyelmeztetés (2026-10-16, EB-0278):**
+   - **Terminológiai Szanálás:** A manuális vegyes bizonylat rögzítőben (`AddManualJournalEntryModal.tsx`) a korábbi megtévesztő *"Teljesítés dátuma"* felirat helyett mostantól egyértelműen **„Könyvelés dátuma (Számviteli időszak)”** szerepel, magyarázó tooltippel kiegészítve, amely tisztázza, hogy a bizonylat könyvelése ebbe a pénzügyi évbe és időszakba fog kerülni.
+   - **Valós Idejű Bizonylatszám Duplikáció-jelző:** Ha a felhasználó által beírt bizonylatszám már létezik az adott cégnél, a rendszer azonnal valós idejű `Badge`-dzsel és borostyánsárga figyelmeztető bannerrel jelzi a duplikációt, megelőzve az azonos számon történő véletlen többszöri könyvelést.
+   - **Előző Évi Időszak Figyelmeztetés:** Ha a kiválasztott könyvelési dátum korábbi naptári évre esik, mint az aktuális könyvelési év, egy figyelemfelhívó modál és kötelező jóváhagyó checkbox figyelmezteti a könyvelőt a lezárt üzleti évi beszámoló érintettségére.
+   - **Tesztek:** `src/components/journals/__tests__/AddManualJournalEntryModal.test.tsx` (14/14 passed).
+
 ## Current Implementation
 
 - Oldal: `src/pages/JournalsPage.tsx`

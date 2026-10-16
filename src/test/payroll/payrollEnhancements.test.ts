@@ -9,6 +9,8 @@ import {
   calculateNightShiftPremiumFromHours,
 } from '@/lib/payroll/premiumCalculator';
 import { validateBirthDate } from '@/lib/payroll/validators';
+import { calculateProRataSalary } from '@/lib/payroll/workdayCalculator';
+import { resolveEmployeeLeaveInput } from '@/lib/payroll/leaveCalculator';
 
 describe('Bérszámfejtés Jogviszony és Szabadság Kezelés (employmentUtils)', () => {
   it('helyesen azonosítja a munkaviszonyos (Mt.) foglalkoztatási formákat', () => {
@@ -137,7 +139,129 @@ describe('Bérszámfejtés Születési Dátum Validáció (Mt. 34. §)', () => {
     const today = new Date();
     const sixteenYearsAgo = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
     const dateStr = sixteenYearsAgo.toISOString().split('T')[0];
-    const result = validateBirthDate(dateStr);
-    expect(result.valid).toBe(true);
+    expect(validateBirthDate(dateStr).valid).toBe(true);
   });
 });
+
+describe('Tört havi Bérarányosítás (calculateProRataSalary)', () => {
+  it('Egyéni vállalkozónál naptári napok arányában arányosít (Tbj. 41. § (3)) — Kilner Gábor eset', () => {
+    // 2026. szeptember (30 napos hónap)
+    // Kezdés: 2026-09-15 -> 16 aktív naptári nap
+    // Havi alapbér: 373 200 Ft
+    // Arányosított bér: 373 200 * (16 / 30) = 199 040 Ft
+    const result = calculateProRataSalary({
+      baseSalary: 373200,
+      salaryType: 'monthly',
+      employmentType: 'ev',
+      startDate: '2026-09-15',
+      cycleYear: 2026,
+      cycleMonth: 9,
+      workDays: 12,
+      sickDays: 2, // Nem-Mt esetén nem vonhat le
+      leaveDays: 3, // Nem-Mt esetén nem vehet igénybe
+      overtimeHours: 10, // Nem-Mt esetén nincs Mt. szerinti túlóra
+    });
+
+    expect(result.isPartialMonth).toBe(true);
+    expect(result.isEv).toBe(true);
+    expect(result.isMt).toBe(false);
+    expect(result.daysInMonth).toBe(30);
+    expect(result.activeCalendarDays).toBe(16);
+    expect(result.calculatedBase).toBe(199040);
+    expect(result.calculatedOvertime).toBe(0);
+    expect(result.calculatedSickLeave).toBe(0);
+    expect(result.calculatedLeave).toBe(0);
+  });
+
+  it('Normál munkaviszonynál törvényes munkanapok arányában arányosít (Mt. 136. §)', () => {
+    // 2026. szeptember (22 törvényes munkanap)
+    // Kezdés: 2026-09-15 (12 munkanap esik szeptember 15 és 30 közé)
+    // Havi alapbér: 373 200 Ft -> napi bér: 373 200 / 22 = 16 963.636 Ft
+    // 12 munkanapra: 16 963.636 * 12 = 203 564 Ft
+    const result = calculateProRataSalary({
+      baseSalary: 373200,
+      salaryType: 'monthly',
+      employmentType: 'munkaviszony',
+      startDate: '2026-09-15',
+      cycleYear: 2026,
+      cycleMonth: 9,
+      workDays: 12,
+      overtimeHours: 4,
+    });
+
+    expect(result.isPartialMonth).toBe(true);
+    expect(result.isMt).toBe(true);
+    expect(result.isEv).toBe(false);
+    expect(result.statutoryWorkDays).toBe(22);
+    expect(result.scheduledWorkDaysInPeriod).toBe(12);
+    expect(result.calculatedBase).toBe(203564);
+    expect(result.calculatedOvertime).toBeGreaterThan(0);
+  });
+
+  it('Teljes havi jogviszony esetén a teljes alapbért számolja', () => {
+    const result = calculateProRataSalary({
+      baseSalary: 373200,
+      salaryType: 'monthly',
+      employmentType: 'ev',
+      startDate: '2026-01-01',
+      cycleYear: 2026,
+      cycleMonth: 9,
+      workDays: 22,
+    });
+
+    expect(result.isPartialMonth).toBe(false);
+    expect(result.calculatedBase).toBe(373200);
+  });
+});
+
+describe('Szabadságkeret Kezelés Jogviszony szerint (resolveEmployeeLeaveInput)', () => {
+  const dummyEmployee = {
+    id: 'emp-1',
+    birth_date: '1990-05-15',
+    first_name: 'Gábor',
+    last_name: 'Kilner',
+  };
+
+  it('Egyéni vállalkozó (EV) esetén null-t ad vissza, nincs szabadságkeret', () => {
+    const leaveInput = resolveEmployeeLeaveInput({
+      employee: dummyEmployee,
+      primaryEmployment: {
+        employment_type: 'ev',
+        start_date: '2026-09-15',
+      },
+      targetYear: 2026,
+    });
+
+    expect(leaveInput).toBeNull();
+  });
+
+  it('Társas vállalkozó és Megbízás esetén is null-t ad vissza', () => {
+    expect(resolveEmployeeLeaveInput({
+      employee: dummyEmployee,
+      primaryEmployment: { employment_type: 'tarsas_vallalkozo' },
+      targetYear: 2026,
+    })).toBeNull();
+
+    expect(resolveEmployeeLeaveInput({
+      employee: dummyEmployee,
+      primaryEmployment: { employment_type: 'megbizas' },
+      targetYear: 2026,
+    })).toBeNull();
+  });
+
+  it('Munkaviszony esetén kiszámolja a szabadság inputot', () => {
+    const leaveInput = resolveEmployeeLeaveInput({
+      employee: dummyEmployee,
+      primaryEmployment: {
+        employment_type: 'munkaviszony',
+        weekly_hours: 40,
+        start_date: '2026-01-01',
+      },
+      targetYear: 2026,
+    });
+
+    expect(leaveInput).not.toBeNull();
+    expect(leaveInput?.ageAtYearStart).toBe(36);
+  });
+});
+

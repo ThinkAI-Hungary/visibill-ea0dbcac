@@ -27,6 +27,7 @@ export const TICKET_CATEGORIES = [
   "pénztár napló",
   "záró tételek napló",
   "vevő-szállító analitika",
+  "folyószámla",
   "előleg analitika",
   "árfolyam elszámolás",
   "elhatárolások",

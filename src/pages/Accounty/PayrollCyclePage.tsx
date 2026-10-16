@@ -40,8 +40,9 @@ import { printPayslip, printAllPayslips, type PayslipData } from '@/lib/payroll/
 import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 import { convertToIban } from '@/lib/payroll/validators';
 import { postPayrollCycleToLedger } from '@/lib/payroll/payrollAutoPoster';
-import { getStatutoryWorkDays, getWorkDaysBetween } from '@/lib/payroll/workdayCalculator';
+import { getStatutoryWorkDays, getWorkDaysBetween, calculateProRataSalary } from '@/lib/payroll/workdayCalculator';
 import { resolveEmployeeLeaveInput, calculateLeaveBalance } from '@/lib/payroll/leaveCalculator';
+import { supportsLeaveAndSickPay } from '@/lib/payroll/employmentUtils';
 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,11 +157,15 @@ export default function PayrollCyclePage() {
 
   // Fetch all employments for this company
   const [allEmployments, setAllEmployments] = useState<any[]>([]);
-  React.useEffect(() => {
+  const reloadEmployments = React.useCallback(() => {
     if (!companyId) return;
     supabase.from('accounty_employments').select('*').eq('company_id', companyId).eq('status', 'active')
       .then(({ data }) => { if (data) setAllEmployments(data); });
   }, [companyId]);
+
+  React.useEffect(() => {
+    reloadEmployments();
+  }, [reloadEmployments]);
 
   // Fetch saved timesheet data for this cycle
   React.useEffect(() => {
@@ -597,38 +602,26 @@ export default function PayrollCyclePage() {
     const isHourly = employment?.salary_type === 'hourly';
 
     let hourlyRate = 0;
-    let dailyRate = 0;
-    let calculatedOvertime = 0;
-    let calculatedSickLeave = 0;
-    let calculatedLeaveAmount = 0;
-    let calculatedBase = 0;
+    const prorated = calculateProRataSalary({
+      baseSalary: rawBaseSalary,
+      salaryType: employment?.salary_type,
+      employmentType: employment?.employment_type,
+      startDate: employment?.start_date,
+      endDate: employment?.end_date,
+      weeklyHours,
+      cycleYear: cycle?.year || new Date().getFullYear(),
+      cycleMonth: cycle?.month || (new Date().getMonth() + 1),
+      workDays: att.workDays,
+      workedHours: att.workedHours,
+      sickDays: att.sickDays,
+      leaveDays: att.leaveDays,
+      overtimeHours: att.overtime,
+    });
 
-    if (isHourly) {
-      hourlyRate = rawBaseSalary;
-      dailyRate = hourlyRate * dailyHours;
-
-      const actualWorkedHours = (att.workedHours !== undefined && att.workedHours !== null && att.workedHours > 0)
-        ? Number(att.workedHours)
-        : (att.workDays || 0) * dailyHours;
-      const sickHours = (att.sickDays || 0) * dailyHours;
-      const leaveHours = (att.leaveDays || 0) * dailyHours;
-
-      calculatedBase = Math.round(actualWorkedHours * hourlyRate);
-      calculatedOvertime = Math.round(hourlyRate * (att.overtime || 0) * 1.5);
-      calculatedSickLeave = Math.round(hourlyRate * sickHours * 0.70);
-      calculatedLeaveAmount = Math.round(hourlyRate * leaveHours * 1.0);
-    } else {
-      const effectiveWorkDays = att.workDays ?? defaultWorkDays;
-      dailyRate = rawBaseSalary / effectiveWorkDays;
-      hourlyRate = rawBaseSalary / (dailyHours * effectiveWorkDays);
-
-      const baseReduction = Math.round(dailyRate * (att.sickDays || 0));
-      calculatedBase = Math.max(0, rawBaseSalary - baseReduction);
-
-      calculatedOvertime = Math.round(hourlyRate * (att.overtime || 0) * 1.5);
-      calculatedSickLeave = Math.round(dailyRate * (att.sickDays || 0) * 0.70);
-      calculatedLeaveAmount = 0; // Already covered in base monthly wage
-    }
+    const calculatedBase = prorated.calculatedBase;
+    const calculatedOvertime = prorated.calculatedOvertime;
+    const calculatedSickLeave = prorated.calculatedSickLeave;
+    const calculatedLeaveAmount = prorated.calculatedLeave;
 
     // Sum explicit items
     const empItems = items.filter(i => i.employment_id === employment?.id && !i.is_deduction);
@@ -741,18 +734,18 @@ export default function PayrollCyclePage() {
       overtimeHours: att.overtime || 0,
       sickDays: att.sickDays || 0,
       leaveDays: att.leaveDays || 0,
-      leaveBalance: {
+      leaveBalance: supportsLeaveAndSickPay(employment?.employment_type) ? {
         annualTotal: annualLeaveTotal,
         takenCurrent: leaveTakenCurrent,
         takenPrevious: leaveTakenPrev,
         remaining: leaveRemaining,
-      },
-      sickLeaveBalance: {
+      } : undefined,
+      sickLeaveBalance: supportsLeaveAndSickPay(employment?.employment_type) ? {
         annualTotal: sickAnnualTotal,
         takenCurrent: sickTakenCurrent,
         takenPrevious: sickTakenPrev,
         remaining: sickRemaining,
-      },
+      } : undefined,
       baseSalary: baseSalary,
       supplements: finalOvertime + finalSickLeave,
       night15Amount: nightShiftAmount > 0 ? nightShiftAmount : undefined,
@@ -1134,6 +1127,7 @@ export default function PayrollCyclePage() {
           }}
           onCycleClose={handleCloseCycle}
           isPosting={isPosting}
+          onReloadEmployments={reloadEmployments}
         />
       ) : (
         <>
@@ -1258,6 +1252,7 @@ export default function PayrollCyclePage() {
               attendanceData={attendanceData}
               defaultWorkDays={defaultWorkDays}
               cycleId={cycle?.id}
+              cycle={cycle}
               onSavingChange={setStep5Saving}
             />
           )}

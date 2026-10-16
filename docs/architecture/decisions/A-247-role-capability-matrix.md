@@ -231,3 +231,26 @@ A felhasználó jóváhagyásával és válaszaival (O1–O4) valamennyi azonos�
 4. **Verifikáció:**
    - pgTAP: `bank_accounts_transfers_write_rls.test.sql` (katalógus és RLS viselkedés tesztek).
    - Vitest: `src/test/permissions/bankTransfersWriteRlsMigration.test.ts`, `src/test/employeeShell.test.tsx`.
+
+### 8.11 Addendum: Külső Könyvelői Számlatükör Hozzáférés (chart_of_accounts_presets) és Kliensoldali Gyorsítótár-Előléptetés (EB-0280, `20261016193000_accounty_preset_access_rls.sql`)
+
+1. **Kontextus & RLS Rés Feltárása (Ticket EB-0280):**
+   - A `20261011052000_external_accountant_ledger_access.sql` migráció megadta az olvasási és írási jogokat az `acc_*` főkönyvi naplókra és a `gl_accounts` számlatükör-tételekre az `accounty_assignments` megbízott könyvelőinek (`rls_accounty_bookkeeping_company_ids()`), azonban a szülő `public.chart_of_accounts_presets` tábla RLS szabályzata kimaradt.
+   - Ennek következtében a megbízott könyvelők (`role: 'könyvelő'`, pl. Lendvai Ádám) számára az RLS elrejtette a kezelt cég egyedi számlatükrét (`company_id = ...`), és a frontend kényszerűen a rendszerszintű generic sablonra (`company_id IS NULL`, 375 számlaszám) esett vissza.
+   - Mivel a beépített sablonban nem szerepeltek a cég egyedi számlatükrében rögzített analitikus számlák (pl. `4541 - Belföldi szállítók forintban`, csak a `454` gyűjtő), a folyószámla és a főkönyv nézete eltért a cégvezető és a könyvelő között.
+
+2. **Adatbázis RLS Megoldás:**
+   - A `public.chart_of_accounts_presets` táblára két új PERMISSIVE szabályzat került:
+     - `accounty_bookkeeping_read` (SELECT): `company_id IN (SELECT public.rls_accounty_bookkeeping_company_ids()) OR is_support_admin()`
+     - `accounty_bookkeeping_write` (ALL): `company_id IN (SELECT public.rls_accounty_bookkeeping_company_ids()) OR is_support_admin()`
+   - A meglévő `Enable read/insert/update/delete access for presets` szabályzatok változatlanul kiszolgálják a közvetlen cégtagokat (`company_members`).
+
+3. **Kliensoldali Önjavító Mechanizmus (`useActivePreset.ts`):**
+   - Azoknál a felhasználóknál, akik a jogosultsági rés fennállása idején léptek be, a böngésző `localStorage`-ában a generic sablon (`a6c46c77-52b7-499e-bb12-419aa94349af`) maradt elmentve aktívként.
+   - A `useActivePreset` hook kiegészült egy automatikus előléptetéssel (auto-promotion): ha a tárolt `activePresetId` megegyezik a generic sablonnal, de a cég rendelkezik aktív egyedi számlatükörrel (`presets.find(p => p.company_id === companyId && p.is_active)`), a hook automatikusan és észrevétlenül átlépteti a klienst az egyedi számlatükörre, azonnal feloldva a beragadt gyorsítótár-állapotot.
+   - `setActivePresetId` memoizálása `useCallback`-kel a hook-stabilitás és rerender-optimalizálás érdekében.
+
+4. **Verifikáció:**
+   - Adatbázis szimuláció könyvelői JWT-vel (`auth.uid() = d04e75e5-815f-488e-928e-5c648f260483`): a 860 tételes egyedi számlatükör és a `4541`–`4549` alszámlák láthatósága fizikailag igazolva PROD környezeten.
+   - Vitest: `src/hooks/__tests__/useActivePreset.test.ts` (3/3 passed).
+   - Oxlint: 0 hiba, TypeScript fordítás (`npx tsc --noEmit`): 0 hiba.

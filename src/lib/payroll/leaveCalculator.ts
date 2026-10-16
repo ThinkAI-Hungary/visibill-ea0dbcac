@@ -12,6 +12,8 @@
  * - Szabadság-mérleg óraalapú nyilvántartása is
  */
 
+import { supportsLeaveAndSickPay } from './employmentUtils';
+
 // ── Típusok ──
 
 export interface LeaveBalance {
@@ -338,6 +340,10 @@ export function resolveEmployeeLeaveInput(params: ResolveLeaveInputParams): Empl
   } = params;
 
   if (!employee?.birth_date) return null;
+  // Egyéni vállalkozónál (EV), társas vállalkozónál és megbízásnál nincs Mt. szerinti szabadságkeret
+  if (primaryEmployment && !supportsLeaveAndSickPay(primaryEmployment.employment_type)) {
+    return null;
+  }
 
   const birthYear = new Date(employee.birth_date).getFullYear();
   const age = targetYear - birthYear;

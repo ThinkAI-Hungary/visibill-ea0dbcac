@@ -28,6 +28,7 @@ import type { LinkedInvoice } from '../expanded-row/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useInvoiceAttachmentCounts } from '../../hooks/useInvoiceAttachmentCounts';
 import { InvoiceAttachmentBadge } from './InvoiceAttachmentBadge';
+import { NavInvoicePartnerAssigner } from './NavInvoicePartnerAssigner';
 
 interface NavInvoiceRowProps {
   invoice: NavInvoice;
@@ -123,6 +124,7 @@ function NavInvoiceRowComponent({
     companyId,
     categories,
     projects,
+    partners,
     nettingInvoiceIds,
     getNettingGroup,
     selectedInvoiceIds,
@@ -354,7 +356,14 @@ function NavInvoiceRowComponent({
               {getInitials(partnerName)}
             </div>
             {partnerName === 'Ismeretlen partner' ? (
-              <span className="text-xs text-muted-foreground italic">{t('invoices:expanded.unknown_partner', 'Ismeretlen partner')}</span>
+              <NavInvoicePartnerAssigner
+                invoiceId={invoice.id}
+                invoiceNumber={invoice.invoice_number}
+                isOutbound={isOutbound}
+                partners={partners}
+                onAssigned={invalidateInvoiceData}
+                disabled={!writable}
+              />
             ) : (
               <div className="flex items-center gap-1 min-w-0">
                 <CopyableCell

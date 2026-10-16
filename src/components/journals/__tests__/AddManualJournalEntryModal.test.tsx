@@ -14,42 +14,60 @@ beforeAll(() => {
 });
 
 let mockExistingEntry: any = null;
+let mockDuplicateHeader: any = null;
 
 vi.mock('@/integrations/supabase/client', () => {
   const createQueryBuilder = (table?: string) => {
     const builder: any = {
       select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockImplementation(() => ({
-        order: vi.fn().mockImplementation(() => {
-          if (table === 'partners') {
-            return Promise.resolve({
-              data: [
-                { id: 'p-1', name: 'Absurd Kft.', tax_number: '12345678-1-42' },
-                { id: 'p-2', name: 'Bégé Design Kft.', tax_number: '87654321-2-41' },
-              ],
-              error: null,
-            });
-          }
-          return Promise.resolve({ data: [], error: null });
-        }),
-        maybeSingle: vi.fn().mockImplementation(() => Promise.resolve({ data: mockExistingEntry, error: null })),
-        then: (resolve: any) => {
-          if (table === 'acc_journals') {
-            return resolve({ data: [{ id: 'j-1', code: 'VE', name: 'Vegyes' }], error: null });
-          }
-          return resolve({ data: [], error: null });
-        },
-      })),
-      order: vi.fn().mockResolvedValue({ data: [], error: null }),
-      maybeSingle: vi.fn().mockImplementation(() => Promise.resolve({ data: mockExistingEntry, error: null })),
+      eq: vi.fn().mockImplementation(() => builder),
+      ilike: vi.fn().mockImplementation(() => builder),
+      in: vi.fn().mockImplementation(() => builder),
+      neq: vi.fn().mockImplementation(() => builder),
+      limit: vi.fn().mockImplementation(() => builder),
+      order: vi.fn().mockImplementation(() => {
+        if (table === 'partners') {
+          return Promise.resolve({
+            data: [
+              { id: 'p-1', name: 'Absurd Kft.', tax_number: '12345678-1-42' },
+              { id: 'p-2', name: 'Bégé Design Kft.', tax_number: '87654321-2-41' },
+            ],
+            error: null,
+          });
+        }
+        return builder;
+      }),
+      maybeSingle: vi.fn().mockImplementation(() => {
+        if (mockDuplicateHeader) {
+          return Promise.resolve({ data: mockDuplicateHeader, error: null });
+        }
+        return Promise.resolve({ data: mockExistingEntry, error: null });
+      }),
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
+      then: (resolve: any) => {
+        if (table === 'acc_journals') {
+          return resolve({ data: [{ id: 'j-1', code: 'VE', name: 'Vegyes' }], error: null });
+        }
+        if (table === 'partners') {
+          return resolve({
+            data: [
+              { id: 'p-1', name: 'Absurd Kft.', tax_number: '12345678-1-42' },
+              { id: 'p-2', name: 'Bégé Design Kft.', tax_number: '87654321-2-41' },
+            ],
+            error: null,
+          });
+        }
+        return resolve({ data: [], error: null });
+      },
     };
     return builder;
   };
 
   return {
+    SUPABASE_URL: 'https://test-ref.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: 'test-key',
     supabase: {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user-1' } } }),
@@ -340,5 +358,50 @@ describe('AddManualJournalEntryModal - Layout and Keyboard Navigation', () => {
     expect(eurBadges.length).toBeGreaterThanOrEqual(2);
 
     mockExistingEntry = null;
+  });
+
+  it('renders renamed posting date label and displays prior year warning when posting_date is in a previous year', async () => {
+    mockExistingEntry = {
+      id: 'entry-prior-1',
+      journal_id: 'j-1',
+      posting_date: '2025-11-28',
+      document_date: '2025-11-28',
+      document_id: 'VBV-2025-46',
+      partner_id: 'none',
+      description: 'Korrekció',
+      lines: [],
+    };
+
+    renderModal({ entryId: 'entry-prior-1' });
+
+    // The label should be "Könyvelés dátuma (Számviteli időszak)"
+    expect(await screen.findByText(/Könyvelés dátuma \(Számviteli időszak\)/i)).toBeInTheDocument();
+
+    // The prior year warning banner should appear
+    expect(await screen.findByText(/Korábbi üzleti év \(2025\) könyvelése/i)).toBeInTheDocument();
+
+    mockExistingEntry = null;
+  });
+
+  it('displays duplicate document ID warning and confirmation checkbox when duplicate exists in journal', async () => {
+    mockDuplicateHeader = {
+      id: 'existing-dup-1',
+      journal_number: 1,
+      accounting_year: 2025,
+      posting_date: '2025-11-28',
+      status: 'KONYVELT',
+      journal: { code: 'V', name: 'Vevő' },
+    };
+
+    renderModal({ defaultJournalId: 'j-1' });
+
+    const docInput = screen.getByPlaceholderText(/pl\. VE-2026\/001/i);
+    fireEvent.change(docInput, { target: { value: 'VBV-2025-46' } });
+
+    // Warning badge and banner should appear
+    expect(await screen.findByText(/Figyelem: Duplikált bizonylatszám!/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tudomásul vettem, szándékosan rögzítem ezzel az azonos bizonylatszámmal/i)).toBeInTheDocument();
+
+    mockDuplicateHeader = null;
   });
 });

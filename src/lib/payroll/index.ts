@@ -110,7 +110,7 @@ export {
   formatJobTitleWithFeor,
 } from './feorCodes';
 
-// Munkanap és ünnepnap kalkulátor
+// Munkanap és ünnepnap kalkulátor, bérarányosítás
 export {
   getEasterSunday,
   getHungarianHolidays,
@@ -119,5 +119,20 @@ export {
   getStatutoryWorkHours,
   getMonthlyWorkDaysMap,
   isWorkDay,
+  getWorkDaysBetween,
+  calculateProRataSalary,
   type HungarianHoliday,
+  type SalaryProrationInput,
+  type SalaryProrationResult,
 } from './workdayCalculator';
+
+// Jogviszony és foglalkoztatási formák (Mt. vs Nem-Mt.)
+export {
+  MT_EMPLOYMENT_TYPES,
+  NON_MT_ENTREPRENEUR_TYPES,
+  CONTRACTOR_TYPES,
+  isMtEmployment,
+  supportsLeaveAndSickPay,
+  getNonMtNotice,
+} from './employmentUtils';
+

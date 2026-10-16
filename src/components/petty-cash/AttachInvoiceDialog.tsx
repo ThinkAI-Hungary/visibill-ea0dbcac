@@ -72,29 +72,46 @@ export function AttachInvoiceDialog({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
 
-  // Fetch open unpaid invoices for this company
+  // Fetch open unpaid invoices for this company (excluding invoices already attached to other cash entries)
   const { data: openInvoices = [], isLoading } = useQuery({
     queryKey: ['open-settlement-invoices', entry.company_id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('invoices')
-        .select(
-          'id, bizonylatsorszam, invoice_direction, vevo_nev, elado_nev, vevo_vat_id, elado_vat_id, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem'
-        )
-        .eq('company_id', entry.company_id)
-        .eq('fizetve', false)
-        .is('transaction_id', null)
-        .not('exclude_from_accounting', 'is', true)
-        .order('fizetesi_hatarido', { ascending: true });
+      const [invRes, pceRes] = await Promise.all([
+        (supabase as any)
+          .from('invoices')
+          .select(
+            'id, bizonylatsorszam, invoice_direction, vevo_nev, elado_nev, vevo_vat_id, elado_vat_id, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem'
+          )
+          .eq('company_id', entry.company_id)
+          .eq('fizetve', false)
+          .is('transaction_id', null)
+          .not('exclude_from_accounting', 'is', true)
+          .order('fizetesi_hatarido', { ascending: true }),
+        (supabase as any)
+          .from('petty_cash_entries')
+          .select('source_id')
+          .eq('company_id', entry.company_id)
+          .eq('source_table', 'invoices')
+          .not('source_id', 'is', null)
+          .neq('id', entry.id)
+          .neq('status', 'cancelled'),
+      ]);
 
-      if (error) throw error;
-      return (data || []).map((inv: any) => ({
-        ...inv,
-        partner_name:
-          inv.invoice_direction?.toUpperCase() === 'INBOUND'
-            ? inv.elado_nev || 'Ismeretlen szállító'
-            : inv.vevo_nev || 'Ismeretlen vevő',
-      })) as OpenInvoiceItem[];
+      if (invRes.error) throw invRes.error;
+
+      const attachedInvoiceIds = new Set(
+        (pceRes.data || []).map((p: any) => p.source_id).filter(Boolean)
+      );
+
+      return (invRes.data || [])
+        .filter((inv: any) => !attachedInvoiceIds.has(inv.id))
+        .map((inv: any) => ({
+          ...inv,
+          partner_name:
+            inv.invoice_direction?.toUpperCase() === 'INBOUND'
+              ? inv.elado_nev || 'Ismeretlen szállító'
+              : inv.vevo_nev || 'Ismeretlen vevő',
+        })) as OpenInvoiceItem[];
     },
     enabled: !!entry.company_id && open,
   });

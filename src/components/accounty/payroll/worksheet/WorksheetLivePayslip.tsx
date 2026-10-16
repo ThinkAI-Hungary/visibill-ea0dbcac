@@ -6,6 +6,7 @@ import {
   type EmployeeDeclarations,
   type TaxParameters,
 } from '@/lib/payroll/taxEngine';
+import { calculateProRataSalary } from '@/lib/payroll/workdayCalculator';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ import { formatJobTitleWithFeor } from '@/lib/payroll/feorCodes';
 export interface WorksheetLivePayslipProps {
   employee: any;
   employment: any;
+  cycle?: any;
   attendance: {
     workDays: number;
     workedHours?: number;
@@ -47,6 +49,7 @@ export interface WorksheetLivePayslipProps {
 export default function WorksheetLivePayslip({
   employee,
   employment,
+  cycle,
   attendance,
   commuteInput,
   bonus,
@@ -66,44 +69,35 @@ export default function WorksheetLivePayslip({
   const calculationResult = useMemo(() => {
     if (!employment || !employee) return null;
 
-    const baseSalary = Number(employment.base_salary || 0);
-    const isHourly = employment.salary_type === 'hourly';
+    const cycleYear = cycle?.year || new Date().getFullYear();
+    const cycleMonth = cycle?.month || (new Date().getMonth() + 1);
     const weeklyHours = Number(employment.weekly_hours || 40);
-    const dailyHours = weeklyHours / 5;
 
-    let hourlyRate = 0;
-    let dailyRate = 0;
-    let calcOvertime = 0;
-    let calcSickLeave = 0;
-    let calcLeave = 0;
-    let calcBase = 0;
+    const prorated = calculateProRataSalary({
+      baseSalary: Number(employment.base_salary || 0),
+      salaryType: employment.salary_type,
+      employmentType: employment.employment_type,
+      startDate: employment.start_date,
+      endDate: employment.end_date,
+      weeklyHours,
+      cycleYear,
+      cycleMonth,
+      workDays: attendance.workDays,
+      workedHours: attendance.workedHours,
+      sickDays: attendance.sickDays,
+      leaveDays: attendance.leaveDays,
+      overtimeHours: attendance.overtime,
+    });
 
-    if (isHourly) {
-      hourlyRate = baseSalary;
-      dailyRate = hourlyRate * dailyHours;
-      const actualWorkedHours = (attendance.workedHours !== undefined && attendance.workedHours !== null && attendance.workedHours > 0)
-        ? Number(attendance.workedHours)
-        : (attendance.workDays || 0) * dailyHours;
-
-      calcBase = Math.round(actualWorkedHours * hourlyRate);
-      calcOvertime = Math.round(hourlyRate * (attendance.overtime || 0) * 1.5);
-      calcSickLeave = Math.round(hourlyRate * (attendance.sickDays || 0) * dailyHours * 0.70);
-      calcLeave = Math.round(hourlyRate * (attendance.leaveDays || 0) * dailyHours);
-    } else {
-      const currentWorkDays = attendance.workDays || defaultWorkDays;
-      dailyRate = baseSalary / currentWorkDays;
-      hourlyRate = baseSalary / (dailyHours * currentWorkDays);
-
-      const baseReduction = Math.round(dailyRate * (attendance.sickDays || 0));
-      calcBase = Math.max(0, baseSalary - baseReduction);
-      calcOvertime = Math.round(hourlyRate * (attendance.overtime || 0) * 1.5);
-      calcSickLeave = Math.round(dailyRate * (attendance.sickDays || 0) * 0.70);
-      calcLeave = 0; // benne van a havi alapbérben
-    }
+    const calcBase = prorated.calculatedBase;
+    const calcOvertime = prorated.calculatedOvertime;
+    const calcSickLeave = prorated.calculatedSickLeave;
+    const calcLeave = prorated.calculatedLeave;
+    const isHourly = employment.salary_type === 'hourly';
 
     const actualWorkedDays = Math.max(
       0,
-      (attendance.workDays || defaultWorkDays) - (attendance.sickDays || 0) - (attendance.leaveDays || 0)
+      (attendance.workDays || prorated.scheduledWorkDaysInPeriod) - (prorated.isMt ? (attendance.sickDays || 0) + (attendance.leaveDays || 0) : 0)
     );
 
     // Calculate birth age
@@ -187,10 +181,12 @@ export default function WorksheetLivePayslip({
       finalNetPayout,
       actualWorkedDays,
       isHourly,
+      isPartialMonth: prorated.isPartialMonth,
     };
   }, [
     employee,
     employment,
+    cycle,
     attendance,
     commuteInput,
     bonus,
@@ -225,6 +221,9 @@ export default function WorksheetLivePayslip({
     garnishResult,
     commuteReimbursement,
     finalNetPayout,
+    actualWorkedDays,
+    isHourly,
+    isPartialMonth,
   } = calculationResult;
 
   return (
@@ -283,7 +282,7 @@ export default function WorksheetLivePayslip({
           </div>
           <div className="space-y-1 pt-1 text-[11px] text-muted-foreground">
             <div className="flex justify-between">
-              <span>Alapbér / Órabér</span>
+              <span>{isPartialMonth ? 'Arányosított alapbér (törthónap)' : 'Alapbér / Órabér'}</span>
               <span className="font-mono">{calcBase.toLocaleString('hu-HU')} Ft</span>
             </div>
             {calcOvertime > 0 && (

@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { TaxParameters } from '@/lib/payroll/taxEngine';
-import { getStatutoryWorkDays, getWorkDaysBetween } from '@/lib/payroll/workdayCalculator';
+import { getStatutoryWorkDays, getWorkDaysBetween, calculateProRataSalary } from '@/lib/payroll/workdayCalculator';
 
 // ═══════════════════════════════════════════════════════════════
 // TÍPUSOK (DB row típusok)
@@ -1244,64 +1244,27 @@ export function useRunBatchPayroll() {
         const tsRow = (timesheets || []).find((t: any) => t.employment_id === employment.id);
         const attendance = (tsRow?.ocr_data as any) || { workDays: scheduledWorkDaysInPeriod, overtime: 0, sickDays: 0, leaveDays: 0 };
 
-        // Calculate auto attendance values
-        const weeklyHours = employment.weekly_hours || 40;
-        const dailyHours = weeklyHours / 5;
+        // Calculate auto attendance and prorated salary values
+        const prorated = calculateProRataSalary({
+          baseSalary,
+          salaryType: employment.salary_type,
+          employmentType: employment.employment_type,
+          startDate: employment.start_date,
+          endDate: employment.end_date,
+          weeklyHours: employment.weekly_hours,
+          cycleYear: input.year,
+          cycleMonth: input.month,
+          workDays: attendance.workDays,
+          workedHours: attendance.workedHours,
+          sickDays: attendance.sickDays,
+          leaveDays: attendance.leaveDays,
+          overtimeHours: attendance.overtime,
+        });
 
-        let hourlyRate = 0;
-        let dailyRate = 0;
-        let overtimeAmount = 0;
-        let sickLeaveAmount = 0;
-        let leaveAmount = 0;
-        let adjustedBaseSalary = 0;
-
-        if (isHourly) {
-          // For Hourly employees: baseSalary is the hourly wage rate (e.g. 142 Ft/hour)
-          hourlyRate = baseSalary;
-          dailyRate = hourlyRate * dailyHours;
-
-          const actualWorkedHours = (attendance.workedHours !== undefined && attendance.workedHours !== null && Number(attendance.workedHours) > 0)
-            ? Number(attendance.workedHours)
-            : (attendance.workDays !== undefined ? attendance.workDays : scheduledWorkDaysInPeriod) * dailyHours;
-          const sickHours = (attendance.sickDays || 0) * dailyHours;
-          const leaveHours = (attendance.leaveDays || 0) * dailyHours;
-
-          adjustedBaseSalary = Math.round(actualWorkedHours * hourlyRate);
-          overtimeAmount = Math.round(hourlyRate * (attendance.overtime || 0) * 1.5);
-          sickLeaveAmount = Math.round(hourlyRate * sickHours * 0.70);
-          leaveAmount = Math.round(hourlyRate * leaveHours * 1.0);
-        } else {
-          // For Monthly employees: baseSalary is the full monthly salary (e.g. 150,000 Ft/month)
-          const isEvEmployment = employment.employment_type === 'ev' || employment.employment_type === 'ev_mellekfogl';
-
-          if (isPartialMonth) {
-            if (isEvEmployment) {
-              // EV: Tbj. szerint a naptári biztosítási napok arányában arányosít
-              const dayRatio = daysInMonth > 0 ? (activeCalendarDays / daysInMonth) : 1;
-              dailyRate = baseSalary / statutoryWorkDays;
-              hourlyRate = baseSalary / (dailyHours * statutoryWorkDays);
-              adjustedBaseSalary = Math.round(baseSalary * dayRatio);
-            } else {
-              // Munkaviszony / Mt. 136. §: a hónapra eső törvényes munkanapok arányában arányosít
-              dailyRate = baseSalary / statutoryWorkDays;
-              hourlyRate = baseSalary / (dailyHours * statutoryWorkDays);
-              const effectiveWorkedDays = attendance.workDays !== undefined ? attendance.workDays : scheduledWorkDaysInPeriod;
-              adjustedBaseSalary = Math.round(dailyRate * Math.max(0, effectiveWorkedDays - (attendance.sickDays || 0)));
-            }
-          } else {
-            const effectiveWorkDays = attendance.workDays || statutoryWorkDays;
-            dailyRate = baseSalary / effectiveWorkDays;
-            hourlyRate = baseSalary / (dailyHours * effectiveWorkDays);
-
-            const baseReduction = Math.round(dailyRate * (attendance.sickDays || 0));
-            adjustedBaseSalary = Math.max(0, baseSalary - baseReduction);
-          }
-
-          overtimeAmount = Math.round(hourlyRate * (attendance.overtime || 0) * 1.5);
-          sickLeaveAmount = Math.round(dailyRate * (attendance.sickDays || 0) * 0.70);
-          // For monthly salaried employees, leave (vacation) days are already covered in the base salary
-          leaveAmount = 0;
-        }
+        const adjustedBaseSalary = prorated.calculatedBase;
+        const overtimeAmount = prorated.calculatedOvertime;
+        const sickLeaveAmount = prorated.calculatedSickLeave;
+        const leaveAmount = prorated.calculatedLeave;
 
         // Fetch explicit item overrides if any
         const itemBaseSalary = empItems.find((i: any) => i.item_type === 'base_salary')?.amount;

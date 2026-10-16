@@ -46,7 +46,7 @@ import type { SubledgerItem, SubledgerMode, SubledgerStatusFilter, GroupedSubled
 import { formatCurrency } from '@/lib/utils';
 import { formatNumberLocale } from '@/lib/locale/formatters';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { groupSubledgerItems, deriveItemForeignAmounts } from '@/lib/subledgerGrouping';
+import { groupSubledgerItems, deriveItemForeignAmounts, formatSubledgerDescription } from '@/lib/subledgerGrouping';
 import { SubledgerItemMatchesModal } from '@/components/subledger/SubledgerItemMatchesModal';
 import { WriteOffSettlementModal } from '@/components/subledger/WriteOffSettlementModal';
 import { BulkRoundingWriteOffModal } from '@/components/subledger/BulkRoundingWriteOffModal';
@@ -1053,12 +1053,18 @@ export default function SubledgerPage() {
                             )}
                           </div>
                           {inv.items.length === 1 && inv.description ? (
-                            <div className="text-[10px] text-muted-foreground truncate max-w-[200px] font-normal font-sans">
-                              {inv.description}
+                            <div
+                              className="text-[10px] text-muted-foreground truncate max-w-[280px] font-normal font-sans"
+                              title={inv.description}
+                            >
+                              {formatSubledgerDescription(inv.description)}
                             </div>
                           ) : inv.items.length > 1 ? (
-                            <div className="text-[10px] text-muted-foreground truncate max-w-[200px] font-normal font-sans">
-                              {inv.items.map((it) => it.description).filter(Boolean).slice(0, 2).join(', ')}
+                            <div
+                              className="text-[10px] text-muted-foreground truncate max-w-[280px] font-normal font-sans"
+                              title={inv.items.map((it) => it.description).filter(Boolean).join(', ')}
+                            >
+                              {inv.items.map((it) => formatSubledgerDescription(it.description)).filter(Boolean).slice(0, 2).join(', ')}
                               {inv.items.length > 2 ? '...' : ''}
                             </div>
                           ) : null}

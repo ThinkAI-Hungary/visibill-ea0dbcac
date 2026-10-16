@@ -13,6 +13,7 @@ import { useAddJobModification } from '@/hooks/accounty';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import ProjectSelectOrAddCombobox from '@/components/accounty/payroll/ProjectSelectOrAddCombobox';
 
 type ChangeType = 'worktime' | 'feor' | 'salary' | 'position' | 'site' | 'costcenter';
 
@@ -56,6 +57,7 @@ export default function JobModificationPage() {
   const [activeType, setActiveType] = useState<ChangeType>('worktime');
   const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().split('T')[0]);
   const [perTypeData, setPerTypeData] = useState<Record<ChangeType, { newValue: string; reason: string }>>({ ...EMPTY_PER_TYPE });
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   // Convenience accessors for the active type
   const data = {
@@ -138,10 +140,12 @@ export default function JobModificationPage() {
         changeType: ct, effectiveDate,
         oldValue: getOldValueFor(ct), newValue: v.newValue, reason: v.reason,
         generate08e: ct === 'worktime' || ct === 'feor',
+        projectId: ct === 'costcenter' ? (selectedProjectId || null) : undefined,
       }));
       await addModMut.mutateAsync(mods);
       // Clear all fields after successful save
       setPerTypeData({ ...EMPTY_PER_TYPE });
+      setSelectedProjectId(null);
       toast({
         title: `${mods.length} módosítás mentve `,
         description: mods.map(m => CHANGE_TYPES.find(t => t.value === m.changeType)?.label).join(', '),
@@ -224,7 +228,7 @@ export default function JobModificationPage() {
                   <select
                     value={data.newValue}
                     onChange={e => updateField('newValue', e.target.value)}
-                    className="px-3 py-2 rounded-lg border-2 border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-sm text-emerald-700 dark:text-emerald-300 font-medium"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground font-medium focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="">Válassz telephelyet…</option>
                     {locations.length > 0 ? locations.map(loc => (
@@ -233,8 +237,25 @@ export default function JobModificationPage() {
                       <option disabled>Nincs telephely felvéve — Beállítások → Telephelyek</option>
                     )}
                   </select>
+                ) : activeType === 'costcenter' ? (
+                  <ProjectSelectOrAddCombobox
+                    companyId={id || ''}
+                    value={data.newValue}
+                    projectId={selectedProjectId}
+                    onChange={(val, projId) => {
+                      updateField('newValue', val);
+                      setSelectedProjectId(projId || null);
+                    }}
+                    placeholder="Válassz projektet vagy költséghelyet…"
+                  />
                 ) : (
-                  <input type="text" value={data.newValue} onChange={e => updateField('newValue', e.target.value)} className="px-3 py-2 rounded-lg border-2 border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-sm text-emerald-700 dark:text-emerald-300 font-medium" placeholder={getNewValuePlaceholder()} />
+                  <input
+                    type="text"
+                    value={data.newValue}
+                    onChange={e => updateField('newValue', e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder={getNewValuePlaceholder()}
+                  />
                 )}
               </div>
             </div>

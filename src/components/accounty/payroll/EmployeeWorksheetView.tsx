@@ -40,6 +40,7 @@ export interface EmployeeWorksheetViewProps {
   onSwitchToStepper: (step?: number) => void;
   onCycleClose: () => Promise<void>;
   isPosting?: boolean;
+  onReloadEmployments?: () => void;
 }
 
 export default function EmployeeWorksheetView({
@@ -59,6 +60,7 @@ export default function EmployeeWorksheetView({
   onSwitchToStepper,
   onCycleClose,
   isPosting = false,
+  onReloadEmployments,
 }: EmployeeWorksheetViewProps) {
   const queryClient = useQueryClient();
 
@@ -698,6 +700,7 @@ export default function EmployeeWorksheetView({
             onCostCenterChange={setCostCenterInput}
             onSaveCostCenter={handleSaveCostCenter}
             isSavingCostCenter={isSavingCostCenter}
+            onEmployeeUpdated={onReloadEmployments}
           />
         </div>
 
@@ -706,6 +709,7 @@ export default function EmployeeWorksheetView({
           <WorksheetLivePayslip
             employee={currentEmployee}
             employment={currentEmployment}
+            cycle={cycle}
             attendance={currentAttendance}
             defaultWorkDays={defaultWorkDays}
             commuteInput={currentCommuteInput}
