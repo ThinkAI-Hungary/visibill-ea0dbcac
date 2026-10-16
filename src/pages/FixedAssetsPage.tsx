@@ -352,8 +352,8 @@ export default function FixedAssetsPage() {
       ) : (
         /* Master-Detail Layout */
         <div className="flex-1 flex min-h-0 overflow-y-auto overflow-x-hidden">
-          {/* Left panel: Asset List (38%) — stays in place */}
-          <div className="w-[40%] xl:w-[38%] 2xl:w-[35%] shrink-0 grow-0 overflow-hidden border-r border-border/50 flex flex-col sticky top-0 self-start min-h-0 max-h-[calc(100vh-8rem)]">
+          {/* Left panel: Asset List (44%) — stays in place */}
+          <div className="w-[46%] xl:w-[44%] 2xl:w-[43%] shrink-0 grow-0 overflow-hidden border-r border-border/50 flex flex-col sticky top-0 self-start min-h-0 max-h-[calc(100vh-8rem)]">
             <AssetListTable
               assets={assets}
               loading={isLoading}
@@ -364,8 +364,8 @@ export default function FixedAssetsPage() {
             />
           </div>
 
-        {/* Right panel: Asset Detail (62%) — stable panel height with independent scrolling */}
-        <div className="w-[60%] xl:w-[62%] 2xl:w-[65%] shrink-0 grow-0 overflow-hidden flex flex-col sticky top-0 self-start min-h-0 max-h-[calc(100vh-8rem)]">
+        {/* Right panel: Asset Detail (56%) — stable panel height with independent scrolling */}
+        <div className="w-[54%] xl:w-[56%] 2xl:w-[57%] shrink-0 grow-0 overflow-hidden flex flex-col sticky top-0 self-start min-h-0 max-h-[calc(100vh-8rem)]">
           {selectedAssetId && detailData?.asset && detailData.asset.id === selectedAssetId ? (
             <AssetDetailPanel
               asset={detailData.asset}

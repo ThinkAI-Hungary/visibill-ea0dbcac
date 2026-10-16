@@ -155,18 +155,18 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
           </div>
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
-            <Table className="compact-table w-full min-w-[880px]" containerClassName="overflow-visible">
+            <Table className="compact-table w-full" containerClassName="overflow-visible">
               <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur-xs border-b border-border/50 shadow-2xs">
                 <TableRow className="bg-muted/40 hover:bg-muted/40 select-none">
-                  <TableHead className="w-[36px] min-w-[36px] text-center font-semibold text-xs whitespace-nowrap p-1">#</TableHead>
-                  <TableHead className="w-[140px] min-w-[130px] font-semibold text-xs whitespace-nowrap p-1.5">{t('hr:fixed_assets.table.inventory_number', 'Leltári Szám')}</TableHead>
-                  <TableHead className="w-[180px] min-w-[150px] font-semibold text-xs whitespace-nowrap p-1.5">{t('hr:fixed_assets.table.name', 'Megnevezés')}</TableHead>
-                  <TableHead className="w-[70px] min-w-[65px] font-semibold text-xs text-center whitespace-nowrap p-1">{t('hr:fixed_assets.table.status', 'Státusz')}</TableHead>
-                  <TableHead className="w-[105px] min-w-[95px] font-semibold text-xs text-right whitespace-nowrap p-1.5">{t('hr:fixed_assets.table.acquisition_value', 'Bekerülési érték')}</TableHead>
-                  <TableHead className="w-[100px] min-w-[90px] font-semibold text-xs text-right whitespace-nowrap p-1.5">{t('hr:fixed_assets.table.dev_reserve', 'Fejlesztési tart.')}</TableHead>
-                  <TableHead className="w-[95px] min-w-[90px] font-semibold text-xs text-right whitespace-nowrap p-1.5">{t('hr:fixed_assets.table.tao_base', 'TAO ÉCS alap')}</TableHead>
-                  <TableHead className="w-[90px] min-w-[80px] font-semibold text-xs whitespace-nowrap p-1.5">{t('hr:fixed_assets.table.project', 'Projekt')}</TableHead>
-                  <TableHead className="w-[95px] min-w-[85px] font-semibold text-xs whitespace-nowrap p-1.5">{t('hr:fixed_assets.table.location', 'Helyszín')}</TableHead>
+                  <TableHead className="w-7 min-w-[28px] text-center font-semibold text-xs whitespace-nowrap p-1">#</TableHead>
+                  <TableHead className="w-[115px] min-w-[105px] font-semibold text-xs whitespace-nowrap p-1">{t('hr:fixed_assets.table.inventory_number', 'Leltári Szám')}</TableHead>
+                  <TableHead className="min-w-[130px] font-semibold text-xs whitespace-nowrap p-1">{t('hr:fixed_assets.table.name', 'Megnevezés')}</TableHead>
+                  <TableHead className="w-[65px] min-w-[55px] font-semibold text-xs text-center whitespace-nowrap p-1">{t('hr:fixed_assets.table.status', 'Státusz')}</TableHead>
+                  <TableHead className="w-[90px] min-w-[80px] font-semibold text-xs text-right whitespace-nowrap p-1">{t('hr:fixed_assets.table.acquisition_value', 'Bekerülési érték')}</TableHead>
+                  <TableHead className="w-[85px] min-w-[75px] font-semibold text-xs text-right whitespace-nowrap p-1">{t('hr:fixed_assets.table.dev_reserve', 'Fejlesztési tart.')}</TableHead>
+                  <TableHead className="w-[85px] min-w-[75px] font-semibold text-xs text-right whitespace-nowrap p-1">{t('hr:fixed_assets.table.tao_base', 'TAO ÉCS alap')}</TableHead>
+                  <TableHead className="w-[75px] min-w-[65px] font-semibold text-xs whitespace-nowrap p-1">{t('hr:fixed_assets.table.project', 'Projekt')}</TableHead>
+                  <TableHead className="w-[85px] min-w-[75px] font-semibold text-xs whitespace-nowrap p-1">{t('hr:fixed_assets.table.location', 'Helyszín')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -192,10 +192,10 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
                       <TableCell className="font-mono text-muted-foreground text-xs text-center whitespace-nowrap p-1">
                         {rowNumber}.
                       </TableCell>
-                      <TableCell className="font-mono text-[11px] font-semibold text-foreground whitespace-nowrap truncate max-w-[140px] p-1.5" title={asset.inventory_number}>
+                      <TableCell className="font-mono text-[11px] font-semibold text-foreground whitespace-nowrap truncate max-w-[115px] p-1" title={asset.inventory_number}>
                         {asset.inventory_number}
                       </TableCell>
-                      <TableCell className="font-medium max-w-[180px] p-1.5" title={cleanedName}>
+                      <TableCell className="font-medium max-w-[160px] p-1" title={cleanedName}>
                         <div className="flex items-center gap-1 overflow-hidden">
                           <span className="truncate text-xs">
                             {truncateText(cleanedName, 28)}
@@ -231,10 +231,10 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
                           {t(`hr:fixed_assets.status.${asset.status}`, { defaultValue: ASSET_STATUS_LABELS[asset.status] })}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right font-mono text-xs font-semibold text-foreground tabular-nums whitespace-nowrap p-1.5">
+                      <TableCell className="text-right font-mono text-xs font-semibold text-foreground tabular-nums whitespace-nowrap p-1">
                         {formatCurrency(asset.acquisition_value, asset.currency)}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-xs tabular-nums whitespace-nowrap p-1.5">
+                      <TableCell className="text-right font-mono text-xs tabular-nums whitespace-nowrap p-1">
                         {devReserveAmount > 0 ? (
                           <span className="text-amber-700 dark:text-amber-400 font-semibold" title={`Levonás: ${devReserveAmount.toLocaleString('hu-HU')} Ft`}>
                             -{formatCurrency(devReserveAmount, asset.currency)}
@@ -243,13 +243,13 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-xs font-semibold text-primary tabular-nums whitespace-nowrap p-1.5">
+                      <TableCell className="text-right font-mono text-xs font-semibold text-primary tabular-nums whitespace-nowrap p-1">
                         {formatCurrency(taoBase, asset.currency)}
                       </TableCell>
-                      <TableCell className="text-xs whitespace-nowrap p-1.5">
+                      <TableCell className="text-xs whitespace-nowrap p-1">
                         {asset.project ? (
                           <span
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary truncate max-w-[85px] border border-primary/20"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary truncate max-w-[80px] border border-primary/20"
                             style={asset.project.color ? { borderColor: asset.project.color, color: asset.project.color } : undefined}
                             title={asset.project.project_code ? `${cleanEntityText(asset.project.name)} (${asset.project.project_code})` : cleanEntityText(asset.project.name)}
                           >
@@ -260,9 +260,9 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-xs whitespace-nowrap p-1.5">
+                      <TableCell className="text-muted-foreground text-xs whitespace-nowrap p-1">
                         {asset.location ? (
-                          <div className="flex flex-col truncate max-w-[90px]" title={asset.location.address ? `${cleanEntityText(asset.location.name)} — ${cleanEntityText(asset.location.address)}` : cleanEntityText(asset.location.name)}>
+                          <div className="flex flex-col truncate max-w-[85px]" title={asset.location.address ? `${cleanEntityText(asset.location.name)} — ${cleanEntityText(asset.location.address)}` : cleanEntityText(asset.location.name)}>
                             <span className="text-foreground font-medium truncate text-xs">{cleanEntityText(asset.location.name)}</span>
                             {asset.location.address && (
                               <span className="text-[10px] opacity-75 truncate">{cleanEntityText(asset.location.address)}</span>
