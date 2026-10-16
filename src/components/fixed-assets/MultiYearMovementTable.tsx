@@ -203,7 +203,7 @@ export function MultiYearMovementTable({
 
   return (
     <Card className="shadow-sm border-border">
-      <CardHeader className="pb-3 pt-4 px-4 sm:px-6">
+      <CardHeader className="py-3 px-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -232,92 +232,90 @@ export function MultiYearMovementTable({
       </CardHeader>
 
       <CardContent className="p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/40 hover:bg-muted/40 text-xs">
-                <TableHead className="font-bold w-16 text-center">Év</TableHead>
-                <TableHead className="text-right">Bruttó Nyitó</TableHead>
-                <TableHead className="text-right text-emerald-600 font-semibold">Növekedés (+)</TableHead>
-                <TableHead className="text-right text-rose-600 font-semibold">Csökkenés (-)</TableHead>
-                <TableHead className="text-right font-bold">Bruttó Záró</TableHead>
-                <TableHead className="text-right">Tárgyévi Sztv ÉCS</TableHead>
-                {showTaoComparison && (
-                  <TableHead className="text-right text-primary font-semibold">Tárgyévi Tao ÉCS</TableHead>
-                )}
-                {showTaoComparison && (
-                  <TableHead className="text-right text-amber-600 font-semibold">Tao Különbözet</TableHead>
-                )}
-                <TableHead className="text-right">Halmozott ÉCS</TableHead>
-                <TableHead className="text-right font-bold text-foreground">Záró Nettó (Sztv)</TableHead>
-                {showTaoComparison && (
-                  <TableHead className="text-right font-bold text-primary">Záró Nettó (Tao)</TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody className="text-xs font-mono">
-              {displayRows.map((row) => {
-                const isCurrent = row.year === currentYear;
-                return (
-                  <TableRow
-                    key={row.year}
-                    className={isCurrent ? 'bg-primary/5 font-semibold' : ''}
-                  >
-                    <TableCell className="text-center font-bold font-sans">
-                      {row.year} {isCurrent ? '⭐' : ''}
+        <Table containerClassName="w-full overflow-x-auto">
+          <TableHeader>
+            <TableRow className="bg-muted/40 hover:bg-muted/40 text-xs">
+              <TableHead className="font-bold w-12 text-center px-2 py-2.5 whitespace-nowrap text-[11px]">Év</TableHead>
+              <TableHead className="text-right px-2 py-2.5 whitespace-nowrap text-[11px]">Bruttó Nyitó</TableHead>
+              <TableHead className="text-right text-emerald-600 font-semibold px-2 py-2.5 whitespace-nowrap text-[11px]">Növekedés (+)</TableHead>
+              <TableHead className="text-right text-rose-600 font-semibold px-2 py-2.5 whitespace-nowrap text-[11px]">Csökkenés (-)</TableHead>
+              <TableHead className="text-right font-bold px-2 py-2.5 whitespace-nowrap text-[11px]">Bruttó Záró</TableHead>
+              <TableHead className="text-right px-2 py-2.5 whitespace-nowrap text-[11px]">Tárgyévi Sztv ÉCS</TableHead>
+              {showTaoComparison && (
+                <TableHead className="text-right text-primary font-semibold px-2 py-2.5 whitespace-nowrap text-[11px]">Tárgyévi Tao ÉCS</TableHead>
+              )}
+              {showTaoComparison && (
+                <TableHead className="text-right text-amber-600 font-semibold px-2 py-2.5 whitespace-nowrap text-[11px]">Tao Különbözet</TableHead>
+              )}
+              <TableHead className="text-right px-2 py-2.5 whitespace-nowrap text-[11px]">Halmozott ÉCS</TableHead>
+              <TableHead className="text-right font-bold text-foreground px-2 py-2.5 whitespace-nowrap text-[11px]">Záró Nettó (Sztv)</TableHead>
+              {showTaoComparison && (
+                <TableHead className="text-right font-bold text-primary px-2 py-2.5 whitespace-nowrap text-[11px]">Záró Nettó (Tao)</TableHead>
+              )}
+            </TableRow>
+          </TableHeader>
+          <TableBody className="text-xs font-mono">
+            {displayRows.map((row) => {
+              const isCurrent = row.year === currentYear;
+              return (
+                <TableRow
+                  key={row.year}
+                  className={isCurrent ? 'bg-primary/5 font-semibold' : ''}
+                >
+                  <TableCell className="text-center font-bold font-sans px-2 py-2 whitespace-nowrap">
+                    {row.year} {isCurrent ? '⭐' : ''}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground px-2 py-2 whitespace-nowrap">
+                    {formatCurrency(row.openingGross, 'HUF')}
+                  </TableCell>
+                  <TableCell className="text-right text-emerald-600 px-2 py-2 whitespace-nowrap">
+                    {row.acquisitions > 0 ? `+${formatCurrency(row.acquisitions, 'HUF')}` : '-'}
+                  </TableCell>
+                  <TableCell className="text-right text-rose-600 px-2 py-2 whitespace-nowrap">
+                    {row.disposals > 0 ? `-${formatCurrency(row.disposals, 'HUF')}` : '-'}
+                  </TableCell>
+                  <TableCell className="text-right font-bold text-foreground px-2 py-2 whitespace-nowrap">
+                    {formatCurrency(row.closingGross, 'HUF')}
+                  </TableCell>
+                  <TableCell className="text-right text-foreground px-2 py-2 whitespace-nowrap">
+                    {formatCurrency(row.currentDeprSztv, 'HUF')}
+                  </TableCell>
+                  {showTaoComparison && (
+                    <TableCell className="text-right text-primary px-2 py-2 whitespace-nowrap">
+                      {formatCurrency(row.currentDeprTao, 'HUF')}
                     </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {formatCurrency(row.openingGross, 'HUF')}
+                  )}
+                  {showTaoComparison && (
+                    <TableCell
+                      className={`text-right font-semibold px-2 py-2 whitespace-nowrap ${
+                        row.taoDifference > 0
+                          ? 'text-amber-600'
+                          : row.taoDifference < 0
+                          ? 'text-indigo-600'
+                          : 'text-muted-foreground'
+                      }`}
+                    >
+                      {row.taoDifference !== 0
+                        ? `${row.taoDifference > 0 ? '+' : ''}${formatCurrency(row.taoDifference, 'HUF')}`
+                        : '0 Ft'}
                     </TableCell>
-                    <TableCell className="text-right text-emerald-600">
-                      {row.acquisitions > 0 ? `+${formatCurrency(row.acquisitions, 'HUF')}` : '-'}
+                  )}
+                  <TableCell className="text-right text-muted-foreground px-2 py-2 whitespace-nowrap">
+                    {formatCurrency(row.closingDeprSztv, 'HUF')}
+                  </TableCell>
+                  <TableCell className="text-right font-bold text-foreground font-sans px-2 py-2 whitespace-nowrap">
+                    {formatCurrency(row.closingNetSztv, 'HUF')}
+                  </TableCell>
+                  {showTaoComparison && (
+                    <TableCell className="text-right font-bold text-primary font-sans px-2 py-2 whitespace-nowrap">
+                      {formatCurrency(row.closingNetTao, 'HUF')}
                     </TableCell>
-                    <TableCell className="text-right text-rose-600">
-                      {row.disposals > 0 ? `-${formatCurrency(row.disposals, 'HUF')}` : '-'}
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-foreground">
-                      {formatCurrency(row.closingGross, 'HUF')}
-                    </TableCell>
-                    <TableCell className="text-right text-foreground">
-                      {formatCurrency(row.currentDeprSztv, 'HUF')}
-                    </TableCell>
-                    {showTaoComparison && (
-                      <TableCell className="text-right text-primary">
-                        {formatCurrency(row.currentDeprTao, 'HUF')}
-                      </TableCell>
-                    )}
-                    {showTaoComparison && (
-                      <TableCell
-                        className={`text-right font-semibold ${
-                          row.taoDifference > 0
-                            ? 'text-amber-600'
-                            : row.taoDifference < 0
-                            ? 'text-indigo-600'
-                            : 'text-muted-foreground'
-                        }`}
-                      >
-                        {row.taoDifference !== 0
-                          ? `${row.taoDifference > 0 ? '+' : ''}${formatCurrency(row.taoDifference, 'HUF')}`
-                          : '0 Ft'}
-                      </TableCell>
-                    )}
-                    <TableCell className="text-right text-muted-foreground">
-                      {formatCurrency(row.closingDeprSztv, 'HUF')}
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-foreground font-sans">
-                      {formatCurrency(row.closingNetSztv, 'HUF')}
-                    </TableCell>
-                    {showTaoComparison && (
-                      <TableCell className="text-right font-bold text-primary font-sans">
-                        {formatCurrency(row.closingNetTao, 'HUF')}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                  )}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
