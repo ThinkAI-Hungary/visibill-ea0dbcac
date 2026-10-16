@@ -91,6 +91,11 @@ A folyószámla felületről közvetlenül elvégezhető a kijelölt javaslatok 
 ### D-9: Bizonylati Integritás és Megváltoztathatatlanság (Immutability Guard)
 A lekönyvelt naplófejek módosítása szigorúan tiltott (`acc_enforce_header_immutability`). Ezért a kiegyenlítési hivatkozást nem utólagos fejléc-update-tel tároljuk, hanem a `get_subledger_items` dinamikusan feloldja a `COALESCE(h.document_id, '')` értéket `settlement_number`-ként, míg az összerendeléseket tisztán a dedikált `acc_open_item_matches` tábla kezeli.
 
+### D-10: Sztornózott és Törölt Számlák Kiszűrése a Folyószámláról (2026-10-16, EB-0276, `20261016184500_exclude_storno_from_subledger_items.sql`)
+A törölt vagy sztornózott számlákhoz kapcsolódó tételek nem maradhatnak a folyószámla analitikában a naplóból való kivezetésük után. A `get_subledger_items` RPC és a subledger szűrőlekérdezések kiegészültek:
+1. `WHERE h.status NOT IN ('SZTORNOZOTT', 'DELETED')` feltétellel a naplófejek szintjén.
+2. A kapcsolt számla (`invoices`) státuszának vizsgálatával: a törölt/sztornózott számlák tételei automatikusan kikerülnek a nyitott tételek listájából, garantálva a folyószámla és a napló teljes egyezőségét.
+
 ---
 
 ## 3. Következmények és Eredmények

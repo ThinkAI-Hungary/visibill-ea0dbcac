@@ -3,14 +3,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchAllGlAccountsByPreset } from '@/lib/glData';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useOptionalDateRange } from '@/contexts/DateRangeContext';
 import { useToast } from '@/hooks/use-toast';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Loader2, AlertCircle, Sparkles, Copy, Check } from 'lucide-react';
+import { Plus, Trash2, Loader2, AlertCircle, Sparkles, Copy, Check, AlertTriangle, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/locale/formatters';
@@ -58,6 +60,8 @@ export default function AddManualJournalEntryModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { activePresetId } = useActivePreset(selectedCompany?.id);
+  const dateRangeContext = useOptionalDateRange();
+  const dateFrom = dateRangeContext?.dateFrom;
 
   // Form states
   const [journalId, setJournalId] = useState<string>('');
@@ -66,6 +70,41 @@ export default function AddManualJournalEntryModal({
   const [documentId, setDocumentId] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [justification, setJustification] = useState<string>('');
+  const [acknowledgedDuplicateDocKey, setAcknowledgedDuplicateDocKey] = useState<string | null>(null);
+
+  // EB-0278: Check if documentId already exists in this company & journal
+  const trimmedDocId = documentId.trim();
+  const duplicateDocKey = `${journalId}:${trimmedDocId.toLowerCase()}`;
+  const isDuplicateAcknowledged = acknowledgedDuplicateDocKey === duplicateDocKey;
+
+  const { data: duplicateEntry } = useQuery({
+    queryKey: ['check-duplicate-doc-id', selectedCompany?.id, journalId, trimmedDocId],
+    queryFn: async () => {
+      if (!selectedCompany?.id || !journalId || trimmedDocId.length < 2) return null;
+      const { data, error } = await supabase
+        .from('acc_journal_headers')
+        .select('id, journal_number, accounting_year, posting_date, status, journal:acc_journals(code, name)')
+        .eq('company_id', selectedCompany.id)
+        .eq('journal_id', journalId)
+        .ilike('document_id', trimmedDocId)
+        .in('status', ['KONYVELT', 'LEKONYVELVE', 'KEZI_PISZKOZAT', 'PISZKOZAT'])
+        .neq('id', entryId || '00000000-0000-0000-0000-000000000000')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!selectedCompany?.id && !!journalId && trimmedDocId.length >= 2,
+    staleTime: 5000,
+  });
+
+  // EB-0278: Prior / cross-year detection
+  const [currentSystemYear] = useState<number>(() => new Date().getFullYear());
+  const activeViewYear = dateFrom ? dateFrom.getFullYear() : currentSystemYear;
+  const postingYear = postingDate ? Number(postingDate.substring(0, 4)) : activeViewYear;
+  const isPriorYear = postingYear > 1900 && postingYear < activeViewYear;
+
   const [lines, setLines] = useState<JournalLineInput[]>([
     { gl_account_id: '', partner_id: null, dc_type: 'T', amount: 0, project_id: null, description: '' },
     { gl_account_id: '', partner_id: null, dc_type: 'K', amount: 0, project_id: null, description: '' },
@@ -616,6 +655,26 @@ export default function AddManualJournalEntryModal({
       }
     }
 
+    // EB-0278: Duplikált bizonylatszám megerősítés megkövetelése
+    if (duplicateEntry && !isDuplicateAcknowledged) {
+      toast({
+        title: t('accounting:dialogs.manual_journal.duplicate_document_id_warning', 'Figyelem: Duplikált bizonylatszám!'),
+        description: t(
+          'accounting:dialogs.manual_journal.duplicate_document_id_desc',
+          `A(z) ${documentId} bizonylatszám már rögzítve van (${(duplicateEntry as any)?.journal?.code || 'Napló'}/${duplicateEntry.journal_number || '?'}, ${duplicateEntry.accounting_year}. év). Kérjük, jelölje be a megerősítő négyzetet a folytatáshoz!`,
+          {
+            docId: documentId,
+            journalCode: (duplicateEntry as any)?.journal?.code || 'Napló',
+            journalNumber: duplicateEntry.journal_number || '?',
+            year: duplicateEntry.accounting_year,
+            date: duplicateEntry.posting_date,
+          }
+        ),
+        variant: "destructive",
+      });
+      return;
+    }
+
     saveMutation.mutate();
   };
 
@@ -678,13 +737,21 @@ export default function AddManualJournalEntryModal({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="documentId">{t('accounting:dialogs.manual_journal.document_id')}</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="documentId">{t('accounting:dialogs.manual_journal.document_id')}</Label>
+                  {duplicateEntry && (
+                    <Badge variant="outline" className="text-[10px] text-amber-600 dark:text-amber-400 border-amber-500/40 bg-amber-500/10 px-1 py-0 gap-1 font-medium">
+                      <AlertTriangle className="w-2.5 h-2.5" /> Duplikátum
+                    </Badge>
+                  )}
+                </div>
                 <Input
                   id="documentId"
                   value={documentId}
                   onChange={e => setDocumentId(e.target.value)}
                   placeholder={t('accounting:dialogs.manual_journal.document_id_placeholder')}
                   autoComplete="off"
+                  className={cn(duplicateEntry && "border-amber-500/70 focus-visible:ring-amber-500")}
                 />
               </div>
 
@@ -732,7 +799,12 @@ export default function AddManualJournalEntryModal({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="postingDate">{t('accounting:dialogs.manual_journal.posting_date')}</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="postingDate">{t('accounting:dialogs.manual_journal.posting_date')}</Label>
+                  <CustomTooltip content={t('accounting:dialogs.manual_journal.posting_date_tooltip', 'Ez a számviteli elszámolási dátum határozza meg, hogy a tétel melyik üzleti év és naptári hónap főkönyvébe és analitikájába kerül be.')}>
+                    <Info className="w-3.5 h-3.5 text-muted-foreground/70 hover:text-foreground cursor-help" />
+                  </CustomTooltip>
+                </div>
                 <DatePicker
                   id="postingDate"
                   value={postingDate}
@@ -764,6 +836,59 @@ export default function AddManualJournalEntryModal({
                 />
               </div>
             </div>
+
+            {/* EB-0278: Warnings Banner for Duplicate Document ID or Prior Year Posting */}
+            {(duplicateEntry || isPriorYear) && (
+              <div className="space-y-2 shrink-0">
+                {duplicateEntry && (
+                  <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                    <div className="flex-1 space-y-1">
+                      <div className="font-semibold text-amber-800 dark:text-amber-300">
+                        {t('accounting:dialogs.manual_journal.duplicate_document_id_warning', 'Figyelem: Duplikált bizonylatszám!')}
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-200/90">
+                        {t('accounting:dialogs.manual_journal.duplicate_document_id_desc',
+                          `A(z) "${documentId}" bizonylatszám már rögzítve van ebben a naplóban (${(duplicateEntry as any)?.journal?.code || 'Napló'}/${duplicateEntry.journal_number || '?'}, ${duplicateEntry.accounting_year}. év, könyvelve: ${duplicateEntry.posting_date}). A duplikált rögzítés kettőzött követelést vagy tartozást eredményezhet!`,
+                          {
+                            docId: documentId,
+                            journalCode: (duplicateEntry as any)?.journal?.code || 'Napló',
+                            journalNumber: duplicateEntry.journal_number || '?',
+                            year: duplicateEntry.accounting_year,
+                            date: duplicateEntry.posting_date,
+                          }
+                        )}
+                      </p>
+                      <label className="flex items-center gap-2 pt-1 cursor-pointer select-none font-medium text-[11px] text-amber-900 dark:text-amber-100">
+                        <Checkbox
+                          checked={isDuplicateAcknowledged}
+                          onCheckedChange={(checked) => setAcknowledgedDuplicateDocKey(checked ? duplicateDocKey : null)}
+                          className="border-amber-600 data-[state=checked]:bg-amber-600 data-[state=checked]:text-white"
+                        />
+                        <span>{t('accounting:dialogs.manual_journal.confirm_duplicate_checkbox', 'Tudomásul vettem, szándékosan rögzítem ezzel az azonos bizonylatszámmal')}</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {isPriorYear && (
+                  <div className="flex items-start gap-2.5 p-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-900 dark:text-blue-200 text-xs">
+                    <Info className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <div className="font-semibold text-blue-800 dark:text-blue-300">
+                        {t('accounting:dialogs.manual_journal.prior_year_warning_title', `Korábbi üzleti év (${postingYear}) könyvelése`, { year: postingYear })}
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-blue-800/90 dark:text-blue-200/90">
+                        {t('accounting:dialogs.manual_journal.prior_year_warning_desc',
+                          `A tétel a(z) ${postingYear}. évi főkönyvbe fog kerülni (nem a nézet szerinti ${activeViewYear}. évbe). Amennyiben egy korábbi, már lezárt évet érintő számlakorrekciót a tárgyévben kíván elszámolni (eredménytartalékkal szemben), kérjük, a könyvelés dátumát állítsa a tárgyévre!`,
+                          { year: postingYear, activeYear: activeViewYear }
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Lines Editor */}
             <div className="space-y-2 flex-1 min-h-0 flex flex-col overflow-hidden">

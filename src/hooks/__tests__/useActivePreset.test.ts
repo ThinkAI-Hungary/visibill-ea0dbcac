@@ -84,4 +84,23 @@ describe('useActivePreset', () => {
     expect(result.current.activePresetId).toBe('custom-mandala');
     expect(localStorage.getItem('visibill_active_preset_test-company-1')).toBe('custom-mandala');
   });
+
+  it('auto-promotes to active custom preset if user previously had stale generic fallback preset in localStorage', async () => {
+    // Simulate stale generic preset stored in localStorage
+    localStorage.setItem('visibill_active_preset_test-company-1', 'generic-1');
+
+    const { result } = renderHook(() => useActivePreset('test-company-1'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Should have auto-promoted from 'generic-1' to 'custom-mandala'
+    await waitFor(() => {
+      expect(result.current.activePresetId).toBe('custom-mandala');
+    });
+    expect(localStorage.getItem('visibill_active_preset_test-company-1')).toBe('custom-mandala');
+  });
 });

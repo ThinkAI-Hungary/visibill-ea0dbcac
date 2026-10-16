@@ -1,6 +1,6 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-15  
+> **Utoljára frissítve:** 2026-10-16  
 > **Összesen:** 258 döntés (243 egyedi döntési fájl) | ✅ Decided: 256 | ⛔ Superseded: 2
 
 

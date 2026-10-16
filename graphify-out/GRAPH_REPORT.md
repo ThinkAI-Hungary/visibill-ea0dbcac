@@ -1,8256 +1,4034 @@
-# Graph Report - eaisybill  (2026-10-15)
+# Graph Report - visibill-709fffdf  (2026-10-16)
 
 ## Corpus Check
-- 3241 files · ~4,592,460 words
+- 3275 files · ~4,650,245 words
 - Verdict: corpus is large enough that graph structure adds value.
+- Unclassified: 17 file(s) not represented in the graph (top: (none) 3, .xml 3, .example 2)
 
 ## Summary
-- 27767 nodes · 47331 edges · 2004 communities (1615 shown, 389 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 30 edges (avg confidence: 0.78)
+- 17119 nodes · 47558 edges · 904 communities (767 shown, 137 thin omitted)
+- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 1554 edges (avg confidence: 0.94)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8d6da795`
+- Built from commit: `e71ae2ad`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_formatCurrency|formatCurrency]]
-- [[_COMMUNITY_react-i18next|react-i18next]]
-- [[_COMMUNITY_useToast|useToast]]
-- [[_COMMUNITY_GLOSSARY|GLOSSARY.md]]
-- [[_COMMUNITY_libutils.ts|lib/utils.ts]]
-- [[_COMMUNITY_lucide-react|lucide-react]]
-- [[_COMMUNITY_vitest|vitest]]
-- [[_COMMUNITY_@testing-libraryreact|@testing-library/react]]
-- [[_COMMUNITY_react-router-dom|react-router-dom]]
-- [[_COMMUNITY_useEvData.ts|useEvData.ts]]
-- [[_COMMUNITY_businessdecisionsindex|business/decisions/index.md]]
-- [[_COMMUNITY_card.tsx|card.tsx]]
-- [[_COMMUNITY_architecturedecisionsindex|architecture/decisions/index.md]]
-- [[_COMMUNITY_8b. eaisyBooks — Könyvelő Iroda Platform|8b. eaisyBooks — Könyvelő Iroda Platform]]
-- [[_COMMUNITY_P-055-accounting-journals-ux|P-055-accounting-journals-ux.md]]
-- [[_COMMUNITY_TransactionDetailsDialog.tsx|TransactionDetailsDialog.tsx]]
-- [[_COMMUNITY_information-architecture|information-architecture.md]]
-- [[_COMMUNITY_ClientDetailsPage.tsx|ClientDetailsPage.tsx]]
-- [[_COMMUNITY_useAuth|useAuth]]
-- [[_COMMUNITY_ErrorControlPanel.tsx|ErrorControlPanel.tsx]]
-- [[_COMMUNITY_accountyRoutes.tsx|accountyRoutes.tsx]]
-- [[_COMMUNITY_productdecisionsindex|product/decisions/index.md]]
-- [[_COMMUNITY_PermissionMatrixPage.tsx|PermissionMatrixPage.tsx]]
-- [[_COMMUNITY_ref_https|ref_https]]
-- [[_COMMUNITY_TaxCalendarPage.tsx|TaxCalendarPage.tsx]]
-- [[_COMMUNITY_management-statsindex.ts|management-stats/index.ts]]
-- [[_COMMUNITY_accountyindex.ts|accounty/index.ts]]
-- [[_COMMUNITY_A-005-edge-functions|A-005-edge-functions.md]]
-- [[_COMMUNITY_database-schema|database-schema.md]]
-- [[_COMMUNITY_invoiceMultiselect.test.tsx|invoiceMultiselect.test.tsx]]
-- [[_COMMUNITY_nav-client.ts|nav-client.ts]]
-- [[_COMMUNITY_A-059-transaction-matching-core-and-modular-ui|A-059-transaction-matching-core-and-modular-ui.md]]
-- [[_COMMUNITY_EvThresholdMonitorPage.tsx|EvThresholdMonitorPage.tsx]]
-- [[_COMMUNITY_InvoiceContext.tsx|InvoiceContext.tsx]]
-- [[_COMMUNITY_payrollindex.ts|payroll/index.ts]]
-- [[_COMMUNITY_P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction|P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md]]
-- [[_COMMUNITY_vattypes.ts|vat/types.ts]]
-- [[_COMMUNITY_ProfitAndLoss.tsx|ProfitAndLoss.tsx]]
-- [[_COMMUNITY_ExportButton.tsx|ExportButton.tsx]]
-- [[_COMMUNITY_useAccountyClients|useAccountyClients]]
-- [[_COMMUNITY_dependencies|dependencies]]
-- [[_COMMUNITY_VatReturnContainer.tsx|VatReturnContainer.tsx]]
-- [[_COMMUNITY_testshelpers.ts|tests/helpers.ts]]
-- [[_COMMUNITY_usePayrollData.ts|usePayrollData.ts]]
-- [[_COMMUNITY_PayrollCyclePage|PayrollCyclePage]]
-- [[_COMMUNITY_DocumentEngine.ts|DocumentEngine.ts]]
-- [[_COMMUNITY_EmployeeDetailsPage.tsx|EmployeeDetailsPage.tsx]]
-- [[_COMMUNITY_opg.ts|opg.ts]]
-- [[_COMMUNITY_checkbox.tsx|checkbox.tsx]]
-- [[_COMMUNITY_AppSidebar.tsx|AppSidebar.tsx]]
-- [[_COMMUNITY_KnowledgeBasePage.tsx|KnowledgeBasePage.tsx]]
-- [[_COMMUNITY_EntriesTab.tsx|EntriesTab.tsx]]
-- [[_COMMUNITY_AuditorExportWorkspace.tsx|AuditorExportWorkspace.tsx]]
-- [[_COMMUNITY_Step6Export.tsx|Step6Export.tsx]]
-- [[_COMMUNITY_InvoiceTableContainer.tsx|InvoiceTableContainer.tsx]]
-- [[_COMMUNITY_Custom Hookek Áttekintése|Custom Hookek Áttekintése]]
-- [[_COMMUNITY_EmployeeImportPage.tsx|EmployeeImportPage.tsx]]
-- [[_COMMUNITY_i18n.ts|i18n.ts]]
-- [[_COMMUNITY_SubledgerPage.tsx|SubledgerPage.tsx]]
-- [[_COMMUNITY_A-024-partner-upsert-strategy|A-024-partner-upsert-strategy.md]]
-- [[_COMMUNITY_replicaindex.ts|replica/index.ts]]
-- [[_COMMUNITY_ProtectedLayout|ProtectedLayout]]
-- [[_COMMUNITY_WorkerPanel.tsx|WorkerPanel.tsx]]
-- [[_COMMUNITY_3. Részletes Tételes Ellenőrzőlista (Mind az 1146 tétel)|3. Részletes Tételes Ellenőrzőlista (Mind az 1146 tétel)]]
-- [[_COMMUNITY_ReportsPage.tsx|ReportsPage.tsx]]
-- [[_COMMUNITY_Visibill Scalability & Security Audit|Visibill Scalability & Security Audit]]
-- [[_COMMUNITY_EmployeeWizardPage.tsx|EmployeeWizardPage.tsx]]
-- [[_COMMUNITY_11 — Adatmegjelenítés & Táblázatok|11 — Adatmegjelenítés & Táblázatok]]
-- [[_COMMUNITY_process-mailgun-webhookindex.ts|process-mailgun-webhook/index.ts]]
-- [[_COMMUNITY_AiAnomalyReportPage.tsx|AiAnomalyReportPage.tsx]]
-- [[_COMMUNITY_TaoYearEndWizardPage.tsx|TaoYearEndWizardPage.tsx]]
-- [[_COMMUNITY_04-invoices|04-invoices.md]]
-- [[_COMMUNITY_rlbParser.ts|rlbParser.ts]]
-- [[_COMMUNITY_cache.test.ts|cache.test.ts]]
-- [[_COMMUNITY_ManualEntryDialog|ManualEntryDialog]]
-- [[_COMMUNITY_closed|closed]]
-- [[_COMMUNITY_DashboardApp|DashboardApp]]
-- [[_COMMUNITY_PartnersPage|PartnersPage]]
-- [[_COMMUNITY_hungarianEncoding.ts|hungarianEncoding.ts]]
-- [[_COMMUNITY_ChangelogPage.tsx|ChangelogPage.tsx]]
-- [[_COMMUNITY_InvoiceApprovalDialog|InvoiceApprovalDialog]]
-- [[_COMMUNITY_glData.ts|glData.ts]]
-- [[_COMMUNITY_procontGlData.ts|procontGlData.ts]]
-- [[_COMMUNITY_escapeXml|escapeXml]]
-- [[_COMMUNITY_FilePreviewModal.tsx|FilePreviewModal.tsx]]
-- [[_COMMUNITY_🛡️ Morfi Implementation Review (Autonomous Goal Mode)|🛡️ Morfi Implementation Review (Autonomous Goal Mode)]]
-- [[_COMMUNITY_useInvoiceContext|useInvoiceContext]]
-- [[_COMMUNITY_send-weekly-summaryweekly-summary.tsx|send-weekly-summary/weekly-summary.tsx]]
-- [[_COMMUNITY_emailsweekly-summary.tsx|emails/weekly-summary.tsx]]
-- [[_COMMUNITY_Components|Components]]
-- [[_COMMUNITY_VatAmendmentsWorkspace.tsx|VatAmendmentsWorkspace.tsx]]
-- [[_COMMUNITY_GeneralLedgerTableBase|GeneralLedgerTableBase]]
-- [[_COMMUNITY_AutoAccountingRulesTab.tsx|AutoAccountingRulesTab.tsx]]
-- [[_COMMUNITY_12 — Dialógusok & Felugró Ablakok|12 — Dialógusok & Felugró Ablakok]]
-- [[_COMMUNITY_AccountyErrorBoundary|AccountyErrorBoundary]]
-- [[_COMMUNITY_Visibill Codebase Audit|Visibill Codebase Audit]]
-- [[_COMMUNITY_InvoiceItemsDialog|InvoiceItemsDialog]]
-- [[_COMMUNITY_08 — Interakciók & Animációk|08 — Interakciók & Animációk]]
-- [[_COMMUNITY_customer-apiindex.ts|customer-api/index.ts]]
-- [[_COMMUNITY_10 — Accessibility & UX Patternek|10 — Accessibility & UX Patternek]]
-- [[_COMMUNITY_KintlevoPage.tsx|KintlevoPage.tsx]]
-- [[_COMMUNITY_send-dunning-emailindex.ts|send-dunning-email/index.ts]]
-- [[_COMMUNITY_FadInvoicePanel.tsx|FadInvoicePanel.tsx]]
-- [[_COMMUNITY_A-104-eaisybooks-ai-chat-streaming-and-edge-architecture|A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md]]
-- [[_COMMUNITY_EvHipaReturnPage.tsx|EvHipaReturnPage.tsx]]
-- [[_COMMUNITY_random|random]]
-- [[_COMMUNITY_A-109-eaisybill-i18n-croatia-localization-and-route-architecture|A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md]]
-- [[_COMMUNITY_Technikai Fogalomtár — Supabase Exit Strategy|Technikai Fogalomtár — Supabase Exit Strategy]]
-- [[_COMMUNITY_Visibill Feature Planner — Zero Silent Decisions & Subagent Swarm|Visibill Feature Planner — Zero Silent Decisions & Subagent Swarm]]
-- [[_COMMUNITY_gen-db-docs.js|gen-db-docs.js]]
-- [[_COMMUNITY_UnifiedFinancialCockpit.tsx|UnifiedFinancialCockpit.tsx]]
-- [[_COMMUNITY_glInvoiceGrouping.ts|glInvoiceGrouping.ts]]
-- [[_COMMUNITY_vatReturnXml.ts|vatReturnXml.ts]]
-- [[_COMMUNITY_PayslipGeneratorPage.tsx|PayslipGeneratorPage.tsx]]
-- [[_COMMUNITY_AssetDetailPanel.tsx|AssetDetailPanel.tsx]]
-- [[_COMMUNITY_VatFrequency|VatFrequency]]
-- [[_COMMUNITY_HelpTabSections.tsx|HelpTabSections.tsx]]
-- [[_COMMUNITY_JournalView|JournalView]]
-- [[_COMMUNITY_6. Lepesrol Lepesre Megvalositasi Terv (Sprint Roadmap)|6. Lepesrol Lepesre Megvalositasi Terv (Sprint Roadmap)]]
-- [[_COMMUNITY_NotesPage.tsx|NotesPage.tsx]]
-- [[_COMMUNITY_devDependencies|devDependencies]]
-- [[_COMMUNITY_Dokumentáció Taxonómia — Mi mibe kerül|Dokumentáció Taxonómia — Mi mibe kerül?]]
-- [[_COMMUNITY_6. Module Permission System (menü ki-bekapcsolás)|6. Module Permission System (menü ki-/bekapcsolás)]]
-- [[_COMMUNITY_02 — Design Tokens & Színrendszer|02 — Design Tokens & Színrendszer]]
-- [[_COMMUNITY_03 — Tipográfia & Ikonok|03 — Tipográfia & Ikonok]]
-- [[_COMMUNITY_Edge Functions Katalógus|Edge Functions Katalógus]]
-- [[_COMMUNITY_P-052-fixed-assets-project-assignment-ux|P-052-fixed-assets-project-assignment-ux.md]]
-- [[_COMMUNITY_eb0255ChartOfAccountsSubledger.test.tsx|eb0255ChartOfAccountsSubledger.test.tsx]]
-- [[_COMMUNITY_fetchAllGlCategorizedItems|fetchAllGlCategorizedItems]]
-- [[_COMMUNITY_DividendPayrollPage.tsx|DividendPayrollPage.tsx]]
-- [[_COMMUNITY_croatianPoreznaXml.ts|croatianPoreznaXml.ts]]
-- [[_COMMUNITY_Visibill Changelog & Patch Notes Publish Skill (visibill-patchnote)|Visibill Changelog & Patch Notes Publish Skill (/visibill-patchnote)]]
-- [[_COMMUNITY_2. Teljes RPC Function Katalógus Áttekintés|2. Teljes RPC Function Katalógus Áttekintés]]
-- [[_COMMUNITY_Nav26A60ReplicaContainer.tsx|Nav26A60ReplicaContainer.tsx]]
-- [[_COMMUNITY_VisibillGoogleDriveSync.js|VisibillGoogleDriveSync.js]]
-- [[_COMMUNITY_glExport.ts|glExport.ts]]
-- [[_COMMUNITY_Nav2665MReplicaContainer.tsx|Nav2665MReplicaContainer.tsx]]
-- [[_COMMUNITY_OutputDocumentsPage.tsx|OutputDocumentsPage.tsx]]
-- [[_COMMUNITY_Döntések|Döntések]]
-- [[_COMMUNITY_asana.cjs|asana.cjs]]
-- [[_COMMUNITY_usePurchaseVouchers.ts|usePurchaseVouchers.ts]]
-- [[_COMMUNITY_2.8 eaisyBooks (Könyvelőirodai Platform & ERP)|2.8 eaisyBooks (Könyvelőirodai Platform & ERP)]]
-- [[_COMMUNITY_vatTemplateParser.ts|vatTemplateParser.ts]]
-- [[_COMMUNITY_cn|cn]]
-- [[_COMMUNITY_NavInvoiceTable.tsx|NavInvoiceTable.tsx]]
-- [[_COMMUNITY_WorksheetLeaveModal|WorksheetLeaveModal]]
-- [[_COMMUNITY_GlAccountCardView|GlAccountCardView]]
-- [[_COMMUNITY_Supabase Lock-in Storage, Realtime, PostgREST, RLS & pg_cron|Supabase Lock-in: Storage, Realtime, PostgREST, RLS & pg_cron]]
-- [[_COMMUNITY_BankAccountsTab|BankAccountsTab]]
-- [[_COMMUNITY_Visibill Spec Lookup — Docs-First Development|Visibill Spec Lookup — Docs-First Development]]
-- [[_COMMUNITY_Visibill Ticket Support — Ügyfélkérések & Hibafeltárás Workflow|Visibill Ticket Support — Ügyfélkérések & Hibafeltárás Workflow]]
-- [[_COMMUNITY_📘 eaisyBooks — EV (Egyéni Vállalkozó)|📘 eaisyBooks — EV (Egyéni Vállalkozó)]]
-- [[_COMMUNITY_ConfirmDialog Async Pattern — Implementációs Terv|ConfirmDialog Async Pattern — Implementációs Terv]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)|🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)]]
-- [[_COMMUNITY_14 — Teljesítmény Optimalizáció|14 — Teljesítmény Optimalizáció]]
-- [[_COMMUNITY_Visibill — Business Overview|Visibill — Business Overview]]
-- [[_COMMUNITY_Egyedi Komponensek (Nem shadcnui)|Egyedi Komponensek (Nem shadcn/ui)]]
-- [[_COMMUNITY_OpeningJournalWizardModal|OpeningJournalWizardModal]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_useDevelopmentReserves.ts|useDevelopmentReserves.ts]]
-- [[_COMMUNITY_minimax-syncindex.ts|minimax-sync/index.ts]]
-- [[_COMMUNITY_🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)|🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)]]
-- [[_COMMUNITY_13 — Autentikáció & Onboarding|13 — Autentikáció & Onboarding]]
-- [[_COMMUNITY_useCashReports.ts|useCashReports.ts]]
-- [[_COMMUNITY_accountyConstants.ts|accountyConstants.ts]]
-- [[_COMMUNITY_constants.ts|constants.ts]]
-- [[_COMMUNITY_1. FÁZIS Log & Hibatábla Felderítés (Data Collection)|1. FÁZIS: Log & Hibatábla Felderítés (Data Collection)]]
-- [[_COMMUNITY_A-024 Partner Upsert Strategy — Prefix Matching, Foreign Partners, Both Upgrade|A-024: Partner Upsert Strategy — Prefix Matching, Foreign Partners, Both Upgrade]]
-- [[_COMMUNITY_InvoiceFullEditDialog|InvoiceFullEditDialog]]
-- [[_COMMUNITY_A-159 Hivatalos ÁFA Analitika Upgrade, M-lap Master–Detail és NAV OSA Keresztellenőrzés|A-159: Hivatalos ÁFA Analitika Upgrade, M-lap Master–Detail és NAV OSA Keresztellenőrzés]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_Visibill — Error Logging & Dashboard Rendszer|Visibill — Error Logging & Dashboard Rendszer]]
-- [[_COMMUNITY_Visibill — Use Cases|Visibill — Use Cases]]
-- [[_COMMUNITY_10 Design Koncepció|10 Design Koncepció]]
-- [[_COMMUNITY_accountyBulkBarIntegration.test.tsx|accountyBulkBarIntegration.test.tsx]]
-- [[_COMMUNITY_useInvoiceMutations.ts|useInvoiceMutations.ts]]
-- [[_COMMUNITY_ClientMissingInvoicesPage.tsx|ClientMissingInvoicesPage.tsx]]
-- [[_COMMUNITY_aggreg8-apiindex.ts|aggreg8-api/index.ts]]
-- [[_COMMUNITY_compilerOptions|compilerOptions]]
-- [[_COMMUNITY_Visibill Rendszerhibák Lekérdezési Kézikönyv (SQL Cheat Sheet)|Visibill Rendszerhibák Lekérdezési Kézikönyv (SQL Cheat Sheet)]]
-- [[_COMMUNITY_Teljes Edge Function Katalógus (70 db dokumentálva a 71-ből)|Teljes Edge Function Katalógus (70 db dokumentálva a 71-ből)]]
-- [[_COMMUNITY_AuthContext|AuthContext]]
-- [[_COMMUNITY_InvoiceDetailPopup|InvoiceDetailPopup]]
-- [[_COMMUNITY_useRelatedPartyTurnover.ts|useRelatedPartyTurnover.ts]]
-- [[_COMMUNITY_InvoiceRulesDialog.test.tsx|InvoiceRulesDialog.test.tsx]]
-- [[_COMMUNITY_InvoiceItemAccrualModal|InvoiceItemAccrualModal]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni (Funkciók részletes leírása)|3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)]]
-- [[_COMMUNITY_Visibill — Product Decision Records (PRD)|Visibill — Product Decision Records (PRD)]]
-- [[_COMMUNITY_9. Oldal-szintű Funkciók (2026-06-26)|9. Oldal-szintű Funkciók (2026-06-26)]]
-- [[_COMMUNITY_Visibill DBSQL Best Practices Checklist|Visibill DB/SQL Best Practices Checklist]]
-- [[_COMMUNITY_A-042 Sztornó Számla Kézi Lezárás (Storno Settle) Architektúra|A-042: Sztornó Számla Kézi Lezárás (Storno Settle) Architektúra]]
-- [[_COMMUNITY_CreateJournalModal.test.tsx|CreateJournalModal.test.tsx]]
-- [[_COMMUNITY_assetImportParser.ts|assetImportParser.ts]]
-- [[_COMMUNITY_GlobalDatePicker|GlobalDatePicker]]
-- [[_COMMUNITY_PostgreSQL RPC Tesztelési Stratégia és Blueprint|PostgreSQL RPC Tesztelési Stratégia és Blueprint]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni (Funkciók részletes leírása)|3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)]]
-- [[_COMMUNITY_2. Felületi Döntések|2. Felületi Döntések]]
-- [[_COMMUNITY_3. Funkcionális specifikáció|3. Funkcionális specifikáció]]
-- [[_COMMUNITY_compilerOptions|compilerOptions]]
-- [[_COMMUNITY_Workflow — Minden fejlesztési feladat elején|Workflow — Minden fejlesztési feladat elején]]
-- [[_COMMUNITY_Visibill Dev — Spec-First, Test-Driven Development (Lite)|Visibill Dev — Spec-First, Test-Driven Development (Lite)]]
-- [[_COMMUNITY_components.json|components.json]]
-- [[_COMMUNITY_📘 eaisyBooks — Alap|📘 eaisyBooks — Alap]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_invoicePaginationRecovery.test.tsx|invoicePaginationRecovery.test.tsx]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_uploadtypesindex.ts|upload/types/index.ts]]
-- [[_COMMUNITY_Visibill — Decision Helper|Visibill — Decision Helper]]
-- [[_COMMUNITY_page-header.tsx|page-header.tsx]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni (Funkciók részletes leírása)|3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)]]
-- [[_COMMUNITY_scripts|scripts]]
-- [[_COMMUNITY_payrollUtils.ts|payrollUtils.ts]]
-- [[_COMMUNITY_useAdminData.ts|useAdminData.ts]]
-- [[_COMMUNITY_tbCertificatesPdf.ts|tbCertificatesPdf.ts]]
-- [[_COMMUNITY_emailsinvoice-processed.tsx|emails/invoice-processed.tsx]]
-- [[_COMMUNITY_Database & Migration Guidelines (Visibill  eaisybill-prod)|Database & Migration Guidelines (Visibill / eaisybill-prod)]]
-- [[_COMMUNITY_Audit Checklist|Audit Checklist]]
-- [[_COMMUNITY_Visibill Drift Check — Spec vs Kód Konzisztencia|Visibill Drift Check — Spec vs Kód Konzisztencia]]
-- [[_COMMUNITY_2. A Partnerektől és a Banktól Megkapható Adatok Katalógusa|2. A Partnerektől és a Banktól Megkapható Adatok Katalógusa]]
-- [[_COMMUNITY_📋 Éves Beszámoló & ÁFA|📋 Éves Beszámoló & ÁFA]]
-- [[_COMMUNITY_📘 eaisyBooks — Bérszámfejtés|📘 eaisyBooks — Bérszámfejtés]]
-- [[_COMMUNITY_📄 Könyvelési Naplók (Accounting Journals)|📄 Könyvelési Naplók (Accounting Journals)]]
-- [[_COMMUNITY_InvoiceDataExportDialog|InvoiceDataExportDialog]]
-- [[_COMMUNITY_2. A Döntés|2. A Döntés]]
-- [[_COMMUNITY_vatCodeMatching.ts|vatCodeMatching.ts]]
-- [[_COMMUNITY_Supabase Edge Functions Katalógus|Supabase Edge Functions Katalógus]]
-- [[_COMMUNITY_2. A Havi Munkafolyamat Lépései Részletesen|2. A Havi Munkafolyamat Lépései Részletesen]]
-- [[_COMMUNITY_PRD-02 Havi Beosztástervező Naptárrács és Interakciók|PRD-02: Havi Beosztástervező Naptárrács és Interakciók]]
-- [[_COMMUNITY_password-reset.tsx|password-reset.tsx]]
-- [[_COMMUNITY_openclaw-apiindex.ts|openclaw-api/index.ts]]
-- [[_COMMUNITY_Visibill DBSQL Best Practices Checklist|Visibill DB/SQL Best Practices Checklist]]
-- [[_COMMUNITY_A-020 Auth Trigger Chain — Signup Incident és Tanulságok|A-020: Auth Trigger Chain — Signup Incident és Tanulságok]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni (Funkciók részletes leírása)|3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)]]
-- [[_COMMUNITY_exchangeRateBanks.ts|exchangeRateBanks.ts]]
-- [[_COMMUNITY_invoiceGlAccountRules.test.tsx|invoiceGlAccountRules.test.tsx]]
-- [[_COMMUNITY_agoraPnlPdf.ts|agoraPnlPdf.ts]]
-- [[_COMMUNITY_openclaw-apiindex.ts|openclaw-api/index.ts]]
-- [[_COMMUNITY_compilerOptions|compilerOptions]]
-- [[_COMMUNITY_dashboard_app.py|dashboard_app.py]]
-- [[_COMMUNITY_🛠️ Platform & Üzemeltetés|🛠️ Platform & Üzemeltetés]]
-- [[_COMMUNITY_AiAssistantChat.tsx|AiAssistantChat.tsx]]
-- [[_COMMUNITY_eb0257JournalsAndPartnerLines.test.ts|eb0257JournalsAndPartnerLines.test.ts]]
-- [[_COMMUNITY_ActivityLogSheet.tsx|ActivityLogSheet.tsx]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_fetchAllGlBalances|fetchAllGlBalances]]
-- [[_COMMUNITY_A-164 Fejlesztési Tartalék és Tárgyi Eszközök Adatmodell, ÉCS Kalkuláció és API|A-164: Fejlesztési Tartalék és Tárgyi Eszközök Adatmodell, ÉCS Kalkuláció és API]]
-- [[_COMMUNITY_A-189 Főkönyvi Kivonat és Naplófőkönyv RPC Teljesítmény-Optimalizálás (Statement Timeout 57014 Megszüntetése, CTE Materializáció és Hash Join)|A-189: Főkönyvi Kivonat és Naplófőkönyv RPC Teljesítmény-Optimalizálás (Statement Timeout 57014 Megszüntetése, CTE Materializáció és Hash Join)]]
-- [[_COMMUNITY_Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)|Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)]]
-- [[_COMMUNITY_3. A 6-Füles Munkavállalói Mesterkarton Specifikációja (`EmployeeCardDrawer`)|3. A 6-Füles Munkavállalói Mesterkarton Specifikációja (`EmployeeCardDrawer`)]]
-- [[_COMMUNITY_cashReceiptTemplate.ts|cashReceiptTemplate.ts]]
-- [[_COMMUNITY_GenericDeclarationPage.tsx|GenericDeclarationPage.tsx]]
-- [[_COMMUNITY_ErrorBoundary|ErrorBoundary]]
-- [[_COMMUNITY_Adatmigráció és Napi Szinkronizáció (Data Migration & Daily Sync)|Adatmigráció és Napi Szinkronizáció (Data Migration & Daily Sync)]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni (Funkciók részletes leírása)|3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)]]
-- [[_COMMUNITY_P-015 Tömeges Műveletek (Bulk Actions)|P-015: Tömeges Műveletek (Bulk Actions)]]
-- [[_COMMUNITY_depreciationPostingService.ts|depreciationPostingService.ts]]
-- [[_COMMUNITY_functionsnavindex.ts|functions/nav/index.ts]]
-- [[_COMMUNITY_🛠️ Végrehajtási Munkafolyamat (`goal` Üzemmód)|🛠️ Végrehajtási Munkafolyamat (`/goal` Üzemmód)]]
-- [[_COMMUNITY_🛠️ Végrehajtási Munkafolyamat (`goal` Üzemmód)|🛠️ Végrehajtási Munkafolyamat (`/goal` Üzemmód)]]
-- [[_COMMUNITY_📋 Működési Folyamat|📋 Működési Folyamat]]
-- [[_COMMUNITY_🔄 Kötelező Végrehajtási Folyamat (Workflow)|🔄 Kötelező Végrehajtási Folyamat (Workflow)]]
-- [[_COMMUNITY_📄 Számlák|📄 Számlák]]
-- [[_COMMUNITY_💳 Tranzakciók & Bank|💳 Tranzakciók & Bank]]
-- [[_COMMUNITY_A-023 Upload Dedup Védelem (DB Trigger + Frontend Mutex)|A-023: Upload Dedup Védelem (DB Trigger + Frontend Mutex)]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_2. Megoldási Architektúra és Döntések|2. Megoldási Architektúra és Döntések]]
-- [[_COMMUNITY_ManualInvoiceCreateDialog|ManualInvoiceCreateDialog]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_06 — Állapotkezelés & Kontextusok|06 — Állapotkezelés & Kontextusok]]
-- [[_COMMUNITY_brdINDEX|brd/INDEX.md]]
-- [[_COMMUNITY_Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)|Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)]]
-- [[_COMMUNITY_3. Üzleti Entitások és Felelősségi Körök|3. Üzleti Entitások és Felelősségi Körök]]
-- [[_COMMUNITY_PRD-08 Dolgozói Önkiszolgáló Portál és Mobil Nézet|PRD-08: Dolgozói Önkiszolgáló Portál és Mobil Nézet]]
-- [[_COMMUNITY_🚨 Riasztások Központ és NAV Határidők (Alerts Center & NAV Deadlines)|🚨 Riasztások Központ és NAV Határidők (Alerts Center & NAV Deadlines)]]
-- [[_COMMUNITY_🛡️ Jogosultságkezelő Mátrix (Permission Matrix)|🛡️ Jogosultságkezelő Mátrix (Permission Matrix)]]
-- [[_COMMUNITY_🧮 Adómértékek és Jogszabályi Paraméterek (Tax Parameters)|🧮 Adómértékek és Jogszabályi Paraméterek (Tax Parameters)]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni|3. Mit lehet benne a felhasználónak csinálni?]]
-- [[_COMMUNITY_📋 Ügyfél Profil és Törzsadatok (Client Profile)|📋 Ügyfél Profil és Törzsadatok (Client Profile)]]
-- [[_COMMUNITY_🏛️ Társasági Adó, KIVA és Zárás Modul (Client TAOKIVA Module)|🏛️ Társasági Adó, KIVA és Zárás Modul (Client TAO/KIVA Module)]]
-- [[_COMMUNITY_3. Mit lehet benne a felhasználónak csinálni (Funkciók részletes leírása)|3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)]]
-- [[_COMMUNITY_Alert|Alert]]
-- [[_COMMUNITY_journalFilterUtils.ts|journalFilterUtils.ts]]
-- [[_COMMUNITY_journalUtils.ts|journalUtils.ts]]
-- [[_COMMUNITY_vatA60Xml.ts|vatA60Xml.ts]]
-- [[_COMMUNITY_permissionsHandler.ts|permissionsHandler.ts]]
-- [[_COMMUNITY_send-invoice-notificationinvoice-processed.tsx|send-invoice-notification/invoice-processed.tsx]]
-- [[_COMMUNITY_UI & UX Guidelines (Visibill  eaisybill-prod)|UI & UX Guidelines (Visibill / eaisybill-prod)]]
-- [[_COMMUNITY_006-tech-stack|006-tech-stack.md]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_A-026 Support Admin Ideiglenes Hozzáférés (Impersonation & Full RLS Access)|A-026: Support Admin Ideiglenes Hozzáférés (Impersonation & Full RLS Access)]]
-- [[_COMMUNITY_PromptsPage|PromptsPage]]
-- [[_COMMUNITY_A-092 Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció|A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_accrualMath.ts|accrualMath.ts]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_A-237 NAV Online Számla v3 GZIP Kitömörítés és Többtételes Közműszámla Ingestion Architektúra|A-237: NAV Online Számla v3 GZIP Kitömörítés és Többtételes Közműszámla Ingestion Architektúra]]
-- [[_COMMUNITY_A-238 Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra|A-238: Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra]]
-- [[_COMMUNITY_Visibill — Architecture Decision Records (ADR)|Visibill — Architecture Decision Records (ADR)]]
-- [[_COMMUNITY_PRD-01 Portál Navigáció, Globális Vezérlők és Menürendszer|PRD-01: Portál Navigáció, Globális Vezérlők és Menürendszer]]
-- [[_COMMUNITY_PRD-03 Műszakszerkesztő Dialógus, Gyorskitöltő és Sablonkezelő|PRD-03: Műszakszerkesztő Dialógus, Gyorskitöltő és Sablonkezelő]]
-- [[_COMMUNITY_PRD-04 Távollét- és Helyettesítéskezelő Felület|PRD-04: Távollét- és Helyettesítéskezelő Felület]]
-- [[_COMMUNITY_🧩 Az 5 Alapvető Hook Részletezve|🧩 Az 5 Alapvető Hook Részletezve]]
-- [[_COMMUNITY_2. Terméktervezési Döntések (UX)|2. Terméktervezési Döntések (UX)]]
-- [[_COMMUNITY_navProtocol.test.ts|navProtocol.test.ts]]
-- [[_COMMUNITY_syncKnowledgeBase.cjs|syncKnowledgeBase.cjs]]
-- [[_COMMUNITY_SharedComponents.tsx|SharedComponents.tsx]]
-- [[_COMMUNITY_inviteCodeFlow.test.ts|inviteCodeFlow.test.ts]]
-- [[_COMMUNITY_React & Frontend Guidelines (Visibill  eaisybill-prod)|React & Frontend Guidelines (Visibill / eaisybill-prod)]]
-- [[_COMMUNITY_Moduláris BRD Készítési Irányelvek és Rekordstruktúra Sablon|Moduláris BRD Készítési Irányelvek és Rekordstruktúra Sablon]]
-- [[_COMMUNITY_📘 eaisyBooks — Adó & Jogi|📘 eaisyBooks — Adó & Jogi]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_UploadHistory|UploadHistory]]
-- [[_COMMUNITY_2. Hiba Források|2. Hiba Források]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_2. Decision|2. Decision]]
-- [[_COMMUNITY_A-233 Kézi Készpénzes Számlarendezések Automatikus Házipénztár Integrációja és GLS Kompenzációs Normalizálás|A-233: Kézi Készpénzes Számlarendezések Automatikus Házipénztár Integrációja és GLS Kompenzációs Normalizálás]]
-- [[_COMMUNITY_💡 Decision|💡 Decision]]
-- [[_COMMUNITY_A-245 calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése)|A-245: calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése)]]
-- [[_COMMUNITY_LiveNotificationProvider|LiveNotificationProvider]]
-- [[_COMMUNITY_PRD-06 Jelenlét-Igazolás, Hóvégi Zárás és Bérszámfejtési Export|PRD-06: Jelenlét-Igazolás, Hóvégi Zárás és Bérszámfejtési Export]]
-- [[_COMMUNITY_eaisybill Design System — Áttekintés|eaisybill Design System — Áttekintés]]
-- [[_COMMUNITY_Kiegészítő Standalone Komponensek|Kiegészítő Standalone Komponensek]]
-- [[_COMMUNITY_🗂️ Kategóriák és Modulok|🗂️ Kategóriák és Modulok]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_🗂️ Gyors Hivatkozások a Glossary Modulokhoz|🗂️ Gyors Hivatkozások a Glossary Modulokhoz]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_useDocumentUpload.ts|useDocumentUpload.ts]]
-- [[_COMMUNITY_Visibill Development & Escalation Protocol|Visibill Development & Escalation Protocol]]
-- [[_COMMUNITY_Új viselkedés|Új viselkedés]]
-- [[_COMMUNITY_3. UIUX Tervezet|3. UI/UX Tervezet]]
-- [[_COMMUNITY_Kiterjesztések, Sorok és Tesztkörnyezet Migráció (Extensions, Queues & Local replica)|Kiterjesztések, Sorok és Tesztkörnyezet Migráció (Extensions, Queues & Local replica)]]
-- [[_COMMUNITY_LeavePanel.tsx|LeavePanel.tsx]]
-- [[_COMMUNITY_ManualUploadFeature.tsx|ManualUploadFeature.tsx]]
-- [[_COMMUNITY_importCustomsAccounting.ts|importCustomsAccounting.ts]]
-- [[_COMMUNITY_accountyPermissions.test.ts|accountyPermissions.test.ts]]
-- [[_COMMUNITY_welcome.tsx|welcome.tsx]]
-- [[_COMMUNITY_compilerOptions|compilerOptions]]
-- [[_COMMUNITY_🤖 Visibill AI Skills|🤖 Visibill AI Skills]]
-- [[_COMMUNITY_🔄 Részletes Szinkronizációs Protokoll (Workflow)|🔄 Részletes Szinkronizációs Protokoll (Workflow)]]
-- [[_COMMUNITY_Visibill PM Task Creator — Letisztult Task Brief & Asana Generátor|Visibill PM Task Creator — Letisztult Task Brief & Asana Generátor]]
-- [[_COMMUNITY_📊 Főkönyv (General Ledger)|📊 Főkönyv (General Ledger)]]
-- [[_COMMUNITY_A-045 Audit Trigger Email-Alias Bypass a Service Role Guard Alatt|A-045: Audit Trigger Email-Alias Bypass a Service Role Guard Alatt]]
-- [[_COMMUNITY_A-052 Multi-Profile IMAPSMTP Levelező Fiókok és Vault Integráció|A-052: Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció]]
-- [[_COMMUNITY_A-086 Főkönyvi Könyvelési Státusz Szűrő (POSTED_ONLY) és Naplózási Irányelvek|A-086: Főkönyvi Könyvelési Státusz Szűrő (POSTED_ONLY) és Naplózási Irányelvek]]
-- [[_COMMUNITY_A-089 Management Dashboard Hibajegy Létrehozás Felhasználó Nevében (Impersonated Ticket Creation)|A-089: Management Dashboard Hibajegy Létrehozás Felhasználó Nevében (Impersonated Ticket Creation)]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_Decision (Döntés)|Decision (Döntés)]]
-- [[_COMMUNITY_Decision (Döntés)|Decision (Döntés)]]
-- [[_COMMUNITY_A-145 Tömeges PDF Szeletelés (Physical Chunk Slicing), NAV Determinisztikus Fallback és Többszörös Mellékletkezelés|A-145: Tömeges PDF Szeletelés (Physical Chunk Slicing), NAV Determinisztikus Fallback és Többszörös Mellékletkezelés]]
-- [[_COMMUNITY_A-168 Számla Export Banki Tranzakció Feloldás, Skontó-Dátum Architektúra és Intelligens Fül-Válogatás|A-168: Számla Export Banki Tranzakció Feloldás, Skontó-Dátum Architektúra és Intelligens Fül-Válogatás]]
-- [[_COMMUNITY_2. Decision|2. Decision]]
-- [[_COMMUNITY_2. Decision|2. Decision]]
-- [[_COMMUNITY_A-184 Real-time AI Categorization Progress Streaming, Invalidation & Idempotency Safeguards|A-184: Real-time AI Categorization Progress Streaming, Invalidation & Idempotency Safeguards]]
-- [[_COMMUNITY_JournalsPage|JournalsPage]]
-- [[_COMMUNITY_2. Architekturális Döntések|2. Architekturális Döntések]]
-- [[_COMMUNITY_A-230 Könyvelési Naplók Kategorizálása, Tételsori Partner Relációk és Banki Kétirányú Szinkronizáció (EB-0257)|A-230: Könyvelési Naplók Kategorizálása, Tételsori Partner Relációk és Banki Kétirányú Szinkronizáció (EB-0257)]]
-- [[_COMMUNITY_A-235 Termékimport és Vámhatározatok ÁFA Integrációja|A-235: Termékimport és Vámhatározatok ÁFA Integrációja]]
-- [[_COMMUNITY_A-236 NAV 26TFEJLH Nyomtatvány Replika és PDF Generáló Motor|A-236: NAV 26TFEJLH Nyomtatvány Replika és PDF Generáló Motor]]
-- [[_COMMUNITY_A-240 ÁFA Számítási Regresszióvédelmi Kapu Golden Master Szerződésteszt és Élő Adatbázis Snapshot Guard Architektúra|A-240: ÁFA Számítási Regresszióvédelmi Kapu: Golden Master Szerződésteszt és Élő Adatbázis Snapshot Guard Architektúra]]
-- [[_COMMUNITY_Email Auth Flow-ok (2026-06-24 redesign)|Email Auth Flow-ok (2026-06-24 redesign)]]
-- [[_COMMUNITY_PostgreSQL RPC és Függvény Katalógus|PostgreSQL RPC és Függvény Katalógus]]
-- [[_COMMUNITY_GraphCanvas|GraphCanvas]]
-- [[_COMMUNITY_PRD-05 Munkaügyi Szabálymotor és Élő Megfelelőségi Rendszer|PRD-05: Munkaügyi Szabálymotor és Élő Megfelelőségi Rendszer]]
-- [[_COMMUNITY_Decision 040 Számla Kapcsolatok és Párosítási Logikák (Matching & Relations)|Decision 040: Számla Kapcsolatok és Párosítási Logikák (Matching & Relations)]]
-- [[_COMMUNITY_04 — Komponens Könyvtár|04 — Komponens Könyvtár]]
-- [[_COMMUNITY_Fejlesztési Munkafolyamat és CICD (Development Workflow)|Fejlesztési Munkafolyamat és CI/CD (Development Workflow)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_P-176 Könyvelési Napló RLB-Mintájú Szűkítés Modál, Pozitív Unió Irányszűrés és Reszponzív Panel UX|P-176: Könyvelési Napló RLB-Mintájú Szűkítés Modál, Pozitív Unió Irányszűrés és Reszponzív Panel UX]]
-- [[_COMMUNITY_Döntések|Döntések]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_2. Termékdöntés és Megoldás|2. Termékdöntés és Megoldás]]
-- [[_COMMUNITY_2. Megvalósított Felületi Élmény (UX)|2. Megvalósított Felületi Élmény (UX)]]
-- [[_COMMUNITY_2. Decision|2. Decision]]
-- [[_COMMUNITY_Migrációs Terv — Auth Absztrakció & Edge Function Portolás|Migrációs Terv — Auth Absztrakció & Edge Function Portolás]]
-- [[_COMMUNITY_4.3 Fázisok részletesen|4.3 Fázisok részletesen]]
-- [[_COMMUNITY_openingImportParser.ts|openingImportParser.ts]]
-- [[_COMMUNITY_sickLeaveTemplates.ts|sickLeaveTemplates.ts]]
-- [[_COMMUNITY_CategoryAccordionItem.tsx|CategoryAccordionItem.tsx]]
-- [[_COMMUNITY_chart.tsx|chart.tsx]]
-- [[_COMMUNITY_nav-auto-syncindex.ts|nav-auto-sync/index.ts]]
-- [[_COMMUNITY_Moduláris PRD Készítési Irányelvek és Rekordstruktúra Sablon|Moduláris PRD Készítési Irányelvek és Rekordstruktúra Sablon]]
-- [[_COMMUNITY_LÉPÉS 1 Spec & Pattern Lookup (NE kódolj!)|LÉPÉS 1: Spec & Pattern Lookup (NE kódolj!)]]
-- [[_COMMUNITY_verify_kb_rag.mjs|verify_kb_rag.mjs]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_A-038 IMAPSMTP Hitelesítő Adatok és Vault Integráció|A-038: IMAP/SMTP Hitelesítő Adatok és Vault Integráció]]
-- [[_COMMUNITY_Auth Provider|Auth Provider]]
-- [[_COMMUNITY_A-085 Főkönyvi Dátum Alap RPC Pushdown és Dinamikus Chunk Reload Recovery|A-085: Főkönyvi Dátum Alap RPC Pushdown és Dinamikus Chunk Reload Recovery]]
-- [[_COMMUNITY_A-101 Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz (PostgREST Pre-Request Hook & Edge Function Client Guard)|A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz (PostgREST Pre-Request Hook & Edge Function Client Guard)]]
-- [[_COMMUNITY_A-112 Futárszolgálati Kompenzációs Értesítők Kétirányú Automatikus Számlarendezése és Futárriport UI Párosítás (GLS  Courier Compensation Auto-Settlement & UI)|A-112: Futárszolgálati Kompenzációs Értesítők Kétirányú Automatikus Számlarendezése és Futárriport UI Párosítás (GLS / Courier Compensation Auto-Settlement & UI)]]
-- [[_COMMUNITY_A-120 Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló|A-120: Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló]]
-- [[_COMMUNITY_A-121 Évek Közötti Áthúzódó Teljesítésű Számlák Főkönyvi és ÁFA Védőhálója (Cross-Year Delivery Guard)|A-121: Évek Közötti Áthúzódó Teljesítésű Számlák Főkönyvi és ÁFA Védőhálója (Cross-Year Delivery Guard)]]
-- [[_COMMUNITY_A-129 Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek|A-129: Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek]]
-- [[_COMMUNITY_A-132 NAV Online Számla v3.0 queryTaxpayer Integráció és Think AI Kft. Kulcs Fallback|A-132: NAV Online Számla v3.0 queryTaxpayer Integráció és Think AI Kft. Kulcs Fallback]]
-- [[_COMMUNITY_A-148 Könyvelőirodai Hibajegy Megosztás és Hibrid RLS Hozzáférés-vezérlés|A-148: Könyvelőirodai Hibajegy Megosztás és Hibrid RLS Hozzáférés-vezérlés]]
-- [[_COMMUNITY_2. Architektúrális Döntések|2. Architektúrális Döntések]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_2. Megoldás & Architektúrális Döntések|2. Megoldás & Architektúrális Döntések]]
-- [[_COMMUNITY_A-185 Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra|A-185: Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra]]
-- [[_COMMUNITY_2. Döntések és Architektúra|2. Döntések és Architektúra]]
-- [[_COMMUNITY_A-231 Cégprofil Számviteli Beállítások Kiterjesztése Teljesítés Dátum, Összevont Főkönyvi Nézet és Devizaárfolyam Bankkatalógus|A-231: Cégprofil Számviteli Beállítások Kiterjesztése: Teljesítés Dátum, Összevont Főkönyvi Nézet és Devizaárfolyam Bankkatalógus]]
-- [[_COMMUNITY_A-234 ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Architektúrája|A-234: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Architektúrája]]
-- [[_COMMUNITY_Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)|Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)]]
-- [[_COMMUNITY_prdINDEX|prd/INDEX.md]]
-- [[_COMMUNITY_7. Pénzügyi Modulok|7. Pénzügyi Modulok]]
-- [[_COMMUNITY_queryTaxpayerFromNav|queryTaxpayerFromNav]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_2. Üzleti és Számviteli Döntések|2. Üzleti és Számviteli Döntések]]
-- [[_COMMUNITY_BDR-065 ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Üzleti Szabályzata|BDR-065: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Üzleti Szabályzata]]
-- [[_COMMUNITY_06. Hiányossági Katalógus és Cselekvési Terv — HR Lokalizáció|06. Hiányossági Katalógus és Cselekvési Terv — HR Lokalizáció]]
-- [[_COMMUNITY_4. Micro-Module Dekomponálás & Végrehajtási Terv|4. Micro-Module Dekomponálás & Végrehajtási Terv]]
-- [[_COMMUNITY_Fejlesztői Környezet Architektúra (DEV Architecture)|Fejlesztői Környezet Architektúra (DEV Architecture)]]
-- [[_COMMUNITY_⚛️ React Alapfogalmak, Virtual DOM & JSX|⚛️ React Alapfogalmak, Virtual DOM & JSX]]
-- [[_COMMUNITY_3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)|3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)]]
-- [[_COMMUNITY_P-085 eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása (Teendők, Portfólió, Segítség, Beállítások) UX|P-085: eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása (Teendők, Portfólió, Segítség, Beállítások) UX]]
-- [[_COMMUNITY_P-087 Aggreg8 Bankcsatlakozás, SyncUI Felugró Ablak és Élő Szinkronizáció UX|P-087: Aggreg8 Bankcsatlakozás, SyncUI Felugró Ablak és Élő Szinkronizáció UX]]
-- [[_COMMUNITY_2. Termékdöntés és Megoldás|2. Termékdöntés és Megoldás]]
-- [[_COMMUNITY_P-130 Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) UX|P-130: Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) UX]]
-- [[_COMMUNITY_FixedAssetsPage|FixedAssetsPage]]
-- [[_COMMUNITY_P-172 ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák UX|P-172: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák UX]]
-- [[_COMMUNITY_P-177 PROCONT Főkönyvi Kivonat A4 PDF és Excel Export, Kétoldalas Egyezőség-számítás és Hibátlan Többoldalas Layout UX|P-177: PROCONT Főkönyvi Kivonat A4 PDF és Excel Export, Kétoldalas Egyezőség-számítás és Hibátlan Többoldalas Layout UX]]
-- [[_COMMUNITY_invoices.ts|invoices.ts]]
-- [[_COMMUNITY_invoiceChainUtils.test.ts|invoiceChainUtils.test.ts]]
-- [[_COMMUNITY_skontoUtils.ts|skontoUtils.ts]]
-- [[_COMMUNITY_accounty-generate-deadlinesindex.ts|accounty-generate-deadlines/index.ts]]
-- [[_COMMUNITY_email-confirmation.tsx|email-confirmation.tsx]]
-- [[_COMMUNITY_Kötelező ÁFA Regresszióvédelmi és Stabilitási Kapu (VAT Safety Gate)|Kötelező ÁFA Regresszióvédelmi és Stabilitási Kapu (VAT Safety Gate)]]
-- [[_COMMUNITY_management_user_helper.cjs|management_user_helper.cjs]]
-- [[_COMMUNITY_🚀 Végrehajtási Folyamat (Workflow)|🚀 Végrehajtási Folyamat (Workflow)]]
-- [[_COMMUNITY_🏢 Cégek & Tagság|🏢 Cégek & Tagság]]
-- [[_COMMUNITY_A-041 Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency|A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency]]
-- [[_COMMUNITY_A-056 pg_cron Storage Cleanup Guard & Edge Function Schema Alignment|A-056: pg_cron Storage Cleanup Guard & Edge Function Schema Alignment]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_A-105 eaisyBill Tudástár Adatmodell, Full-Text Search és AI Retrieval Előkészítés|A-105: [eaisyBill] Tudástár Adatmodell, Full-Text Search és AI Retrieval Előkészítés]]
-- [[_COMMUNITY_A-116 K&H Bankkivonatok (.xls  .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem|A-116: K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem]]
-- [[_COMMUNITY_2. Architekturális Döntések|2. Architekturális Döntések]]
-- [[_COMMUNITY_2. Decision|2. Decision]]
-- [[_COMMUNITY_A-169-b2c-nav-anonymization-and-submitted-invoice-sync|A-169-b2c-nav-anonymization-and-submitted-invoice-sync.md]]
-- [[_COMMUNITY_A-167 NAV 2665 Hivatalos Nyomtatvány Digitális Replika Architektúra|A-167: NAV 2665 Hivatalos Nyomtatvány Digitális Replika Architektúra]]
-- [[_COMMUNITY_A-190 Non-Destructive IMAP UID Követés (Zero-Seen), Elosztott Zárolás és Batch Capping|A-190: Non-Destructive IMAP UID Követés (Zero-\Seen), Elosztott Zárolás és Batch Capping]]
-- [[_COMMUNITY_2. Döntések és Architektúra|2. Döntések és Architektúra]]
-- [[_COMMUNITY_2. Rendszerdöntések (Decisions D-1 .. D-4)|2. Rendszerdöntések (Decisions D-1 .. D-4)]]
-- [[_COMMUNITY_2. Architectural Decisions|2. Architectural Decisions]]
-- [[_COMMUNITY_A-243 NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZSZJ Detektálás Architektúra|A-243: NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZ/SZJ Detektálás Architektúra]]
-- [[_COMMUNITY_Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)|Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)]]
-- [[_COMMUNITY_Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)|Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)]]
-- [[_COMMUNITY_PRD-09 Fejlesztési Roadmap, Képernyő-készültség és MVP Kiadás|PRD-09: Fejlesztési Roadmap, Képernyő-készültség és MVP Kiadás]]
-- [[_COMMUNITY_Visibill — Business Requirements Document (BRD)|Visibill — Business Requirements Document (BRD)]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_BDR-066 Termékimport és Vámhatározatok ÁFA Elszámolása|BDR-066: Termékimport és Vámhatározatok ÁFA Elszámolása]]
-- [[_COMMUNITY_BDR-067 NAV 26TFEJLH Turizmusfejlesztési Hozzájárulás Bevallás és Nyomtatvány Replika|BDR-067: NAV 26TFEJLH Turizmusfejlesztési Hozzájárulás Bevallás és Nyomtatvány Replika]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_Dashboard KPI Kártyák Újratervezése (Design Mockup & Specifikáció)|Dashboard KPI Kártyák Újratervezése (Design Mockup & Specifikáció)]]
-- [[_COMMUNITY_01. Számlák és Bizonylatkezelés — HR Lokalizációs Leltár|01. Számlák és Bizonylatkezelés — HR Lokalizációs Leltár]]
-- [[_COMMUNITY_02. Pénzügy, Könyvelés és GL — HR Lokalizációs Leltár|02. Pénzügy, Könyvelés és GL — HR Lokalizációs Leltár]]
-- [[_COMMUNITY_03. Bank, Partnerek és Tranzakciók — HR Lokalizációs Leltár|03. Bank, Partnerek és Tranzakciók — HR Lokalizációs Leltár]]
-- [[_COMMUNITY_04. HR, Munkaidő és Tárgyi Eszközök — HR Lokalizációs Leltár|04. HR, Munkaidő és Tárgyi Eszközök — HR Lokalizációs Leltár]]
-- [[_COMMUNITY_05. Beállítások, Integrációk és Globális UI — HR Lokalizációs Leltár|05. Beállítások, Integrációk és Globális UI — HR Lokalizációs Leltár]]
-- [[_COMMUNITY_🪟 Sliding Window & Two Pointers Minták|🪟 Sliding Window & Two Pointers Minták]]
-- [[_COMMUNITY_🔄 Szerver Állapot & TanStack React Query (`useQuery`, `useMutation`)|🔄 Szerver Állapot & TanStack React Query (`useQuery`, `useMutation`)]]
-- [[_COMMUNITY_📋 NAV Bérbevallások és 08-as Modul (Payroll Filings)|📋 NAV Bérbevallások és 08-as Modul (Payroll Filings)]]
-- [[_COMMUNITY_Onboarding Wizard Felépítése és Lépései|Onboarding Wizard Felépítése és Lépései]]
-- [[_COMMUNITY_P-100 Nem Levonható ÁFA Megjelenítése és Felületi Átláthatósága (1. + 2. + 3. Opció) UX|P-100: Nem Levonható ÁFA Megjelenítése és Felületi Átláthatósága (1. + 2. + 3. Opció) UX]]
-- [[_COMMUNITY_2. Termékdöntés|2. Termékdöntés]]
-- [[_COMMUNITY_P-140 Számlázz.hu Saját Kimenő Számlaképek Lehívása és NAV Párosítás|P-140: Számlázz.hu Saját Kimenő Számlaképek Lehívása és NAV Párosítás]]
-- [[_COMMUNITY_2. Megoldás és Felületi Működés|2. Megoldás és Felületi Működés]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_P-150 Számlatétel-szintű Kontextuális Időbeli Elhatárolások (AIEPIE) Varázsló és Feladási UX|P-150: Számlatétel-szintű Kontextuális Időbeli Elhatárolások (AIE/PIE) Varázsló és Feladási UX]]
-- [[_COMMUNITY_P-163 Online Pénztárgép (OPG) Modul és Házipénztár Integráció UX|P-163: Online Pénztárgép (OPG) Modul és Házipénztár Integráció UX]]
-- [[_COMMUNITY_P-173 Termékimport és Vámhatározatok Rögzítése és Megjelenítése UX|P-173: Termékimport és Vámhatározatok Rögzítése és Megjelenítése UX]]
-- [[_COMMUNITY_P-174 NAV 26TFEJLH Nyomtatvány Replika és PDF Export UX|P-174: NAV 26TFEJLH Nyomtatvány Replika és PDF Export UX]]
-- [[_COMMUNITY_rich-text-editor.tsx|rich-text-editor.tsx]]
-- [[_COMMUNITY_ManageJournalsModal.test.tsx|ManageJournalsModal.test.tsx]]
-- [[_COMMUNITY_EaisybillPermissionPanel.tsx|EaisybillPermissionPanel.tsx]]
-- [[_COMMUNITY_rpcPerformanceAndResilience.test.ts|rpcPerformanceAndResilience.test.ts]]
-- [[_COMMUNITY_Supabase Edge Functions Guidelines (Visibill  eaisybill-prod)|Supabase Edge Functions Guidelines (Visibill / eaisybill-prod)]]
-- [[_COMMUNITY_Layer 2 Type Safety|Layer 2: Type Safety]]
-- [[_COMMUNITY_Visibill Database & Supabase Audit Framework|Visibill Database & Supabase Audit Framework]]
-- [[_COMMUNITY_Célzott éles NAV szinkron + láncellenőrzés|Célzott éles NAV szinkron + láncellenőrzés]]
-- [[_COMMUNITY_A-022 Kategóriák és Projektek Dual-Table Szinkronizációs Stratégia|A-022: Kategóriák és Projektek Dual-Table Szinkronizációs Stratégia]]
-- [[_COMMUNITY_2. Decision|2. Decision]]
-- [[_COMMUNITY_2. Decision|2. Decision]]
-- [[_COMMUNITY_2. Decision|2. Decision]]
-- [[_COMMUNITY_A-081 NAV 08 (2608  2508  2408) XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor|A-081: NAV 08 (2608 / 2508 / 2408) XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor]]
-- [[_COMMUNITY_A-090 Biztonságos Számlatükör Sablon Törlés, Függőség-Ellenőrzés és Tételek Átkötése (Remapping)|A-090: Biztonságos Számlatükör Sablon Törlés, Függőség-Ellenőrzés és Tételek Átkötése (Remapping)]]
-- [[_COMMUNITY_A-097 Multi-Tenant nav_invoice_items Denormalizáció, GL Statement Timeout Felszámolása és RLS Optimalizálás|A-097: Multi-Tenant nav_invoice_items Denormalizáció, GL Statement Timeout Felszámolása és RLS Optimalizálás]]
-- [[_COMMUNITY_2. Döntések és Architektúra|2. Döntések és Architektúra]]
-- [[_COMMUNITY_A-122 Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés|A-122: Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés]]
-- [[_COMMUNITY_2. Döntések|2. Döntések]]
-- [[_COMMUNITY_2. Architekturális Döntés|2. Architekturális Döntés]]
-- [[_COMMUNITY_A-179 Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra|A-179: Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra]]
-- [[_COMMUNITY_A-190-management-dashboard-counts-caching-and-worker-vault-offloading|A-190-management-dashboard-counts-caching-and-worker-vault-offloading.md]]
-- [[_COMMUNITY_A-244 Külföldi és Devizás Bejövő Számlák Integrálása az ÁFA Bevallásba és Taxology Baseline Igazítás|A-244: Külföldi és Devizás Bejövő Számlák Integrálása az ÁFA Bevallásba és Taxology Baseline Igazítás]]
-- [[_COMMUNITY_Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)|Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)]]
-- [[_COMMUNITY_Decision 061 Számlatétel Áfakód Felülbírálat és Gépi Tanulási (ML) Szabályrendszer|Decision 061: Számlatétel Áfakód Felülbírálat és Gépi Tanulási (ML) Szabályrendszer]]
-- [[_COMMUNITY_Decision 068 ÁFA tv. Szerinti Adófizetési Kötelezettség és Levonási Jog Keletkezése Normál vs. Pénzforgalmi Adózási Módban|Decision 068: ÁFA tv. Szerinti Adófizetési Kötelezettség és Levonási Jog Keletkezése Normál vs. Pénzforgalmi Adózási Módban]]
-- [[_COMMUNITY_Szerver-Oldali Szűrt Tábla — Debounce + Skeleton Pattern|Szerver-Oldali Szűrt Tábla — Debounce + Skeleton Pattern]]
-- [[_COMMUNITY_Design Spec — Árfolyam-különbözetek Szekció Újratervezése (FX Differences Redesign)|Design Spec — Árfolyam-különbözetek Szekció Újratervezése (FX Differences Redesign)]]
-- [[_COMMUNITY_2. Megvalósított Megoldás „Fintech Dense Split” (1. Opció)|2. Megvalósított Megoldás: „Fintech Dense Split” (1. Opció)]]
-- [[_COMMUNITY_Worker Architektúra és Dedikált Dev Worker Replica|Worker Architektúra és Dedikált Dev Worker Replica]]
-- [[_COMMUNITY_Döntések|Döntések]]
-- [[_COMMUNITY_UX Finomítások és Light Mode Optimalizáció (2026.08)|UX Finomítások és Light Mode Optimalizáció (2026.08)]]
-- [[_COMMUNITY_🖥️ Felhasználói Felület és Workflow Viselkedés|🖥️ Felhasználói Felület és Workflow Viselkedés]]
-- [[_COMMUNITY_💡 Termék és Felületi Tervezés (UX)|💡 Termék és Felületi Tervezés (UX)]]
-- [[_COMMUNITY_Implementációs Terv Discrepancy 2 — Auto-Poster RPC Refaktorálás és Cégvezetői Főkönyvi Írási Korlátozás|Implementációs Terv: Discrepancy 2 — Auto-Poster RPC Refaktorálás és Cégvezetői Főkönyvi Írási Korlátozás]]
-- [[_COMMUNITY_Decision (Döntés)|Decision (Döntés)]]
-- [[_COMMUNITY_2. Termékdöntés és Megvalósítás|2. Termékdöntés és Megvalósítás]]
-- [[_COMMUNITY_P-127 Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX|P-127: Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX]]
-- [[_COMMUNITY_2. Felületi Kialakítás és Interakciók|2. Felületi Kialakítás és Interakciók]]
-- [[_COMMUNITY_P-143 eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX|P-143: eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX]]
-- [[_COMMUNITY_P-148 Bérjegyzék Redesign, Költséghely Kezelés és FEOR Munkakör UX|P-148: Bérjegyzék Redesign, Költséghely Kezelés és FEOR Munkakör UX]]
-- [[_COMMUNITY_2. Termékdöntés|2. Termékdöntés]]
-- [[_COMMUNITY_2. Termékdöntések és Felhasználói Élmény (UX)|2. Termékdöntések és Felhasználói Élmény (UX)]]
-- [[_COMMUNITY_Termékdöntések és Funkcionális Viselkedés|Termékdöntések és Funkcionális Viselkedés]]
-- [[_COMMUNITY_3.4 Beosztáskezelő – a rendszer központi modulja|3.4 Beosztáskezelő – a rendszer központi modulja]]
-- [[_COMMUNITY_src_locales_hr_categories|src_locales_hr_categories]]
-- [[_COMMUNITY_seed_missing_params.cjs|seed_missing_params.cjs]]
-- [[_COMMUNITY_seed_missing_params.js|seed_missing_params.js]]
-- [[_COMMUNITY_vatTypes.ts|vatTypes.ts]]
-- [[_COMMUNITY_MonthlyBalanceCard.tsx|MonthlyBalanceCard.tsx]]
-- [[_COMMUNITY_documentUploadService.ts|documentUploadService.ts]]
-- [[_COMMUNITY_AdminTaxParametersPage.tsx|AdminTaxParametersPage.tsx]]
-- [[_COMMUNITY_TemplatesPage.tsx|TemplatesPage.tsx]]
-- [[_COMMUNITY_annualReportCsv.ts|annualReportCsv.ts]]
-- [[_COMMUNITY_uiMountSmoke.test.tsx|uiMountSmoke.test.tsx]]
-- [[_COMMUNITY_tickets-apiindex.ts|tickets-api/index.ts]]
-- [[_COMMUNITY_Browser Testing & Subagent Authentication Rules|Browser Testing & Subagent Authentication Rules]]
-- [[_COMMUNITY_Fejlesztői Környezet (DEV) és Ágkezelési Védelmi Szabályzat|Fejlesztői Környezet (DEV) és Ágkezelési Védelmi Szabályzat]]
-- [[_COMMUNITY_PRD Tisztasági Audit és Technikai Szivárgás-Megelőzés|PRD Tisztasági Audit és Technikai Szivárgás-Megelőzés]]
-- [[_COMMUNITY_Workflow|Workflow]]
-- [[_COMMUNITY_🗄️ Knowledge Base Schema & Metadata Reference|🗄️ Knowledge Base Schema & Metadata Reference]]
-- [[_COMMUNITY_A-003 Multi-tenancy RLS Alapon|A-003: Multi-tenancy RLS Alapon]]
-- [[_COMMUNITY_A-014 React Query Cache Stratégia|A-014: React Query Cache Stratégia]]
-- [[_COMMUNITY_A-033 Exclude Service Role Operations from Company Audit Trail|A-033: Exclude Service Role Operations from Company Audit Trail]]
-- [[_COMMUNITY_A-049 Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete)|A-049: Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete)]]
-- [[_COMMUNITY_A-061 Decomposing the Monolithic Super-Admin & Management Dashboard|A-061: Decomposing the Monolithic Super-Admin & Management Dashboard]]
-- [[_COMMUNITY_2. Döntés|2. Döntés]]
-- [[_COMMUNITY_A-103 Accounty RLS Teljesítményoptimalizálás és Postgres Hibanapló Stabilizálás|A-103: Accounty RLS Teljesítményoptimalizálás és Postgres Hibanapló Stabilizálás]]
-- [[_COMMUNITY_backfill_nav_items.mjs|backfill_nav_items.mjs]]
-- [[_COMMUNITY_2. Döntések|2. Döntések]]
-- [[_COMMUNITY_A-201 NAV 2665 ÁFA Bevallás 43. (Tárgyi eszköz értékesítés) és 45. (Előleg) Sorok Adóösszeg Implementációja|A-201: NAV 2665 ÁFA Bevallás: 43. (Tárgyi eszköz értékesítés) és 45. (Előleg) Sorok Adóösszeg Implementációja]]
-- [[_COMMUNITY_2. Architektúra és Döntések|2. Architektúra és Döntések]]
-- [[_COMMUNITY_Decision 064 A60 Közösségi ÁFA Összesítő és 65-ös Bevallás Összefüggés-vizsgálat (VIES Integrációval)|Decision 064: A60 Közösségi ÁFA Összesítő és 65-ös Bevallás Összefüggés-vizsgálat (VIES Integrációval)]]
-- [[_COMMUNITY_shadcnui Komponensek (60 fájl)|shadcn/ui Komponensek (60 fájl)]]
-- [[_COMMUNITY_⚠️ Oldal-szintű Animációk & GPU ClearType Homályosodás Megelőzése (2026-09-11)|⚠️ Oldal-szintű Animációk & GPU ClearType Homályosodás Megelőzése (2026-09-11)]]
-- [[_COMMUNITY_Hover Patternek|Hover Patternek]]
-- [[_COMMUNITY_⭐ Async Confirm Dialog Pattern (DB műveletek)|⭐ Async Confirm Dialog Pattern (DB műveletek)]]
-- [[_COMMUNITY_EaisyWorks Nyilt REST API Dokumentacio (v1)|EaisyWorks Nyilt REST API Dokumentacio (v1)]]
-- [[_COMMUNITY_3. API Vegpontok Reszletes Katalógusa|3. API Vegpontok Reszletes Katalógusa]]
-- [[_COMMUNITY_🔑 JWT — JSON Web Token (Munkamenet Hitelesítés)|🔑 JWT — JSON Web Token (Munkamenet Hitelesítés)]]
-- [[_COMMUNITY_💡 Hogyan Érvényesül az RBAC a Kódban|💡 Hogyan Érvényesül az RBAC a Kódban?]]
-- [[_COMMUNITY_🚨 A 4 Legfőbb Webes Sérülékenység & Védelem|🚨 A 4 Legfőbb Webes Sérülékenység & Védelem]]
-- [[_COMMUNITY_🐘 PostgreSQL — A Relációs Adatbázismotor|🐘 PostgreSQL — A Relációs Adatbázismotor]]
-- [[_COMMUNITY_🔑 Főbb Aszinkron Minták Katalógusa|🔑 Főbb Aszinkron Minták Katalógusa]]
-- [[_COMMUNITY_⚡ Caching Stratégiák, Eviction & Cache Stampede|⚡ Caching Stratégiák, Eviction & Cache Stampede]]
-- [[_COMMUNITY_🔑 A 3 Adatbázis Skálázási Stratégia|🔑 A 3 Adatbázis Skálázási Stratégia]]
-- [[_COMMUNITY_🔑 Főbb Gráfbejárási & Rendezési Algoritmusok|🔑 Főbb Gráfbejárási & Rendezési Algoritmusok]]
-- [[_COMMUNITY_eaisyBill & eaisyBooks Teljes Rendszer Tudásbázis (Knowledge Base)|eaisyBill & eaisyBooks Teljes Rendszer Tudásbázis (Knowledge Base)]]
-- [[_COMMUNITY_P-051 Többprofilos Levelező Fiókok (Multi-Profile IMAPSMTP) Kezelése UX|P-051: Többprofilos Levelező Fiókok (Multi-Profile IMAP/SMTP) Kezelése UX]]
-- [[_COMMUNITY_2. Termék & UX Döntések|2. Termék & UX Döntések]]
-- [[_COMMUNITY_UploadDialogManager.tsx|UploadDialogManager.tsx]]
-- [[_COMMUNITY_Részletes UIUX Működés|Részletes UI/UX Működés]]
-- [[_COMMUNITY_P-099 Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX)|P-099: Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX)]]
-- [[_COMMUNITY_2. Termékdöntés és Megvalósítás|2. Termékdöntés és Megvalósítás]]
-- [[_COMMUNITY_2. Termékdöntés|2. Termékdöntés]]
-- [[_COMMUNITY_P-126 NAV 2665 Hivatalos Nyomtatvány Digitális Replika UX|P-126: NAV 2665 Hivatalos Nyomtatvány Digitális Replika UX]]
-- [[_COMMUNITY_P-131 Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX|P-131: Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX]]
-- [[_COMMUNITY_2. Felületi Megvalósítás és UX Megoldások|2. Felületi Megvalósítás és UX Megoldások]]
-- [[_COMMUNITY_2. Megoldás és UI Működés|2. Megoldás és UI Működés]]
-- [[_COMMUNITY_2. Termékdöntés és Megoldás|2. Termékdöntés és Megoldás]]
-- [[_COMMUNITY_2. Felületi Megvalósítás és UX Megoldások|2. Felületi Megvalósítás és UX Megoldások]]
-- [[_COMMUNITY_2. Megvalósított Felületi Élmény (UX) és Döntések|2. Megvalósított Felületi Élmény (UX) és Döntések]]
-- [[_COMMUNITY_3. Fő Funkciók és Kezelés|3. Fő Funkciók és Kezelés]]
-- [[_COMMUNITY_Define Goal|Define Goal]]
-- [[_COMMUNITY_4. Fejlesztési roadmap|4. Fejlesztési roadmap]]
-- [[_COMMUNITY_1. Vezetői összefoglaló – mi a szoftver értelme|1. Vezetői összefoglaló – mi a szoftver értelme?]]
-- [[_COMMUNITY_ManualInvoiceCreateDialog.test.tsx|ManualInvoiceCreateDialog.test.tsx]]
-- [[_COMMUNITY_syncStaggering.ts|syncStaggering.ts]]
-- [[_COMMUNITY_send-welcome-emailindex.ts|send-welcome-email/index.ts]]
-- [[_COMMUNITY_send-web-pushindex.ts|send-web-push/index.ts]]
-- [[_COMMUNITY_findDuplicateKeysInJson|findDuplicateKeysInJson]]
-- [[_COMMUNITY_Layer 3 Data Flow & State Management|Layer 3: Data Flow & State Management]]
-- [[_COMMUNITY_Audit Execution Process|Audit Execution Process]]
-- [[_COMMUNITY_BRD Vizuális Diagramkészítési Irányelvek (baoyu-diagram Integráció)|BRD Vizuális Diagramkészítési Irányelvek (baoyu-diagram Integráció)]]
-- [[_COMMUNITY_BRD Tisztasági Audit és Technikai Szivárgás-Megelőzés|BRD Tisztasági Audit és Technikai Szivárgás-Megelőzés]]
-- [[_COMMUNITY_PRD Vizuális UI Diagram- és Mockupkészítési Irányelvek (baoyu-diagram)|PRD Vizuális UI Diagram- és Mockupkészítési Irányelvek (baoyu-diagram)]]
-- [[_COMMUNITY_A-029 Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció|A-029: Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció]]
-- [[_COMMUNITY_A-069 Centralized Frontend Error Ingestion, Stack Trace Preservation & Intelligent Context Deserialization|A-069: Centralized Frontend Error Ingestion, Stack Trace Preservation & Intelligent Context Deserialization]]
-- [[_COMMUNITY_A-113 NAV Invoice Items VAT & Gross Auto-Calculation|A-113: NAV Invoice Items VAT & Gross Auto-Calculation]]
-- [[_COMMUNITY_A-124 Többoldalas Számlák Folytatás-Felismerése és Téves Multi-Invoice Split Megelőzés (Multi-Page Invoice Continuation Guard)|A-124: Többoldalas Számlák Folytatás-Felismerése és Téves Multi-Invoice Split Megelőzés (Multi-Page Invoice Continuation Guard)]]
-- [[_COMMUNITY_A-144 Determinisztikus Számlatétel Szabály Motor (`invoice_item_rules`) és Kötegelt Illesztési Architektúra|A-144: Determinisztikus Számlatétel Szabály Motor (`invoice_item_rules`) és Kötegelt Illesztési Architektúra]]
-- [[_COMMUNITY_A-186 Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) és Szakképzési Tanulói Keret (Szkt. 84. §)|A-186: Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) és Szakképzési Tanulói Keret (Szkt. 84. §)]]
-- [[_COMMUNITY_exportVatCollectorAnalyticsExcel|exportVatCollectorAnalyticsExcel]]
-- [[_COMMUNITY_2. Architektúra Döntés|2. Architektúra Döntés]]
-- [[_COMMUNITY_A-246 Worker Invoice Upsert Idempotencia és Postgres 23505 Pre-Check Ütközésvédelem (Többoldalas és Kötegelt Feltöltések)|A-246: Worker Invoice Upsert Idempotencia és Postgres 23505 Pre-Check Ütközésvédelem (Többoldalas és Kötegelt Feltöltések)]]
-- [[_COMMUNITY_Beosztásom Modul — Termékkövetelmény Dokumentáció (PRD)|Beosztásom Modul — Termékkövetelmény Dokumentáció (PRD)]]
-- [[_COMMUNITY_12. Biztonság & Compliance|12. Biztonság & Compliance]]
-- [[_COMMUNITY_2. A Három Alapszabály Master-Detail és Tab Felületeken|2. A Három Alapszabály Master-Detail és Tab Felületeken]]
-- [[_COMMUNITY_⭐ Beágyazott Popover & Kereshető Dropdown  Combobox Pattern (2026-10-05)|⭐ Beágyazott Popover & Kereshető Dropdown / Combobox Pattern (2026-10-05)]]
-- [[_COMMUNITY_📐 Big O Notation (Algoritmus Komplexitás a Visibillben)|📐 Big O Notation (Algoritmus Komplexitás a Visibillben)]]
-- [[_COMMUNITY_📦 AWS S3 — Simple Storage Service (Objektumtárolás)|📦 AWS S3 — Simple Storage Service (Objektumtárolás)]]
-- [[_COMMUNITY_🐳 Docker & Konténerizáció|🐳 Docker & Konténerizáció]]
-- [[_COMMUNITY_☸️ Kubernetes (K8s) & Konténer Orkesztráció|☸️ Kubernetes (K8s) & Konténer Orkesztráció]]
-- [[_COMMUNITY_🦕 Deno — TypeScriptJavaScript Runtime & Edge Security|🦕 Deno — TypeScript/JavaScript Runtime & Edge Security]]
-- [[_COMMUNITY_⚛️ Next.js — Fullstack React Framework|⚛️ Next.js — Fullstack React Framework]]
-- [[_COMMUNITY_👁️ OCR & Vision Pipeline (Optikai Karakterfelismerés)|👁️ OCR & Vision Pipeline (Optikai Karakterfelismerés)]]
-- [[_COMMUNITY_NewClientPage|NewClientPage]]
-- [[_COMMUNITY_P-105 Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa KibontásÖsszecsukás UX|P-105: Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa Kibontás/Összecsukás UX]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_2. A Döntés és Felületi Specifikáció|2. A Döntés és Felületi Specifikáció]]
-- [[_COMMUNITY_2. Felületi Megvalósítás (UX Architecture)|2. Felületi Megvalósítás (UX Architecture)]]
-- [[_COMMUNITY_MI-Könyvelőprogram Minimálkövetelmény-Lista & Rendszerelemzés|MI-Könyvelőprogram Minimálkövetelmény-Lista & Rendszerelemzés]]
-- [[_COMMUNITY_3.15 Beállítások, navigáció, dokumentumok|3.15 Beállítások, navigáció, dokumentumok]]
-- [[_COMMUNITY_🛠️ Részletes Módosítások|🛠️ Részletes Módosítások]]
-- [[_COMMUNITY_CategoryDonutChart.tsx|CategoryDonutChart.tsx]]
-- [[_COMMUNITY_AddGlAccountModal.test.tsx|AddGlAccountModal.test.tsx]]
-- [[_COMMUNITY_JournalsUnpostStorno.test.tsx|JournalsUnpostStorno.test.tsx]]
-- [[_COMMUNITY_rich-text-content.tsx|rich-text-content.tsx]]
-- [[_COMMUNITY_InvoiceBulkActionsBar.test.tsx|InvoiceBulkActionsBar.test.tsx]]
-- [[_COMMUNITY_financeUtils.ts|financeUtils.ts]]
-- [[_COMMUNITY_navTaxpayer.test.ts|navTaxpayer.test.ts]]
-- [[_COMMUNITY_navValidationInboundProbe.test.ts|navValidationInboundProbe.test.ts]]
-- [[_COMMUNITY_statusMappers.test.ts|statusMappers.test.ts]]
-- [[_COMMUNITY_auto-categorize-invoicesindex.ts|auto-categorize-invoices/index.ts]]
-- [[_COMMUNITY_nav-tax-profile-syncindex.ts|nav-tax-profile-sync/index.ts]]
-- [[_COMMUNITY_Layer 1 Routing & Navigation|Layer 1: Routing & Navigation]]
-- [[_COMMUNITY_area-spec-map|area-spec-map.md]]
-- [[_COMMUNITY_🎯 RAG Optimalizációs Útmutató az eaisyBill  eaisyBooks Tudástárhoz|🎯 RAG Optimalizációs Útmutató az eaisyBill / eaisyBooks Tudástárhoz]]
-- [[_COMMUNITY_A-036 Pénztárbizonylat (Cash Voucher) Processing|A-036: Pénztárbizonylat (Cash Voucher) Processing]]
-- [[_COMMUNITY_A-071 Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity|A-071: Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity]]
-- [[_COMMUNITY_A-072 Robust Accounting Firm Assignment RLS & Direct Client Creation|A-072: Robust Accounting Firm Assignment RLS & Direct Client Creation]]
-- [[_COMMUNITY_A-075 Management Overview Null-Safety in SQL JSON Aggregations|A-075: Management Overview Null-Safety in SQL JSON Aggregations]]
-- [[_COMMUNITY_A-142 Kettős Könyvvitel Szerinti Kötelező Kontírszám Szabályok és Vevői Kontírválasztó (311–317 + ÁFA 467466)|A-142: Kettős Könyvvitel Szerinti Kötelező Kontírszám Szabályok és Vevői Kontírválasztó (311–317 + ÁFA 467/466)]]
-- [[_COMMUNITY_A-195 NAV 26A60 v3.0 Közösségi Összesítő Nyilatkozat ÁNYK XML Export & 65-ös Bevallási Rekonciliáció|A-195: NAV 26A60 v3.0 Közösségi Összesítő Nyilatkozat ÁNYK XML Export & 65-ös Bevallási Rekonciliáció]]
-- [[_COMMUNITY_11. Support & Onboarding|11. Support & Onboarding]]
-- [[_COMMUNITY_5. Számla Kezelés|5. Számla Kezelés]]
-- [[_COMMUNITY_⚠️ Anti-CLS Design Szabályok (Kötelező)|⚠️ Anti-CLS Design Szabályok (Kötelező)]]
-- [[_COMMUNITY_Toast Értesítések|Toast Értesítések]]
-- [[_COMMUNITY_VisiBill Fejlesztői Környezet (DEV Environment)|VisiBill Fejlesztői Környezet (DEV Environment)]]
-- [[_COMMUNITY_2.1. POST apiv1authtoken|2.1. [POST] /api/v1/auth/token]]
-- [[_COMMUNITY_2.2. POST apiv1tickets|2.2. [POST] /api/v1/tickets]]
-- [[_COMMUNITY_2.7. PATCH apiv1tasksid|2.7. [PATCH] /api/v1/tasks/:id]]
-- [[_COMMUNITY_Session Summary — 2026-10-01 1050|Session Summary — 2026-10-01 10:50]]
-- [[_COMMUNITY_mockData.ts|mockData.ts]]
-- [[_COMMUNITY_ticketCategories.test.ts|ticketCategories.test.ts]]
-- [[_COMMUNITY_accounty-ai-chatindex.ts|accounty-ai-chat/index.ts]]
-- [[_COMMUNITY_fetch-legal-updatesindex.ts|fetch-legal-updates/index.ts]]
-- [[_COMMUNITY_nav-m2m-proxyindex.ts|nav-m2m-proxy/index.ts]]
-- [[_COMMUNITY_Layer 8 Dead Code & Unused Imports|Layer 8: Dead Code & Unused Imports]]
-- [[_COMMUNITY_Graphify Integráció|Graphify Integráció]]
-- [[_COMMUNITY_Decision|Decision]]
-- [[_COMMUNITY_10. Értesítések & Kommunikáció|10. Értesítések & Kommunikáció]]
-- [[_COMMUNITY_13. Integrációk|13. Integrációk]]
-- [[_COMMUNITY_3. Technikai Architektúra|3. Technikai Architektúra]]
-- [[_COMMUNITY_2.10. GET apiv1workspacesid|2.10. [GET] /api/v1/workspaces/:id]]
-- [[_COMMUNITY_2.12. GET apiv1milestones|2.12. [GET] /api/v1/milestones]]
-- [[_COMMUNITY_2.14. POST apiorganizationsorgIdwebhooks|2.14. [POST] /api/organizations/:orgId/webhooks]]
-- [[_COMMUNITY_2.3. GET apiv1tickets|2.3. [GET] /api/v1/tickets]]
-- [[_COMMUNITY_2.4. GET apiv1tasks|2.4. [GET] /api/v1/tasks]]
-- [[_COMMUNITY_2.5. POST apiv1tasks|2.5. [POST] /api/v1/tasks]]
-- [[_COMMUNITY_2.6. GET apiv1tasksid|2.6. [GET] /api/v1/tasks/:id]]
-- [[_COMMUNITY_2.8. DELETE apiv1tasksid|2.8. [DELETE] /api/v1/tasks/:id]]
-- [[_COMMUNITY_2.9. GET apiv1workspaces|2.9. [GET] /api/v1/workspaces]]
-- [[_COMMUNITY_P-084 Hierarchikus Útvonalkövető (Breadcrumbs) Rendszer és Automatikus Route Resolver UX|P-084: Hierarchikus Útvonalkövető (Breadcrumbs) Rendszer és Automatikus Route Resolver UX]]
-- [[_COMMUNITY_P-121 ÁFA Bevallás és Analitikák Bizonylatköri Adatkör Választó (Számlaképpel Rendelkező vs. Teljes OSA) UX|P-121: ÁFA Bevallás és Analitikák Bizonylatköri Adatkör Választó (Számlaképpel Rendelkező vs. Teljes OSA) UX]]
-- [[_COMMUNITY_dateUtils.ts|dateUtils.ts]]
-- [[_COMMUNITY_send-monthly-summaryindex.ts|send-monthly-summary/index.ts]]
-- [[_COMMUNITY_2. Termék Scope & Célcsoport|2. Termék Scope & Célcsoport]]
-- [[_COMMUNITY_8. HR & Munkaidő (eaisyBill)|8. HR & Munkaidő (eaisyBill)]]
-- [[_COMMUNITY_9. Előfizetés & Árazás|9. Előfizetés & Árazás]]
-- [[_COMMUNITY_3.9 Munkavállalók|3.9 Munkavállalók]]
-- [[_COMMUNITY_MissingInvoicesTimeline.tsx|MissingInvoicesTimeline.tsx]]
-- [[_COMMUNITY_rulesgraphify|rules/graphify.md]]
-- [[_COMMUNITY_task-brief-template|task-brief-template.md]]
-- [[_COMMUNITY_workflowsgraphify|workflows/graphify.md]]
-- [[_COMMUNITY_morfi-implementation-review|morfi-implementation-review.md]]
-- [[_COMMUNITY_ticket-support|ticket-support.md]]
-- [[_COMMUNITY_visibill-ticket-support|visibill-ticket-support.md]]
-- [[_COMMUNITY_MI_konyveloprogram_minimum_csekklista_8d5839f7|MI_konyveloprogram_minimum_csekklista_8d5839f7.md]]
-- [[_COMMUNITY_summary-004218-changelog-patchnotes|summary-004218-changelog-patchnotes.md]]
-- [[_COMMUNITY_summary-011100-semver-versioning-patchnote-skill|summary-011100-semver-versioning-patchnote-skill.md]]
-- [[_COMMUNITY_summary-020700-gl-perf-journals-layout-button-nesting|summary-020700-gl-perf-journals-layout-button-nesting.md]]
-- [[_COMMUNITY_summary-151000-accounty-access-guard-and-croatian-vat|summary-151000-accounty-access-guard-and-croatian-vat.md]]
-- [[_COMMUNITY_summary-161800-cte-refactor-partners-scroll-and-signout-clean|summary-161800-cte-refactor-partners-scroll-and-signout-clean.md]]
-- [[_COMMUNITY_summary-013651-imap-attachment-filtering-storage-sanitization-idempotency|summary-013651-imap-attachment-filtering-storage-sanitization-idempotency.md]]
-- [[_COMMUNITY_summary-015000-invoices-multiselect-and-range-selection|summary-015000-invoices-multiselect-and-range-selection.md]]
-- [[_COMMUNITY_summary-020300-gl-duplicate-key-fix-and-setloadedrawaccountitems|summary-020300-gl-duplicate-key-fix-and-setloadedrawaccountitems.md]]
-- [[_COMMUNITY_summary-031200-dashboard-redesign-fintech-split-categories-and-reorder|summary-031200-dashboard-redesign-fintech-split-categories-and-reorder.md]]
-- [[_COMMUNITY_summary-042600-kpi-borders-nav-matching-quick-actions-and-badges|summary-042600-kpi-borders-nav-matching-quick-actions-and-badges.md]]
-- [[_COMMUNITY_summary-051500-error-hunter-partner-upsert-race-condition-company-router-23505-fix|summary-051500-error-hunter-partner-upsert-race-condition-company-router-23505-fix.md]]
-- [[_COMMUNITY_summary-151000-sha256-content-dedup-vision-ocr-mini-and-image001-filtering|summary-151000-sha256-content-dedup-vision-ocr-mini-and-image001-filtering.md]]
-- [[_COMMUNITY_summary-111200-aggreg8-prod-cutover-live-sync-and-partner-data-spec|summary-111200-aggreg8-prod-cutover-live-sync-and-partner-data-spec.md]]
-- [[_COMMUNITY_summary-034900-invoice-url-tab-sync-nav-foreign-badge-gotrue-token-fix|summary-034900-invoice-url-tab-sync-nav-foreign-badge-gotrue-token-fix.md]]
-- [[_COMMUNITY_summary-045700-worker-attachment-splitting-and-partner-preservation-guard|summary-045700-worker-attachment-splitting-and-partner-preservation-guard.md]]
-- [[_COMMUNITY_summary-055200-unified-financial-cockpit-realized-profit-and-szamlakep-tabs|summary-055200-unified-financial-cockpit-realized-profit-and-szamlakep-tabs.md]]
-- [[_COMMUNITY_summary-074000-partners-layout-nav-query-and-hungarian-tax-standardization|summary-074000-partners-layout-nav-query-and-hungarian-tax-standardization.md]]
-- [[_COMMUNITY_summary-135500-eb0208-eb0211-ocr-fix-and-aggreg8-cross-import-dedup|summary-135500-eb0208-eb0211-ocr-fix-and-aggreg8-cross-import-dedup.md]]
-- [[_COMMUNITY_summary-174500-eb0219-receipt-upload-fixed-assets-coa-resolve-and-reserve-journal-rpc|summary-174500-eb0219-receipt-upload-fixed-assets-coa-resolve-and-reserve-journal-rpc.md]]
-- [[_COMMUNITY_summary-190500-payroll-young25-statutory-tax-engine-and-eb0222-resolution|summary-190500-payroll-young25-statutory-tax-engine-and-eb0222-resolution.md]]
-- [[_COMMUNITY_summary-210500-anyk-vat-export-representative-persistence-and-position-fix|summary-210500-anyk-vat-export-representative-persistence-and-position-fix.md]]
-- [[_COMMUNITY_summary-162800-gl-realtime-progress-and-error-fixes|summary-162800-gl-realtime-progress-and-error-fixes.md]]
-- [[_COMMUNITY_summary-224800-eb-0232-payroll-payslip-abc-sorting-and-employee-filter|summary-224800-eb-0232-payroll-payslip-abc-sorting-and-employee-filter.md]]
-- [[_COMMUNITY_summary-232500-eb-0231-nav-08-efo-and-kiva-reconstruction-support|summary-232500-eb-0231-nav-08-efo-and-kiva-reconstruction-support.md]]
-- [[_COMMUNITY_summary-235300-eb-0230-payslip-redesign-feor-dictionary-and-cost-center|summary-235300-eb-0230-payslip-redesign-feor-dictionary-and-cost-center.md]]
-- [[_COMMUNITY_summary-001211-eb-0223-payroll-extra-leave-entitlements-and-tests|summary-001211-eb-0223-payroll-extra-leave-entitlements-and-tests.md]]
-- [[_COMMUNITY_summary-013218-eb-0226-aggreg8-multi-company-consent-and-account-sync|summary-013218-eb-0226-aggreg8-multi-company-consent-and-account-sync.md]]
-- [[_COMMUNITY_summary-035600-invoice-item-accrual-and-ve-posting|summary-035600-invoice-item-accrual-and-ve-posting.md]]
-- [[_COMMUNITY_summary-043500-dynamic-journals-management-and-bank-linking|summary-043500-dynamic-journals-management-and-bank-linking.md]]
-- [[_COMMUNITY_summary-234500-eb-0223-child-leave-disabled-supplement-and-morfi-review|summary-234500-eb-0223-child-leave-disabled-supplement-and-morfi-review.md]]
-- [[_COMMUNITY_summary-001800-eb-0230-eb-0231-payroll-payslip-formatting-and-efo-audit|summary-001800-eb-0230-eb-0231-payroll-payslip-formatting-and-efo-audit.md]]
-- [[_COMMUNITY_summary-194400-anyk-vat-return-validation-and-formula-standardization|summary-194400-anyk-vat-return-validation-and-formula-standardization.md]]
-- [[_COMMUNITY_summary-193000-nav-hybrid-async-sync-and-atomic-item-idempotency|summary-193000-nav-hybrid-async-sync-and-atomic-item-idempotency.md]]
-- [[_COMMUNITY_summary-233900-oxlint-integration-and-cockpit-missing-vouchers-range-fix|summary-233900-oxlint-integration-and-cockpit-missing-vouchers-range-fix.md]]
-- [[_COMMUNITY_summary-023600-nav-autocategorize-worker-rpc-hardening-e2e|summary-023600-nav-autocategorize-worker-rpc-hardening-e2e.md]]
-- [[_COMMUNITY_summary-174500-nav-a60-community-summary-anyk-xml-export-and-reconciliation|summary-174500-nav-a60-community-summary-anyk-xml-export-and-reconciliation.md]]
-- [[_COMMUNITY_summary-224600-supabase-query-performance-indexes-and-vat-return-268x-speedup|summary-224600-supabase-query-performance-indexes-and-vat-return-268x-speedup.md]]
-- [[_COMMUNITY_summary-072500-eb-0245-payroll-worksheet-bonus-race-condition-vocational-leave-and-overlap-guard|summary-072500-eb-0245-payroll-worksheet-bonus-race-condition-vocational-leave-and-overlap-guard.md]]
-- [[_COMMUNITY_summary-085500-manual-invoice-create-dialog-search-input-and-zero-jitter|summary-085500-manual-invoice-create-dialog-search-input-and-zero-jitter.md]]
-- [[_COMMUNITY_summary-170000-manual-invoice-create-audit-fixes-and-i18n-duplication-test|summary-170000-manual-invoice-create-audit-fixes-and-i18n-duplication-test.md]]
-- [[_COMMUNITY_summary-023600-nav-upsert-21000-and-gl-balances-timeout-57014|summary-023600-nav-upsert-21000-and-gl-balances-timeout-57014.md]]
-- [[_COMMUNITY_summary-145000-manual-invoice-searchinput-paid-flag-and-company-lock|summary-145000-manual-invoice-searchinput-paid-flag-and-company-lock.md]]
-- [[_COMMUNITY_summary-161600-eb0250-worker-pdf-splitter-nav-fuzzy-matching-and-db-repair|summary-161600-eb0250-worker-pdf-splitter-nav-fuzzy-matching-and-db-repair.md]]
-- [[_COMMUNITY_summary-035100-invoice-notes-attachments-tig-and-layout-shift-protection|summary-035100-invoice-notes-attachments-tig-and-layout-shift-protection.md]]
-- [[_COMMUNITY_summary-042830-rlb-parser-and-batch-import|summary-042830-rlb-parser-and-batch-import.md]]
-- [[_COMMUNITY_summary-175000-gl-module-audit-burst-throttling-and-partner-aging|summary-175000-gl-module-audit-burst-throttling-and-partner-aging.md]]
-- [[_COMMUNITY_summary-070700-rbac-capability-matrix-legacy-rpc-guards-and-period-closing|summary-070700-rbac-capability-matrix-legacy-rpc-guards-and-period-closing.md]]
-- [[_COMMUNITY_summary-162000-rbac-write-rls-employee-shell-doc-sync-and-executive-diagrams|summary-162000-rbac-write-rls-employee-shell-doc-sync-and-executive-diagrams.md]]
-- [[_COMMUNITY_summary-172500-cs-es-k-fakov-gl-balances-and-worker-fix|summary-172500-cs-es-k-fakov-gl-balances-and-worker-fix.md]]
-- [[_COMMUNITY_summary-201500-fokonyv-4-oszlopos-export-es-szamla-osszevonas|summary-201500-fokonyv-4-oszlopos-export-es-szamla-osszevonas.md]]
-- [[_COMMUNITY_summary-212500-purchase-vouchers-statutory-vat-views-and-fad-rules|summary-212500-purchase-vouchers-statutory-vat-views-and-fad-rules.md]]
-- [[_COMMUNITY_summary-232500-vat-scope-selector-and-gl-modal-widen|summary-232500-vat-scope-selector-and-gl-modal-widen.md]]
-- [[_COMMUNITY_summary-101500-gl-ui-ux-modularization-universal-invoice-preview-and-adr163-merge|summary-101500-gl-ui-ux-modularization-universal-invoice-preview-and-adr163-merge.md]]
-- [[_COMMUNITY_summary-140500-development-reserves-related-parties-and-doc-sync|summary-140500-development-reserves-related-parties-and-doc-sync.md]]
-- [[_COMMUNITY_summary-150000-hungarian-tb-social-security-payroll-module-and-morfi-review|summary-150000-hungarian-tb-social-security-payroll-module-and-morfi-review.md]]
-- [[_COMMUNITY_vat-snapshot-guard.mjs|vat-snapshot-guard.mjs]]
-- [[_COMMUNITY_summary-154500-nav-2665-official-tax-form-digital-replica-and-live-db-binding|summary-154500-nav-2665-official-tax-form-digital-replica-and-live-db-binding.md]]
-- [[_COMMUNITY_summary-193000-vat-analytics-2665-petty-cash-ergonomics-and-invoice-export-dates|summary-193000-vat-analytics-2665-petty-cash-ergonomics-and-invoice-export-dates.md]]
-- [[_COMMUNITY_summary-004500-ticket-support-fakov-vat-dedup-and-vbv-petty-cash-gl-fixes|summary-004500-ticket-support-fakov-vat-dedup-and-vbv-petty-cash-gl-fixes.md]]
-- [[_COMMUNITY_summary-130700-periodic-cash-reports-schema-wizard-rpcs-and-gl-posting|summary-130700-periodic-cash-reports-schema-wizard-rpcs-and-gl-posting.md]]
-- [[_COMMUNITY_summary-202200-subledger-open-items-auto-settle-and-ticket-support|summary-202200-subledger-open-items-auto-settle-and-ticket-support.md]]
-- [[_COMMUNITY_summary-011500-ticket-support-szzj-reverse-journals-and-gl-grouping|summary-011500-ticket-support-szzj-reverse-journals-and-gl-grouping.md]]
-- [[_COMMUNITY_summary-121500-nav-2665-sheet08-replica-width-and-custom-gl-account-deletion|summary-121500-nav-2665-sheet08-replica-width-and-custom-gl-account-deletion.md]]
-- [[_COMMUNITY_summary-171500-fixed-assets-periodic-depreciation-posting-and-ticket-support|summary-171500-fixed-assets-periodic-depreciation-posting-and-ticket-support.md]]
-- [[_COMMUNITY_summary-174500-transaction-multi-invoice-matching-and-ticket-support|summary-174500-transaction-multi-invoice-matching-and-ticket-support.md]]
-- [[_COMMUNITY_summary-180400-transaction-multi-invoice-matching-and-ticket-support|summary-180400-transaction-multi-invoice-matching-and-ticket-support.md]]
-- [[_COMMUNITY_summary-211000-vat-m-lines-aam-proforma-exclusion-and-calc-override-fix|summary-211000-vat-m-lines-aam-proforma-exclusion-and-calc-override-fix.md]]
-- [[_COMMUNITY_summary-110000-subledger-accordion-two-sided-posting-and-net-vat|summary-110000-subledger-accordion-two-sided-posting-and-net-vat.md]]
-- [[_COMMUNITY_summary-140700-payroll-3column-efo-separation-petty-cash-rpc-fix-and-ticket-support|summary-140700-payroll-3column-efo-separation-petty-cash-rpc-fix-and-ticket-support.md]]
-- [[_COMMUNITY_summary-151500-company-alphabetical-sorting-and-partial-payment-ticket-support|summary-151500-company-alphabetical-sorting-and-partial-payment-ticket-support.md]]
-- [[_COMMUNITY_summary-102500-eb-0228-petty-cash-settlement-payment-date-fix|summary-102500-eb-0228-petty-cash-settlement-payment-date-fix.md]]
-- [[_COMMUNITY_summary-114800-subledger-foreign-currency-workday-calculator-and-ticket-support|summary-114800-subledger-foreign-currency-workday-calculator-and-ticket-support.md]]
-- [[_COMMUNITY_summary-174900-accounting-rules-and-nav-a60-replica|summary-174900-accounting-rules-and-nav-a60-replica.md]]
-- [[_COMMUNITY_summary-133000-fixed-assets-bulk-import-nav-65m-02-k-storno-and-cash-closing-support|summary-133000-fixed-assets-bulk-import-nav-65m-02-k-storno-and-cash-closing-support.md]]
-- [[_COMMUNITY_summary-145000-payroll-advanced-reports-declarations-nav-vat-rows-43-45|summary-145000-payroll-advanced-reports-declarations-nav-vat-rows-43-45.md]]
-- [[_COMMUNITY_summary-201000-nav-upo-m2m-multi-company-and-vat-petty-cash-fixes|summary-201000-nav-upo-m2m-multi-company-and-vat-petty-cash-fixes.md]]
-- [[_COMMUNITY_summary-160200-gl-subledger-opt-opg-fixes-and-support-tickets|summary-160200-gl-subledger-opt-opg-fixes-and-support-tickets.md]]
-- [[_COMMUNITY_summary-113200-eb-0255-coa-subledger-and-legal-clickwrap-gate|summary-113200-eb-0255-coa-subledger-and-legal-clickwrap-gate.md]]
-- [[_COMMUNITY_summary-130500-eb-0258-default-date-gl-aggregated-and-fx-banks|summary-130500-eb-0258-default-date-gl-aggregated-and-fx-banks.md]]
-- [[_COMMUNITY_summary-193200-gls-compensation-transfers-bulk-settle-and-petty-cash-sync|summary-193200-gls-compensation-transfers-bulk-settle-and-petty-cash-sync.md]]
-- [[_COMMUNITY_summary-131500-nav-m2m-sanitize-tfejlh-replica-import-vat-and-deferred-vat-e2e|summary-131500-nav-m2m-sanitize-tfejlh-replica-import-vat-and-deferred-vat-e2e.md]]
-- [[_COMMUNITY_summary-224200-journal-filter-fixes-and-nav-gzip-decompression|summary-224200-journal-filter-fixes-and-nav-gzip-decompression.md]]
-- [[_COMMUNITY_summary-115500-procont-gl-export-26tfejlh-anyk-xml-and-vat-regression-guard|summary-115500-procont-gl-export-26tfejlh-anyk-xml-and-vat-regression-guard.md]]
-- [[_COMMUNITY_summary-200800-auditor-gl-export-mkvk-xml-isa560-settlements-and-closing-checklist|summary-200800-auditor-gl-export-mkvk-xml-isa560-settlements-and-closing-checklist.md]]
-- [[_COMMUNITY_summary-220500-vat-return-enhancements-foreign-inbound-invoices-and-rlb-baseline|summary-220500-vat-return-enhancements-foreign-inbound-invoices-and-rlb-baseline.md]]
-- [[_COMMUNITY_summary-202500-agora-gl-and-pnl-statutory-exports-and-view-fixes|summary-202500-agora-gl-and-pnl-statutory-exports-and-view-fixes.md]]
-- [[_COMMUNITY_vercel.json|vercel.json]]
-- [[_COMMUNITY_handoffSKILL|handoff/SKILL.md]]
-- [[_COMMUNITY_plan|plan.md]]
-- [[_COMMUNITY_setup-skills.ps1|setup-skills.ps1]]
-- [[_COMMUNITY_pettyCashXml.ts|pettyCashXml.ts]]
-- [[_COMMUNITY_Community 824|Community 824]]
-- [[_COMMUNITY_Community 825|Community 825]]
-- [[_COMMUNITY_Community 826|Community 826]]
-- [[_COMMUNITY_Community 827|Community 827]]
-- [[_COMMUNITY_Community 828|Community 828]]
-- [[_COMMUNITY_Community 829|Community 829]]
-- [[_COMMUNITY_Community 830|Community 830]]
-- [[_COMMUNITY_Community 831|Community 831]]
-- [[_COMMUNITY_Community 832|Community 832]]
-- [[_COMMUNITY_Community 833|Community 833]]
-- [[_COMMUNITY_Community 834|Community 834]]
-- [[_COMMUNITY_Community 835|Community 835]]
-- [[_COMMUNITY_Community 836|Community 836]]
-- [[_COMMUNITY_Community 837|Community 837]]
-- [[_COMMUNITY_Community 838|Community 838]]
-- [[_COMMUNITY_Community 839|Community 839]]
-- [[_COMMUNITY_Community 840|Community 840]]
-- [[_COMMUNITY_Community 841|Community 841]]
-- [[_COMMUNITY_Community 842|Community 842]]
-- [[_COMMUNITY_Community 843|Community 843]]
-- [[_COMMUNITY_Community 844|Community 844]]
-- [[_COMMUNITY_Community 845|Community 845]]
-- [[_COMMUNITY_Community 846|Community 846]]
-- [[_COMMUNITY_Community 847|Community 847]]
-- [[_COMMUNITY_Community 848|Community 848]]
-- [[_COMMUNITY_Community 849|Community 849]]
-- [[_COMMUNITY_Community 850|Community 850]]
-- [[_COMMUNITY_Community 851|Community 851]]
-- [[_COMMUNITY_Community 852|Community 852]]
-- [[_COMMUNITY_Community 853|Community 853]]
-- [[_COMMUNITY_Community 854|Community 854]]
-- [[_COMMUNITY_Community 855|Community 855]]
-- [[_COMMUNITY_Community 856|Community 856]]
-- [[_COMMUNITY_Community 857|Community 857]]
-- [[_COMMUNITY_Community 858|Community 858]]
-- [[_COMMUNITY_Community 859|Community 859]]
-- [[_COMMUNITY_Community 860|Community 860]]
-- [[_COMMUNITY_Community 861|Community 861]]
-- [[_COMMUNITY_Community 862|Community 862]]
-- [[_COMMUNITY_Community 863|Community 863]]
-- [[_COMMUNITY_Community 864|Community 864]]
-- [[_COMMUNITY_Community 865|Community 865]]
-- [[_COMMUNITY_Community 866|Community 866]]
-- [[_COMMUNITY_Community 867|Community 867]]
-- [[_COMMUNITY_Community 868|Community 868]]
-- [[_COMMUNITY_Community 869|Community 869]]
-- [[_COMMUNITY_Community 870|Community 870]]
-- [[_COMMUNITY_Community 871|Community 871]]
-- [[_COMMUNITY_Community 872|Community 872]]
-- [[_COMMUNITY_Community 873|Community 873]]
-- [[_COMMUNITY_Community 874|Community 874]]
-- [[_COMMUNITY_Community 875|Community 875]]
-- [[_COMMUNITY_Community 876|Community 876]]
-- [[_COMMUNITY_Community 877|Community 877]]
-- [[_COMMUNITY_Community 878|Community 878]]
-- [[_COMMUNITY_Community 879|Community 879]]
-- [[_COMMUNITY_Community 880|Community 880]]
-- [[_COMMUNITY_Community 881|Community 881]]
-- [[_COMMUNITY_Community 882|Community 882]]
-- [[_COMMUNITY_Community 883|Community 883]]
-- [[_COMMUNITY_Community 884|Community 884]]
-- [[_COMMUNITY_Community 885|Community 885]]
-- [[_COMMUNITY_Community 886|Community 886]]
-- [[_COMMUNITY_Community 887|Community 887]]
-- [[_COMMUNITY_Community 888|Community 888]]
-- [[_COMMUNITY_Community 889|Community 889]]
-- [[_COMMUNITY_Community 890|Community 890]]
-- [[_COMMUNITY_Community 891|Community 891]]
-- [[_COMMUNITY_Community 892|Community 892]]
-- [[_COMMUNITY_Community 893|Community 893]]
-- [[_COMMUNITY_Community 894|Community 894]]
-- [[_COMMUNITY_Community 895|Community 895]]
-- [[_COMMUNITY_Community 896|Community 896]]
-- [[_COMMUNITY_Community 897|Community 897]]
-- [[_COMMUNITY_Community 898|Community 898]]
-- [[_COMMUNITY_Community 899|Community 899]]
-- [[_COMMUNITY_Community 900|Community 900]]
-- [[_COMMUNITY_Community 901|Community 901]]
-- [[_COMMUNITY_Community 902|Community 902]]
-- [[_COMMUNITY_Community 903|Community 903]]
-- [[_COMMUNITY_Community 904|Community 904]]
-- [[_COMMUNITY_Community 905|Community 905]]
-- [[_COMMUNITY_Community 906|Community 906]]
-- [[_COMMUNITY_Community 907|Community 907]]
-- [[_COMMUNITY_Community 908|Community 908]]
-- [[_COMMUNITY_Community 909|Community 909]]
-- [[_COMMUNITY_Community 910|Community 910]]
-- [[_COMMUNITY_Community 911|Community 911]]
-- [[_COMMUNITY_Community 912|Community 912]]
-- [[_COMMUNITY_Community 913|Community 913]]
-- [[_COMMUNITY_Community 914|Community 914]]
-- [[_COMMUNITY_Community 915|Community 915]]
-- [[_COMMUNITY_Community 916|Community 916]]
-- [[_COMMUNITY_Community 917|Community 917]]
-- [[_COMMUNITY_Community 918|Community 918]]
-- [[_COMMUNITY_Community 919|Community 919]]
-- [[_COMMUNITY_Community 920|Community 920]]
-- [[_COMMUNITY_Community 921|Community 921]]
-- [[_COMMUNITY_Community 922|Community 922]]
-- [[_COMMUNITY_Community 923|Community 923]]
-- [[_COMMUNITY_Community 924|Community 924]]
-- [[_COMMUNITY_Community 925|Community 925]]
-- [[_COMMUNITY_Community 926|Community 926]]
-- [[_COMMUNITY_Community 927|Community 927]]
-- [[_COMMUNITY_Community 928|Community 928]]
-- [[_COMMUNITY_Community 929|Community 929]]
-- [[_COMMUNITY_Community 930|Community 930]]
-- [[_COMMUNITY_Community 931|Community 931]]
-- [[_COMMUNITY_Community 932|Community 932]]
-- [[_COMMUNITY_Community 933|Community 933]]
-- [[_COMMUNITY_Community 934|Community 934]]
-- [[_COMMUNITY_Community 935|Community 935]]
-- [[_COMMUNITY_Community 936|Community 936]]
-- [[_COMMUNITY_Community 937|Community 937]]
-- [[_COMMUNITY_Community 938|Community 938]]
-- [[_COMMUNITY_Community 939|Community 939]]
-- [[_COMMUNITY_Community 940|Community 940]]
-- [[_COMMUNITY_Community 941|Community 941]]
-- [[_COMMUNITY_Community 942|Community 942]]
-- [[_COMMUNITY_Community 943|Community 943]]
-- [[_COMMUNITY_Community 944|Community 944]]
-- [[_COMMUNITY_Community 945|Community 945]]
-- [[_COMMUNITY_Community 946|Community 946]]
-- [[_COMMUNITY_Community 947|Community 947]]
-- [[_COMMUNITY_Community 948|Community 948]]
-- [[_COMMUNITY_Community 949|Community 949]]
-- [[_COMMUNITY_Community 950|Community 950]]
-- [[_COMMUNITY_Community 951|Community 951]]
-- [[_COMMUNITY_Community 952|Community 952]]
-- [[_COMMUNITY_Community 953|Community 953]]
-- [[_COMMUNITY_Community 954|Community 954]]
-- [[_COMMUNITY_Community 955|Community 955]]
-- [[_COMMUNITY_Community 956|Community 956]]
-- [[_COMMUNITY_Community 957|Community 957]]
-- [[_COMMUNITY_Community 958|Community 958]]
-- [[_COMMUNITY_Community 959|Community 959]]
-- [[_COMMUNITY_Community 960|Community 960]]
-- [[_COMMUNITY_Community 961|Community 961]]
-- [[_COMMUNITY_Community 962|Community 962]]
-- [[_COMMUNITY_Community 963|Community 963]]
-- [[_COMMUNITY_Community 964|Community 964]]
-- [[_COMMUNITY_Community 965|Community 965]]
-- [[_COMMUNITY_Community 966|Community 966]]
-- [[_COMMUNITY_Community 967|Community 967]]
-- [[_COMMUNITY_Community 968|Community 968]]
-- [[_COMMUNITY_Community 969|Community 969]]
-- [[_COMMUNITY_Community 970|Community 970]]
-- [[_COMMUNITY_Community 971|Community 971]]
-- [[_COMMUNITY_Community 972|Community 972]]
-- [[_COMMUNITY_Community 973|Community 973]]
-- [[_COMMUNITY_Community 974|Community 974]]
-- [[_COMMUNITY_Community 975|Community 975]]
-- [[_COMMUNITY_Community 976|Community 976]]
-- [[_COMMUNITY_Community 977|Community 977]]
-- [[_COMMUNITY_Community 978|Community 978]]
-- [[_COMMUNITY_Community 979|Community 979]]
-- [[_COMMUNITY_Community 980|Community 980]]
-- [[_COMMUNITY_Community 981|Community 981]]
-- [[_COMMUNITY_Community 982|Community 982]]
-- [[_COMMUNITY_Community 983|Community 983]]
-- [[_COMMUNITY_Community 984|Community 984]]
-- [[_COMMUNITY_Community 985|Community 985]]
-- [[_COMMUNITY_Community 986|Community 986]]
-- [[_COMMUNITY_Community 987|Community 987]]
-- [[_COMMUNITY_Community 988|Community 988]]
-- [[_COMMUNITY_Community 989|Community 989]]
-- [[_COMMUNITY_Community 990|Community 990]]
-- [[_COMMUNITY_Community 991|Community 991]]
-- [[_COMMUNITY_Community 992|Community 992]]
-- [[_COMMUNITY_Community 993|Community 993]]
-- [[_COMMUNITY_Community 994|Community 994]]
-- [[_COMMUNITY_Community 995|Community 995]]
-- [[_COMMUNITY_Community 996|Community 996]]
-- [[_COMMUNITY_Community 997|Community 997]]
-- [[_COMMUNITY_Community 998|Community 998]]
-- [[_COMMUNITY_GraphEngine|GraphEngine]]
-- [[_COMMUNITY_Community 1000|Community 1000]]
-- [[_COMMUNITY_Community 1001|Community 1001]]
-- [[_COMMUNITY_Community 1002|Community 1002]]
-- [[_COMMUNITY_Community 1003|Community 1003]]
-- [[_COMMUNITY_Community 1004|Community 1004]]
-- [[_COMMUNITY_Community 1005|Community 1005]]
-- [[_COMMUNITY_Community 1006|Community 1006]]
-- [[_COMMUNITY_Community 1007|Community 1007]]
-- [[_COMMUNITY_Community 1008|Community 1008]]
-- [[_COMMUNITY_Community 1009|Community 1009]]
-- [[_COMMUNITY_Community 1010|Community 1010]]
-- [[_COMMUNITY_Community 1011|Community 1011]]
-- [[_COMMUNITY_Community 1012|Community 1012]]
-- [[_COMMUNITY_Community 1013|Community 1013]]
-- [[_COMMUNITY_Community 1014|Community 1014]]
-- [[_COMMUNITY_Community 1015|Community 1015]]
-- [[_COMMUNITY_Community 1016|Community 1016]]
-- [[_COMMUNITY_Community 1017|Community 1017]]
-- [[_COMMUNITY_Community 1018|Community 1018]]
-- [[_COMMUNITY_Community 1019|Community 1019]]
-- [[_COMMUNITY_Community 1020|Community 1020]]
-- [[_COMMUNITY_Community 1021|Community 1021]]
-- [[_COMMUNITY_Community 1022|Community 1022]]
-- [[_COMMUNITY_Community 1023|Community 1023]]
-- [[_COMMUNITY_Community 1024|Community 1024]]
-- [[_COMMUNITY_Community 1025|Community 1025]]
-- [[_COMMUNITY_Community 1026|Community 1026]]
-- [[_COMMUNITY_Community 1027|Community 1027]]
-- [[_COMMUNITY_Community 1028|Community 1028]]
-- [[_COMMUNITY_Community 1029|Community 1029]]
-- [[_COMMUNITY_Community 1030|Community 1030]]
-- [[_COMMUNITY_Community 1031|Community 1031]]
-- [[_COMMUNITY_Community 1032|Community 1032]]
-- [[_COMMUNITY_Community 1033|Community 1033]]
-- [[_COMMUNITY_Community 1034|Community 1034]]
-- [[_COMMUNITY_Community 1035|Community 1035]]
-- [[_COMMUNITY_Community 1036|Community 1036]]
-- [[_COMMUNITY_Community 1037|Community 1037]]
-- [[_COMMUNITY_Community 1038|Community 1038]]
-- [[_COMMUNITY_Community 1039|Community 1039]]
-- [[_COMMUNITY_Community 1040|Community 1040]]
-- [[_COMMUNITY_Community 1041|Community 1041]]
-- [[_COMMUNITY_Community 1042|Community 1042]]
-- [[_COMMUNITY_Community 1043|Community 1043]]
-- [[_COMMUNITY_Community 1044|Community 1044]]
-- [[_COMMUNITY_Community 1045|Community 1045]]
-- [[_COMMUNITY_Community 1046|Community 1046]]
-- [[_COMMUNITY_Community 1047|Community 1047]]
-- [[_COMMUNITY_Community 1048|Community 1048]]
-- [[_COMMUNITY_Community 1049|Community 1049]]
-- [[_COMMUNITY_Community 1050|Community 1050]]
-- [[_COMMUNITY_Community 1051|Community 1051]]
-- [[_COMMUNITY_Community 1052|Community 1052]]
-- [[_COMMUNITY_Community 1053|Community 1053]]
-- [[_COMMUNITY_Community 1054|Community 1054]]
-- [[_COMMUNITY_Community 1055|Community 1055]]
-- [[_COMMUNITY_Community 1056|Community 1056]]
-- [[_COMMUNITY_Community 1057|Community 1057]]
-- [[_COMMUNITY_Community 1058|Community 1058]]
-- [[_COMMUNITY_Community 1059|Community 1059]]
-- [[_COMMUNITY_Community 1060|Community 1060]]
-- [[_COMMUNITY_Community 1061|Community 1061]]
-- [[_COMMUNITY_Community 1062|Community 1062]]
-- [[_COMMUNITY_Community 1063|Community 1063]]
-- [[_COMMUNITY_Community 1064|Community 1064]]
-- [[_COMMUNITY_Community 1065|Community 1065]]
-- [[_COMMUNITY_Community 1066|Community 1066]]
-- [[_COMMUNITY_Community 1067|Community 1067]]
-- [[_COMMUNITY_Community 1068|Community 1068]]
-- [[_COMMUNITY_Community 1069|Community 1069]]
-- [[_COMMUNITY_Community 1070|Community 1070]]
-- [[_COMMUNITY_Community 1071|Community 1071]]
-- [[_COMMUNITY_Community 1072|Community 1072]]
-- [[_COMMUNITY_Community 1073|Community 1073]]
-- [[_COMMUNITY_Community 1074|Community 1074]]
-- [[_COMMUNITY_Community 1075|Community 1075]]
-- [[_COMMUNITY_Community 1076|Community 1076]]
-- [[_COMMUNITY_Community 1077|Community 1077]]
-- [[_COMMUNITY_Community 1078|Community 1078]]
-- [[_COMMUNITY_Community 1079|Community 1079]]
-- [[_COMMUNITY_Community 1080|Community 1080]]
-- [[_COMMUNITY_Community 1081|Community 1081]]
-- [[_COMMUNITY_Community 1082|Community 1082]]
-- [[_COMMUNITY_Community 1083|Community 1083]]
-- [[_COMMUNITY_Community 1084|Community 1084]]
-- [[_COMMUNITY_Community 1085|Community 1085]]
-- [[_COMMUNITY_Community 1086|Community 1086]]
-- [[_COMMUNITY_Community 1087|Community 1087]]
-- [[_COMMUNITY_Community 1088|Community 1088]]
-- [[_COMMUNITY_Community 1089|Community 1089]]
-- [[_COMMUNITY_Community 1090|Community 1090]]
-- [[_COMMUNITY_Community 1091|Community 1091]]
-- [[_COMMUNITY_Community 1092|Community 1092]]
-- [[_COMMUNITY_Community 1093|Community 1093]]
-- [[_COMMUNITY_Community 1094|Community 1094]]
-- [[_COMMUNITY_Community 1095|Community 1095]]
-- [[_COMMUNITY_Community 1096|Community 1096]]
-- [[_COMMUNITY_Community 1097|Community 1097]]
-- [[_COMMUNITY_Community 1098|Community 1098]]
-- [[_COMMUNITY_Community 1099|Community 1099]]
-- [[_COMMUNITY_Community 1100|Community 1100]]
-- [[_COMMUNITY_Community 1101|Community 1101]]
-- [[_COMMUNITY_Community 1102|Community 1102]]
-- [[_COMMUNITY_Community 1103|Community 1103]]
-- [[_COMMUNITY_Community 1104|Community 1104]]
-- [[_COMMUNITY_Community 1105|Community 1105]]
-- [[_COMMUNITY_Community 1106|Community 1106]]
-- [[_COMMUNITY_Community 1107|Community 1107]]
-- [[_COMMUNITY_Community 1108|Community 1108]]
-- [[_COMMUNITY_Community 1109|Community 1109]]
-- [[_COMMUNITY_Community 1110|Community 1110]]
-- [[_COMMUNITY_Community 1111|Community 1111]]
-- [[_COMMUNITY_Community 1112|Community 1112]]
-- [[_COMMUNITY_Community 1113|Community 1113]]
-- [[_COMMUNITY_Community 1114|Community 1114]]
-- [[_COMMUNITY_Community 1115|Community 1115]]
-- [[_COMMUNITY_Community 1116|Community 1116]]
-- [[_COMMUNITY_Community 1117|Community 1117]]
-- [[_COMMUNITY_Community 1118|Community 1118]]
-- [[_COMMUNITY_Community 1119|Community 1119]]
-- [[_COMMUNITY_Community 1120|Community 1120]]
-- [[_COMMUNITY_Community 1121|Community 1121]]
-- [[_COMMUNITY_Community 1122|Community 1122]]
-- [[_COMMUNITY_Community 1123|Community 1123]]
-- [[_COMMUNITY_Community 1124|Community 1124]]
-- [[_COMMUNITY_Community 1125|Community 1125]]
-- [[_COMMUNITY_Community 1126|Community 1126]]
-- [[_COMMUNITY_Community 1127|Community 1127]]
-- [[_COMMUNITY_Community 1128|Community 1128]]
-- [[_COMMUNITY_Community 1129|Community 1129]]
-- [[_COMMUNITY_Community 1130|Community 1130]]
-- [[_COMMUNITY_Community 1131|Community 1131]]
-- [[_COMMUNITY_Community 1132|Community 1132]]
-- [[_COMMUNITY_Community 1133|Community 1133]]
-- [[_COMMUNITY_Community 1134|Community 1134]]
-- [[_COMMUNITY_Community 1135|Community 1135]]
-- [[_COMMUNITY_Community 1136|Community 1136]]
-- [[_COMMUNITY_Community 1137|Community 1137]]
-- [[_COMMUNITY_Community 1138|Community 1138]]
-- [[_COMMUNITY_Community 1139|Community 1139]]
-- [[_COMMUNITY_Community 1140|Community 1140]]
-- [[_COMMUNITY_Community 1141|Community 1141]]
-- [[_COMMUNITY_Community 1142|Community 1142]]
-- [[_COMMUNITY_Community 1143|Community 1143]]
-- [[_COMMUNITY_Community 1144|Community 1144]]
-- [[_COMMUNITY_Community 1145|Community 1145]]
-- [[_COMMUNITY_Community 1146|Community 1146]]
-- [[_COMMUNITY_Community 1147|Community 1147]]
-- [[_COMMUNITY_Community 1148|Community 1148]]
-- [[_COMMUNITY_Community 1149|Community 1149]]
-- [[_COMMUNITY_Community 1150|Community 1150]]
-- [[_COMMUNITY_Community 1151|Community 1151]]
-- [[_COMMUNITY_Community 1152|Community 1152]]
-- [[_COMMUNITY_Community 1153|Community 1153]]
-- [[_COMMUNITY_Community 1154|Community 1154]]
-- [[_COMMUNITY_Community 1155|Community 1155]]
-- [[_COMMUNITY_Community 1156|Community 1156]]
-- [[_COMMUNITY_Community 1157|Community 1157]]
-- [[_COMMUNITY_Community 1158|Community 1158]]
-- [[_COMMUNITY_Community 1159|Community 1159]]
-- [[_COMMUNITY_Community 1160|Community 1160]]
-- [[_COMMUNITY_Community 1161|Community 1161]]
-- [[_COMMUNITY_Community 1162|Community 1162]]
-- [[_COMMUNITY_Community 1163|Community 1163]]
-- [[_COMMUNITY_Community 1164|Community 1164]]
-- [[_COMMUNITY_Community 1165|Community 1165]]
-- [[_COMMUNITY_Community 1166|Community 1166]]
-- [[_COMMUNITY_Community 1167|Community 1167]]
-- [[_COMMUNITY_Community 1168|Community 1168]]
-- [[_COMMUNITY_Community 1169|Community 1169]]
-- [[_COMMUNITY_Community 1170|Community 1170]]
-- [[_COMMUNITY_Community 1171|Community 1171]]
-- [[_COMMUNITY_Community 1172|Community 1172]]
-- [[_COMMUNITY_Community 1173|Community 1173]]
-- [[_COMMUNITY_Community 1174|Community 1174]]
-- [[_COMMUNITY_Community 1175|Community 1175]]
-- [[_COMMUNITY_Community 1176|Community 1176]]
-- [[_COMMUNITY_Community 1177|Community 1177]]
-- [[_COMMUNITY_Community 1178|Community 1178]]
-- [[_COMMUNITY_Community 1179|Community 1179]]
-- [[_COMMUNITY_Community 1180|Community 1180]]
-- [[_COMMUNITY_Community 1181|Community 1181]]
-- [[_COMMUNITY_Community 1182|Community 1182]]
-- [[_COMMUNITY_Community 1183|Community 1183]]
-- [[_COMMUNITY_Community 1184|Community 1184]]
-- [[_COMMUNITY_Community 1185|Community 1185]]
-- [[_COMMUNITY_Community 1186|Community 1186]]
-- [[_COMMUNITY_Community 1187|Community 1187]]
-- [[_COMMUNITY_Community 1188|Community 1188]]
-- [[_COMMUNITY_Community 1189|Community 1189]]
-- [[_COMMUNITY_Community 1190|Community 1190]]
-- [[_COMMUNITY_Community 1191|Community 1191]]
-- [[_COMMUNITY_Community 1192|Community 1192]]
-- [[_COMMUNITY_Community 1193|Community 1193]]
-- [[_COMMUNITY_Community 1194|Community 1194]]
-- [[_COMMUNITY_Community 1195|Community 1195]]
-- [[_COMMUNITY_Community 1196|Community 1196]]
-- [[_COMMUNITY_Community 1197|Community 1197]]
-- [[_COMMUNITY_Community 1198|Community 1198]]
-- [[_COMMUNITY_Community 1199|Community 1199]]
-- [[_COMMUNITY_Community 1200|Community 1200]]
-- [[_COMMUNITY_Community 1201|Community 1201]]
-- [[_COMMUNITY_Community 1202|Community 1202]]
-- [[_COMMUNITY_Community 1203|Community 1203]]
-- [[_COMMUNITY_Community 1204|Community 1204]]
-- [[_COMMUNITY_Community 1205|Community 1205]]
-- [[_COMMUNITY_os|os]]
-- [[_COMMUNITY_Community 1207|Community 1207]]
-- [[_COMMUNITY_Community 1208|Community 1208]]
-- [[_COMMUNITY_Community 1209|Community 1209]]
-- [[_COMMUNITY_Community 1210|Community 1210]]
-- [[_COMMUNITY_Community 1211|Community 1211]]
-- [[_COMMUNITY_Community 1212|Community 1212]]
-- [[_COMMUNITY_Community 1213|Community 1213]]
-- [[_COMMUNITY_Community 1214|Community 1214]]
-- [[_COMMUNITY_Community 1215|Community 1215]]
-- [[_COMMUNITY_Community 1216|Community 1216]]
-- [[_COMMUNITY_Community 1217|Community 1217]]
-- [[_COMMUNITY_Community 1218|Community 1218]]
-- [[_COMMUNITY_Community 1219|Community 1219]]
-- [[_COMMUNITY_Community 1220|Community 1220]]
-- [[_COMMUNITY_Community 1221|Community 1221]]
-- [[_COMMUNITY_Community 1222|Community 1222]]
-- [[_COMMUNITY_Community 1223|Community 1223]]
-- [[_COMMUNITY_Community 1224|Community 1224]]
-- [[_COMMUNITY_Community 1225|Community 1225]]
-- [[_COMMUNITY_Community 1226|Community 1226]]
-- [[_COMMUNITY_Community 1227|Community 1227]]
-- [[_COMMUNITY_Community 1228|Community 1228]]
-- [[_COMMUNITY_Community 1229|Community 1229]]
-- [[_COMMUNITY_Community 1230|Community 1230]]
-- [[_COMMUNITY_Community 1231|Community 1231]]
-- [[_COMMUNITY_Community 1232|Community 1232]]
-- [[_COMMUNITY_Community 1233|Community 1233]]
-- [[_COMMUNITY_Community 1234|Community 1234]]
-- [[_COMMUNITY_Community 1235|Community 1235]]
-- [[_COMMUNITY_Community 1236|Community 1236]]
-- [[_COMMUNITY_Community 1237|Community 1237]]
-- [[_COMMUNITY_Community 1238|Community 1238]]
-- [[_COMMUNITY_Community 1239|Community 1239]]
-- [[_COMMUNITY_Community 1240|Community 1240]]
-- [[_COMMUNITY_Community 1241|Community 1241]]
-- [[_COMMUNITY_Community 1242|Community 1242]]
-- [[_COMMUNITY_Community 1243|Community 1243]]
-- [[_COMMUNITY_Community 1244|Community 1244]]
-- [[_COMMUNITY_Community 1245|Community 1245]]
-- [[_COMMUNITY_Community 1246|Community 1246]]
-- [[_COMMUNITY_Community 1247|Community 1247]]
-- [[_COMMUNITY_test_worker_on_problematic_file.py|test_worker_on_problematic_file.py]]
-- [[_COMMUNITY_Community 1249|Community 1249]]
-- [[_COMMUNITY_Community 1250|Community 1250]]
-- [[_COMMUNITY_Community 1251|Community 1251]]
-- [[_COMMUNITY_@supabasesupabase-js|@supabase/supabase-js]]
-- [[_COMMUNITY_Community 1253|Community 1253]]
-- [[_COMMUNITY_Community 1254|Community 1254]]
-- [[_COMMUNITY_Community 1255|Community 1255]]
-- [[_COMMUNITY_Community 1256|Community 1256]]
-- [[_COMMUNITY_Community 1257|Community 1257]]
-- [[_COMMUNITY_Community 1258|Community 1258]]
-- [[_COMMUNITY_Community 1259|Community 1259]]
-- [[_COMMUNITY_Community 1260|Community 1260]]
-- [[_COMMUNITY_Community 1261|Community 1261]]
-- [[_COMMUNITY_Community 1262|Community 1262]]
-- [[_COMMUNITY_Community 1263|Community 1263]]
-- [[_COMMUNITY_test_customer_api.mjs|test_customer_api.mjs]]
-- [[_COMMUNITY_Community 1265|Community 1265]]
-- [[_COMMUNITY_Community 1266|Community 1266]]
-- [[_COMMUNITY_Community 1267|Community 1267]]
-- [[_COMMUNITY_Community 1268|Community 1268]]
-- [[_COMMUNITY_Community 1269|Community 1269]]
-- [[_COMMUNITY_Community 1270|Community 1270]]
-- [[_COMMUNITY_Community 1271|Community 1271]]
-- [[_COMMUNITY_Community 1272|Community 1272]]
-- [[_COMMUNITY_Community 1273|Community 1273]]
-- [[_COMMUNITY_Community 1274|Community 1274]]
-- [[_COMMUNITY_Community 1275|Community 1275]]
-- [[_COMMUNITY_Community 1276|Community 1276]]
-- [[_COMMUNITY_Community 1277|Community 1277]]
-- [[_COMMUNITY_Community 1278|Community 1278]]
-- [[_COMMUNITY_Community 1279|Community 1279]]
-- [[_COMMUNITY_Community 1280|Community 1280]]
-- [[_COMMUNITY_Community 1281|Community 1281]]
-- [[_COMMUNITY_Community 1282|Community 1282]]
-- [[_COMMUNITY_Community 1283|Community 1283]]
-- [[_COMMUNITY_Community 1284|Community 1284]]
-- [[_COMMUNITY_Community 1285|Community 1285]]
-- [[_COMMUNITY_Community 1286|Community 1286]]
-- [[_COMMUNITY_Community 1287|Community 1287]]
-- [[_COMMUNITY_Community 1288|Community 1288]]
-- [[_COMMUNITY_Community 1289|Community 1289]]
-- [[_COMMUNITY_Community 1290|Community 1290]]
-- [[_COMMUNITY_Community 1291|Community 1291]]
-- [[_COMMUNITY_Community 1292|Community 1292]]
-- [[_COMMUNITY_Community 1293|Community 1293]]
-- [[_COMMUNITY_🎫 Task Globális Teljesítés  Keltezés dátumszűrő elhelyezése a fejlécben|🎫 [Task] Globális Teljesítés / Keltezés dátumszűrő elhelyezése a fejlécben]]
-- [[_COMMUNITY_Community 1295|Community 1295]]
-- [[_COMMUNITY_Community 1296|Community 1296]]
-- [[_COMMUNITY_Community 1297|Community 1297]]
-- [[_COMMUNITY_useCompanyCapabilities|useCompanyCapabilities]]
-- [[_COMMUNITY_🎫 Task Kategóriák listájának rendezése százalékos arány szerint csökkenő sorrendbe|🎫 [Task] Kategóriák listájának rendezése százalékos arány szerint csökkenő sorrendbe]]
-- [[_COMMUNITY_Community 1300|Community 1300]]
-- [[_COMMUNITY_Community 1301|Community 1301]]
-- [[_COMMUNITY_Community 1302|Community 1302]]
-- [[_COMMUNITY_Community 1303|Community 1303]]
-- [[_COMMUNITY_Community 1304|Community 1304]]
-- [[_COMMUNITY_Community 1305|Community 1305]]
-- [[_COMMUNITY_Community 1306|Community 1306]]
-- [[_COMMUNITY_Community 1307|Community 1307]]
-- [[_COMMUNITY_Community 1308|Community 1308]]
-- [[_COMMUNITY_Community 1309|Community 1309]]
-- [[_COMMUNITY_Community 1310|Community 1310]]
-- [[_COMMUNITY_Community 1311|Community 1311]]
-- [[_COMMUNITY_Community 1312|Community 1312]]
-- [[_COMMUNITY_Community 1313|Community 1313]]
-- [[_COMMUNITY_Community 1314|Community 1314]]
-- [[_COMMUNITY_Community 1315|Community 1315]]
-- [[_COMMUNITY_eaisybillRoutes.tsx|eaisybillRoutes.tsx]]
-- [[_COMMUNITY_Community 1317|Community 1317]]
-- [[_COMMUNITY_Community 1318|Community 1318]]
-- [[_COMMUNITY_Community 1319|Community 1319]]
-- [[_COMMUNITY_Community 1320|Community 1320]]
-- [[_COMMUNITY_Community 1321|Community 1321]]
-- [[_COMMUNITY_Community 1322|Community 1322]]
-- [[_COMMUNITY_Community 1323|Community 1323]]
-- [[_COMMUNITY_Community 1324|Community 1324]]
-- [[_COMMUNITY_Community 1325|Community 1325]]
-- [[_COMMUNITY_Community 1326|Community 1326]]
-- [[_COMMUNITY_Community 1327|Community 1327]]
-- [[_COMMUNITY_Community 1328|Community 1328]]
-- [[_COMMUNITY_Community 1329|Community 1329]]
-- [[_COMMUNITY_Community 1330|Community 1330]]
-- [[_COMMUNITY_Community 1331|Community 1331]]
-- [[_COMMUNITY_Community 1332|Community 1332]]
-- [[_COMMUNITY_Community 1333|Community 1333]]
-- [[_COMMUNITY_Community 1334|Community 1334]]
-- [[_COMMUNITY_Community 1335|Community 1335]]
-- [[_COMMUNITY_Community 1336|Community 1336]]
-- [[_COMMUNITY_Community 1337|Community 1337]]
-- [[_COMMUNITY_Community 1338|Community 1338]]
-- [[_COMMUNITY_Community 1339|Community 1339]]
-- [[_COMMUNITY_Community 1340|Community 1340]]
-- [[_COMMUNITY_Community 1341|Community 1341]]
-- [[_COMMUNITY_Community 1342|Community 1342]]
-- [[_COMMUNITY_Community 1343|Community 1343]]
-- [[_COMMUNITY_ref_fs|ref_fs]]
-- [[_COMMUNITY_Community 1345|Community 1345]]
-- [[_COMMUNITY_Community 1346|Community 1346]]
-- [[_COMMUNITY_Community 1347|Community 1347]]
-- [[_COMMUNITY_Community 1348|Community 1348]]
-- [[_COMMUNITY_Community 1349|Community 1349]]
-- [[_COMMUNITY_Community 1350|Community 1350]]
-- [[_COMMUNITY_Community 1351|Community 1351]]
-- [[_COMMUNITY_Community 1352|Community 1352]]
-- [[_COMMUNITY_Community 1353|Community 1353]]
-- [[_COMMUNITY_Community 1354|Community 1354]]
-- [[_COMMUNITY_Community 1355|Community 1355]]
-- [[_COMMUNITY_Community 1356|Community 1356]]
-- [[_COMMUNITY_Community 1357|Community 1357]]
-- [[_COMMUNITY_Community 1358|Community 1358]]
-- [[_COMMUNITY_Community 1359|Community 1359]]
-- [[_COMMUNITY_Community 1360|Community 1360]]
-- [[_COMMUNITY_Community 1361|Community 1361]]
-- [[_COMMUNITY_Community 1362|Community 1362]]
-- [[_COMMUNITY_Community 1363|Community 1363]]
-- [[_COMMUNITY_Community 1364|Community 1364]]
-- [[_COMMUNITY_Community 1365|Community 1365]]
-- [[_COMMUNITY_Community 1366|Community 1366]]
-- [[_COMMUNITY_Community 1367|Community 1367]]
-- [[_COMMUNITY_Community 1368|Community 1368]]
-- [[_COMMUNITY_Community 1369|Community 1369]]
-- [[_COMMUNITY_Community 1370|Community 1370]]
-- [[_COMMUNITY_Community 1371|Community 1371]]
-- [[_COMMUNITY_Community 1372|Community 1372]]
-- [[_COMMUNITY_Community 1373|Community 1373]]
-- [[_COMMUNITY_Community 1374|Community 1374]]
-- [[_COMMUNITY_Community 1375|Community 1375]]
-- [[_COMMUNITY_Community 1376|Community 1376]]
-- [[_COMMUNITY_Community 1377|Community 1377]]
-- [[_COMMUNITY_Community 1378|Community 1378]]
-- [[_COMMUNITY_Community 1379|Community 1379]]
-- [[_COMMUNITY_Community 1380|Community 1380]]
-- [[_COMMUNITY_Community 1381|Community 1381]]
-- [[_COMMUNITY_Community 1382|Community 1382]]
-- [[_COMMUNITY_Community 1383|Community 1383]]
-- [[_COMMUNITY_Community 1384|Community 1384]]
-- [[_COMMUNITY_Community 1385|Community 1385]]
-- [[_COMMUNITY_Community 1386|Community 1386]]
-- [[_COMMUNITY_Community 1387|Community 1387]]
-- [[_COMMUNITY_Community 1388|Community 1388]]
-- [[_COMMUNITY_Community 1389|Community 1389]]
-- [[_COMMUNITY_Community 1390|Community 1390]]
-- [[_COMMUNITY_Community 1391|Community 1391]]
-- [[_COMMUNITY_Community 1392|Community 1392]]
-- [[_COMMUNITY_Community 1393|Community 1393]]
-- [[_COMMUNITY_Community 1394|Community 1394]]
-- [[_COMMUNITY_Community 1395|Community 1395]]
-- [[_COMMUNITY_Community 1396|Community 1396]]
-- [[_COMMUNITY_Community 1397|Community 1397]]
-- [[_COMMUNITY_Community 1398|Community 1398]]
-- [[_COMMUNITY_Community 1399|Community 1399]]
-- [[_COMMUNITY_Community 1400|Community 1400]]
-- [[_COMMUNITY_Community 1401|Community 1401]]
-- [[_COMMUNITY_backfill_customer_names.mjs|backfill_customer_names.mjs]]
-- [[_COMMUNITY_Community 1403|Community 1403]]
-- [[_COMMUNITY_Community 1404|Community 1404]]
-- [[_COMMUNITY_Community 1405|Community 1405]]
-- [[_COMMUNITY_Community 1406|Community 1406]]
-- [[_COMMUNITY_Community 1407|Community 1407]]
-- [[_COMMUNITY_Community 1408|Community 1408]]
-- [[_COMMUNITY_Community 1409|Community 1409]]
-- [[_COMMUNITY_Community 1410|Community 1410]]
-- [[_COMMUNITY_Community 1411|Community 1411]]
-- [[_COMMUNITY_Community 1412|Community 1412]]
-- [[_COMMUNITY_Community 1413|Community 1413]]
-- [[_COMMUNITY_Community 1414|Community 1414]]
-- [[_COMMUNITY_Community 1415|Community 1415]]
-- [[_COMMUNITY_🌟 Fő Funkciók és Képességek|🌟 Fő Funkciók és Képességek]]
-- [[_COMMUNITY_Community 1417|Community 1417]]
-- [[_COMMUNITY_Community 1418|Community 1418]]
-- [[_COMMUNITY_Community 1419|Community 1419]]
-- [[_COMMUNITY_Community 1420|Community 1420]]
-- [[_COMMUNITY_Community 1421|Community 1421]]
-- [[_COMMUNITY_Community 1422|Community 1422]]
-- [[_COMMUNITY_Community 1423|Community 1423]]
-- [[_COMMUNITY_Community 1424|Community 1424]]
-- [[_COMMUNITY_Community 1425|Community 1425]]
-- [[_COMMUNITY_Community 1426|Community 1426]]
-- [[_COMMUNITY_Community 1427|Community 1427]]
-- [[_COMMUNITY_Community 1428|Community 1428]]
-- [[_COMMUNITY_Community 1429|Community 1429]]
-- [[_COMMUNITY_Community 1430|Community 1430]]
-- [[_COMMUNITY_Community 1431|Community 1431]]
-- [[_COMMUNITY_Community 1432|Community 1432]]
-- [[_COMMUNITY_Community 1433|Community 1433]]
-- [[_COMMUNITY_Community 1434|Community 1434]]
-- [[_COMMUNITY_Community 1435|Community 1435]]
-- [[_COMMUNITY_Community 1436|Community 1436]]
-- [[_COMMUNITY_Community 1437|Community 1437]]
-- [[_COMMUNITY_Community 1438|Community 1438]]
-- [[_COMMUNITY_Community 1439|Community 1439]]
-- [[_COMMUNITY_Community 1440|Community 1440]]
-- [[_COMMUNITY_Community 1441|Community 1441]]
-- [[_COMMUNITY_Community 1442|Community 1442]]
-- [[_COMMUNITY_Community 1443|Community 1443]]
-- [[_COMMUNITY_Community 1444|Community 1444]]
-- [[_COMMUNITY_Community 1445|Community 1445]]
-- [[_COMMUNITY_Community 1446|Community 1446]]
-- [[_COMMUNITY_Community 1447|Community 1447]]
-- [[_COMMUNITY_Community 1448|Community 1448]]
-- [[_COMMUNITY_Community 1449|Community 1449]]
-- [[_COMMUNITY_Community 1450|Community 1450]]
-- [[_COMMUNITY_Community 1451|Community 1451]]
-- [[_COMMUNITY_Community 1452|Community 1452]]
-- [[_COMMUNITY_Community 1453|Community 1453]]
-- [[_COMMUNITY_Community 1454|Community 1454]]
-- [[_COMMUNITY_Community 1455|Community 1455]]
-- [[_COMMUNITY_Community 1456|Community 1456]]
-- [[_COMMUNITY_Community 1457|Community 1457]]
-- [[_COMMUNITY_Community 1458|Community 1458]]
-- [[_COMMUNITY_Community 1459|Community 1459]]
-- [[_COMMUNITY_Community 1460|Community 1460]]
-- [[_COMMUNITY_Community 1461|Community 1461]]
-- [[_COMMUNITY_Community 1462|Community 1462]]
-- [[_COMMUNITY_Community 1463|Community 1463]]
-- [[_COMMUNITY_Community 1464|Community 1464]]
-- [[_COMMUNITY_Community 1465|Community 1465]]
-- [[_COMMUNITY_Community 1466|Community 1466]]
-- [[_COMMUNITY_Community 1467|Community 1467]]
-- [[_COMMUNITY_Community 1468|Community 1468]]
-- [[_COMMUNITY_Community 1469|Community 1469]]
-- [[_COMMUNITY_Community 1470|Community 1470]]
-- [[_COMMUNITY_Community 1471|Community 1471]]
-- [[_COMMUNITY_Community 1472|Community 1472]]
-- [[_COMMUNITY_Community 1473|Community 1473]]
-- [[_COMMUNITY_Community 1474|Community 1474]]
-- [[_COMMUNITY_Community 1475|Community 1475]]
-- [[_COMMUNITY_Community 1476|Community 1476]]
-- [[_COMMUNITY_Community 1477|Community 1477]]
-- [[_COMMUNITY_Community 1478|Community 1478]]
-- [[_COMMUNITY_Community 1479|Community 1479]]
-- [[_COMMUNITY_Community 1480|Community 1480]]
-- [[_COMMUNITY_Community 1481|Community 1481]]
-- [[_COMMUNITY_Community 1482|Community 1482]]
-- [[_COMMUNITY_Community 1483|Community 1483]]
-- [[_COMMUNITY_Community 1484|Community 1484]]
-- [[_COMMUNITY_Community 1485|Community 1485]]
-- [[_COMMUNITY_Community 1486|Community 1486]]
-- [[_COMMUNITY_Community 1487|Community 1487]]
-- [[_COMMUNITY_Community 1488|Community 1488]]
-- [[_COMMUNITY_Community 1489|Community 1489]]
-- [[_COMMUNITY_Community 1490|Community 1490]]
-- [[_COMMUNITY_Community 1491|Community 1491]]
-- [[_COMMUNITY_Community 1492|Community 1492]]
-- [[_COMMUNITY_Community 1493|Community 1493]]
-- [[_COMMUNITY_Community 1494|Community 1494]]
-- [[_COMMUNITY_Community 1495|Community 1495]]
-- [[_COMMUNITY_Community 1496|Community 1496]]
-- [[_COMMUNITY_Community 1497|Community 1497]]
-- [[_COMMUNITY_Community 1498|Community 1498]]
-- [[_COMMUNITY_Community 1499|Community 1499]]
-- [[_COMMUNITY_Community 1500|Community 1500]]
-- [[_COMMUNITY_Community 1501|Community 1501]]
-- [[_COMMUNITY_Community 1502|Community 1502]]
-- [[_COMMUNITY_Community 1503|Community 1503]]
-- [[_COMMUNITY_Community 1504|Community 1504]]
-- [[_COMMUNITY_Community 1505|Community 1505]]
-- [[_COMMUNITY_Community 1506|Community 1506]]
-- [[_COMMUNITY_Community 1507|Community 1507]]
-- [[_COMMUNITY_Community 1508|Community 1508]]
-- [[_COMMUNITY_Community 1509|Community 1509]]
-- [[_COMMUNITY_Community 1510|Community 1510]]
-- [[_COMMUNITY_Community 1511|Community 1511]]
-- [[_COMMUNITY_Community 1512|Community 1512]]
-- [[_COMMUNITY_Community 1513|Community 1513]]
-- [[_COMMUNITY_Community 1514|Community 1514]]
-- [[_COMMUNITY_Community 1515|Community 1515]]
-- [[_COMMUNITY_Community 1516|Community 1516]]
-- [[_COMMUNITY_Community 1517|Community 1517]]
-- [[_COMMUNITY_Community 1518|Community 1518]]
-- [[_COMMUNITY_Community 1519|Community 1519]]
-- [[_COMMUNITY_Community 1520|Community 1520]]
-- [[_COMMUNITY_Community 1521|Community 1521]]
-- [[_COMMUNITY_Community 1522|Community 1522]]
-- [[_COMMUNITY_Community 1523|Community 1523]]
-- [[_COMMUNITY_Community 1524|Community 1524]]
-- [[_COMMUNITY_Community 1525|Community 1525]]
-- [[_COMMUNITY_Community 1526|Community 1526]]
-- [[_COMMUNITY_Community 1527|Community 1527]]
-- [[_COMMUNITY_Community 1528|Community 1528]]
-- [[_COMMUNITY_Community 1529|Community 1529]]
-- [[_COMMUNITY_Community 1530|Community 1530]]
-- [[_COMMUNITY_package.json|package.json]]
-- [[_COMMUNITY_Community 1534|Community 1534]]
-- [[_COMMUNITY_Community 1535|Community 1535]]
-- [[_COMMUNITY_ref_dns|ref_dns]]
-- [[_COMMUNITY_ref_dotenv|ref_dotenv]]
-- [[_COMMUNITY_Community 1538|Community 1538]]
-- [[_COMMUNITY_Community 1539|Community 1539]]
-- [[_COMMUNITY_Community 1540|Community 1540]]
-- [[_COMMUNITY_Community 1541|Community 1541]]
-- [[_COMMUNITY_Community 1542|Community 1542]]
-- [[_COMMUNITY_Community 1543|Community 1543]]
-- [[_COMMUNITY_Community 1544|Community 1544]]
-- [[_COMMUNITY_Community 1545|Community 1545]]
-- [[_COMMUNITY_Community 1546|Community 1546]]
-- [[_COMMUNITY_react|react]]
-- [[_COMMUNITY_Community 1548|Community 1548]]
-- [[_COMMUNITY_ChangeEmailDialog.tsx|ChangeEmailDialog.tsx]]
-- [[_COMMUNITY_NavInvoiceRow.tsx|NavInvoiceRow.tsx]]
-- [[_COMMUNITY_Community 1551|Community 1551]]
-- [[_COMMUNITY_Community 1552|Community 1552]]
-- [[_COMMUNITY_Community 1553|Community 1553]]
-- [[_COMMUNITY_Community 1554|Community 1554]]
-- [[_COMMUNITY_Community 1555|Community 1555]]
-- [[_COMMUNITY_Community 1556|Community 1556]]
-- [[_COMMUNITY_Community 1557|Community 1557]]
-- [[_COMMUNITY_Community 1558|Community 1558]]
-- [[_COMMUNITY_Community 1559|Community 1559]]
-- [[_COMMUNITY_Community 1560|Community 1560]]
-- [[_COMMUNITY_Community 1561|Community 1561]]
-- [[_COMMUNITY_Community 1562|Community 1562]]
-- [[_COMMUNITY_Community 1563|Community 1563]]
-- [[_COMMUNITY_Community 1564|Community 1564]]
-- [[_COMMUNITY_Community 1565|Community 1565]]
-- [[_COMMUNITY_Community 1566|Community 1566]]
-- [[_COMMUNITY_Community 1567|Community 1567]]
-- [[_COMMUNITY_Community 1568|Community 1568]]
-- [[_COMMUNITY_Community 1569|Community 1569]]
-- [[_COMMUNITY_Community 1570|Community 1570]]
-- [[_COMMUNITY_Community 1571|Community 1571]]
-- [[_COMMUNITY_Community 1572|Community 1572]]
-- [[_COMMUNITY_Community 1573|Community 1573]]
-- [[_COMMUNITY_Community 1574|Community 1574]]
-- [[_COMMUNITY_Community 1575|Community 1575]]
-- [[_COMMUNITY_Community 1576|Community 1576]]
-- [[_COMMUNITY_Community 1577|Community 1577]]
-- [[_COMMUNITY_Community 1578|Community 1578]]
-- [[_COMMUNITY_Community 1579|Community 1579]]
-- [[_COMMUNITY_Community 1580|Community 1580]]
-- [[_COMMUNITY_Community 1581|Community 1581]]
-- [[_COMMUNITY_Community 1582|Community 1582]]
-- [[_COMMUNITY_Community 1583|Community 1583]]
-- [[_COMMUNITY_Community 1584|Community 1584]]
-- [[_COMMUNITY_Community 1585|Community 1585]]
-- [[_COMMUNITY_Community 1586|Community 1586]]
-- [[_COMMUNITY_Community 1588|Community 1588]]
-- [[_COMMUNITY_Community 1590|Community 1590]]
-- [[_COMMUNITY_Community 1591|Community 1591]]
-- [[_COMMUNITY_Community 1593|Community 1593]]
-- [[_COMMUNITY_Community 1594|Community 1594]]
-- [[_COMMUNITY_Community 1596|Community 1596]]
-- [[_COMMUNITY_Community 1597|Community 1597]]
-- [[_COMMUNITY_Community 1598|Community 1598]]
-- [[_COMMUNITY_Community 1599|Community 1599]]
-- [[_COMMUNITY_Community 1600|Community 1600]]
-- [[_COMMUNITY_Community 1601|Community 1601]]
-- [[_COMMUNITY_Community 1602|Community 1602]]
-- [[_COMMUNITY_Community 1603|Community 1603]]
-- [[_COMMUNITY_Community 1604|Community 1604]]
-- [[_COMMUNITY_Community 1605|Community 1605]]
-- [[_COMMUNITY_Community 1606|Community 1606]]
-- [[_COMMUNITY_Community 1607|Community 1607]]
-- [[_COMMUNITY_Community 1608|Community 1608]]
-- [[_COMMUNITY_Community 1609|Community 1609]]
-- [[_COMMUNITY_Community 1610|Community 1610]]
-- [[_COMMUNITY_Community 1611|Community 1611]]
-- [[_COMMUNITY_Community 1612|Community 1612]]
-- [[_COMMUNITY_Community 1613|Community 1613]]
-- [[_COMMUNITY_Community 1614|Community 1614]]
-- [[_COMMUNITY_Community 1615|Community 1615]]
-- [[_COMMUNITY_Community 1616|Community 1616]]
-- [[_COMMUNITY_Community 1617|Community 1617]]
-- [[_COMMUNITY_Community 1618|Community 1618]]
-- [[_COMMUNITY_Community 1619|Community 1619]]
-- [[_COMMUNITY_Community 1620|Community 1620]]
-- [[_COMMUNITY_Community 1621|Community 1621]]
-- [[_COMMUNITY_Community 1622|Community 1622]]
-- [[_COMMUNITY_Community 1623|Community 1623]]
-- [[_COMMUNITY_Community 1624|Community 1624]]
-- [[_COMMUNITY_Community 1625|Community 1625]]
-- [[_COMMUNITY_Community 1626|Community 1626]]
-- [[_COMMUNITY_Community 1627|Community 1627]]
-- [[_COMMUNITY_Community 1628|Community 1628]]
-- [[_COMMUNITY_Community 1629|Community 1629]]
-- [[_COMMUNITY_Community 1630|Community 1630]]
-- [[_COMMUNITY_Community 1631|Community 1631]]
-- [[_COMMUNITY_Community 1632|Community 1632]]
-- [[_COMMUNITY_Community 1633|Community 1633]]
-- [[_COMMUNITY_Community 1634|Community 1634]]
-- [[_COMMUNITY_Community 1635|Community 1635]]
-- [[_COMMUNITY_Community 1636|Community 1636]]
-- [[_COMMUNITY_Community 1637|Community 1637]]
-- [[_COMMUNITY_Community 1638|Community 1638]]
-- [[_COMMUNITY_Community 1639|Community 1639]]
-- [[_COMMUNITY_Community 1640|Community 1640]]
-- [[_COMMUNITY_Community 1641|Community 1641]]
-- [[_COMMUNITY_Community 1642|Community 1642]]
-- [[_COMMUNITY_Community 1643|Community 1643]]
-- [[_COMMUNITY_Community 1644|Community 1644]]
-- [[_COMMUNITY_Community 1645|Community 1645]]
-- [[_COMMUNITY_Community 1646|Community 1646]]
-- [[_COMMUNITY_Community 1647|Community 1647]]
-- [[_COMMUNITY_Community 1648|Community 1648]]
-- [[_COMMUNITY_Community 1649|Community 1649]]
-- [[_COMMUNITY_Community 1650|Community 1650]]
-- [[_COMMUNITY_Community 1651|Community 1651]]
-- [[_COMMUNITY_Community 1652|Community 1652]]
-- [[_COMMUNITY_backfill_partner_tax_numbers.mjs|backfill_partner_tax_numbers.mjs]]
-- [[_COMMUNITY_Community 1654|Community 1654]]
-- [[_COMMUNITY_Community 1655|Community 1655]]
-- [[_COMMUNITY_Community 1656|Community 1656]]
-- [[_COMMUNITY_Community 1657|Community 1657]]
-- [[_COMMUNITY_Community 1658|Community 1658]]
-- [[_COMMUNITY_Community 1659|Community 1659]]
-- [[_COMMUNITY_Community 1661|Community 1661]]
-- [[_COMMUNITY_Community 1662|Community 1662]]
-- [[_COMMUNITY_Community 1663|Community 1663]]
-- [[_COMMUNITY_Community 1664|Community 1664]]
-- [[_COMMUNITY_Community 1665|Community 1665]]
-- [[_COMMUNITY_Community 1666|Community 1666]]
-- [[_COMMUNITY_Community 1667|Community 1667]]
-- [[_COMMUNITY_Community 1668|Community 1668]]
-- [[_COMMUNITY_Community 1669|Community 1669]]
-- [[_COMMUNITY_Community 1670|Community 1670]]
-- [[_COMMUNITY_Community 1671|Community 1671]]
-- [[_COMMUNITY_Community 1672|Community 1672]]
-- [[_COMMUNITY_Community 1673|Community 1673]]
-- [[_COMMUNITY_Community 1674|Community 1674]]
-- [[_COMMUNITY_Community 1675|Community 1675]]
-- [[_COMMUNITY_Community 1676|Community 1676]]
-- [[_COMMUNITY_Community 1677|Community 1677]]
-- [[_COMMUNITY_Community 1678|Community 1678]]
-- [[_COMMUNITY_Community 1679|Community 1679]]
-- [[_COMMUNITY_Community 1680|Community 1680]]
-- [[_COMMUNITY_Community 1681|Community 1681]]
-- [[_COMMUNITY_Community 1682|Community 1682]]
-- [[_COMMUNITY_Community 1683|Community 1683]]
-- [[_COMMUNITY_Community 1684|Community 1684]]
-- [[_COMMUNITY_Community 1685|Community 1685]]
-- [[_COMMUNITY_Community 1686|Community 1686]]
-- [[_COMMUNITY_Community 1687|Community 1687]]
-- [[_COMMUNITY_Community 1688|Community 1688]]
-- [[_COMMUNITY_Community 1689|Community 1689]]
-- [[_COMMUNITY_Community 1690|Community 1690]]
-- [[_COMMUNITY_Community 1691|Community 1691]]
-- [[_COMMUNITY_Community 1692|Community 1692]]
-- [[_COMMUNITY_Community 1693|Community 1693]]
-- [[_COMMUNITY_Community 1694|Community 1694]]
-- [[_COMMUNITY_Community 1695|Community 1695]]
-- [[_COMMUNITY_Community 1696|Community 1696]]
-- [[_COMMUNITY_Community 1697|Community 1697]]
-- [[_COMMUNITY_Community 1698|Community 1698]]
-- [[_COMMUNITY_Community 1699|Community 1699]]
-- [[_COMMUNITY_Community 1700|Community 1700]]
-- [[_COMMUNITY_Community 1701|Community 1701]]
-- [[_COMMUNITY_Community 1702|Community 1702]]
-- [[_COMMUNITY_Community 1703|Community 1703]]
-- [[_COMMUNITY_Community 1704|Community 1704]]
-- [[_COMMUNITY_Community 1705|Community 1705]]
-- [[_COMMUNITY_Community 1706|Community 1706]]
-- [[_COMMUNITY_Community 1707|Community 1707]]
-- [[_COMMUNITY_Community 1708|Community 1708]]
-- [[_COMMUNITY_Community 1709|Community 1709]]
-- [[_COMMUNITY_Community 1710|Community 1710]]
-- [[_COMMUNITY_Community 1711|Community 1711]]
-- [[_COMMUNITY_Community 1712|Community 1712]]
-- [[_COMMUNITY_Community 1713|Community 1713]]
-- [[_COMMUNITY_Community 1714|Community 1714]]
-- [[_COMMUNITY_Community 1715|Community 1715]]
-- [[_COMMUNITY_Community 1716|Community 1716]]
-- [[_COMMUNITY_Community 1717|Community 1717]]
-- [[_COMMUNITY_Community 1718|Community 1718]]
-- [[_COMMUNITY_Community 1719|Community 1719]]
-- [[_COMMUNITY_Community 1720|Community 1720]]
-- [[_COMMUNITY_Community 1721|Community 1721]]
-- [[_COMMUNITY_Community 1722|Community 1722]]
-- [[_COMMUNITY_Community 1723|Community 1723]]
-- [[_COMMUNITY_Community 1724|Community 1724]]
-- [[_COMMUNITY_Community 1725|Community 1725]]
-- [[_COMMUNITY_Community 1726|Community 1726]]
-- [[_COMMUNITY_Community 1727|Community 1727]]
-- [[_COMMUNITY_Community 1728|Community 1728]]
-- [[_COMMUNITY_Community 1729|Community 1729]]
-- [[_COMMUNITY_Community 1730|Community 1730]]
-- [[_COMMUNITY_Community 1731|Community 1731]]
-- [[_COMMUNITY_Community 1732|Community 1732]]
-- [[_COMMUNITY_Community 1733|Community 1733]]
-- [[_COMMUNITY_Community 1734|Community 1734]]
-- [[_COMMUNITY_Community 1735|Community 1735]]
-- [[_COMMUNITY_Community 1736|Community 1736]]
-- [[_COMMUNITY_Community 1737|Community 1737]]
-- [[_COMMUNITY_Community 1738|Community 1738]]
-- [[_COMMUNITY_Community 1739|Community 1739]]
-- [[_COMMUNITY_Community 1740|Community 1740]]
-- [[_COMMUNITY_Community 1741|Community 1741]]
-- [[_COMMUNITY_Community 1742|Community 1742]]
-- [[_COMMUNITY_Community 1743|Community 1743]]
-- [[_COMMUNITY_Community 1744|Community 1744]]
-- [[_COMMUNITY_Community 1745|Community 1745]]
-- [[_COMMUNITY_Community 1746|Community 1746]]
-- [[_COMMUNITY_Community 1747|Community 1747]]
-- [[_COMMUNITY_Community 1748|Community 1748]]
-- [[_COMMUNITY_Community 1749|Community 1749]]
-- [[_COMMUNITY_Community 1750|Community 1750]]
-- [[_COMMUNITY_Community 1751|Community 1751]]
-- [[_COMMUNITY_Community 1752|Community 1752]]
-- [[_COMMUNITY_Community 1753|Community 1753]]
-- [[_COMMUNITY_Community 1754|Community 1754]]
-- [[_COMMUNITY_Community 1755|Community 1755]]
-- [[_COMMUNITY_Community 1756|Community 1756]]
-- [[_COMMUNITY_Community 1757|Community 1757]]
-- [[_COMMUNITY_Community 1759|Community 1759]]
-- [[_COMMUNITY_Community 1760|Community 1760]]
-- [[_COMMUNITY_Community 1761|Community 1761]]
-- [[_COMMUNITY_Community 1762|Community 1762]]
-- [[_COMMUNITY_Community 1763|Community 1763]]
-- [[_COMMUNITY_Community 1764|Community 1764]]
-- [[_COMMUNITY_Community 1765|Community 1765]]
-- [[_COMMUNITY_Community 1766|Community 1766]]
-- [[_COMMUNITY_Community 1767|Community 1767]]
-- [[_COMMUNITY_Community 1768|Community 1768]]
-- [[_COMMUNITY_Community 1769|Community 1769]]
-- [[_COMMUNITY_Community 1770|Community 1770]]
-- [[_COMMUNITY_Community 1771|Community 1771]]
-- [[_COMMUNITY_Community 1772|Community 1772]]
-- [[_COMMUNITY_Community 1773|Community 1773]]
-- [[_COMMUNITY_Community 1774|Community 1774]]
-- [[_COMMUNITY_Community 1775|Community 1775]]
-- [[_COMMUNITY_Community 1776|Community 1776]]
-- [[_COMMUNITY_Community 1777|Community 1777]]
-- [[_COMMUNITY_Community 1778|Community 1778]]
-- [[_COMMUNITY_Community 1779|Community 1779]]
-- [[_COMMUNITY_Community 1780|Community 1780]]
-- [[_COMMUNITY_Community 1781|Community 1781]]
-- [[_COMMUNITY_Community 1782|Community 1782]]
-- [[_COMMUNITY_Community 1783|Community 1783]]
-- [[_COMMUNITY_Community 1784|Community 1784]]
-- [[_COMMUNITY_Community 1785|Community 1785]]
-- [[_COMMUNITY_Community 1786|Community 1786]]
-- [[_COMMUNITY_Community 1787|Community 1787]]
-- [[_COMMUNITY_Community 1788|Community 1788]]
-- [[_COMMUNITY_Community 1789|Community 1789]]
-- [[_COMMUNITY_Community 1790|Community 1790]]
-- [[_COMMUNITY_Community 1791|Community 1791]]
-- [[_COMMUNITY_Community 1792|Community 1792]]
-- [[_COMMUNITY_Community 1793|Community 1793]]
-- [[_COMMUNITY_Community 1794|Community 1794]]
-- [[_COMMUNITY_Community 1795|Community 1795]]
-- [[_COMMUNITY_Community 1796|Community 1796]]
-- [[_COMMUNITY_Community 1797|Community 1797]]
-- [[_COMMUNITY_Community 1798|Community 1798]]
-- [[_COMMUNITY_Community 1799|Community 1799]]
-- [[_COMMUNITY_Community 1800|Community 1800]]
-- [[_COMMUNITY_Community 1801|Community 1801]]
-- [[_COMMUNITY_Community 1802|Community 1802]]
-- [[_COMMUNITY_Community 1803|Community 1803]]
-- [[_COMMUNITY_Community 1804|Community 1804]]
-- [[_COMMUNITY_Community 1805|Community 1805]]
-- [[_COMMUNITY_Community 1806|Community 1806]]
-- [[_COMMUNITY_Community 1807|Community 1807]]
-- [[_COMMUNITY_Community 1808|Community 1808]]
-- [[_COMMUNITY_Community 1809|Community 1809]]
-- [[_COMMUNITY_Community 1810|Community 1810]]
-- [[_COMMUNITY_Community 1811|Community 1811]]
-- [[_COMMUNITY_Community 1812|Community 1812]]
-- [[_COMMUNITY_Community 1813|Community 1813]]
-- [[_COMMUNITY_Community 1814|Community 1814]]
-- [[_COMMUNITY_Community 1815|Community 1815]]
-- [[_COMMUNITY_Community 1816|Community 1816]]
-- [[_COMMUNITY_Community 1817|Community 1817]]
-- [[_COMMUNITY_Community 1818|Community 1818]]
-- [[_COMMUNITY_Community 1820|Community 1820]]
-- [[_COMMUNITY_Community 1821|Community 1821]]
-- [[_COMMUNITY_Community 1822|Community 1822]]
-- [[_COMMUNITY_Community 1823|Community 1823]]
-- [[_COMMUNITY_Community 1824|Community 1824]]
-- [[_COMMUNITY_Community 1825|Community 1825]]
-- [[_COMMUNITY_Community 1826|Community 1826]]
-- [[_COMMUNITY_Community 1827|Community 1827]]
-- [[_COMMUNITY_Community 1828|Community 1828]]
-- [[_COMMUNITY_Community 1834|Community 1834]]
-- [[_COMMUNITY_Community 1835|Community 1835]]
-- [[_COMMUNITY_Community 1836|Community 1836]]
-- [[_COMMUNITY_Community 1838|Community 1838]]
-- [[_COMMUNITY_Community 1850|Community 1850]]
-- [[_COMMUNITY_Community 1851|Community 1851]]
-- [[_COMMUNITY_Community 1852|Community 1852]]
-- [[_COMMUNITY_Community 1853|Community 1853]]
-- [[_COMMUNITY_Community 1854|Community 1854]]
-- [[_COMMUNITY_Community 1855|Community 1855]]
-- [[_COMMUNITY_Community 1856|Community 1856]]
-- [[_COMMUNITY_Community 1857|Community 1857]]
-- [[_COMMUNITY_Community 1858|Community 1858]]
-- [[_COMMUNITY_Community 1859|Community 1859]]
-- [[_COMMUNITY_Community 1860|Community 1860]]
-- [[_COMMUNITY_Community 1861|Community 1861]]
-- [[_COMMUNITY_Community 1862|Community 1862]]
-- [[_COMMUNITY_Community 1863|Community 1863]]
-- [[_COMMUNITY_Community 1864|Community 1864]]
-- [[_COMMUNITY_Community 1865|Community 1865]]
-- [[_COMMUNITY_Community 1866|Community 1866]]
-- [[_COMMUNITY_Community 1867|Community 1867]]
-- [[_COMMUNITY_Community 1868|Community 1868]]
-- [[_COMMUNITY_Community 1869|Community 1869]]
-- [[_COMMUNITY_Community 1870|Community 1870]]
-- [[_COMMUNITY_Community 1871|Community 1871]]
-- [[_COMMUNITY_Community 1872|Community 1872]]
-- [[_COMMUNITY_Community 1873|Community 1873]]
-- [[_COMMUNITY_Community 1874|Community 1874]]
-- [[_COMMUNITY_Community 1875|Community 1875]]
-- [[_COMMUNITY_Community 1876|Community 1876]]
-- [[_COMMUNITY_Community 1877|Community 1877]]
-- [[_COMMUNITY_Community 1878|Community 1878]]
-- [[_COMMUNITY_Community 1879|Community 1879]]
-- [[_COMMUNITY_Community 1880|Community 1880]]
-- [[_COMMUNITY_Community 1881|Community 1881]]
-- [[_COMMUNITY_Community 1882|Community 1882]]
-- [[_COMMUNITY_Community 1883|Community 1883]]
-- [[_COMMUNITY_Community 1884|Community 1884]]
-- [[_COMMUNITY_Community 1885|Community 1885]]
-- [[_COMMUNITY_Community 1886|Community 1886]]
-- [[_COMMUNITY_Community 1887|Community 1887]]
-- [[_COMMUNITY_Community 1888|Community 1888]]
-- [[_COMMUNITY_Community 1889|Community 1889]]
-- [[_COMMUNITY_Community 1890|Community 1890]]
-- [[_COMMUNITY_Community 1891|Community 1891]]
-- [[_COMMUNITY_Community 1892|Community 1892]]
-- [[_COMMUNITY_Community 1893|Community 1893]]
-- [[_COMMUNITY_Community 1894|Community 1894]]
-- [[_COMMUNITY_Community 1895|Community 1895]]
-- [[_COMMUNITY_Community 1896|Community 1896]]
-- [[_COMMUNITY_Community 1897|Community 1897]]
-- [[_COMMUNITY_Community 1898|Community 1898]]
-- [[_COMMUNITY_Community 1899|Community 1899]]
-- [[_COMMUNITY_Community 1900|Community 1900]]
-- [[_COMMUNITY_Community 1901|Community 1901]]
-- [[_COMMUNITY_Community 1902|Community 1902]]
-- [[_COMMUNITY_Community 1903|Community 1903]]
-- [[_COMMUNITY_Community 1904|Community 1904]]
-- [[_COMMUNITY_Community 1905|Community 1905]]
-- [[_COMMUNITY_Community 1906|Community 1906]]
-- [[_COMMUNITY_Community 1907|Community 1907]]
-- [[_COMMUNITY_Community 1908|Community 1908]]
-- [[_COMMUNITY_Community 1909|Community 1909]]
-- [[_COMMUNITY_Community 1910|Community 1910]]
-- [[_COMMUNITY_Community 1911|Community 1911]]
-- [[_COMMUNITY_Community 1912|Community 1912]]
-- [[_COMMUNITY_Community 1913|Community 1913]]
-- [[_COMMUNITY_Community 1914|Community 1914]]
-- [[_COMMUNITY_Community 1915|Community 1915]]
-- [[_COMMUNITY_Community 1916|Community 1916]]
-- [[_COMMUNITY_Community 1917|Community 1917]]
-- [[_COMMUNITY_Community 1918|Community 1918]]
-- [[_COMMUNITY_Community 1919|Community 1919]]
-- [[_COMMUNITY_Community 1920|Community 1920]]
-- [[_COMMUNITY_Community 1921|Community 1921]]
-- [[_COMMUNITY_Community 1922|Community 1922]]
-- [[_COMMUNITY_Community 1923|Community 1923]]
-- [[_COMMUNITY_Community 1924|Community 1924]]
-- [[_COMMUNITY_Community 1925|Community 1925]]
-- [[_COMMUNITY_Community 1926|Community 1926]]
-- [[_COMMUNITY_Community 1927|Community 1927]]
-- [[_COMMUNITY_Community 1928|Community 1928]]
-- [[_COMMUNITY_Community 1929|Community 1929]]
-- [[_COMMUNITY_Community 1930|Community 1930]]
-- [[_COMMUNITY_Community 1931|Community 1931]]
-- [[_COMMUNITY_Community 1932|Community 1932]]
-- [[_COMMUNITY_Community 1933|Community 1933]]
-- [[_COMMUNITY_Community 1934|Community 1934]]
-- [[_COMMUNITY_Community 1935|Community 1935]]
-- [[_COMMUNITY_Community 1936|Community 1936]]
-- [[_COMMUNITY_Community 1937|Community 1937]]
-- [[_COMMUNITY_Community 1938|Community 1938]]
-- [[_COMMUNITY_Community 1939|Community 1939]]
-- [[_COMMUNITY_Community 1940|Community 1940]]
-- [[_COMMUNITY_Community 1941|Community 1941]]
-- [[_COMMUNITY_Community 1942|Community 1942]]
-- [[_COMMUNITY_Community 1943|Community 1943]]
-- [[_COMMUNITY_Community 1964|Community 1964]]
-- [[_COMMUNITY_Community 1965|Community 1965]]
-- [[_COMMUNITY_Community 1967|Community 1967]]
-- [[_COMMUNITY_Community 1970|Community 1970]]
-- [[_COMMUNITY_Community 1971|Community 1971]]
-- [[_COMMUNITY_Community 1972|Community 1972]]
-- [[_COMMUNITY_Community 1973|Community 1973]]
-- [[_COMMUNITY_Community 1974|Community 1974]]
-- [[_COMMUNITY_Community 1975|Community 1975]]
-- [[_COMMUNITY_Community 1976|Community 1976]]
-- [[_COMMUNITY_Community 1977|Community 1977]]
-- [[_COMMUNITY_Community 1978|Community 1978]]
-- [[_COMMUNITY_Community 1979|Community 1979]]
-- [[_COMMUNITY_Community 1980|Community 1980]]
-- [[_COMMUNITY_Community 1981|Community 1981]]
-- [[_COMMUNITY_Community 1982|Community 1982]]
-- [[_COMMUNITY_Community 1983|Community 1983]]
-- [[_COMMUNITY_Community 1984|Community 1984]]
-- [[_COMMUNITY_Community 1985|Community 1985]]
-- [[_COMMUNITY_Community 1987|Community 1987]]
-- [[_COMMUNITY_Community 1988|Community 1988]]
-- [[_COMMUNITY_Community 1989|Community 1989]]
-- [[_COMMUNITY_Community 1990|Community 1990]]
-- [[_COMMUNITY_Community 1991|Community 1991]]
-- [[_COMMUNITY_Community 1992|Community 1992]]
-- [[_COMMUNITY_Community 1993|Community 1993]]
-- [[_COMMUNITY_Community 1994|Community 1994]]
-- [[_COMMUNITY_Community 1995|Community 1995]]
-- [[_COMMUNITY_Community 1996|Community 1996]]
-- [[_COMMUNITY_Community 1998|Community 1998]]
-- [[_COMMUNITY_Community 2002|Community 2002]]
-- [[_COMMUNITY_Community 2003|Community 2003]]
-- [[_COMMUNITY_Community 2004|Community 2004]]
-- [[_COMMUNITY_Community 2011|Community 2011]]
-- [[_COMMUNITY_Community 2012|Community 2012]]
+- formatCurrency
+- react-i18next
+- client.ts
+- vitest
+- react
+- badge.tsx
+- GLOSSARY.md
+- card.tsx
+- react-router-dom
+- product/decisions/index.md
+- architecture/decisions/index.md
+- accounty/index.ts
+- business/decisions/index.md
+- useEvData.ts
+- A-080-nav-anyk-vat-return-xml-standardization.md
+- TicketsPage.tsx
+- reportError
+- accountyRoutes.tsx
+- P-055-accounting-journals-ux.md
+- useToast
+- ClientDetailsPage.tsx
+- database-schema.md
+- ProtectedAccountyRoute.tsx
+- ref_https
+- cn
+- payroll/index.ts
+- AssetActivationDialog.tsx
+- management/ManagementDashboard.tsx
+- vat/types.ts
+- useInvoiceContext
+- EntriesTab.tsx
+- DocumentEngine.ts
+- useAccountyClients
+- InvoiceContext.tsx
+- EmployeeDetailsPage.tsx
+- AnnualReportContainer.tsx
+- useVatReturnData.ts
+- PettyCashPage.tsx
+- KnowledgeBasePage.tsx
+- replica/index.ts
+- dependencies
+- useDocumentUpload.ts
+- tests/helpers.ts
+- useSteelProductsData.ts
+- A-062-invoices-feature-slice-modularization.md
+- opg.ts
+- escapeXml
+- nav-client.ts
+- Auth.tsx
+- AppSidebar.tsx
+- BankAccountsTab.tsx
+- AccountyApp.tsx
+- AuditorExportWorkspace.tsx
+- EmployeeImportPage.tsx
+- usePayrollData.ts
+- fixed-assets.ts
+- WorkerPanel.tsx
+- i18n.ts
+- 🏦 Házipénztár
+- A-024-partner-upsert-strategy.md
+- 12 — Dialógusok & Felugró Ablakok
+- PayrollCyclePage.tsx
+- A-258-gl-opening-balances-rollforward-and-transfers-dedup-integrity.md
+- Visibill — Business Requirements Document (BRD)
+- AccountyShellContext.tsx
+- openingImportParser.ts
+- 3. Részletes Tételes Ellenőrzőlista (Mind az 1146 tétel)
+- AssetReconciliationTab.tsx
+- process-mailgun-webhook/index.ts
+- Visibill Scalability & Security Audit
+- AutoAccountingRulesTab.tsx
+- AiAssistantChat.tsx
+- NavInvoice
+- cache.test.ts
+- rich-text-editor.tsx
+- accrualMath.ts
+- 11 — Adatmegjelenítés & Táblázatok
+- DashboardApp
+- FilePreviewModal
+- ChangelogPage.tsx
+- KintlevoPage.tsx
+- GeneralLedgerPage.tsx
+- useAdminData.ts
+- procontGlData.ts
+- 🛡️ Morfi Implementation Review (Autonomous Goal Mode)
+- A. Backend Edge Function Moduláris Architektúra (`supabase/functions/management-stats/`)
+- ClientInvoicesPage
+- send-weekly-summary/weekly-summary.tsx
+- emails/weekly-summary.tsx
+- croatianPoreznaXml.ts
+- DeclarationArchivePage.tsx
+- Components
+- AccountyLayout
+- VatCalculatorView.tsx
+- GlobalDatePicker
+- VatAmendmentsWorkspace.tsx
+- 05 — Layout & Navigáció
+- OutputDocumentsPage.tsx
+- matchingService.ts
+- invoices.ts
+- rlbParser.ts
+- send-dunning-email/index.ts
+- 4. Részletes Tételes Teendőjegyzék (Mind a 318 Tétel)
+- aggreg8-api/index.ts
+- depreciationPostingService.ts
+- random
+- Nav2665MReplicaContainer.tsx
+- TaoYearEndWizardPage.tsx
+- AiAnomalyReportPage.tsx
+- gen-db-docs.js
+- assetDisposalPostingService.ts
+- customer-api/index.ts
+- 08 — Interakciók & Animációk
+- button.tsx
+- 10 — Accessibility & UX Patternek
+- tbCertificatesPdf.ts
+- P-033-payroll-cycle.md
+- rlbGlData.ts
+- AccountyErrorBoundary
+- lucide-react
+- devDependencies
+- expanded-row/types.ts
+- Technikai Fogalomtár — Supabase Exit Strategy
+- FadInvoicePanel.tsx
+- AlertsCenterPage.tsx
+- Visibill Feature Planner — Zero Silent Decisions & Subagent Swarm
+- 04-invoices.md
+- PurchaseVouchersTab.tsx
+- glExport.ts
+- AccountyScopedLayout.tsx
+- ReportsPage.tsx
+- HelpTabSections.tsx
+- ExpandedInvoiceRow
+- 02 — Design Tokens & Színrendszer
+- Dokumentáció Taxonómia — Mi mibe kerül?
+- normalizeHungarianForPdf
+- glInvoiceGrouping.ts
+- vatReturnXml.ts
+- payrollUtils.ts
+- asana.cjs
+- 6. Module Permission System (menü ki-/bekapcsolás)
+- 6. Lepesrol Lepesre Megvalositasi Terv (Sprint Roadmap)
+- 03 — Tipográfia & Ikonok
+- toast.tsx
+- 13 — Autentikáció & Onboarding
+- VatTemplatePreview.tsx
+- InvoiceDetailPopup.tsx
+- TransactionDetailsDialog.tsx
+- Visibill Changelog & Patch Notes Publish Skill (/visibill-patchnote)
+- A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md
+- 2. Teljes RPC Function Katalógus Áttekintés
+- assetImportParser.ts
+- ConfirmDialog Async Pattern — Implementációs Terv
+- VisibillGoogleDriveSync.js
+- Döntések
+- PermissionMatrixPage.tsx
+- 2.8 eaisyBooks (Könyvelőirodai Platform & ERP)
+- Supabase Lock-in: Storage, Realtime, PostgREST, RLS & pg_cron
+- PostingGroupAccordion.tsx
+- useTechnicalAccounting.ts
+- FilesPanel
+- WorksheetLeaveModal
+- Egyedi Komponensek (Nem shadcn/ui)
+- Visibill Spec Lookup — Docs-First Development
+- Visibill Ticket Support — Ügyfélkérések & Hibafeltárás Workflow
+- 📘 eaisyBooks — EV (Egyéni Vállalkozó)
+- Decision
+- Visibill — Business Overview
+- developmentReservePenaltyCalculator.ts
+- assetDisposalProtocolPdf.ts
+- filesHandler.ts
+- minimax-sync/index.ts
+- eb0255ChartOfAccountsSubledger.test.tsx
+- useAccountyPermissions
+- 🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)
+- 14 — Teljesítmény Optimalizáció
+- 🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)
+- validationUtils.ts
+- journalUtils.ts
+- useCashReports.ts
+- accountyConstants.ts
+- 1. FÁZIS: Log & Hibatábla Felderítés (Data Collection)
+- A-024: Partner Upsert Strategy — Prefix Matching, Foreign Partners, Both Upgrade
+- PayrollStep8.tsx
+- xml-parser.ts
+- CashClosingDialog
+- Visibill — Use Cases
+- 09 — Hibakezelés & Feedback
+- 10 Design Koncepció
+- ManualMatchSearchSection.tsx
+- floating-bulk-bar.tsx
+- payrollBankMatcher.ts
+- management-stats/index.ts
+- compilerOptions
+- Visibill Rendszerhibák Lekérdezési Kézikönyv (SQL Cheat Sheet)
+- useRelatedPartyTurnover.ts
+- A-189: Főkönyvi Kivonat és Naplófőkönyv RPC Teljesítmény-Optimalizálás (Statement Timeout 57014 Megszüntetése, CTE Materializáció és Hash Join)
+- useCompanySubLocations.ts
+- 3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)
+- Visibill — Product Decision Records (PRD)
+- Edge Functions Katalógus
+- Filing08EPage.tsx
+- Visibill DB/SQL Best Practices Checklist
+- ⚙️ Kapcsolódó RPC Függvények és Folyamatok
+- InvoiceDataExportDialog
+- 8b. eaisyBooks — Könyvelő Iroda Platform
+- 07 — Betöltés & Skeleton Patternek
+- DividendPayrollPage.tsx
+- capabilities.ts
+- 📘 eaisyBooks — Bérszámfejtés
+- A-040: Multi-Tab Auth Flow Isolation (2026-07-18)
+- 2. A Döntés és Felületi Specifikáció
+- Visibill — Error Logging & Dashboard Rendszer
+- scripts
+- PostgreSQL RPC Tesztelési Stratégia és Blueprint
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- App.tsx
+- 3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)
+- 9. Oldal-szintű Funkciók (2026-06-26)
+- 3. Funkcionális specifikáció
+- posSettlementProcessor.ts
+- compilerOptions
+- Workflow — Minden fejlesztési feladat elején
+- components.json
+- 📘 eaisyBooks — Alap
+- Decision
+- invoicePaginationRecovery.test.tsx
+- Decision
+- payslipTemplate.ts
+- 2. A Döntés
+- password-reset.tsx
+- Döntések
+- InvoiceRulesDialog
+- Visibill — Decision Helper
+- ErrorBoundary
+- 3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)
+- 3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)
+- mkvkAuditXmlGenerator.ts
+- PayrollPortfolioPage.tsx
+- permissionsHandler.ts
+- emails/invoice-processed.tsx
+- Audit Checklist
+- Visibill Drift Check — Spec vs Kód Konzisztencia
+- 2. A Partnerektől és a Banktól Megkapható Adatok Katalógusa
+- 📋 Éves Beszámoló & ÁFA
+- dashboard_app.py
+- Részletek
+- closed
+- NavInvoiceVatSummaryCard
+- ActivityLogSheet.tsx
+- 2. A Havi Munkafolyamat Lépései Részletesen
+- PRD-02: Havi Beosztástervező Naptárrács és Interakciók
+- Visibill — Business Requirement Decisions
+- 04 — Komponens Könyvtár
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- exchangeRateBanks.ts
+- EaisyWorksSyncCard.tsx
+- agoraPnlPdf.ts
+- openclaw-api/index.ts
+- compilerOptions
+- AuthContext
+- A-020: Auth Trigger Chain — Signup Incident és Tanulságok
+- Decision
+- 2. Megoldási Architektúra és Döntések
+- Supabase Edge Functions Katalógus
+- 06 — Állapotkezelés & Kontextusok
+- Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)
+- 3. A 6-Füles Munkavállalói Mesterkarton Specifikációja (`EmployeeCardDrawer`)
+- Adatmigráció és Napi Szinkronizáció (Data Migration & Daily Sync)
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni?
+- 3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)
+- carousel.tsx
+- ClientEvMainPage.tsx
+- functions/nav/index.ts
+- 🛠️ Végrehajtási Munkafolyamat (`/goal` Üzemmód)
+- 🛠️ Végrehajtási Munkafolyamat (`/goal` Üzemmód)
+- 📋 Működési Folyamat
+- 🔄 Kötelező Végrehajtási Folyamat (Workflow)
+- 📄 Számlák
+- 💳 Tranzakciók & Bank
+- 📊 Főkönyv (General Ledger)
+- A-011: Mailgun Email Processing Pipeline
+- A-023: Upload Dedup Védelem (DB Trigger + Frontend Mutex)
+- Decision
+- SubledgerItem
+- Legnagyobb Chunk-ok
+- brd/INDEX.md
+- Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)
+- 3. Üzleti Entitások és Felelősségi Körök
+- PRD-08: Dolgozói Önkiszolgáló Portál és Mobil Nézet
+- 🚨 Riasztások Központ és NAV Határidők (Alerts Center & NAV Deadlines)
+- 🛡️ Jogosultságkezelő Mátrix (Permission Matrix)
+- 🧮 Adómértékek és Jogszabályi Paraméterek (Tax Parameters)
+- 📋 Ügyfél Profil és Törzsadatok (Client Profile)
+- 🏛️ Társasági Adó, KIVA és Zárás Modul (Client TAO/KIVA Module)
+- Tárgyi Eszköz Nyilvántartó (TENY) – Teljes GAP Elemzés és Megvalósítási Terv
+- 3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)
+- P-015: Tömeges Műveletek (Bulk Actions)
+- 2. Terméktervezési Döntések (UX)
+- send-invoice-notification/invoice-processed.tsx
+- UI & UX Guidelines (Visibill / eaisybill-prod)
+- Database Development & Optimization Guidelines (Visibill / eaisybill-prod)
+- Teljes Edge Function Katalógus (70 db dokumentálva a 71-ből)
+- Decision
+- Decision
+- eb0257JournalsAndPartnerLines.test.ts
+- Decision
+- A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció
+- P-138-unified-accounting-rules-and-prompt-library-ux.md
+- 2. Decision
+- Decision
+- A-237: NAV Online Számla v3 GZIP Kitömörítés és Többtételes Közműszámla Ingestion Architektúra
+- A-238: Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra
+- Visibill — Architecture Decision Records (ADR)
+- PRD-01: Portál Navigáció, Globális Vezérlők és Menürendszer
+- PRD-03: Műszakszerkesztő Dialógus, Gyorskitöltő és Sablonkezelő
+- PRD-04: Távollét- és Helyettesítéskezelő Felület
+- Decision
+- 🧩 Az 5 Alapvető Hook Részletezve
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- Nav2665ReplicaContainer
+- useSubledger.ts
+- navProtocol.test.ts
+- syncKnowledgeBase.cjs
+- SharedComponents.tsx
+- inventoryReportExport.ts
+- inviteCodeFlow.test.ts
+- React & Frontend Guidelines (Visibill / eaisybill-prod)
+- Moduláris BRD Készítési Irányelvek és Rekordstruktúra Sablon
+- 📘 eaisyBooks — Adó & Jogi
+- Decision
+- Decision
+- Decision
+- 2. Hiba Források
+- Decision
+- Decision
+- 2. Decision
+- A-233: Kézi Készpénzes Számlarendezések Automatikus Házipénztár Integrációja és GLS Kompenzációs Normalizálás
+- 💡 Decision
+- Decision
+- PRD-06: Jelenlét-Igazolás, Hóvégi Zárás és Bérszámfejtési Export
+- Decision
+- eaisybill Design System — Áttekintés
+- Kiegészítő Standalone Komponensek
+- 🗂️ Kategóriák és Modulok
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 🗂️ Gyors Hivatkozások a Glossary Modulokhoz
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- TENY (Tárgyi Eszköz Nyilvántartó) – Hivatalos Implementációs Terv
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- Visibill Development & Escalation Protocol
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- Új viselkedés
+- Decision
+- 2. Termékdöntés és Megoldás
+- 2. Termékdöntés
+- Kiterjesztések, Sorok és Tesztkörnyezet Migráció (Extensions, Queues & Local replica)
+- ActivityLogTimelineItem.tsx
+- UploadHistory.tsx
+- useComputedStatus.ts
+- accountyPermissions.test.ts
+- eaisybillPermissions.test.ts
+- nav-opg-proxy/index.ts
+- welcome.tsx
+- compilerOptions
+- 🤖 Visibill AI Skills
+- 🔄 Részletes Szinkronizációs Protokoll (Workflow)
+- Visibill PM Task Creator — Letisztult Task Brief & Asana Generátor
+- A-045: Audit Trigger Email-Alias Bypass a Service Role Guard Alatt
+- A-052: Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció
+- GraphCanvas
+- A-086: Főkönyvi Könyvelési Státusz Szűrő (POSTED_ONLY) és Naplózási Irányelvek
+- A-087: Főkönyvi Adatbázis-alapú Keresés, Számla-szintű Lapozás és Tooltip Architektúra
+- A-089: Management Dashboard Hibajegy Létrehozás Felhasználó Nevében (Impersonated Ticket Creation)
+- Decision
+- Decision (Döntés)
+- Decision (Döntés)
+- A-168: Számla Export Banki Tranzakció Feloldás, Skontó-Dátum Architektúra és Intelligens Fül-Válogatás
+- Decision
+- 2. Decision
+- A-184: Real-time AI Categorization Progress Streaming, Invalidation & Idempotency Safeguards
+- A-230: Könyvelési Naplók Kategorizálása, Tételsori Partner Relációk és Banki Kétirányú Szinkronizáció (EB-0257)
+- A-235: Termékimport és Vámhatározatok ÁFA Integrációja
+- A-236: NAV 26TFEJLH Nyomtatvány Replika és PDF Generáló Motor
+- A-240: ÁFA Számítási Regresszióvédelmi Kapu: Golden Master Szerződésteszt és Élő Adatbázis Snapshot Guard Architektúra
+- A-245: calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése)
+- Decision
+- A-258: Főkönyvi Nyitó Mérlegtételek Évközi Átgörgetése (GL Rollforward) és Bérszámfejtési Utalási Tranzakció Integritás
+- A-259: invoice_items Multi-Tenant Denormalizáció, PostgREST Lateral Join Timeout Felszámolása és get_unclassified_gl_items Limit Védelem
+- Email Auth Flow-ok (2026-06-24 redesign)
+- PostgreSQL RPC és Függvény Katalógus
+- PRD-05: Munkaügyi Szabálymotor és Élő Megfelelőségi Rendszer
+- Decision 040: Számla Kapcsolatok és Párosítási Logikák (Matching & Relations)
+- Visibill — User Journeys
+- Fejlesztési Munkafolyamat és CI/CD (Development Workflow)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- Döntések
+- Decision
+- 2. Megvalósított Felületi Élmény (UX)
+- 2. Decision
+- 2. Felületi Döntések
+- P-172: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák UX
+- Migrációs Terv — Auth Absztrakció & Edge Function Portolás
+- 4.3 Fázisok részletesen
+- sickLeaveTemplates.ts
+- chart.tsx
+- filingGenerator.ts
+- nav-auto-sync/index.ts
+- rpcPerformanceAndResilience.test.ts
+- Database & Migration Guidelines (Visibill / eaisybill-prod)
+- Moduláris PRD Készítési Irányelvek és Rekordstruktúra Sablon
+- getProjectClients
+- Decision
+- A-038: IMAP/SMTP Hitelesítő Adatok és Vault Integráció
+- A-042: Sztornó Számla Kézi Lezárás (Storno Settle) Architektúra
+- Döntés
+- A-085: Főkönyvi Dátum Alap RPC Pushdown és Dinamikus Chunk Reload Recovery
+- A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz (PostgREST Pre-Request Hook & Edge Function Client Guard)
+- 4. Micro-Module Dekomponálás & Végrehajtási Terv
+- A-112: Futárszolgálati Kompenzációs Értesítők Kétirányú Automatikus Számlarendezése és Futárriport UI Párosítás (GLS / Courier Compensation Auto-Settlement & UI)
+- A-120: Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló
+- A-121: Évek Közötti Áthúzódó Teljesítésű Számlák Főkönyvi és ÁFA Védőhálója (Cross-Year Delivery Guard)
+- A-129: Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek
+- A-145: Tömeges PDF Szeletelés (Physical Chunk Slicing), NAV Determinisztikus Fallback és Többszörös Mellékletkezelés
+- A-148: Könyvelőirodai Hibajegy Megosztás és Hibrid RLS Hozzáférés-vezérlés
+- 2. Architektúrális Döntések
+- 2. Megoldás & Architektúrális Döntések
+- A-185: Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra
+- 2. Döntések és Architektúra
+- JournalsPage
+- 2. Architekturális Döntések
+- A-234: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Architektúrája
+- Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)
+- 7. Pénzügyi Modulok
+- Decision
+- 2. Üzleti és Számviteli Döntések
+- BDR-065: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Üzleti Szabályzata
+- 06. Hiányossági Katalógus és Cselekvési Terv — HR Lokalizáció
+- Fejlesztői Környezet Architektúra (DEV Architecture)
+- ⚛️ React Alapfogalmak, Virtual DOM & JSX
+- 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)
+- Döntések
+- P-085: eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása (Teendők, Portfólió, Segítség, Beállítások) UX
+- P-087: Aggreg8 Bankcsatlakozás, SyncUI Felugró Ablak és Élő Szinkronizáció UX
+- 2. Termékdöntés és Megoldás
+- P-130: Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) UX
+- P-177: PROCONT Főkönyvi Kivonat A4 PDF és Excel Export, Kétoldalas Egyezőség-számítás és Hibátlan Többoldalas Layout UX
+- Decision
+- PayrollReconciliationTab.tsx
+- journalFilterUtils.ts
+- invoiceChainUtils.test.ts
+- skontoUtils.ts
+- accounty-generate-deadlines/index.ts
+- email-confirmation.tsx
+- Kötelező ÁFA Regresszióvédelmi és Stabilitási Kapu (VAT Safety Gate)
+- 🚀 Végrehajtási Folyamat (Workflow)
+- 🏢 Cégek & Tagság
+- A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency
+- A-056: pg_cron Storage Cleanup Guard & Edge Function Schema Alignment
+- A-105: [eaisyBill] Tudástár Adatmodell, Full-Text Search és AI Retrieval Előkészítés
+- A-116: K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem
+- A-125: Atomi Házipénztári Számlakiegyenlítés és Auth Életciklus Védelmek
+- Decision
+- 2. Architekturális Döntések
+- 2. Decision
+- 2. Decision
+- A-167: NAV 2665 Hivatalos Nyomtatvány Digitális Replika Architektúra
+- A-190: Non-Destructive IMAP UID Követés (Zero-\Seen), Elosztott Zárolás és Batch Capping
+- SubledgerItemMatchesModal
+- 2. Rendszerdöntések (Decisions D-1 .. D-4)
+- 2. Architectural Decisions
+- A-243: NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZ/SZJ Detektálás Architektúra
+- A-249: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra
+- A-255: Technikai Könyvelési és Bérszámfejtési RPC Jogosultságkezelés, Külső Könyvelői Hozzáférés (has_accounty_company_access) és Folyószámla Típusbiztonság
+- Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)
+- Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)
+- PRD-09: Fejlesztési Roadmap, Képernyő-készültség és MVP Kiadás
+- Decision
+- BDR-066: Termékimport és Vámhatározatok ÁFA Elszámolása
+- BDR-067: NAV 26TFEJLH Turizmusfejlesztési Hozzájárulás Bevallás és Nyomtatvány Replika
+- Decision
+- Decision
+- Dashboard KPI Kártyák Újratervezése (Design Mockup & Specifikáció)
+- 01. Számlák és Bizonylatkezelés — HR Lokalizációs Leltár
+- 02. Pénzügy, Könyvelés és GL — HR Lokalizációs Leltár
+- 03. Bank, Partnerek és Tranzakciók — HR Lokalizációs Leltár
+- 04. HR, Munkaidő és Tárgyi Eszközök — HR Lokalizációs Leltár
+- 05. Beállítások, Integrációk és Globális UI — HR Lokalizációs Leltár
+- 🪟 Sliding Window & Two Pointers Minták
+- 🔄 Szerver Állapot & TanStack React Query (`useQuery`, `useMutation`)
+- 🛡️ Audit Napló és Biztonsági Naplózás (Audit Log)
+- 📑 Ügyfél Számlák és Bizonylatok (Client Invoices)
+- Onboarding Wizard Felépítése és Lépései
+- P-082: Bérszámfejtési Főkönyvi Feladás Kontírozás (Step 8), Kereshető Választó és Magyarázó Szövegezés UX
+- P-100: Nem Levonható ÁFA Megjelenítése és Felületi Átláthatósága (1. + 2. + 3. Opció) UX
+- Decision (Döntés)
+- 2. Termékdöntés
+- P-140: Számlázz.hu Saját Kimenő Számlaképek Lehívása és NAV Párosítás
+- 2. Megoldás és Felületi Működés
+- Decision
+- P-173: Termékimport és Vámhatározatok Rögzítése és Megjelenítése UX
+- P-174: NAV 26TFEJLH Nyomtatvány Replika és PDF Export UX
+- Decision
+- toggle-group.tsx
+- ManageJournalsModal.test.tsx
+- importCustomsAccounting.ts
+- FilingWorkflowPage.tsx
+- grantDeferralPostingService.ts
+- subledger.ts
+- Supabase Edge Functions Guidelines (Visibill / eaisybill-prod)
+- Visibill Codebase Audit
+- 1.1 Előfeltételek és Feltételezések (Assumptions I'm Making)
+- Visibill Database & Supabase Audit Framework
+- Célzott éles NAV szinkron + láncellenőrzés
+- A-022: Kategóriák és Projektek Dual-Table Szinkronizációs Stratégia
+- A-043: ZIP / RAR / 7z Archívum Csatolmány Kicsomagolás és Body-MIME Parsing az Email Pipeline-ban
+- A-058: Banki Utalások és Csomagkészítés Architektúra (Bank Transfers)
+- 2. Decision
+- 2. Decision
+- 2. Decision
+- A-081: NAV 08 (2608 / 2508 / 2408) XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor
+- A-090: Biztonságos Számlatükör Sablon Törlés, Függőség-Ellenőrzés és Tételek Átkötése (Remapping)
+- src_locales_hr_categories
+- A-097: Multi-Tenant nav_invoice_items Denormalizáció, GL Statement Timeout Felszámolása és RLS Optimalizálás
+- A-098: Készpénzes és Manuális Kifizetésű Számlák Egységes Párosítási Státusza és KPI Integritása
+- 2. Döntések és Architektúra
+- A-122: Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés
+- 2. Döntések
+- 2. Architekturális Döntés
+- 2. Architektúra és Implementációs Döntések
+- A-166: Magyar Társadalombiztosítási (TB) Adómotor, Minimális Járulékalap (Tbj. 27. §), Nyugdíj és 2608 M-lap Architektúra
+- 2. Architektúrális Döntés
+- A-179: Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra
+- 2. Döntések és Architektúra
+- A-254 — Házipénztár Egyedi Név, Perzisztált Bizonylatszám és 65-ös ÁFA Motor Integráció Architektúra
+- Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)
+- Decision 068: ÁFA tv. Szerinti Adófizetési Kötelezettség és Levonási Jog Keletkezése Normál vs. Pénzforgalmi Adózási Módban
+- Decision 075: Bankkártyás és AMEX Elfogadói Göngyölegek Feldolgozása Virtuális Bankként és Zéró-Egyenlegű Főkönyvi Elszámolása
+- Szerver-Oldali Szűrt Tábla — Debounce + Skeleton Pattern
+- Design Spec — Árfolyam-különbözetek Szekció Újratervezése (FX Differences Redesign)
+- 2. Megvalósított Megoldás: „Fintech Dense Split” (1. Opció)
+- Worker Architektúra és Dedikált Dev Worker Replica
+- Alert
+- P-051: Többprofilos Levelező Fiókok (Multi-Profile IMAP/SMTP) Kezelése UX
+- 🖥️ Felhasználói Felület és Workflow Viselkedés
+- backfill_nav_items.mjs
+- P-113: Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX
+- 2. Termékdöntés és Megvalósítás
+- P-127: Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX
+- P-128: Könyvelési Naplók Tömeges Kontírozása és Vizuális T/K Kontíroszlop UX
+- P-142: Tranzakció Többes Számlapárosítás és Jutalék-levonás UX
+- P-143: eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX
+- P-148: Bérjegyzék Redesign, Költséghely Kezelés és FEOR Munkakör UX
+- P-153: Dinamikus Törvényes Munkanapkeret és Bérszámfejtési Munkanap Választó UX
+- 2. Termékdöntés
+- 2. Termékdöntések és Felhasználói Élmény (UX)
+- Termékdöntések és Funkcionális Viselkedés
+- 2. Termékdöntések (UX & Workflow)
+- P-183: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX
+- 💡 Decision
+- P-191: Bankkártyás POS és AMEX Göngyölegek Virtuális Banki Feldolgozása, Tételes Tranzakció Generálás és Kereskedői Elszámolási UX
+- 3.4 Beosztáskezelő – a rendszer központi modulja
+- InvoiceRulesDialog.test.tsx
+- InvoiceFullEditDialog.test.tsx
+- vatTypes.ts
+- ClientTaoMainPage.tsx
+- JobModificationPage.tsx
+- useInvoiceMutations.test.ts
+- barcodeGenerator.ts
+- uiMountSmoke.test.tsx
+- tickets-api/index.ts
+- Browser Testing & Subagent Authentication Rules
+- Fejlesztői Környezet (DEV) és Ágkezelési Védelmi Szabályzat
+- PRD Tisztasági Audit és Technikai Szivárgás-Megelőzés
+- Workflow
+- 🗄️ Knowledge Base Schema & Metadata Reference
+- A-003: Multi-tenancy RLS Alapon
+- A-033: Exclude Service Role Operations from Company Audit Trail
+- A-103: Accounty RLS Teljesítményoptimalizálás és Postgres Hibanapló Stabilizálás
+- 2. Döntés & Rendszerarchitektúra
+- A-190: Menedzsment Dashboard Összesítő Gyorsítótárazás és Python Worker Vault Tehermentesítés (P2 Skálázhatósági Fejlesztés)
+- 2. Architektúra és Döntések
+- A-257: Főkönyvi Egyenlegek Előaggregáció és Atomi JSON RPC (Upstream Timeout Felszámolás)
+- shadcn/ui Komponensek (60 fájl)
+- ⚠️ Oldal-szintű Animációk & GPU ClearType Homályosodás Megelőzése (2026-09-11)
+- send-welcome-email/index.ts
+- send-web-push/index.ts
+- Hover Patternek
+- EaisyWorks Nyilt REST API Dokumentacio (v1)
+- 3. API Vegpontok Reszletes Katalógusa
+- 🔑 JWT — JSON Web Token (Munkamenet Hitelesítés)
+- 💡 Hogyan Érvényesül az RBAC a Kódban?
+- 🚨 A 4 Legfőbb Webes Sérülékenység & Védelem
+- 🔑 Főbb Aszinkron Minták Katalógusa
+- ⚡ Caching Stratégiák, Eviction & Cache Stampede
+- 🔑 A 3 Adatbázis Skálázási Stratégia
+- UI / UX Kialakítás
+- P-072: Bérszámfejtési Ciklus Jelenlét Kézi Rögzítés és Cafeteria UX Stabilitás
+- P-099: Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX)
+- 2. Terméktervezési Elvek és Megoldások
+- P-131: Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX
+- 2. A Varázsló Működési Logikája
+- P-149: Munkavállalói Pótszabadságok Törzsadat-alapú Feloldása és Szabadság Tájékoztató Kártya UX
+- 1. „Semmit a kéznek, mindent a szemnek” Read-Only Elv
+- 2. Felületi Megvalósítás és UX Megoldások
+- 2. Felületi Megvalósítás és UX Megoldások
+- 2. Megvalósított Felületi Élmény (UX) és Döntések
+- 🔐 AUTH — Részletes Audit
+- Define Goal
+- 4. Fejlesztési roadmap
+- 1. Vezetői összefoglaló – mi a szoftver értelme?
+- ManualInvoiceCreateDialog.test.tsx
+- syncStaggering.ts
+- accountyDefaults.ts
+- crossSystemPermissions.test.ts
+- Layer 2: Type Safety
+- Layer 3: Data Flow & State Management
+- Layer 5: Auth & Authorization
+- Layer 7: Supabase Integration
+- Audit Execution Process
+- BRD Vizuális Diagramkészítési Irányelvek (baoyu-diagram Integráció)
+- BRD Tisztasági Audit és Technikai Szivárgás-Megelőzés
+- PRD Vizuális UI Diagram- és Mockupkészítési Irányelvek (baoyu-diagram)
+- A-006: Python Worker Architektúra
+- A-029: Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció
+- A-049: Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete)
+- A-068: High-Performance Server-Side Management Files Pagination & Multi-Source Unified Querying (`get_management_files` RPC)
+- A-100: Banki Tranzakció Egyediségi Megkötés Bővítése Összeggel és Csendes Duplikátum-kezelés
+- A-124: Többoldalas Számlák Folytatás-Felismerése és Téves Multi-Invoice Split Megelőzés (Multi-Page Invoice Continuation Guard)
+- A-126: Audit Trail Email Ingestion Metadata & Retrospective Invoice Linking
+- A-131: NAV 2665 ÁFA Bevallás Sormegfeleltetés, Gyűjtőkódok Tisztítása, 6/B Acélipari Nyilatkozat és Egész Kilogrammos Kerekítés
+- A-138: Számlák Teljesítés Dátuma és Dátum Alap RPC Szűrés
+- A-146: Magánszemély Vevőnevek Gazdagítása és ÁFA Analitikai Deduplikáció
+- A-186: Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) és Szakképzési Tanulói Keret (Szkt. 84. §)
+- A-198: Manuális Beküldött Számlarögzítés, Dokumentum Csatolás és Többes Párosítás
+- A-246: Worker Invoice Upsert Idempotencia és Postgres 23505 Pre-Check Ütközésvédelem (Többoldalas és Kötegelt Feltöltések)
+- Beosztásom Modul — Termékkövetelmény Dokumentáció (PRD)
+- 2. A Három Alapszabály Master-Detail és Tab Felületeken
+- ☸️ Kubernetes (K8s) & Konténer Orkesztráció
+- 👁️ OCR & Vision Pipeline (Optikai Karakterfelismerés)
+- P-105: Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa Kibontás/Összecsukás UX
+- P-134: Bérszámfejtési Ciklus Lezárási Választó Modál, Lezárt Ciklus Védelem és Újranyitás UX
+- 2. A Döntés és Felületi Specifikáció
+- 3.15 Beállítások, navigáció, dokumentumok
+- 🛠️ Részletes Módosítások
+- Session Summary — 2026-10-01 10:50
+- OpeningJournalWizardModal.test.tsx
+- OpeningEntryEditUnpost.test.tsx
+- rich-text-content.tsx
+- useIdleTimeout.ts
+- navTaxpayer.test.ts
+- navValidationInboundProbe.test.ts
+- clientListFiltering.test.ts
+- statusMappers.test.ts
+- cashReports.test.ts
+- auto-categorize-invoices/index.ts
+- nav-tax-profile-sync/index.ts
+- Layer 1: Routing & Navigation
+- area-spec-map.md
+- 🎯 RAG Optimalizációs Útmutató az eaisyBill / eaisyBooks Tudástárhoz
+- A-025: Cross-company Invoice Routing
+- A-034: Accounty Digest Összefoglaló Működése
+- A-035: Háromirányú Szekvenciális Pipeline Átirányítás (Invoice ↔ Transaction ↔ Report) és Hibakezelés
+- A-036: Pénztárbizonylat (Cash Voucher) Processing
+- A-069: Centralized Frontend Error Ingestion, Stack Trace Preservation & Intelligent Context Deserialization
+- A-071: Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity
+- A-072: Robust Accounting Firm Assignment RLS & Direct Client Creation
+- A-073: Defensive Prop Normalization & Settings Component Resilience
+- A-074: PDF Export Edge Function Invocation Resilience
+- A-075: Management Overview Null-Safety in SQL JSON Aggregations
+- A-082: Partially Paid Invoices Status, Server-Side Amount Aggregation & Trigger Alignment
+- A-091: Bank Statement Boundary Governance & Defense-in-Depth Summary Artifact Filtering
+- A-095: Nemzetközi Kártyaelfogadó Terminál (Europay POS) Clearing Devizafelülírás Védelme és Kártyás Időbélyeg Kinyerés
+- A-113: NAV Invoice Items VAT & Gross Auto-Calculation
+- Decision (Döntés)
+- A-142: Kettős Könyvvitel Szerinti Kötelező Kontírszám Szabályok és Vevői Kontírválasztó (311–317 + ÁFA 467/466)
+- A-182: Részfizetés és Jutaléklevonás Számlapárosítás és Deduplikációs Architektúra
+- Eaisybill Horvát (HR) Lokalizációs Audit — Teljes Kódbázis Leltár és Hiányossági Térkép
+- VisiBill Fejlesztői Környezet (DEV Environment)
+- 2.1. [POST] /api/v1/auth/token
+- 2.2. [POST] /api/v1/tickets
+- 2.7. [PATCH] /api/v1/tasks/:id
+- navPartnerSync.test.ts
+- mockData.ts
+- ticketCategories.test.ts
+- accounty-ai-chat/index.ts
+- fetch-legal-updates/index.ts
+- nav-m2m-proxy/index.ts
+- Layer 11: DB Triggers & Migrations (ÚJ)
+- Layer 4: Error Handling
+- Layer 8: Dead Code & Unused Imports
+- Graphify Integráció
+- A-001: Három Rétegű Architektúra
+- A-002: Supabase mint Backend-as-a-Service
+- A-004: PGMQ mint Aszinkron Queue
+- A-005: Edge Functions (Deno) a Serverless Logikához
+- A-008: OCR Pipeline (Vision + MarkItDown)
+- A-010: Credential Titkosítás (AES-256-GCM)
+- A-026: Support Admin Ideiglenes Hozzáférés (Impersonation & Full RLS Access)
+- Decision
+- ADR A-059: TransactionMatchingCore & Moduláris UI Architektúra
+- A-194: ÁFA Analitika PDF Export (NAV 2665 Bevallási Sorok & Gyűjtőkódok) RLB-60 Standard Szerint
+- 2.10. [GET] /api/v1/workspaces/:id
+- 2.12. [GET] /api/v1/milestones
+- 2.14. [POST] /api/organizations/:orgId/webhooks
+- 2.3. [GET] /api/v1/tickets
+- 2.4. [GET] /api/v1/tasks
+- 2.5. [POST] /api/v1/tasks
+- 2.6. [GET] /api/v1/tasks/:id
+- 2.8. [DELETE] /api/v1/tasks/:id
+- 2.9. [GET] /api/v1/workspaces
+- 🧼 SOLID Principles & Clean Code (Tiszta Szoftvertervezés)
+- dateUtils.ts
+- evCashbookXml.ts
+- AssignCompanyDialog
+- partnerMajorityCategorization.test.ts
+- feedback-dialog.test.ts
+- send-monthly-summary/index.ts
+- Layer 10: Localization & Hardcoded Strings
+- Layer 12: Edge Functions (ÚJ)
+- Layer 6: UI Consistency
+- Layer 9: Environment & Configuration
+- Decision 020: Adó Modul Scope
+- 3.9 Munkavállalók
+- MissingInvoicesTimeline.tsx
+- fetch-mnb-rates/index.ts
+- trigger-nav-categorization/index.ts
+- rules/graphify.md
+- task-brief-template.md
+- workflows/graphify.md
+- morfi-implementation-review.md
+- ticket-support.md
+- visibill-ticket-support.md
+- MI_konyveloprogram_minimum_csekklista_8d5839f7.md
+- summary-004218-changelog-patchnotes.md
+- summary-011100-semver-versioning-patchnote-skill.md
+- summary-020700-gl-perf-journals-layout-button-nesting.md
+- summary-151000-accounty-access-guard-and-croatian-vat.md
+- ref_fs
+- summary-161800-cte-refactor-partners-scroll-and-signout-clean.md
+- summary-013651-imap-attachment-filtering-storage-sanitization-idempotency.md
+- summary-015000-invoices-multiselect-and-range-selection.md
+- summary-020300-gl-duplicate-key-fix-and-setloadedrawaccountitems.md
+- summary-031200-dashboard-redesign-fintech-split-categories-and-reorder.md
+- summary-042600-kpi-borders-nav-matching-quick-actions-and-badges.md
+- summary-051500-error-hunter-partner-upsert-race-condition-company-router-23505-fix.md
+- summary-151000-sha256-content-dedup-vision-ocr-mini-and-image001-filtering.md
+- summary-111200-aggreg8-prod-cutover-live-sync-and-partner-data-spec.md
+- summary-034900-invoice-url-tab-sync-nav-foreign-badge-gotrue-token-fix.md
+- summary-045700-worker-attachment-splitting-and-partner-preservation-guard.md
+- summary-055200-unified-financial-cockpit-realized-profit-and-szamlakep-tabs.md
+- summary-074000-partners-layout-nav-query-and-hungarian-tax-standardization.md
+- summary-135500-eb0208-eb0211-ocr-fix-and-aggreg8-cross-import-dedup.md
+- summary-174500-eb0219-receipt-upload-fixed-assets-coa-resolve-and-reserve-journal-rpc.md
+- summary-190500-payroll-young25-statutory-tax-engine-and-eb0222-resolution.md
+- summary-210500-anyk-vat-export-representative-persistence-and-position-fix.md
+- summary-162800-gl-realtime-progress-and-error-fixes.md
+- summary-224800-eb-0232-payroll-payslip-abc-sorting-and-employee-filter.md
+- summary-232500-eb-0231-nav-08-efo-and-kiva-reconstruction-support.md
+- summary-235300-eb-0230-payslip-redesign-feor-dictionary-and-cost-center.md
+- summary-001211-eb-0223-payroll-extra-leave-entitlements-and-tests.md
+- summary-013218-eb-0226-aggreg8-multi-company-consent-and-account-sync.md
+- summary-035600-invoice-item-accrual-and-ve-posting.md
+- summary-043500-dynamic-journals-management-and-bank-linking.md
+- summary-234500-eb-0223-child-leave-disabled-supplement-and-morfi-review.md
+- summary-001800-eb-0230-eb-0231-payroll-payslip-formatting-and-efo-audit.md
+- summary-194400-anyk-vat-return-validation-and-formula-standardization.md
+- summary-193000-nav-hybrid-async-sync-and-atomic-item-idempotency.md
+- summary-233900-oxlint-integration-and-cockpit-missing-vouchers-range-fix.md
+- summary-023600-nav-autocategorize-worker-rpc-hardening-e2e.md
+- summary-174500-nav-a60-community-summary-anyk-xml-export-and-reconciliation.md
+- summary-224600-supabase-query-performance-indexes-and-vat-return-268x-speedup.md
+- summary-072500-eb-0245-payroll-worksheet-bonus-race-condition-vocational-leave-and-overlap-guard.md
+- summary-085500-manual-invoice-create-dialog-search-input-and-zero-jitter.md
+- summary-170000-manual-invoice-create-audit-fixes-and-i18n-duplication-test.md
+- summary-023600-nav-upsert-21000-and-gl-balances-timeout-57014.md
+- summary-145000-manual-invoice-searchinput-paid-flag-and-company-lock.md
+- summary-161600-eb0250-worker-pdf-splitter-nav-fuzzy-matching-and-db-repair.md
+- summary-035100-invoice-notes-attachments-tig-and-layout-shift-protection.md
+- summary-042830-rlb-parser-and-batch-import.md
+- summary-175000-gl-module-audit-burst-throttling-and-partner-aging.md
+- summary-070700-rbac-capability-matrix-legacy-rpc-guards-and-period-closing.md
+- summary-162000-rbac-write-rls-employee-shell-doc-sync-and-executive-diagrams.md
+- summary-164000-error-hunter-subledger-rpc-steel-chunking-and-sw-filter.md
+- summary-170500-fix-tech-accounting-and-payroll-rpc-external-accountant-auth.md
+- summary-124500-fix-rbac-member-read-tier-and-invoice-rules-timeout.md
+- summary-095521-nav-zero-vat-blended-rate-and-item-vat-rates-cleanup.md
+- summary-172500-cs-es-k-fakov-gl-balances-and-worker-fix.md
+- summary-201500-fokonyv-4-oszlopos-export-es-szamla-osszevonas.md
+- summary-212500-purchase-vouchers-statutory-vat-views-and-fad-rules.md
+- summary-232500-vat-scope-selector-and-gl-modal-widen.md
+- summary-101500-gl-ui-ux-modularization-universal-invoice-preview-and-adr163-merge.md
+- summary-140500-development-reserves-related-parties-and-doc-sync.md
+- summary-150000-hungarian-tb-social-security-payroll-module-and-morfi-review.md
+- summary-154500-nav-2665-official-tax-form-digital-replica-and-live-db-binding.md
+- summary-193000-vat-analytics-2665-petty-cash-ergonomics-and-invoice-export-dates.md
+- summary-004500-ticket-support-fakov-vat-dedup-and-vbv-petty-cash-gl-fixes.md
+- summary-130700-periodic-cash-reports-schema-wizard-rpcs-and-gl-posting.md
+- summary-202200-subledger-open-items-auto-settle-and-ticket-support.md
+- summary-011500-ticket-support-szzj-reverse-journals-and-gl-grouping.md
+- summary-121500-nav-2665-sheet08-replica-width-and-custom-gl-account-deletion.md
+- summary-171500-fixed-assets-periodic-depreciation-posting-and-ticket-support.md
+- summary-174500-transaction-multi-invoice-matching-and-ticket-support.md
+- summary-180400-transaction-multi-invoice-matching-and-ticket-support.md
+- summary-211000-vat-m-lines-aam-proforma-exclusion-and-calc-override-fix.md
+- summary-110000-subledger-accordion-two-sided-posting-and-net-vat.md
+- summary-140700-payroll-3column-efo-separation-petty-cash-rpc-fix-and-ticket-support.md
+- summary-151500-company-alphabetical-sorting-and-partial-payment-ticket-support.md
+- summary-102500-eb-0228-petty-cash-settlement-payment-date-fix.md
+- summary-114800-subledger-foreign-currency-workday-calculator-and-ticket-support.md
+- summary-174900-accounting-rules-and-nav-a60-replica.md
+- summary-133000-fixed-assets-bulk-import-nav-65m-02-k-storno-and-cash-closing-support.md
+- summary-145000-payroll-advanced-reports-declarations-nav-vat-rows-43-45.md
+- summary-201000-nav-upo-m2m-multi-company-and-vat-petty-cash-fixes.md
+- summary-160200-gl-subledger-opt-opg-fixes-and-support-tickets.md
+- summary-113200-eb-0255-coa-subledger-and-legal-clickwrap-gate.md
+- summary-130500-eb-0258-default-date-gl-aggregated-and-fx-banks.md
+- summary-193200-gls-compensation-transfers-bulk-settle-and-petty-cash-sync.md
+- summary-131500-nav-m2m-sanitize-tfejlh-replica-import-vat-and-deferred-vat-e2e.md
+- summary-224200-journal-filter-fixes-and-nav-gzip-decompression.md
+- summary-115500-procont-gl-export-26tfejlh-anyk-xml-and-vat-regression-guard.md
+- summary-200800-auditor-gl-export-mkvk-xml-isa560-settlements-and-closing-checklist.md
+- summary-220500-vat-return-enhancements-foreign-inbound-invoices-and-rlb-baseline.md
+- summary-202500-agora-gl-and-pnl-statutory-exports-and-view-fixes.md
+- summary-130600-petty-cash-invoice-attach-and-gl-compensation-cleanup.md
+- summary-174500-payroll-module-14-reconciliation-giro-and-tabs-consolidation.md
+- summary-231500-transaction-matching-journal-sorting-and-invoice-gl-sides.md
+- summary-155300-petty-cash-custom-name-voucher-seq-and-vat-entry.md
+- summary-011500-gl-opening-rollforward-pettycash-currency-and-szallas-bank.md
+- summary-142500-pos-amex-card-settlement-virtual-bank-and-fakov-reconciliation.md
+- summary-194000-vbv-support-tickets-eb0275-eb0276-eb0278-eb0280-rls-and-subledger.md
+- AuditExportStalenessInfo
+- vercel.json
+- GraphEngine
+- os
+- test_worker_on_problematic_file.py
+- 🎫 [Task] Globális Teljesítés / Keltezés dátumszűrő elhelyezése a fejlécben
+- serviceOnlyRpcGrants.test.ts
+- 🎫 [Task] Kategóriák listájának rendezése százalékos arány szerint csökkenő sorrendbe
+- 🌟 Fő Funkciók és Képességek
+- HANDOFF – TENY (Tárgyi Eszköz Nyilvántartó) fejlesztés
+- package.json
+- ref_dns
+- ref_dotenv
+- ChangeEmailDialog.tsx
+- 8. Addendum: RLS-szintű védelem (`20261011042300_rls_role_write_guards_and_payroll_isolation.sql`)
+- backfill_partner_tax_numbers.mjs
+- Index.tsx
+- InvoiceTableContainer.tsx
+- information-architecture.md
 
 ## God Nodes (most connected - your core abstractions)
-1. `cn()` - 718 edges
-2. `Button` - 465 edges
-3. `useToast()` - 438 edges
-4. `supabase` - 373 edges
-5. `useCompany()` - 300 edges
-6. `useAuth()` - 289 edges
-7. `Input` - 253 edges
-8. `Badge` - 246 edges
-9. `Card` - 198 edges
-10. `CardContent` - 194 edges
+1. `cn()` - 1027 edges
+2. `react` - 945 edges
+3. `lucide-react` - 658 edges
+4. `Button` - 469 edges
+5. `useToast()` - 441 edges
+6. `vitest` - 403 edges
+7. `supabase` - 374 edges
+8. `@tanstack/react-query` - 372 edges
+9. `react-i18next` - 313 edges
+10. `useCompany()` - 305 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `positionNumbersMatch()` --calls--> `normalize()`  [INFERRED]
-  supabase/functions/shipment-retroactive-match/index.ts → src/components/dashboard/ActivityLogSheet.tsx
-- `ClientDetailsPage()` --calls--> `formatTime()`  [INFERRED]
-  src/pages/Accounty/ClientDetailsPage.tsx → src/components/IdleWarningModal.tsx
-- `CompanyAccessCard()` --calls--> `formatTime()`  [INFERRED]
-  src/pages/Accounty/ProfileSettingsPage.tsx → src/components/IdleWarningModal.tsx
-- `CompanyAccessCard()` --calls--> `formatTime()`  [INFERRED]
-  src/pages/Settings.tsx → src/components/IdleWarningModal.tsx
-- `InvoiceImageDialog()` --calls--> `getDisplayName()`  [INFERRED]
-  src/components/InvoiceImageDialog.tsx → src/components/dashboard/ActivityLogSheet.tsx
+- `1. Idle Prefetch (Háttérben, Mount Után)` --references--> `useIdleRoutePrefetch()`  [INFERRED]
+  docs/architecture/frontend-performance.md → src/components/AppLayout.tsx
+- `1. Idle Prefetch (AppLayout)` --references--> `useIdleRoutePrefetch()`  [INFERRED]
+  docs/design/07-loading-patterns.md → src/components/AppLayout.tsx
+- `5. ⚡ Érintettség & Függőségi Útvonalak (Impact & Path Analysis)` --references--> `AppLayout()`  [INFERRED]
+  docs/DASHBOARD_GUIDE.md → src/components/AppLayout.tsx
+- `3. `scrollbar-gutter: stable` — scroll shift megelőzése` --references--> `AppLayout()`  [INFERRED]
+  docs/design/04-component-library.md → src/components/AppLayout.tsx
+- `1. Összefoglaló` --references--> `AppModeSwitcher()`  [INFERRED]
+  docs/business/brd.md → src/components/AppModeSwitcher.tsx
 
 ## Import Cycles
 - 2-file cycle: `src/features/invoices/context/InvoiceContext.tsx -> src/features/invoices/context/useInvoiceContext.ts -> src/features/invoices/context/InvoiceContext.tsx`
-- 2-file cycle: `src/components/ui/custom-tooltip.tsx -> src/components/ui/tooltip.tsx -> src/components/ui/custom-tooltip.tsx`
-- 3-file cycle: `src/components/AppModeSwitcher.tsx -> src/pages/Accounty/AccountyLayout.tsx -> src/components/accounty/layout/AccountySidebar.tsx -> src/components/AppModeSwitcher.tsx`
-- 3-file cycle: `src/components/AppLayout.tsx -> src/components/AppSidebar.tsx -> src/components/AppModeSwitcher.tsx -> src/components/AppLayout.tsx`
 
-## Communities (2004 total, 389 thin omitted)
+## Communities (904 total, 137 thin omitted)
 
-### Community 3 - "GLOSSARY.md"
-Cohesion: 0.09
-Nodes (18): ProductTourTooltip(), AuthContextType, Theme, ThemeContext, ThemeContextType, ThemeProvider(), RevenueExpensesChartProps, MonthlyData (+10 more)
+### Community 0 - "formatCurrency"
+Cohesion: 0.05
+Nodes (61): A-067: Projects Oldal Lekérdezés Párhuzamosítás és Parciális Indexelés, Consequences, Context, Decision, Kapcsolódó, Decision D-4: Többszörös Mellékletkezelés és Előnézeti Lapozó, 4. Reaktivitás és Kliens Állapotkezelés, Kapcsolódó (+53 more)
 
-### Community 6 - "vitest"
-Cohesion: 0.02
-Nodes (210): CYCLE_STEPS, EMPLOYMENT_TYPE_LABELS, MONTHS, Profile, SystemSettings, ANALYTICAL_PACKAGES, AnalyticalPackageItem, ChecklistItem (+202 more)
+### Community 1 - "react-i18next"
+Cohesion: 0.04
+Nodes (120): 4. Pénznem és Dátumkezelés Adaptációja, AlertDialog Portal Flash Fix (2026-06-24), Komponensek ahol implementálva van, Micro-Module 3.1: Pályázati Projektek és Komponens Táblák Sémája (Méret: S), date-fns, react-i18next, CategoryAccordionItem(), CategoryAccordionItemProps (+112 more)
 
-### Community 7 - "@testing-library/react"
-Cohesion: 0.09
-Nodes (31): ClientMissingInvoicesReportPage(), CompanySwitcher(), useSafeCompany(), MissingInvoicesReportPage(), useAccountyClients(), useAccountyTaxProfile(), useAccountyAllMissingItems(), useAccountyDocuments() (+23 more)
+### Community 2 - "client.ts"
+Cohesion: 0.03
+Nodes (141): Decision, Hozzáférés-védelem (6 réteg), Management Routing (Zero-Flash Guard), Custom Hookek Áttekintése, react-joyride, @tanstack/react-query, AccountyWelcomeWizard(), AccountyWelcomeWizardProps (+133 more)
+
+### Community 3 - "vitest"
+Cohesion: 0.01
+Nodes (84): @testing-library/react, vitest, PAGE_SIZE, GlKpiBar(), mockInsert, mockToast, TRANSACTION_TYPE_OPTIONS, mockInsert (+76 more)
+
+### Community 4 - "react"
+Cohesion: 0.03
+Nodes (124): 2.2. Kétfüles Modál Elrendezés (`ManualInvoiceCreateDialog.tsx`), react, react-dom, AccountyErrorStateProps, ClientPayrollTabProps, MissingItemsTooltip(), OwnerDropdown(), AccountyHeaderProps (+116 more)
+
+### Community 5 - "badge.tsx"
+Cohesion: 0.04
+Nodes (132): Decision, Current Implementation, AccountyErrorState(), UserActivityDialogProps, AssetImportModalProps, ImportStep, DepreciationRunDialogProps, MONTH_NAMES (+124 more)
+
+### Community 6 - "GLOSSARY.md"
+Cohesion: 0.01
+Nodes (153): A-039: Transaction Matcher Performance Optimization (O(1) Scaling), Consequences, Context, Decision, Kapcsolódó, 🏷️ Brands & Naming (Márkanevek és Elnevezések), 🤖 Kötelező Szabályok AI Agent-eknek, 📋 Megnevezések Mátrixa (+145 more)
+
+### Community 7 - "card.tsx"
+Cohesion: 0.03
+Nodes (129): 1. Meglévő Felület Elemzése (As-Is State & Fájdalompontok), 1. Előzmények és Elemzés, Meglévő Problémák:, ExportSnapshotsHistoryCardProps, AccountyNavSkeletonProps, Aggreg8BankConnections(), Props, CategoryBreakdown() (+121 more)
 
 ### Community 8 - "react-router-dom"
-Cohesion: 0.17
-Nodes (19): InvoicePaginationContext, InvoicePaginationContextValue, InvoiceApprovalDialogProps, SuggestedInvoiceLinkDialogProps, NavInvoice, SubmittedInvoice, TransactionRecord, UseInvoiceMutationsParams (+11 more)
-
-### Community 9 - "useEvData.ts"
-Cohesion: 0.02
-Nodes (196): AccountyErrorState(), AccountyErrorStateProps, FILING_TYPES, FilingsPageProps, MONTHS, STATUS_MAP, KpiModalType, MissingInvoicesPage() (+188 more)
-
-### Community 10 - "business/decisions/index.md"
-Cohesion: 0.01
-Nodes (179): acc_0, acc_1, acc_11, acc_111, acc_112, acc_113, acc_114, acc_115 (+171 more)
-
-### Community 11 - "card.tsx"
-Cohesion: 0.01
-Nodes (179): acc_0, acc_1, acc_11, acc_111, acc_112, acc_113, acc_114, acc_115 (+171 more)
-
-### Community 12 - "architecture/decisions/index.md"
-Cohesion: 0.06
-Nodes (47): EmployeeImportPage(), EmployeesPage(), FilingsPage(), PayrollCyclePage(), PayrollDashboardPage(), fmt(), MonthlyData, MONTHS (+39 more)
-
-### Community 13 - "8b. eaisyBooks — Könyvelő Iroda Platform"
-Cohesion: 0.02
-Nodes (122): AccountantManagementPage, AccountingRedirectPage, AccountyOnboardingPage, AccountyScopedLayout, AdminTaxParametersPage, AiAnomalyReportPage, AiAssistantPage, AlertsCenterPage (+114 more)
-
-### Community 14 - "P-055-accounting-journals-ux.md"
-Cohesion: 0.10
-Nodes (23): createTicketOnBehalf(), ControlCenterTab, CreateTicketOnBehalfPayload, CreateTicketResponse, ErrorRow, ErrorsData, ErrorSortCol, FileRow (+15 more)
-
-### Community 15 - "TransactionDetailsDialog.tsx"
-Cohesion: 0.09
-Nodes (25): CategoryAccordionItem(), CategoryAccordionItemProps, CategoryInvoice, formatCurrencyTotals(), CategoryAmountStat, CategoryAmountSummary(), CategoryAmountSummaryProps, CATEGORY_I18N_KEYS (+17 more)
-
-### Community 16 - "information-architecture.md"
 Cohesion: 0.05
-Nodes (109): AccountingRedirectPage(), useAccountyClient(), DateRangeContext, DateRangeContextType, DateRangeProvider(), formatDate(), getInitialDates(), parseLocalDate() (+101 more)
+Nodes (122): react-router-dom, DateRangeContext, DateRangeContextType, useDateRange(), useAccountyClient(), EvClientSettings, useAllEvClientSettings(), useCashbookEntries() (+114 more)
 
-### Community 17 - "ClientDetailsPage.tsx"
+### Community 9 - "product/decisions/index.md"
+Cohesion: 0.02
+Nodes (80): A-229: Egységes Számlatükör Cégenként, Cégek Közötti Klónozás és Folyószámla Szabályrendszer (EB-0255), Consequences, Context, 🌟 1. Opció: Fintech Side-by-Side Split (Két szinkronizált 520px kártya), 2. A 3 Kidolgozott Design Koncepció, ⭐ 2. Opció: Unified Financial Cockpit (Egyesített Teendőközpont — Kiemelten Ajánlott!), ⚡ 3. Opció: Action-First Dense Grid (Maximális Sebesség Könyvelőknek), Design Spec — Nem Párosított Tételek & Bejövő Számlák Állapota Újratervezés (+72 more)
+
+### Community 10 - "architecture/decisions/index.md"
+Cohesion: 0.04
+Nodes (15): A-013: Scoped URL Routing Pattern, Consequences, Context, Architecture Decision Record (ADR), Architecture Decision Record (ADR), Architecture Decision Record (ADR), Decision 006: Tech Stack, Kapcsolódó Architekturális Döntések (+7 more)
+
+### Community 11 - "accounty/index.ts"
 Cohesion: 0.03
-Nodes (90): FUND_TYPES, Props, CATEGORIES, PRIORITIES, Props, STATUSES, Props, UNIT_TYPES (+82 more)
+Nodes (113): A-050: Server-Side Aggregation & N+1 Query Optimization, Döntés, Kontextus, Következmények, Státusz, AuditLogEntry, NavRepresentation, PortalStats (+105 more)
 
-### Community 18 - "useAuth"
+### Community 12 - "business/decisions/index.md"
 Cohesion: 0.02
-Nodes (107): items, action_accounting_toggle, action_activate, action_change_gl, action_deductibility, activate_in_teny, already_activated, apply_70_30 (+99 more)
+Nodes (73): A-015: Stripe Integráció Eltávolítása, Consequences, Context, Decision, Kapcsolódó döntések, Decision 001: Elsődleges Célcsoport, Decision 002: Támogatott Vállalkozási Formák, Decision 004: Árazási Modell (+65 more)
 
-### Community 19 - "ErrorControlPanel.tsx"
-Cohesion: 0.02
-Nodes (107): items, action_accounting_toggle, action_activate, action_change_gl, action_deductibility, activate_in_teny, already_activated, apply_70_30 (+99 more)
+### Community 13 - "useEvData.ts"
+Cohesion: 0.03
+Nodes (101): CondoFundModal(), FUND_TYPES, Props, CATEGORIES, CondoMaintenanceModal(), PRIORITIES, Props, STATUSES (+93 more)
 
-### Community 20 - "accountyRoutes.tsx"
+### Community 14 - "A-080-nav-anyk-vat-return-xml-standardization.md"
+Cohesion: 0.03
+Nodes (80): 🛑 1. Zero Phantom Claims & Evidence Before Assertions, 🔍 2. Kötelező Ellenőrzési Lépések (Verifikációs Kapu), 🛡️ 3. Senior Quality Gate (/morfi-implementation-review), Pre-Completion Verification & Quality Gates, A-051: ÁFA Bevallás Kalkuláció Robusztusság (Auto-Seed & Date Fallback), Consequences, Context, Decision (+72 more)
+
+### Community 15 - "TicketsPage.tsx"
 Cohesion: 0.05
-Nodes (88): AccountyApp(), RecentActivities(), CompanyStructurePage(), DataRetentionPage(), REQUEST_TYPE_LABELS, calculateInsurance(), MultiJobPage(), ReportsPage() (+80 more)
+Nodes (82): Frontend & Architektúra funkciók (2026-09 frissítés), Olvasatlan Detektálás, 6. Teljes Frontend Lokalizáció (Batches 1–7) & Automata Regressziós Tesztelés, Decision 036: [Accounty] Hibajegy és Visszajelzés Rendszer, Kezelőkonzol (Support Console Layout) és Anti-Phantom Scroll Szabály, Kapcsolódó, P-035: Hibajegy UI és Workflow, ImageGalleryModal() (+74 more)
 
-### Community 21 - "product/decisions/index.md"
-Cohesion: 0.01
-Nodes (342): CompanyPromptRulesManager(), EvPortfolioDashboard, PayrollPortfolioPage, TaoPortfolioPage, AccountyRoleContext, AccountyRoleProvider(), AccountyWelcomeWizard(), AccountyWelcomeWizardProps (+334 more)
+### Community 16 - "reportError"
+Cohesion: 0.03
+Nodes (91): 1. Külön `accounty_email_preferences` tábla (könyvelő beállítások), Realtime channel zaj — NEM logolva DB-be, Kategória Kezelő (Categories Page), Egyéb Dialógusok & Részlet Panelek, P-013: Feltöltés UX, Réteg 1 — Supabase Realtime (elsődleges, push alapú), queryClient, ChangeEmailDialog() (+83 more)
 
-### Community 25 - "management-stats/index.ts"
-Cohesion: 0.08
-Nodes (36): reserve(), AlienationCheck, assessReserveExpiry(), checkAlienationRestriction(), daysBetween(), estimateUnusedReservePenalty(), getReserveDeadline(), pad() (+28 more)
-
-### Community 26 - "accounty/index.ts"
+### Community 17 - "accountyRoutes.tsx"
 Cohesion: 0.02
-Nodes (88): nav, alert_env, alert_tax_match, api_keys_label, badge_autosync, badge_secure, connection_error, credentials_desc (+80 more)
+Nodes (102): useEvRecordCounts(), AccountingRedirectPage(), EvRecordsOverviewPage(), RECORDS, RecordType, BookkeepingMode, CostRatio, EmploymentStatus (+94 more)
 
-### Community 27 - "A-005-edge-functions.md"
-Cohesion: 0.02
-Nodes (88): nav, alert_env, alert_tax_match, api_keys_label, badge_autosync, badge_secure, connection_error, credentials_desc (+80 more)
+### Community 18 - "P-055-accounting-journals-ux.md"
+Cohesion: 0.03
+Nodes (59): 2. Döntési Alternatívák, 3. Részletes Rendszer-Architektúra, 4. Megvalósítási Eredmények, 5. Minőségbiztosítás és Tesztelési Eredmények, A-163: Főkönyv UI & UX Modularizáció, Ergonómiai Átszervezés és Zsúfoltság-Megszüntetés, Decision 021: Főkönyvi Rendszer (General Ledger), Kapcsolódó, Context (+51 more)
 
-### Community 28 - "database-schema.md"
-Cohesion: 0.02
-Nodes (225): CompanyPromptRulesManagerProps, PromptRule, RULE_TEMPLATES_HR, RULE_TEMPLATES_HU, TabType, ViewMode, COLORS, defaultBarData (+217 more)
+### Community 19 - "useToast"
+Cohesion: 0.03
+Nodes (99): 1. Kontextus és Problémafelvetés, 1. Kontextus és Problémafelvetés, 2. Architektúra Döntés, 3. Következmények és Előnyök, A-160: Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet Fallback Architektúra, A. Kiszerezett, Atomikus Bizonylatfeloldó Hook (`useGlInvoiceDocumentResolver`), B. UI Integráció mindkét tételnézetben, 1. Kontextus és Problémafelvetés (+91 more)
 
-### Community 30 - "nav-client.ts"
-Cohesion: 0.02
-Nodes (81): flowchart, back_to_projects, board_title, budget_limit_badge, budget_usage, cashflow_no_data, cashflow_subtitle, cashflow_title (+73 more)
+### Community 20 - "ClientDetailsPage.tsx"
+Cohesion: 0.04
+Nodes (78): ClientInvoicesTab(), ClientInvoicesTabProps, ClientPayrollTab(), ClientProfileTab(), ClientReportsTab(), ClientReportsTabProps, CEGKAPU_DEFAULTS, CegkapuFormData (+70 more)
 
-### Community 31 - "A-059-transaction-matching-core-and-modular-ui.md"
-Cohesion: 0.02
-Nodes (81): flowchart, back_to_projects, board_title, budget_limit_badge, budget_usage, cashflow_no_data, cashflow_subtitle, cashflow_title (+73 more)
+### Community 21 - "database-schema.md"
+Cohesion: 0.03
+Nodes (66): 🔐 Auth & Felhasználók, `nylas_tokens`, `profiles`, `settings`, `user_email_preferences`, `user_nav_credentials`, `user_subscriptions`, `accounty_module_permissions` (+58 more)
 
-### Community 32 - "EvThresholdMonitorPage.tsx"
-Cohesion: 0.09
-Nodes (42): CafeteriaAllocation, CafeteriaTaxResult, CafeteriaWarning, calculateCafeteriaTax(), calculatePocketTax(), DEFAULT_2026_SZEP_LIMITS, formatCafeteriaSummary(), SzepCardLimits (+34 more)
-
-### Community 34 - "payroll/index.ts"
+### Community 22 - "ProtectedAccountyRoute.tsx"
 Cohesion: 0.12
-Nodes (22): MONTH_NAMES, PayrollReconciliationPage(), PayrollReconciliationPageProps, downloadGiroXmlFile(), getPayrollPostingSummary(), PayrollGlMapping, PayrollPostingSummary, postPayrollCycleToLedger() (+14 more)
+Nodes (13): AccountyModule, PATH_TO_MODULE, src_pages_accounty_accountyrolecontext_accountyrole, AccountyAccessGuard(), AccountyAccessGuardProps, AccountyModuleLayout(), hasMinimumRole(), ProtectedAccountyRouteProps (+5 more)
 
-### Community 35 - "P-122-general-ledger-ui-ux-restructuring-and-clutter-reduction.md"
-Cohesion: 0.03
-Nodes (75): add_note_btn, address, advance_invoice_ref, advance_settled, amounts, amounts_vat, attachment, author (+67 more)
+### Community 23 - "ref_https"
+Cohesion: 0.05
+Nodes (32): ref_https, ref_node_buffer, ref_npm_mammoth_1_8_0, ref_npm_pdf_parse_1_1_1, InvoiceToPredict, AssetToSuggest, corsHeaders, corsHeaders (+24 more)
 
-### Community 38 - "ExportButton.tsx"
-Cohesion: 0.03
-Nodes (75): add_note_btn, address, advance_invoice_ref, advance_settled, amounts, amounts_vat, attachment, author (+67 more)
+### Community 24 - "cn"
+Cohesion: 0.02
+Nodes (189): class-variance-authority, input-otp, @radix-ui/react-context-menu, @radix-ui/react-dialog, @radix-ui/react-menubar, @radix-ui/react-navigation-menu, @radix-ui/react-slider, @radix-ui/react-slot (+181 more)
 
-### Community 39 - "useAccountyClients"
-Cohesion: 0.03
-Nodes (61): mockHandleBackToPortfolio, mockNavigate, mockShellContext, AccountyErrorBoundary, Props, State, AccountyLayoutInner(), AccountyScopedLayout() (+53 more)
+### Community 25 - "payroll/index.ts"
+Cohesion: 0.06
+Nodes (72): 2.1. Tiszta Architektúrájú Feloldó Motor (`resolveEmployeeLeaveInput`), 2.2. Jogszabályi Szabályok Leképezése (Mt. 116–122. § és Szkt. 84. §), 2.3. Frontend Integráció (`EmployeeDetailsPage.tsx`), 2.4. Nyomtatott Bérlap (Payslip) és PDF Szinkronizáció (`PayrollCyclePage.tsx`), 2. Decision, 3.1. Dolgozói Adatlap (`EmployeeDetailsPage.tsx`), PayrollStep5(), PayrollStep5Props (+64 more)
+
+### Community 26 - "AssetActivationDialog.tsx"
+Cohesion: 0.05
+Nodes (73): Decision, 4. Frontend Architektúra, 5. Automatikus Főkönyvi Könyvelés (`developmentReserveAutoPoster.ts`), Decision, 1. Háttér és Üzleti Kontextus, 2. Felhasználói Igények és Szerepkörök, 3.1 TENY Főoldal: Két Lapfül (`/teny`), 3.2 Tárgyi Eszköz Aktiválási Varázsló (`AssetActivationDialog`) (+65 more)
+
+### Community 27 - "management/ManagementDashboard.tsx"
+Cohesion: 0.04
+Nodes (57): A-066: Management Route Access Control és NotFound Guard, Consequences, Context, Decision, Kapcsolódó, Control Center, Decision 037: [Accounty] Management Dashboard, eaisybill modulok (14) (+49 more)
+
+### Community 28 - "vat/types.ts"
+Cohesion: 0.05
+Nodes (62): 1. Kontextus és Könyvelői Követelmények, 2. Megvalósított Architektúra és Komponensek, 3. Fordított Adózás (FAD - Áfa tv. 142. §) Önadózási Adóalap és ÁFA Levezetés, 4. M-lap Szigorú Kizárási Szabályok (AAM, Díjbekérő, Biztosítás), 5. Verifikáció és Minőségbiztosítás, A-159: Hivatalos ÁFA Analitika Upgrade, M-lap Master–Detail és NAV OSA Keresztellenőrzés, A. Új Komponensek (`src/features/vat/components/`), B. Konténer Integráció (`VatReturnContainer.tsx`) (+54 more)
+
+### Community 29 - "useInvoiceContext"
+Cohesion: 0.05
+Nodes (53): A-054: Szigorított NAV ↔ Beküldött Számla Összerendelés (Strict Invoice Pairing), Consequences, Context, Kapcsolódó, A-062: Számla Feature Szelet Modularizáció és Dekompozíció (`src/features/invoices`), Consequences, Context, Decision (+45 more)
+
+### Community 30 - "EntriesTab.tsx"
+Cohesion: 0.06
+Nodes (63): 2. Kliensoldali Validáció és Szanitizáció, 4. Frontend Architektúra és Vercel Best Practices, Current Implementation, Decision, 1. „Számla hozzárendelése” gomb a lenyitott sorban (`ExpandedEntryRow`), AttachInvoiceDialog(), AttachInvoiceDialogProps, OpenInvoiceItem (+55 more)
+
+### Community 31 - "DocumentEngine.ts"
+Cohesion: 0.07
+Nodes (45): 1.2 Integracios alapelvek es Zero-Adatredundancia, Decision 046: Egységes Dokumentum és Export Motor Szabályai, Kapcsolódó, {
+  mockSetFilters,
+  mockSetDateBasis,
+  mockClearAllFilters,
+  mockState,
+}, HtmlPreviewAdapter, PdfDocumentAdapter, SpreadsheetAdapter, XmlDocumentAdapter (+37 more)
+
+### Community 32 - "useAccountyClients"
+Cohesion: 0.05
+Nodes (62): Decision 032: [Accounty] Payroll (Bérszámfejtés) Modul, Kapcsolódó, 1. Háttér és Felhasználói Probléma, 2.1 Bérszámfejtés Zárás és Pre-Flight Ellenőrző (`FilingPreFlightDialog`), 2.2 Többes Jogviszony Megjelenítés a 2608 Felületen (`Filing2608Page`), 2.3 Kilépő TB Igazolvány és Hatósági Kivonat (`ExitDocumentsPage`), 2.4 Mesterséges Intelligencia és Anomália Elemző (`AiAnomalyReportPage`), 2. Megoldás és UI/UX Munkafolyamat (+54 more)
+
+### Community 33 - "InvoiceContext.tsx"
+Cohesion: 0.07
+Nodes (50): 1. InvoiceContext Dekompozíció Sub-Context Hubbá, ExportableInvoice, ExportLevel, ExportSheetLayout, ManualInvoiceCreateDialogProps, src_features_invoices_context_index_invoicefilterprovider, src_features_invoices_context_index_invoicepaginationprovider, src_features_invoices_context_index_invoiceselectionprovider (+42 more)
+
+### Community 34 - "EmployeeDetailsPage.tsx"
+Cohesion: 0.07
+Nodes (61): FilingPreFlightDialog(), WorksheetEmployeeEditModal(), useCreateDependent(), useCreateEmployee(), useCreateEmployment(), useEmployeeSalaryHistory(), useJobCodes(), usePayrollDeclarations() (+53 more)
+
+### Community 35 - "AnnualReportContainer.tsx"
+Cohesion: 0.09
+Nodes (51): A. Tiszta Számítási Motorok (Pure Computation Engines), C. Dekomponált Komponensek & Thin Facade Architektúra, YearEndClosingChecklist(), AnnualReportContainer(), STEPS, Step1Alapadatok(), Step1AlapadatokProps, Step2Adatimport() (+43 more)
+
+### Community 36 - "useVatReturnData.ts"
+Cohesion: 0.13
+Nodes (27): 1. Context & Business Need, 2. Döntési Mátrix és Törvényi Sorbesorolás, 3.1 Dual-Source Adatgyűjtés, 3.2 4-Kártyás Statisztikai és Összefüggés Ellenőrző Fejléc, 3.3 Élő Európai Bizottsági VIES REST API Integráció, 3. Részletes Rendszerdöntések, Decision 064: A60 Közösségi ÁFA Összesítő és 65-ös Bevallás Összefüggés-vizsgálat (VIES Integrációval), VatXmlValidationDialog() (+19 more)
+
+### Community 37 - "PettyCashPage.tsx"
+Cohesion: 0.05
+Nodes (55): A-079: Accounty ErrorBoundary Route-Scoped Reset és Client-Scoped Prompt Szabályok, Consequences, Context, Decision, Kapcsolódó, AccountingRulesDialogProps, AccountingAnomalyWidget(), EmptyStateDashboardProps (+47 more)
+
+### Community 38 - "KnowledgeBasePage.tsx"
+Cohesion: 0.06
+Nodes (54): 1. Context & Technikai Kihívás, 1. Dedikált Szerveroldali Lapozó és Aggregáló RPC (`get_gl_journal_view_items`), 2. Decision, 2. Window Function Aggregációk Egyetlen Menetben (`COUNT(*) OVER()`), 3. Consequences, 3. Frontend Reaktivitás és Debounce (`JournalView.tsx`), 4. Kapcsolódó, 4. Optimalizált Kötegelt Exportálás (`handleExport`) (+46 more)
+
+### Community 39 - "replica/index.ts"
+Cohesion: 0.08
+Nodes (47): 2.3 Vezérlés és Ergonómia, 2.2 Determinisztikus Adatkötés és Partner Aggregáció, Nav2665BankAccountBoxes(), Nav2665BankAccountBoxesProps, Nav2665CharBox(), Nav2665CharBoxProps, Nav2665DateBoxes(), Nav2665DateBoxesProps (+39 more)
 
 ### Community 40 - "dependencies"
 Cohesion: 0.03
 Nodes (69): dependencies, class-variance-authority, clsx, cmdk, date-fns, embla-carousel-react, exceljs, framer-motion (+61 more)
 
-### Community 41 - "VatReturnContainer.tsx"
-Cohesion: 0.02
-Nodes (136): ApprovalQueuePage(), EVENT_COLORS, EVENT_LABELS, EVENT_TYPES, ClientReportsPage(), DOCUMENT_TEMPLATES, ExitDocument, STATUS_BADGE (+128 more)
+### Community 41 - "useDocumentUpload.ts"
+Cohesion: 0.05
+Nodes (56): A-064: Multi-Channel Document Upload Engine és Feature Szelet Modularizáció (`src/features/upload`), Context, Decision, 1. Zéró-Szerverköltségű Google Apps Script (GAS) Begyűjtő Motor, 2. Többcéges (Multi-Tenancy) Automatikus Mappafolyamat, 3. Dinamikus Kép és PDF MIME Típus Felismerés (`customer-api`), 4. Idempotencia és Duplikáció-Védelem, 5. Multi-Project Útválasztás (Visibill PROD vs. Thinkerman Sharding) (+48 more)
 
 ### Community 42 - "tests/helpers.ts"
-Cohesion: 0.20
-Nodes (6): __dirname, envLocal, __filename, login(), navigateTo(), waitForAppReady()
-
-### Community 43 - "usePayrollData.ts"
-Cohesion: 0.03
-Nodes (71): client_overview, act_add_missing, act_complete_deadline, act_contiroz, act_create_client, act_default, act_generate_portal, act_generate_report (+63 more)
-
-### Community 44 - "PayrollCyclePage"
-Cohesion: 0.03
-Nodes (71): client_overview, act_add_missing, act_complete_deadline, act_contiroz, act_create_client, act_default, act_generate_portal, act_generate_report (+63 more)
-
-### Community 45 - "DocumentEngine.ts"
 Cohesion: 0.05
-Nodes (49): AssignmentRow, CompanyInvoice, CompanyRow, DeadlineRow, InvoiceStatus, kanbanStatusMap, kanbanStatusReverse, MissingItemRow (+41 more)
+Nodes (35): 1.0 Hypothesis — confidence check (ELSŐ lépés, spec lookup ELŐTT), 1.1 Kérés értelmezése, 1.2 Spec keresés (kötelező sorrend), 1.2a Terminológia konzisztencia ellenőrzés, 1.2b Kód konzisztencia cross-check, 1.4 DB érintettség → db-checklist betöltés, 1.4b React frontend érintettség → vercel-react-best-practices & composition-patterns betöltés, 1.4c KÖTELEZŐ: Design Pattern Kontextus Betöltése (+27 more)
 
-### Community 46 - "EmployeeDetailsPage.tsx"
-Cohesion: 0.03
-Nodes (68): bank_accounts, account_number, account_number_hint, account_number_label, account_number_placeholder, account_suffix, accounting_mapping_title, add_title (+60 more)
+### Community 43 - "useSteelProductsData.ts"
+Cohesion: 0.05
+Nodes (57): 1. Adatbázis Séma & Migráció (`20260920180000_restructure_vat_codes_and_nav65_rows.sql`), 2. Formázás & Univerzális „mentes” Kezelés, 3. Áfa tv. 6/B. Melléklet Acélipari Analitika & Adatkezelés, 4. ÁNYK XML Pre-Export Guard Védelem, Decision, 2.1 Adatbázis Séma és Migráció (`20260921150000_add_vat_code_legacy_code_and_display_mode.sql`), 2.2 F.AFA és Fordított Adózás Felismerése (`src/lib/utils.ts` & `src/utils/vatCodeMatching.ts`), 2.3 Megjelenítési Mód és Vizuális Kiemelés (`VatCodeConfigTab.tsx`) (+49 more)
 
-### Community 47 - "opg.ts"
-Cohesion: 0.03
-Nodes (68): bank_accounts, account_number, account_number_hint, account_number_label, account_number_placeholder, account_suffix, accounting_mapping_title, add_title (+60 more)
+### Community 44 - "A-062-invoices-feature-slice-modularization.md"
+Cohesion: 0.04
+Nodes (39): 1. Context, 2. Decision, 3. Consequences, A-070: Multi-Channel Upload Storage Bucket Alignment & Synchronized History Mapping, Pozitív:, A-123: Vevő Adószám Inkonzisztencia Detektálás és Könyvelői Jóváhagyási Figyelmeztetés (Buyer Tax Number Mismatch Guard), Consequences, Context (+31 more)
 
-### Community 48 - "checkbox.tsx"
-Cohesion: 0.24
-Nodes (11): JournalFilterModal(), JournalFilterModalProps, ActiveFilterChip, DEFAULT_JOURNAL_FILTER_CRITERIA, filterJournalEntries(), getActiveFilterChips(), getActiveFilterCount(), getMatchModeShortLabel() (+3 more)
+### Community 45 - "opg.ts"
+Cohesion: 0.06
+Nodes (40): 1. Adatbázis Séma, 2. Adatbázis Szintű Integrációs RPC-k, 3. Kliensoldali Réteg és Resziliencia, 4. NAV M2M OPG SOAP Proxy és Automatikus AP Kód Felderítés, A-204: Online Pénztárgép (OPG) Modul Architektúra és Házipénztár Integráció, Dátum, Döntések, Kapcsolódó (+32 more)
 
-### Community 50 - "KnowledgeBasePage.tsx"
+### Community 46 - "escapeXml"
 Cohesion: 0.07
-Nodes (50): TransactionDetailsDialogProps, UseTransactionMatcherParams, useTransactionMatching(), UseTransactionMatchingOptions, APPROX_FX_RATES, BRAND_SYNONYMS, filterAndSortInvoiceCandidates(), filterAndSortTransactionCandidates() (+42 more)
+Nodes (49): 1. Kontextus & Üzleti Igény, 2. Döntések (A jóváhagyott D-1 – D-11 döntési mátrix alapján), 3. Verifikáció & Tesztelés, A-195: NAV 26A60 v3.0 Közösségi Összesítő Nyilatkozat ÁNYK XML Export & 65-ös Bevallási Rekonciliáció, Nav26TfejlhReplicaContainer(), Nav26TfejlhReplicaContainerProps, VatXmlExportModal(), createPreviewBlobUrl() (+41 more)
 
-### Community 51 - "EntriesTab.tsx"
-Cohesion: 0.03
-Nodes (62): account_number_placeholder, add_tag, add_tag_placeholder, amount_by_category, auto_categorize, auto_categorize_error, auto_categorize_gathering, auto_categorize_in_progress (+54 more)
+### Community 47 - "nav-client.ts"
+Cohesion: 0.10
+Nodes (38): Decision, JWT Összefoglaló, 🏛️ NAV Integráció (11 db), A-012: NAV Online Számla API v3 Integráció, 🔄 Adatfolyam és Szabályok, Consequences, Context, Decision (+30 more)
 
-### Community 53 - "Step6Export.tsx"
-Cohesion: 0.03
-Nodes (62): account_number_placeholder, add_tag, add_tag_placeholder, amount_by_category, auto_categorize, auto_categorize_error, auto_categorize_gathering, auto_categorize_in_progress (+54 more)
+### Community 48 - "Auth.tsx"
+Cohesion: 0.05
+Nodes (57): A-009: Supabase Auth + RBAC, Consequences, Context, Hozzáférés-kezelő Hook-ok, Hozzárendelési Mechánizmusok, Kapcsolódó, Signup Trigger Chain, 1. Kontextus és Problémafelvetés (+49 more)
 
-### Community 54 - "InvoiceTableContainer.tsx"
+### Community 49 - "AppSidebar.tsx"
 Cohesion: 0.03
-Nodes (63): business, accounting_settings_desc, accounting_settings_title, add_first_bank_account, add_location_title, address, address_placeholder, agrar_badge (+55 more)
+Nodes (102): 1.1 — Scoped Routing Pattern (Visibill-specifikus), Decision, Decision, 3.1 Frontend, Sidebar Stability, AppLayout(), AppLayoutProps, TopBar (+94 more)
 
-### Community 55 - "Custom Hookek Áttekintése"
-Cohesion: 0.03
-Nodes (63): business, accounting_settings_desc, accounting_settings_title, add_first_bank_account, add_location_title, address, address_placeholder, agrar_badge (+55 more)
+### Community 50 - "BankAccountsTab.tsx"
+Cohesion: 0.07
+Nodes (54): 1. Kontextus és Problémafelvetés, 2.1 Adatbázis Séma Bővítés (`public.gl_accounts`), 2.2 Számlatükör Karbantartás és Automatikus Felismerés (`AddGlAccountModal`), 2.3 Safeguard: Bankszámla Deviza-Főkönyvi Egyezőség (`BankAccountsTab`), 2.4 Nyitó Varázsló Összekapcsolás (`OpeningJournalWizardModal`), 2.5 Devizás Számlakarton Egyenlegek (`GlAccountCardView`), 2.7 Tört Időszaki Devizás Nyitó Göngyölítés az RPC-ben (`get_gl_account_card_items`), 2. Architekturális Döntések (+46 more)
 
-### Community 56 - "EmployeeImportPage.tsx"
-Cohesion: 0.03
-Nodes (61): company_selector, add_company, address_label, address_placeholder, choose_company, country_hr, country_hu, country_label (+53 more)
+### Community 51 - "AccountyApp.tsx"
+Cohesion: 0.05
+Nodes (50): ClientGridView(), ClientGridViewProps, ClientKanbanView(), ClientKanbanViewProps, ClientListViewProps, DashboardKpiView(), DashboardKpiViewProps, CLIENT_COLORS (+42 more)
 
-### Community 58 - "SubledgerPage.tsx"
-Cohesion: 0.03
-Nodes (61): acquisition_value, activation_date, depreciation_method, description, dev_reserve_frame, dev_reserve_frame_option, dev_reserve_toggle, dev_reserve_used_amount (+53 more)
+### Community 52 - "AuditorExportWorkspace.tsx"
+Cohesion: 0.13
+Nodes (32): ANALYTICAL_PACKAGES, AnalyticalPackageItem, AnalyticalPackagesCard(), AnalyticalPackagesCardProps, AuditorExportWorkspace(), CURRENT_YEAR, YEAR_OPTIONS, GlJournalExportCard() (+24 more)
+
+### Community 53 - "EmployeeImportPage.tsx"
+Cohesion: 0.09
+Nodes (48): 2.1. Architekturális komponensek, 1. Question, 2. Decision, 3.1. Dolgozói Tömeges Import Oldal (`EmployeeImportPage.tsx`), 3.2. Gyors Rekonstrukciós Modál (`PayrollReconstructionDialog.tsx`), 3. Current Implementation, 4. Rationale, 5. Kapcsolódó (+40 more)
+
+### Community 54 - "usePayrollData.ts"
+Cohesion: 0.06
+Nodes (50): 1. Kontextus és Problémafelvetés, 2. Döntések és Architektúra, 3. Verifikáció és Teszteredmények, A-106: Saját Jogú Nyugdíjas Járulékmentesség, Megbízási Munkaidő Rugalmasság és Vendéglátóipari Felszolgálási Díj Adózás, D-1: Nyugdíjas Járulékmentesség a Tiszta Adómotorban (`taxEngine.ts`), D-2: Vendéglátóipari Felszolgálási Díj Modellezése és Adózási Logikája, D-3: Rugalmas Megbízási Jogviszony Felvitel (`EmployeeWizardPage.tsx`), D-4: Közvetlen Ledolgozott Munkaóra Rögzítés (`PayrollStep3.tsx` & `usePayrollData.ts`) (+42 more)
+
+### Community 55 - "fixed-assets.ts"
+Cohesion: 0.05
+Nodes (47): AssetAgingPyramidChartProps, AssetAnalyticsDashboardProps, AssetComponentsViewProps, AssetDetailPanelProps, AssetListTableProps, DevelopmentReserveAlienationAlertProps, DevelopmentReserveAssignDialogProps, DisposalApprovalDialogProps (+39 more)
+
+### Community 56 - "WorkerPanel.tsx"
+Cohesion: 0.06
+Nodes (44): Kapcsolódó, P-061: Management Worker Telemetry Decomposition & Calendar Month LLM UX, Rationale, ControlCenterUser, ControlCenter, ControlCenterComponent(), ControlCenterProps, ControlCenterTab (+36 more)
+
+### Community 57 - "i18n.ts"
+Cohesion: 0.04
+Nodes (48): i18next, i18next-browser-languagedetector, defaultNS, languageDetector, pathDetector, resources, src_locales_hr_accounting, src_locales_hr_accounty (+40 more)
+
+### Community 58 - "🏦 Házipénztár"
+Cohesion: 0.04
+Nodes (42): `hp_settings`, 🏦 Házipénztár, `opg_cash_registers`, `opg_sync_logs`, `opg_transactions`, `petty_cash_entries`, `petty_cash_opening_balances`, `petty_cash_registers` (+34 more)
 
 ### Community 59 - "A-024-partner-upsert-strategy.md"
-Cohesion: 0.03
-Nodes (61): company_selector, add_company, address_label, address_placeholder, choose_company, country_hr, country_hu, country_label (+53 more)
-
-### Community 60 - "replica/index.ts"
-Cohesion: 0.03
-Nodes (61): acquisition_value, activation_date, depreciation_method, description, dev_reserve_frame, dev_reserve_frame_option, dev_reserve_toggle, dev_reserve_used_amount (+53 more)
-
-### Community 61 - "ProtectedLayout"
-Cohesion: 0.12
-Nodes (21): BULK_STATUS_OPTIONS, ClientInvoicesPage(), InvoiceAttachmentItem, InvoiceForDialog, InvoiceImageDialog(), InvoiceImageDialogProps, InvoiceHeader(), SzamlazzStatus (+13 more)
-
-### Community 62 - "WorkerPanel.tsx"
-Cohesion: 0.08
-Nodes (25): OpgOverviewTabProps, FormContentProps, OpgRegisterModalProps, OpgRegistersTabProps, OpgSyncLogsTabProps, OpgTransactionDetailSheetProps, OpgTransactionsTabProps, OpgZReportGroup (+17 more)
-
-### Community 63 - "3. Részletes Tételes Ellenőrzőlista (Mind az 1146 tétel)"
-Cohesion: 0.03
-Nodes (58): showcase, books_active_employees, books_anomaly_desc, books_anomaly_notice, books_anomaly_prob, books_anomaly_title, books_assets, books_assigned_companies (+50 more)
-
-### Community 64 - "ReportsPage.tsx"
-Cohesion: 0.03
-Nodes (58): showcase, books_active_employees, books_anomaly_desc, books_anomaly_notice, books_anomaly_prob, books_anomaly_title, books_assets, books_assigned_companies (+50 more)
-
-### Community 65 - "Visibill Scalability & Security Audit"
-Cohesion: 0.02
-Nodes (104): AccountantManagementPage(), AssignCompanyDialog(), AvailableCompany, FirmAccountant, ROLE_COLORS, ROLE_LABELS, useAddCompanyAssignment(), useFirmAccountants() (+96 more)
-
-### Community 66 - "EmployeeWizardPage.tsx"
-Cohesion: 0.06
-Nodes (34): status_starting, status_with_count, title, reclassify_btn, selected_count, general_ledger, ai_progress, balance_label (+26 more)
-
-### Community 67 - "11 — Adatmegjelenítés & Táblázatok"
-Cohesion: 0.04
-Nodes (54): feedback, attachments_label, browse_link, cancel, category_label, close, company_label, delete_attachment (+46 more)
-
-### Community 69 - "AiAnomalyReportPage.tsx"
-Cohesion: 0.04
-Nodes (54): feedback, attachments_label, browse_link, cancel, category_label, close, company_label, delete_attachment (+46 more)
-
-### Community 70 - "TaoYearEndWizardPage.tsx"
-Cohesion: 0.04
-Nodes (53): accountant_performance, active_links, activity_log, ai_phone_call, assigned_ok, automation_risk, clients_closed, closing_pct (+45 more)
-
-### Community 71 - "04-invoices.md"
-Cohesion: 0.04
-Nodes (53): accountant_performance, active_links, activity_log, ai_phone_call, assigned_ok, automation_risk, clients_closed, closing_pct (+45 more)
-
-### Community 72 - "rlbParser.ts"
-Cohesion: 0.14
-Nodes (15): CONFIGS, DeclType, GenericDeclarationPage(), ChildItem, DECLARATION_TYPES, EditDeclarationDialog(), NewDeclarationDialog(), normalizeChildItem() (+7 more)
-
-### Community 74 - "ManualEntryDialog"
-Cohesion: 0.04
-Nodes (52): manual_entry_dialog, amount_label, badge_inbound, badge_outbound, cancel_btn, choose_register, date_label, delete_btn (+44 more)
-
-### Community 75 - "closed"
-Cohesion: 0.04
-Nodes (52): manual_entry_dialog, amount_label, badge_inbound, badge_outbound, cancel_btn, choose_register, date_label, delete_btn (+44 more)
-
-### Community 76 - "DashboardApp"
-Cohesion: 0.08
-Nodes (36): FALLBACK_CATEGORY_MAP, FALLBACK_KNOWLEDGE_ARTICLES, FALLBACK_KNOWLEDGE_CATEGORIES, URL_TO_MODULE, useCanAccessKnowledgeMenuPath(), useDebounce(), useKnowledgeArticle(), useKnowledgeArticles() (+28 more)
-
-### Community 77 - "PartnersPage"
-Cohesion: 0.04
-Nodes (51): approval_queue, all_checkbox, bulk_approve, bulk_label, bulk_reject, bulk_unit, category_callback, category_normal (+43 more)
-
-### Community 78 - "hungarianEncoding.ts"
-Cohesion: 0.04
-Nodes (51): approval_queue, all_checkbox, bulk_approve, bulk_label, bulk_reject, bulk_unit, category_callback, category_normal (+43 more)
-
-### Community 79 - "ChangelogPage.tsx"
 Cohesion: 0.05
-Nodes (43): AppLayout(), AppLayoutProps, ContentArea, TopBar, useIdleRoutePrefetch(), AppSidebar, NavGroup, navigationGroups (+35 more)
+Nodes (31): `categories`, `courier_reports`, `partners`, `project_labor_costs` — VIEW, `projects`, `report_uploads`, `reverse_charge_entries`, `tax` (+23 more)
 
-### Community 80 - "InvoiceApprovalDialog"
+### Community 60 - "12 — Dialógusok & Felugró Ablakok"
 Cohesion: 0.04
-Nodes (50): annual_opt, assets_displayed, btn_cancel, btn_post, business_year_label, col_acq_value, col_gl, col_inv_number (+42 more)
+Nodes (48): 12 — Dialógusok & Felugró Ablakok, 1. Layout Shift Védelem (Fix Listamagasság), 1. Radix Dialog + Popover Görgetés-blokkolás Védelem (`modal={true}`), 2. Akció Gombok Pozíció-Stabilitása, 2. Kereshető Popover Fix Magassága (Zero-Jitter Ugrásvédelem), 3. DOM Szeletelés & Kezdeti Render Limit (Top 20 tétel), 3. Tisztított Kijelölési Stílus (Dupla Ring Elkerülése), 4. Keresőmező Kötelező Komponens Standard (`SearchInput`) (+40 more)
 
-### Community 82 - "procontGlData.ts"
-Cohesion: 0.04
-Nodes (50): annual_opt, assets_displayed, btn_cancel, btn_post, business_year_label, col_acq_value, col_gl, col_inv_number (+42 more)
-
-### Community 83 - "escapeXml"
-Cohesion: 0.10
-Nodes (32): SAMPLE_ROWS, TEMPLATE_HEADERS, BulkImportResult, ReconstructionResult, PayrollCycle, PayrollEmployment, FEOR_DICTIONARY, formatJobTitleWithFeor() (+24 more)
-
-### Community 84 - "FilePreviewModal.tsx"
-Cohesion: 0.04
-Nodes (47): 05 — Layout & Navigáció, 1. Hidegindítás (Cold Start – F5 újratöltés vagy munkamenetbeli első belépés), 1. Komponens API (`src/components/ui/page-header.tsx`), 1. Scrollbar Gutter — `scrollbar-gutter: stable`, 2. CSS Grid gyerekek — `min-h-0` kötelező, 2. Meleg Váltás (Warm Switch – további navigációk az appok között), 2. Tiszta Útvonal Feloldó (`src/hooks/useAccountyBreadcrumbs.ts`), 3. Cégválasztó & Útvonal Szinkronizáció (+39 more)
-
-### Community 85 - "🛡️ Morfi Implementation Review (Autonomous Goal Mode)"
-Cohesion: 0.12
-Nodes (21): XmlDocumentAdapter, createPreviewBlobUrl(), AnykHeaderOptions, buildAnykEnvelope(), buildXmlTag(), escapeXml(), buildTfejlhHtml(), esc() (+13 more)
-
-### Community 86 - "useInvoiceContext"
-Cohesion: 0.15
-Nodes (25): AnnualReport, AnnualReportStep, AssetMovementSummary, EquityRowItem, FinancialMetrics, NotesSectionItem, NotesTemplateItem, SalaryMetrics (+17 more)
-
-### Community 87 - "send-weekly-summary/weekly-summary.tsx"
-Cohesion: 0.04
-Nodes (46): 13 — Autentikáció & Onboarding, 1. eaisybill Jogosultsági Körök, 1. Profilok és Feliratkozások Automatikus Létrehozása, 2. eaisybooks (Accounty) Szerepkörök, 2. kattintás (token már felhasznált):, 2. Meghívási és Ellenőrzési Folyamat, 3. Kereszt-Alkalmazás Szerepkör-feloldás (Cross-App Role Resolution), 3. Könyvelők Áttérése (eaisybooks → eaisybill) (+38 more)
-
-### Community 88 - "emails/weekly-summary.tsx"
-Cohesion: 0.04
-Nodes (47): invite_dialog, add_button, add_failed_title, adding, assign_company_label, cancel, companies_count_plural, companies_count_single (+39 more)
-
-### Community 89 - "Components"
-Cohesion: 0.04
-Nodes (47): invite_dialog, add_button, add_failed_title, adding, assign_company_label, cancel, companies_count_plural, companies_count_single (+39 more)
-
-### Community 90 - "VatAmendmentsWorkspace.tsx"
+### Community 61 - "PayrollCyclePage.tsx"
 Cohesion: 0.07
-Nodes (39): AnalyticalPackagesCardProps, ExportSnapshotsHistoryCardProps, GlJournalExportCardProps, StalenessWarningBanner(), StalenessWarningBannerProps, SubsequentSettlementsCardProps, AuditExportRecord, AuditExportStalenessInfo (+31 more)
+Nodes (39): A-094: Bérszámfejtési Ciklus Végtelen Re-render Védelem, Stabil Függőségi Kulcsok és Kézi Jelenlét Perzisztencia, Consequences, Context, Decision, Kapcsolódó, PayrollStep1(), PayrollStep3(), PayrollStep3Props (+31 more)
 
-### Community 91 - "GeneralLedgerTableBase"
+### Community 62 - "A-258-gl-opening-balances-rollforward-and-transfers-dedup-integrity.md"
+Cohesion: 0.06
+Nodes (31): 1. Context, 2.1 Eredménykimutatás összköltség eljárással („A” változat), 2. Decision, 3. Consequences, A-248: Agora / Novitax Formátumhű Pénzügyi Kimutatások (Főkönyvi Kivonat és Eredménykimutatás) Export Architektúra, Kapcsolódó:, Pozitív:, 1. Főkönyvi Nyitó Egyenlegek Évközi Folytonossága (Sztv. 15. § (4)) (+23 more)
+
+### Community 63 - "Visibill — Business Requirements Document (BRD)"
 Cohesion: 0.04
-Nodes (46): missing_invoices, action_ai_call, action_details, action_mark_received, action_send_email, bulk_selected, bulk_unit, close (+38 more)
+Nodes (46): 10. Értesítések & Kommunikáció, 11. Support & Onboarding, 12. Biztonság & Compliance, 13. Integrációk, 14. Jövőbeli Döntések, 15. Követelmények Mátrix, 1. Összefoglaló, 2. Termék Scope & Célcsoport (+38 more)
 
-### Community 92 - "AutoAccountingRulesTab.tsx"
+### Community 64 - "AccountyShellContext.tsx"
+Cohesion: 0.08
+Nodes (41): 2.1. Központi `AccountyShellContext` és `AccountyShellProvider`, 2.2. Moduláris Kompozíciós Komponensek (Vercel Composition Patterns), 2.3. Seam Hardening és Teszt Kompatibilitás (Defensive Standalone Fallback), 2. A Döntés, 1. Komponens API (`src/components/ui/page-header.tsx`), 2. Tiszta Útvonal Feloldó (`src/hooks/useAccountyBreadcrumbs.ts`), Hierarchikus Útvonalkövető (Breadcrumbs) Rendszer (PRD P-084), Context (+33 more)
+
+### Community 65 - "openingImportParser.ts"
+Cohesion: 0.07
+Nodes (41): 1. Kontextus és Problémafelvetés, 2.1 Excel 2003 XML (SpreadsheetML) Natív Dekódolás, 2.2 Intelligens Fejléc és Számlaszám Tisztítás, 2.3 UI Fájlmaszkok Bővítése, 2. Döntések és Megvalósítás, 3. Következmények és Minőségbiztosítás, A-137: Rugalmas Főkönyvi Kivonat és Nyitó Egyenleg Import Normalizáció (Microfox Fejlécek és Excel 2003 XML / SpreadsheetML Támogatás), 1. Kiterjesztett Fájlformátum Támogatás (.xlsx, .xls, .xml, .csv, .json, .txt) (+33 more)
+
+### Community 66 - "3. Részletes Tételes Ellenőrzőlista (Mind az 1146 tétel)"
 Cohesion: 0.04
-Nodes (46): missing_invoices, action_ai_call, action_details, action_mark_received, action_send_email, bulk_selected, bulk_unit, close (+38 more)
+Nodes (45): 01. Cégtörzs – azonosítás, 02. Cégtörzs – címek, 03. Adózás és számviteli beállítások, 04. Üzleti év és végelszámolás, 06. Partnertörzs – cím és kapcsolattartás, 07. Partnertörzs – bankszámlák, 08. Törzsadatok – ellenőrzés és módosítás, 09. Számlatükör (+37 more)
 
-### Community 93 - "12 — Dialógusok & Felugró Ablakok"
-Cohesion: 0.04
-Nodes (46): 01. Cégtörzs – azonosítás, 02. Cégtörzs – címek, 03. Adózás és számviteli beállítások, 04. Üzleti év és végelszámolás, 05. Partnertörzs – alapadatok, 06. Partnertörzs – cím és kapcsolattartás, 07. Partnertörzs – bankszámlák, 08. Törzsadatok – ellenőrzés és módosítás (+38 more)
+### Community 67 - "AssetReconciliationTab.tsx"
+Cohesion: 0.08
+Nodes (34): ACCUM_ISSUE_LABELS, AssetReconciliationTab(), AssetReconciliationTabProps, GROSS_ISSUE_LABELS, KpiCard(), KpiCardProps, RowFilter, rowHasIssue() (+26 more)
 
-### Community 94 - "AccountyErrorBoundary"
-Cohesion: 0.04
-Nodes (45): btn_new, btn_save_reserve, col_action, col_creation_year, col_expiration, col_notes, col_remaining, col_reserve_amount (+37 more)
+### Community 68 - "process-mailgun-webhook/index.ts"
+Cohesion: 0.06
+Nodes (33): RFC-822, A-162: Mailgun & IMAP Csatolmány Szűrési Szinkronizáció, Storage Fájlnév-Szanálás és Body-MIME Hardening, Consequences, Context, Decision, Kapcsolódó, ref_npm_fflate_0_8_2, ref_npm_postal_mime_2_4_1 (+25 more)
 
-### Community 95 - "Visibill Codebase Audit"
-Cohesion: 0.04
-Nodes (45): details, accounting_setting, btn_configure, click_partner_hint, company_details, copy_address, copy_email, copy_tax_number (+37 more)
-
-### Community 96 - "InvoiceItemsDialog"
-Cohesion: 0.04
-Nodes (45): detail, add_attachment, attach_file_tooltip, attachments_title, cancel_resolution_request, comment_placeholder_active, comment_placeholder_locked, comments_count (+37 more)
-
-### Community 97 - "08 — Interakciók & Animációk"
-Cohesion: 0.04
-Nodes (45): btn_new, btn_save_reserve, col_action, col_creation_year, col_expiration, col_notes, col_remaining, col_reserve_amount (+37 more)
-
-### Community 98 - "customer-api/index.ts"
-Cohesion: 0.04
-Nodes (45): details, accounting_setting, btn_configure, click_partner_hint, company_details, copy_address, copy_email, copy_tax_number (+37 more)
-
-### Community 99 - "10 — Accessibility & UX Patternek"
-Cohesion: 0.04
-Nodes (45): detail, add_attachment, attach_file_tooltip, attachments_title, cancel_resolution_request, comment_placeholder_active, comment_placeholder_locked, comments_count (+37 more)
-
-### Community 100 - "KintlevoPage.tsx"
+### Community 69 - "Visibill Scalability & Security Audit"
 Cohesion: 0.05
 Nodes (43): 1.1 — Table Size & Row Counts, 1.2 — Missing Indexes (Critical), 1.3 — Slow Queries, 1.4 — N+1 Query Detection, 1.5 — Connection Pool Saturation, 1.6 — Unindexed Foreign Keys, 1.7 — Unused Indexes (Wasted Write Overhead), 2.1 — RLS InitPlan Check (Critical Performance) (+35 more)
 
-### Community 102 - "FadInvoicePanel.tsx"
-Cohesion: 0.05
-Nodes (43): 11 — Adatmegjelenítés & Táblázatok, 1. `table-layout: auto` (nem `fixed`), 1b. Expandable Rows Pattern (Lenyitható részlet-sorok), 2. Horizontális scroll wrapper, 3. Partner név truncálás (13 karakter), 4. Oszlop szélességek, 4b. Többdevizás Összeg Megjelenítési Minta (Multi-currency Display Pattern), 5. NE legyen `overflow: hidden` a cellákon (+35 more)
+### Community 70 - "AutoAccountingRulesTab.tsx"
+Cohesion: 0.08
+Nodes (41): A-228: Automatikus Könyvelési Szabályok Konfigurációs Felülete és Cégek Közötti Klónozása (EB-0256), Consequences, Context, Decision, Kapcsolódó, 1. Döntési Kontextus és Problémafelvetés, 2.1 Elhelyezés és Navigáció, 2.2 Kártyás Struktúra és Felületi Részek (+33 more)
 
-### Community 103 - "A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md"
-Cohesion: 0.05
-Nodes (42): groups, accounting, finance, hr, operations, overview, shipment, support (+34 more)
+### Community 71 - "AiAssistantChat.tsx"
+Cohesion: 0.07
+Nodes (36): Kapcsolódó, P-077: [eaisyBill & eaisyBooks] Kettős Lebegő Akciógomb (Dual FAB) és AI Asszisztens Chat UX, JWT (JSON Web Token), AiAssistantChat(), AiAssistantChatProps, ChatMessagesSkeleton(), CompanySelectToken, ConversationSidebar() (+28 more)
 
-### Community 104 - "EvHipaReturnPage.tsx"
-Cohesion: 0.05
-Nodes (42): groups, accounting, finance, hr, operations, overview, shipment, support (+34 more)
+### Community 72 - "NavInvoice"
+Cohesion: 0.06
+Nodes (35): NavInvoicePickerProps, SyncProgress, InvoiceApprovalDialogProps, SuggestedInvoiceLinkDialogProps, NavInvoiceRow, NavInvoiceRowProps, NavInvoiceTableProps, SubmittedInvoiceRowProps (+27 more)
 
-### Community 106 - "A-109-eaisybill-i18n-croatia-localization-and-route-architecture.md"
-Cohesion: 0.05
-Nodes (40): activityGrid, activityItem, activityItemError, container, dateRange, divider, footer, footerLink (+32 more)
+### Community 73 - "cache.test.ts"
+Cohesion: 0.09
+Nodes (25): 6. Dinamikus Gyorsítótár és Supabase Realtime Szinkronizáció, Moduláris Query Key & Cache Rendszer, React Query Konfiguráció, src_lib_cache_index_accountykeys, src_lib_cache_index_glkeys, src_lib_cache_index_invalidateaccountyqueries, src_lib_cache_index_invalidateinvoicequeries, src_lib_cache_index_invalidatepartnerqueries (+17 more)
 
-### Community 107 - "Technikai Fogalomtár — Supabase Exit Strategy"
-Cohesion: 0.05
-Nodes (42): modal, add_invoice, add_selected_count, add_transaction, cancel_btn, close_btn, content_label, content_placeholder (+34 more)
+### Community 74 - "rich-text-editor.tsx"
+Cohesion: 0.07
+Nodes (37): Vágólap (Ctrl+V) & Drag-and-Drop Csatolmányok és 4-szintű Duplikáció-védelem (2026-10), 1. Kérdés / Problémafelvetés, 2. Döntés (Decision), 3. Rationale, 4. Kapcsolódó Dokumentumok, A. Indítógomb Elhelyezése a `TicketsPage`-en, B. Dialógus Felépítés és Mezők (`ManagementCreateTicketDialog`), C. Sikeres Beküldés Utáni UX (+29 more)
 
-### Community 108 - "Visibill Feature Planner — Zero Silent Decisions & Subagent Swarm"
+### Community 75 - "accrualMath.ts"
+Cohesion: 0.07
+Nodes (37): 1. Context, 2.1. Független Matematikai és Időszak-detektáló Motor (`src/lib/accrualMath.ts`), 2.2. Automatikus Vegyes Napló Feladó Szolgáltatás (`accrualPostingService.ts`), 2.3. Kontextuális Felületi Varázsló (`InvoiceItemAccrualModal.tsx` & `InvoiceItemsDialog.tsx`), 2. Decision, 3. Consequences, 4. Kapcsolódó, A-187: Számlatétel-szintű Kontextuális Időbeli Elhatárolások és Vegyes Napló Feladás (+29 more)
+
+### Community 76 - "11 — Adatmegjelenítés & Táblázatok"
 Cohesion: 0.05
-Nodes (42): modal, add_invoice, add_selected_count, add_transaction, cancel_btn, close_btn, content_label, content_placeholder (+34 more)
+Nodes (42): 11 — Adatmegjelenítés & Táblázatok, 1. `table-layout: auto` (nem `fixed`), 1b. Expandable Rows Pattern (Lenyitható részlet-sorok), 2. Horizontális scroll wrapper, 3. Partner név truncálás (13 karakter), 4. Oszlop szélességek, 4b. Többdevizás Összeg Megjelenítési Minta (Multi-currency Display Pattern), 5. NE legyen `overflow: hidden` a cellákon (+34 more)
+
+### Community 77 - "DashboardApp"
+Cohesion: 0.09
+Nodes (3): DashboardApp, Processes messages from background threads safely in the main GUI thread., Continuously checks if graphify-out/graph.json has been modified externally.
+
+### Community 78 - "FilePreviewModal"
+Cohesion: 0.06
+Nodes (39): 🎨 1. Új UI Elem / Komponens Kreálása (Design System Fegyelem), 🏛️ 2. Építészeti Döntések (ADR Fegyelem), 📋 3. Termék és Funkció Döntések (PRD Fegyelem), ⚖️ 4. Szabályok vs. Döntési Dokumentumok Határvonala (Thin Rule + Deep Spec Minta), Design System & Documentation Governance, A-044: Shared FilePreviewModal Utility — Egységes Fájl Előnézet, Consequences, Context (+31 more)
+
+### Community 79 - "ChangelogPage.tsx"
+Cohesion: 0.09
+Nodes (30): 1. Kontextus és Problémafelvetés, 2. Megoldási Opciók Mérlegelése, 3.1 Adatmodell (`public.changelog_entries`), 3.2 Hozzáférés-szabályozás (RLS), 3.3 Felhasználói Felület & Navigáció, 3.4 Teljes Magasságú Héj és Belső Flex Görgetés (Full-Height Shell & Scroll Containment), 3.5 Automatizált AI Skill (`visibill-patchnote`), 3. Megvalósítás Részletei (+22 more)
+
+### Community 80 - "KintlevoPage.tsx"
+Cohesion: 0.11
+Nodes (32): 2.3. Frontend Jurisdictio és Komponensek, PostgREST, DunningDialog(), Props, BUCKETS, CustomTooltip(), KintlevoAgingChart(), Props (+24 more)
+
+### Community 81 - "GeneralLedgerPage.tsx"
+Cohesion: 0.03
+Nodes (115): 7. Standard Számlatükör és Főkönyvi Lokalizációs Motor (Chart of Accounts Localization Engine), 2.5 Horvát Számlatükör Megnevezések Védelme (`glUtils.ts`), 2.6 Többdevizás Partner Analitika (`PartnerLedgerCardView`), 1. Context and Problem Statement, 1. Lazy & Chunked P&L Trend Queries (`trendData`):, 2. Decision and Architecture Pattern, 2. On-Demand GL Drilldown (`fetchGlItemsForAccount`):, 3. On-Demand Excel Export Support: (+107 more)
+
+### Community 82 - "useAdminData.ts"
+Cohesion: 0.09
+Nodes (34): AuditLogFilters, useAddLegalUpdate(), useAuditLog(), useCreateGdprRequest(), useDuplicateTaxYear(), useGdprRequests(), useGlobalTaxParams(), useJobCodes() (+26 more)
+
+### Community 83 - "procontGlData.ts"
+Cohesion: 0.12
+Nodes (32): AgoraBuildOptions, AgoraGlData, AgoraGlRow, AgoraReconciliation, AgoraRowLevel, AgoraSummaryRow, buildAgoraGlData(), formatAgoraPeriod() (+24 more)
+
+### Community 84 - "🛡️ Morfi Implementation Review (Autonomous Goal Mode)"
+Cohesion: 0.05
+Nodes (37): 1. ⏱️ Concurrency, Race Conditions & Temporal Order, 1. Correctness & Behavioral Integrity, 2. 🧱 Boundary Conditions, Data Extremes & Nullability, 2. Readability & Simplicity, 3. Architecture & Structural Remedies, 3. 💥 Failure Modes, Resilience & Rollback, 4. Database Constraints & Concurrency Safety, 4. 🔄 State Lifecycle, Transitions & Cache Invalidation (+29 more)
+
+### Community 85 - "A. Backend Edge Function Moduláris Architektúra (`supabase/functions/management-stats/`)"
+Cohesion: 0.12
+Nodes (34): A. Backend Edge Function Moduláris Architektúra (`supabase/functions/management-stats/`), Severity diszciplína, APP_LOG_CATEGORY_MAP, appLogSubSource(), buildErrors(), buildQueuePayload(), categorizeError(), categoryLabel() (+26 more)
+
+### Community 86 - "ClientInvoicesPage"
+Cohesion: 0.07
+Nodes (34): 5. Frontend UI/UX — Visibill és Accounty (eaisyBooks), 10. 🔌 Külső Integrációk & API (4 db), 3.1 Számlaszinkron és Technikai Fejléc Akciók, 3.2 Szűrősáv és Keresőmező, 3.3 Strukturált Számlatáblázat és T-számlás Előnézet, 3.4 Eredeti Számlakép Megtekintése, 3.5 Számla Jóváhagyása és Kontírozás Munkalap, 3.6 Exportálás Könyvelőszoftverbe (RLB60, Kulcs-Soft, Novitax) (+26 more)
+
+### Community 87 - "send-weekly-summary/weekly-summary.tsx"
+Cohesion: 0.05
+Nodes (37): activityGrid, activityItem, activityItemError, container, dateRange, divider, footer, footerLink (+29 more)
+
+### Community 88 - "emails/weekly-summary.tsx"
+Cohesion: 0.05
+Nodes (37): activityGrid, activityItem, activityItemError, container, dateRange, divider, footer, footerLink (+29 more)
+
+### Community 89 - "croatianPoreznaXml.ts"
+Cohesion: 0.09
+Nodes (34): 1. Context, 1. Szerveroldali Atomi Aggregáció (`get_croatian_eu_vat_statements` RPC), 2. Decision, 2. Kliensoldali Hivatalos XML Generátor (`croatianPoreznaXml.ts`), 3. Consequences, 3. Interaktív Előnézeti Modál (`VatPoreznaExportDialog.tsx`), 4. Integráció a Fő ÁFA Nézetbe (`VatReturnViewTab.tsx`), 4. Kapcsolódó Dokumentáció (+26 more)
+
+### Community 90 - "DeclarationArchivePage.tsx"
+Cohesion: 0.07
+Nodes (34): A-202: Bérszámfejtés Haladó Riportok Motor, Kliensoldali Aggregáció és Nyilatkozatok Scoped Navigációs Architektúra, Consequences, Context, Decision, Kapcsolódó, Negatív, Pozitív, 1. Context & Problémafelvetés (+26 more)
+
+### Community 91 - "Components"
+Cohesion: 0.05
+Nodes (36): Agent Prompt Guide, Announcement Banner, Avatar/Profile Indicator, Berkeley Mono — Code, IDs, keyboard shortcuts, technical metadata (issue IDs like ENG-2703, code references in agent prompts). Its presence signals "this is a tool, not a marketing site" — the monospace voice only speaks where precision matters. · `--font-berkeley-mono`, Border Radius, Components, CSS Custom Properties, Customer Logo Strip (+28 more)
+
+### Community 92 - "AccountyLayout"
+Cohesion: 0.07
+Nodes (34): 1. Dátumok & Időszaki Szűrések, 2. Navigáció & Layout, 3. Számlák & Bizonylatok, 4. Bank, Tranzakciók & Párosítás, 5. eaisyBooks (Accounty) & Könyvelői Modulok, 📖 Visibill PM Fogalom- és Komponens Térkép (Glossary Mapping), 1. Kontextus és Problémafelvetés, 2.1. Dual-Mode Navigáció és Kliens Kontextus Scoping (+26 more)
+
+### Community 93 - "VatCalculatorView.tsx"
+Cohesion: 0.09
+Nodes (31): A-080: NAV ÁNYK 2665 ÁFA-Bevallás (2665A) és 65M Összesítő Jelentés (2665M) Szabványos XML Export Architektúra, Consequences, Context, Decision, Kapcsolódó, 1. Döntési Kontextus és Igény, 2.1 Komponens Hierarchia és Felelősségek, 2.3 Felületi Integráció (+23 more)
+
+### Community 94 - "GlobalDatePicker"
+Cohesion: 0.08
+Nodes (36): 1. i18next & react-i18next Keretrendszer Névterekkel (Namespaces), 3. Route Wrapperek és Redirect Stratégia, 5. Nyelvválasztó Kivezetése az Oldalsávról, 8. Bizonylatfeltöltési Duplikáció-védelem és Modál Stabilitás, 9. Automatikus Rekurzív JSON AST Duplikáció- és Szintaxis-ellenőrzés (CI / QA Gate), A-109: Eaisybill Horvát Lokalizáció, /hr/ Scoped Route Architektúra és Helyi Tároló Mentes Nyelvkezelés, Consequences, Context (+28 more)
+
+### Community 95 - "VatAmendmentsWorkspace.tsx"
+Cohesion: 0.11
+Nodes (32): 1. Adatbázis Séma és Táblák (`accounty_vat_snapshots`, `accounty_vat_revision_pool`), 2. Kriptográfiai Pecsétképzés és Számlaállomány Fagyasztás (`vatSnapshotService.ts`), 3. Polimorf és Védett Diff-Összehasonlító Motor (`compareCurrentInvoicesWithSnapshot`), 4. Art. 211. § Önellenőrzési Pótlék Kalkulátor (`penaltyCalculator.ts`), A-242: ÁFA Bevallás Változásvédelem, Kriptográfiai Pillanatkép és Art. 211. § Önellenőrzési Pótlék Számítási Architektúra, ⚡ Consequences, 🏛️ Context, 💡 Decision (+24 more)
+
+### Community 96 - "05 — Layout & Navigáció"
+Cohesion: 0.06
+Nodes (36): 05 — Layout & Navigáció, 1. Scrollbar Gutter — `scrollbar-gutter: stable`, 2. CSS Grid gyerekek — `min-h-0` kötelező, 3. `divide-y` és `border-l-*` NEM kombinálható, 4. Aktív állapot border — mindig foglalj helyet, 5. Tab / Sub-tab gombok — fix méret, 6 Navigációs Csoport, Anti-CLS szabály alkalmazása (+28 more)
+
+### Community 97 - "OutputDocumentsPage.tsx"
+Cohesion: 0.14
+Nodes (33): AccountyDocument, useAccountyDocuments(), useGenerateDocuments(), usePayrollCalculations(), addDocHeader(), addFooter(), addSignatureBlock(), DocContext (+25 more)
+
+### Community 98 - "matchingService.ts"
+Cohesion: 0.21
+Nodes (27): Döntés, useTransactionMatcher(), UseTransactionMatcherParams, useTransactionMatching(), invalidateMatchingQueries(), MATCHING_QUERY_KEYS, addExtraMatch(), applyMatch() (+19 more)
+
+### Community 99 - "invoices.ts"
+Cohesion: 0.07
+Nodes (32): 1. Kontextus & Problémafelvetés, 2. Architektúrális Döntések, 3. Következmények & Előnyök, A-147: Kétirányú Számlaláncolat (Invoice Chaining), Dinamikus Kapcsolt Bizonylat Feloldás és Előnézeti Dokumentum-lapozás, D-1: Kliensoldali In-Memory Gráf Indexelés (`InvoiceContext` + `buildLinkedInvoicesMap`), D-2: Kétirányú Láncolat-feloldás (`resolveLinkedInvoices`), D-3: NAV és Beküldött Számlák Egységes Kezelése, D-4: Determinisztikus Hiányzó Bizonylat Detektálás (`LinkedInvoicesSection`) (+24 more)
+
+### Community 100 - "rlbParser.ts"
+Cohesion: 0.09
+Nodes (30): A-227: RLB-60 Könyvvizsgálói XML és CSV Főkönyvi Kivonat Parser Motor és Kliensoldali Kötegelt Ingestion Architektúra, Consequences, Context, Decision, Kapcsolódó, ImportRlbCsvParams, ImportRlbXmlParams, RlbImportProgress (+22 more)
+
+### Community 101 - "send-dunning-email/index.ts"
+Cohesion: 0.07
+Nodes (21): ref_npm_resend_4_0_0, corsHeaders, resend, corsHeaders, RequestBody, resend, corsHeaders, PREF_MAP (+13 more)
+
+### Community 102 - "4. Részletes Tételes Teendőjegyzék (Mind a 318 Tétel)"
+Cohesion: 0.06
+Nodes (34): 01. Cégtörzs – azonosítás, 02. Cégtörzs – címek, 03. Adózás és számviteli beállítások, 04. Üzleti év és végelszámolás, 05. Partnertörzs – alapadatok, 06. Partnertörzs – cím és kapcsolattartás, 07. Partnertörzs – bankszámlák, 08. Törzsadatok – ellenőrzés és módosítás (+26 more)
+
+### Community 103 - "aggreg8-api/index.ts"
+Cohesion: 0.08
+Nodes (29): 1. Hosted SyncUI és Zéró Felelősség (Zero Liability) Modell, 2. Kettős Edge Function Architektúra, Megosztott Motor és Proxy Relay, 3. Adatbázis Séma és Nullability Migráció, 4. Aszinkron Háttér-feldolgozás (Python Worker & PGMQ), 5. Versenyhelyzet és UX Retesz (Race Condition Protection), 6. Felületi Elhelyezés és Kétirányú Navigáció (UI/UX Architecture), 7. Aggreg8 PSD2 és Fájlimport Cross-Deduplikáció (2026-09 Frissítés), 8. Multi-Company Consent Megosztás és Dinamikus Számlaleosztás (2026-10 Frissítés, EB-0226) (+21 more)
+
+### Community 104 - "depreciationPostingService.ts"
+Cohesion: 0.09
+Nodes (29): 1. Döntési Kontextus, 2.1 Új tábla: `public.development_reserves`, 2.2 `public.fixed_assets` bővítése, 2. Adatbázis Séma, 3. Értékcsökkenési Matematika és Algoritmus (`useDepreciation.ts`), 6. Tao Éves Zárás Integráció (`TaoYearEndWizardPage.tsx`), 7. Kapcsolódó Dokumentáció és Döntések, A-164: Fejlesztési Tartalék és Tárgyi Eszközök Adatmodell, ÉCS Kalkuláció és API (+21 more)
+
+### Community 106 - "Nav2665MReplicaContainer.tsx"
+Cohesion: 0.12
+Nodes (28): MReplicaDisplayMode, Nav2665MReplicaContainer(), Nav2665MReplicaContainerProps, Nav2665MSheet02(), Nav2665MSheet02Props, Nav2665MSheet02K(), Nav2665MSheet02KProps, Nav2665MSheetFolap() (+20 more)
+
+### Community 107 - "TaoYearEndWizardPage.tsx"
+Cohesion: 0.15
+Nodes (27): useSaveTaoYearly(), useTaoYearly(), CREDIT_ITEMS, DECREASING_ITEMS, DONATION_ITEMS, fmt(), INCREASING_ITEMS, NumberInput() (+19 more)
+
+### Community 108 - "AiAnomalyReportPage.tsx"
+Cohesion: 0.10
+Nodes (30): PayrollCalculation, useTaxParameters(), useUpdateTaxParameter(), ALL_RULES, Anomaly, AnomalyInput, AnomalyRule, AnomalySeverity (+22 more)
 
 ### Community 109 - "gen-db-docs.js"
 Cohesion: 0.07
 Nodes (28): ACCURATE_FK_FILE, accurateFKs, accurateFKsByTable, allCategorized, columns, COLUMNS_FILE, columnsByTable, commentMap (+20 more)
 
-### Community 110 - "UnifiedFinancialCockpit.tsx"
-Cohesion: 0.05
-Nodes (40): access_denied, back_to_home, desc, title, all, back, cancel, close (+32 more)
+### Community 110 - "assetDisposalPostingService.ts"
+Cohesion: 0.10
+Nodes (29): Decision, 1. Dinamikus Számlatükör-Preset Feloldás (`resolveActivePresetId`), 3. Kivezetés = kérelem → jóváhagyás (maker–checker), DB-ben kikényszerítve, Micro-Module 1.4: 4 Jogcímű Kivezetési Könyvelő Motor és Jegyzőkönyv (Méret: L), DisposalApprovalDialog(), approveAssetDisposal(), ApproveDisposalResult, AssetGlPosition (+21 more)
 
-### Community 111 - "glInvoiceGrouping.ts"
-Cohesion: 0.05
-Nodes (40): access_denied, back_to_home, desc, title, all, back, cancel, close (+32 more)
-
-### Community 112 - "vatReturnXml.ts"
-Cohesion: 0.05
-Nodes (41): filters, all_categories, all_currencies, all_payment_methods, all_projects, all_statuses, category, clear_filters (+33 more)
-
-### Community 114 - "AssetDetailPanel.tsx"
-Cohesion: 0.05
-Nodes (41): filters, all_categories, all_currencies, all_payment_methods, all_projects, all_statuses, category, clear_filters (+33 more)
-
-### Community 115 - "VatFrequency"
-Cohesion: 0.06
-Nodes (54): EmployeeDetailsPage(), TABS, CURRENT_YEAR, DependentData, EmployeeWizardPage(), EMPLOYMENT_TYPES, FormData, FormField() (+46 more)
-
-### Community 116 - "HelpTabSections.tsx"
+### Community 111 - "customer-api/index.ts"
 Cohesion: 0.07
-Nodes (30): fetchManagementData(), postManagementData(), RETRYABLE_SOURCES, useWorkerTelemetry(), WORKER_PERIOD_LABELS, formatDuration(), formatUptime(), LLMCostPanel() (+22 more)
+Nodes (23): 1. Dedikált `customer-api` Supabase Edge Function, 2. Többcéges Hibrid API Kulcs Modell (`user_id` kapcsolat), 3. Támogatott Műveletek és Szigorú Mező-Whitelist, 4. Átfogó API Audit Napló (`api_request_logs`), 5. Webes Kulcskezelő Felület (`ApiKeysCard.tsx`), A-117: Hivatalos Ügyfél REST API v2.2.3 (Customer API), Többcéges API Kulcs Kezelés és Auditált M2M Átjáró, Addendum (2026-09-18) — Customer REST API v2 Bővítés (Pénzügyi Domainek & Path-Based Routing), Addendum (2026-09-22) — Customer REST API v2.1 (OpenAPI 3.0.3, Idempotencia, P0 Adatintegritás és Teljes Életciklus) (+15 more)
 
-### Community 117 - "JournalView"
-Cohesion: 0.11
-Nodes (33): AgoraBuildOptions, AgoraGlData, AgoraGlRow, AgoraReconciliation, AgoraRowLevel, AgoraSummaryRow, buildAgoraGlData(), formatAgoraPeriod() (+25 more)
+### Community 112 - "08 — Interakciók & Animációk"
+Cohesion: 0.06
+Nodes (33): 08 — Interakciók & Animációk, Card Ripple Egérkövető Fényeffekt (`.card-ripple`), Csoport Fejléc Chevron Animáció, CSS Classes, CSS Transition Összefoglaló, Design Filozófia: Flat & Calm, Feedback FAB Animáció, Globális Hover Shadow Tiltás (+25 more)
 
-### Community 118 - "6. Lepesrol Lepesre Megvalositasi Terv (Sprint Roadmap)"
+### Community 113 - "button.tsx"
+Cohesion: 0.03
+Nodes (171): CompanyPromptRulesManagerProps, PromptRule, RULE_TEMPLATES_HR, RULE_TEMPLATES_HU, CopyCompanyRulesModalProps, ClientProfileTabProps, AamTransitionModalProps, FilingPreFlightDialogProps (+163 more)
+
+### Community 114 - "10 — Accessibility & UX Patternek"
+Cohesion: 0.06
+Nodes (32): 10 — Accessibility & UX Patternek, ARIA Patternek, Auth Viewport Scaling, Autofill Kezelés, Clipboard Másolás Pattern, Date Input Calendar Ikon (Dark Mode), Financial Number Display, Firefox Támogatás (+24 more)
+
+### Community 115 - "tbCertificatesPdf.ts"
+Cohesion: 0.10
+Nodes (26): jspdf, jspdf-autotable, loadPdfLibraries(), VatCollectorGroup, CompanyData, ContributionCertificateData, downloadPdf(), EmployeeData (+18 more)
+
+### Community 116 - "P-033-payroll-cycle.md"
+Cohesion: 0.14
+Nodes (7): 1. Felhasználói Igény és Probléma, 2.1. Haladó Riportok Generálója (`PayrollAdvancedReportsPage.tsx`), 2.2. Nyilatkozatok Vissza-Navigációja (`*DeclarationPage.tsx`), 2.3. Stabil Dolgozói Munkalap és Témakontraszt, 2. Megoldás és UI Működés, Kapcsolódó, P-161: Bérszámfejtés Haladó Riportok és Adóelőleg-Nyilatkozatok Munkafolyamat és Export UX
+
+### Community 117 - "rlbGlData.ts"
 Cohesion: 0.12
-Nodes (31): InvoiceContextValue, InvoiceFilterContext, InvoiceFilterContextValue, InvoiceFilterProvider(), useInvoiceFilterContext(), InvoicePaginationProvider(), useInvoicePaginationContext(), InvoiceSelectionContext (+23 more)
+Nodes (27): 1. Kétszintű Adataggregáció (`rlbGlData.ts`), 2. Többoldalas jsPDF + AutoTable Megvalósítás (`rlbGlPdf.ts`), 3. ExcelJS Munkafüzet Export (`rlbGlExcel.ts`), A-253: RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Export Motor Architektúra, 🏗️ Architektúrális Döntések, 🎯 Kontextus és Problémafelvetés, 🛡️ Minőségbiztosítás és Verifikáció, buildRlbGlData() (+19 more)
+
+### Community 118 - "AccountyErrorBoundary"
+Cohesion: 0.07
+Nodes (19): 1. Executive Summary & Architecture Paradigm, 2. Navigáció & Útvonalstruktúra (Routing Engine), 3.1. Hibrid Felbontási Mechanizmus (`useAccountyPermissions`), 3.2. Irodai Szerepkörök és Hatáskörök Mátrixa, 3. Jogosultságkezelés & RBAC Architektúra, 4.1. Bérszámfejtési Alrendszer (Payroll Engine), 4.2. Egyéni Vállalkozói (EV) és Szervezeti Könyvvitel, 4.3. TAO és KIVA Modul (+11 more)
+
+### Community 119 - "lucide-react"
+Cohesion: 0.04
+Nodes (94): 7. Layout és Kártya Igazítás (2026-09-29), Partnertörzs (`/partners`), lucide-react, AccountyCompanySelector(), AccountyCompanySelectorProps, AccountySidebarProps, AiAssistantDrawer(), AiAssistantDrawerProps (+86 more)
 
 ### Community 120 - "devDependencies"
 Cohesion: 0.07
 Nodes (29): devDependencies, autoprefixer, eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom (+21 more)
 
-### Community 121 - "Dokumentáció Taxonómia — Mi mibe kerül?"
+### Community 121 - "expanded-row/types.ts"
+Cohesion: 0.10
+Nodes (28): 2. ExpandedInvoiceRow Modularizáció, A-065 — Invoice God Context Dekompozíció és Expanded Invoice Row Modularizáció, Döntés, Kapcsolódó ADR-ek, Kontextus, Következmények, Pozitív, Státusz (+20 more)
+
+### Community 122 - "Technikai Fogalomtár — Supabase Exit Strategy"
+Cohesion: 0.06
+Nodes (31): Anon Key (Publishable Key), `auth.uid()`, `auth.users`, Bucket, CORS (Cross-Origin Resource Sharing), Deno, Drizzle / Prisma / Kysely, Edge Functions (+23 more)
+
+### Community 123 - "FadInvoicePanel.tsx"
+Cohesion: 0.13
+Nodes (22): FadDashboardCard(), FadInvoicePanel(), FadInvoicePanelProps, severityBg, severityIcon, calculateReverseChargeVat(), ReverseChargeEntry, summarizeFadForPeriod() (+14 more)
+
+### Community 124 - "AlertsCenterPage.tsx"
 Cohesion: 0.08
-Nodes (29): subledgerQueryKeys, useAutoSettleSubledgerItems(), useBatchPostSubledgerItems(), useSettleOpenItems(), useSubledgerAccounts(), useSubledgerItemMatches(), useSubledgerItems(), useUnpostSubledgerEntry() (+21 more)
+Nodes (28): EvTaxReturn, useAllEvTaxReturns(), useEvYtdTotals(), AlertCategory, AlertLevel, AlertsCenterPage(), AlertState, CATEGORIES (+20 more)
 
-### Community 122 - "6. Module Permission System (menü ki-/bekapcsolás)"
-Cohesion: 0.05
-Nodes (39): files, actions, all_uploaders, delete_batch_choose, delete_batch_title, delete_cannot_undo, delete_choose_mode, delete_selected (+31 more)
-
-### Community 123 - "02 — Design Tokens & Színrendszer"
-Cohesion: 0.05
-Nodes (39): registers_tab, approval_threshold_hint, approval_threshold_label, cancel, cash_limit_label, closing_mode_custom, closing_mode_daily, closing_mode_decade (+31 more)
-
-### Community 124 - "03 — Tipográfia & Ikonok"
-Cohesion: 0.05
-Nodes (39): files, actions, all_uploaders, delete_batch_choose, delete_batch_title, delete_cannot_undo, delete_choose_mode, delete_selected (+31 more)
-
-### Community 125 - "Edge Functions Katalógus"
-Cohesion: 0.05
-Nodes (39): registers_tab, approval_threshold_hint, approval_threshold_label, cancel, cash_limit_label, closing_mode_custom, closing_mode_daily, closing_mode_decade (+31 more)
-
-### Community 126 - "P-052-fixed-assets-project-assignment-ux.md"
-Cohesion: 0.09
-Nodes (34): PostingGlReassignModal(), PostingGlReassignModalProps, PostingGroupAccordion, PostingGroupAccordionProps, PostingItemRow, PostingItemRowProps, PostingRuleDialog(), PostingRuleDialogProps (+26 more)
-
-### Community 127 - "eb0255ChartOfAccountsSubledger.test.tsx"
-Cohesion: 0.05
-Nodes (37): nullable, type, example, type, example, type, example, type (+29 more)
-
-### Community 128 - "fetchAllGlCategorizedItems"
-Cohesion: 0.10
-Nodes (3): DashboardApp, Processes messages from background threads safely in the main GUI thread., Continuously checks if graphify-out/graph.json has been modified externally.
-
-### Community 129 - "DividendPayrollPage.tsx"
-Cohesion: 0.08
-Nodes (41): _notifiedCommentIds, TicketComment, TicketPriority, TicketStatus, TicketType, useAddComment(), useDeleteTicket(), useIsManagementRole() (+33 more)
-
-### Community 130 - "croatianPoreznaXml.ts"
-Cohesion: 0.05
-Nodes (37): activityGrid, activityItem, activityItemError, container, dateRange, divider, footer, footerLink (+29 more)
-
-### Community 131 - "Visibill Changelog & Patch Notes Publish Skill (/visibill-patchnote)"
-Cohesion: 0.05
-Nodes (36): 1. ⏱️ Concurrency, Race Conditions & Temporal Order, 1. Correctness & Behavioral Integrity, 2. 🧱 Boundary Conditions, Data Extremes & Nullability, 2. Readability & Simplicity, 3. Architecture & Structural Remedies, 3. 💥 Failure Modes, Resilience & Rollback, 4. Database Constraints & Concurrency Safety, 4. 🔄 State Lifecycle, Transitions & Cache Invalidation (+28 more)
-
-### Community 132 - "2. Teljes RPC Function Katalógus Áttekintés"
-Cohesion: 0.05
-Nodes (36): Agent Prompt Guide, Announcement Banner, Avatar/Profile Indicator, Berkeley Mono — Code, IDs, keyboard shortcuts, technical metadata (issue IDs like ENG-2703, code references in agent prompts). Its presence signals "this is a tool, not a marketing site" — the monospace voice only speaks where precision matters. · `--font-berkeley-mono`, Border Radius, Components, CSS Custom Properties, Customer Logo Strip (+28 more)
-
-### Community 133 - "Nav26A60ReplicaContainer.tsx"
-Cohesion: 0.05
-Nodes (37): all_items_option, closing_balance, col_contra_gl, col_credit, col_date, col_debit, col_description, col_doc_id (+29 more)
-
-### Community 134 - "VisibillGoogleDriveSync.js"
-Cohesion: 0.05
-Nodes (37): full_edit, add_item, buyer_name, cannot_undo, delete_image, delete_image_desc, delete_image_opt1_desc, delete_image_opt1_title (+29 more)
-
-### Community 135 - "glExport.ts"
-Cohesion: 0.05
-Nodes (37): all_items_option, closing_balance, col_contra_gl, col_credit, col_date, col_debit, col_description, col_doc_id (+29 more)
-
-### Community 136 - "Nav2665MReplicaContainer.tsx"
-Cohesion: 0.05
-Nodes (37): full_edit, add_item, buyer_name, cannot_undo, delete_image, delete_image_desc, delete_image_opt1_desc, delete_image_opt1_title (+29 more)
-
-### Community 137 - "OutputDocumentsPage.tsx"
-Cohesion: 0.06
-Nodes (35): all, completed, urgent, mode_switcher, bill_desc, bill_mode, books_desc, books_mode (+27 more)
-
-### Community 138 - "Döntések"
-Cohesion: 0.06
-Nodes (35): all, completed, urgent, header, all_read, critical_clients, critical_clients_title, date_picker_label (+27 more)
-
-### Community 140 - "usePurchaseVouchers.ts"
-Cohesion: 0.06
-Nodes (36): col_cost, col_employee, col_rate, col_status, copy_link_tooltip, delete_confirm, delete_tooltip, detail_email (+28 more)
-
-### Community 141 - "2.8 eaisyBooks (Könyvelőirodai Platform & ERP)"
-Cohesion: 0.06
-Nodes (36): col_cost, col_employee, col_rate, col_status, copy_link_tooltip, delete_confirm, delete_tooltip, detail_email (+28 more)
-
-### Community 142 - "vatTemplateParser.ts"
-Cohesion: 0.06
-Nodes (34): 01. Cégtörzs – azonosítás, 02. Cégtörzs – címek, 03. Adózás és számviteli beállítások, 04. Üzleti év és végelszámolás, 05. Partnertörzs – alapadatok, 06. Partnertörzs – cím és kapcsolattartás, 07. Partnertörzs – bankszámlák, 08. Törzsadatok – ellenőrzés és módosítás (+26 more)
-
-### Community 145 - "WorksheetLeaveModal"
-Cohesion: 0.06
-Nodes (34): Anon Key (Publishable Key), `auth.uid()`, `auth.users`, Bucket, CORS (Cross-Origin Resource Sharing), Deno, Drizzle / Prisma / Kysely, Edge Functions (+26 more)
-
-### Community 146 - "GlAccountCardView"
-Cohesion: 0.06
-Nodes (34): status_starting, status_with_count, title, reclassify_btn, selected_count, general_ledger, ai_progress, balance_label (+26 more)
-
-### Community 147 - "Supabase Lock-in: Storage, Realtime, PostgREST, RLS & pg_cron"
-Cohesion: 0.06
-Nodes (35): unmatched_items, all_nav_matched, all_tx_matched, amount, col_description, customer, date, description (+27 more)
-
-### Community 148 - "BankAccountsTab"
-Cohesion: 0.06
-Nodes (35): approve_and_book, edit_and_approve, view_invoice_image, view_receipt, cash_receipt, opening, pending_approval, related_party (+27 more)
-
-### Community 149 - "Visibill Spec Lookup — Docs-First Development"
-Cohesion: 0.06
-Nodes (35): unmatched_items, all_nav_matched, all_tx_matched, amount, col_description, customer, date, description (+27 more)
-
-### Community 150 - "Visibill Ticket Support — Ügyfélkérések & Hibafeltárás Workflow"
-Cohesion: 0.06
-Nodes (35): approve_and_book, edit_and_approve, view_invoice_image, view_receipt, cash_receipt, opening, pending_approval, related_party (+27 more)
-
-### Community 151 - "📘 eaisyBooks — EV (Egyéni Vállalkozó)"
-Cohesion: 0.02
-Nodes (192): invalidateGlQueries(), InvoiceItemsDialogProps, InvoiceLineItem, ItemNoteCell(), ItemNoteCellProps, ItemProjectRuleButtonProps, ItemVtszWeightPopover(), ItemVtszWeightPopoverProps (+184 more)
-
-### Community 152 - "ConfirmDialog Async Pattern — Implementációs Terv"
-Cohesion: 0.09
-Nodes (22): 1. Radix UI auto-close mechanizmus, 2. Jelenlegi `alert-dialog.tsx` állapota, 3. `UnsavedChangesDialog.tsx` — NE MIGRÁLJUK, 4. `ManagementDashboard.tsx` FilesPanel, 5. `mutate()` vs `mutateAsync()` probléma, Amit a következő sessionnek TUDNIA KELL, Fájlok, amikbe bele kell nézni az audit során, Globális megoldás terve (+14 more)
-
-### Community 153 - "Decision"
-Cohesion: 0.15
-Nodes (4): InvoiceToPredict, ProcessPolicyRequest, checkAutomationShield(), corsHeaders
-
-### Community 154 - "🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)"
-Cohesion: 0.06
-Nodes (34): select_all, selected_clients, unit, action, description, no_match, search_result, status_suffix (+26 more)
-
-### Community 155 - "14 — Teljesítmény Optimalizáció"
-Cohesion: 0.06
-Nodes (34): matched_entity, accept_btn, additional_invoice_btn, badge_nav, badge_nav_submitted, badge_submitted, buyer, click_details (+26 more)
-
-### Community 156 - "Visibill — Business Overview"
-Cohesion: 0.06
-Nodes (34): search, back, badge_exact, badge_near, badge_paid, badge_partial_paid, badge_partner_match, badge_unpaid (+26 more)
-
-### Community 157 - "Egyedi Komponensek (Nem shadcn/ui)"
-Cohesion: 0.06
-Nodes (34): select_all, selected_clients, unit, action, description, no_match, search_result, status_suffix (+26 more)
-
-### Community 158 - "OpeningJournalWizardModal"
-Cohesion: 0.06
-Nodes (34): matched_entity, accept_btn, additional_invoice_btn, badge_nav, badge_nav_submitted, badge_submitted, buyer, click_details (+26 more)
-
-### Community 159 - "Decision"
-Cohesion: 0.06
-Nodes (34): search, back, badge_exact, badge_near, badge_paid, badge_partial_paid, badge_partner_match, badge_unpaid (+26 more)
-
-### Community 160 - "useDevelopmentReserves.ts"
-Cohesion: 0.10
-Nodes (30): PdfDocumentAdapter, SpreadsheetAdapter, loadPdfLibraries(), loadSpreadsheetLibraries(), KeyValueSection, TableSection, TextSection, formatHungarianCurrency() (+22 more)
-
-### Community 161 - "minimax-sync/index.ts"
-Cohesion: 0.19
-Nodes (15): MReplicaDisplayMode, Nav2665MReplicaContainer(), Nav2665MSheet02(), Nav2665MSheet02Props, Nav2665MSheet02K(), Nav2665MSheet02KProps, Nav2665MSheetFolapProps, buildNav65MPartnerSheets() (+7 more)
-
-### Community 163 - "🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)"
-Cohesion: 0.06
-Nodes (32): 10 — Accessibility & UX Patternek, ARIA Patternek, Auth Viewport Scaling, Autofill Kezelés, Clipboard Másolás Pattern, Date Input Calendar Ikon (Dark Mode), Financial Number Display, Firefox Támogatás (+24 more)
-
-### Community 164 - "13 — Autentikáció & Onboarding"
-Cohesion: 0.06
-Nodes (32): converter, amount, converted_amount, target_currency, title, currencies, AUD, CAD (+24 more)
-
-### Community 166 - "useCashReports.ts"
-Cohesion: 0.06
-Nodes (32): converter, amount, converted_amount, target_currency, title, currencies, AUD, CAD (+24 more)
-
-### Community 167 - "accountyConstants.ts"
-Cohesion: 0.14
-Nodes (13): VatA60TableProps, VatNavA60ReplicaProps, VatXmlExportModalProps, A60SheetType, Nav26A60ReplicaContainerProps, A60AggregatedPartnerItem, A60SubSheetType, Nav26A60SheetTable() (+5 more)
-
-### Community 168 - "constants.ts"
-Cohesion: 0.22
-Nodes (16): NavInvoiceVatSummaryCardProps, InvoiceLineItem, InvoiceSummaryDetails, InvoiceVatSummaryItem, TaxpayerAddress, VatRateCategory, extractAddress(), extractTag() (+8 more)
-
-### Community 169 - "1. FÁZIS: Log & Hibatábla Felderítés (Data Collection)"
-Cohesion: 0.10
-Nodes (28): importRlbAuditXml(), importRlbCsvLedger(), ImportRlbCsvParams, ImportRlbXmlParams, resolveOrCreatePreset(), RlbImportProgress, RlbImportResult, mockInsert (+20 more)
-
-### Community 170 - "A-024: Partner Upsert Strategy — Prefix Matching, Foreign Partners, Both Upgrade"
-Cohesion: 0.06
-Nodes (31): 1. Portfólió Mód (`/eaisybooks/*`, PRD P-085), 1. URL Struktúra, 1. 📊 Áttekintés (`overview`), 2. Oldal Térkép (Sitemap), 2. 🏦 Pénzügyek (`finance`), 2. Ügyfél Kontextus Mód (`/eaisybooks/:companyId/:dateRange/*`), 3. 📖 Könyvelés (`accounting`), 3. Sidebar Navigáció (6 Csoport) (+23 more)
-
-### Community 171 - "InvoiceFullEditDialog"
-Cohesion: 0.06
-Nodes (32): accountants, ai_assistant, alerts, approval_queue, audit, cegkapu_settings, ev, gdpr (+24 more)
-
-### Community 172 - "A-159: Hivatalos ÁFA Analitika Upgrade, M-lap Master–Detail és NAV OSA Keresztellenőrzés"
-Cohesion: 0.06
-Nodes (32): cockpit, all_loaded, bank_sub, batch_upload, claim, inbound_unpaid_sub, liquidity, load_more (+24 more)
-
-### Community 173 - "Decision"
-Cohesion: 0.06
-Nodes (31): default_badge, denomination_calc, limit_setting_label, limit_utilization, limit_warning_desc, limit_warning_title, move_dialog, cancel (+23 more)
-
-### Community 174 - "Visibill — Error Logging & Dashboard Rendszer"
-Cohesion: 0.06
-Nodes (32): minimax, badge_jurisdiction, badge_oauth, badge_test_mode, badge_two_way, card_subtitle, card_title, conn_active_live (+24 more)
-
-### Community 175 - "Visibill — Use Cases"
-Cohesion: 0.06
-Nodes (32): accountants, ai_assistant, alerts, approval_queue, audit, cegkapu_settings, ev, gdpr (+24 more)
-
-### Community 176 - "10 Design Koncepció"
-Cohesion: 0.06
-Nodes (32): cockpit, all_loaded, bank_sub, batch_upload, claim, inbound_unpaid_sub, liquidity, load_more (+24 more)
-
-### Community 177 - "accountyBulkBarIntegration.test.tsx"
-Cohesion: 0.06
-Nodes (31): default_badge, denomination_calc, limit_setting_label, limit_utilization, limit_warning_desc, limit_warning_title, move_dialog, cancel (+23 more)
-
-### Community 178 - "useInvoiceMutations.ts"
-Cohesion: 0.06
-Nodes (32): minimax, badge_jurisdiction, badge_oauth, badge_test_mode, badge_two_way, card_subtitle, card_title, conn_active_live (+24 more)
-
-### Community 179 - "ClientMissingInvoicesPage.tsx"
-Cohesion: 0.07
-Nodes (47): AdminTaxParametersPage(), PARAM_LABELS, AuditLogPage(), GdprPage(), LegalUpdatesPage(), CATEGORIES, TemplatesPage(), VARIABLES (+39 more)
-
-### Community 180 - "aggreg8-api/index.ts"
-Cohesion: 0.11
-Nodes (24): VatAmendmentsWorkspaceProps, VatAnnualMatrixViewProps, VatCollectorAnalyticsViewProps, VatImportCustomsSectionProps, VatItemizedJournalViewProps, VatMLineDrillDownProps, VatMLineMasterDetailProps, VatNav65MReplicaProps (+16 more)
-
-### Community 181 - "compilerOptions"
-Cohesion: 0.06
-Nodes (31): cancel, email_label, loading, member_select_label, mode_manual, mode_member, name_label, name_placeholder (+23 more)
-
-### Community 182 - "Visibill Rendszerhibák Lekérdezési Kézikönyv (SQL Cheat Sheet)"
-Cohesion: 0.06
-Nodes (31): details, amount, attach_dialog_desc, attach_dialog_title, attach_invoice, buyer, date, desc (+23 more)
-
-### Community 183 - "Teljes Edge Function Katalógus (70 db dokumentálva a 71-ből)"
-Cohesion: 0.06
-Nodes (31): verification_dialog, amount_label, auto_save_hint, buyer_label, buyer_placeholder, cancel, confidence_badge, currency_placeholder (+23 more)
-
-### Community 184 - "AuthContext"
-Cohesion: 0.06
-Nodes (31): cancel, email_label, loading, member_select_label, mode_manual, mode_member, name_label, name_placeholder (+23 more)
-
-### Community 185 - "InvoiceDetailPopup"
-Cohesion: 0.06
-Nodes (31): details, amount, attach_dialog_desc, attach_dialog_title, attach_invoice, buyer, date, desc (+23 more)
-
-### Community 186 - "useRelatedPartyTurnover.ts"
-Cohesion: 0.06
-Nodes (31): verification_dialog, amount_label, auto_save_hint, buyer_label, buyer_placeholder, cancel, confidence_badge, currency_placeholder (+23 more)
-
-### Community 187 - "InvoiceRulesDialog.test.tsx"
-Cohesion: 0.05
-Nodes (61): APP_LOG_CATEGORY_MAP, appLogSubSource(), buildErrors(), buildQueuePayload(), categorizeError(), categoryLabel(), collectDeduplicatedErrors(), deleteAllErrors() (+53 more)
-
-### Community 188 - "InvoiceItemAccrualModal"
-Cohesion: 0.10
-Nodes (23): CompanyDetail, OverviewData, UserDetail, Skeleton(), SkeletonList(), StatCard(), RoleBadge(), CompanyDetailView() (+15 more)
-
-### Community 189 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
+### Community 125 - "Visibill Feature Planner — Zero Silent Decisions & Subagent Swarm"
 Cohesion: 0.07
 Nodes (29): 1.0 Hypothesis — confidence check (Spec lookup ELŐTT), 1.0a Izoláció — Git Worktree Check, 1.1 User kérés értelmezése, 1.2 Graphify query — érintett kód, 1.2a Terminológia konzisztencia ellenőrzés, 1.4 KÖTELEZŐ: Design Pattern Kontextus Betöltése, 1.4b KÖTELEZŐ: Vercel React Best Practices & Composition Minták Betöltése, 2.1.1 Spec Reviewer Mandátum (+21 more)
 
-### Community 190 - "Visibill — Product Decision Records (PRD)"
+### Community 126 - "04-invoices.md"
+Cohesion: 0.09
+Nodes (15): `accounty_efo_entries`, `accounty_upo_credentials`, Kapcsolódó RPC Függvények (NAV ÜPO M2M), 🏛️ NAV Integráció, `nav_invoice_items`, `nav_invoices`, `nav_invoices` (Kimenő számlák kezelése), `nav_m2m_audit_logs` (+7 more)
+
+### Community 127 - "PurchaseVouchersTab.tsx"
 Cohesion: 0.14
-Nodes (21): calculateReverseChargeVat(), ReverseChargeEntry, summarizeFadForPeriod(), computeFadStats(), detectFadFromInvoice(), detectFadFromLineItems(), FadDetectionResult, FAD_CATEGORIES (+13 more)
+Nodes (24): 1. Kontextus és Üzleti Igény, 2. Megvalósított Architektúra, 3. Következmények és Előnyök, 4. Kapcsolódó, A-158: Mezőgazdasági Felvásárlási Jegyek Modul és Bérügyi Integráció, A. Adatbázis Modell (`supabase/migrations/20260926200000_purchase_vouchers_module.sql`), B. Frontend Domain Szolgáltatás (`src/features/purchase-vouchers/`), C. Rendszerintegráció (+16 more)
 
-### Community 191 - "9. Oldal-szintű Funkciók (2026-06-26)"
-Cohesion: 0.06
-Nodes (36): Alert, AlertCategory, AlertLevel, AlertsCenterPage(), AlertState, CATEGORIES, LEVEL_CONFIG, DeadlineStatus (+28 more)
-
-### Community 192 - "Visibill DB/SQL Best Practices Checklist"
+### Community 128 - "glExport.ts"
 Cohesion: 0.13
-Nodes (25): categories, Category, CategoryArticle, FaqItem, faqs, glossary, GlossaryItem, HelpTab (+17 more)
+Nodes (25): 1. Kontextus & Üzleti Igény, exceljs, papaparse, GlTemplatePreviewProps, GlTemplateUploadDialog(), GlTemplateUploadDialogProps, BUILTIN_GL_TEMPLATES, exportGlAnalyticalExcel() (+17 more)
 
-### Community 193 - "A-042: Sztornó Számla Kézi Lezárás (Storno Settle) Architektúra"
-Cohesion: 0.07
-Nodes (28): 1. Adatbázis Tábla: `app_error_logs`, 2.1 Frontend — `errorReporter.ts`, 2.2 Worker — `error_reporter.py`, 2.3 Edge Functions — error-logger utility, 2. Hiba Források, 3.1 Architektúra, 3.2 KPI Kártyák, 3.3 Szűrők (+20 more)
+### Community 129 - "AccountyScopedLayout.tsx"
+Cohesion: 0.08
+Nodes (26): 1. Belső Tab-rendszer a `PayrollDashboardPage`-en, 2. URL Szinkronizáció és Deep-Linking (`?tab=...`), 3. Főcímek Tisztítása ("471" prefix eltávolítása), 4. ClientNav Egyedi Kijelölés (Zero Dual-Active), 5. Rugalmas Konténermagasság és Görgetésvédelem, Current Implementation, Decision, Kapcsolódó (+18 more)
 
-### Community 194 - "CreateJournalModal.test.tsx"
-Cohesion: 0.07
-Nodes (28): 1. Menü és routing, 2.1 ShipmentMatchingDashboard.tsx, 2.2 UploadHistory.tsx (transport doc status), 2.3 UploadedFilesModal.tsx, 2. Komponensek, 3. Adatfolyam (end-to-end), 4. DB táblák (cross-reference), 5.1 Transport doc nem jelenik meg a Fuvaroknál (+20 more)
-
-### Community 195 - "assetImportParser.ts"
-Cohesion: 0.07
-Nodes (28): 1.1 A modul rendeltetese es jogszabalyi hattere, 1.2 Integracios alapelvek es Zero-Adatredundancia, 1.3 Forraskod- es Konyvtarstruktura, 1. Rendszer-architektura es Meglevo Visibill Integracio, 2.1 Adatbazis tablak letrehozasa (`20261007000001_worktime_fixed_schema.sql`), 2.2 Indexek es RLS Szabalyok (`20261007000002_worktime_fixed_rls.sql`), 2.3 Immutabilitasi Triggerek (`20261007000003_worktime_fixed_triggers.sql`), 2.4 Szerveroldali RPC Fuggvenyek (`20261007000004_worktime_fixed_rpc.sql`) (+20 more)
-
-### Community 196 - "GlobalDatePicker"
+### Community 130 - "ReportsPage.tsx"
 Cohesion: 0.12
-Nodes (21): getStatus(), generateExpectedReturns(), RETURN_TYPE_LABELS, STATUS_CONFIG, EvClientSettings, buildContrib2658Xml(), Contrib2658Data, escapeXml() (+13 more)
+Nodes (26): FullReportData, InvoiceReportRow, ReportRow, useAccountyFullReportData(), useAccountyReportData(), ReportCatalog(), ReportCatalogProps, ReportType (+18 more)
 
-### Community 197 - "PostgreSQL RPC Tesztelési Stratégia és Blueprint"
+### Community 131 - "HelpTabSections.tsx"
+Cohesion: 0.14
+Nodes (27): categories, Category, CategoryArticle, FaqItem, faqs, glossary, GlossaryItem, HelpTab (+19 more)
+
+### Community 132 - "ExpandedInvoiceRow"
 Cohesion: 0.07
-Nodes (28): active_filter_overdue_notice, batch_no_response, category_filter, all, none, placeholder, clear_company_search, clear_filter (+20 more)
+Nodes (29): A-014: React Query Cache Stratégia, Cache Reset vs. Invalidation Mutációk Után (Eviction Pattern), Consequences, Context, Decision, Page-Level Batch Pre-fetch & Query Key Hygiene (2026-08), Realtime Cache Invalidáció, Kézi lezárás toggle gomb (Sztornó lezárása / Visszavonás) (+21 more)
 
-### Community 198 - "3. Mit lehet benne a felhasználónak csinálni?"
+### Community 133 - "02 — Design Tokens & Színrendszer"
 Cohesion: 0.07
-Nodes (28): active_filter_overdue_notice, batch_no_response, category_filter, all, none, placeholder, clear_company_search, clear_filter (+20 more)
+Nodes (28): 02 — Design Tokens & Színrendszer, Akció & Accent Színek, Alapelv, Automatikus Badge Hairline Szegély (`color-mix`), Border & Input, Border Radius, Brand Szín — Primary (Fintech Teal), Chart Színek (+20 more)
 
-### Community 199 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.07
-Nodes (29): change_email_dialog, cancel, close, confirm_email_label, confirmation_desc, confirmation_required, current_password_label, description_current (+21 more)
-
-### Community 200 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
-Cohesion: 0.07
-Nodes (29): change_email_dialog, cancel, close, confirm_email_label, confirmation_desc, confirmation_required, current_password_label, description_current (+21 more)
-
-### Community 201 - "2. Felületi Döntések"
+### Community 134 - "Dokumentáció Taxonómia — Mi mibe kerül?"
 Cohesion: 0.07
 Nodes (27): 1. lépés: Módosított fájlok azonosítása, 2. lépés: Fájl → Docs mapping, 3.5 lépés: ⭐ Doc Self-Review (javaslat bemutatása ELŐTT — kötelező), 3. lépés: Változás analízis és javaslat, 4. lépés: Végrehajtás (jóváhagyás után), 5. lépés: ⭐ Graphify update (MINDIG az utolsó lépés), ⭐ ADR minőségi szűrő — Mikor VALÓBAN kell ADR?, Aktuális számozás (mindig ellenőrizd az index.md-t!) (+19 more)
 
-### Community 202 - "3. Funkcionális specifikáció"
+### Community 135 - "normalizeHungarianForPdf"
+Cohesion: 0.19
+Nodes (20): 2.8 Többdevizás PDF Export Generálás (`ledgerCardPdfs.ts`), AssetProtocolData, generateAssetActivationProtocolBlob(), generateAssetActivationProtocolPdf(), hu(), formatHungarianCurrency(), formatHungarianDate(), formatHungarianNumber() (+12 more)
+
+### Community 136 - "glInvoiceGrouping.ts"
+Cohesion: 0.08
+Nodes (25): 1. 4-Oszlopos Statisztikai és Analitikus Excel/CSV Export Motor (`src/lib/glExport.ts`), 1. Context, 2. Decision, 2. Kliensoldali In-Memory Metaadat-Gazdagító Pipeline (`src/lib/glInvoiceGrouping.ts`), 3. Consequences, 3. Determinisztikus Számla- és Kontírszintű Aggregáció (`groupLedgerItemsByInvoice`), 4. Kapcsolódó Dokumentumok, 4. Kliensoldali 0 ms Nézetváltás és Állapotkezelés (+17 more)
+
+### Community 137 - "vatReturnXml.ts"
+Cohesion: 0.11
+Nodes (24): 1. Kontextus, 2. Döntés és Rendszerarchitektúra, 3. Következmények és Eredmények, A-199: NAV 65M-02-K Korrekciós és Sztornó Számlák Feldolgozási és ÁNYK XML Export Architektúrája, D-1: Korrekciós Feloldó Motor (`vatCorrectionResolver.ts`), D-2: ÁNYK XML Export Bővítés (`vatReturnXml.ts`), D-3: Webes Megjelenítés (`VatMLineMasterDetail.tsx`), CorrectionType (+16 more)
+
+### Community 138 - "payrollUtils.ts"
+Cohesion: 0.10
+Nodes (24): 1. Adatbázis Séma és Migráció (`supabase/migrations/20261008140000_eb0258_accounting_settings_date_gl_fx.sql`), 2. Hivatalos Bankkatalógus (`src/lib/banking/exchangeRateBanks.ts`), 3. Főkönyvi Összevont vs Tételes Nézet Modellje (`GeneralLedgerTable.tsx`), 4. NAV Adószám Auto-kitöltés Integráció (`BusinessSection.tsx`), A-231: Cégprofil Számviteli Beállítások Kiterjesztése: Teljesítés Dátum, Összevont Főkönyvi Nézet és Devizaárfolyam Bankkatalógus, Architektúrális Döntések, Kontextus és Érintett Területek, Verifikáció és Minőségi Kapuk (+16 more)
+
+### Community 139 - "asana.cjs"
+Cohesion: 0.18
+Nodes (22): asanaFetch(), cleanHungarianWord(), escapeXml(), fs, getWorkspace(), KNOWN_ALIASES, levenshtein(), listProjects() (+14 more)
+
+### Community 140 - "6. Module Permission System (menü ki-/bekapcsolás)"
+Cohesion: 0.07
+Nodes (28): 1. Menü és routing, 2.1 ShipmentMatchingDashboard.tsx, 2.2 UploadHistory.tsx (transport doc status), 2.3 UploadedFilesModal.tsx, 2. Komponensek, 3. Adatfolyam (end-to-end), 4. DB táblák (cross-reference), 5.1 Transport doc nem jelenik meg a Fuvaroknál (+20 more)
+
+### Community 141 - "6. Lepesrol Lepesre Megvalositasi Terv (Sprint Roadmap)"
+Cohesion: 0.07
+Nodes (27): 1.1 A modul rendeltetese es jogszabalyi hattere, 1.3 Forraskod- es Konyvtarstruktura, 1. Rendszer-architektura es Meglevo Visibill Integracio, 2.1 Adatbazis tablak letrehozasa (`20261007000001_worktime_fixed_schema.sql`), 2.2 Indexek es RLS Szabalyok (`20261007000002_worktime_fixed_rls.sql`), 2.3 Immutabilitasi Triggerek (`20261007000003_worktime_fixed_triggers.sql`), 2.4 Szerveroldali RPC Fuggvenyek (`20261007000004_worktime_fixed_rpc.sql`), 2. Adatbazis Sema (DDL, RLS, Triggerek, RPC) (+19 more)
+
+### Community 142 - "03 — Tipográfia & Ikonok"
 Cohesion: 0.07
 Nodes (27): 03 — Tipográfia & Ikonok, Animált Ikon Pattern (Téma Váltás), Betöltési Stratégia, Betűtípus, Body Alap Méret, Brand Logó Tipográfia, Csoport Fejléc Ikonok, Elsődleges: Montserrat (+19 more)
 
-### Community 203 - "compilerOptions"
-Cohesion: 0.07
-Nodes (27): 07 — Betöltés & Skeleton Patternek, 1. Debounce: `useEffect` (NEM `useMemo`!), 1. Fülváltási Szabály: A Skeleton kizárólag ELSŐ betöltésre való, 1. Idle Prefetch (AppLayout), 2. Hover/Focus Prefetch (AppSidebar), 2. Query: `keepPreviousData` + `debouncedSearch` a queryKey-ben, 3. Skeleton vs. Opacity: `isLoading` ≠ `isFetching`, A megoldás: 3 réteg (+19 more)
+### Community 143 - "toast.tsx"
+Cohesion: 0.21
+Nodes (12): @radix-ui/react-toast, Toast, ToastAction, ToastActionElement, ToastClose, ToastDescription, ToastProps, src_components_ui_toast_toastprovider (+4 more)
 
-### Community 204 - "Workflow — Minden fejlesztési feladat elején"
+### Community 144 - "13 — Autentikáció & Onboarding"
 Cohesion: 0.07
-Nodes (27): col_amount, col_name, col_status, col_type, employee_count, empty, items_count, title (+19 more)
+Nodes (27): 13 — Autentikáció & Onboarding, 1. eaisybill Jogosultsági Körök, 1. Profilok és Feliratkozások Automatikus Létrehozása, 2. eaisybooks (Accounty) Szerepkörök, 2. Meghívási és Ellenőrzési Folyamat, 3. Kereszt-Alkalmazás Szerepkör-feloldás (Cross-App Role Resolution), 3. Könyvelők Áttérése (eaisybooks → eaisybill), App Ready Gate (+19 more)
 
-### Community 205 - "Visibill Dev — Spec-First, Test-Driven Development (Lite)"
+### Community 145 - "VatTemplatePreview.tsx"
 Cohesion: 0.15
-Nodes (19): VatMLineDrillDown(), VatPoreznaExportDialog(), MockPdvAccumulator, HistoryProps, ReturnHistoryTable(), fmtEft(), fmtEur(), fmtVatAmount() (+11 more)
+Nodes (21): VatTemplatePreview(), VatTemplatePreviewProps, VatTemplateUploadDialog(), VatTemplateUploadDialogProps, BUILTIN_VAT_TEMPLATES, exportVatJournalCsv(), exportVatJournalExcel(), getVatItemFieldValue() (+13 more)
 
-### Community 206 - "components.json"
-Cohesion: 0.07
-Nodes (28): actions, add, back, cancel, close, confirm, continue, copied (+20 more)
+### Community 146 - "InvoiceDetailPopup.tsx"
+Cohesion: 0.15
+Nodes (20): formatDate(), formatDateTime(), FullInvoice, InvoiceDetailPopupProps, statusLabels, NoteAttachmentList(), NoteAttachmentListProps, NoteAttachmentUploader() (+12 more)
 
-### Community 207 - "📘 eaisyBooks — Alap"
-Cohesion: 0.07
-Nodes (28): avg_hourly_rate, contractors, headcount_suffix, hour_suffix, monthly_salary_cost, registered, approved, draft (+20 more)
+### Community 147 - "TransactionDetailsDialog.tsx"
+Cohesion: 0.15
+Nodes (21): MatchedCourierReportsCard(), MatchedCourierReportsCardProps, MatchedEntityCard(), MatchedEntityCardProps, TransactionCardProps, TransactionGlAccountSelector(), TransactionGlAccountSelectorProps, TransactionHeader() (+13 more)
 
-### Community 208 - "Decision"
-Cohesion: 0.07
-Nodes (28): closing_wizard, btn_back, btn_cancel, btn_next, dialog_desc, dialog_title, finalize_btn, step1 (+20 more)
+### Community 148 - "Visibill Changelog & Patch Notes Publish Skill (/visibill-patchnote)"
+Cohesion: 0.08
+Nodes (25): 1. Bázis Verzió Beolvasása (Single Source of Truth), 1. Lépés: Mélyreható Anyaggyűjtés, 1. Mikor elegendő 1 bejegyzés?, 1. Pillér: Git Commitok & Fájlváltozások Feltérképezése, 2. Determinisztikus Léptetési Szabályok, 2. Lépés: Szintézis és Csoportosítás (Chunking & SemVer Tervezés), 2. Mikor KÖTELEZŐ vagy ERŐSEN AJÁNLOTT több bejegyzésre bontani?, 2. Pillér: Kapcsolódó Dokumentumok Kötelező Olvasása (Spec-Lookup) (+17 more)
 
-### Community 209 - "invoicePaginationRecovery.test.tsx"
-Cohesion: 0.07
-Nodes (28): routing_rules, active_label, badge_currency, badge_desc, badge_partner, badge_type, cancel, catch_all (+20 more)
+### Community 149 - "A-104-eaisybooks-ai-chat-streaming-and-edge-architecture.md"
+Cohesion: 0.11
+Nodes (14): `accounty_ai_chat_messages`, `accounty_ai_chat_sessions`, 📘 eaisyBooks — AI Chat, Kapcsolódó döntések, `view_ai_chat_feedback_reports` (Adminisztrátori Segédnézet), 1. Kontextus & Üzleti Cél, 2.1 Navigáció és Elhelyezés, 2.2 Főoldali Kereső és Kategóriaszűrők (Master Nézet) (+6 more)
 
-### Community 210 - "Decision"
-Cohesion: 0.07
-Nodes (28): expanded, assign_invoice, book, booked_gl, cancel, delete_booking, direct_gl, direct_gl_hint (+20 more)
+### Community 150 - "2. Teljes RPC Function Katalógus Áttekintés"
+Cohesion: 0.08
+Nodes (26): 1. PostgREST Direkt Query (egyszerű CRUD), 📊 2.1 Frontend által hívott Query RPC-k, ✏️ 2.2 Frontend által hívott Mutation RPC-k, 🔑 2.3 Auth & Credential RPC-k, 📬 2.4 PGMQ Wrapper RPC-k (Worker által hívott), 🤖 2.5 Worker-Only RPC-k, 🏗️ 2.6 eaisyBooks / Management RPC-k, 🏷️ 2.7 Partner & Ranking RPC-k (+18 more)
 
-### Community 211 - "upload/types/index.ts"
-Cohesion: 0.07
-Nodes (28): actions, add, back, cancel, close, confirm, continue, copied (+20 more)
+### Community 151 - "assetImportParser.ts"
+Cohesion: 0.13
+Nodes (22): 1. Kontextus és Problémafelvetés, 2.1. Parser Modul (`src/lib/fixed-assets/assetImportParser.ts`), 2.2. Kliensoldali Import Modál (`src/components/fixed-assets/AssetImportModal.tsx`), 2.3. Integráció a TENY felületen (`src/pages/FixedAssetsPage.tsx`, `AssetListTable.tsx`), 2.4. Vakfolt Kezelés és Adatintegritási Garanciák, 2. Megvalósítás és Architektúra, 3. Verifikáció, A-200 — Tárgyi Eszközök és Nyitó Állomány Tömeges Excel/CSV Import Architektúra (+14 more)
 
-### Community 212 - "Visibill — Decision Helper"
-Cohesion: 0.07
-Nodes (27): col_amount, col_name, col_status, col_type, employee_count, empty, items_count, title (+19 more)
+### Community 152 - "ConfirmDialog Async Pattern — Implementációs Terv"
+Cohesion: 0.05
+Nodes (37): Az új `ConfirmDialog` API, ConfirmDialog Async Pattern — Implementációs Terv, Kockázatok, Komponens belső logika, Megoldás: `ConfirmDialog` wrapper komponens (Opció B), Migrálási lista (prioritás sorrendben), Migrálási pattern (minden call-site-on), Miért nem Opció A (alert-dialog.tsx forrás módosítás)? (+29 more)
 
-### Community 213 - "page-header.tsx"
-Cohesion: 0.07
-Nodes (28): avg_hourly_rate, contractors, headcount_suffix, hour_suffix, monthly_salary_cost, registered, approved, draft (+20 more)
+### Community 153 - "VisibillGoogleDriveSync.js"
+Cohesion: 0.11
+Nodes (24): 👔 1. A Cégvezető / Ügyfél Élménye (100% Non-Technical), 1. Normál Visibill PROD cég bekötése:, 🛠️ 2. A ThinkAI Csapat Teendői (Egyszeri, Belső Beállítás), 2. Thinkerman projekt cég bekötése:, A) Első alkalommal (Központi motor üzembe helyezése — 5 perc), B) Új Ügyfél / Cég Bekapcsolása (1 perc/cég), 🔒 Biztonsági és Adatvédelmi Garanciák, ⚙️ Mi történik a motorháztető alatt? (+16 more)
 
-### Community 214 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
-Cohesion: 0.07
-Nodes (28): closing_wizard, btn_back, btn_cancel, btn_next, dialog_desc, dialog_title, finalize_btn, step1 (+20 more)
+### Community 154 - "Döntések"
+Cohesion: 0.09
+Nodes (23): 1. Email Change Flow — Kötelező Kijelentkeztetés, 2. App.tsx Szinkron IIFE Hash Interception, 3. sessionStorage — Csak Típus Flag, Nem Token, 4. Lejárt/Felhasznált Token Kezelés, 5. Signup — Egyetlen Email (Welcome Email), 6. verify-email — Supabase Auth Confirm, 7. Jelszó Komplexitás Kiterjesztése a Jelszó-visszaállításra, 8. Jelszó-visszaállító Email Átalakítása (OTP Elsődlegesség & Fallback Link) (+15 more)
+
+### Community 155 - "PermissionMatrixPage.tsx"
+Cohesion: 0.10
+Nodes (17): Decision 055: [eaisyBooks] AI Asszisztens Chat és Szakmai Döntéstámogatás, Kapcsolódó, AccountantUser, Assignment, CompanyInfo, CONFIGURABLE_MODULES, ModulePermRow, PermissionMatrixPage() (+9 more)
+
+### Community 156 - "2.8 eaisyBooks (Könyvelőirodai Platform & ERP)"
+Cohesion: 0.08
+Nodes (25): 1. Termék Összefoglaló, 2.1 Onboarding, 2.2 Dashboard & Navigáció, 2.3 Számla Kezelés, 2.4 Tranzakció & Párosítás, 2.5 Főkönyv & Riportok, 2.6 Értesítések, 2.7 Beállítások (+17 more)
+
+### Community 157 - "Supabase Lock-in: Storage, Realtime, PostgREST, RLS & pg_cron"
+Cohesion: 0.08
+Nodes (24): auth.uid() és auth.role() használat, FK hivatkozások auth.users-re, 🔗 Hardcoded Supabase URL-ek & Token-ek, Használat mértéke, Használt bucket-ek (6 db), Migrációs hatás, Migrációs hatás: 🟢 Alacsony, Migrációs nehézség: 🟢 Alacsony (+16 more)
+
+### Community 158 - "PostingGroupAccordion.tsx"
+Cohesion: 0.15
+Nodes (19): @radix-ui/react-accordion, AccordionContent, AccordionItem, AccordionTrigger, PostingGlReassignModalProps, PostingGroupAccordion, PostingGroupAccordionProps, PostingItemRow (+11 more)
+
+### Community 159 - "useTechnicalAccounting.ts"
+Cohesion: 0.17
+Nodes (22): ReclassificationAuditLogTab(), ReclassificationTab(), useExecuteReclassification(), useOmniPartnerLedger(), useReclassificationHistory(), useRollbackReclassification(), useSimulateReclassification(), AccountingAnomaliesResult (+14 more)
+
+### Community 160 - "FilesPanel"
+Cohesion: 0.09
+Nodes (23): A-061: Decomposing the Monolithic Super-Admin & Management Dashboard, Consequences, Context, Decision, Directory & Component Structure, Negative / Trade-offs, Positive, Status (+15 more)
+
+### Community 161 - "WorksheetLeaveModal"
+Cohesion: 0.09
+Nodes (23): 1. Kontextus és Üzleti Igény, 2. Döntések és Architektúra, 3. Következmények és Migráció, A-108: Bérszámfejtési Munkába Járás Költségtérítés és Dolgozó-Központú Munkalap (Employee Worksheet View), D-1: Munkába Járás Törzsadatok és Adatbázis Séma (`accounty_employments`, `accounty_tax_profiles`), D-2: Adómotor Számítási Logika (`taxEngine.ts`), D-3: Főkönyvi Feladás és Kettős Könyvelési Egyensúly (`payrollAutoPoster.ts`, `PayrollStep8.tsx`), D-4: Kettős Nézetváltó és Állapotmegőrzés (`PayrollCyclePage.tsx`) (+15 more)
+
+### Community 163 - "Egyedi Komponensek (Nem shadcn/ui)"
+Cohesion: 0.08
+Nodes (24): AiAssistantDrawer & AiAssistantChat, AppModeSwitcher, CompanySelector, Content Skeleton, Copyable Cell, Egyedi Komponensek (Nem shadcn/ui), FeedbackFab & FeedbackDialog (Dual Floating Action Bubbles), Financial Skeleton (+16 more)
+
+### Community 164 - "Visibill Spec Lookup — Docs-First Development"
+Cohesion: 0.09
+Nodes (22): 1. Projekt → Docs Mapping, 2.5 Automatikus Drift Check (spec olvasás UTÁN, tervezés ELŐTT), 2. Docs beolvasása — Konkrét fájlútvonalak, 3. Graphify Query (kódbázis térkép), 4. Összefoglaló a Usernek, 5. Komplexitás Döntés — Mi Következik?, ⚠️ Context Flooding Anti-pattern, ⚠️ DB/SQL érintettség (migration, RPC, RLS, Edge Function query) (+14 more)
+
+### Community 166 - "Visibill Ticket Support — Ügyfélkérések & Hibafeltárás Workflow"
+Cohesion: 0.09
+Nodes (22): 0.1 Kötelező Élő Adatbázis Lekérdezések (`supabase-visibill`), 0.2 Megjelenítendő Dashboard Formátum, 0. LÉPÉS: Strukturált Hibajegy Áttekintés & Dashboard (Overview Mode), 1.1 Automatikus Jegy & Beszélgetésfolyam Betöltése (ha jegyszámot kaptál), 1. LÉPÉS: Kérés fogadása & Hipotézis (Konkrét Jegy Esetén), 2.1 Specifikációk beolvasása (`visibill-spec-lookup`), 2.2 Adatbázis lekérdezés (`execute_sql` via `supabase-visibill` — CSAK SELECT), 2.3 Kódbázis ellenőrzés (+14 more)
+
+### Community 167 - "📘 eaisyBooks — EV (Egyéni Vállalkozó)"
+Cohesion: 0.09
+Nodes (22): `accounty_ev_audit_log`, `accounty_ev_client_settings`, `accounty_ev_contribution_calc`, `accounty_ev_hipa_calc`, `accounty_ev_lifecycle_events`, `accounty_ev_records_consignment`, `accounty_ev_records_fixed_assets`, `accounty_ev_records_inventory` (+14 more)
+
+### Community 168 - "Decision"
+Cohesion: 0.09
+Nodes (23): 1. réteg: Autentikáció (Supabase Auth), 2. réteg: Autorizáció — Row Level Security (RLS), 3. réteg: Edge Function Biztonság, 4. réteg: API Key Autentikáció (Külső Integrációk), 5. réteg: Credential Titkosítás (AES-256-GCM), 6. réteg: Audit Trail, 7. réteg: Worker Biztonság, 9. réteg: Szkript-Automatizáció Szűrő Retesz (PostgREST Pre-Request Hook & Edge Function Client Guard) (+15 more)
+
+### Community 169 - "Visibill — Business Overview"
+Cohesion: 0.09
+Nodes (23): 1. Elsődleges célcsoport: Magyar KKV Cégvezetők & Pénzügyesek (`eaisyBill`), 1. Számlák beérkezése, 2. AI feldolgozás & Tanulás, 2. Egyenrangú szakmai célcsoport: Könyvelőirodák, Könyvelők & Bérszámfejtők (`eaisyBooks`), 3. Banki egyeztetés & Párosítás, 3. Iparági specializációk, 4. Pénzügyi áttekintés & Könyvelői Jóváhagyási Kapu, 5. Zárás & Hatósági Bevallások (+15 more)
+
+### Community 170 - "developmentReservePenaltyCalculator.ts"
+Cohesion: 0.17
+Nodes (21): Micro-Module 1.5: Fejlesztési Tartalék Késedelmi Pótlék & Tao 22/A. § Kedvezmény (Méret: M), ALIENATION_PROTECTION_YEARS, AlienationCheck, assessReserveExpiry(), checkAlienationRestriction(), CORPORATE_TAX_RATE, daysBetween(), DEFAULT_MNB_BASE_RATE_PERCENT (+13 more)
+
+### Community 171 - "assetDisposalProtocolPdf.ts"
+Cohesion: 0.19
+Nodes (20): BuildDisposalJournalInput, RequestDisposalParams, buildDisposalProtocolFileName(), DISPOSAL_PROTOCOL_TITLES, DisposalProtocolData, DisposalProtocolJournalLine, generateAssetDisposalProtocolBlob(), generateAssetDisposalProtocolPdf() (+12 more)
+
+### Community 172 - "filesHandler.ts"
+Cohesion: 0.12
+Nodes (20): 1. Context, 1. D-1: Adatbázis Tisztítás és Karbantartás (`20260904140000_cleanup_duplicate_error_uploads.sql`), 2. D-2: Irányított Aszinkron Gráf (DAG) Ciklusvédelem a Workerben (`worker/worker.py`, `worker/db.py`), 3. D-3: Pontos Státusz-visszaadás a Worker Handlerben (`workerHandler.ts`), 4. D-4: Szerver-oldali Dedublikáció és Fallback Előzmény Nyomonkövetés, 5. D-5: Biztonságos Fizikai Tárhely Törlés (`filesHandler.ts`), 6. UI Továbbfejlesztések, Decision (+12 more)
+
+### Community 173 - "minimax-sync/index.ts"
+Cohesion: 0.10
+Nodes (17): 1. Kontextus és Problémafelvetés, 2.1. Adatbázis Séma és Hitelesítő Adatok Tárolása, 2.2. Supabase Edge Function (`minimax-sync`), 2. Architektúrális Döntések, 3. Bizonyítékok és Eredmények (Evidence), A-171: Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció, 1. Adatbázis, RPC Réteg & Edge Function, 2. Frontend UI, Hookok és Kétnyelvűsítés (HR / HU) (+9 more)
+
+### Community 174 - "eb0255ChartOfAccountsSubledger.test.tsx"
+Cohesion: 0.11
+Nodes (18): Decision, 1. Döntési Kontextus és Ügyféligény (EB-0255), 2.1 Cégek Közötti 1-Kattintásos Számlatükör Másolás (`CopyChartOfAccountsModal`), 2.2 Új és Meglévő Számlaszám Szerkesztése (`GlAccountFormFields`, `EditGlAccountModal`), 2.3 Csoportszámla és Analitika Jelvények a Táblázatban (`GeneralLedgerTable`), 2.4 Kényszerek Érvényesítése a Vegyes Naplóban (`AddManualJournalEntryModal`), 2. Felületi Megvalósítás (UX Architecture), P-168: Egységes Számlatükör, Cégek Közötti Másolás és Folyószámla Kényszer (EB-0255) (+10 more)
+
+### Community 175 - "useAccountyPermissions"
+Cohesion: 0.13
+Nodes (22): 1. Kontextus, 3.2 Adatbázis (`20261011012947_role_capability_refactor.sql`, idempotens), 3.3 Edge Function, 3. Megvalósítás, 4. Biztonsági korlátok (őszinte kép), 5. Nem része ennek az ADR-nek (specifikáció, de még nincs kikényszerítve), 6. Tesztek, 7. Dev kézi tesztmátrix (+14 more)
+
+### Community 176 - "🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)"
+Cohesion: 0.09
+Nodes (21): 1. Adatbázis pgTAP Tesztek (159 teszteset zöld):, 📌 1. Vezetői Összefoglaló & Rendszer-Architektúra, 2. Kliensoldali Vitest & TypeScript Tesztek (64 tesztfájl / 820+ teszt PASS):, 🗺️ 2. Vizuális Rendszer-Architektúra Diagram, 3.1 eaisyBill Cégtagsági Szerepkörök (`company_members`), 3.2 eaisyBooks Könyvelési Hozzárendelések (`accounty_assignments`), 👥 3. Szerepkörök Részletes Katalógusa, 4.1 A Kiszervezett 5 Autoposter és a 9 RPC Függvény (+13 more)
+
+### Community 177 - "14 — Teljesítmény Optimalizáció"
+Cohesion: 0.09
+Nodes (21): 14 — Teljesítmény Optimalizáció, 1. Idle Prefetch (Háttérben, Mount Után), 2. Hover/Focus Prefetch (Sidebar Navigáció), Centralizált Query Keys, Fix Magasságú Sorok, Font Betöltés Optimalizáció, HTML-Level Optimalizációk, Initial Load Performance (+13 more)
+
+### Community 178 - "🛡️ VisiBill & eaisyBooks — Hozzáférés-Vezérlési & RBAC Mátrix (A-247 Refaktor)"
+Cohesion: 0.09
+Nodes (21): 1. Adatbázis pgTAP Tesztek (159 teszteset zöld):, 📌 1. Vezetői Összefoglaló & Rendszer-Architektúra, 2. Kliensoldali Vitest & TypeScript Tesztek (66 tesztfájl / 840+ teszt PASS):, 🗺️ 2. Vizuális Rendszer-Architektúra Diagram, 3.1 eaisyBill Cégtagsági Szerepkörök (`company_members`), 3.2 eaisyBooks Könyvelési Hozzárendelések (`accounty_assignments`), 👥 3. Szerepkörök Részletes Katalógusa, 4.1 A Kiszervezett 5 Autoposter és a 9 RPC Függvény (+13 more)
+
+### Community 179 - "validationUtils.ts"
+Cohesion: 0.14
+Nodes (16): AamTransitionModal(), buildContrib2658Xml(), Contrib2658Data, escapeXml(), generateContrib2658Xml(), buildT101Xml(), escapeXml(), generateT101Xml() (+8 more)
+
+### Community 180 - "journalUtils.ts"
+Cohesion: 0.13
+Nodes (20): AddManualJournalEntryModal(), ManageJournalsModal(), useOptionalDateRange(), CODE_TO_KEY, COMMON_JOURNAL_DESCRIPTIONS, CORE_JOURNAL_CODES, getJournalCategory(), getLocalizedJournalName() (+12 more)
+
+### Community 181 - "useCashReports.ts"
+Cohesion: 0.13
+Nodes (19): CashReportsTab(), CashClosingWizardDialog(), mockEq, mockIn, mockLimit, mockMaybeSingle, mockOrder, mockRpc (+11 more)
+
+### Community 182 - "accountyConstants.ts"
+Cohesion: 0.09
+Nodes (20): ACCOUNTY_ROLE, AccountyRole, ACTIVE_DEADLINE_STATUSES, ACTIVE_MISSING_STATUSES, ADMIN_ROLES, CLIENT_STATUS, CLIENT_STATUS_LIST, ClientStatus (+12 more)
+
+### Community 183 - "1. FÁZIS: Log & Hibatábla Felderítés (Data Collection)"
+Cohesion: 0.10
+Nodes (20): 1.1. `app_error_logs` (Központi frontend & backend alkalmazásnapló), 1.2. `nav_sync_logs` (NAV Online Számla Szinkronizációs Napló), 1.3. `api_request_logs` (Ügyfél REST API Napló), 1.4. Feltöltési táblák (Upload pipelines), 1.5. Időzített feladatok (`cron.job_run_details`), 1.6. PGMQ üzenetsorok (Queue health & stuck messages), 1.7. Supabase Platform & Postgres Logok (`query_logs` MCP eszköz), 1. FÁZIS: Log & Hibatábla Felderítés (Data Collection) (+12 more)
+
+### Community 184 - "A-024: Partner Upsert Strategy — Prefix Matching, Foreign Partners, Both Upgrade"
+Cohesion: 0.10
+Nodes (21): 2026-07-20 bővítések, 2026-09-27 bővítések, A1: Nullable `tax_number` (DB schema change), A2: UI-ból manuális `both` beállítás, A3: Külön `is_foreign` boolean mező, A-024: Partner Upsert Strategy — Prefix Matching, Foreign Partners, Both Upgrade, Alternatives Considered, Backfill (2026-06-29) (+13 more)
+
+### Community 185 - "PayrollStep8.tsx"
+Cohesion: 0.15
+Nodes (17): A-110: Bérszámfejtési Főkönyvi Számlatükör Pagináció, Cégprofilos Kontírozás Perzisztencia és Kattintási Outline Védelem, Consequences, Context, Decision, Kapcsolódó, 6. Következmények és Trade-offok, Current Implementation, PayrollGlAccountSelectorProps (+9 more)
+
+### Community 186 - "xml-parser.ts"
+Cohesion: 0.18
+Nodes (19): 1. Adatbázis Séma Bővítés, 2. XML Parser & Típusdefiníciók (`_shared/nav`), 4. Frontend Megjelenítés, Decision (Döntés), NavInvoiceVatSummaryCardProps, InvoiceLineItem, InvoiceSummaryDetails, InvoiceVatSummaryItem (+11 more)
+
+### Community 187 - "CashClosingDialog"
+Cohesion: 0.10
+Nodes (21): 1. Context, 1. Kétirányú Számlakiegyenlítő RPC (`settle_invoices_via_petty_cash`), 2. Decision, 2. Időszaki Pénztárzárás és Egyenlegmodell (`CashClosingDialog`), 3. Consequences, 3. Negatív Kassza Integritási Védelem, 4. Kapcsolódó, 4. Pénztárzárási Összesítő Lábléc & PDF Záróív (2026-09-27) (+13 more)
+
+### Community 188 - "Visibill — Use Cases"
+Cohesion: 0.10
+Nodes (21): UC-001: Regisztráció & Cég Létrehozás, UC-002: Számla Feltöltés (Manuális), UC-003: Számla Fogadás Emailben, UC-004: NAV Szinkronizáció, UC-005: Tranzakció Import & Párosítás, UC-006: Éves Beszámoló Készítés, UC-007: Fizetési Felszólítás Küldés, UC-008: Tárgyi Eszköz Aktiválás (+13 more)
+
+### Community 189 - "09 — Hibakezelés & Feedback"
+Cohesion: 0.10
+Nodes (21): 09 — Hibakezelés & Feedback, Chunk Load Error (Automatikus Kezelés), Dashboard Empty State, Empty State Patternek, Error Boundary, Feedback Dialog & Instant Képernyőkép Capture, Feedback FAB (Floating Action Button) & AI Assistant Coexistence, Feedback Rendszer (+13 more)
+
+### Community 190 - "10 Design Koncepció"
+Cohesion: 0.10
+Nodes (20): 10 Design Koncepció, ⑩ Split Brand Logo, ① Pill Toggle, ② Orb Icons + Bridge, ③ Stacked Glass Cards, ④ Vertical Radio Pills, ⑤ Segmented Control + Icons, ⑥ Workspace Dropdown (Notion/Slack) (+12 more)
+
+### Community 191 - "ManualMatchSearchSection.tsx"
+Cohesion: 0.21
+Nodes (16): Kapcsolódó, P-146: Részfizetett és Jutalékkal Csökkentett Számlák Státuszkijelzése és Felismerése UX, ManualMatchSearchSection(), ManualMatchSearchSectionProps, APPROX_FX_RATES, BRAND_SYNONYMS, filterAndSortInvoiceCandidates(), filterAndSortTransactionCandidates() (+8 more)
+
+### Community 192 - "floating-bulk-bar.tsx"
+Cohesion: 0.13
+Nodes (12): ClientListView(), FloatingBulkBar(), FloatingBulkBarProps, FloatingBulkSelectOption, FloatingBulkSelectProps, getPriorityBadge(), getStatusBadge(), InvoiceDetailModalProps (+4 more)
+
+### Community 193 - "payrollBankMatcher.ts"
+Cohesion: 0.19
+Nodes (18): PayoutsTab(), PayrollReconciliationTab(), downloadGiroXmlFile(), formatToIban(), generateGiroPayrollXml(), GiroBatchParams, GiroEmployeePayoutItem, autoMatchPayrollBankTransactions() (+10 more)
+
+### Community 194 - "management-stats/index.ts"
+Cohesion: 0.16
+Nodes (16): buildSuperadminData(), createTicketOnBehalf(), CreateTicketPayload, sendOverdueTicketReminders(), authenticateRequester(), corsHeaders, json(), emptyCompanyDetail (+8 more)
+
+### Community 195 - "compilerOptions"
+Cohesion: 0.10
+Nodes (20): compilerOptions, allowImportingTsExtensions, isolatedModules, jsx, lib, module, moduleDetection, moduleResolution (+12 more)
+
+### Community 196 - "Visibill Rendszerhibák Lekérdezési Kézikönyv (SQL Cheat Sheet)"
+Cohesion: 0.10
+Nodes (19): 1. `app_error_logs` Részletes Típus- és Súlyosságelemzés, 2. NAV Online Számla Szinkronizációs Hibák (`nav_sync_logs`), 3. Ügyfél REST API Hibák (`api_request_logs`), 4. Feltöltési és Pipeline Hibák (Invoices, Transactions, Statements, Accounty), 5. Időzített Cron Feladatok (`cron.job_run_details`), 6. PGMQ Üzenetsor Beragadás és Retry Figyelés, 7.1. PostgreSQL Motor hibák és figyelmeztetések (utolsó 24 óra), 7.2. PostgREST API Gateway hibák és lassú kérések (+11 more)
+
+### Community 197 - "useRelatedPartyTurnover.ts"
+Cohesion: 0.14
+Nodes (17): 1. Döntési Kontextus, 2. Adatbázis Séma Bővítés (`public.partners`), 3. Könyvelési Kontírozási Szabályok (`invoiceGlSides.ts` & Főkönyv), 4. Forgalmi Kimutatási és Aggregációs Logika, 5. Kapcsolódó Dokumentáció és Döntések, A-165: Kapcsolt Vállalkozások Adatmodell, Forgalmi Lekérdezések és Kontírozási Integráció, CASH_PAYMENT_KEYWORDS, isCashPayment() (+9 more)
+
+### Community 198 - "A-189: Főkönyvi Kivonat és Naplófőkönyv RPC Teljesítmény-Optimalizálás (Statement Timeout 57014 Megszüntetése, CTE Materializáció és Hash Join)"
+Cohesion: 0.10
+Nodes (20): 1. Kontextus & Problémafelvetés, 2.1. Memóriabeli Materializált CTE Architektúra (`MATERIALIZED`), 2.2. Naplók Számlaszám-Előleképezése és In-Memory Hash Join, 2.3. Parciális Index-Alapú ÁFA Aggregáció, 2.4. Dinamikus Predikátum Pushdown a Tételes Nézetben, 2. Architektúrális Döntések & Megoldás, 3. Verifikáció & Benchmark Eredmények, 4. Következmények & Érintett Rendszerelemek (+12 more)
+
+### Community 199 - "useCompanySubLocations.ts"
+Cohesion: 0.12
+Nodes (18): 1. Tárolóhely & Felelős Struktúra (`company_sub_locations`), 2. Kétnyelvű Átadás-Átvételi Nyilatkozat (Mt. 179. §) & Áthelyezési Napló, 3. Hibrid Címkenyomtatás (Code 128B SVG + QR kód), 4. Mobilbarát Leltározás és Fordulónapi Leltárív (Sztv. 69. §), 5. Pályázati Projektek és Eszköz-komponensek Sémája, 6. Komponens-szintű ÉCS és ÉCS-arányos PIE Feloldás Könyvelése (Sztv. 45. § (2)), 7. Digitális Támogatási Projektlap és Négyoldalú Rekonciliáció, 8. Blind-Spot Védelem és Adatintegritási Keményítés (Option A Implementáció) (+10 more)
+
+### Community 200 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
+Cohesion: 0.11
+Nodes (19): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.10 „Lejárt / Visszavont” meghatalmazások történeti blokkja, 3.1 Navigációs fejléc és „Vissza” gomb, 3.2 „Új meghatalmazás” gomb, 3.3 UJEGYKE Varázsló — 1. lépés: Típus és alapadatok, 3.4 UJEGYKE Varázsló — 2. lépés: Hatáskör részletezése, 3.5 UJEGYKE Varázsló — 3. lépés: Időtartam megadása (+11 more)
+
+### Community 201 - "Visibill — Product Decision Records (PRD)"
+Cohesion: 0.10
+Nodes (20): ⚙️ Beállítások & Profil, 📊 Dashboard & Navigáció, 💼 eaisyBooks, 💳 Előfizetés & Pricing, 📒 Főkönyv & Riportok, 📋 Jegyzetek, 🏷️ Kategóriák, 🔍 Keresés (+12 more)
+
+### Community 202 - "Edge Functions Katalógus"
+Cohesion: 0.11
+Nodes (15): 🤖 Accounty AI (5 db), Deno-specifikus kötöttségek, Edge Functions Katalógus, 📦 Egyéb (11 db), 📧 Email küldés (8 db), Frontend hívási pontok, 📊 Migrációs nehézség összesítés, 🟠 NAV Integráció (7 db) — Üzletileg kritikus (+7 more)
+
+### Community 203 - "Filing08EPage.tsx"
+Cohesion: 0.15
+Nodes (18): generateRegistrationCertificatePdf(), previewPdfInNewTab(), downloadXmlFile(), generate08EXml(), generate2608Xml(), generate2658Xml(), generateT1041Xml(), generateT1042EXml() (+10 more)
+
+### Community 204 - "Visibill DB/SQL Best Practices Checklist"
+Cohesion: 0.11
+Nodes (19): 1. Legacy formátum (Supabase CLI generált) — NE használd manuálisan, 1. Általános DB Checklist, 2. Aktuális formátum (manuális / AI agent) — KÖTELEZŐ, 2. Új Tábla Checklist (`CREATE TABLE`), 3. Új RPC Function Checklist (`CREATE FUNCTION`), 4. Frontend Query Checklist (Supabase client), 5. Edge Function DB Checklist, 6. Migration Checklist (+11 more)
+
+### Community 205 - "⚙️ Kapcsolódó RPC Függvények és Folyamatok"
+Cohesion: 0.11
+Nodes (19): 1. Javaslatok generálása (`acc_generate_drafts_from_ledger`), 2. Könyvelés és Sorszámozás (`acc_post_journal_entry`), 3. Sztornózás és Helyesbítés (`acc_storno_journal_entry`), 4. Nyitó Varázsló Műveletek & Főkönyvi (GL) Integráció (Migrációk: `20260903120000`, `20260903130000`), 5. Célzott Indexek, 6. Folyószámla és Nyitott Tételek Kezelése (Subledger RPC-k, A-175), 7. Technikai Könyvelés és Számviteli Audit (Module 22, A-255), `acc_accounting_periods` (+11 more)
+
+### Community 206 - "InvoiceDataExportDialog"
+Cohesion: 0.11
+Nodes (19): 1. Dialógus Állapotkezelés (`InvoiceDataExportDialog.tsx`), 2. Kétrétegű NAV ↔ Feltöltött Számlakép Párosítás, 3. Dinamikus Rendszer-Font Betöltés (`_get_font`), 4. Hibatűrő Numerikus Parser (`_safe_float`), 5. eaisybill Brand Design Palette, A-047: Robust PDF Export Pipeline, Paired Image Resolution & eaisybill Brand Kontírozó Lap, Consequences, Context (+11 more)
+
+### Community 207 - "8b. eaisyBooks — Könyvelő Iroda Platform"
+Cohesion: 0.11
+Nodes (19): 8b. eaisyBooks — Könyvelő Iroda Platform, REQ-8b.10: Ügyfél onboarding, REQ-8b.11: Ügyfélportál, REQ-8b.12: Adminisztráció (iroda_admin), REQ-8b.13: eaisyBooks RBAC adatmodell, REQ-8b.14: Egyéni Vállalkozói (EV) & Szervezeti Egyszeres Könyvvitel, REQ-8b.15: Társasági Adó (TAO) & Kisvállalati Adó (KIVA) Modul, REQ-8b.16: Cégkapu / KÜNY Tárhely Integráció (+11 more)
+
+### Community 208 - "07 — Betöltés & Skeleton Patternek"
+Cohesion: 0.11
+Nodes (18): 07 — Betöltés & Skeleton Patternek, 1. Fülváltási Szabály: A Skeleton kizárólag ELSŐ betöltésre való, 1. Idle Prefetch (AppLayout), 2. Hover/Focus Prefetch (AppSidebar), Betöltési Rétegek, Layer 2: LoadingSpinner, Layer 3: ContentSkeleton, Lazy Loading (Code Splitting) (+10 more)
+
+### Community 209 - "DividendPayrollPage.tsx"
+Cohesion: 0.23
+Nodes (14): calculateDividendTaxes(), DividendCalculationInput, DividendCalculationResult, DividendRecord, SZOCHO_ANNUAL_CAP_2026, useCreateDividend(), useDeleteDividend(), useDividends() (+6 more)
+
+### Community 210 - "capabilities.ts"
+Cohesion: 0.18
+Nodes (17): ACCOUNTY_ASSIGNMENT_ROLES, ACCOUNTY_CAPABILITIES, ACCOUNTY_ROLE_LABELS, ALL_CAPABILITIES, canAccountyRoleClosePeriod(), canAccountyRoleExportOfficialXml(), CapabilityKey, EAISYBILL_CAPABILITIES (+9 more)
+
+### Community 211 - "📘 eaisyBooks — Bérszámfejtés"
+Cohesion: 0.11
+Nodes (18): `accounty_cafeteria`, `accounty_declarations`, `accounty_dependents`, `accounty_employee_jobs`, `accounty_employees`, `accounty_employments`, `accounty_garnishments`, `accounty_job_codes` (+10 more)
+
+### Community 212 - "A-040: Multi-Tab Auth Flow Isolation (2026-07-18)"
+Cohesion: 0.11
+Nodes (16): 1. Böngésző-szintű szinkron szinkronizáció-detektálás, 2. A tiltás elszigetelése (sessionStorage), 3. Időzítők helyett Életciklus-alapú flag-kezelés, 4. Lapfrissítés (F5) támogatása, A-040: Multi-Tab Auth Flow Isolation (2026-07-18), Context, Döntések, Kapcsolódó (+8 more)
+
+### Community 213 - "2. A Döntés és Felületi Specifikáció"
+Cohesion: 0.11
+Nodes (18): 1. Context and Problem Statement, 1. RPC Volatility Fix (`20260925031000_mark_read_only_rpcs_stable.sql`), 2. Decision and Implementation, 2. Realtime Company Isolation & Debounce Hardening (`LiveNotificationProvider.tsx`), 3. Lightweight GL Account Mapping (`JournalView.tsx`), 3. Verification & Results, 4. Cockpit Query Pagination & Progressive Loading (`UnifiedFinancialCockpit.tsx`), A-152: Analytical RPC Stability & Realtime Notification Leak Hardening (+10 more)
+
+### Community 214 - "Visibill — Error Logging & Dashboard Rendszer"
+Cohesion: 0.11
+Nodes (18): 3.1 Architektúra, 3.2 KPI Kártyák, 3.3 Szűrők, 3.4 Táblázat Oszlopok, 3.5 Expanded Nézet, 3.6 Bulk Akciók, 3. Management Dashboard — Error Panel, 4. Edge Function: `management-stats` — Error Actions (+10 more)
 
 ### Community 215 - "scripts"
 Cohesion: 0.10
 Nodes (21): scripts, build, build:dev, build:staging, db:push:dev, db:push:prod, dev, dev:prod (+13 more)
 
-### Community 216 - "payrollUtils.ts"
-Cohesion: 0.07
-Nodes (28): routing_rules, active_label, badge_currency, badge_desc, badge_partner, badge_type, cancel, catch_all (+20 more)
-
-### Community 217 - "useAdminData.ts"
-Cohesion: 0.07
-Nodes (28): expanded, assign_invoice, book, booked_gl, cancel, delete_booking, direct_gl, direct_gl_hint (+20 more)
-
-### Community 218 - "tbCertificatesPdf.ts"
-Cohesion: 0.16
-Nodes (18): VatOsaCheckDialog(), buildVatReturnXml(), convertToEFt(), formatAnykPhoneNumber(), generateVatReturnXml(), getPartnerComputedTotals(), getVatReturnFilename(), getVatReturnXmlString() (+10 more)
-
-### Community 219 - "emails/invoice-processed.tsx"
-Cohesion: 0.03
-Nodes (82): CompanyAccessCard(), extractErrorInfo(), initAuthHashHandler(), queryClient, EnvironmentBadge(), ErrorBoundary, formatTime(), IdleWarningModal() (+74 more)
-
-### Community 220 - "Database & Migration Guidelines (Visibill / eaisybill-prod)"
-Cohesion: 0.09
-Nodes (24): AgingBucketData, AgingBucketKey, AssetAgingPyramidChart(), AssetAgingPyramidChartProps, BUCKET_CONFIG, AssetAnalyticsDashboardProps, GROUP_COLORS, AssetComponentsViewProps (+16 more)
-
-### Community 221 - "Audit Checklist"
-Cohesion: 0.07
-Nodes (26): 1.0 Hypothesis — confidence check (ELSŐ lépés, spec lookup ELŐTT), 1.1 Kérés értelmezése, 1.2 Spec keresés (kötelező sorrend), 1.2a Terminológia konzisztencia ellenőrzés, 1.2b Kód konzisztencia cross-check, 1.4 DB érintettség → db-checklist betöltés, 1.4b React frontend érintettség → vercel-react-best-practices & composition-patterns betöltés, 1.4c KÖTELEZŐ: Design Pattern Kontextus Betöltése (+18 more)
-
-### Community 222 - "Visibill Drift Check — Spec vs Kód Konzisztencia"
-Cohesion: 0.07
-Nodes (26): 1. PostgREST Direkt Query (egyszerű CRUD), 📊 2.1 Frontend által hívott Query RPC-k, ✏️ 2.2 Frontend által hívott Mutation RPC-k, 🔑 2.3 Auth & Credential RPC-k, 📬 2.4 PGMQ Wrapper RPC-k (Worker által hívott), 🤖 2.5 Worker-Only RPC-k, 🏗️ 2.6 eaisyBooks / Management RPC-k, 🏷️ 2.7 Partner & Ranking RPC-k (+18 more)
-
-### Community 223 - "2. A Partnerektől és a Banktól Megkapható Adatok Katalógusa"
-Cohesion: 0.22
-Nodes (8): TicketEvent, useTicketEvents(), ThinkAiBadge(), ThinkAiBadgeProps, ThinkAiIcon(), STATUS_COLORS, TicketTimeline(), TicketTimelineProps
-
-### Community 224 - "📋 Éves Beszámoló & ÁFA"
-Cohesion: 0.07
-Nodes (27): toasts, delete_confirm, delete_error, invalid_email, invalid_tax_desc, invalid_tax_title, missing_data, name_and_tax_required (+19 more)
-
-### Community 225 - "📘 eaisyBooks — Bérszámfejtés"
-Cohesion: 0.07
-Nodes (27): toasts, delete_confirm, delete_error, invalid_email, invalid_tax_desc, invalid_tax_title, missing_data, name_and_tax_required (+19 more)
-
-### Community 226 - "📄 Könyvelési Naplók (Accounting Journals)"
-Cohesion: 0.11
-Nodes (20): ALL_ARCHIVE_EXTENSIONS, cleanAndUnescapeUrl(), DEFERRED_ARCHIVE_EXTENSIONS, DIRECT_SUPPORTED_EXTS, ErrorLogEntry, expandAttachments(), ExpandedFile, extractFilenameFromHeader() (+12 more)
-
-### Community 227 - "InvoiceDataExportDialog"
-Cohesion: 0.14
-Nodes (17): EmployeeLeaveTab(), EmployeeLeaveTabProps, Leave, LeaveEntitlementDialog(), CONTRACTOR_TYPES, getNonMtNotice(), isMtEmployment(), MT_EMPLOYMENT_TYPES (+9 more)
-
-### Community 228 - "2. A Döntés"
-Cohesion: 0.08
-Nodes (26): example, type, example, type, example, type, example, type (+18 more)
-
-### Community 229 - "vatCodeMatching.ts"
-Cohesion: 0.08
-Nodes (25): 14 — Teljesítmény Optimalizáció, 1. Idle Prefetch (Háttérben, Mount Után), 2. Hover/Focus Prefetch (Sidebar Navigáció), Centralizált Query Keys, Code Splitting, Fix Magasságú Sorok, Font Betöltés Optimalizáció, HTML-Level Optimalizációk (+17 more)
-
-### Community 230 - "Supabase Edge Functions Katalógus"
-Cohesion: 0.08
-Nodes (25): 1. Bázis Verzió Beolvasása (Single Source of Truth), 1. Lépés: Mélyreható Anyaggyűjtés, 1. Mikor elegendő 1 bejegyzés?, 1. Pillér: Git Commitok & Fájlváltozások Feltérképezése, 2. Determinisztikus Léptetési Szabályok, 2. Lépés: Szintézis és Csoportosítás (Chunking & SemVer Tervezés), 2. Mikor KÖTELEZŐ vagy ERŐSEN AJÁNLOTT több bejegyzésre bontani?, 2. Pillér: Kapcsolódó Dokumentumok Kötelező Olvasása (Spec-Lookup) (+17 more)
-
-### Community 231 - "2. A Havi Munkafolyamat Lépései Részletesen"
-Cohesion: 0.08
-Nodes (25): 1. Termék Összefoglaló, 2.1 Onboarding, 2.2 Dashboard & Navigáció, 2.3 Számla Kezelés, 2.4 Tranzakció & Párosítás, 2.5 Főkönyv & Riportok, 2.6 Értesítések, 2.7 Beállítások (+17 more)
-
-### Community 232 - "PRD-02: Havi Beosztástervező Naptárrács és Interakciók"
-Cohesion: 0.20
-Nodes (9): kpis, matched, suggested, total_results, unmatched, search_placeholder, subtitle, title (+1 more)
-
-### Community 234 - "openclaw-api/index.ts"
-Cohesion: 0.12
-Nodes (26): TaxParametersPage(), paramsToTaxParams(), useTaxParameters(), useUpdateTaxParameter(), ALL_RULES, Anomaly, AnomalyInput, AnomalyRule (+18 more)
-
-### Community 235 - "Visibill DB/SQL Best Practices Checklist"
-Cohesion: 0.08
-Nodes (26): notifications, bank_statement_processed_title, congratulations, doc_escalated_desc, doc_escalated_title, doc_matched_desc, doc_matched_title, doc_recorded_desc (+18 more)
-
-### Community 236 - "A-020: Auth Trigger Chain — Signup Incident és Tanulságok"
-Cohesion: 0.08
-Nodes (26): acquisition_value, activation_date, amount_label, btn_save_changes, calc_acq_base, calc_modified_tax_base, calc_reserve_deduction, currently_linked (+18 more)
-
-### Community 237 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.08
-Nodes (26): toasts, toasts, attachment_added, attachment_added_desc, attachment_removed, batch_response_cleared_desc, batch_response_cleared_title, category_updated_title (+18 more)
-
-### Community 238 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.08
-Nodes (26): auto_verify_desc, auto_verify_title, cancel_btn, dir_all, dir_inflow, dir_outflow, field_direction, field_max_amount (+18 more)
-
-### Community 239 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.08
-Nodes (26): notifications, bank_statement_processed_title, congratulations, doc_escalated_desc, doc_escalated_title, doc_matched_desc, doc_matched_title, doc_recorded_desc (+18 more)
-
-### Community 240 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.08
-Nodes (26): acquisition_value, activation_date, amount_label, btn_save_changes, calc_acq_base, calc_modified_tax_base, calc_reserve_deduction, currently_linked (+18 more)
-
-### Community 241 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.08
-Nodes (26): toasts, toasts, attachment_added, attachment_added_desc, attachment_removed, batch_response_cleared_desc, batch_response_cleared_title, category_updated_title (+18 more)
-
-### Community 242 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
-Cohesion: 0.08
-Nodes (26): auto_verify_desc, auto_verify_title, cancel_btn, dir_all, dir_inflow, dir_outflow, field_direction, field_max_amount (+18 more)
-
-### Community 243 - "exchangeRateBanks.ts"
-Cohesion: 0.08
-Nodes (24): 1. réteg: Autentikáció (Supabase Auth), 2. réteg: Autorizáció — Row Level Security (RLS), 3. réteg: Edge Function Biztonság, 4. réteg: API Key Autentikáció (Külső Integrációk), 5. réteg: Credential Titkosítás (AES-256-GCM), 6. réteg: Audit Trail, 7. réteg: Worker Biztonság, 8. réteg: Frontend Biztonság (+16 more)
-
-### Community 244 - "invoiceGlAccountRules.test.tsx"
-Cohesion: 0.08
-Nodes (24): 09 — Hibakezelés & Feedback, Centralizált Error Logging, Chunk Load Error (Automatikus Kezelés), Dashboard Empty State, Empty State Patternek, Error Boundary, Feedback Dialog & Instant Képernyőkép Capture, Feedback FAB (Floating Action Button) & AI Assistant Coexistence (+16 more)
-
-### Community 245 - "agoraPnlPdf.ts"
-Cohesion: 0.08
-Nodes (24): auth.uid() és auth.role() használat, FK hivatkozások auth.users-re, 🔗 Hardcoded Supabase URL-ek & Token-ek, Használat mértéke, Használt bucket-ek (6 db), Migrációs hatás, Migrációs hatás: 🟢 Alacsony, Migrációs nehézség: 🟢 Alacsony (+16 more)
-
-### Community 246 - "openclaw-api/index.ts"
-Cohesion: 0.07
-Nodes (34): AssetComponentCalculationResult, calculateAssetComponentsDepreciation(), calculateElapsedMonths(), ComponentDepreciationBreakdown, mockAsset, mockComponents, mockAssets, mockProjects (+26 more)
-
-### Community 247 - "compilerOptions"
-Cohesion: 0.14
-Nodes (21): GeneralLedgerTableRef, GlTemplatePreviewProps, GlTemplateUploadDialogProps, BUILTIN_GL_TEMPLATES, exportGlAnalyticalExcel(), exportGlExcel(), exportVatCollectorAnalyticsExcel(), GlExportOptions (+13 more)
-
-### Community 248 - "dashboard_app.py"
-Cohesion: 0.15
-Nodes (12): customtkinter, Visibill & Eaisybill Architecture Dashboard Live Graphify Knowledge Graph Deskt, Interactive Tkinter Graph Canvas for Graphify Dashboard. Visualizes ego-network, Graphify Data Engine for eaisybill-prod Loads, indexes, searches and provides g, math, queue, re, subprocess (+4 more)
-
-### Community 249 - "🛠️ Platform & Üzemeltetés"
-Cohesion: 0.08
-Nodes (25): next, prev, submit, accounting_type, assigned_accountant, company_name, company_name_placeholder, currency (+17 more)
-
-### Community 250 - "AiAssistantChat.tsx"
-Cohesion: 0.08
-Nodes (25): modal, assign_button, assign_invoices_section, assigned_invoices, col_actions, col_amount, col_date, col_direction (+17 more)
-
-### Community 251 - "eb0257JournalsAndPartnerLines.test.ts"
-Cohesion: 0.08
-Nodes (25): toasts, approve_error, approved_desc, approved_title, attach_success_desc, attach_success_title, delete_error, entry_created (+17 more)
-
-### Community 253 - "Decision"
-Cohesion: 0.08
-Nodes (25): szamlazz, alert_desc, api_docs, api_endpoint, api_key_label, badge_api_length, badge_free, disconnect (+17 more)
-
-### Community 254 - "fetchAllGlBalances"
-Cohesion: 0.08
-Nodes (25): next, prev, submit, accounting_type, assigned_accountant, company_name, company_name_placeholder, currency (+17 more)
-
-### Community 255 - "A-164: Fejlesztési Tartalék és Tárgyi Eszközök Adatmodell, ÉCS Kalkuláció és API"
-Cohesion: 0.08
-Nodes (25): modal, assign_button, assign_invoices_section, assigned_invoices, col_actions, col_amount, col_date, col_direction (+17 more)
-
-### Community 256 - "A-189: Főkönyvi Kivonat és Naplófőkönyv RPC Teljesítmény-Optimalizálás (Statement Timeout 57014 Megszüntetése, CTE Materializáció és Hash Join)"
-Cohesion: 0.08
-Nodes (25): toasts, approve_error, approved_desc, approved_title, attach_success_desc, attach_success_title, delete_error, entry_created (+17 more)
-
-### Community 257 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
-Cohesion: 0.08
-Nodes (25): szamlazz, alert_desc, api_docs, api_endpoint, api_key_label, badge_api_length, badge_free, disconnect (+17 more)
-
-### Community 258 - "3. A 6-Füles Munkavállalói Mesterkarton Specifikációja (`EmployeeCardDrawer`)"
-Cohesion: 0.17
-Nodes (19): CafeteriaInputItem, calculateGarnishments(), calculateGross(), calculatePayroll(), DEFAULT_2026_PARAMS, EmployeeDeclarations, Garnishment, GarnishmentResultItem (+11 more)
-
-### Community 259 - "cashReceiptTemplate.ts"
-Cohesion: 0.17
-Nodes (24): description, description, description, description, parameters, responses, security, summary (+16 more)
-
-### Community 260 - "GenericDeclarationPage.tsx"
-Cohesion: 0.16
-Nodes (24): description, requestBody, /v1/invoices/link, /v1/invoices/upload, /v1/nav/sync, /v1/partners, /v1/transactions/bulk-delete, /v1/transactions/{id}/match (+16 more)
-
-### Community 261 - "ErrorBoundary"
-Cohesion: 0.08
-Nodes (23): 1. Elsődleges célcsoport: Magyar KKV Cégvezetők & Pénzügyesek (`eaisyBill`), 1. Számlák beérkezése, 2. AI feldolgozás & Tanulás, 2. Egyenrangú szakmai célcsoport: Könyvelőirodák, Könyvelők & Bérszámfejtők (`eaisyBooks`), 3. Banki egyeztetés & Párosítás, 3. Iparági specializációk, 4. Pénzügyi áttekintés & Könyvelői Jóváhagyási Kapu, 5. Zárás & Hatósági Bevallások (+15 more)
-
-### Community 262 - "Adatmigráció és Napi Szinkronizáció (Data Migration & Daily Sync)"
-Cohesion: 0.17
-Nodes (16): mockEntries, ChangelogEntryCard(), ChangelogEntryCardProps, ChangelogHeader(), ChangelogHeaderProps, ChangelogTimeline(), ChangelogTimelineProps, ChangelogTimelineSkeleton() (+8 more)
-
-### Community 263 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.30
-Nodes (10): downloadPayslipHtml(), escHtml(), fmt(), generatePayslipBlockHtml(), generatePayslipHtml(), MONTHS_HU, PayslipData, printAllPayslips() (+2 more)
-
-### Community 264 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.08
-Nodes (23): 2026-07-20 bővítések, 2026-09-27 bővítések, 2026-09-29 bővítések, A1: Nullable `tax_number` (DB schema change), A2: UI-ból manuális `both` beállítás, A3: Külön `is_foreign` boolean mező, A-024: Partner Upsert Strategy — Prefix Matching, Foreign Partners, Both Upgrade, Alternatives Considered (+15 more)
-
-### Community 265 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.08
-Nodes (24): AiAssistantDrawer & AiAssistantChat, AppModeSwitcher, CompanySelector, Content Skeleton, Copyable Cell, Egyedi Komponensek (Nem shadcn/ui), FeedbackFab & FeedbackDialog (Dual Floating Action Bubbles), Financial Skeleton (+16 more)
-
-### Community 266 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.18
-Nodes (11): all_accountants, all_clients, all_companies, all_statuses, all_types, clear_filters, ev_individual, my_clients (+3 more)
-
-### Community 267 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.08
-Nodes (24): all_uploaders, anonymous_user, button, col_action, col_filename, col_upload_date, col_uploader, delete_cancel (+16 more)
-
-### Community 268 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.08
-Nodes (24): all_uploaders, anonymous_user, button, col_action, col_filename, col_upload_date, col_uploader, delete_cancel (+16 more)
-
-### Community 269 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
-Cohesion: 0.13
-Nodes (15): approving, confirm_button, custom_note, custom_note_placeholder, description, gross_total, invoice_number, issue_date (+7 more)
-
-### Community 270 - "P-015: Tömeges Műveletek (Bulk Actions)"
-Cohesion: 0.15
-Nodes (13): cannot_undo, deleting, description_prefix, description_suffix, option_row_and_file_desc, option_row_and_file_title, option_row_only_desc, option_row_only_title (+5 more)
-
-### Community 271 - "depreciationPostingService.ts"
-Cohesion: 0.15
-Nodes (19): ReportType, reportTypes, FullReportData, ReportCatalog(), ReportCatalogProps, ReportType, ReportTypeConfig, ReportGeneratorModalProps (+11 more)
-
-### Community 272 - "functions/nav/index.ts"
-Cohesion: 0.09
-Nodes (22): 🚀 10. Csomag C: Munkavállalói Shell és Banki RLS Zárása (2026-10-11, Migráció 20261011130700), 1. Adatbázis pgTAP Tesztek (159 teszteset zöld):, 📌 1. Vezetői Összefoglaló & Rendszer-Architektúra, 2. Kliensoldali Vitest & TypeScript Tesztek (66 tesztfájl / 840+ teszt PASS):, 🗺️ 2. Vizuális Rendszer-Architektúra Diagram, 3.1 eaisyBill Cégtagsági Szerepkörök (`company_members`), 3.2 eaisyBooks Könyvelési Hozzárendelések (`accounty_assignments`), 👥 3. Szerepkörök Részletes Katalógusa (+14 more)
-
-### Community 273 - "🛠️ Végrehajtási Munkafolyamat (`/goal` Üzemmód)"
-Cohesion: 0.09
-Nodes (22): 1. Projekt → Docs Mapping, 2.5 Automatikus Drift Check (spec olvasás UTÁN, tervezés ELŐTT), 2. Docs beolvasása — Konkrét fájlútvonalak, 3. Graphify Query (kódbázis térkép), 4. Összefoglaló a Usernek, 5. Komplexitás Döntés — Mi Következik?, ⚠️ Context Flooding Anti-pattern, ⚠️ DB/SQL érintettség (migration, RPC, RLS, Edge Function query) (+14 more)
-
-### Community 274 - "🛠️ Végrehajtási Munkafolyamat (`/goal` Üzemmód)"
-Cohesion: 0.09
-Nodes (22): 0.1 Kötelező Élő Adatbázis Lekérdezések (`supabase-visibill`), 0.2 Megjelenítendő Dashboard Formátum, 0. LÉPÉS: Strukturált Hibajegy Áttekintés & Dashboard (Overview Mode), 1.1 Automatikus Jegy & Beszélgetésfolyam Betöltése (ha jegyszámot kaptál), 1. LÉPÉS: Kérés fogadása & Hipotézis (Konkrét Jegy Esetén), 2.1 Specifikációk beolvasása (`visibill-spec-lookup`), 2.2 Adatbázis lekérdezés (`execute_sql` via `supabase-visibill` — CSAK SELECT), 2.3 Kódbázis ellenőrzés (+14 more)
-
-### Community 275 - "📋 Működési Folyamat"
-Cohesion: 0.09
-Nodes (22): `accounty_ev_audit_log`, `accounty_ev_client_settings`, `accounty_ev_contribution_calc`, `accounty_ev_hipa_calc`, `accounty_ev_lifecycle_events`, `accounty_ev_records_consignment`, `accounty_ev_records_fixed_assets`, `accounty_ev_records_inventory` (+14 more)
-
-### Community 276 - "🔄 Kötelező Végrehajtási Folyamat (Workflow)"
-Cohesion: 0.09
-Nodes (22): assets, no_assigned, no_matching, open_in_teny, search_placeholder, view_assets, create_first, create_first_button (+14 more)
-
-### Community 277 - "📄 Számlák"
-Cohesion: 0.09
-Nodes (22): assets, no_assigned, no_matching, open_in_teny, search_placeholder, view_assets, create_first, create_first_button (+14 more)
-
-### Community 278 - "💳 Tranzakciók & Bank"
-Cohesion: 0.09
-Nodes (22): 1. Kontextus, 2. Döntések, 3.1 Frontend, 3.2 Adatbázis (`20261011012947_role_capability_refactor.sql`, idempotens), 3.3 Edge Function, 3. Megvalósítás, 4. Biztonsági korlátok (őszinte kép), 5. Nem része ennek az ADR-nek (specifikáció, de még nincs kikényszerítve) (+14 more)
-
-### Community 279 - "A-023: Upload Dedup Védelem (DB Trigger + Frontend Mutex)"
-Cohesion: 0.09
-Nodes (23): account_not_found, cannot_delete, confirm_delete_desc, confirm_delete_title, confirm_delete_warning, contra_gl, credit, date_fulfillment (+15 more)
-
-### Community 280 - "Decision"
-Cohesion: 0.09
-Nodes (23): partner_ledger_card, aging_1_30, aging_31_60, aging_60_plus, aging_current, all_partners, all_partners_summary, all_traffic (+15 more)
-
-### Community 281 - "2. Megoldási Architektúra és Döntések"
-Cohesion: 0.09
-Nodes (23): batch_book, batch_categorize, batch_export, select_all, client_invoices, actions, table, tabs (+15 more)
-
-### Community 282 - "ManualInvoiceCreateDialog"
-Cohesion: 0.09
-Nodes (23): dialog, budget_label, code_label, code_placeholder, code_tooltip, color_hint, color_label, description_label (+15 more)
-
-### Community 283 - "Decision"
-Cohesion: 0.09
-Nodes (23): account_not_found, cannot_delete, confirm_delete_desc, confirm_delete_title, confirm_delete_warning, contra_gl, credit, date_fulfillment (+15 more)
-
-### Community 284 - "06 — Állapotkezelés & Kontextusok"
-Cohesion: 0.09
-Nodes (23): partner_ledger_card, aging_1_30, aging_31_60, aging_60_plus, aging_current, all_partners, all_partners_summary, all_traffic (+15 more)
-
-### Community 285 - "brd/INDEX.md"
-Cohesion: 0.09
-Nodes (23): batch_book, batch_categorize, batch_export, select_all, client_invoices, actions, table, tabs (+15 more)
-
-### Community 286 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
-Cohesion: 0.09
-Nodes (23): dialog, budget_label, code_label, code_placeholder, code_tooltip, color_hint, color_label, description_label (+15 more)
-
-### Community 287 - "3. Üzleti Entitások és Felelősségi Körök"
-Cohesion: 0.09
-Nodes (22): example, type, nullable, type, format, nullable, type, format (+14 more)
-
-### Community 288 - "PRD-08: Dolgozói Önkiszolgáló Portál és Mobil Nézet"
-Cohesion: 0.10
-Nodes (22): bearerFormat, description, scheme, type, description, in, name, required (+14 more)
-
-### Community 289 - "🚨 Riasztások Központ és NAV Határidők (Alerts Center & NAV Deadlines)"
-Cohesion: 0.09
-Nodes (21): UC-001: Regisztráció & Cég Létrehozás, UC-002: Számla Feltöltés (Manuális), UC-003: Számla Fogadás Emailben, UC-004: NAV Szinkronizáció, UC-005: Tranzakció Import & Párosítás, UC-006: Éves Beszámoló Készítés, UC-007: Fizetési Felszólítás Küldés, UC-008: Tárgyi Eszköz Aktiválás (+13 more)
-
-### Community 290 - "🛡️ Jogosultságkezelő Mátrix (Permission Matrix)"
-Cohesion: 0.09
-Nodes (21): 1. Kontextus & Problémafelvetés, 2.1. Memóriabeli Materializált CTE Architektúra (`MATERIALIZED`), 2.2. Naplók Számlaszám-Előleképezése és In-Memory Hash Join, 2.3. Parciális Index-Alapú ÁFA Aggregáció, 2.4. Dinamikus Predikátum Pushdown a Tételes Nézetben, 2.5. PostgREST `max-rows = 1000` Integritás-Védelem a Kliensoldalon, 2. Architektúrális Döntések & Megoldás, 3. Verifikáció & Benchmark Eredmények (+13 more)
-
-### Community 291 - "🧮 Adómértékek és Jogszabályi Paraméterek (Tax Parameters)"
-Cohesion: 0.10
-Nodes (20): actions, edit_partner, new_partner, badges, foreign, related_party, columns, city (+12 more)
-
-### Community 292 - "3. Mit lehet benne a felhasználónak csinálni?"
-Cohesion: 0.09
-Nodes (21): compilerOptions, allowImportingTsExtensions, isolatedModules, jsx, lib, module, moduleDetection, moduleResolution (+13 more)
-
-### Community 293 - "📋 Ügyfél Profil és Törzsadatok (Client Profile)"
-Cohesion: 0.09
-Nodes (21): 1. Adatbázis pgTAP Tesztek (159 teszteset zöld):, 📌 1. Vezetői Összefoglaló & Rendszer-Architektúra, 2. Kliensoldali Vitest & TypeScript Tesztek (64 tesztfájl / 820+ teszt PASS):, 🗺️ 2. Vizuális Rendszer-Architektúra Diagram, 3.1 eaisyBill Cégtagsági Szerepkörök (`company_members`), 3.2 eaisyBooks Könyvelési Hozzárendelések (`accounty_assignments`), 👥 3. Szerepkörök Részletes Katalógusa, 4.1 A Kiszervezett 5 Autoposter és a 9 RPC Függvény (+13 more)
-
-### Community 294 - "🏛️ Társasági Adó, KIVA és Zárás Modul (Client TAO/KIVA Module)"
-Cohesion: 0.17
-Nodes (17): BUILTIN_VAT_TEMPLATES, exportVatJournalCsv(), exportVatJournalExcel(), VatJournalExportItem, inferVatField(), normalizeHeader(), ParsedVatTemplateResult, parseVatTemplateFile() (+9 more)
-
-### Community 295 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
-Cohesion: 0.09
-Nodes (22): toolbar, active_preset, add_account, ai_classification, builtin_badge, builtin_hr_preset, builtin_system_preset, export (+14 more)
-
-### Community 296 - "Alert"
-Cohesion: 0.09
-Nodes (22): add_title, amount_label, amount_placeholder, amount_summary_label, cancel, date_label, date_summary_label, edit_name_placeholder (+14 more)
-
-### Community 297 - "journalFilterUtils.ts"
-Cohesion: 0.09
-Nodes (22): suggested_link, approval_note, approval_note_placeholder, confirm_button, description, explanation, extracted_number, gross_amount (+14 more)
-
-### Community 298 - "journalUtils.ts"
-Cohesion: 0.09
-Nodes (21): notifications, email_subtitle, email_title, load_error, subtitle, title, update_error, update_success (+13 more)
-
-### Community 299 - "vatA60Xml.ts"
-Cohesion: 0.09
-Nodes (22): change_password_dialog, cancel, confirm_password_label, confirm_password_placeholder, current_password_label, current_password_placeholder, description, new_password_label (+14 more)
-
-### Community 300 - "permissionsHandler.ts"
-Cohesion: 0.09
-Nodes (22): actions, bank_tx_count, file_name, upload_date, uploaded_by, files, all_uploaders, anonymous_user (+14 more)
-
-### Community 301 - "send-invoice-notification/invoice-processed.tsx"
-Cohesion: 0.10
-Nodes (22): filters, filters, active_filters, all_currencies, all_statuses, all_types, clear_all, clear_filters (+14 more)
-
-### Community 302 - "UI & UX Guidelines (Visibill / eaisybill-prod)"
-Cohesion: 0.09
-Nodes (22): types, atm_cash_deposit, atm_cash_withdrawal, atm_withdrawal, bank_cost, bank_fee, card_fee, cash_deposit (+14 more)
-
-### Community 303 - "006-tech-stack.md"
-Cohesion: 0.09
-Nodes (22): toolbar, active_preset, add_account, ai_classification, builtin_badge, builtin_hr_preset, builtin_system_preset, export (+14 more)
-
-### Community 304 - "Decision"
-Cohesion: 0.09
-Nodes (22): add_title, amount_label, amount_placeholder, amount_summary_label, cancel, date_label, date_summary_label, edit_name_placeholder (+14 more)
-
-### Community 305 - "Decision"
-Cohesion: 0.09
-Nodes (22): suggested_link, approval_note, approval_note_placeholder, confirm_button, description, explanation, extracted_number, gross_amount (+14 more)
-
-### Community 306 - "A-026: Support Admin Ideiglenes Hozzáférés (Impersonation & Full RLS Access)"
-Cohesion: 0.09
-Nodes (21): notifications, email_subtitle, email_title, load_error, subtitle, title, update_error, update_success (+13 more)
-
-### Community 307 - "PromptsPage"
-Cohesion: 0.09
-Nodes (22): change_password_dialog, cancel, confirm_password_label, confirm_password_placeholder, current_password_label, current_password_placeholder, description, new_password_label (+14 more)
-
-### Community 308 - "A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció"
-Cohesion: 0.09
-Nodes (22): actions, bank_tx_count, file_name, upload_date, uploaded_by, files, all_uploaders, anonymous_user (+14 more)
-
-### Community 309 - "Decision"
-Cohesion: 0.10
-Nodes (22): filters, filters, active_filters, all_currencies, all_statuses, all_types, clear_all, clear_filters (+14 more)
-
-### Community 310 - "Decision"
-Cohesion: 0.09
-Nodes (22): types, atm_cash_deposit, atm_cash_withdrawal, atm_withdrawal, bank_cost, bank_fee, card_fee, cash_deposit (+14 more)
-
-### Community 311 - "accrualMath.ts"
-Cohesion: 0.17
-Nodes (9): defaultNS, languageDetector, pathDetector, resources, CashClosingProtocol, CashReport, DenominationSheet, PrintCashReportParams (+1 more)
-
-### Community 312 - "Decision"
-Cohesion: 0.05
-Nodes (38): 1. Főkönyv ↔ TENY Rekonciliációs Szolgáltatás (`assetReconciliationService.ts`), 🧭 1. Vezetői Összefoglaló és Érettségi Mátrix, 2.1. Tárgyi eszköz analitika és főkönyvi egyezőség, 2.2. Párhuzamos értékcsökkenési nyilvántartás, 2.3. Leltár és tárolóhely, 2.4. Fejlesztési tartalék és adókedvezmények, 2.5. Kivezetés, értékesítés, selejtezés, leltárhiány, 2.6. Támogatásból megvalósított eszközök (+30 more)
-
-### Community 313 - "A-237: NAV Online Számla v3 GZIP Kitömörítés és Többtételes Közműszámla Ingestion Architektúra"
-Cohesion: 0.20
-Nodes (11): invalidateAccountyQueries(), invalidateInvoiceQueries(), invalidatePartnerQueries(), invalidatePayrollQueries(), invalidateTransactionQueries(), accountyKeys, glKeys, invoiceKeys (+3 more)
-
-### Community 314 - "A-238: Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra"
-Cohesion: 0.17
-Nodes (17): VatReturnVersionHeaderProps, AccountyVatSnapshot, compareCurrentInvoicesWithSnapshot(), computeSnapshotDiff(), computeVatSnapshotSha256(), createVatSnapshot(), InvoiceDiffResult, VatRevisionDiffSummary (+9 more)
-
-### Community 315 - "Visibill — Architecture Decision Records (ADR)"
-Cohesion: 0.06
-Nodes (45): BankBadge(), BankBadgeProps, BankHintSelector(), BankHintSelectorProps, CourierTypeSelector(), CourierTypeSelectorProps, UploadChannelTab(), UploadChannelTabProps (+37 more)
-
-### Community 316 - "PRD-01: Portál Navigáció, Globális Vezérlők és Menürendszer"
-Cohesion: 0.10
-Nodes (20): 1.1. `app_error_logs` (Központi frontend & backend alkalmazásnapló), 1.2. `nav_sync_logs` (NAV Online Számla Szinkronizációs Napló), 1.3. `api_request_logs` (Ügyfél REST API Napló), 1.4. Feltöltési táblák (Upload pipelines), 1.5. Időzített feladatok (`cron.job_run_details`), 1.6. PGMQ üzenetsorok (Queue health & stuck messages), 1.7. Supabase Platform & Postgres Logok (`query_logs` MCP eszköz), 1. FÁZIS: Log & Hibatábla Felderítés (Data Collection) (+12 more)
-
-### Community 317 - "PRD-03: Műszakszerkesztő Dialógus, Gyorskitöltő és Sablonkezelő"
-Cohesion: 0.10
-Nodes (20): A-005: Edge Functions (Deno) a Serverless Logikához, 🔐 Auth & User Management (4 db), Consequences, Context, Decision, 📱 eaisyBooks / Accounty Modul (15 db), 📥 Email Fogadás & Saját Levelező (5 db), 📧 Email Küldés & Riportok (10 db) (+12 more)
-
-### Community 318 - "PRD-04: Távollét- és Helyettesítéskezelő Felület"
-Cohesion: 0.10
-Nodes (20): A-018: Hibajegy Rendszer Architektúra, Adatmodell, Consequences, Context, Decision, EaisyWorks Integráció és Feladatszinkronizáció (2026-10 frissítés), Frontend & Architektúra funkciók (2026-09 frissítés), Frontend funkciók (2026-06 állapot) (+12 more)
-
-### Community 319 - "🧩 Az 5 Alapvető Hook Részletezve"
-Cohesion: 0.10
-Nodes (20): 10 Design Koncepció, ⑩ Split Brand Logo, ① Pill Toggle, ② Orb Icons + Bridge, ③ Stacked Glass Cards, ④ Vertical Radio Pills, ⑤ Segmented Control + Icons, ⑥ Workspace Dropdown (Notion/Slack) (+12 more)
-
-### Community 320 - "2. Terméktervezési Döntések (UX)"
-Cohesion: 0.09
-Nodes (21): actions, edit_partner, new_partner, badges, foreign, related_party, empty, adjust_filters (+13 more)
-
-### Community 321 - "navProtocol.test.ts"
-Cohesion: 0.10
-Nodes (20): companies_count, date_filter_basis, empty_desc, empty_title, filter_all, filter_by_due_date, filter_by_issue_date, filter_label (+12 more)
-
-### Community 322 - "syncKnowledgeBase.cjs"
-Cohesion: 0.10
-Nodes (20): companies_count, date_filter_basis, empty_desc, empty_title, filter_all, filter_by_due_date, filter_by_issue_date, filter_label (+12 more)
-
-### Community 323 - "SharedComponents.tsx"
-Cohesion: 0.08
-Nodes (35): ActivityLogFilters(), ActivityLogFiltersProps, AVAILABLE_ACTIONS, CURRENT_YEAR, DAY_OPTIONS, HOUR_OPTIONS, LocalSelectProps, MIN_OPTIONS (+27 more)
-
-### Community 324 - "inviteCodeFlow.test.ts"
-Cohesion: 0.10
-Nodes (20): ⚙️ Beállítások & Profil, 📊 Dashboard & Navigáció, 💼 eaisyBooks, 💳 Előfizetés & Pricing, 📒 Főkönyv & Riportok, 📋 Jegyzetek, 🏷️ Kategóriák, 🔍 Keresés (+12 more)
-
-### Community 325 - "React & Frontend Guidelines (Visibill / eaisybill-prod)"
-Cohesion: 0.19
-Nodes (16): useEaisyWorksSync(), Ticket, findWordBreak(), getTicketSummary(), stripHtml(), createEaisyWorksTicket(), EaisyWorksConfig, getEaisyWorksConfig() (+8 more)
-
-### Community 326 - "Moduláris BRD Készítési Irányelvek és Rekordstruktúra Sablon"
-Cohesion: 0.10
-Nodes (21): item_types, advance, bank_tx, cash, closing, final_invoice, incoming_cost, invoice (+13 more)
-
-### Community 327 - "📘 eaisyBooks — Adó & Jogi"
-Cohesion: 0.10
-Nodes (21): close_cycle, download_transfer_file, generate_payslips, start_cycle, col_actions, col_job, col_job_type, col_name (+13 more)
-
-### Community 328 - "Decision"
-Cohesion: 0.10
-Nodes (21): toasts, code_resent, code_verified, email_resent_desc, email_resent_title, enter_email, enter_otp, enter_password (+13 more)
-
-### Community 329 - "Decision"
-Cohesion: 0.10
-Nodes (21): amber, amethyst, blue, bordeaux, cyan, emerald, gray, green (+13 more)
-
-### Community 330 - "Decision"
-Cohesion: 0.10
-Nodes (21): fx_differences, choose_gl, currency_breakdown, default_badge, gain, gain_gl_label, gl_classification, gl_info (+13 more)
-
-### Community 331 - "UploadHistory"
-Cohesion: 0.10
-Nodes (21): inbound_status, description, empty, empty_desc, gross, invoice_number, issue_date, missing (+13 more)
-
-### Community 332 - "2. Hiba Források"
-Cohesion: 0.10
-Nodes (21): resolution_banner, admin_badge, admin_desc, admin_direct_close, admin_title, cancel_btn, close_error_desc, error_title (+13 more)
-
-### Community 333 - "Decision"
-Cohesion: 0.10
-Nodes (21): rules, active_rules_count, confirm_delete, description, empty_desc, empty_title, new_rule_btn, simulator (+13 more)
-
-### Community 334 - "Decision"
-Cohesion: 0.10
-Nodes (21): item_types, advance, bank_tx, cash, closing, final_invoice, incoming_cost, invoice (+13 more)
-
-### Community 335 - "Decision"
-Cohesion: 0.10
-Nodes (21): close_cycle, download_transfer_file, generate_payslips, start_cycle, col_actions, col_job, col_job_type, col_name (+13 more)
-
-### Community 336 - "2. Decision"
-Cohesion: 0.10
-Nodes (21): toasts, code_resent, code_verified, email_resent_desc, email_resent_title, enter_email, enter_otp, enter_password (+13 more)
-
-### Community 337 - "A-233: Kézi Készpénzes Számlarendezések Automatikus Házipénztár Integrációja és GLS Kompenzációs Normalizálás"
-Cohesion: 0.10
-Nodes (21): amber, amethyst, blue, bordeaux, cyan, emerald, gray, green (+13 more)
-
-### Community 338 - "💡 Decision"
-Cohesion: 0.10
-Nodes (21): fx_differences, choose_gl, currency_breakdown, default_badge, gain, gain_gl_label, gl_classification, gl_info (+13 more)
-
-### Community 339 - "A-245: calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése)"
-Cohesion: 0.10
-Nodes (21): inbound_status, description, empty, empty_desc, gross, invoice_number, issue_date, missing (+13 more)
-
-### Community 340 - "LiveNotificationProvider"
-Cohesion: 0.10
-Nodes (21): resolution_banner, admin_badge, admin_desc, admin_direct_close, admin_title, cancel_btn, close_error_desc, error_title (+13 more)
-
-### Community 341 - "PRD-06: Jelenlét-Igazolás, Hóvégi Zárás és Bérszámfejtési Export"
-Cohesion: 0.10
-Nodes (21): rules, active_rules_count, confirm_delete, description, empty_desc, empty_title, new_rule_btn, simulator (+13 more)
-
-### Community 342 - "eaisybill Design System — Áttekintés"
-Cohesion: 0.10
-Nodes (19): ACCOUNTY_ROLE, AccountyRole, ACTIVE_DEADLINE_STATUSES, ACTIVE_MISSING_STATUSES, ADMIN_ROLES, CLIENT_STATUS, CLIENT_STATUS_LIST, ClientStatus (+11 more)
-
-### Community 343 - "Kiegészítő Standalone Komponensek"
-Cohesion: 0.10
-Nodes (20): 8b. eaisyBooks — Könyvelő Iroda Platform, REQ-8b.10: Ügyfél onboarding, REQ-8b.11: Ügyfélportál, REQ-8b.12: Adminisztráció (iroda_admin), REQ-8b.13: eaisyBooks RBAC adatmodell, REQ-8b.14: Egyéni Vállalkozói (EV) & Szervezeti Egyszeres Könyvvitel, REQ-8b.15: Társasági Adó (TAO) & Kisvállalati Adó (KIVA) Modul, REQ-8b.16: Cégkapu / KÜNY Tárhely Integráció (+12 more)
-
-### Community 344 - "🗂️ Kategóriák és Modulok"
-Cohesion: 0.10
-Nodes (19): 1. Legacy formátum (Supabase CLI generált) — NE használd manuálisan, 1. Általános DB Checklist, 2. Aktuális formátum (manuális / AI agent) — KÖTELEZŐ, 2. Új Tábla Checklist (`CREATE TABLE`), 3. Új RPC Function Checklist (`CREATE FUNCTION`), 4. Frontend Query Checklist (Supabase client), 5. Edge Function DB Checklist, 6. Migration Checklist (+11 more)
-
-### Community 345 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (19): 1. `app_error_logs` Részletes Típus- és Súlyosságelemzés, 2. NAV Online Számla Szinkronizációs Hibák (`nav_sync_logs`), 3. Ügyfél REST API Hibák (`api_request_logs`), 4. Feltöltési és Pipeline Hibák (Invoices, Transactions, Statements, Accounty), 5. Időzített Cron Feladatok (`cron.job_run_details`), 6. PGMQ Üzenetsor Beragadás és Retry Figyelés, 7.1. PostgreSQL Motor hibák és figyelmeztetések (utolsó 24 óra), 7.2. PostgREST API Gateway hibák és lassú kérések (+11 more)
-
-### Community 346 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (19): actions, auto_match, import_statement, match_now, chart, inflow, outflow, reset_zoom (+11 more)
-
-### Community 347 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (19): actions, auto_match, import_statement, match_now, chart, inflow, outflow, reset_zoom (+11 more)
-
-### Community 348 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (20): project_breakdown, active_project, average, create_project_desc, create_project_title, description, empty, empty_desc (+12 more)
-
-### Community 349 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (20): detail, amount, content, create_one_now, date, description_partner, invoice_date, invoice_number (+12 more)
-
-### Community 350 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (20): notes, anonymous, badge_private, badge_shared, default_title, empty, field_content, field_content_placeholder (+12 more)
-
-### Community 351 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (20): toasts, account_save_error, account_saved_desc, account_saved_title, delete_batch_error, delete_batch_success, delete_single_error, delete_single_success (+12 more)
-
-### Community 352 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (20): project_breakdown, active_project, average, create_project_desc, create_project_title, description, empty, empty_desc (+12 more)
-
-### Community 353 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (20): detail, amount, content, create_one_now, date, description_partner, invoice_date, invoice_number (+12 more)
-
-### Community 354 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (20): notes, anonymous, badge_private, badge_shared, default_title, empty, field_content, field_content_placeholder (+12 more)
-
-### Community 355 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (20): toasts, account_save_error, account_saved_desc, account_saved_title, delete_batch_error, delete_batch_success, delete_single_error, delete_single_success (+12 more)
-
-### Community 356 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.16
-Nodes (24): BuyerMismatchResult, checkBuyerTaxMismatch(), evaluateNavAndSubmittedSuggestedMatch(), ExtendedNavInvoiceMatchCandidate, ExtendedSubmittedInvoiceMatchCandidate, extractBaseTax(), GENERIC_WORDS, isForeignSubmittedInvoice() (+16 more)
-
-### Community 357 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.13
-Nodes (23): createSignature(), formatCompactTimestamp(), generateRequestId(), hashPassword(), maskSensitiveXml(), sanitizeTaxNumber(), NavClient, splitDateRange() (+15 more)
-
-### Community 358 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.08
-Nodes (35): ACCOUNTY_ADMIN_ONLY, ACCOUNTY_ALWAYS, ACCOUNTY_MODULES, ACCOUNTY_SENIOR_AND_ADMIN, buildUserPermissions(), deleteUser(), EAISYBILL_ACCOUNTING_TECH, EAISYBILL_ADMIN_ONLY (+27 more)
-
-### Community 359 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.24
-Nodes (12): DividendPayrollPage(), calculateDividendTaxes(), DividendCalculationInput, DividendCalculationResult, DividendRecord, useCreateDividend(), useDeleteDividend(), useDividends() (+4 more)
-
-### Community 360 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.09
-Nodes (27): accounts, build(), position(), approveAssetDisposal(), ApproveDisposalResult, AssetGlPosition, buildDisposalJournal(), classifyAssetGlNumber() (+19 more)
-
-### Community 361 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.11
-Nodes (19): properties, type, nullable, type, format, type, example, nullable (+11 more)
-
-### Community 362 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+### Community 216 - "PostgreSQL RPC Tesztelési Stratégia és Blueprint"
 Cohesion: 0.11
 Nodes (18): 1. Vezetői Összefoglaló és Célkitűzés, 2. A 4 Kockázati és Tesztelési Szint (RPC Tiers), 3. Tier 1: Kritikus Pénzügyi Számítások & Könyvelés (MANDATORY pgTAP), 4. Tier 2: Állapotmódosítások, Jóváhagyások & Folyószámla (Integration / pgTAP), 5. Tier 3: Szűrt Listák & Dashboard KPI-k (Smoke & Null-Safety Tests), 6. Tier 4: Queue (PGMQ), Worker & Rendszer-üzemeltetés (Worker Pipeline Tests), 7. A pgTAP Tesztek Kötelező Struktúrája (Standard Pattern), 8. Prioritási Mátrix és Bevezetési Ütemterv (+10 more)
 
-### Community 363 - "🗂️ Gyors Hivatkozások a Glossary Modulokhoz"
+### Community 217 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.11
+Nodes (17): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Irodai Felkészültségi Mutató (Progress Ring), 3.2 1. Lépés — Könyvelői Profil Beállítása, 3.3 2. Lépés — Könyvelőiroda Adatai, 3.4 3. Lépés — Első Ügyfél Hozzárendelése és Meghívókód Ellenőrzése, 3.5 4. Lépés — Irodai Preferenciák Beállítása, 3.6 5. Lépés — Munkatársak Meghívása (+9 more)
+
+### Community 218 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.12
+Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 1. Fül — Személyes Profil és Beosztás, 3.2 2. Fül — Vállalkozási Adatok és Csatlakozási Kód (Ügyfélkapcsolat), 3.3 3. Fül — Értesítési Beállítások, 3.4 4. Fül — Rendszer és Megjelenési Preferenciák, 3.5 5. Fül — Fiókbiztonság és Jelszócsere, 3. Mit lehet benne a felhasználónak csinálni? (+7 more)
+
+### Community 219 - "App.tsx"
+Cohesion: 0.07
+Nodes (46): ADR A-060: Moduláris App Router & Platform Bootstrap Architektúra, Döntés, Kontextus és Probléma, Következmények & Előnyök, Státusz, 2. Tiszta Útvonal-Vezérelt Nyelvmeghatározás (Zero LocalStorage Persistence), Komponens & Modul Felelősségek, 1. URL Struktúra (+38 more)
+
+### Community 220 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
+Cohesion: 0.11
+Nodes (17): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.10 Alsó műveleti sáv — „Mégse” és „Mentés” gombok, 3.1 Navigációs fejléc és „Vissza” gomb, 3.2 Tárhely fül — Tárhely típusa választó kártyák, 3.3 Tárhely fül — Tárhely-azonosító beviteli mező, 3.4 Tárhely fül — Státusz legördülő menü, 3.5 Tárhely fül — Cég neve a tárhelyen mező és Kapacitás mérő (+9 more)
+
+### Community 221 - "9. Oldal-szintű Funkciók (2026-06-26)"
+Cohesion: 0.11
+Nodes (18): 1. 📊 Áttekintés (`overview`), 2. Oldal Térkép (Sitemap), 2. 🏦 Pénzügyek (`finance`), 3. 📖 Könyvelés (`accounting`), 3. Sidebar Navigáció (6 Csoport), 4. 👥 HR & Eszközök (`hr`), 5. Layout Struktúra, 5. 🚚 Szállítmányozás (`shipment`) (+10 more)
+
+### Community 222 - "3. Funkcionális specifikáció"
+Cohesion: 0.11
+Nodes (18): 3.10 Operátorok, 3.11 Munkahelyek és munkakörök, 3.12 Sablonok: munkarendek, munkaidősablonok, beosztássablonok, 3.13 Beléptetőrendszer: belépések, ellenőrzőpontok, 3.14 Integráció a meglévő rendszerünkkel [Új], 3.16 Munkaügyi szabálymotor – összefoglaló szabálylista, 3.17 Adatmodell (entitások), 3.18 Nyitott kérdések – a fejlesztés megkezdése előtt tisztázandó (+10 more)
+
+### Community 223 - "posSettlementProcessor.ts"
+Cohesion: 0.24
+Nodes (14): pdfjs-dist, cleanPosAmount(), extractLinesByYFromPdf(), formatPosDate(), GeneratedVirtualBankTransaction, generateVirtualBankTransactions(), isOtpPosSettlementText(), ParsedPosSettlementSummary (+6 more)
+
+### Community 224 - "compilerOptions"
+Cohesion: 0.11
+Nodes (17): compilerOptions, allowImportingTsExtensions, isolatedModules, jsx, lib, module, moduleDetection, moduleResolution (+9 more)
+
+### Community 225 - "Workflow — Minden fejlesztési feladat elején"
+Cohesion: 0.12
+Nodes (16): 1. lépés: Kulcsszavak kinyerése, 2. lépés: Graphify query, 3. lépés: Döntés-keresés a 4 rétegben, 4. lépés: ⭐ Design Pattern-ek felderítése, 5. lépés: ⭐ Open / Partially Decided döntések feltárása, 6. lépés: Kontextus összesítő, 7. lépés: KÖTELEZŐ — Várd meg a jóváhagyást, a) Business Decisions (BRD) (+8 more)
+
+### Community 226 - "components.json"
+Cohesion: 0.12
+Nodes (16): aliases, components, hooks, lib, ui, utils, rsc, $schema (+8 more)
+
+### Community 227 - "📘 eaisyBooks — Alap"
+Cohesion: 0.12
+Nodes (17): `accounty_assignments`, `accounty_audit_log`, `accounty_communication_preferences`, `accounty_deadlines`, `accounty_documents`, `accounty_email_preferences`, `accounty_gdpr_requests`, `accounty_messages` (+9 more)
+
+### Community 228 - "Decision"
+Cohesion: 0.12
+Nodes (17): A-018: Hibajegy Rendszer Architektúra, Adatmodell, Consequences, Context, Decision, EaisyWorks Integráció és Feladatszinkronizáció (2026-10 frissítés), Frontend funkciók (2026-06 állapot), Frontend funkciók (2026-08 frissítés) (+9 more)
+
+### Community 229 - "invoicePaginationRecovery.test.tsx"
+Cohesion: 0.13
+Nodes (15): A-055: Server-Side Invoice Query, KPI Aggregation & GIN Trigram Optimization, Consequences, Context, Decision, Kapcsolódó, Decision, Kapcsolódó, P-103: Számlák Teljesítés Dátuma Szűrés és Dátum Alap Kapcsoló UX (+7 more)
+
+### Community 230 - "Decision"
+Cohesion: 0.12
+Nodes (17): 10. Többdevizás Nyitó Sorok Perzisztenciája és Fallback Generátor Típusbiztonság (2026-09-23), 1. Adatmodell (`acc_*` táblák), 2. Sorszám Generálás és Konkurencia Kezelés, 3. Integritás és Triggerek, 4. RPC Műveletek és Automatikus Kontírozás, 5. Frontend & Kliensoldali Architektúra (Decoupling), 6. Nyitóadatok és Főkönyvi Kivonat (GL) Integráció (2026-09-03 — Migráció `20260903120000`), 7. Körkörös Piszkozat-Védelem, Keményített Rekonciliáció és Realtime Szinkron (2026-09-03 — Migráció `20260903130000`) (+9 more)
+
+### Community 231 - "payslipTemplate.ts"
+Cohesion: 0.25
+Nodes (14): A-063 — Unified DocumentEngine & Ports-and-Adapters Exporter Architecture, Döntés, Előnézeti és Letöltési Szerződések (Preview & Download Contracts), Kapcsolódó, Kontextus & Probléma, Következmények és Előnyök, Visszafelé Kompatibilitás (Facade Pattern), buildPayslipDescriptor() (+6 more)
+
+### Community 232 - "2. A Döntés"
+Cohesion: 0.12
+Nodes (17): 1. Kontextus és Problémafelvetés, 2.10. Élő Cégkontextus & Pénzügyi Pillanatkép (Live Business Data Layer), 2.11. Komponens Dekompozíció és Teljesítmény-optimalizáció, 2.12. Beszélgetés Törlés és Adatmegőrzési Stratégia (Soft Delete), 2.1. Server-Sent Events (SSE) Token Streaming, 2.2. Dual-Provider API Routing, Dinamikus Modellválasztás és Automatikus Fallback, 2.3. Védelem és Kvóták (Automation Shield & In-Memory Rate Limiting), 2.4. Dinamikus Rendszerprompt és Kontextus-Injektálás (+9 more)
+
+### Community 233 - "password-reset.tsx"
+Cohesion: 0.13
+Nodes (13): ref_npm_react_18_3_1, ref_npm_react_email, code, container, footer, h1, link, main (+5 more)
+
+### Community 234 - "Döntések"
+Cohesion: 0.12
+Nodes (17): 4. UI Űrlap Integrációk, 1. Dual-table számlalekérdezés, 2. Master lista számlaszám aggregáció, 3. Tab-alapú szétválasztás a jobb panelen, 4. Számlakereső, 5.1 Számlakép előnézet (2026-07-05), 5. Kattintható számla kártyák → PartnerInvoiceDetailDialog, 6. NAV státusz eltávolítása (+9 more)
+
+### Community 235 - "InvoiceRulesDialog"
+Cohesion: 0.12
+Nodes (17): 1. Context, 2. Decision, 3. Consequences, A-177: Egységes Számlaszabály Kezelő Komponens és eaisyBooks Integráció, 2.2 Számlák Fejléc "Könyvelési szabályok" Menüpont (`InvoiceRulesDialog`), 2. Felületi Döntések & UX Specifikáció, 3. Minőségbiztosítás és Eredmények, P-109: Determinisztikus Számlatétel Szabály Motor és 1-Kattintásos Kontírozási Gyorsmentő (Quick Save) UX (+9 more)
+
+### Community 236 - "Visibill — Decision Helper"
+Cohesion: 0.12
+Nodes (17): 001 — Elsődleges Célcsoport (Partially Decided), 002 — Támogatott Vállalkozási Formák (Open), 003 — Lokalizáció & Nyelv (Partially Decided), 004 — Árazási Modell & Tier Nevek (Open), 005 — Előfizetés Scope (Open), 007 — Multi-instance Stratégia (Open), 010 — Felhasználói Szerepek (Partially Decided), 011 — Member Jogosultsági Határok (Open) (+9 more)
+
+### Community 237 - "ErrorBoundary"
+Cohesion: 0.12
+Nodes (10): CSS Utility Class-ok, financial-number, glass-card, interactive, Eltávolítási Pontok, Layer 1: HTML Initial Loader, Centralizált Error Logging, Frontend Error Reporter (+2 more)
+
+### Community 238 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
+Cohesion: 0.12
+Nodes (16): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Navigációs fejléc és „Vissza” gomb, 3.2 Fülválasztó navigációs sáv, 3.3 „Alapértelmezések betöltése (magyar jogszabályok)” gomb, 3.4 „Új típus” gomb és inline rögzítő sor, 3.5 Dokumentumtípusok táblázata és inline szerkesztése, 3.6 Megőrzési szabály törlése gomb (+8 more)
+
+### Community 239 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
+Cohesion: 0.12
+Nodes (16): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Navigációs fejléc és „Vissza” gomb, 3.2 Felső összefoglaló statisztikai kártyák, 3.3 Fülválasztó sáv (Telephelyek / Költséghelyek / Részlegek), 3.4 Telephelyek fül — „Új telephely” gomb és rögzítő panel, 3.5 Telephelyek táblázata és Létszám-összesítés, 3.6 Költséghelyek fül — „Új költséghely” gomb és rögzítő panel (+8 more)
+
+### Community 240 - "mkvkAuditXmlGenerator.ts"
+Cohesion: 0.16
+Nodes (15): jszip, escapeXml(), MkvkAccount, MkvkAuditXmlRawData, MkvkCompanyData, MkvkItem, MkvkJournal, MkvkPartner (+7 more)
+
+### Community 241 - "PayrollPortfolioPage.tsx"
+Cohesion: 0.15
+Nodes (13): useAccountyCompanySummary(), PayrollPortfolioPage, CONFIGS, DeclType, GenericDeclarationPage(), CYCLE_STATUS_CONFIG, CycleStatus, FILING_STATUS_MAP (+5 more)
+
+### Community 242 - "permissionsHandler.ts"
+Cohesion: 0.16
+Nodes (15): ACCOUNTY_ADMIN_ONLY, ACCOUNTY_ALWAYS, ACCOUNTY_MODULES, ACCOUNTY_SENIOR_AND_ADMIN, buildUserPermissions(), deleteUser(), EAISYBILL_ACCOUNTING_TECH, EAISYBILL_ADMIN_ONLY (+7 more)
+
+### Community 243 - "emails/invoice-processed.tsx"
+Cohesion: 0.12
+Nodes (15): corsHeaders, resend, container, detailsBox, detailText, errorBox, errorText, footer (+7 more)
+
+### Community 244 - "Audit Checklist"
+Cohesion: 0.12
+Nodes (15): 10. Elavult Stripe hivatkozások, 1. Provider Stack (App.tsx vs docs), 2. Context-ek száma, 3. Route-ok vs Information Architecture, 4. Edge Functions száma, 5. Migration count, 6. Törölt fájl hivatkozások, 7. Package.json vs Tech Stack (+7 more)
+
+### Community 245 - "Visibill Drift Check — Spec vs Kód Konzisztencia"
+Cohesion: 0.12
+Nodes (15): A 5 Verifikálható Claim Típus, A Drift Check Folyamata, Drift esetén (mindig blokkoló), Gyors összefoglaló (ha nincs drift), Lépés 1: Terület vs Spec Mapping, Lépés 2: Verifikálható Claim-ek Kinyerése, Lépés 3: Kód Ellenőrzés (claim-enként), Lépés 4: Drift Riport Összeállítása (+7 more)
+
+### Community 246 - "2. A Partnerektől és a Banktól Megkapható Adatok Katalógusa"
+Cohesion: 0.12
+Nodes (16): 🏢 1.1 Többvállalkozásos Hozzájárulás-megosztás & Számlaszétválasztás (v1.1.0), 1. Áttekintés, 🏢 2.1 Partner / Ellenoldali Adatok (Counterparty), 💰 2.2 Pénzügyi és Valutaváltási Adatok, 📝 2.3 Közlemény és Tranzakciós Referenciák, 🏷️ 2.4 Művelettípus és Gépi Besorolás, 2. A Partnerektől és a Banktól Megkapható Adatok Katalógusa, 3.1 Belföldi Banki Átutalás (Kimenő Partneri Kifizetés) (+8 more)
+
+### Community 247 - "📋 Éves Beszámoló & ÁFA"
+Cohesion: 0.12
+Nodes (15): `accounty_audit_export_diffs`, `accounty_audit_exports`, `annual_report_notes_templates`, `annual_reports`, `bs_mapping`, `bs_prior_year`, `bs_structure`, `pnl_mapping` (+7 more)
+
+### Community 248 - "dashboard_app.py"
+Cohesion: 0.16
+Nodes (12): customtkinter, json, math, queue, subprocess, threading, time, tkinter (+4 more)
+
+### Community 249 - "Részletek"
+Cohesion: 0.13
+Nodes (16): 2026-09-29 bővítések, D9: Belföldi Magyar Partner Adószám Normalizálás (8-1-2 Szabvány), Valós Idejű NAV Gazdagítás és Worker Auto-Upgrade, Egyszeri backfill (2026-06-29), Kapcsolódó, Keresés, Megjelenítés a detail panelben, Megjelenítés a táblázatban, P-044: Külföldi partner megjelenítés (+8 more)
+
+### Community 250 - "closed"
+Cohesion: 0.14
+Nodes (16): 1. Kontextus, 2.1 Adatbázis Séma (`20260928120000_periodic_cash_reports_schema.sql`), 2.2 Tranzakcionális PostgreSQL RPC-k (`20260928121000_cash_report_workflow_rpcs.sql`), 2.3 Főkönyvi Feladás és Validáció (`20260928122000_post_cash_report_to_gl.sql`), 2. Döntés és Architektúra, 3. Következmények és Előnyök, A-172: Időszaki Pénztárjelentés Adatbázis Modell, Szigorú Számadású Sorszámozás és Főkönyvi Életciklus, 1. Kontextus & Problémafelvetés (+8 more)
+
+### Community 251 - "NavInvoiceVatSummaryCard"
+Cohesion: 0.13
+Nodes (16): 1. Fülváltási URL Paraméter-Izoláció (`src/lib/navigation.ts`), 2. Deep-Link Fókusz-Védőháló (`src/features/invoices/context/InvoiceContext.tsx`), 3. Lenyitható Sor Letisztítása (`ExpandedInvoiceRow.tsx`), 4. Külföldi Számlák NAV Mentessége és Szövegfrissítés, 5. Supabase Auth GoTrue Null Token Adatbázis Sanity, A-176: Számla Mélyhivatkozás (Deep-Linking) Tab-Izoláció, Fókusz-Visszarántás Védelem és Külföldi Számla NAV Mentesség, Consequences, Context (+8 more)
+
+### Community 252 - "ActivityLogSheet.tsx"
+Cohesion: 0.15
+Nodes (18): 3. Kliensoldali batch enricher (Retrospektív támogatás), AVAILABLE_ACTIONS, ActivityLogSheet(), CompanyMember, EnrichedInvoiceInfo, EnrichedUploadInfo, getDateRange(), GroupedEmailAttachment (+10 more)
+
+### Community 253 - "2. A Havi Munkafolyamat Lépései Részletesen"
+Cohesion: 0.12
+Nodes (16): 02. Fő Üzleti Folyamatok és Felhasználói Utak, 1. A Teljes Körű Havi Üzleti Munkafolyamat, 1. Felhasználói Út: A Könyvelőirodai Operátor Gyors Havi Ciklusa (10 perces zárás), 2.1 Előkészítés és Törzsadatok (Egyszeri beállítás), 2.2 Hó Eleji Beosztástervezés, 2.3 Hó Közbeni Eseménykezelés, 2.4 Hó Végi Jelenlét-igazolás, 2.5 Hivatalos Kimenetek és Bérszámfejtési Átadás (+8 more)
+
+### Community 254 - "PRD-02: Havi Beosztástervező Naptárrács és Interakciók"
+Cohesion: 0.12
+Nodes (16): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Felületcélkitűzés, 2. Naptárrács UI Mockup és Szerkezeti Elrendezés, 3. Fejléc Vezérlők és Szűrősáv Specifikáció, 4.1 Bal Oldali Rögzített Dolgozói Kártyaoszlop (Fixed Left Column), 4.2 Naptári Napok Oszlopai (1..31), 4.3 Cellákban Megjelenő Elemek, 4.4 Jobb Oldali Havi Összesítő Oszlop (+8 more)
+
+### Community 255 - "Visibill — Business Requirement Decisions"
+Cohesion: 0.12
+Nodes (16): 🏗️ Architektúra & Infrastruktúra, 🔒 Biztonság & Compliance, 👥 Cégstruktúra & Jogosultságok, 🎯 Célpiac & Üzleti Modell, 💼 eaisyBooks & Intégrált Modulok, Hogyan használd, 🕐 HR & Munkaidő, 🏦 Integrációk & Jövő (+8 more)
+
+### Community 256 - "04 — Komponens Könyvtár"
+Cohesion: 0.12
+Nodes (16): 04 — Komponens Könyvtár, 1. Gomb border-space foglalás, 2. Dinamikus counter anti-CLS, 3. `scrollbar-gutter: stable` — scroll shift megelőzése, 4. Checkbox Vertikális Eltolódás — Radix Indicator Layout Bug (2026-07-22), ⚠️ Anti-CLS Design Szabályok (Kötelező), Badge Variánsok, Button Variánsok (+8 more)
+
+### Community 257 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.12
+Nodes (16): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Eszköz Felvétele és Aktiválása, 3.2 Eszközlista Táblázat és Kategória Szűrők, 3.3 Kettős ÉCS Kalkulátor (Számviteli és Adózási Amortizáció), 3.4 Fizikai Leltárellenőrzés és Jegyzőkönyv, 3.5.1 Rekonciliáció & Főkönyv fül, 3.5.2 Fejlesztési tartalék riasztások (+8 more)
+
+### Community 258 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.12
+Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Keresősáv és „Új munkatárs meghívása” Gomb, 3.2 Új Munkatárs Meghívása Párbeszédablak, 3.3 Munkatársi Kártya és eaisyBill Hozzáférés Kapcsoló, 3.4 Cég Hozzárendelése a Munkatárshoz, 3.5 Főkönyvelői Státusz és Cég Levétel, 3.6 Munkatárs Eltávolítása az Irodából (+7 more)
+
+### Community 259 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.12
+Nodes (16): 3.1 Szabadszavas Keresőmező, 3.2 Eseménytípus Szűrő Legördülő Menü, 3.3 Audit Események Táblázata, 3.4 Exportálás CSV Fájlba, 3.5 Lapozó Sáv, 3. Mit lehet benne a felhasználónak csinálni?, 1. Reszponzív és Zsúfoltságmentes Elrendezés (`JournalFilterModal.tsx`), 2. Szűkítési Kategóriák és Pozitív Unió Irányszűrés (+8 more)
+
+### Community 260 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.12
+Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 GDPR Statisztikai Állapotkártyák, 3.2 „Új kérelem” Indítása Gomb, 3.3 Új Érintetti Kérelem Rögzítése Dialógus, 3.4 Kérelem Feldolgozásának Indítása („Elkezd”), 3.5 Kérelem Lezárása („Teljesít”), 3.6 Lapozó Sáv (+7 more)
+
+### Community 261 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.12
+Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Szűrősáv és Keresőmező, 3.2 „Új hibajegy” Nyitása Gomb, 3.3 Hibajegy Lista és Részletező Megnyitása, 3.4 Válaszadás az Ügyfélnek, 3.5 Belső Szakmai Feljegyzés Rögzítése (Csak Belső Személyzet), 3.6 Felelős és Státusz Módosítása (+7 more)
+
+### Community 262 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.12
+Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Globális Dokumentáció Kereső, 3.2 1. Fül — Áttekintés és GYIK Harmonika, 3.3 2. Fül — Tematikus Cikkek és Útmutatók, 3.4 3. Fül — Videós Útmutatók, 3.5 4. Fül — Hivatalos Jogszabálytár, 3.6 5. Fül — Számviteli és Adózási Szakszótár (+7 more)
+
+### Community 263 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.12
+Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Céginformációs Fejléc és „Vissza a portfólióhoz” Gomb, 3.2 „NAV Szinkronizáció most” Gomb, 3.3 Zárási Blokkoló Tételek (Blocking Items) Blokk, 3.4 Bizonylatbekérő E-mail Indítása az Ügyfélnek, 3.5 Határidők és Teendők Kártya, 3.6 Manuális Hiányzó Tétel Rögzítése (+7 more)
+
+### Community 264 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.12
+Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Fejléc és Gyorsakció Gombok, 3.2 Hiányzó Bizonylat KPI Kártyák, 3.3 Szűrősáv és Keresőmező, 3.4 Hiánylista Táblázat és Eseti Műveletek, 3.5 Tömeges Kijelölés és „Bizonylatbekérő Jóváhagyásra Küldése”, 3. Mit lehet benne a felhasználónak csinálni? (+7 more)
+
+### Community 265 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.12
+Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégfejléc és Adózási Jogállás Jelvények, 3.2 Pénzügyi Összegző és Keretfigyelő Kártyák, 3.3 1. Blokk — Törzsadatok és Beállítás Varázsló, 3.4 2. Blokk — Adózási Formák és Kalkulátorok, 3.5 3. Blokk — Digitális Pénztárkönyv és NAV Számla Import, 3.6 4. Blokk — Járulékszámítás és Havi Bevallások (+7 more)
+
+### Community 266 - "exchangeRateBanks.ts"
 Cohesion: 0.17
+Nodes (13): AGGREGATED_EXPANDED_IDS, DEFAULT_EXPANDED_IDS, DEFAULT_SETTINGS, DEFAULT_FX_BANK_CODE, DEFAULT_FX_RATE_TYPE, EXCHANGE_RATE_BANKS, EXCHANGE_RATE_TYPES, ExchangeRateBank (+5 more)
+
+### Community 267 - "EaisyWorksSyncCard.tsx"
+Cohesion: 0.25
+Nodes (12): EaisyWorksSyncCard(), EaisyWorksSyncCardProps, useEaisyWorksSync(), createEaisyWorksTicket(), EaisyWorksConfig, getEaisyWorksConfig(), mapPriority(), mapTypeLabel() (+4 more)
+
+### Community 268 - "agoraPnlPdf.ts"
+Cohesion: 0.30
+Nodes (12): AGORA_PNL_DEFINITIONS, AgoraPnlCalculatedRow, AgoraPnlReportData, AgoraPnlRowDefinition, buildAgoraPnlData(), BuildAgoraPnlOptions, formatAgoraPnlNumber(), hashCode() (+4 more)
+
+### Community 269 - "openclaw-api/index.ts"
+Cohesion: 0.15
+Nodes (12): ALLOWED_TABLES, ApiKeyRecord, authenticateApiKey(), BLOCKED_TABLES, corsHeaders, errorResponse(), json(), queryTable() (+4 more)
+
+### Community 270 - "compilerOptions"
+Cohesion: 0.12
+Nodes (15): compilerOptions, allowImportingTsExtensions, isolatedModules, lib, module, moduleDetection, moduleResolution, noEmit (+7 more)
+
+### Community 271 - "AuthContext"
+Cohesion: 0.13
+Nodes (15): 8. réteg: Frontend Biztonság, 1. Push Preferences és Subscriptions táblák, 2. Frontend működés (AccountyNotificationPreferences.tsx), 3. Biztonság (RLS), 4. Backend (Edge Function), A-032: Accounty Push Notification Preferences, Consequences, Context (+7 more)
+
+### Community 272 - "A-020: Auth Trigger Chain — Signup Incident és Tanulságok"
+Cohesion: 0.13
+Nodes (15): 1. `SECURITY DEFINER` KÖTELEZŐ minden trigger function-re, 2. `search_path` KÖTELEZŐEN tartalmazza az `extensions` sémát, 3. `CREATE OR REPLACE` használatakor MINDIG hordozd át az attribútumokat, A-020: Auth Trigger Chain — Signup Incident és Tanulságok, Az Incidens, Consequences, Context, Decision (+7 more)
+
+### Community 273 - "Decision"
+Cohesion: 0.13
+Nodes (15): 1. Atomi PostgreSQL Tárolt Eljárás (`public.recalculate_partner_skonto`), 2. Egyetlen Tranzakcióban Történő Frissítés (CTE Update), 3. Skontó Kikapcsolásának Kezelése, 4. Szerveroldali Szállítási Díj Detektálás, 5. Külföldi és Belföldi Partnerek Kezelése, 6. Jogosultságvédelem (Security Definer Guard), 7. Vékony Kliens Implementáció (`PartnersPage.tsx`), A-118: Atomi Partner Skontó Újraszámolás és Kliensoldali Ciklusok Felszámolása (+7 more)
+
+### Community 274 - "2. Megoldási Architektúra és Döntések"
+Cohesion: 0.13
+Nodes (15): 1. Kontextus és Problémafelvetés, 2. Megoldási Architektúra és Döntések, 3. Következmények és Eredmények, 4. Kapcsolódó Döntések és Szabályzatok, A-175: Folyószámla és Analitika Architektúra, Nyitott Tételek Rendezése és Főkönyvi Integritás-Védelem, D-10: Sztornózott és Törölt Számlák Kiszűrése a Folyószámláról (2026-10-16, EB-0276, `20261016184500_exclude_storno_from_subledger_items.sql`), D-1: Főkönyvi számlák analitikai konfigurációja (`subledger_type`, `is_open_item_managed`), D-2: Szigorú főkönyvi integritás-védelem (`acc_post_journal_entry`) (+7 more)
+
+### Community 275 - "Supabase Edge Functions Katalógus"
+Cohesion: 0.13
+Nodes (15): 11. 🗓️ MNB & Jogi Frissítések (2 db), 12. 🚚 Szállítmányozás / HRTSPED (1 db), 13. 🏦 Open Banking & Aggreg8 Integráció (2 db), 1. 🏛️ NAV Integráció (11 db), 2. 📧 Email Küldés & Riportok (10 db), 3. 📥 Email Fogadás & Saját Levelező (5 db), 4. ⚡ Queue & Export Generálás (2 db), 5. 🔐 Auth & Felhasználókezelés (4 db) (+7 more)
+
+### Community 276 - "06 — Állapotkezelés & Kontextusok"
+Cohesion: 0.13
+Nodes (14): 06 — Állapotkezelés & Kontextusok, Context Hierarchia, Figyelt Táblák (19), Invalidation Stratégia, Invoice Feature State & URL Sync (`src/features/invoices/context/InvoiceContext.tsx`), localStorage Kulcsok, Realtime State — LiveNotificationProvider, Safe Storage (+6 more)
+
+### Community 277 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
+Cohesion: 0.13
+Nodes (15): 03. Beosztástervezés és Naptárrács Részletes Követelményei, 1. Rendszerszintű és Navigációs Követelmények, 2. Felületi Menüstruktúra (Bal Oldali Navigáció), 3.1 Időszak Létrehozása és Alapadatok, 3.2 Munkaidő Megadása (Létszámigény lépés), 3. Beosztáskezelő Modul — Funkcionális Követelmények, 4.1 Rács Vezérlő és Kijelző Funkciók, 4. A Naptárrács (A Rendszer Fő Munkafelülete) (+7 more)
+
+### Community 278 - "3. A 6-Füles Munkavállalói Mesterkarton Specifikációja (`EmployeeCardDrawer`)"
+Cohesion: 0.13
+Nodes (15): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Képernyőszerkezet és Munkavállalói Lista, 3.1 1. Fül: Alapadatok és Elérhetőségek (`GeneralInfoTab`), 3.2 2. Fül: Jogviszony és Munkaidő Norma (`EmploymentTab`), 3.3 3. Fül: Szabadságkeret és Egyenlegek (`LeaveBalanceTab`), 3.4 4. Fül: Munkaidőkeret Konfiguráció (`WorkHoursFrameworkTab`), 3.5 5. Fül: Munkaügyi Szabályok és Felülbírálások (`ComplianceTab`) (+7 more)
+
+### Community 279 - "Adatmigráció és Napi Szinkronizáció (Data Migration & Daily Sync)"
+Cohesion: 0.13
+Nodes (14): 🏢 1. Az Átemelt Cégek, 🏛️ 2. Teljes Architektúra és Séma Paritás (100% Egyezés), 📬 3. Üzemeltetési Elemek: PGMQ Sorok és Karbantartó Cron Jobok, 📊 4. Átemelt Adathalmazok Részletes Bontása, ⏰ 5. Napi 06:00-s Automatikus Szinkronizáció (Cron Job) és Teljes Ökoszisztéma Szinkron, 🌙 6. Éjszakai és Hajnali pg_cron Jobok Állapota (Prod DB), A. Globális Törzsadatok és Mesterdefiníciók (100% Prod Másolat), A. PGMQ Sorok (`pgmq.list_queues()`) (+6 more)
+
+### Community 280 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.13
+Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Munkamenet Oldalsáv és Beszélgetési Előzmények, 3.2 Cégkontextus Kiválasztása, 3.3 Gyors Kérdéssablonok (Prompt Kártyák), 3.4 Kérdésfeltevés és Válasz Generálás, 3.5 Válasz Vágólapra Másolása és Visszajelzés, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+
+### Community 281 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.13
+Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Visszanavigálás és Fejléc Mentés Gomb, 3.2 1. Fül — Általános Irodai Törzsadatok, 3.3 2. Fül — Biztonsági és Munkamenet Szabályok, 3.4 3. Fül — Értesítési Preferenciák és Emlékeztetők, 3.5 4. Fül — NAV Integrációs Környezet, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+
+### Community 282 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.13
+Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Kategória Választó Fülsor, 3.2 „Új sablon” Létrehozása Gomb, 3.3 Sablonszerkesztő Párbeszédablak és Változóbeillesztés, 3.4 Meglévő Sablon Módosítása, 3.5 Sablon Verziótörténet Megtekintése, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+
+### Community 283 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.13
+Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Szabadszavas Kereső és Állapotszűrő Gombok, 3.2 „Új kód” Felvétele Gomb, 3.3 Jogviszonykód Szerkesztő és Létrehozó Dialógus, 3.4 Kód Módosítása és NAV Referencia Megnyitása, 3.5 Táblázatos Lapozó és Tételszám, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+
+### Community 284 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.13
+Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 „Feed frissítése” Gomb (Automatikus Szinkron), 3.2 „Új bejegyzés” Rögzítése Gomb, 3.3 Új Jogszabályi Bejegyzés Létrehozása Párbeszédablak, 3.4 Hírfolyam Kártyák és Szakmai Elemzés, 3.5 Külső Jogforrás Megnyitása, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+
+### Community 285 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.13
+Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégfejléc és Akciógombok, 3.2 Bérszámfejtési KPI Összegző Kártyák, 3.3 Havi Bérszámfejtési Ciklusok Táblázata, 3.4 Új Munkavállaló Beléptető Varázsló, 3.5 Bérjegyzékek és Banki Átutalási Fájl Generálása, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+
+### Community 286 - "3. Mit lehet benne a felhasználónak csinálni?"
+Cohesion: 0.13
+Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégfejléc és Akciógombok, 3.2 Bevallási KPI Statisztikai Kártyák, 3.3 Szűrősáv és Keresőmező, 3.4 Bevallások Táblázata és Műveleti Ikonok, 3.5 Lapozó Sáv, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+
+### Community 287 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
+Cohesion: 0.13
+Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.2 „Kapcsolat & Értesítések” — Kapcsolattartó és csatornák beállítása, 3.3 „Adózási Profil” — Bevallási gyakoriságok és adózási formák, 3.4 „Bérszámfejtés & NAV” — Kerekítési és munkanap szabályok, 3.5 „Bérszámfejtés & NAV” — Pótlékszabályok és munkaidő-beállítások, 3.6 „Bérszámfejtés & NAV” — Kifizetési nap, Cafeteria és Távmunka keret, 3.7 „Bérszámfejtés & NAV” — Telephelyek és Székhelyek gyorskezelése (+6 more)
+
+### Community 288 - "carousel.tsx"
+Cohesion: 0.17
+Nodes (14): embla-carousel-react, Carousel, CarouselApi, CarouselContent, CarouselContext, CarouselContextProps, CarouselItem, CarouselNext (+6 more)
+
+### Community 289 - "ClientEvMainPage.tsx"
+Cohesion: 0.17
+Nodes (14): useCashbookTotals(), useEvRealTotals(), ClientEvMainPage(), EMPLOYMENT_LABELS, EMPLOYMENT_LABELS_HR, FORM_LABELS, FORM_LABELS_HR, formatEvAmount() (+6 more)
+
+### Community 290 - "functions/nav/index.ts"
+Cohesion: 0.22
+Nodes (10): buildHeader(), buildUserXml(), cors, queryInvoiceDataXml(), queryInvoiceDigestXml(), sha3_512UpperHex(), sha512UpperHex(), storeInvoiceDigests() (+2 more)
+
+### Community 291 - "🛠️ Végrehajtási Munkafolyamat (`/goal` Üzemmód)"
+Cohesion: 0.14
+Nodes (13): 1. Fázis: Teljes Forráselemzés és Követelmény-Leltár, 2. Fázis: Autonóm Rekordgenerálási Ciklus, 3. Fázis: Vizuális Illusztrációk Létrehozása a `diagramms/` Mappában, 4. Fázis: Tisztasági Szűrő és Csendes Audit (Zéró Fájlszemét), 5. Fázis: Központi `INDEX.md` Összeállítása, 6. Fázis: Lefedettségi és Integritási Minőségi Kapu (Kötelező Megállási Feltétel!), 📁 A Moduláris Rekordstruktúra és Mappaszerkezet, 🎯 Az 5 Nem-alkuképes Alapelv (Core Invariants) (+5 more)
+
+### Community 292 - "🛠️ Végrehajtási Munkafolyamat (`/goal` Üzemmód)"
+Cohesion: 0.14
+Nodes (13): 1. Fázis: Bemenet Elemzése és Képernyőtérkép Leltár, 2. Fázis: Autonóm Rekordgenerálási Ciklus, 3. Fázis: Vizuális UI Diagramok Generálása a `diagramms/` Mappában, 4. Fázis: Tisztasági Szűrő és Csendes Audit (Zéró Fájlszemét), 5. Fázis: Központi `INDEX.md` Összeállítása, 6. Fázis: Lefedettségi és Integritási Minőségi Kapu (Kötelező Megállási Feltétel!), 📁 A Moduláris Rekordstruktúra és Mappaszerkezet, 🎯 Az 5 Nem-alkuképes Alapelv (Core Invariants) (+5 more)
+
+### Community 293 - "📋 Működési Folyamat"
+Cohesion: 0.14
+Nodes (13): 1. Fejlesztő Azonosítása, 2. Kontextus Gyűjtése, 3. Összefoglaló Generálása, 4. Automatikus Mentés Mappába (Persistence & Git Tracking), 5. Megjelenítés a Felhasználónak, A Commit Message Felépítése:, Fejlesztő Automatikus Azonosítása (Developer Detection):, 👥 Fejlesztői Környezet & Almappák (+5 more)
+
+### Community 294 - "🔄 Kötelező Végrehajtási Folyamat (Workflow)"
+Cohesion: 0.14
+Nodes (13): 1. Lépés: Téma felmérése & Duplikáció-ellenőrzés, 2. Lépés: RAG-Optimalizált Cikk Felépítése, 3. Lépés: Adatbázis Módosítás Végrehajtása (Idempotens SQL), 4. Lépés: Frontend Fallback Szinkronizáció, 5. Lépés: RAG Retrieval Tesztelés (Rank & Keresési Validáció), 6. Lépés: Dokumentáció & Graphify Szinkronizáció, 🏛️ Architektúra Áttekintés, Elfogadási kritériumok: (+5 more)
+
+### Community 295 - "📄 Számlák"
+Cohesion: 0.14
+Nodes (14): `egyszerusitett_szamla_backup`, `invoice_items`, `invoice_uploads`, `invoices`, `note_attachments`, `notes`, `pdf_export_jobs`, `proforma_backup` (+6 more)
+
+### Community 296 - "💳 Tranzakciók & Bank"
+Cohesion: 0.14
+Nodes (14): `aggreg8_accounts`, `aggreg8_consents`, `aggreg8_settings`, `bank_statement_uploads`, `bank_statements`, `bank_transactions`, `match_transaction_overrides_log`, `payment_transfers` (+6 more)
+
+### Community 297 - "📊 Főkönyv (General Ledger)"
+Cohesion: 0.14
+Nodes (14): `chart_of_accounts_presets`, 📊 Főkönyv (General Ledger), ⚙️ Főkönyvi Lekérdező RPC Függvények & Nyitó Átgördítés (A-258), `get_gl_balances` / `get_gl_balances_json`, `get_gl_categorized_items`, `gl_accounts`, `gl_audit_accounts`, `gl_audit_imports` (+6 more)
+
+### Community 298 - "A-011: Mailgun Email Processing Pipeline"
+Cohesion: 0.13
+Nodes (14): A-011: Mailgun Email Processing Pipeline, Alias Not Found: Silent Handling (2026-07-07), Consequences, Context, Cross-company Email Routing (2026-07-02), Decision, 🔴 Incident: MAILGUN_SIGNING_KEY (2026-05-15 → 2026-06-11), Mailgun Retry Idempotency (2026-07-07) (+6 more)
+
+### Community 299 - "A-023: Upload Dedup Védelem (DB Trigger + Frontend Mutex)"
+Cohesion: 0.14
+Nodes (14): 2026-07-04: AFTER INSERT → BEFORE INSERT trigger fix, 2026-07-07: Email Alias Dedup Bypass + Mailgun Idempotency, 2026-09-03: P3 Worker-oldali Fuzzy Duplikáció-Szűrő és Bankszámlaszám Védelem (B-commerce Incidens), 2026-09-27: P4 Mailgun Webhook SHA-256 Tartalmi Deduplikáció és Szemét-Attachment Szűrés, A-023: Upload Dedup Védelem (DB Trigger + Frontend Mutex), Bugfix History, Consequences, Context (+6 more)
+
+### Community 300 - "Decision"
+Cohesion: 0.14
+Nodes (14): 1. Céghez rendelés és routing utáni aktiválás, 2. Többlépcsős intelligens jelöltkeresés (`find_matching_nav_invoice_and_items`), 3. Szigorú memóriabeli ellenőrzés (0 Ft tolerancia & Partner egyezés), 4. Fejléc hitelesítés és 23505 ütközésvédelem (`apply_nav_verified_status`), 5. NAV ÁFA-összeg Automatikus Átemelése (Authoritative NAV VAT Override — 2026-09-07), 6. Tételsorok Átvétele (Ideiglenesen felfüggesztve — 2026-09-07), 7. Robusztus Fallback, A-096: Hivatalos NAV Tételsor Védőháló, Sorszám Szinkronizáció és 23505 Ütközésvédelem (Authoritative NAV Line Items Crosscheck & Sync Guard) (+6 more)
+
+### Community 301 - "SubledgerItem"
+Cohesion: 0.21
+Nodes (12): D-1: Kettős Deviza Adatmodell és Típusbővítés (`src/types/subledger.ts`), BulkRoundingWriteOffModalProps, SubledgerExportDialogProps, SubledgerItemMatchesModalProps, SubledgerPostingModalProps, WriteOffSettlementModalProps, DerivedForeignAmounts, deriveItemForeignAmounts() (+4 more)
+
+### Community 302 - "Legnagyobb Chunk-ok"
+Cohesion: 0.14
+Nodes (13): 🏛️ Context, Code Splitting, Legnagyobb Chunk-ok, Route-Level Splitting, Decision 033: [Accounty] ÁFA Bevallás Modul, 1. Vezetői Összefoglaló (Executive Summary), 2. Témakörönkénti Összesítő Mátrix (45 Témakör), 🎯 Főbb Következtetések (+5 more)
+
+### Community 303 - "brd/INDEX.md"
+Cohesion: 0.22
+Nodes (5): 🎯 A Projekt Célja 1 Mondatban, 📌 Hogyan Olvasd Ezt a Dokumentációt?, 🧭 Navigáció és Dokumentumtérkép, Visibill & Beosztásom.hu Integráció — BRD Dokumentáció, 🎨 Vizuális Architektúra és Folyamatábrák (baoyu-diagram)
+
+### Community 304 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
+Cohesion: 0.14
+Nodes (14): 00. Vezetői Összefoglaló és Üzleti Kontextus, 1.1 A projekt célja egy mondatban, 1.2 Milyen üzleti problémát old meg?, 1. Vezetői Összefoglaló — Mi a Szoftver Értelme?, 2.1 Felhasználói Szerepkörök Mátrixa, 2. Érintettek és Felhasználói Szerepkörök, 3. A Meglévő Beosztásom.hu Bemutató Elemzése, 4. Azonosított Hiányosságok és a Visibill Megkülönböztető Előnyei (Kiemelt Értékajánlat) (+6 more)
+
+### Community 305 - "3. Üzleti Entitások és Felelősségi Körök"
+Cohesion: 0.14
+Nodes (14): 01. Fogalomtár és Konceptuális Domain Modell, 1. Hivatalos Munkajogi és Rendszer Szintű Fogalomtár, 2. Konceptuális Üzleti Domain Modell, 3.1 Cég (Ügyfélszervezet), 3.2 Munkahely / Telephely, 3.3 Munkakör, 3.4 Munkavállaló, 3.5 Műszak (+6 more)
+
+### Community 306 - "PRD-08: Dolgozói Önkiszolgáló Portál és Mobil Nézet"
+Cohesion: 0.14
+Nodes (14): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Dolgozói Mobil Képernyő és Wireframe, 3.1 Fejléc és Havi Munkaidő Keret Mutató, 3.2 Heti Dátumválasztó Csík (Week Slider), 3.3 Műszakkártyák Listája (Shift Cards), 3. Mobil Felületi Zónák Specifikációja (`MobileRosterView`), 4.1 Műszakcsere Lépései a Felületen (+6 more)
+
+### Community 307 - "🚨 Riasztások Központ és NAV Határidők (Alerts Center & NAV Deadlines)"
+Cohesion: 0.14
+Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Statisztikai Állapotkártyák (KPI Összegző), 3.2 Szabadszavas Kereső és Kategória Szűrősáv, 3.3 Archivált Riasztások Megjelenítése, 3.4 Riasztási Műveleti Kártyák és Intézkedések, 3. Mit lehet benne a felhasználónak csinálni?, 4.1 Reggeli határidő- és kockázatellenőrzés (+5 more)
+
+### Community 308 - "🛡️ Jogosultságkezelő Mátrix (Permission Matrix)"
+Cohesion: 0.14
+Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Mátrix Nézetváltó Fülek és Keresősáv, 3.2 Cég Hozzárendelése Könyvelőhöz, 3.3 Hozzárendelt Szerepkör Módosítása és Eltávolítása, 3.4 Modul Jogosultságok Finomhangolása (Olvasás / Írás), 3. Mit lehet benne a felhasználónak csinálni?, 4.1 Újonnan belépő junior könyvelő portfóliójának összeállítása (+5 more)
+
+### Community 309 - "🧮 Adómértékek és Jogszabályi Paraméterek (Tax Parameters)"
+Cohesion: 0.14
+Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Visszalépés Nyíl és Keresőmező, 3.2 Kategória Választó Fülsor, 3.3 Paraméter Táblázat és Adatlap, 3.4 Inline Értékmódosítás és Mentés, 3. Mit lehet benne a felhasználónak csinálni?, 4.1 Éves minimálbér-emelés beállítása januárban (+5 more)
+
+### Community 310 - "📋 Ügyfél Profil és Törzsadatok (Client Profile)"
+Cohesion: 0.14
+Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégadatok Panel, 3.2 Kapcsolattartó Adatlap és Mentés Gomb, 3.3 Adóprofil Összefoglaló, 3.4 Kommunikációs Csatornák és Automatikus Emlékeztetők, 3. Mit lehet benne a felhasználónak csinálni?, 4.1 Kapcsolattartó váltás átvezetése (+5 more)
+
+### Community 311 - "🏛️ Társasági Adó, KIVA és Zárás Modul (Client TAO/KIVA Module)"
+Cohesion: 0.14
+Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégfejléc és TAO Lapfülek, 3.2 TAO Pénzügyi KPI Összegző Kártyák, 3.3 11 Lépéses Éves Zárási Varázsló, 3.4 KIVA Kalkulátor és TAO–KIVA Összehasonlítás, 3. Mit lehet benne a felhasználónak csinálni?, 4.1 Májusi TAO bevallás elkészítése a zárási varázslóval (+5 more)
+
+### Community 312 - "Tárgyi Eszköz Nyilvántartó (TENY) – Teljes GAP Elemzés és Megvalósítási Terv"
+Cohesion: 0.05
+Nodes (38): 1. Főkönyv ↔ TENY Rekonciliációs Szolgáltatás (`assetReconciliationService.ts`), 🧭 1. Vezetői Összefoglaló és Érettségi Mátrix, 2.1. Tárgyi eszköz analitika és főkönyvi egyezőség, 2.2. Párhuzamos értékcsökkenési nyilvántartás, 2.3. Leltár és tárolóhely, 2.4. Fejlesztési tartalék és adókedvezmények, 2.5. Kivezetés, értékesítés, selejtezés, leltárhiány, 2.6. Támogatásból megvalósított eszközök (+30 more)
+
+### Community 313 - "3. Mit lehet benne a felhasználónak csinálni? (Funkciók részletes leírása)"
+Cohesion: 0.14
+Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 „Új szabály hozzáadása” gomb és rögzítő ablak, 3.2 Aktív Szabályok listája és kártyái, 3.3 Szabály állapota kapcsoló (Aktív / Inaktív státuszváltó), 3.4 Szabály törlése gomb, 3.5 Gyors Sablonok kártya és sablonkiválasztó gombok, 3.6 „Hogyan írj hatékony könyvelési szabályokat?” útmutató kártya (+5 more)
+
+### Community 314 - "P-015: Tömeges Műveletek (Bulk Actions)"
+Cohesion: 0.15
+Nodes (14): AlertDialog Portal Flash — Ismert Bug Fix (2026-06-24), Implementált Bulk Delete Pattern (A/B mód), Komponensek ahol implementálva van, P-015: Tömeges Műveletek (Bulk Actions), RPC: delete_upload_with_data, Számlatétel Könyvelési Státusz Tömeges Kezelése (2026-07-18), Számlák és Tranzakciók — Központi Lebegő Műveleti Sáv (FloatingBulkBar) (2026-09-14), Technikai Implementáció (+6 more)
+
+### Community 315 - "2. Terméktervezési Döntések (UX)"
+Cohesion: 0.16
+Nodes (13): 1. Felhasználói Igény és Célkitűzés, 2.1 Kétlépcsős Folyamat és Tiszta Szétválasztás (Two-step Timeline), 2.2 Közvetlen Számla Interaktivitás (`InvoiceDetailPopup`), 2.3 Retrospektív Működés, 2.4 Szűrés és Keresés, 2.5 Multi-Attachment Aggregáció és Fallback Zajszűrés (Deduplication), 2.6 Időrendi Stabilitás és Determinisztikus Sorrend (Szintetikus Eltolás Nélkül), 2.7 Modularizált Felületi Komponensek és Ergonómia (+5 more)
+
+### Community 316 - "send-invoice-notification/invoice-processed.tsx"
+Cohesion: 0.14
+Nodes (12): container, detailsBox, detailText, errorBox, errorText, footer, h1, h2 (+4 more)
+
+### Community 317 - "UI & UX Guidelines (Visibill / eaisybill-prod)"
+Cohesion: 0.15
+Nodes (12): 📋 10. Letisztult Űrlap Checkbox Konvenció, 🛑 11. Fals Üres Állapot Védelem & Sorszintű Hiba-Résiliencia, 🔄 1. A 4 Kötelező UI Állapot (The 4 States Rule), ⚡ 2. Aszinkron Műveletek & Dupla-kattintás Védelem (Double-Submit Guard), 💰 3. Pénzügyi Szám- és Dátumformázási Fegyelem, ⚠️ 4. Destruktív Műveletek Megerősítése (Confirm Dialogs), 🎯 5. Interakciós Tisztaság és Villogásvédelem ([10-accessibility-ux.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/10-accessibility-ux.md)), 🖥️ 6. Tabok, Master-Detail és Kijelzők Stabilitása (Zero-Jitter & ClearType Védelem) (+4 more)
+
+### Community 318 - "Database Development & Optimization Guidelines (Visibill / eaisybill-prod)"
+Cohesion: 0.15
+Nodes (12): 💰 10. Zero-as-Value & Falsy Védelem és RPC Tömb Pushdown, 🚀 11. Main Merge & Kötelező Éles Migráció Futtatás (Production Migration on Merge Guard), 🎯 1. Zero Silent DB Decisions, 📁 2. Migrációs Szabvány & Fájlkonvenciók, ⚙️ 3. RPC (Postgres Stored Procedures & Functions) Szabvány, 🛡️ 4. Row Level Security (RLS) és Bérlői Védelem, 🚀 5. Teljesítmény és Indexelés (Production-Grade), 🔄 6. Migrációs Nyilvántartás & Git Szinkron (Baseline Garancia) (+4 more)
+
+### Community 319 - "Teljes Edge Function Katalógus (70 db dokumentálva a 71-ből)"
+Cohesion: 0.15
+Nodes (13): 🔐 Auth & User Management (4 db), 📱 eaisyBooks / Accounty Modul (15 db), 📥 Email Fogadás & Saját Levelező (5 db), 📧 Email Küldés & Riportok (10 db), 🔌 External API & Számlázó Integrációk (4 db), 🛠️ Management & Üzemeltetés (8 db), 🗓️ MNB & Jogi Frissítések (2 db), 🔑 NAV Credentials (2 db) (+5 more)
+
+### Community 320 - "Decision"
+Cohesion: 0.15
+Nodes (13): A-007: LLM Stratégia (LiteLLM, Multi-Provider), Concurrency Control, Consequences, Context, Decision, Feladatonkénti Modell Használat, GL Besorolási Védelmi Rendszerek (Safeguards), Kapcsolódó ADR-ek (Worker) (+5 more)
+
+### Community 321 - "Decision"
+Cohesion: 0.15
+Nodes (13): A-019: Management Dashboard Architektúra, Adatforrások, API Design: Action-based Query Params, Architektúra: Edge Function + Service Role, Context, Decision, Error Handling, Error message elsőbbség (+5 more)
+
+### Community 322 - "eb0257JournalsAndPartnerLines.test.ts"
+Cohesion: 0.28
+Nodes (8): 11. Szigorúan Kronologikus Tömeges Könyvelési Sorrend- és Sorszámozás-védelem (2026-09-29), BankJournalEntity, BankMatchCriteria, CompanyBankAccountEntity, resolveBankJournal(), sanitizeAccountNumber(), generateDraftsFallback(), generatePettyCashDrafts()
+
+### Community 323 - "Decision"
+Cohesion: 0.15
+Nodes (13): 1. Magnum XML Streaming Parser Tükörkód Feloldás (`audit_xml_parser.py`), 2. Automatikus Számlatükör Szinkronizáció a Workerben (`audit_xml_handler.py`, Step 5.5), 3. Főkönyvi RPC Robusztusítás (`LEFT JOIN LATERAL` és Sztornó Támogatás), 4. Frontend Deviza Támogatás (`GeneralLedgerTable.tsx`), 5. `gl_journal_entries` RLS Szabályzatok Bővítése, A-087: Magnum Audit XML Főkönyvi Import, Tükörkód Feloldás, Számlatükör Auto-Szinkronizáció és RPC Robusztusság, Consequences, Context (+5 more)
+
+### Community 324 - "A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció"
+Cohesion: 0.15
+Nodes (13): 1. `(SELECT auth.uid())` InitPlan Minta Szabványosítása, 2. Single-Permissive és Write-Only RLS Konszolidáció, 3. Teljes Foreign Key B-Tree Lefedettség, 4. Célzott Lekérdezés Optimalizálás (Query Performance), 5. `search_path` Rögzítés és Séma Tisztítás, A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció, Consequences, Context (+5 more)
+
+### Community 325 - "P-138-unified-accounting-rules-and-prompt-library-ux.md"
+Cohesion: 0.24
+Nodes (6): 1. Architektúrális Háttér & Indoklás, 2. Adatmodell & Séma Specifikáció, 3. Kötegelt Végrehajtási Motor (`apply_invoice_item_rules`), A-144: Determinisztikus Számlatétel Szabály Motor (`invoice_item_rules`) és Kötegelt Illesztési Architektúra, Indexelés & RLS, `public.invoice_item_rules` Tábla
+
+### Community 326 - "2. Decision"
+Cohesion: 0.15
+Nodes (12): 1. Context, 2.1. Adatbázis Séma Bővítés (`is_active` mező a bankszámláknak), 2.2. Automatikus Kódgenerálás és Új Napló Modál (`CreateJournalModal.tsx`), 2.3. Bankszámla Kezelő Integráció (`BankAccountsTab.tsx`), 2.4. Globális Naplókezelő Modál (`ManageJournalsModal.tsx` & `JournalsPage.tsx`), 2. Decision, 3. Consequences, 4. Kapcsolódó Dokumentáció (+4 more)
+
+### Community 327 - "Decision"
+Cohesion: 0.15
+Nodes (13): 1. Kétfázisú Szétválasztott Szinkronizáció (Fast-Path & Background Queue), 2. Atomi Idempotens Tételmentés Tárolt Eljárással (RPC), 3. PGMQ Láthatóság-Elhalasztás NAV 503 Karbantartás Esetén (`public.pgmq_set_vt`), 4. Kötelező 30 Napos Catch-Up Garancia Mentéskor, 5. Automatikus Kategorizálás a Workerben, Tételsorok Után (follow-up, 2026-10-04), 6. Biztonsági Keményítés: Csak service_role Hívhatja a Belső RPC-ket (2026-10-04), A-193: Hibrid Aszinkron NAV Számlaszinkronizáció, PGMQ Tétel-feldolgozás, Atomi Idempotens Mentés és NAV 503 Reziliencia, Consequences (+5 more)
+
+### Community 328 - "A-237: NAV Online Számla v3 GZIP Kitömörítés és Többtételes Közműszámla Ingestion Architektúra"
+Cohesion: 0.15
+Nodes (13): 1. Aszinkron Streaming GZIP Kitömörítés (`xml-parser.ts`), 2. Kliens és Hívó Lánc Igazítás (`nav-client.ts`), 3. Letöltési Státusz Zárási Védelem (`nav-ingestion-service.ts`), 4. Adatbázis Integritási és Trigger Védelem, A-237: NAV Online Számla v3 GZIP Kitömörítés és Többtételes Közműszámla Ingestion Architektúra, A korábbi architektúra hibája:, Consequences, Context (+5 more)
+
+### Community 329 - "A-238: Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra"
+Cohesion: 0.15
+Nodes (13): 1. Bizonylatszintű Tételegyesítés az Adatbázisban (`20261009220000_group_invoice_drafts_by_document.sql`), 1. Többtételes Számlák Fragmentációja a Piszkozatokban, 2. A Napló Szűrési Rendszer Inkonzisztenciája és Hibái, 2. Pozitív Unió Iránymegfeleltetés (`journalFilterUtils.ts`), 3. Státusz Szűrési Állapotgép, 4. Moduláris Felületi Integráció (`JournalFilterModal.tsx` & `JournalsPage.tsx`), A-238: Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra, Consequences (+5 more)
+
+### Community 330 - "Visibill — Architecture Decision Records (ADR)"
+Cohesion: 0.15
+Nodes (13): 🗄️ Adatbázis & Pénzügy, 🤖 AI & Feldolgozás, 🔒 Biztonság & Auth, 📧 Email & Integráció, 💳 Fizetés, 🖥️ Frontend, Hogyan használd, 📡 Kommunikáció & Queue (+5 more)
+
+### Community 331 - "PRD-01: Portál Navigáció, Globális Vezérlők és Menürendszer"
+Cohesion: 0.15
+Nodes (13): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Felületcélkitűzés, 2. Képernyőelrendezés és Portálarchitektúra, 3. Vizuális Rendszerarchitektúra Diagram, 4.1 Cégválasztó Komponens (`CompanySwitcher`), 4.2 Időszakválasztó Komponens (`PeriodSelector`), 4.3 Értesítési Központ (`NotificationBadge` & `NotificationPopover`), 4.4 Felhasználói Profil és Biztonság (`UserProfileMenu`) (+5 more)
+
+### Community 332 - "PRD-03: Műszakszerkesztő Dialógus, Gyorskitöltő és Sablonkezelő"
+Cohesion: 0.15
+Nodes (13): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Műszakszerkesztő UI Dialógus és Állapotgép, 3. Műszakszerkesztő Mezőspecifikáció (`ShiftEditorDialog`), 4.1 Táblázat Szerkezete és Oszlopai, 4.2 Billentyűzet-központú Gépelési Élmény, 4. Alternatív Táblázatos Kitöltő Nézet (`TabularShiftEntryView`), 5.1 Munkarendek Sablonjai (`WorkSchedules`) (+5 more)
+
+### Community 333 - "PRD-04: Távollét- és Helyettesítéskezelő Felület"
+Cohesion: 0.15
+Nodes (13): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Távollét és Helyettesítés UI Munkafolyamat, 3. Távollét Rögzítő Űrlap Mezőspecifikáció (`AbsenceDialog`), 4.1 Rendes és Rendkívüli Szabadságok, 4.2 Keresőképtelenség és Egészségügyi Távollétek, 4.3 Családtámogatási és Gyermekgondozási Jogcímek, 4.4 Egyéb Törvényes és Hatósági Mentesülések (+5 more)
+
+### Community 334 - "Decision"
+Cohesion: 0.15
+Nodes (13): 1. Főkönyvi Egyezőség és `fixed_asset_id` Kötelezettség, 2. Kétlépcsős, Jóváhagyás-alapú Kivezetési Rend (Maker–Checker), 3. Tárolóhelyi Hierarchia és Mt. 179. § Szerinti Dolgozói Felelősségvállalás, 4. Törvényes Fordulónapi Analitikus Leltározás (Sztv. 69. §), 5. Fejlesztési Tartalék (Tao tv. 7. § (15)) és Késedelmi Pótlék Riasztás, 6. Pályázati Beruházások és ÉCS-arányos PIE Feloldás (Sztv. 45. § (2), 77. § (3)), 7. Pályázati Projektek Törlési Védelme és Komponens Életciklus Garanciák, Context (+5 more)
+
+### Community 335 - "🧩 Az 5 Alapvető Hook Részletezve"
+Cohesion: 0.15
+Nodes (13): 1. `useState` — Lokális Állapotkezelés, 2. `useEffect` — Mellékhatások Kezelése, 3. `useRef` — Változó Renderelés Nélkül & DOM Elérés, 4. `useContext` — Globális Adatátadás, 5. Custom Hooks (Saját Hook-ok), 💡 A Függőségi Tömb (Dependency Array) Szabályai:, 📜 A Hook-ok 2 Arany Szabálya (Rules of Hooks), 🧩 Az 5 Alapvető Hook Részletezve (+5 more)
+
+### Community 336 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.15
+Nodes (12): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Főkönyvi Kivonat Fa-struktúra és Számlaosztály Szűrők, 3.2 Főkönyvi Gyorskereső és Valós Idejű Fa-Szűrés, 3.3 Főkönyvi Karton Megnyitása és Bizonylatszintű Mélyfúrás, 3.4 Audit XML (SAF-T) Feltöltése és Adatimport, 3.5 Új Vegyes Könyvelési Tétel Rögzítése, 3.6 Mesterséges Intelligencia Kontírozási Asszisztens Futtatása (+4 more)
+
+### Community 337 - "Nav2665ReplicaContainer"
+Cohesion: 0.18
+Nodes (12): 1. „Semmit a kéznek, mindent a szemnek” Elv, 2. Hivatalos ÁNYK 2665 Vizuális Formátum és Lapszerkezet, 3. Eszköztár és Ergonómiai Vezérlők, Decision, Kapcsolódó, P-126: NAV 2665 Hivatalos Nyomtatvány Digitális Replika UX, Question, Rationale (+4 more)
+
+### Community 338 - "useSubledger.ts"
+Cohesion: 0.29
+Nodes (10): 2.5 Folyószámla Modul Szűrése (`SubledgerPage`, `useSubledgerAccounts`), mockRpc, subledgerQueryKeys, useAutoSettleSubledgerItems(), useBatchPostSubledgerItems(), useSettleOpenItems(), useSubledgerAccounts(), useSubledgerItems() (+2 more)
+
+### Community 339 - "navProtocol.test.ts"
+Cohesion: 0.23
+Nodes (8): js-sha3, createSignature(), extractAddressLocal(), extractTag(), extractTaxNumber(), formatCompactTimestamp(), parseInvoiceDigestXml(), parseNavError()
+
+### Community 340 - "syncKnowledgeBase.cjs"
+Cohesion: 0.18
+Nodes (12): EAISYBILL_DIR, EAISYBILL_MAP, EAISYBOOKS_DIR, EAISYBOOKS_MAP, executeSql(), FALLBACK_FILE, fs, https (+4 more)
+
+### Community 341 - "SharedComponents.tsx"
+Cohesion: 0.15
+Nodes (7): Breadcrumb(), BreadcrumbItem, COLOR_MAP, EmptyStateProps, ICON_COLOR_MAP, KpiCard(), KpiCardProps
+
+### Community 342 - "inventoryReportExport.ts"
+Cohesion: 0.28
+Nodes (11): InventoryItemState, exportInventoryReportPdf(), exportInventoryReportXlsx(), generateInventoryReportPdf(), generateInventoryReportPdfBlob(), hu(), INVENTORY_STATUS_LABELS, InventoryCheckStatus (+3 more)
+
+### Community 343 - "inviteCodeFlow.test.ts"
+Cohesion: 0.17
+Nodes (12): Assignment, COMPANIES, Company, FIFTEEN_MIN_AGO, FIVE_MIN_AGO, joinCompanyAsAccountant(), JoinResult, JUST_EXPIRED (+4 more)
+
+### Community 344 - "React & Frontend Guidelines (Visibill / eaisybill-prod)"
+Cohesion: 0.17
+Nodes (11): 10. Pénzügyi Korosítás Dátum-Invariánsa (Történeti Cutoff vs. Mai Nap), 1. Komponens Architektúra és Kompozíció, 2. Teljesítmény és Renderelés (Vercel Best Practices), 3. Stílus és UI Konvenciók, 4. TypeScript és Típusbiztonság, 5. Gyors Kódminőség és Hook Ellenőrzés (Oxlint), 6. Infinite Scroll és PostgREST Lapozási Architektúra (PGRST103 & Loop Védelem), 7. i18next Dinamikus Objektum és Tömb Lekérések (Tömb-Fallback Invariáns) (+3 more)
+
+### Community 345 - "Moduláris BRD Készítési Irányelvek és Rekordstruktúra Sablon"
+Cohesion: 0.17
+Nodes (11): 🎯 1. A BRD Alapelvei és Szerepe, 📁 2. A Dinamikus Rekordstruktúra és Mappaszerkezet, 📄 3. Egy Atomikus BRD Döntési Rekord Belső Anatómiája, 🗺️ 4. A Központi `INDEX.md` Felépítése, 🎨 5. A Dedikált Diagram Alkönyvtár Szabványa (`diagramms/`), 🔄 6. A `/goal` Teljességi és Megállási Feltétel (Completeness Gate), (Business Requirements Document Guidelines & Dynamic Record Architecture), 📌 Dinamikus Dekompozíció (Nincs Merev Kötetszám!) (+3 more)
+
+### Community 346 - "📘 eaisyBooks — Adó & Jogi"
+Cohesion: 0.17
+Nodes (12): `accounty_cegkapu_settings`, `accounty_data_contracts`, `accounty_filings`, `accounty_global_tax_params`, `accounty_legal_updates`, `accounty_nav_representations`, `accounty_retention_rules`, `accounty_tao_yearly` (+4 more)
+
+### Community 347 - "Decision"
+Cohesion: 0.17
+Nodes (12): A-028: PDF Export Workflow & Lifecycle (v2 — Worker Pipeline), Architektúra, Cleanup, Consequences, Context, Decision, Elvetett megoldások, Job lifecycle & Modes (+4 more)
+
+### Community 348 - "Decision"
+Cohesion: 0.17
+Nodes (12): 2. Dual-mode `send-accounty-notification` EF, 3. Opt-in logika (v2 — javított), 4. Default értékek: minden KI, 5. Dual trigger model, 6. Felhasználó email cím source, A-030: Accounty Email Notification Architecture, Consequences, Context (+4 more)
+
+### Community 349 - "Decision"
+Cohesion: 0.17
+Nodes (12): 0. Tier 0: Authoritative NAV Online Számla Cross-Check (`_check_nav_invoice_info`), 1. Programmatic Override — Tax-based double-check, 2. Hallucination Detection — Seller == Buyer guard, 3. Noisy Seller Recovery — Zajos operátornév helyreállítása (NAV nélküli fallback), 4. VAT ID Zipcode Sanitization, A-048: Invoice Direction Detection — Programmatic Override Safety Net, Consequences, Context (+4 more)
+
+### Community 350 - "2. Hiba Források"
+Cohesion: 0.17
+Nodes (12): A-083: Rules of Hooks Invariáns Garantálása és Teszt-Telemetria Kiszivárgás Megelőzése, Consequences, Context, Decision, Gyökérok Elemzés (RCA), Kapcsolódó, 2.1 Frontend — `errorReporter.ts`, 2.2 Worker — `error_reporter.py` (+4 more)
+
+### Community 351 - "Decision"
+Cohesion: 0.17
+Nodes (12): 1. Atomi PostgREST Upsert (`onConflict: 'company_id'`), 2. Parciális Frissítések Izolációja (Partial Payload Isolation), 3. Szigorú Típusbiztonság (`CompanySettingsInsert`), 4. UI Dupla Eseménykiváltás Megszüntetése és Pending Védelem, 5. Optimista UI Rollback Hiba Esetén, 6. Memóriabeli Referencia Stabilitás (`useMemo`), A-093: Atomi Cégbeállítások Upsert, Versenyhelyzet Megelőzés és Parciális Frissítések Izolációja, Consequences (+4 more)
+
+### Community 352 - "Decision"
+Cohesion: 0.17
+Nodes (12): 1. Szigorú Reguláris Token-Határ Illesztés (`_is_exact_invoice_number_in_description`), 2. Részhalmaz-Kiszűrés és Leghosszabb Egyezés Elve (`_filter_subsumed_hits`), 3. Többszörös Párosítás Jóváhagyási Kapu (Multi-Match Confidence Gate), 4. Adatbázis-szintű Törlési és Lekapcsolási Triggerek, 5. Banki Referenciaszám Alapú Import Deduplikáció (`db.py`), A-128: Szigorított Számlaszám Határ-illesztés (Boundary Matching), Részhalmaz Kiszűrés (Subsumption Filter) és Többszörös Párosítási Jóváhagyási Kapu, Consequences, Context (+4 more)
+
+### Community 353 - "2. Decision"
+Cohesion: 0.17
+Nodes (12): 1. Context, 1. Kriptográfiai Pipeline és Kétrétegű Hitelesítés, 2. Adatbázis Séma és RLS Védelem (`20260924163000_nav_upo_m2m.sql`), 2. Decision, 3. Biztonsági Maszkolás és Revokáció RPC-k, 3. Consequences, 4. Automatizált Háttérszinkronizáció (`cron_sync_all`), 4. Kapcsolódó (+4 more)
+
+### Community 354 - "A-233: Kézi Készpénzes Számlarendezések Automatikus Házipénztár Integrációja és GLS Kompenzációs Normalizálás"
+Cohesion: 0.17
+Nodes (12): 1.1 Készpénzes Számlarendezés és a Házipénztár Eltávolodása, 1.2 GLS Kompenzációs Értesítők Elcsúszott Előtagjai és Fuvardíj-részletezők Kihagyása, 1. Context & Problémameghatározás, 2.1 Készpénzes Rendezések Valós Idejű Házipénztár Bejegyzése (`record_manual_invoice_payment`), 2.2 `sync_petty_cash_entries` Szinkronizáció Kibővítése, 2.3 GLS Kompenzációs Normalizálás és Fuvardíj Részletezők Mentessége, 2. Decision & Architektúrális Megoldás, 3. Következmények és Előnyök (+4 more)
+
+### Community 355 - "💡 Decision"
+Cohesion: 0.17
+Nodes (12): 1. PROCONT Számlafa Hierarchia és Aggregációs Motor (`src/lib/procontGlData.ts`), 2. Hivatalos PROCONT „EGYEZŐSÉG SZÁMÍTÁS” Motor, 3. Vektoros A4 Álló PDF Motor és Többoldalas Layout Védelem (`src/lib/procontGlPdf.ts`), 4. Excel Munkafüzet Generáló Motor (`src/lib/procontGlExcel.ts`), 5. Felhasználói Integráció (`GlToolbar.tsx`, `GeneralLedgerTable.tsx`, `GeneralLedgerPage.tsx`), A-239: PROCONT Főkönyvi Kivonat Export, Hierarchikus Számla-aggregáció és Mérleg-Eredmény Egyezőség-számítás Architektúra, ⚡ Consequences, 🏛️ Context (+4 more)
+
+### Community 356 - "Decision"
+Cohesion: 0.17
+Nodes (12): 1. Adatbázis Modell és Atomi RPC-k (`20261012170000_payroll_reconciliation_and_payouts.sql`), 2. Algoritmikus Motorok (`src/lib/payroll/`), 3. Főoldali Tab Konszolidáció (`PayrollDashboardPage.tsx`), 4. ClientNav Longest-Prefix Match Algoritmus, 5. Impersonációs Versenyhelyzet Elhárítása (`useAppReady.ts`, `ProtectedRoute.tsx`), A-250: 14. Bérszámfejtés és Főkönyvi Bérfeladás Modul Architektúra, GIRO Motor és Tab Konszolidáció, Consequences, Context (+4 more)
+
+### Community 357 - "PRD-06: Jelenlét-Igazolás, Hóvégi Zárás és Bérszámfejtési Export"
+Cohesion: 0.17
+Nodes (12): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Hóvégi Zárás és Export Munkafolyamat, 3.1 Fejléc Vezérlők, 3.2 Tervezett vs. Tényleges Eltérés-Összehasonlító Táblázat, 3. Jelenlét-Igazolás Képernyő Specifikáció (`AttendanceVerificationView`), 4. Hóvégi Zárási Varázsló (`ClosureWizardModal`), 5.1 Fájlstruktúra és Munkalapok (+4 more)
+
+### Community 358 - "Decision"
+Cohesion: 0.17
+Nodes (12): 1. Nyitó Egyenlegek Folytonossága és Integritása (100.00%-os Egyezés), 2. Előző Évi Adózott Eredmény Átvezetése (Sztv. 37. § (1)), 3. Tárgyi Eszköz Beruházások Aktiválása (1. számlaosztály), 4. Banki Bizonylatok és NAV Adószámlák Könyvelése (B1 Napló), 5. Készpénzes Számlák és Házipénztár Könyvelése (P1 Napló), 6. Időszaki Lefedettség Eltérés (2026. augusztus vs. szeptember), 7. Anyagköltség Számlatükör-bontás (511 vs. 513), Decision (+4 more)
+
+### Community 359 - "eaisybill Design System — Áttekintés"
+Cohesion: 0.17
+Nodes (12): Alkalmazási Terület, Az Alkalmazás Dióhéjban, Brand Logó, Design Filozófia, Design System Célja, eaisybill Design System — Áttekintés, Konvenciók Új Termékekhez, Multi-Product Design System (+4 more)
+
+### Community 360 - "Kiegészítő Standalone Komponensek"
+Cohesion: 0.17
+Nodes (12): CategoryCard, CompanySelector, EmailAliasManager, EmailPreferences, InvoiceImagePreview, Kiegészítő Standalone Komponensek, LiveNotificationProvider, NylasEmailConnect (+4 more)
+
+### Community 361 - "🗂️ Kategóriák és Modulok"
+Cohesion: 0.17
+Nodes (12): 1. Üzlet, Márkák & Magyar Adózás, 2. Biztonság, Autentikáció & Megfelelőség, 3. Adatbázis & Szervermentes Logika, 4. Aszinkron Kommunikáció & Valós Idejű Hálózat, 5. Szoftverminták, Algoritmusok & Megbízhatóság, 6. Felhő, Konténerek & CI/CD DevOps, 7. Futtatókörnyezetek, Keretrendszerek & AI Pipeline, 8. System Design Minták & Algoritmusok (+4 more)
+
+### Community 362 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Időszakválasztó (Dátumtartomány szűrő), 3.2 Fő Teljesítménymutatók (KPI Kártyasor), 3.3 Bevételek és Költségek Trendje (Interaktív Forgalmi Grafikon), 3.4 ÁFA Pozíció és Adóteher Előrejelző Panel, 3.5 Deviza Árfolyamkülönbözet Analitika, 3.6 Gyors Teendők és Riasztások Doboz (+3 more)
+
+### Community 363 - "🗂️ Gyors Hivatkozások a Glossary Modulokhoz"
+Cohesion: 0.18
 Nodes (11): 1. Üzlet, Márkák & Magyar Adózás, 2. Biztonság, Autentikáció & Megfelelőség, 3. Adatbázis & Szervermentes Logika, 4. Aszinkron Kommunikáció & Valós Idejű Hálózat, 5. Szoftverminták, Algoritmusok & Megbízhatóság, 6. Felhő, Konténerek & CI/CD DevOps, 7. Futtatókörnyezetek, Keretrendszerek & AI Pipeline, 8. System Design Minták & Algoritmusok (+3 more)
 
 ### Community 364 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.11
-Nodes (18): 10. Többdevizás Nyitó Sorok Perzisztenciája és Fallback Generátor Típusbiztonság (2026-09-23), 11. Szigorúan Kronologikus Tömeges Könyvelési Sorrend- és Sorszámozás-védelem (2026-09-29), 1. Adatmodell (`acc_*` táblák), 2. Sorszám Generálás és Konkurencia Kezelés, 3. Integritás és Triggerek, 4. RPC Műveletek és Automatikus Kontírozás, 5. Frontend & Kliensoldali Architektúra (Decoupling), 6. Nyitóadatok és Főkönyvi Kivonat (GL) Integráció (2026-09-03 — Migráció `20260903120000`) (+10 more)
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Költségmegoszlási Kördiagram, 3.2 Új Kategória Hozzáadása, 3.3 Kategória Lenyitható Adatlap és Számlalista, 3.4 Kategória Szerkesztése és Módosítása, 3.5 Kategória Törlése, 3.6 Számlák Kézi Átsorolása Más Kategóriába (+3 more)
 
 ### Community 365 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.11
-Nodes (18): profile_summary, title, sections, cashflow, monthly_comparison, quick_actions, recent_invoices, recent_invoices_tooltip (+10 more)
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Számlatípus Lapfülek, 3.2 Részletes Kereső és Szűrősáv, 3.3 Számlakép Megtekintése és Letöltése, 3.4 Tételek és Főkönyvi Kontírozás Munkalap, 3.5 Fizetettség Kézi Rögzítése, 3.6 Lebegő Kötegelt Műveleti Sáv (+3 more)
 
 ### Community 366 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.11
-Nodes (18): profile_summary, title, sections, cashflow, monthly_comparison, quick_actions, recent_invoices, recent_invoices_tooltip (+10 more)
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Bankkivonat Feltöltése és Kezelése, 3.2 Számlapárosítás és Jóváhagyás, 3.3 Tranzakció Felbontása és Részfizetés, 3.4 Nem Számlaköteles Tétel Könyvelése, 3.5 Futár Riportok, Kompenzációs Értesítők és SZÉP Kártya Munkaterület, 3.6 Párosítási Szabályok Kezelése (+3 more)
 
 ### Community 367 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.11
-Nodes (18): compilerOptions, allowImportingTsExtensions, isolatedModules, jsx, lib, module, moduleDetection, moduleResolution (+10 more)
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Számlák Kijelölése és Utalási Csomag Összeállítása, 3.2 Partnerenkénti Csoportosítás Kapcsoló, 3.3 Forrás Bankszámla és Értéknap Kiválasztása, 3.4 Partner Bankszámlaszám Azonnali Rögzítése és Javítása, 3.5 GIRO és SEPA Export Fájl Generálása, 3.6 Utalási Csomagok Története és Visszavonása (+3 more)
 
 ### Community 368 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.11
-Nodes (18): header, net_balance, total_deductible_tax, total_payable_tax, lines, m_lines, m_lines_count, metadata (+10 more)
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Beszámoló Varázsló Lépésválasztó Sávja, 3.2 Alapadatok és Céginformációk Beállítása (1. Lépés), 3.3 Automatikus Mérleg és Eredmény Adatimport, Validáció (2–3. Lépés), 3.4 Kiegészítő Melléklet Intelligens Szerkesztője (4. Lépés), 3.5 Osztalékfizetési Korlát Kalkulátor és Határozat Készítő (5. Lépés), 3.6 Hivatalos Beszámoló Csomag Exportálása és Üzleti Év Zárolása (6. Lépés) (+3 more)
 
-### Community 369 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.07
-Nodes (29): 1.0 Hipotézis és Megértés, 1.1 Rendszer-feltételezések (Assumptions I'm Making), 📊 1. Adatmodell Döntések, 🏗️ 2. Architektúra és Számviteli Döntések, 🖥️ 3. Frontend & UX Döntések, 🎯 FÁZIS 1: Kontextus és Hipotézis, 🛡️ FÁZIS 2.1: Spec Reviewer Audit (6-Dimenziós Elemzés), 📦 FÁZIS 2.5 & 2.6: Micro-Module Dekomponálás és Függőségi Gráf (+21 more)
+### Community 369 - "TENY (Tárgyi Eszköz Nyilvántartó) – Hivatalos Implementációs Terv"
+Cohesion: 0.08
+Nodes (24): 1.0 Hipotézis és Megértés, 1.1 Rendszer-feltételezések (Assumptions I'm Making), 📊 1. Adatmodell Döntések, 🏗️ 2. Architektúra és Számviteli Döntések, 🖥️ 3. Frontend & UX Döntések, 🎯 FÁZIS 1: Kontextus és Hipotézis, 📦 FÁZIS 2.5 & 2.6: Micro-Module Dekomponálás és Függőségi Gráf, 🔍 FÁZIS 2: Döntési Mátrix (Zero Silent Decisions) (+16 more)
 
-### Community 370 - "useDocumentUpload.ts"
-Cohesion: 0.11
-Nodes (19): alanyi_mentes, penzforgalmi, vat, analytics, categories, costs, deductible_vat, inbound_vat_content (+11 more)
+### Community 370 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Időszakválasztó és ÁFA Pozíció Kártyák, 3.2 Hivatalos 65-ös NAV Űrlaptábla és Sorok Kibontása, 3.3 Törvényi Levonási Korlátozások Beállítása, 3.4 NAV M-lapos Belföldi Összesítő Jelentés Ellenőrzése, 3.5 Hivatalos NAV ÁNYK és ONYA XML Export, 3.6 Számlaszintű ÁFA Analitika Letöltése (PDF / Excel) (+3 more)
 
 ### Community 371 - "Visibill Development & Escalation Protocol"
 Cohesion: 0.33
 Nodes (5): 🎯 5 Nem-alkuképes Alapelv (Core Invariants), 🔄 Eszkalációs Döntési Mátrix (Escalation Workflow), ✍️ Formázási és Kommunikációs Szabály, 📋 Szakterületi Szabályok és Minőségbiztosítás, Visibill Development & Escalation Protocol
 
-### Community 372 - "Új viselkedés"
-Cohesion: 0.11
-Nodes (19): accounting_depr, book_value, custom_rate, dev_reserve_badge, dev_reserve_note, lifetime, method, rate (+11 more)
+### Community 372 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Naplótípus Választó Lapfülek és Státusz Szűrők, 3.2 Új Kézi Vegyes Könyvelési Tétel Rögzítése, 3.3 Nyitó Napló Varázsló, 3.4 Tételek Ellenőrzése és Kötegelt Jóváhagyása, 3.5 Hibás Könyvelési Tétel Sztornózása, 3.6 Időszaki Zárolás (Könyvelési Lakat) (+3 more)
 
-### Community 373 - "3. UI/UX Tervezet"
-Cohesion: 0.11
-Nodes (19): table, ai_suggested, booked, click_kpi_to_clear, collapse_all, compensation, expand_all, invoice_image (+11 more)
+### Community 373 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Bérösszesítő Mutatók (KPI Kártyasor), 3.2 Új Havi Bér Rögzítése és Automatikus Bérkalkuláció, 3.3 Munkavállalói Kártyák és Digitális Bérlap (PDF) Kezelése, 3.4 Adókedvezmények Érvényesítése, 3.5 NAV Havi Járulékösszesítő Táblázat, 3.6 Bérkifizetési Banki Utalási Lista (+3 more)
 
-### Community 374 - "Kiterjesztések, Sorok és Tesztkörnyezet Migráció (Extensions, Queues & Local replica)"
-Cohesion: 0.11
-Nodes (19): modal, address_placeholder, appearance_title, bg_color, foreign_tax_number_placeholder, monogram, related_party_hint, related_party_label (+11 more)
+### Community 374 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Napi Időrögzítő Panel és Projekt Hozzárendelés, 3.2 Havi Jelenléti Ív Mátrix és Színkódos Naptár, 3.3 Vezetői Jóváhagyási Munkaterület, 3.4 Szabadságigénylési Modul és Keretellenőrző, 3.5 Alkalmazotti Óradíjak és Munkakör Beállítások, 3.6 Hivatalos Mt. Jelenléti Ív Nyomtatása (PDF) (+3 more)
 
-### Community 375 - "LeavePanel.tsx"
-Cohesion: 0.11
-Nodes (19): dialog, cancel, category_filter, companies_selected, description, error_email_invalid, error_email_required, error_no_company (+11 more)
+### Community 375 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Pozíciószám Kereső és Státusz Szűrősáv, 3.2 Logisztikai KPI Kártyák és Párosítási Kördiagram, 3.3 Fuvarok Táblázata és Számlakép Megtekintése, 3.4 Kézi Számlapárosítás és Szétkapcsolás, 3.5 CMR és Fuvarokmányok Feltöltése és Csatolása, 3.6 Fuvarlista Exportálása (Excel / CSV) (+3 more)
 
-### Community 376 - "ManualUploadFeature.tsx"
-Cohesion: 0.11
-Nodes (19): extra_matches, gl_selector, subtitle, title, dialogs, details, badge_nav, badge_submitted (+11 more)
+### Community 376 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Kétpaneles Összehasonlító Nézet (Számla vs. Megbízás), 3.2 Differencia és Anomália Címkék, 3.3 Jóváhagyás és Kifizetés Engedélyezése, 3.4 Vitatás és Kifizetési Zárolás, 3.5 Szétkapcsolás (Téves Gépi Összerendelés Bontása), 3.6 Csatolt CMR Okmány és Számlakép Együttes Ellenőrzése (+3 more)
 
-### Community 377 - "importCustomsAccounting.ts"
-Cohesion: 0.11
-Nodes (19): alanyi_mentes, penzforgalmi, vat, analytics, categories, costs, deductible_vat, inbound_vat_content (+11 more)
+### Community 377 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Jegyzet Létrehozása, 3.2 Láthatósági Váltókapcsoló (Privát vs. Megosztott), 3.3 Kétpaneles Munkaterület és Kategória Lapfülek, 3.4 Intelligens Jegyzet- és Számlakereső Mező, 3.5 Számla és Banki Tranzakció Hozzákapcsolása, 3.6 Csatolt Számlakép és Tranzakció Megnyitása (+3 more)
 
-### Community 378 - "accountyPermissions.test.ts"
-Cohesion: 0.11
-Nodes (19): accounting_depr, book_value, custom_rate, dev_reserve_badge, dev_reserve_note, lifetime, method, rate (+11 more)
+### Community 378 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Nettó / Bruttó Szemléletmód Váltókapcsoló, 3.2 Megjelenítendő Rétegkapcsolók (Árbevétel, Költség, Bér), 3.3 Havi Bontású Interaktív Trendgrafikon és Értékbuborék, 3.4 Havi Időszakos Összehasonlító Panel, 3.5 ÁFA Kulcsok Szerinti Analitikai Diagram, 3.6 Pénzügyi Analitika Exportálása (PDF / Excel) (+3 more)
 
-### Community 379 - "welcome.tsx"
-Cohesion: 0.11
-Nodes (19): table, ai_suggested, booked, click_kpi_to_clear, collapse_all, compensation, expand_all, invoice_image (+11 more)
+### Community 379 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Csatornaválasztó Lapfülek (5 Specializált Csatorna), 3.2 Drag & Drop Feltöltési Zóna és Fájlböngésző, 3.3 Feltöltés Előtti Ellenőrző Lista és Előnézet, 3.4 Feldolgozás Indítása és Állapotjelző Sáv, 3.5 Feltöltési Előzmények és Feldolgozási Státuszkövető, 3.6 Eredeti Bizonylat Visszatöltése (+3 more)
 
-### Community 380 - "compilerOptions"
-Cohesion: 0.11
-Nodes (19): modal, address_placeholder, appearance_title, bg_color, foreign_tax_number_placeholder, monogram, related_party_hint, related_party_label (+11 more)
+### Community 380 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégadatok és AI Cégismertető Generálása, 3.2 Csatlakozási Kód Generálása (Gyors Tagcsatlakoztatás), 3.3 Új Tag Meghívása és Jogosultságok Beállítása, 3.4 Új Bankszámla Rögzítése és IBAN Validáció, 3.5 Rendszer Téma és GDPR Adatvagyon Exportálása, 3.6 Kétlépcsős Hitelesítés (2FA) és Jelszócsere (+3 more)
 
-### Community 381 - "🤖 Visibill AI Skills"
-Cohesion: 0.11
-Nodes (19): dialog, cancel, category_filter, companies_selected, description, error_email_invalid, error_email_required, error_no_company (+11 more)
+### Community 381 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Tudástár Gyorskereső Mező, 3.2 Kategória Szűrőgombok és Cikkszámlálók, 3.3 Cikk Kártyák és Nehézségi Szint Jelvények, 3.4 Cikkolvasó Nézet és Lépésről Lépésre Útmutató, 3.5 „Hasznos volt ez a cikk?” Minősítő Visszajelzés, 3.6 Közvetlen Ugrás a Funkcióra (Műveleti Gomb) (+3 more)
 
-### Community 382 - "🔄 Részletes Szinkronizációs Protokoll (Workflow)"
-Cohesion: 0.11
-Nodes (19): extra_matches, gl_selector, subtitle, title, dialogs, details, badge_nav, badge_submitted (+11 more)
+### Community 382 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Hibajegy Indítása, 3.2 Hibajegyek Listája és Állapotszűrők, 3.3 Üzenetváltási Idővonal és Válasz Küldése, 3.4 Képernyőkép és Fájlmelléklet Csatolása, 3.5 Hibajegy Lezárása és Újranyitása, 3.6 Operátori Belső Jegyzet és Felelős Kijelölése (+3 more)
 
-### Community 383 - "Visibill PM Task Creator — Letisztult Task Brief & Asana Generátor"
-Cohesion: 0.11
-Nodes (19): settle_dialog, cancel, confirm, desc, invoices_count, note, note_placeholder, opt_cash (+11 more)
+### Community 383 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Öregedési Szűrőkártyák (0–15 nap, 16–30 nap, 30+ nap), 3.2 Globális Hiánylista Táblázat és Cégszűrő, 3.3 Automatikus Ügyféli Bizonylatbekérő Küldése, 3.4 Kézi Számlapárosítás Keresőablak, 3.5 Nem Számlaköteles Tétel Átminősítése, 3.6 Hiánylista Riport Exportálása (Excel / PDF) (+3 more)
 
-### Community 384 - "📊 Főkönyv (General Ledger)"
-Cohesion: 0.11
-Nodes (17): 1. Executive Summary & Architecture Paradigm, 2.1. URL Mappázás és Alútvonalak, 2. Navigáció & Útvonalstruktúra (Routing Engine), 3.1. Hibrid Felbontási Mechanizmus (`useAccountyPermissions`), 3.2. Irodai Szerepkörök és Hatáskörök Mátrixa, 3. Jogosultságkezelés & RBAC Architektúra, 4.1. Bérszámfejtési Alrendszer (Payroll Engine), 4.2. Egyéni Vállalkozói (EV) és Szervezeti Könyvvitel (+9 more)
+### Community 384 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Naptár és Idővonal Nézetváltó Kapcsolók, 3.2 Adónem és Kötelezettség Szűrők, 3.3 Cég és Felelős Könyvelő Szűrősáv, 3.4 Határidő Adatlap és Érintett Ügyfelek Listája, 3.5 Benyújtási Státusz Beállítása és Követése, 3.6 Naptár Szinkronizáció és Havi Teendőlista (PDF / iCal) (+3 more)
 
-### Community 385 - "A-045: Audit Trigger Email-Alias Bypass a Service Role Guard Alatt"
-Cohesion: 0.11
-Nodes (17): 10. 🔌 Külső Integrációk & API (4 db), 11. 🗓️ MNB & Jogi Frissítések (2 db), 12. 🚚 Szállítmányozás / HRTSPED (1 db), 13. 🏦 Open Banking & Aggreg8 Integráció (2 db), 1. 🏛️ NAV Integráció (11 db), 2. 📧 Email Küldés & Riportok (10 db), 3. 📥 Email Fogadás & Saját Levelező (5 db), 4. ⚡ Queue & Export Generálás (2 db) (+9 more)
+### Community 385 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Konszolidált Portfólió Műszerfal és Kockázati Mátrix, 3.2 AI Anomália Detektáló Lista és Szakmai Bizonyítékok, 3.3 Téves Riasztás Elfogadása és AI Tanítás, 3.4 Javítás Kezdeményezése és Feladatküldés, 3.5 Hiányzó Bizonylatok Vezetői Rangsor Táblázata, 3.6 Vezetői Riport Exportálása (Excel / PDF) (+3 more)
 
-### Community 386 - "A-052: Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció"
-Cohesion: 0.11
-Nodes (17): 06 — Állapotkezelés & Kontextusok, Context Hierarchia, Custom Hookek Áttekintése, Figyelt Táblák (19), Invalidation Stratégia, Invoice Feature State & URL Sync (`src/features/invoices/context/InvoiceContext.tsx`), localStorage Kulcsok, Moduláris Query Key & Cache Rendszer (+9 more)
+### Community 386 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.17
+Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Várakozó Sor Táblázat és Típus Szűrők, 3.2 Részletes Felülvizsgálati Munkalap és Bizonylatelőnézet, 3.3 Jóváhagyás és Véglegesítés, 3.4 Visszaküldés Javításra (Szakmai Instrukcióval), 3.5 Elutasítás és Érvénytelenítés, 3.6 Kötegelt Jóváhagyási Műveleti Sáv (+3 more)
 
-### Community 387 - "A-086: Főkönyvi Könyvelési Státusz Szűrő (POSTED_ONLY) és Naplózási Irányelvek"
-Cohesion: 0.16
-Nodes (14): InvoiceEditDialogProps, BaseInvoice, EgyszerusitettInvoice, Invoice, InvoiceAttachment, InvoiceType, ProformaInvoice, SimaInvoice (+6 more)
+### Community 387 - "Új viselkedés"
+Cohesion: 0.17
+Nodes (12): Async Modal UX, Kapcsolódó, Korábbi viselkedés, Modal felépítés (`NavSyncDialog.tsx`), P-049: NAV Szinkronizálás Dátumtartomány Választó Modal UX, Preset gombok, Progress feedback (sync közben), Rationale (+4 more)
 
-### Community 388 - "A-089: Management Dashboard Hibajegy Létrehozás Felhasználó Nevében (Impersonated Ticket Creation)"
-Cohesion: 0.11
-Nodes (17): `accounty_assignments`, `accounty_audit_log`, `accounty_communication_preferences`, `accounty_deadlines`, `accounty_documents`, `accounty_email_preferences`, `accounty_gdpr_requests`, `accounty_messages` (+9 more)
+### Community 388 - "Decision"
+Cohesion: 0.17
+Nodes (12): 1.1 Főkönyvi Kivonat Fa Valós Idejű Szűrése és Ág-Autokibontás (`GeneralLedgerTable`), 1. Főkönyvi Globális Kereső Autocomplete (`GlSearchAutocomplete`), 3. Naplófőkönyv Terminológia és Finom Tipográfia (`JournalView`), 4. Paginációs Ugrálás Megszüntetése (`UnifiedPagination`), 5. CustomTooltip Alkalmazása, Consequences, Context, Decision (+4 more)
 
-### Community 389 - "Decision"
-Cohesion: 0.11
-Nodes (17): 1. Kontextus és Problémafelvetés, 2.10. Élő Cégkontextus & Pénzügyi Pillanatkép (Live Business Data Layer), 2.11. Komponens Dekompozíció és Teljesítmény-optimalizáció, 2.12. Beszélgetés Törlés és Adatmegőrzési Stratégia (Soft Delete), 2.1. Server-Sent Events (SSE) Token Streaming, 2.2. Dual-Provider API Routing, Dinamikus Modellválasztás és Automatikus Fallback, 2.3. Védelem és Kvóták (Automation Shield & In-Memory Rate Limiting), 2.4. Dinamikus Rendszerprompt és Kontextus-Injektálás (+9 more)
+### Community 389 - "2. Termékdöntés és Megoldás"
+Cohesion: 0.17
+Nodes (12): 1. 4-Oszlopos Statisztikai és Analitikus Excel Export, 1. Kontextus és Problémafelvetés, 2. Alapértelmezett Számlánkénti Tétel-összevonás (`by_invoice`), 2. Termékdöntés és Megoldás, 3. Dedikált Nézetváltó Kapcsoló az Eszköztárban (Row 2 Filter Bar), 3. Minőségbiztosítás és Verifikáció, 4. Kapcsolódó Dokumentumok, 4. Állapotmegőrzés és URL Szinkronizáció (+4 more)
 
-### Community 390 - "Decision (Döntés)"
-Cohesion: 0.11
-Nodes (17): 001 — Elsődleges Célcsoport (Partially Decided), 002 — Támogatott Vállalkozási Formák (Open), 003 — Lokalizáció & Nyelv (Partially Decided), 004 — Árazási Modell & Tier Nevek (Open), 005 — Előfizetés Scope (Open), 007 — Multi-instance Stratégia (Open), 010 — Felhasználói Szerepek (Partially Decided), 011 — Member Jogosultsági Határok (Open) (+9 more)
+### Community 390 - "2. Termékdöntés"
+Cohesion: 0.17
+Nodes (10): 1. Termékkérdés és Célkitűzés, 2. Termékdöntés, 3. Racionálé és Számviteli Integráció, 4. Kapcsolódó Dokumentumok, A. Racionalizált 9 Fülből Álló Moduláris Rendszer (`VatReturnContainer.tsx`), C. 12 Hónapos Éves ÁFA Mátrix (`VatAnnualMatrixView.tsx`), D. Fordított Adózás (FAD) Transzparens Kettős Oszlopos Megjelenítése, E. Ergonómiai és UI Javítások (+2 more)
 
-### Community 391 - "Decision (Döntés)"
-Cohesion: 0.11
-Nodes (17): 08 — Interakciók & Animációk, Card Ripple Egérkövető Fényeffekt (`.card-ripple`), CSS Transition Összefoglaló, Design Filozófia: Flat & Calm, Feedback FAB Animáció, Globális Hover Shadow Tiltás, Idle Warning Modal Animációk, Kijelölés Gomb — `ring` + `border` Dupla Vastag Antipattern (2026-07-22) (+9 more)
+### Community 391 - "Kiterjesztések, Sorok és Tesztkörnyezet Migráció (Extensions, Queues & Local replica)"
+Cohesion: 0.17
+Nodes (11): 1. PGMQ (Postgres Message Queue) Migrációs Forgatókönyvek, 2. `pg_cron` (Időzített feladatok) Kiváltása, 3. Adatbázis Migrációs Stratégia (Downtime vs. Live Sync), 4. Helyi Tesztkörnyezet (Docker-Compose Local Replica), A) Opció: Self-Hosted `pgmq` kiterjesztés (Ajánlott), Adatszinkronizáció (Downtime minimalizálása), B) Opció: Redis + BullMQ (Node.js) és Celery (Python) Fallback, C) Opció: Tiszta SQL (Table-based) Queue Fallback (+3 more)
 
-### Community 392 - "A-145: Tömeges PDF Szeletelés (Physical Chunk Slicing), NAV Determinisztikus Fallback és Többszörös Mellékletkezelés"
-Cohesion: 0.11
-Nodes (17): 13 — File Preview Pattern, 1. Drag & Drop Zóna Állapotai (`src/pages/UploadInvoices.tsx`), 2. Többfájlos Feltöltési Várólista (Multi-File Queue), 3. Csatolt Fájlok Batch Menedzser (`InvoiceFilesDialog.tsx`, `UploadedFilesModal.tsx`), A komponens, Alap használat, Anti-patternok — TILOS, Csak a tartalom terület kell (beágyazott nézet) (+9 more)
-
-### Community 393 - "A-168: Számla Export Banki Tranzakció Feloldás, Skontó-Dátum Architektúra és Intelligens Fül-Válogatás"
-Cohesion: 0.11
-Nodes (17): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Irodai Felkészültségi Mutató (Progress Ring), 3.2 1. Lépés — Könyvelői Profil Beállítása, 3.3 2. Lépés — Könyvelőiroda Adatai, 3.4 3. Lépés — Első Ügyfél Hozzárendelése és Meghívókód Ellenőrzése, 3.5 4. Lépés — Irodai Preferenciák Beállítása, 3.6 5. Lépés — Munkatársak Meghívása (+9 more)
-
-### Community 394 - "2. Decision"
-Cohesion: 0.11
-Nodes (17): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.10 Alsó műveleti sáv — „Mégse” és „Mentés” gombok, 3.1 Navigációs fejléc és „Vissza” gomb, 3.2 Tárhely fül — Tárhely típusa választó kártyák, 3.3 Tárhely fül — Tárhely-azonosító beviteli mező, 3.4 Tárhely fül — Státusz legördülő menü, 3.5 Tárhely fül — Cég neve a tárhelyen mező és Kapacitás mérő (+9 more)
-
-### Community 395 - "2. Decision"
-Cohesion: 0.11
-Nodes (17): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.10 „Lejárt / Visszavont” meghatalmazások történeti blokkja, 3.1 Navigációs fejléc és „Vissza” gomb, 3.2 „Új meghatalmazás” gomb, 3.3 UJEGYKE Varázsló — 1. lépés: Típus és alapadatok, 3.4 UJEGYKE Varázsló — 2. lépés: Hatáskör részletezése, 3.5 UJEGYKE Varázsló — 3. lépés: Időtartam megadása (+9 more)
-
-### Community 396 - "A-184: Real-time AI Categorization Progress Streaming, Invalidation & Idempotency Safeguards"
-Cohesion: 0.35
-Nodes (15): CONFIGS, DocConfig, DocType, addDocHeader(), addFooter(), addSignatureBlock(), DocContext, fmt() (+7 more)
-
-### Community 397 - "JournalsPage"
+### Community 392 - "ActivityLogTimelineItem.tsx"
 Cohesion: 0.24
-Nodes (10): CASH_PAYMENT_KEYWORDS, isCashPayment(), UseRelatedPartyTurnoverParams, Partner, RelatedPartnerFields, RelatedPartyInvoiceItem, RelatedPartyTurnoverItem, RelatedPartyTurnoverTotals (+2 more)
+Nodes (11): ActivityLogFiltersProps, ActivityLogPdfDialogProps, AuditLogRow, decodeSenderEmail(), getDisplayName(), isLikelyPdf(), TimelineItem, ACTION_CONFIG (+3 more)
 
-### Community 398 - "2. Architekturális Döntések"
-Cohesion: 0.20
-Nodes (18): useReclassificationHistory(), useRollbackReclassification(), AccountingAnomaliesResult, AccountingAnomaly, detectAccountingAnomalies(), executeReclassification(), getOmniPartnerLedger(), getPartner360Matrix() (+10 more)
+### Community 393 - "UploadHistory.tsx"
+Cohesion: 0.17
+Nodes (10): activeStatuses, CMREscalationDialog, cmrStatuses, doneStatuses, pendingStatuses, processingErrorStatuses, processingStatuses, uploadErrorStatuses (+2 more)
 
-### Community 399 - "A-230: Könyvelési Naplók Kategorizálása, Tételsori Partner Relációk és Banki Kétirányú Szinkronizáció (EB-0257)"
-Cohesion: 0.11
-Nodes (18): journal_view, all_types, col_balance, col_credit, col_date, col_debit, col_description, col_partner (+10 more)
+### Community 394 - "useComputedStatus.ts"
+Cohesion: 0.24
+Nodes (7): CASH_TYPES, computePaymentStatus(), getPaymentStatusBadge(), MatchStatus, PaymentStatus, TransactionLike, computePaymentStatus()
 
-### Community 400 - "A-235: Termékimport és Vámhatározatok ÁFA Integrációja"
-Cohesion: 0.11
-Nodes (18): labels, actions, amount, company, currency, date, details, exchange_rate (+10 more)
+### Community 395 - "accountyPermissions.test.ts"
+Cohesion: 0.24
+Nodes (11): AccountyModule, AccountyRole, ADMIN_ONLY_MODULES, ALL_MODULES, ALWAYS_ACCESSIBLE, getPermissions(), canAccess(), canWrite() (+3 more)
 
-### Community 401 - "A-236: NAV 26TFEJLH Nyomtatvány Replika és PDF Generáló Motor"
-Cohesion: 0.11
-Nodes (18): manual_payment, amount_to_pay, confirm_button, description, methods, note, note_placeholder, payment_date (+10 more)
+### Community 396 - "eaisybillPermissions.test.ts"
+Cohesion: 0.18
+Nodes (10): ACCOUNTING_TECH_MODULES, ADMIN_ONLY_MODULES, ALL_MODULES, ASSISTANT_MODULES, canAccess(), canWrite(), EMPLOYEE_MODULES, MEMBER_MODULES (+2 more)
 
-### Community 402 - "A-240: ÁFA Számítási Regresszióvédelmi Kapu: Golden Master Szerződésteszt és Élő Adatbázis Snapshot Guard Architektúra"
-Cohesion: 0.11
-Nodes (18): invoice_detail_dialog, direction_inbound, direction_outbound, gross_amount, issue_date, items_title, no_items, payment_date (+10 more)
+### Community 397 - "nav-opg-proxy/index.ts"
+Cohesion: 0.24
+Nodes (9): buildSoapAuth(), DiscoveredRegister, downloadNavCashRegisterFiles(), formatCompactTimestamp(), NavCreds, ParsedOpgTransaction, queryNavCashRegisterStatus(), sha3512Hex() (+1 more)
 
-### Community 403 - "Email Auth Flow-ok (2026-06-24 redesign)"
-Cohesion: 0.14
-Nodes (18): table, table, table, actions, amount, confidence, currency, customer (+10 more)
+### Community 398 - "welcome.tsx"
+Cohesion: 0.17
+Nodes (10): container, featureItem, features, footer, h1, h2, hr, main (+2 more)
 
-### Community 404 - "PostgreSQL RPC és Függvény Katalógus"
-Cohesion: 0.11
-Nodes (18): alias_created_desc, alias_created_title, copied_desc, copied_title, copy_error_desc, copy_error_title, dedicated_addresses, generate_alias (+10 more)
+### Community 399 - "compilerOptions"
+Cohesion: 0.17
+Nodes (11): compilerOptions, allowJs, noImplicitAny, noUnusedLocals, noUnusedParameters, paths, skipLibCheck, strictNullChecks (+3 more)
 
-### Community 406 - "PRD-05: Munkaügyi Szabálymotor és Élő Megfelelőségi Rendszer"
-Cohesion: 0.11
-Nodes (18): settle_dialog, cancel, confirm, desc, invoices_count, note, note_placeholder, opt_cash (+10 more)
+### Community 400 - "🤖 Visibill AI Skills"
+Cohesion: 0.18
+Nodes (10): 📝 Audit & Dokumentáció, Ellenőrzés, Frissítés, 🔍 Mindig aktív, Skillek Áttekintése, Telepítés, 📋 Tervezés & Implementáció, 🤖 Visibill AI Skills (+2 more)
 
-### Community 407 - "Decision 040: Számla Kapcsolatok és Párosítási Logikák (Matching & Relations)"
-Cohesion: 0.11
-Nodes (18): journal_view, all_types, col_balance, col_credit, col_date, col_debit, col_description, col_partner (+10 more)
+### Community 401 - "🔄 Részletes Szinkronizációs Protokoll (Workflow)"
+Cohesion: 0.18
+Nodes (10): 1. Helyi fájlok statikus ellenőrzése, 1. Lépés: Helyi migrációk feltérképezése, 2. Lépés: Távoli adatbázis lekérdezése (`supabase-visibill`), 3. Lépés: Kétirányú Diff Analízis (Disk vs DB), A) IN DB ONLY (Ghost Migration — Adatbázisban létezik, de lemezről hiányzik), B) ON DISK ONLY (Lemezről létezik, de a DB-ben nincs bejegyezve), ⚡ Gyors Futtatás (Quick Start), 🛡️ Minőségbiztosítási Kapuk Git Push Előtt (+2 more)
 
-### Community 408 - "04 — Komponens Könyvtár"
-Cohesion: 0.11
-Nodes (18): labels, actions, amount, company, currency, date, details, exchange_rate (+10 more)
+### Community 402 - "Visibill PM Task Creator — Letisztult Task Brief & Asana Generátor"
+Cohesion: 0.18
+Nodes (10): 1. LÉPÉS: Bemenet Elemzés & Kép-Kiértékelés, 2. LÉPÉS: Kötelező Háttér-Docs Keresés (CSENDBEN, A HÁTTÉRBEN), 3. LÉPÉS: Tisztázó Kérdések (Csak ha valóban elágazás van!), 4. LÉPÉS: A Letisztult PM Task Brief Generálása, 5. LÉPÉS: Automatikus Mentés `.md` Fájlba (`tasks/`), 6. LÉPÉS: Asana Task Létrehozás, Szekció, Felelős & Határidő Hozzárendelése, A brief KIZÁRÓLAG az alábbi 4 blokkból állhat:, 🎯 A Skill Küldetése & Alapelvei (+2 more)
 
-### Community 409 - "Fejlesztési Munkafolyamat és CI/CD (Development Workflow)"
-Cohesion: 0.11
-Nodes (18): manual_payment, amount_to_pay, confirm_button, description, methods, note, note_placeholder, payment_date (+10 more)
+### Community 403 - "A-045: Audit Trigger Email-Alias Bypass a Service Role Guard Alatt"
+Cohesion: 0.18
+Nodes (11): 1. Targeted bypass az `email_alias` INSERT-ekre, 2. Trigger hozzáadása hiányzó táblákra, 3. Trigger function bővítése, A-045: Audit Trigger Email-Alias Bypass a Service Role Guard Alatt, Alternatívák, Biztonsági elemzés, Consequences, Context (+3 more)
 
-### Community 410 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.11
-Nodes (18): invoice_detail_dialog, direction_inbound, direction_outbound, gross_amount, issue_date, items_title, no_items, payment_date (+10 more)
+### Community 404 - "A-052: Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció"
+Cohesion: 0.18
+Nodes (11): 1. Új Adatbázis Tábla: `public.company_email_accounts`, 2. Row Level Security (RLS) és Indexek, 3. Atomikus SECURITY DEFINER RPC Függvények, 4. Edge Functions & Worker Integráció, A-052: Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció, Consequences, Context, Decision (+3 more)
 
-### Community 411 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.14
-Nodes (18): table, table, table, actions, amount, confidence, currency, customer (+10 more)
+### Community 406 - "A-086: Főkönyvi Könyvelési Státusz Szűrő (POSTED_ONLY) és Naplózási Irányelvek"
+Cohesion: 0.18
+Nodes (11): 1. Adatbázis RPC Kiterjesztés (`p_posting_status`), 2. Főkönyvi Szegmentált Kapcsoló, Összehasonlítás és URL Szinkronizáció, 3. Naplók UX Tisztázás, Hibatűrő Tömeges Könyvelés és Cache Invalidation, 4. ÁFA Bevallás Könyvelési Audit Indikátor, A-086: Főkönyvi Könyvelési Státusz Szűrő (POSTED_ONLY) és Naplózási Irányelvek, Consequences, Context, Decision (+3 more)
 
-### Community 412 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.11
-Nodes (18): alias_created_desc, alias_created_title, copied_desc, copied_title, copy_error_desc, copy_error_title, dedicated_addresses, generate_alias (+10 more)
+### Community 407 - "A-087: Főkönyvi Adatbázis-alapú Keresés, Számla-szintű Lapozás és Tooltip Architektúra"
+Cohesion: 0.18
+Nodes (11): 1. PostgreSQL Kereső RPC: `search_gl_entities`, 2. Számla-szintű Ablakozott Lapozás (`get_gl_categorized_items` `p_limit` és `p_offset`), 3. Keresési Elem Injektálása és Célzott Görgetés (`handleNavigateToEntity`), 4. Egységes Tooltip Rendszer: `CustomTooltip`, A-087: Főkönyvi Adatbázis-alapú Keresés, Számla-szintű Lapozás és Tooltip Architektúra, Consequences, Context, Decision (+3 more)
 
-### Community 413 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.14
-Nodes (13): 1. Főkönyvi Egyezőség és `fixed_asset_id` Kötelezettség, 2. Kétlépcsős, Jóváhagyás-alapú Kivezetési Rend (Maker–Checker), 3. Tárolóhelyi Hierarchia és Mt. 179. § Szerinti Dolgozói Felelősségvállalás, 4. Törvényes Fordulónapi Analitikus Leltározás (Sztv. 69. §), 5. Fejlesztési Tartalék (Tao tv. 7. § (15)) és Késedelmi Pótlék Riasztás, 6. Pályázati Beruházások és ÉCS-arányos PIE Feloldás (Sztv. 45. § (2), 77. § (3)), 7. Pályázati Projektek Törlési Védelme és Komponens Életciklus Garanciák, Context (+5 more)
+### Community 408 - "A-089: Management Dashboard Hibajegy Létrehozás Felhasználó Nevében (Impersonated Ticket Creation)"
+Cohesion: 0.18
+Nodes (11): 1. Context, 2. Decision, 3. Consequences, 4. Kapcsolódó Dokumentumok, A-089: Management Dashboard Hibajegy Létrehozás Felhasználó Nevében (Impersonated Ticket Creation), A. Biztonságos Backend Proxy: `management-stats` Edge Function (`action: create-ticket`), B. Adatbázis Integritás és Eseménylánc (Event Sourcing), C. Dinamikus Cégkezelés és Auto-Fill Szabály (+3 more)
 
-### Community 414 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.13
-Nodes (14): ALLOWED_TABLES, ApiKeyRecord, authenticateApiKey(), BLOCKED_TABLES, corsHeaders, errorResponse(), json(), queryTable() (+6 more)
+### Community 409 - "Decision"
+Cohesion: 0.18
+Nodes (11): 1. Főkönyvi Lekérdezések Javítása (Sztornó Kioltás és Teljes Auditnyom), 2. Közvetlen Visszanyitás RPC (`acc_unpost_journal_entry`), 3. Kétszintű Zárlati Retesz (Accounting Period & VAT Lock), 4. Sorszámmegőrzés Újrakönyveléskor (`acc_post_journal_entry`), 5. Sorszámfolytonossági Védelem (Sztv. 166. § – Opció A), 6. Import-kulcs Örökítés (`acc_storno_journal_entry`), A-111: Közvetlen Bizonylat-visszanyitás (Unpost), Főkönyvi Sztornó Kioltás és Sorszámfolytonossági Védelem, Consequences (+3 more)
 
-### Community 415 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.10
-Nodes (22): AssetActivationPostingParams, AssetActivationPostingResult, postAssetActivationToLedger(), removeAssetActivationPosting(), resolveCipGlAccount(), computeExpectedAccumulatedAtDisposal(), AccumIssue, AssetReconciliationReport (+14 more)
+### Community 410 - "Decision (Döntés)"
+Cohesion: 0.18
+Nodes (11): 1. Négy Hajnali Idősáv (pg_cron ütemezés), 2. Determinisztikus és Egyenletes Kvótaelosztás (UUID Hex Modulo 4), 3. Edge Function Vezérlés és Bypass Szabályok (`nav-auto-sync`), 4. Hibaszigetelés és Naplózás, 5. Időkeret, Frekvencia és Worker-átadás (2026-10-04, [A-193](./A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md)), A-130: NAV Automatikus Szinkronizáció Hajnali Idő-ablakos Terheléselosztása (Load Staggering), Consequences (Következmények), Context (Kontextus) (+3 more)
 
-### Community 416 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.12
-Nodes (16): 🏢 1.1 Többvállalkozásos Hozzájárulás-megosztás & Számlaszétválasztás (v1.1.0), 1. Áttekintés, 🏢 2.1 Partner / Ellenoldali Adatok (Counterparty), 💰 2.2 Pénzügyi és Valutaváltási Adatok, 📝 2.3 Közlemény és Tranzakciós Referenciák, 🏷️ 2.4 Művelettípus és Gépi Besorolás, 2. A Partnerektől és a Banktól Megkapható Adatok Katalógusa, 3.1 Belföldi Banki Átutalás (Kimenő Partneri Kifizetés) (+8 more)
+### Community 411 - "Decision (Döntés)"
+Cohesion: 0.18
+Nodes (11): 1. Univerzális ÁFA Kulcs Normalizálás (`src/lib/utils.ts`), 2. Háromszintű Felületi Megjelenítés (1. + 2. + 3. Opció), 3. Reaktív Cache Invalidáció (11 Query Key), 4. Lefelé Irányuló Könyvelési és Bevallási Szinkronizáció, 5. Parciális B-Tree Indexek az Éles Adatbázisban, A-134: Nem Levonható ÁFA Életciklus, Reaktív ÁFA-Bontás (1. + 2. + 3. Opció) és Parciális B-Tree Indexek, Consequences (Következmények), Context (Kontextus) (+3 more)
 
-### Community 417 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.12
-Nodes (16): 02. Fő Üzleti Folyamatok és Felhasználói Utak, 1. A Teljes Körű Havi Üzleti Munkafolyamat, 1. Felhasználói Út: A Könyvelőirodai Operátor Gyors Havi Ciklusa (10 perces zárás), 2.1 Előkészítés és Törzsadatok (Egyszeri beállítás), 2.2 Hó Eleji Beosztástervezés, 2.3 Hó Közbeni Eseménykezelés, 2.4 Hó Végi Jelenlét-igazolás, 2.5 Hivatalos Kimenetek és Bérszámfejtési Átadás (+8 more)
+### Community 412 - "A-168: Számla Export Banki Tranzakció Feloldás, Skontó-Dátum Architektúra és Intelligens Fül-Válogatás"
+Cohesion: 0.18
+Nodes (11): 1. Context, 1. Kötegelt Banki Tranzakció Dátum Feloldás (`txDateMap`), 2. Decision, 2. Intelligens Banki Fül-Válogatás (`isBankOrCard`), 3. Consequences, 3. Kétkomponensű Dátumstruktúra az Excel Fejlécekben, 4. Kapcsolódó, A-168: Számla Export Banki Tranzakció Feloldás, Skontó-Dátum Architektúra és Intelligens Fül-Válogatás (+3 more)
 
-### Community 418 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.19
-Nodes (20): BuildDisposalJournalInput, RequestDisposalParams, buildDisposalProtocolFileName(), DISPOSAL_PROTOCOL_TITLES, DisposalProtocolData, DisposalProtocolJournalLine, generateAssetDisposalProtocolBlob(), generateAssetDisposalProtocolPdf() (+12 more)
+### Community 413 - "Decision"
+Cohesion: 0.18
+Nodes (11): 2. Rugalmas Számviteli Időszak Típusok és Determinisztikus Bizonylatszámok, 4. Idempotencia és Duplikáció Megelőzés, 5. Atomi Véglegesítés és Sorszámozás (`acc_post_journal_entry` RPC), 6. Analitikus Auditkövetés (`asset_events`), A-180: Tárgyi Eszköz Időszaki Értékcsökkenés (ÉCS) Elszámolás és Vegyes Napló Feladási Architektúra, Consequences, Context, Decision (+3 more)
 
-### Community 419 - "P-176: Könyvelési Napló RLB-Mintájú Szűkítés Modál, Pozitív Unió Irányszűrés és Reszponzív Panel UX"
-Cohesion: 0.13
-Nodes (6): AuthResult, corsHeaders, errorResponse(), rateLimitMap, validateQueryParams(), OPENAPI_SPEC
+### Community 414 - "2. Decision"
+Cohesion: 0.18
+Nodes (11): 1. Context, 2.1 Kétirányú Dual-Source Adatgyűjtés és Deduplikáció, 2.2 Törvényi Sorbesorolási Mátrix a Számítási Motorban (`vatEngine.ts`), 2.3 Élő Európai Bizottsági VIES REST API Integráció, 2.4 4-Kártyás Összefüggés-vizsgálati Fejléc és Eltérés-Jelzés, 2. Decision, 3. Consequences, 4. Kapcsolódó (+3 more)
 
-### Community 420 - "Döntések"
-Cohesion: 0.12
-Nodes (16): 1. lépés: Kulcsszavak kinyerése, 2. lépés: Graphify query, 3. lépés: Döntés-keresés a 4 rétegben, 4. lépés: ⭐ Design Pattern-ek felderítése, 5. lépés: ⭐ Open / Partially Decided döntések feltárása, 6. lépés: Kontextus összesítő, 7. lépés: KÖTELEZŐ — Várd meg a jóváhagyást, a) Business Decisions (BRD) (+8 more)
+### Community 415 - "A-184: Real-time AI Categorization Progress Streaming, Invalidation & Idempotency Safeguards"
+Cohesion: 0.18
+Nodes (11): 1. Eseményvezérelt Realtime Progress Streaming Polling Helyett, 2. Teljeskörű Query Invalidáció Befejezéskor, 3. 15 Perces Időkorlátos Érvényesség Vizsgálat (Stale Job Guard), 4. Idempotens Tranzakció-Számla Párosítás, A-184: Real-time AI Categorization Progress Streaming, Invalidation & Idempotency Safeguards, Consequences, Context, Decision (+3 more)
+
+### Community 416 - "A-230: Könyvelési Naplók Kategorizálása, Tételsori Partner Relációk és Banki Kétirányú Szinkronizáció (EB-0257)"
+Cohesion: 0.18
+Nodes (11): 1. Döntési Háttér és Kontextus, 2.1. Séma Módosítások, 2.2. Automatikus Rendszer-Zárolás, 2.3. Kétirányú Banki Szinkronizációs Triggerek, 2. Adatbázis Módosítások (`supabase/migrations/20261008130000_eb0257_journal_line_partner_and_bank_sync.sql`), 3.1. Bank Journal Resolver (`src/features/journals/services/bankJournalResolver.ts`), 3.2. Tételsori Partner Picker (`src/components/journals/JournalLinePartnerPicker.tsx`), 3.3. Kategorizálás és UI Túlcsordulás Megelőzés (`src/lib/journalUtils.ts`, `JournalsPage.tsx`) (+3 more)
+
+### Community 417 - "A-235: Termékimport és Vámhatározatok ÁFA Integrációja"
+Cohesion: 0.18
+Nodes (11): 1. Vámhatározatok Adatbázis Modellje (`import_customs_declarations`), 2. Rendszerszintű Áfakódok Bővítése, 3. ÁFA Számítási Motor Bővítése (`calculate_hungarian_vat_return`), 4. Biztonság és Jogosultság (RLS), A-235: Termékimport és Vámhatározatok ÁFA Integrációja, ⚡ Consequences, 🏛️ Context, 💡 Decision (+3 more)
+
+### Community 418 - "A-236: NAV 26TFEJLH Nyomtatvány Replika és PDF Generáló Motor"
+Cohesion: 0.18
+Nodes (11): 1. Komponens Architektúra és Hivatalos Megjelenítés, 2. Kliensoldali Vektoros PDF Motor (`src/lib/tfejlhPdf.ts`), 3. Reaktív Számítás és Integráció, 4. Hivatalos NAV AbevJava v3.0 ÁNYK XML Generáló Motor (`src/lib/tfejlhXml.ts`), A-236: NAV 26TFEJLH Nyomtatvány Replika és PDF Generáló Motor, ⚡ Consequences, 🏛️ Context, 💡 Decision (+3 more)
+
+### Community 419 - "A-240: ÁFA Számítási Regresszióvédelmi Kapu: Golden Master Szerződésteszt és Élő Adatbázis Snapshot Guard Architektúra"
+Cohesion: 0.18
+Nodes (11): 1. Kétszintű Hibrid Védelmi Architektúra, 2. Vitest Golden Master Szerződésteszt (`src/test/vat/vatRegressionTaxology.test.ts`), 3. Élő Adatbázis Snapshot Guard CLI Script (`scripts/vat-snapshot-guard.mjs`, `npm run vat:guard`), 4. Kötelező Verifikációs Kapu (`.agents/rules/verification.md`), A-240: ÁFA Számítási Regresszióvédelmi Kapu: Golden Master Szerződésteszt és Élő Adatbázis Snapshot Guard Architektúra, ⚡ Consequences, 🏛️ Context, 💡 Decision (+3 more)
+
+### Community 420 - "A-245: calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése)"
+Cohesion: 0.18
+Nodes (11): 1. Dátumkorlátok Visszaállítása a Kurzor WHERE Feltételében (Statutory Boundary Bounding), 2. N+1 Árfolyam-lekérdezés Felszámolása Hash / Index Joinnal, 3. Jogosultságok és Biztonsági Védelem Hardeningje, 4. Dedikált Regressziós és Teljesítmény Tesztcsomag (`vatPerformanceAndTimeout.test.ts`), A-245: calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése), 📊 Benchmark & Mérési Eredmények (Dev DB), ⚡ Consequences, 💡 Decision (+3 more)
 
 ### Community 421 - "Decision"
-Cohesion: 0.12
-Nodes (16): aliases, components, hooks, lib, ui, utils, rsc, $schema (+8 more)
+Cohesion: 0.20
+Nodes (11): 1. `fixed_asset_id` címke a főkönyvi soron, 2. Rekonciliáció (csak olvasás), 4. Egységes kivezetési motor, 5. Fejlesztési tartalék figyelés (kliensoldali, tájékoztató), 6. PDF, A-251: Tárgyi Eszköz ↔ Főkönyv Kapcsolat, Rekonciliáció és Jóváhagyás-alapú Kivezetési Workflow, Consequences, Context (+3 more)
 
-### Community 422 - "2. Termékdöntés és Megoldás"
-Cohesion: 0.10
-Nodes (19): 1. Javaslatok generálása (`acc_generate_drafts_from_ledger`), 2. Könyvelés és Sorszámozás (`acc_post_journal_entry`), 3. Sztornózás és Helyesbítés (`acc_storno_journal_entry`), 4. Nyitó Varázsló Műveletek & Főkönyvi (GL) Integráció (Migrációk: `20260903120000`, `20260903130000`), 5. Célzott Indexek, 6. Folyószámla és Nyitott Tételek Kezelése (Subledger RPC-k, A-175), 7. Technikai Könyvelés és Számviteli Audit (Module 22, A-255), `acc_accounting_periods` (+11 more)
+### Community 422 - "A-258: Főkönyvi Nyitó Mérlegtételek Évközi Átgörgetése (GL Rollforward) és Bérszámfejtési Utalási Tranzakció Integritás"
+Cohesion: 0.18
+Nodes (11): 1. Főkönyvi Nyitó Mérlegtételek Hiánya Évközi Szűréseknél, 1. Főkönyvi Nyitó Átgörgetés (Rollforward) RPC Szinten, 2. Bérszámfejtési Utalási Lista Duplikáció és Törlési Jogosultság Hiány, 2. Utalási Lista Integritás és Törlési RLS Policy, A-258: Főkönyvi Nyitó Mérlegtételek Évközi Átgörgetése (GL Rollforward) és Bérszámfejtési Utalási Tranzakció Integritás, Consequences, Context, Decision (+3 more)
 
-### Community 423 - "2. Megvalósított Felületi Élmény (UX)"
-Cohesion: 0.12
-Nodes (16): 1. i18next & react-i18next Keretrendszer Névterekkel (Namespaces), 2. Tiszta Útvonal-Vezérelt Nyelvmeghatározás (Zero LocalStorage Persistence), 3. Route Wrapperek és Redirect Stratégia, 4. Pénznem és Dátumkezelés Adaptációja, 5. Nyelvválasztó Kivezetése az Oldalsávról, 6. Teljes Frontend Lokalizáció (Batches 1–7) & Automata Regressziós Tesztelés, 7. Standard Számlatükör és Főkönyvi Lokalizációs Motor (Chart of Accounts Localization Engine), 8. Bizonylatfeltöltési Duplikáció-védelem és Modál Stabilitás (+8 more)
+### Community 423 - "A-259: invoice_items Multi-Tenant Denormalizáció, PostgREST Lateral Join Timeout Felszámolása és get_unclassified_gl_items Limit Védelem"
+Cohesion: 0.18
+Nodes (11): 1. `get_unclassified_gl_items` Beépített Limit Védelem, 2. `company_id` Denormalizáció az `invoice_items` Táblán, 3. Automatikus Szinkronizációs Triggerek (Defense in Depth), 4. RLS Házirend és Klienshívások Optimalizálása, A-259: invoice_items Multi-Tenant Denormalizáció, PostgREST Lateral Join Timeout Felszámolása és get_unclassified_gl_items Limit Védelem, Consequences, Context, Decision (+3 more)
 
-### Community 425 - "2. Decision"
-Cohesion: 0.12
-Nodes (16): 1. Dedikált `customer-api` Supabase Edge Function, 2. Többcéges Hibrid API Kulcs Modell (`user_id` kapcsolat), 3. Támogatott Műveletek és Szigorú Mező-Whitelist, 4. Átfogó API Audit Napló (`api_request_logs`), 5. Webes Kulcskezelő Felület (`ApiKeysCard.tsx`), A-117: Hivatalos Ügyfél REST API v2.2.3 (Customer API), Többcéges API Kulcs Kezelés és Auditált M2M Átjáró, Addendum (2026-09-18) — Customer REST API v2 Bővítés (Pénzügyi Domainek & Path-Based Routing), Addendum (2026-09-22) — Customer REST API v2.1 (OpenAPI 3.0.3, Idempotencia, P0 Adatintegritás és Teljes Életciklus) (+8 more)
+### Community 425 - "Email Auth Flow-ok (2026-06-24 redesign)"
+Cohesion: 0.18
+Nodes (11): 2. kattintás (token már felhasznált):, AuthCallback Oldal, Email Auth Flow-ok (2026-06-24 redesign), Email Change Flow, Kettős email probléma (megoldva), Két verifikációs rendszer, Password Recovery Flow, Signup (Regisztráció) Flow (+3 more)
 
-### Community 426 - "Migrációs Terv — Auth Absztrakció & Edge Function Portolás"
-Cohesion: 0.12
-Nodes (16): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Felületcélkitűzés, 2. Naptárrács UI Mockup és Szerkezeti Elrendezés, 3. Fejléc Vezérlők és Szűrősáv Specifikáció, 4.1 Bal Oldali Rögzített Dolgozói Kártyaoszlop (Fixed Left Column), 4.2 Naptári Napok Oszlopai (1..31), 4.3 Cellákban Megjelenő Elemek, 4.4 Jobb Oldali Havi Összesítő Oszlop (+8 more)
+### Community 426 - "PostgreSQL RPC és Függvény Katalógus"
+Cohesion: 0.18
+Nodes (11): 1. 📊 Frontend Lekérdező és Aggregációs RPC-k, 2. ✏️ Frontend Állapotmódosító és Üzleti RPC-k, 3. 📄 Kettős Könyvviteli Naplók (acc_*) RPC-k, 4. 📘 eaisyBooks és EV Modul RPC-k, 5. 🔐 Jogosultságkezelés és RLS Segédfüggvények, 6. ⚡ Queue, Worker és Job Management (PGMQ) RPC-k, 7. 🛠️ Platform és Management Üzemeltetési RPC-k, 8. 📧 Email Fiókok, Vault és Hitelesítő Adatok (+3 more)
 
-### Community 427 - "4.3 Fázisok részletesen"
-Cohesion: 0.12
-Nodes (16): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Navigációs fejléc és „Vissza” gomb, 3.2 Fülválasztó navigációs sáv, 3.3 „Alapértelmezések betöltése (magyar jogszabályok)” gomb, 3.4 „Új típus” gomb és inline rögzítő sor, 3.5 Dokumentumtípusok táblázata és inline szerkesztése, 3.6 Megőrzési szabály törlése gomb (+8 more)
+### Community 427 - "PRD-05: Munkaügyi Szabálymotor és Élő Megfelelőségi Rendszer"
+Cohesion: 0.18
+Nodes (11): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Szabálymotor Visszajelzési Hierarchia, 3. A 4 Súlyossági Szint Felületi Specifikációja, 4.1 Napi és Heti Pihenőidők (Mt. 104–106. §), 4.2 Napi és Heti Munkaidő-korlátok (Mt. 99. §), 4.3 Munkaidőkeret Egyenleg és Göngyölítés (Mt. 93–95. §), 4. Ellenőrzött Munkaügyi Szabályok Katalógusa (+3 more)
 
-### Community 428 - "openingImportParser.ts"
-Cohesion: 0.12
-Nodes (16): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Navigációs fejléc és „Vissza” gomb, 3.2 Felső összefoglaló statisztikai kártyák, 3.3 Fülválasztó sáv (Telephelyek / Költséghelyek / Részlegek), 3.4 Telephelyek fül — „Új telephely” gomb és rögzítő panel, 3.5 Telephelyek táblázata és Létszám-összesítés, 3.6 Költséghelyek fül — „Új költséghely” gomb és rögzítő panel (+8 more)
+### Community 428 - "Decision 040: Számla Kapcsolatok és Párosítási Logikák (Matching & Relations)"
+Cohesion: 0.18
+Nodes (11): 1. Bizonylat-láncolatok és Kapcsolatok (Invoice-to-Invoice Relations), 2. Banki Tranzakció ↔ Számla Párosítás (Bank Matching), 3. Fuvar ↔ Számla Párosítás (Shipment Matching), 4. Manuális kifizetések (Máshogyan kiegyenlített tételek), 5. NAV Online Számla ↔ Feltöltött Számla Szinkronizáció (Twin Sync), A. Automatikus Párosítás (Backend/Worker), A. Díjbekérő (Proforma) ↔ Előlegszámla ↔ Végszámla Láncolat, B. Eredeti Számla ↔ Sztornó/Helyesbítő Számla Párok (+3 more)
 
-### Community 429 - "sickLeaveTemplates.ts"
-Cohesion: 0.12
-Nodes (16): AlertDialog Portal Flash — Ismert Bug Fix (2026-06-24), Funkciók és UX Kialakítás, Implementált Bulk Delete Pattern (A/B mód), Komponensek ahol implementálva van, Komponensek ahol implementálva van, P-015: Tömeges Műveletek (Bulk Actions), RPC: delete_upload_with_data, Számlatétel Könyvelési Státusz Tömeges Kezelése (2026-07-18) (+8 more)
+### Community 429 - "Visibill — User Journeys"
+Cohesion: 0.18
+Nodes (11): Journey 11: Új Ügyfél Onboarding & Bér/Könyvelés Rekonstrukció, Journey 12: Egyéni Vállalkozó Havi Könyvelése & Pénztárkönyv Zárás, Journey 1: Új Felhasználó Onboarding, Journey 2: Napi Számla Kezelés, Journey 3: Havi Pénzügyi Egyeztetés, Journey 4: NAV Integráció Beállítás & Használat, Journey 5: Év Végi Beszámoló Készítés, Journey 6: Futárszolgálat Riport Feldolgozás (+3 more)
 
-### Community 430 - "CategoryAccordionItem.tsx"
-Cohesion: 0.12
-Nodes (16): 1. Dual-table számlalekérdezés, 2. Master lista számlaszám aggregáció, 3. Tab-alapú szétválasztás a jobb panelen, 4. Számlakereső, 5.1 Számlakép előnézet (2026-07-05), 5. Kattintható számla kártyák → PartnerInvoiceDetailDialog, 6. NAV státusz eltávolítása, 7. Layout és Kártya Igazítás (2026-09-29) (+8 more)
+### Community 430 - "Fejlesztési Munkafolyamat és CI/CD (Development Workflow)"
+Cohesion: 0.18
+Nodes (10): 🌿 1. Git Ág-stratégia (Branching Model), 💻 2. Lokális Fejlesztés a Saját Gépeden, ⚙️ 3. Supabase CLI és Adatbázis Migrációk, 🤖 4. Automatikus GitHub Actions CI/CD ([`.github/workflows/deploy-dev.yml`](file:///d:/ThinkAI/Visibill/eaisybill-prod/.github/workflows/deploy-dev.yml)), 🛡️ 5. Fejlesztői Minőségbiztosítási Lépések (Pre-Commit), 🎫 6. Hibajegyek (Tickets) és Error Hunter Munkafolyamat (Develop-First Bugfixing), Fejlesztési Munkafolyamat és CI/CD (Development Workflow), Hogyan történik egy új adatbázis migráció? (+2 more)
 
-### Community 431 - "chart.tsx"
-Cohesion: 0.12
-Nodes (16): filters, all, due_today, future, group_by_partner, overdue, floating_bar, download_button (+8 more)
+### Community 431 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.18
+Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Projekt Létrehozása, 3.2 Projekt Kártya és Fedezeti Műszerfal, 3.3 Szállítói és Vevői Számlák Projekthez Rendelése, 3.4 Munkaidő és Bérköltség Allokáció, 3.5 Projekt Státusz Módosítása és Zárás, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
 
-### Community 433 - "nav-auto-sync/index.ts"
-Cohesion: 0.12
-Nodes (16): filters, all, due_today, future, group_by_partner, overdue, floating_bar, download_button (+8 more)
+### Community 433 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.18
+Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Partner Rögzítése, 3.2 Kétpaneles Partner Kereső és Lista, 3.3 Partner Részletező Adatlap és Kapcsolt Vállalkozás Jelölő, 3.4 Partner Számlatörténet és Számlarészletező, 3.5 TOP Partner Forgalmi Rangsor, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
 
-### Community 434 - "Moduláris PRD Készítési Irányelvek és Rekordstruktúra Sablon"
-Cohesion: 0.12
-Nodes (16): 🏗️ Architektúra & Infrastruktúra, 🔒 Biztonság & Compliance, 👥 Cégstruktúra & Jogosultságok, 🎯 Célpiac & Üzleti Modell, 💼 eaisyBooks & Intégrált Modulok, 🕐 HR & Munkaidő, 🏦 Integrációk & Jövő, 📱 Platform & Terjeszkedés (+8 more)
+### Community 434 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.18
+Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Korosítási Idősáv Kártyák (Aging Szűrők), 3.2 Nettó / Bruttó Nézetváltó, 3.3 Partner Kintlévőségi Táblázat (Lenyitható Partner Sávok), 3.4 Fizetési Felszólítás Küldése, 3.5 Egyenlegközlő Levél Generálása, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
 
-### Community 435 - "LÉPÉS 1: Spec & Pattern Lookup (NE kódolj!)"
-Cohesion: 0.12
-Nodes (15): container, detailsBox, detailText, errorBox, errorText, footer, h1, h2 (+7 more)
+### Community 435 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.18
+Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Pénztárbizonylat Kiállítása, 3.2 Címletjegyzék Kalkulátor és Kasszaellenőrzés, 3.3 Hivatalos Időszaki Pénztárjelentés Generálása, 3.4 Pénztár Létrehozása és Alapadatok Kezelése, 3.5 Törvényi és Belső Készpénzlimit Beállítása, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
 
-### Community 436 - "verify_kb_rag.mjs"
-Cohesion: 0.21
-Nodes (13): mockFixedAssetsInsert, mockToast, AssetImportParseResult, DetectedFormat, detectFormat(), generateSampleAssetImportExcel(), parseAssetImportData(), ParsedAssetImportItem (+5 more)
+### Community 436 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.18
+Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Ezer Forintos Megjelenítés Kapcsoló, 3.2 Eredménysorok Kibontása és Számlaszintű Mélyfúrás, 3.3 Sankey Értékáramlás és Forgalmi Grafikon Nézet, 3.4 AI Pénzügyi Elemző Asszisztens Futtatása, 3.5 Hivatalos Eredménykimutatás Exportálása, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
 
-### Community 437 - "Decision"
-Cohesion: 0.12
-Nodes (17): analytics, business, education, finance, healthcare, it, maintenance, marketing (+9 more)
+### Community 437 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.18
+Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Mérlegegyezőségi Kártya és Differencia Figyelmeztető, 3.2 Eszközök és Források Nézetváltó Kapcsoló, 3.3 Mérlegtételek Kibontása és Számlaszintű Mélyfúrás, 3.4 Pénzügyi Mutatószámok Analitikai Kártyái, 3.5 Hivatalos Mérleg Exportálása (PDF / Excel), 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
 
-### Community 438 - "A-038: IMAP/SMTP Hitelesítő Adatok és Vault Integráció"
-Cohesion: 0.12
-Nodes (17): knowledge_base, clear_filters, empty_desc, empty_title, header_badge, header_subtitle, header_title, scope_all (+9 more)
+### Community 438 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.18
+Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Feltöltési Zóna és Mintasablon Letöltése, 3.2 Oszlop-hozzárendelő és Validációs Előnézet, 3.3 Importálás Indítása és Automatikus Számlapárosítás, 3.4 Korábbi Import Kötegek Története, 3.5 Téves Import Köteg Visszavonása és Törlése, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
 
-### Community 439 - "Auth Provider"
-Cohesion: 0.12
-Nodes (17): approved_label, days, days_sublabel, draft_label, hours_unit, logged, logged_sublabel, norm (+9 more)
+### Community 439 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.18
+Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 NAV Online Számla Kulcsok és Kapcsolat Tesztelése, 3.2 NAV Szinkronizációs Napló és Hibaelhárítás, 3.3 Számlafogadó E-mail Alias Másolása és Újragenerálása, 3.4 Számlázz.hu és Külső Számlázók API Összeköttetése, 3.5 Relax Könyvelési Adatimport Modul, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
 
-### Community 440 - "A-085: Főkönyvi Dátum Alap RPC Pushdown és Dinamikus Chunk Reload Recovery"
-Cohesion: 0.12
-Nodes (17): storno_settle, confirm_settle, confirm_unsettle, item_image, item_nav, item_original, settle_can_undo, settle_desc (+9 more)
+### Community 440 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.18
+Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Irodai KPI Összesítő Kártyasor, 3.2 Portfólió Szegmentáló Lapfülek, 3.3 Felelős Könyvelő és Státusz Szűrők, 3.4 Ügyféltáblázat és Feldolgozottsági Arányjelző, 3.5 Belépés az Ügyfél Munkaterületére (Kontextusváltás), 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
 
-### Community 441 - "A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz (PostgREST Pre-Request Hook & Edge Function Client Guard)"
-Cohesion: 0.12
-Nodes (17): closing_dialog, all_registers, close, closing_balance, description, empty, footer_summary, items_count (+9 more)
+### Community 441 - "Döntések"
+Cohesion: 0.18
+Nodes (11): 1. Automatikus twin sync GL módosításkor, 2. Atomikus batch RPC hívás, 3. Felhasználói visszajelzés, 4. Cache invalidáció, 5. Graceful degradation, Döntések, Implementáció részletek, Kapcsolódó döntések (+3 more)
 
-### Community 442 - "A-112: Futárszolgálati Kompenzációs Értesítők Kétirányú Automatikus Számlarendezése és Futárriport UI Párosítás (GLS / Courier Compensation Auto-Settlement & UI)"
-Cohesion: 0.12
-Nodes (17): table, col_activity, col_assignee, col_category, col_created_at, col_priority, col_status, col_subject (+9 more)
+### Community 442 - "Decision"
+Cohesion: 0.18
+Nodes (11): 1. Kulcslista és Státusz Áttekintés, 2. Új API Kulcs Generálása Varázsló (Kétfázisú Modál), 3. Hivatalos REST API v1 Fejlesztői Portál (Önálló Oldal és Új Lap), 4. Megerősített Kulcsvisszavonás (`AlertDialog`), Addendum (2026-09-22) — Fejlesztői Portál v2.1 & OpenAPI 3 Export, Addendum (2026-09-22) — Fejlesztői Portál v2.2 (Support Tickets Modul & 33 Végpont), Decision, P-086: Programozói Hozzáférés & API Kulcsok Kezelése (ApiKeysCard) UX (+3 more)
 
-### Community 443 - "A-120: Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló"
-Cohesion: 0.12
-Nodes (17): table, amount_max, amount_min, col_actions, col_auto_verify, col_direction_amount, col_name, col_pattern (+9 more)
+### Community 443 - "2. Megvalósított Felületi Élmény (UX)"
+Cohesion: 0.18
+Nodes (11): 1. Felhasználói Igény és Célkitűzés, 2.1 Navigáció és Elhelyezés, 2.2 Főképernyő Felépítése (`SubledgerPage.tsx`), 2.3 Lebegő Kijelölési és Mérlegsáv (Sticky Balancing Bar), 2.4 Különbözet-leírási Varázslók, 2.5 Kapcsolódó Párosítások Megtekintése és Felbontása (`SubledgerItemMatchesModal.tsx`), 2.6 Kimutatások és Exportok (`SubledgerExportDialog.tsx`), 2. Megvalósított Felületi Élmény (UX) (+3 more)
 
-### Community 444 - "A-121: Évek Közötti Áthúzódó Teljesítésű Számlák Főkönyvi és ÁFA Védőhálója (Cross-Year Delivery Guard)"
-Cohesion: 0.12
-Nodes (17): history, actions, amount, date, delete, delete_selected, desc, empty (+9 more)
+### Community 444 - "2. Decision"
+Cohesion: 0.18
+Nodes (10): 1. Question, 2.1. Gyors Naplórögzítés a Bankszámlák Beállításainál (`BankAccountsTab.tsx`), 2.2. Automatikus Kódgenerálás és Napló-űrlap (`CreateJournalModal.tsx`), 2.3. Átfogó Naplókezelő Központ (`ManageJournalsModal.tsx` & `JournalsPage.tsx`), 2.4. Bankszámla Érvénytelenítés és Státuszjelzés, 2.5. Inaktív Naplók Megjelenítése a Bankszámla Szerkesztőben (`filterBankJournalsForEdit`), 2. Decision, 3. Current Implementation (+2 more)
 
-### Community 445 - "A-129: Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek"
-Cohesion: 0.12
-Nodes (17): channels_config, invoices, salaries, transactions, vouchers, action_button, card_description, card_title (+9 more)
+### Community 445 - "2. Felületi Döntések"
+Cohesion: 0.18
+Nodes (11): 1. Kérdés és Célkitűzés, 2.1. Elsődleges Akciógomb az Eszköztárban (`InvoiceHeader.tsx`), 2.3. Zero-Jitter Kereshető Popover & Combobox Standard (`PartnerInputWithAutocomplete.tsx`), 2.4. Globális `SearchInput` és Gyors Új Partner Választás, 2.5. Kontextuális Partner Előtöltés, Irányfüggő Zárolás és Adószám Auto-Kitöltés, 2.6. Tranzakció Elrablás Megelőzése (Transaction Stealing Guard & Visual State), 2.7. Toast Visszajelzések és Nemzetközi (HR) Lokalizáció, 2. Felületi Döntések (+3 more)
 
-### Community 446 - "A-132: NAV Online Számla v3.0 queryTaxpayer Integráció és Think AI Kft. Kulcs Fallback"
-Cohesion: 0.12
-Nodes (17): analytics, business, education, finance, healthcare, it, maintenance, marketing (+9 more)
+### Community 446 - "P-172: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák UX"
+Cohesion: 0.18
+Nodes (11): 1. Kétpólusú Kizárási Választó Modál (`ExclusionReasonDialog.tsx`), 2. Vizuális Megkülönböztetés a Számlalistában, 3. Vezérlőpulti "Kérdéses Számlák" Widget (`DeferredInvoicesWidget.tsx`), 4. Proaktív ÁFA Bevallási Értesítő Sáv & Dialógus (`DeferredVatPromptBanner.tsx`, `DeferredVatPromptDialog.tsx`), 🔍 Current Implementation, 💡 Decision, 🔗 Kapcsolódó, P-172: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák UX (+3 more)
 
-### Community 447 - "A-148: Könyvelőirodai Hibajegy Megosztás és Hibrid RLS Hozzáférés-vezérlés"
-Cohesion: 0.12
-Nodes (17): knowledge_base, clear_filters, empty_desc, empty_title, header_badge, header_subtitle, header_title, scope_all (+9 more)
+### Community 447 - "Migrációs Terv — Auth Absztrakció & Edge Function Portolás"
+Cohesion: 0.18
+Nodes (11): Auth Service Interface (tervezet), Döntési pontok, Edge Function Client Interface (tervezet), Fázis 0: Előkészítés (MOST — 0 kockázat) ⏱️ ~3-4 óra, Fázis 1: Auth absztrakció (~2-4 nap), Fázis 2: Edge Function előkészítés (~1 hét), Fázis 3: Tényleges migráció (CSAK amikor szükséges), Fázisonkénti terv (+3 more)
 
-### Community 448 - "2. Architektúrális Döntések"
-Cohesion: 0.12
-Nodes (17): approved_label, days, days_sublabel, draft_label, hours_unit, logged, logged_sublabel, norm (+9 more)
+### Community 448 - "4.3 Fázisok részletesen"
+Cohesion: 0.18
+Nodes (11): 0. fázis – Előkészítés, 1. fázis – Törzsadatok, 2. fázis – Beosztáskezelő (alap), 3. fázis – Távollétek, 4.3 Fázisok részletesen, 4. fázis – Jelenlét és export (MVP mérföldkő), 5. fázis – Munkaügyi szabálymotor és munkaidőkeret, 6. fázis – Automatizálás és tömeges szerkesztés (a megkülönböztető erő) (+3 more)
 
-### Community 449 - "Decision"
-Cohesion: 0.12
-Nodes (17): storno_settle, confirm_settle, confirm_unsettle, item_image, item_nav, item_original, settle_can_undo, settle_desc (+9 more)
+### Community 449 - "sickLeaveTemplates.ts"
+Cohesion: 0.38
+Nodes (10): SickLeaveFormDialog(), CompanyInfo, EmployeeInfo, escapeHtml(), LeaveInfo, printCsedGyedStatement(), printHtml(), printPregnancySickLeaveStatement() (+2 more)
 
-### Community 450 - "2. Megoldás & Architektúrális Döntések"
-Cohesion: 0.12
-Nodes (17): closing_dialog, all_registers, close, closing_balance, description, empty, footer_summary, items_count (+9 more)
-
-### Community 451 - "A-185: Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra"
-Cohesion: 0.12
-Nodes (17): table, col_activity, col_assignee, col_category, col_created_at, col_priority, col_status, col_subject (+9 more)
-
-### Community 452 - "2. Döntések és Architektúra"
-Cohesion: 0.12
-Nodes (17): table, amount_max, amount_min, col_actions, col_auto_verify, col_direction_amount, col_name, col_pattern (+9 more)
-
-### Community 453 - "A-231: Cégprofil Számviteli Beállítások Kiterjesztése: Teljesítés Dátum, Összevont Főkönyvi Nézet és Devizaárfolyam Bankkatalógus"
-Cohesion: 0.12
-Nodes (17): history, actions, amount, date, delete, delete_selected, desc, empty (+9 more)
-
-### Community 454 - "A-234: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Architektúrája"
-Cohesion: 0.12
-Nodes (17): channels_config, invoices, salaries, transactions, vouchers, action_button, card_description, card_title (+9 more)
-
-### Community 455 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
+### Community 450 - "chart.tsx"
 Cohesion: 0.25
-Nodes (15): bigMod97(), COUNTRY_NAMES, detectAccountFormat(), detectBankFromAccountNumber(), formatAccountOnType(), formatGiro(), formatIban(), giroToIban() (+7 more)
+Nodes (9): ChartConfig, ChartContainer, ChartContext, ChartContextProps, ChartLegendContent, ChartTooltipContent, getPayloadConfigFromPayload(), THEMES (+1 more)
 
-### Community 456 - "prd/INDEX.md"
-Cohesion: 0.21
-Nodes (16): CompanyData, ContributionCertificateData, downloadPdf(), EmployeeData, EmployerMedicalClaimData, EmploymentDetails, fmt(), fmtDate() (+8 more)
+### Community 451 - "filingGenerator.ts"
+Cohesion: 0.35
+Nodes (9): escapeXml(), Filing08Data, Filing08EmployeeLine, formatTaj(), generateFiling08Xml(), generateM30Xml(), parseTaxNumber(), baseData (+1 more)
 
-### Community 457 - "7. Pénzügyi Modulok"
-Cohesion: 0.10
-Nodes (21): VatA60Table(), VatAnnualMatrixView(), VatItemizedJournalView(), VatMLineMasterDetail(), VatNav65MReplica(), VatNav65Replica(), VatNav65ReplicaProps, VatNavA60Replica() (+13 more)
+### Community 452 - "nav-auto-sync/index.ts"
+Cohesion: 0.25
+Nodes (6): base, corsHeaders, NAV_ITEM_QUEUE, NavItemJobMessage, NavItemJobPlanInput, planNavItemJob()
 
-### Community 458 - "queryTaxpayerFromNav"
-Cohesion: 0.21
-Nodes (11): A8_ENV, config, corsHeaders, ensureAggreg8User(), corsHeaders, DownstreamForwardConfig, A8_ENV, getAggreg8Headers() (+3 more)
+### Community 453 - "rpcPerformanceAndResilience.test.ts"
+Cohesion: 0.20
+Nodes (7): CompanyCountsData, createCompanyCountsCacheManager(), fetchCompanyCountsWithCache(), GlBalanceRow, GlCategorizedItemRow, UnclassifiedGlItem, VatBreakdownRow
 
-### Community 459 - "Decision"
-Cohesion: 0.12
-Nodes (16): example, type, properties, type, format, nullable, type, properties (+8 more)
+### Community 454 - "Database & Migration Guidelines (Visibill / eaisybill-prod)"
+Cohesion: 0.20
+Nodes (9): 🎯 1. Zero Silent DB Decisions, 📁 2. Migrációs Szabvány & Idempotencia, ⚙️ 3. RPC Szabvány & Short-Circuit Limit Invariáns, 🛡️ 4. RLS & Multi-Tenant Tételtábla Denormalizáció, 🚀 5. Teljesítmény és Indexelés (Production-Grade), 🛑 6. PostgREST & Query Védőkorlátok, 🔄 7. Migrációs Nyilvántartás & Git Szinkron, 🚀 8. Main Merge & Kötelező Éles Migráció Futtatás (+1 more)
 
-### Community 460 - "2. Üzleti és Számviteli Döntések"
-Cohesion: 0.15
-Nodes (12): ControlCenterUser, ControlCenter, ControlCenterProps, ControlCenterTab, ErrorControlPanel, FilesPanel, PermissionsPanel, UsersControlPanel (+4 more)
+### Community 455 - "Moduláris PRD Készítési Irányelvek és Rekordstruktúra Sablon"
+Cohesion: 0.20
+Nodes (9): 🎯 1. A PRD Alapelvei és Szerepe, 📁 2. A Dinamikus Rekordstruktúra és Mappaszerkezet, 📄 3. Egy Atomikus PRD Rekord Belső Anatómiája, 🗺️ 4. A Központi `INDEX.md` Felépítése, 📌 Dinamikus Dekompozíció (Nincs Merev Kötetszám!), Mi a PRD célja?, Mi NEM a PRD feladata? (Szigorú elhatárolás!), Moduláris PRD Készítési Irányelvek és Rekordstruktúra Sablon (+1 more)
 
-### Community 461 - "BDR-065: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Üzleti Szabályzata"
-Cohesion: 0.12
-Nodes (15): 03. Beosztástervezés és Naptárrács Részletes Követelményei, 1. Rendszerszintű és Navigációs Követelmények, 2. Felületi Menüstruktúra (Bal Oldali Navigáció), 3.1 Időszak Létrehozása és Alapadatok, 3.2 Munkaidő Megadása (Létszámigény lépés), 3. Beosztáskezelő Modul — Funkcionális Követelmények, 4.1 Rács Vezérlő és Kijelző Funkciók, 4. A Naptárrács (A Rendszer Fő Munkafelülete) (+7 more)
+### Community 456 - "getProjectClients"
+Cohesion: 0.27
+Nodes (9): LLM Költség Lekérdezés (Szerver-Oldali RPC Aggregáció), A-046: LLM Cost Aggregation via Server-Side SECURITY DEFINER RPCs, Consequences, Context, Decision, Kapcsolódó, buildLLMCosts(), fetchMultiProjectMonthlyLlm() (+1 more)
 
-### Community 462 - "06. Hiányossági Katalógus és Cselekvési Terv — HR Lokalizáció"
-Cohesion: 0.52
-Nodes (6): exportCsvFile(), exportData(), ExportFormat, exportToCsv(), exportXlsx(), triggerDownload()
+### Community 457 - "Decision"
+Cohesion: 0.20
+Nodes (10): 1. Rangsor adatforrás szabály, 2. Globális dátumszűrés (`p_date_from`, `p_date_to`), 3. VAT normalizáció (mindkét oldalon), 4. Treemap layout, 5. Treemap szín paletta (light/dark mode aware, 2026-07-05), A-027: Partner Ranking & Treemap — NAV-only + külföldi partner + dátumszűrő logika, Consequences, Context (+2 more)
+
+### Community 458 - "A-038: IMAP/SMTP Hitelesítő Adatok és Vault Integráció"
+Cohesion: 0.20
+Nodes (10): 1. Adatbázis Séma és RLS, 2. Biztonságos RPC Függvények (Security Definer), 3. Szerver Oldali Feloldás és Fallback Kézbesítés, A-038: IMAP/SMTP Hitelesítő Adatok és Vault Integráció, Consequences, Context, Decision, Kapcsolódó (+2 more)
+
+### Community 459 - "A-042: Sztornó Számla Kézi Lezárás (Storno Settle) Architektúra"
+Cohesion: 0.20
+Nodes (10): A-042: Sztornó Számla Kézi Lezárás (Storno Settle) Architektúra, Biztonsági zárolás (unmark), Consequences, Context, Decision, `is_manual_payment` és row rendering, Kapcsolódó, Kétlépéses láncolat logika (+2 more)
+
+### Community 460 - "Döntés"
+Cohesion: 0.20
+Nodes (10): 1. Adatbázis Séma Bővítés, 2. Kétirányú Védelem, 3. Könyvelési Zárlat (`get_gl_categorized_items`), 4. Könyvelői Jóváhagyási RPC (`approve_invoice_for_accounting`), A-084: NAV Online Számla Cross-Check & Könyvelői Jóváhagyási Kapu (Approval Gate), Döntés, Kapcsolódó, Kontextus és Probléma (+2 more)
+
+### Community 461 - "A-085: Főkönyvi Dátum Alap RPC Pushdown és Dinamikus Chunk Reload Recovery"
+Cohesion: 0.20
+Nodes (10): 1. Dinamikus Chunk Betöltési Hiba Auto-Recovery (`ErrorBoundary`), 2. Főkönyvi Dátum Alap Adatbázis RPC Pushdown, 3. Frontend Állapot és Reaktív Cache Stratégia, A-085: Főkönyvi Dátum Alap RPC Pushdown és Dinamikus Chunk Reload Recovery, Consequences, Context, Decision, Kapcsolódó (+2 more)
+
+### Community 462 - "A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz (PostgREST Pre-Request Hook & Edge Function Client Guard)"
+Cohesion: 0.20
+Nodes (10): 1. Védelmi Vonal: PostgREST Pre-Request Hook (`check_request()`), 2. Védelmi Vonal: Edge Function Client Guard (`_shared/client-guard.ts`), 3. Zéró-CORS-Súrlódás Webapp Integráció, A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz (PostgREST Pre-Request Hook & Edge Function Client Guard), Consequences, Context, Decision, Kapcsolódó (+2 more)
 
 ### Community 463 - "4. Micro-Module Dekomponálás & Végrehajtási Terv"
 Cohesion: 0.12
 Nodes (16): 1.1 Végcél (Long-term Vision), 1.2 Jelenlegi Fázis Célja (Phase 1 MVP), 1. Feature Összefoglaló & Célkitűzés, 2. Felhasználói Döntések Nyilvántartása (Jóváhagyva: 2026-10-03), 3. Spec Reviewer 6-Dimenziós Audit Elemzés, 4. Micro-Module Dekomponálás & Végrehajtási Terv, 📊 A. Adatmodell Döntések (`feedback` tábla), 🏗️ B. Architektúra & API Kommunikációs Döntések (+8 more)
 
-### Community 464 - "Fejlesztői Környezet Architektúra (DEV Architecture)"
+### Community 464 - "A-112: Futárszolgálati Kompenzációs Értesítők Kétirányú Automatikus Számlarendezése és Futárriport UI Párosítás (GLS / Courier Compensation Auto-Settlement & UI)"
 Cohesion: 0.20
-Nodes (9): 🎯 1. Zero Silent DB Decisions, 📁 2. Migrációs Szabvány & Idempotencia, ⚙️ 3. RPC Szabvány & Short-Circuit Limit Invariáns, 🛡️ 4. RLS & Multi-Tenant Tételtábla Denormalizáció, 🚀 5. Teljesítmény és Indexelés (Production-Grade), 🛑 6. PostgREST & Query Védőkorlátok, 🔄 7. Migrációs Nyilvántartás & Git Szinkron, 🚀 8. Main Merge & Kötelező Éles Migráció Futtatás (+1 more)
-
-### Community 465 - "⚛️ React Alapfogalmak, Virtual DOM & JSX"
-Cohesion: 0.12
-Nodes (15): 10. Elavult Stripe hivatkozások, 1. Provider Stack (App.tsx vs docs), 2. Context-ek száma, 3. Route-ok vs Information Architecture, 4. Edge Functions száma, 5. Migration count, 6. Törölt fájl hivatkozások, 7. Package.json vs Tech Stack (+7 more)
-
-### Community 466 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
-Cohesion: 0.12
-Nodes (15): A 5 Verifikálható Claim Típus, A Drift Check Folyamata, Drift esetén (mindig blokkoló), Gyors összefoglaló (ha nincs drift), Lépés 1: Terület vs Spec Mapping, Lépés 2: Verifikálható Claim-ek Kinyerése, Lépés 3: Kód Ellenőrzés (claim-enként), Lépés 4: Drift Riport Összeállítása (+7 more)
-
-### Community 467 - "P-085: eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása (Teendők, Portfólió, Segítség, Beállítások) UX"
-Cohesion: 0.11
-Nodes (18): `accounty_cafeteria`, `accounty_declarations`, `accounty_dependents`, `accounty_employee_jobs`, `accounty_employees`, `accounty_employments`, `accounty_garnishments`, `accounty_job_codes` (+10 more)
-
-### Community 468 - "P-087: Aggreg8 Bankcsatlakozás, SyncUI Felugró Ablak és Élő Szinkronizáció UX"
-Cohesion: 0.12
-Nodes (15): `api_idempotency_keys`, `api_keys`, `app_error_logs`, `audit_logs`, `changelog_entries`, `company_prompt_rules`, `daily_exchange_rates`, `dunning_sends` (+7 more)
-
-### Community 469 - "2. Termékdöntés és Megoldás"
-Cohesion: 0.12
-Nodes (15): A-019: Management Dashboard Architektúra, Adatforrások, API Design: Action-based Query Params, Architektúra: Edge Function + Service Role, Context, Decision, Error Handling, Error message elsőbbség (+7 more)
-
-### Community 470 - "P-130: Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) UX"
-Cohesion: 0.12
-Nodes (15): 1. `SECURITY DEFINER` KÖTELEZŐ minden trigger function-re, 2. `search_path` KÖTELEZŐEN tartalmazza az `extensions` sémát, 3. `CREATE OR REPLACE` használatakor MINDIG hordozd át az attribútumokat, A-020: Auth Trigger Chain — Signup Incident és Tanulságok, Az Incidens, Consequences, Context, Decision (+7 more)
-
-### Community 471 - "FixedAssetsPage"
-Cohesion: 0.12
-Nodes (15): 1. Email Change Flow — Kötelező Kijelentkeztetés, 2. App.tsx Szinkron IIFE Hash Interception, 3. sessionStorage — Csak Típus Flag, Nem Token, 4. Lejárt/Felhasznált Token Kezelés, 5. Signup — Egyetlen Email (Welcome Email), 6. verify-email — Supabase Auth Confirm, 7. Jelszó Komplexitás Kiterjesztése a Jelszó-visszaállításra, 8. Jelszó-visszaállító Email Átalakítása (OTP Elsődlegesség & Fallback Link) (+7 more)
-
-### Community 472 - "P-172: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák UX"
-Cohesion: 0.12
-Nodes (15): 1. Atomi PostgreSQL Tárolt Eljárás (`public.recalculate_partner_skonto`), 2. Egyetlen Tranzakcióban Történő Frissítés (CTE Update), 3. Skontó Kikapcsolásának Kezelése, 4. Szerveroldali Szállítási Díj Detektálás, 5. Külföldi és Belföldi Partnerek Kezelése, 6. Jogosultságvédelem (Security Definer Guard), 7. Vékony Kliens Implementáció (`PartnersPage.tsx`), A-118: Atomi Partner Skontó Újraszámolás és Kliensoldali Ciklusok Felszámolása (+7 more)
-
-### Community 473 - "P-177: PROCONT Főkönyvi Kivonat A4 PDF és Excel Export, Kétoldalas Egyezőség-számítás és Hibátlan Többoldalas Layout UX"
-Cohesion: 0.12
-Nodes (15): 1. Kétlépcsős eseménymodell és szétválasztás (Timeline Invariance), 2. Adatbázis Trigger funkció bővítése (`global_audit_trigger_func`), 3. Kliensoldali batch enricher (Retrospektív támogatás), 4. Szűrés és Keresés Bővítése, 5. Multi-Attachment Aggregáció és Fallback Duplikáció Szűrés (Deduplication), 6. Hierarchikus Rendező Komparátor (Szintetikus Időbélyeg-eltolás Mentesítés), 7. Frontend Komponens Modularizáció (ActivityLogSheet Dekompozíció), 8. Időbélyeg-konzisztencia Tisztázása (Created / Updated / Processed) (+7 more)
-
-### Community 474 - "invoices.ts"
-Cohesion: 0.12
-Nodes (15): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Képernyőszerkezet és Munkavállalói Lista, 3.1 1. Fül: Alapadatok és Elérhetőségek (`GeneralInfoTab`), 3.2 2. Fül: Jogviszony és Munkaidő Norma (`EmploymentTab`), 3.3 3. Fül: Szabadságkeret és Egyenlegek (`LeaveBalanceTab`), 3.4 4. Fül: Munkaidőkeret Konfiguráció (`WorkHoursFrameworkTab`), 3.5 5. Fül: Munkaügyi Szabályok és Felülbírálások (`ComplianceTab`) (+7 more)
-
-### Community 475 - "invoiceChainUtils.test.ts"
-Cohesion: 0.12
-Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Keresősáv és „Új munkatárs meghívása” Gomb, 3.2 Új Munkatárs Meghívása Párbeszédablak, 3.3 Munkatársi Kártya és eaisyBill Hozzáférés Kapcsoló, 3.4 Cég Hozzárendelése a Munkatárshoz, 3.5 Főkönyvelői Státusz és Cég Levétel, 3.6 Munkatárs Eltávolítása az Irodából (+7 more)
-
-### Community 476 - "skontoUtils.ts"
-Cohesion: 0.12
-Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 GDPR Statisztikai Állapotkártyák, 3.2 „Új kérelem” Indítása Gomb, 3.3 Új Érintetti Kérelem Rögzítése Dialógus, 3.4 Kérelem Feldolgozásának Indítása („Elkezd”), 3.5 Kérelem Lezárása („Teljesít”), 3.6 Lapozó Sáv (+7 more)
-
-### Community 477 - "accounty-generate-deadlines/index.ts"
-Cohesion: 0.12
-Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Szűrősáv és Keresőmező, 3.2 „Új hibajegy” Nyitása Gomb, 3.3 Hibajegy Lista és Részletező Megnyitása, 3.4 Válaszadás az Ügyfélnek, 3.5 Belső Szakmai Feljegyzés Rögzítése (Csak Belső Személyzet), 3.6 Felelős és Státusz Módosítása (+7 more)
-
-### Community 478 - "email-confirmation.tsx"
-Cohesion: 0.12
-Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Globális Dokumentáció Kereső, 3.2 1. Fül — Áttekintés és GYIK Harmonika, 3.3 2. Fül — Tematikus Cikkek és Útmutatók, 3.4 3. Fül — Videós Útmutatók, 3.5 4. Fül — Hivatalos Jogszabálytár, 3.6 5. Fül — Számviteli és Adózási Szakszótár (+7 more)
-
-### Community 479 - "Kötelező ÁFA Regresszióvédelmi és Stabilitási Kapu (VAT Safety Gate)"
-Cohesion: 0.12
-Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Céginformációs Fejléc és „Vissza a portfólióhoz” Gomb, 3.2 „NAV Szinkronizáció most” Gomb, 3.3 Zárási Blokkoló Tételek (Blocking Items) Blokk, 3.4 Bizonylatbekérő E-mail Indítása az Ügyfélnek, 3.5 Határidők és Teendők Kártya, 3.6 Manuális Hiányzó Tétel Rögzítése (+7 more)
-
-### Community 480 - "management_user_helper.cjs"
-Cohesion: 0.12
-Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Számlaszinkron és Technikai Fejléc Akciók, 3.2 Szűrősáv és Keresőmező, 3.3 Strukturált Számlatáblázat és T-számlás Előnézet, 3.4 Eredeti Számlakép Megtekintése, 3.5 Számla Jóváhagyása és Kontírozás Munkalap, 3.6 Exportálás Könyvelőszoftverbe (RLB60, Kulcs-Soft, Novitax) (+7 more)
-
-### Community 481 - "🚀 Végrehajtási Folyamat (Workflow)"
-Cohesion: 0.12
-Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégfejléc és Adózási Jogállás Jelvények, 3.2 Pénzügyi Összegző és Keretfigyelő Kártyák, 3.3 1. Blokk — Törzsadatok és Beállítás Varázsló, 3.4 2. Blokk — Adózási Formák és Kalkulátorok, 3.5 3. Blokk — Digitális Pénztárkönyv és NAV Számla Import, 3.6 4. Blokk — Járulékszámítás és Havi Bevallások (+7 more)
-
-### Community 482 - "🏢 Cégek & Tagság"
-Cohesion: 0.12
-Nodes (15): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Almenü / Sub-tab választó sáv, 3.2 „Kapcsolat & Értesítések” — Kapcsolattartó és csatornák beállítása, 3.3 „Adózási Profil” — Bevallási gyakoriságok és adózási formák, 3.4 „Bérszámfejtés & NAV” — Kerekítési és munkanap szabályok, 3.5 „Bérszámfejtés & NAV” — Pótlékszabályok és munkaidő-beállítások, 3.6 „Bérszámfejtés & NAV” — Kifizetési nap, Cafeteria és Távmunka keret (+7 more)
-
-### Community 483 - "A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency"
-Cohesion: 0.12
-Nodes (15): Az új `ConfirmDialog` API, ConfirmDialog Async Pattern — Implementációs Terv, Kockázatok, Komponens belső logika, Megoldás: `ConfirmDialog` wrapper komponens (Opció B), Migrálási lista (prioritás sorrendben), Migrálási pattern (minden call-site-on), Miért nem Opció A (alert-dialog.tsx forrás módosítás)? (+7 more)
-
-### Community 484 - "A-056: pg_cron Storage Cleanup Guard & Edge Function Schema Alignment"
-Cohesion: 0.12
-Nodes (15): compilerOptions, allowImportingTsExtensions, isolatedModules, lib, module, moduleDetection, moduleResolution, noEmit (+7 more)
-
-### Community 485 - "Decision"
-Cohesion: 0.05
-Nodes (43): DeferredVatPromptBanner(), DeferredVatPromptBannerProps, DeferredVatPromptDialog(), DeferredVatPromptDialogContent(), EmployeeHeader, VatRegime, ActivityLogSheet(), DashboardMetrics (+35 more)
-
-### Community 486 - "A-105: [eaisyBill] Tudástár Adatmodell, Full-Text Search és AI Retrieval Előkészítés"
-Cohesion: 0.12
-Nodes (15): `accounty_audit_export_diffs`, `accounty_audit_exports`, `annual_report_notes_templates`, `annual_reports`, `bs_mapping`, `bs_prior_year`, `bs_structure`, `pnl_mapping` (+7 more)
-
-### Community 487 - "A-116: K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem"
-Cohesion: 0.21
-Nodes (14): calculateA60Aggregations(), calculateDeadlineCountdown(), calculateVatBalances(), findSuspiciousReverseChargeInvoices(), runXmlValidation(), validateHungarianTaxNumber(), cleanEuVatNumber(), EU_VAT_RULES (+6 more)
-
-### Community 488 - "2. Architekturális Döntések"
-Cohesion: 0.09
-Nodes (16): queryClient, TestComponent(), InvoiceProvider(), NettingCardSectionProps, useInvoiceFilters(), useInvoiceMutations(), NettingGroup, useNettingDetection() (+8 more)
-
-### Community 489 - "2. Decision"
-Cohesion: 0.12
-Nodes (16): accounts_count, col_balance, col_change_pct, col_diff, compared_periods, export_toast, filter_all, filter_changed (+8 more)
-
-### Community 490 - "A-169-b2c-nav-anonymization-and-submitted-invoice-sync.md"
-Cohesion: 0.12
-Nodes (16): missing_items, new, pending, urgent, nav, badges, sections, tooltips (+8 more)
-
-### Community 491 - "A-167: NAV 2665 Hivatalos Nyomtatvány Digitális Replika Architektúra"
-Cohesion: 0.12
-Nodes (16): fixed_assets, create_asset, create_asset_btn, depreciation_run, import_assets, import_assets_btn, inventory_check, statuses (+8 more)
-
-### Community 492 - "A-190: Non-Destructive IMAP UID Követés (Zero-\Seen), Elosztott Zárolás és Batch Capping"
-Cohesion: 0.12
-Nodes (16): table, accounting, accounting_tooltip, deductibility, description, gl, gross, line_number (+8 more)
-
-### Community 493 - "2. Döntések és Architektúra"
-Cohesion: 0.12
-Nodes (16): ranking, customers, invoices, no_data, no_partners_period, suppliers, title, top_3_ratio (+8 more)
-
-### Community 494 - "2. Rendszerdöntések (Decisions D-1 .. D-4)"
-Cohesion: 0.12
-Nodes (16): transfer_dialog, amount_exceeds_balance, amount_label, currency_label, date_label, desc_label, description, error_title (+8 more)
-
-### Community 495 - "2. Architectural Decisions"
-Cohesion: 0.12
-Nodes (16): refresh, refresh_tooltip, rematch_all, rematch_tooltip, rematching, courier_tab, actions, card_desc (+8 more)
-
-### Community 496 - "A-243: NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZ/SZJ Detektálás Architektúra"
-Cohesion: 0.13
-Nodes (16): bulk, book_button, cancel, clear_selection, delete, delete_confirm_btn, delete_dialog_desc, delete_dialog_prompt (+8 more)
-
-### Community 497 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
-Cohesion: 0.12
-Nodes (16): accounts_count, col_balance, col_change_pct, col_diff, compared_periods, export_toast, filter_all, filter_changed (+8 more)
-
-### Community 498 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
-Cohesion: 0.12
-Nodes (16): missing_items, new, pending, urgent, nav, badges, sections, tooltips (+8 more)
-
-### Community 499 - "PRD-09: Fejlesztési Roadmap, Képernyő-készültség és MVP Kiadás"
-Cohesion: 0.12
-Nodes (16): fixed_assets, create_asset, create_asset_btn, depreciation_run, import_assets, import_assets_btn, inventory_check, statuses (+8 more)
-
-### Community 500 - "Visibill — Business Requirements Document (BRD)"
-Cohesion: 0.12
-Nodes (16): table, accounting, accounting_tooltip, deductibility, description, gl, gross, line_number (+8 more)
-
-### Community 501 - "Decision"
-Cohesion: 0.12
-Nodes (16): ranking, customers, invoices, no_data, no_partners_period, suppliers, title, top_3_ratio (+8 more)
-
-### Community 502 - "BDR-066: Termékimport és Vámhatározatok ÁFA Elszámolása"
-Cohesion: 0.12
-Nodes (16): transfer_dialog, amount_exceeds_balance, amount_label, currency_label, date_label, desc_label, description, error_title (+8 more)
-
-### Community 503 - "BDR-067: NAV 26TFEJLH Turizmusfejlesztési Hozzájárulás Bevallás és Nyomtatvány Replika"
-Cohesion: 0.12
-Nodes (16): refresh, refresh_tooltip, rematch_all, rematch_tooltip, rematching, courier_tab, actions, card_desc (+8 more)
-
-### Community 504 - "Decision"
-Cohesion: 0.13
-Nodes (16): bulk, book_button, cancel, clear_selection, delete, delete_confirm_btn, delete_dialog_desc, delete_dialog_prompt (+8 more)
-
-### Community 505 - "Dashboard KPI Kártyák Újratervezése (Design Mockup & Specifikáció)"
-Cohesion: 0.26
-Nodes (12): AGORA_PNL_DEFINITIONS, AgoraPnlCalculatedRow, AgoraPnlReportData, AgoraPnlRowDefinition, buildAgoraPnlData(), BuildAgoraPnlOptions, formatAgoraPnlNumber(), hashCode() (+4 more)
-
-### Community 506 - "01. Számlák és Bizonylatkezelés — HR Lokalizációs Leltár"
-Cohesion: 0.12
-Nodes (28): downloadBlob(), DownloadOptions, downloadString(), cleanOib(), CroatianCompanyTaxInfo, CroatianEuStatementsData, CroatianPreparerInfo, downloadPdvSXml() (+20 more)
+Nodes (10): 1. Kétirányú `settle_compensation_for_courier_report` Függvény, 2. Adatbázis Trigger (`trg_courier_reports_auto_settle_compensation`), 3. Frontend UI Fejlesztések (`MatchedCourierReportsCard.tsx`), A-112: Futárszolgálati Kompenzációs Értesítők Kétirányú Automatikus Számlarendezése és Futárriport UI Párosítás (GLS / Courier Compensation Auto-Settlement & UI), A) Bejövő szállítói számlák (`INBOUND`) automatikus rendezése, B) Kimenő vevői COD számlák (`OUTBOUND`) automatikus rendezése (0 Ft-os átutalás esetén), Consequences, Context (+2 more)
+
+### Community 465 - "A-120: Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló"
+Cohesion: 0.20
+Nodes (10): 1. Kliensoldali Csoportos ÁFA Validációs Segédfüggvények (`validationUtils.ts`), 2. Figyelmeztető UI Védőháló a NAV Kapcsolat Beállítási Felületein, 3. Hivatalos Tudástár Útmutató Integráció (`nav-group-vat-sync`), A-120: Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló, A probléma jogszabályi és technikai oka:, Consequences, Context, Decision (+2 more)
+
+### Community 466 - "A-121: Évek Közötti Áthúzódó Teljesítésű Számlák Főkönyvi és ÁFA Védőhálója (Cross-Year Delivery Guard)"
+Cohesion: 0.20
+Nodes (10): 1. Adatbázis-szintű Cross-Year Guard a Tervezet-Generáló Triggerekben, 2. 46671 Főkönyvi Számla Helyes Kezelése és Átfutó ÁFA Elkülönítés, 3. Véglegesített Főkönyvi Tételek Integritása (`post_accounting_journal_draft`), A-121: Évek Közötti Áthúzódó Teljesítésű Számlák Főkönyvi és ÁFA Védőhálója (Cross-Year Delivery Guard), Consequences, Context, Decision, Negatív / Kötöttségek (+2 more)
+
+### Community 467 - "A-129: Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek"
+Cohesion: 0.20
+Nodes (10): 1. Adatbázis Trigger és Szigorú Többségi Szabály (Phase 1 / Mentéskori besorolás), 2. Kétfázisú Edge Function (`auto-categorize-invoices`), 3. Worker Integráció (`category_classifier.py`), A-129: Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek, Consequences (Következmények), Context (Kontextus), Decision (Döntés), Implementation Details (Implementációs részletek) (+2 more)
+
+### Community 468 - "A-145: Tömeges PDF Szeletelés (Physical Chunk Slicing), NAV Determinisztikus Fallback és Többszörös Mellékletkezelés"
+Cohesion: 0.20
+Nodes (10): 1. Architektúrális Háttér & Indoklás, 2. Rendszerdöntések (Decisions D-1, D-2, D-3, D-4), 3. Érintett Rendszerkomponensek, 4. Verifikáció & Minőségbiztosítás, 5. Kapcsolódó Továbbfejlesztések, A-145: Tömeges PDF Szeletelés (Physical Chunk Slicing), NAV Determinisztikus Fallback és Többszörös Mellékletkezelés, Decision D-1: Fizikai PDF Szeletelés és Üres Lapok Kiszűrése (`worker/pdf_splitter.py`), Decision D-2: Szeletelt Chunkok Feltöltése és Egyedi Tárolása (`worker/worker.py`) (+2 more)
+
+### Community 469 - "A-148: Könyvelőirodai Hibajegy Megosztás és Hibrid RLS Hozzáférés-vezérlés"
+Cohesion: 0.20
+Nodes (10): 1. Kontextus és Problémafelvetés, 2. Megoldási Opciók Mérlegelése, 3.1 Adatbázis és RLS Migráció, 3.2 Megoldás Visszaigazolás (Resolution Confirmation) RPC & Versenyhelyzet Védelem, 3.3 Olvasatlan Számláló és Értesítési Izoláció (Unread Privacy), 3.4 Felhasználói Felület és Cég Keresősáv (Frontend), 3. Megvalósítás Részletei, 4. Tenant Izoláció és Biztonsági Verifikáció (+2 more)
+
+### Community 470 - "2. Architektúrális Döntések"
+Cohesion: 0.20
+Nodes (10): 1. Kontextus & Problémafelvetés, 2. Architektúrális Döntések, 3. Következmények & Éles Eredmények, A-173: Számlalánc Tranzakció-örökítés, Díjbekérő-Végszámla Automatikus Párosítás és PostgreSQL Propagáció, D-1: Számlalánc-feloldási Szabályrendszer (Chain Resolution Engine), D-2: PostgreSQL Propagációs Motor (`propagate_transaction_to_invoice_chain`), D-3: Kétirányú Eseményvezérelt Triggerek, D-4: Teljesítmény és Indexelés (+2 more)
+
+### Community 471 - "2. Megoldás & Architektúrális Döntések"
+Cohesion: 0.20
+Nodes (10): 1. Kontextus & Problémafelvetés, 2.1 Célzott Részleges és Összetett Indexelés, 2.2 RLS `(SELECT auth.uid())` Skalár Allekérdezés és FK Indexelés, 2.3 `calculate_hungarian_vat_return` — Lateral Join OR Csapda Megszüntetése, 2.4 Pénzügyi Elemző RPC-k `STABLE` Jelölése és CTE Materializálás, 2.5 Biztonsági Keményítés, Search Path és RLS Többszörös Permisszív Szabályzatok Megszüntetése, 2. Megoldás & Architektúrális Döntések, 3. Mért Eredmények (Evidence Before Assertions) (+2 more)
+
+### Community 472 - "A-185: Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra"
+Cohesion: 0.20
+Nodes (10): 1. Context, 2.1. FEOR-08 Szótár és Munkakör Feloldó Motor (`feorCodes.ts`), 2.2. Bérjegyzék Generátor Redesign (`payslipGenerator.ts`), 2.3. Költséghely és Munkakör Kezelés a Felületen, 2. Decision, 3. Consequences, 4. Kapcsolódó Dokumentáció, A-185: Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra (+2 more)
+
+### Community 473 - "2. Döntések és Architektúra"
+Cohesion: 0.20
+Nodes (10): 1. Kontextus és Problémafelvetés, 2. Döntések és Architektúra, 3. Következmények és Eredmények, 4. Kapcsolódó, A-192: Munka Törvénykönyve (Mt.) Szerinti Magyar Munkanap és Törvényes Bérszámfejtési Keret Motor, A korábbi hiányosság (Root Cause), D-1: Tiszta Naptári Kalkulátor Motor (`src/lib/payroll/workdayCalculator.ts`), D-2: Dinamikus Törvényes Osztó a Bérszámfejtési Pipeline-ban (`src/hooks/usePayrollData.ts`) (+2 more)
+
+### Community 474 - "JournalsPage"
+Cohesion: 0.22
+Nodes (10): 1. Architekturális Háttér, 2.2 Útvonalkezelés és Jogosultságok, 2.3 Állapot és Dialógus Vezérlés a Fogyasztó Komponensekben, 2. Komponens és Adatfolyam Architektúra, 3. Minőségbiztosítás és Tesztelés, A-196: Könyvelési Szabályok Modális és Keresztmodul Integrációja (ÁFA, Napló és Főkönyvi Szabálykezelő), deriveJournalItems(), getStatusInfo() (+2 more)
+
+### Community 475 - "2. Architekturális Döntések"
+Cohesion: 0.20
+Nodes (10): 1. Kontextus és Problémafelvetés, 2. Architekturális Döntések, 3. Következmények és Előnyök, 4. Kapcsolódó Dokumentáció, A-226: Főkönyvi és Folyószámlai Lekérdezési Vihar (Concurrency Storm) Felszámolása, get_gl_analytic_reconciliation Sémajavítás és Folyószámla Pagináció, D-2: `get_gl_analytic_reconciliation` SQL Javítás és Kliens Védelem, D-3: Folyószámla Egységes Lapozó Rendszer (`UnifiedPagination`), D-4: Napló (Journals) Skálázási Védőkorlátok (Guardrails) (+2 more)
+
+### Community 476 - "A-234: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Architektúrája"
+Cohesion: 0.20
+Nodes (10): 1. Séma Bővítés a Dual-Table Modellben, 2. Atomi Tárolt Eljárások (RPC) és Védelmi Mechanizmusok, 3. ÁFA Számítási Motor Integráció (`calculate_hungarian_vat_return`), A-234: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Architektúrája, ⚡ Consequences, 🏛️ Context, 💡 Decision, 🔗 Kapcsolódó (+2 more)
+
+### Community 477 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
+Cohesion: 0.20
+Nodes (10): 04. Távollétek, Betegszabadság és Jelenlét-igazolás, 1.1 A Meglévő Rendszer Hibájának Kiküszöbölése (Kiemelt Értékajánlat), 1. Távollét-kezelés és Mt. szerinti Jogcímek, 2. A Hivatalos Mt. Távollét-típusok Katalógusa, 3.1 Üzleti Szabályok, 3. A 15 Napos Betegszabadság → Táppénz Automatikus Átfordulás Motorja, 4. Szabadságkeret és Egyenlegkezelés, 5.1 Funkcionális Követelmények (+2 more)
+
+### Community 479 - "7. Pénzügyi Modulok"
+Cohesion: 0.20
+Nodes (10): 7. Pénzügyi Modulok, REQ-7.1: Tranzakció kezelés, REQ-7.2: Futárszolgálat riportok, REQ-7.3: Bér & járulék modul, REQ-7.4: Adó modul, REQ-7.5: Főkönyvi rendszer (GL), REQ-7.6: Éves beszámoló, REQ-7.7: Tárgyi eszközök (+2 more)
+
+### Community 480 - "Decision"
+Cohesion: 0.20
+Nodes (9): 1. Hivatalos NAV 65 ÁFA Bevallásból Való Teljes Kizárás, 2. Sor Drilldown (Részletező) Védelem, 3. ÁFA Gyűjtőkódos Analitika, 4. Tétel-Felismerési Szabály (False Positive Védelem), Decision, Decision 062: DRS Kötelező Visszaváltási Díj (Kupakdíj / Betétdíj) Kizárása az ÁFA Bevallásból, Kapcsolódó, Question (+1 more)
+
+### Community 481 - "2. Üzleti és Számviteli Döntések"
+Cohesion: 0.20
+Nodes (10): 1. Kontextus és Számviteli Követelmények, 2.1 Zéró Eltérés Elv (Zero Silent Discrepancy Policy), 2.2 Nyitott Tételek Rendezésének Szabályai, 2.3 Kerekítési Különbözetek Számviteli Kezelése ($\le 10$ Ft), 2.4 Realizált Árfolyamkülönbözet Kezelése, 2.5 Javaslatok és Végleges Könyvelés Kezelése, 2. Üzleti és Számviteli Döntések, 3. Üzleti Indoklás (Rationale) (+2 more)
+
+### Community 482 - "BDR-065: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Üzleti Szabályzata"
+Cohesion: 0.20
+Nodes (10): 1. Kétpólusú Kizárási Rendszer (`accounting_exclusion_type`), 2. Műszerfali "Kérdéses Számlák" Vezérlőpult (`DeferredInvoicesWidget.tsx`), 3. ÁFA Bevallás & Hónapzárási Kapu (`DeferredVatPromptBanner.tsx`, `DeferredVatPromptDialog.tsx`), 4. Adatbázis & RPC Motor, BDR-065: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Üzleti Szabályzata, 🔒 Biztonság és Jogosultság, 💡 Döntés & Megoldási Architektúra, 🔗 Kapcsolódó (+2 more)
+
+### Community 483 - "06. Hiányossági Katalógus és Cselekvési Terv — HR Lokalizáció"
+Cohesion: 0.20
+Nodes (10): 06. Hiányossági Katalógus és Cselekvési Terv — HR Lokalizáció, 🎯 1. Bevezetés és Célkitűzés, 🟢 1. Fázis: Értékesítési Demó és Kritikus UI Felületek (P0 Showstoppers), 🟡 2. Fázis: Főbb Felhasználói Űrlapok és Modális Dialógusok (P1), 📅 2. Háromfázisú Cselekvési Terv, 🔵 3. Fázis: Teljes Rendszerfedettség, Toastok és Súgók (P2/P3), 💻 3. Javasolt Szótárstruktúra Kiegészítés (`src/locales/hr/`), 🛡️ 4. Minőségbiztosítási és Verifikációs Kapu (+2 more)
+
+### Community 484 - "Fejlesztői Környezet Architektúra (DEV Architecture)"
+Cohesion: 0.20
+Nodes (9): 🌐 1. Webszerver és Domain, 🗄️ 2. Dev Adatbázis (Supabase), ⚡ 3. Edge Functions, 🔒 4. Hitelesítés, Jogosultságok és Menedzsment Izoláció a Dev Környezetben, 🤖 5. Dedikált AI Worker Replikáció (`worker-dev`), Fejlesztői Környezet Architektúra (DEV Architecture), Kliens Felhasználók és Cégek, Menedzsment Felhasználók (Platform Adminisztrátorok) (+1 more)
+
+### Community 485 - "⚛️ React Alapfogalmak, Virtual DOM & JSX"
+Cohesion: 0.20
+Nodes (10): 🏛️ 1. Mi a React? (Deklaratív vs. Imperatív UI), 🌳 2. A DOM és a Virtual DOM (VDOM) Működése, 📦 3. Props vs. State (Adatáramlás), 💡 Használat a Visibillben, Miért fontos a `key` prop a listáknál?, 📖 Mozaikszavak Kibontása & Definíciók, Példa Visibill Komponensre (Props + State):, ⚛️ React Alapfogalmak, Virtual DOM & JSX (+2 more)
+
+### Community 486 - "3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)"
+Cohesion: 0.20
+Nodes (9): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Kiemelt Deviza Kártyák és Testreszabás, 3.2 Kétirányú Valutaváltó Kalkulátor, 3.3 Hivatalos MNB Árfolyamtáblázat és Kereső, 3.4 Manuális Árfolyam-szinkronizálás, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható), Fő feladatai és jogszabályi háttere: (+1 more)
+
+### Community 487 - "Döntések"
+Cohesion: 0.20
+Nodes (10): 1. Multi-currency összeg megjelenítés, 2. Dual-table keresés a hozzárendelési dialógusban, 3. Kategóriák leírás frissítése, 4. Arány megjelenítés — számla darabszám alapú (2026-06-29), 5. Összeg kimutatás — vízszintes sáv diagram (2026-06-29), 6. Kategória számlák exportálása — CSV, XLSX, PDF (2026-07-22), Döntések, Kapcsolódó fájlok (+2 more)
+
+### Community 488 - "P-085: eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása (Teendők, Portfólió, Segítség, Beállítások) UX"
+Cohesion: 0.20
+Nodes (10): 1. ⚡ Teendők (Action Center / Sürgős feladatok), 2. 💼 Portfólió (Ügyfélmunka & Szolgáltatások), 3. ✨ Segítség (Intelligencia & Támogatás), 4. ⚙️ Beállítások (Rendszer & Biztonság), Context, Döntés (Decision), P-085: eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása (Teendők, Portfólió, Segítség, Beállítások) UX, UX Kérdés & Döntési Folyamat (+2 more)
+
+### Community 489 - "P-087: Aggreg8 Bankcsatlakozás, SyncUI Felugró Ablak és Élő Szinkronizáció UX"
+Cohesion: 0.20
+Nodes (10): 1. Négy Kötelező UI Állapot, 2. SyncUI Felugró Ablak (Popup) Kezelés, 3. Versenyhelyzet- és Villogásvédelem (Anti-Flicker & Race Condition Safeguard), 4. Beszédes Hibaüzenetek és Naplózás, 5. Jogosultsági Védelem (RBAC), 6. Nagy Adatmennyiségű Szinkronizáció Visszajelzés (10 000+ Tétel), 7. Többvállalkozásos Bankkapcsolat (Multi-Company Netbank Megosztás, 2026-10 Frissítés, EB-0226), Kapcsolódó (+2 more)
+
+### Community 490 - "2. Termékdöntés és Megoldás"
+Cohesion: 0.20
+Nodes (10): 1. Kettős Adatbeviteli Mód (40 Karakteres Auto-Split vs. 4 Mező), 1. Kérdés és Felhasználói Kontextus, 2. Termékdöntés és Megoldás, 2. Vizuális Státuszkártya és Maszkolás (`NavUpoM2mCard`), 3. Kapcsolódó, 3. Valós Idejű Kapcsolatteszt és KOMA Ellenőrzés, 4. Automatizált Napi Szinkronizáció és Manuális Gombok, 5. Biztonságos Kapcsolatbontás (Revocation Flow) (+2 more)
+
+### Community 491 - "P-130: Horvát ePorezna ÁFA Bevallás XML Export (Obrazac PDV-S & Obrazac ZP) UX"
+Cohesion: 0.20
+Nodes (10): 1. Fül: `Obrazac PDV-S` (EU Beszerzések és Igénybe vett szolgáltatások), 1. Kontextus és Felhasználói Igény, 2.1 Kontextusfüggő Export Menü (`VatReturnViewTab.tsx`), 2.2 Interaktív Előnézeti és Export Dialógus (`VatPoreznaExportDialog.tsx`), 2. Fül: `Obrazac ZP` (EU Értékesítések és Nyújtott szolgáltatások), 2. Termékdöntés és Felhasználói Felület (UX), 3. Fül: `Sastavljač & Ispostava` (Beadó személy & Kirendeltség), 3. Rendszermegbízhatóság és Hibakezelés (+2 more)
+
+### Community 492 - "P-177: PROCONT Főkönyvi Kivonat A4 PDF és Excel Export, Kétoldalas Egyezőség-számítás és Hibátlan Többoldalas Layout UX"
+Cohesion: 0.20
+Nodes (10): 1. Főkönyvi Eszköztár Export Menü Bővítés (`GlToolbar.tsx`), 2. A4 Álló PDF Vizuális Kialakítás és Többoldalas Védelem (`procontGlPdf.ts`), 3. Excel Munkafüzet UX (`procontGlExcel.ts`), 4. Visszajelzés és Hiba-reziliencia, 🔍 Current Implementation, 💡 Decision, 🔗 Kapcsolódó, P-177: PROCONT Főkönyvi Kivonat A4 PDF és Excel Export, Kétoldalas Egyezőség-számítás és Hibátlan Többoldalas Layout UX (+2 more)
+
+### Community 493 - "Decision"
+Cohesion: 0.20
+Nodes (10): 1. Tárolóhely & Felelős Kezelés és Áthelyezési Folyamat, 2. Címkenyomtatás Dialógus (`QrLabelDialog.tsx`), 3. Mobilbarát Leltározó & Év Végi Leltárív (`InventoryCheckDialog.tsx`, `inventoryReportExport.ts`), 4. Pályázati Projektek és Négyoldalú Rekonciliáció Fül (`GrantProjectsTab.tsx`), 5. Eszköz-komponensek és Forrásmegosztás Sáv (`AssetComponentsView.tsx`), Consequences, Context, Decision (+2 more)
+
+### Community 494 - "PayrollReconciliationTab.tsx"
+Cohesion: 0.27
+Nodes (6): ChecklistItem, INITIAL_CHECKLIST, YearEndClosingChecklistProps, WorksheetSidebarProps, PayrollReconciliationTabProps, Progress
+
+### Community 495 - "journalFilterUtils.ts"
+Cohesion: 0.33
+Nodes (8): JournalFilterModalProps, ActiveFilterChip, filterJournalEntries(), getActiveFilterChips(), getMatchModeShortLabel(), JournalFilterCriteria, matchesStringPattern(), MatchMode
+
+### Community 496 - "invoiceChainUtils.test.ts"
+Cohesion: 0.24
+Nodes (8): buildInvoiceChain(), walkDown(), walkUp(), ChainableInvoice, InvoiceChainResult, invoiceA, invoiceB, invoiceC
+
+### Community 497 - "skontoUtils.ts"
+Cohesion: 0.31
+Nodes (7): calculateSkonto(), CalculateSkontoParams, detectShippingAmount(), formatTransferNarrative(), InvoiceLineItemCandidate, SHIPPING_ITEM_REGEX, SkontoCalculationResult
+
+### Community 498 - "accounty-generate-deadlines/index.ts"
+Cohesion: 0.36
+Nodes (8): addUTCDays(), adjustToBusinessDay(), buildDueDate(), corsHeaders, fmtDate(), getEasterSunday(), getHungarianHolidays(), TAX_DEADLINES
+
+### Community 499 - "email-confirmation.tsx"
+Cohesion: 0.20
+Nodes (8): code, container, EmailConfirmationProps, footer, h1, link, main, text
+
+### Community 500 - "Kötelező ÁFA Regresszióvédelmi és Stabilitási Kapu (VAT Safety Gate)"
+Cohesion: 0.22
+Nodes (8): 🛑 1. Mikor Érvényes Ez a Szabályzat?, 🔍 2. Kötelező Verifikációs Kapuk (Verification Gates), ⚠️ 3. Szándékos Kalkuláció Módosítás / Bugfix Esetén, 🚫 4. Zéró Fantom Verifikáció, Kapu 1: Vitest Golden Master Regressziós Teszt (<150ms), Kapu 2: Élő Adatbázis Snapshot Guard (<10s), Kapu 3: Oxlint & Típusellenőrzés, Kötelező ÁFA Regresszióvédelmi és Stabilitási Kapu (VAT Safety Gate)
+
+### Community 501 - "🚀 Végrehajtási Folyamat (Workflow)"
+Cohesion: 0.22
+Nodes (8): 1. Előzetes ellenőrzés (Pre-Check), 2. Felhasználó Regisztrációja (Auth SignUp), 3. Jogosultságok és Email Megerősítés Beállítása (DB Elevate), 4. Hitelesítés és Végponti Ellenőrzés (Smoke Test), 📥 Elvárt Bemenetek (Inputs), Visibill Create Management User Skill, 🚀 Végrehajtási Folyamat (Workflow), 📊 Összegző Jelentés Formátum
+
+### Community 502 - "🏢 Cégek & Tagság"
+Cohesion: 0.22
+Nodes (9): `api_request_logs`, `companies`, `company_bank_accounts`, `company_email_accounts`, `company_fx_settings`, `company_locations`, `company_members`, `company_settings` (+1 more)
+
+### Community 503 - "A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency"
+Cohesion: 0.22
+Nodes (9): A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency, Consequences, Context, Decision, Kapcsolódó, Layer 1: Alkalmazás szintű check (EF, upload táblák), Layer 2: Alkalmazás szintű check — llm_koltsegek (permanent audit log), Layer 3: DB-szintű UNIQUE partial index (atomi garancia) (+1 more)
+
+### Community 504 - "A-056: pg_cron Storage Cleanup Guard & Edge Function Schema Alignment"
+Cohesion: 0.22
+Nodes (8): A-056: pg_cron Storage Cleanup Guard & Edge Function Schema Alignment, Consequences, Context, Decision, Kapcsolódó, corsHeaders, ManualInvoice, NavInvoice
+
+### Community 505 - "A-105: [eaisyBill] Tudástár Adatmodell, Full-Text Search és AI Retrieval Előkészítés"
+Cohesion: 0.22
+Nodes (9): 1. Kontextus & Követelmények, 2.1 `knowledge_base_categories`, 2.2 `knowledge_base_articles`, 2. Adatbázis Séma (`supabase/migrations/20260907165915_create_knowledge_base.sql`, `supabase/migrations/20260907170045_expand_hierarchical_knowledge_base.sql`, `supabase/migrations/20260907170112_audit_and_complete_knowledge_base.sql`, `supabase/migrations/20260907170143_audit_eaisybooks_knowledge_base.sql` és `supabase/migrations/20260907170155_search_knowledge_base_rpc.sql`), 3.1 `search_knowledge_base` RPC és RAG Keresőmotor, 3. Full-Text Search (FTS) és GIN Indexelés, 4. Hozzáférés-vezérlés (RLS) & Biztonság, 5. Frontend Fallback & Teljesítmény (+1 more)
+
+### Community 506 - "A-116: K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem"
+Cohesion: 0.22
+Nodes (9): 1. Dinamikus Elválasztójel-Gyakoriság Detektálás (`transaction_extractor.py`), 2. Fejléc-Alapú Strukturált Oszloptérképezés Excelhez (`transaction_extractor.py`), 3. Tranzakció Pipeline Intercept Védőháló (`worker.py`), 4. Egységteszt Csomag (`test/unit_test/test_kh_bank_exports.py`), A-116: K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem, Consequences, Context, Decision (+1 more)
+
+### Community 507 - "A-125: Atomi Házipénztári Számlakiegyenlítés és Auth Életciklus Védelmek"
+Cohesion: 0.22
+Nodes (9): 1. Atomi Számlakiegyenlítő Tárolt Eljárás (`settle_invoices_via_petty_cash`), 3. PDF Export Auth-Életciklus Védelem, 4. Bővítmény Zajszűrés, A-125: Atomi Házipénztári Számlakiegyenlítés és Auth Életciklus Védelmek, Consequences, Context, Decision, Kapcsolódó (+1 more)
+
+### Community 508 - "Decision"
+Cohesion: 0.22
+Nodes (9): 1. Kétlépcsős eseménymodell és szétválasztás (Timeline Invariance), 2. Adatbázis Trigger funkció bővítése (`global_audit_trigger_func`), 4. Szűrés és Keresés Bővítése, 5. Multi-Attachment Aggregáció és Fallback Duplikáció Szűrés (Deduplication), 6. Hierarchikus Rendező Komparátor (Szintetikus Időbélyeg-eltolás Mentesítés), 7. Frontend Komponens Modularizáció (ActivityLogSheet Dekompozíció), 8. Időbélyeg-konzisztencia Tisztázása (Created / Updated / Processed), Decision (+1 more)
+
+### Community 509 - "2. Architekturális Döntések"
+Cohesion: 0.22
+Nodes (9): 1. Kontextus és Problémafelvetés, 2.1 Adatbázis Séma Bővítés: Multi-Country Cégek és Sablonok, 2.2 Hierarchikus Horvát Kontó Fa-struktúra Beszúrása (`gl_accounts`), 2.3 Központi Joghatóság Motor: `useCompanyJurisdiction`, 2.4 Sablonkezelés Scoping: `useActivePreset`, 2.6 Dinamikus Devizakezelés a Főkönyvben, 2. Architekturális Döntések, 3. Következmények és Előnyök (+1 more)
+
+### Community 510 - "2. Decision"
+Cohesion: 0.22
+Nodes (9): 1. Context & Technikai Kihívás, 1. Reaktivált Batch Query Stratégia (`fetchAllGlCategorizedItems`), 2. Decision, 2. O(1) Fastruktúra Indexelés (`batchItemsByGL`), 3. Consequences, 3. N+1 Guard a Korábbi On-Demand Hookokon, 4. Kapcsolódó, 4. Állapotmegőrzés (`savedKontirokExpandedRef`) (+1 more)
+
+### Community 511 - "2. Decision"
+Cohesion: 0.22
+Nodes (9): 1. Context, 1. Közös Adatbázis-táblák Jurisdikció-specifikus Kiterjesztése, 2. Decision, 2. Többjurisdikciós Számítási Motor (Top-level Router Pattern), 3. Consequences, 3. Frontend Nyomtatvány-replika és Nézetválasztó, A-156: Horvát ÁFA Bevallás (Obrazac PDV) és Adókód Architektúra, Negatív / Kockázatok (+1 more)
+
+### Community 512 - "A-167: NAV 2665 Hivatalos Nyomtatvány Digitális Replika Architektúra"
+Cohesion: 0.22
+Nodes (9): 1. Döntési Kontextus és Felhasználói Igény, 2.1 Komponens Hierarchia és Felelősségek, 2.2 Determinisztikus Adatkötés (Data Binding), 2. Architektúra Döntés, 3. Következmények és Előnyök, 4. Kapcsolódó Dokumentáció, A-167: NAV 2665 Hivatalos Nyomtatvány Digitális Replika Architektúra, Negatív / Kockázatok (+1 more)
+
+### Community 513 - "A-190: Non-Destructive IMAP UID Követés (Zero-\Seen), Elosztott Zárolás és Batch Capping"
+Cohesion: 0.22
+Nodes (9): 1. RFC 3501 Zero-`\Seen` Non-Destructive Peek, 2. Perzisztens Adatbázis-szintű UID Deduplikáció (`imap_processed_messages`), 3. PostgreSQL Elosztott Leader Zárolás (`worker_distributed_locks`), 4. Batch Capping (`MAX_EMAILS_PER_SYNC = 50`), A-190: Non-Destructive IMAP UID Követés (Zero-\Seen), Elosztott Zárolás és Batch Capping, Consequences, Context, Decision (+1 more)
+
+### Community 514 - "SubledgerItemMatchesModal"
+Cohesion: 0.33
+Nodes (9): 3. Következmények és Eredmények, 1.3 Modálok és Export Szinkronizáció, BulkRoundingWriteOffModal(), SubledgerExportDialog(), SubledgerItemMatchesModal(), WriteOffSettlementModal(), useSubledgerItemMatches(), useUnsettleOpenItems() (+1 more)
+
+### Community 515 - "2. Rendszerdöntések (Decisions D-1 .. D-4)"
+Cohesion: 0.22
+Nodes (9): 1. Architektúrális Háttér & Indoklás, 2. Rendszerdöntések (Decisions D-1 .. D-4), 3. Érintett Rendszerkomponensek, 4. Verifikáció & Minőségbiztosítás, A-225: Duplex PDF Darabolás Robusztusítás, Táblázatfejléc Védelem és Számlaszám Fuzzy NAV Párosítás (EB-0250), Decision D-1: Táblázatfejlécek és Banki Adatok Szigorú Feketelistázása (`worker/pdf_splitter.py`), Decision D-2: Determinisztikus Halmazmetszet és Token-szintű Összetartozás (`worker/pdf_splitter.py`), Decision D-3: Duplex-Tudatos Lapszámozási Arány (`worker/pdf_splitter.py`) (+1 more)
+
+### Community 516 - "2. Architectural Decisions"
+Cohesion: 0.22
+Nodes (9): 1. Context & Business Need, 2.1 Multi-Tenancy & Integrity Tables (`accounty_audit_exports`, `accounty_audit_export_diffs`), 2.2 Standardized 20-Column General Ledger RPC (`get_auditor_gl_journal_export`), 2.3 ISA 560 Subsequent Cash Settlements RPC (`get_subsequent_settlements_report`), 2.4 Zero-Redundancy Integration with MKVK AuditXML Generator, 2. Architectural Decisions, 3. Database Schema DDL, 4. Consequences & Benefits (+1 more)
+
+### Community 517 - "A-243: NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZ/SZJ Detektálás Architektúra"
+Cohesion: 0.22
+Nodes (9): 1. Háromirányú Egyeztető RPC (`get_vat_osa_three_way_reconciliation`), 2. Kliensoldali Egyeztető Munkaterület (`VatOsaThreeWayReconciliation.tsx`), 3. Fordított ÁFA Acéltermék és Fémhulladék Detektálás (`useSteelProductsData.ts`, `VatSteelProductsSection.tsx`), A-243: NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZ/SZJ Detektálás Architektúra, ⚡ Consequences, 🏛️ Context, 💡 Decision, 🔗 Kapcsolódó (+1 more)
+
+### Community 518 - "A-249: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra"
+Cohesion: 0.22
+Nodes (9): 1. Atomi PostgreSQL RPC-k (`SECURITY DEFINER`), 2. Kettős Végrehajtási Réteg (Resilient Execution Layer), A-249: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra, Consequences, Context, Decision, Kapcsolódó, Negatív / Kockázatok: (+1 more)
+
+### Community 519 - "A-255: Technikai Könyvelési és Bérszámfejtési RPC Jogosultságkezelés, Külső Könyvelői Hozzáférés (has_accounty_company_access) és Folyószámla Típusbiztonság"
+Cohesion: 0.22
+Nodes (9): 1. Egységes Könyvelői Jogosultságkezelés (`has_accounty_company_access` és `rls_write_denied_company_ids`), 2. Szigorú PL/pgSQL Típusillesztés a RETURN QUERY Eljárásokban, 3. REST Lekérdezési URL Kötegelés (Chunking), A-255: Technikai Könyvelési és Bérszámfejtési RPC Jogosultságkezelés, Külső Könyvelői Hozzáférés (has_accounty_company_access) és Folyószámla Típusbiztonság, Consequences, Context, Decision, Negatív / Kockázatok (+1 more)
+
+### Community 520 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
+Cohesion: 0.22
+Nodes (9): 05. Munkaügyi Szabálymotor és Mt. Megfelelőség, 1. Munkajogi Háttér és Célkitűzés, 2. Háromszintű Szabályöröklési Modell, 3. Ellenőrzött Munkaügyi Szabályok Katalógusa, 4. Súlyossági Szintek és Felületi Visszajelzés, 5.1 Keretszámítás Lépései, 5. Munkaidőkeret Elszámolási Logika (Mt. 93–95. §), 6. Munkaközi Szünet és Pihenőidő Előírások (Mt. 103. és 104. §) (+1 more)
+
+### Community 521 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
+Cohesion: 0.22
+Nodes (9): 06. Hatósági Exportok, Bérszámfejtés és Rendszerintegráció, 1.1 Munkaidő-jegyzék Excel Specifikáció (.xlsx), 1. A Rendszer Legfontosabb Kimenete: A Hivatalos Munkaidő-jegyzék, 2. Statisztikák és Lekérdezések, 3.1 Bérszámfejtési Adatstruktúra, 3. Bérszámfejtési Híd és eaisyBooks Integráció, 4. Rendszerintegrációk a Meglévő Visibill Platformmal, 5. Beléptetőrendszer és Ellenőrzőpontok Interfész Specifikáció (Jövőbeli Fázis) (+1 more)
+
+### Community 522 - "PRD-09: Fejlesztési Roadmap, Képernyő-készültség és MVP Kiadás"
+Cohesion: 0.22
+Nodes (9): 1.1 Kiemelt Kiadási Alapelvek, 1. Termék- és Kiadási Célkitűzés, 2. Képernyő-készültségi és Fázis Mátrix, 3.1 Mit TUD az MVP?, 3.2 Mi MARAD a Második Hullámra (Fázis 5–7)?, 3. Az Éles MVP Kiadás Terjedelme (Fázis 0–4), 4. UI/UX Teljesítmény- és Minőségi Küszöbök, 5. Elfogadási Kritériumok (Definition of Done) (+1 more)
+
+### Community 523 - "Decision"
+Cohesion: 0.22
+Nodes (9): 1. Belföldi Adókulcsok & Értékesítési Sorok, 2. Fordított Adózás (FAD) Kettős Elszámolása, 3. Gyűjtőkód Törzs Tisztítása & Redundanciák Felszámolása, 4. Áfa tv. 6/B. Melléklet — Vas- és Acéltermékek Kötelező Analitikája, Decision, Decision 060: NAV 2665 ÁFA Bevallási Szabályok, Gyűjtőkódok és 6/B Acélipari Kötelezettség, Kapcsolódó, Question (+1 more)
+
+### Community 524 - "BDR-066: Termékimport és Vámhatározatok ÁFA Elszámolása"
+Cohesion: 0.22
+Nodes (9): 1. Vámhatározatok Elkülönített Analitikája (`import_customs_declarations`), 2. Kettős Adózási Mód Támogatása, 3. Rendszerszintű Import ÁFA Kódok, 4. ÁFA Motor és Replika Integráció, BDR-066: Termékimport és Vámhatározatok ÁFA Elszámolása, 🔗 Kapcsolódó, 📈 Racionálé és Előnyök, 💡 Üzleti Döntés (+1 more)
+
+### Community 525 - "BDR-067: NAV 26TFEJLH Turizmusfejlesztési Hozzájárulás Bevallás és Nyomtatvány Replika"
+Cohesion: 0.22
+Nodes (9): 1. Hozzájárulási Alap és Kötelezettség Kalkuláció, 2. NAV 26TFEJLH Hivatalos Nyomtatvány Digitális Replika, 3. Hivatalos Vektoros PDF Export Motor (`tfejlhPdf.ts`), 4. Hivatalos NAV AbevJava v3.0 XML Export (`tfejlhXml.ts`), BDR-067: NAV 26TFEJLH Turizmusfejlesztési Hozzájárulás Bevallás és Nyomtatvány Replika, 🔗 Kapcsolódó, 📈 Racionálé és Haszon, 💡 Üzleti Döntés (+1 more)
+
+### Community 526 - "Decision"
+Cohesion: 0.22
+Nodes (9): 1. Strukturált Éves Zárlati Folyamat (9 Lépéses Ellenőrzőlista), 2. Standardizált Könyvvizsgálói Adatszolgáltatás (20-Oszlopos Karton és MKVK Audit XML), 3. ISA 560: Mérlegfordulónap Utáni Rendezések (Subsequent Events), 4. ISA 500: Adatintegritás és Elavulás-védelem (Staleness Guard), Decision, Decision 069: Könyvvizsgálói Adatszolgáltatási, Zárlati és Integritási Szabályzat (MKVK, ISA 500, ISA 560), Kapcsolódó, Question (+1 more)
+
+### Community 527 - "Decision"
+Cohesion: 0.22
+Nodes (9): 1. Sztv. 471. Jövedelemelszámolási Egyeztető Egyenlet (Reconciliation Equation), 2. Mt. 157. § Szerinti Kifizetési Határidő és Eltérés-Audit, 3. Banki GIRO XML Köteg Generálás és Tömeges Átutalási Szabályok, 4. Rendszer-szétválasztási Architektúra (Visibill vs. eaisyBooks), Decision, Decision 071: Bérszámfejtés, Sztv. 471 Főkönyvi Egyeztetés és Banki GIRO Kifizetés-ellenőrzési Szabályzat, Kapcsolódó, Question (+1 more)
+
+### Community 528 - "Dashboard KPI Kártyák Újratervezése (Design Mockup & Specifikáció)"
+Cohesion: 0.22
+Nodes (8): 1. Hibaok Elemzés (Root Cause Diagnosis), 💎 1. Opció (Ajánlott): „Fintech Executive” — Fő Konszolidált Érték + Deviza Címkék (Pills), 2. Megoldási Opciók & Mockup Design, 📊 2. Opció: „Structured Currency Matrix” — Strukturált Deviza-Sorok, 3. Alkalmazott Eaisybill Design Tokenek, ⚡ 3. Opció: „Interactive Segmented” — Kártyaszintű Devizaváltó, 4. Javasolt Refaktorálási Lépések a Kódbázisban, Dashboard KPI Kártyák Újratervezése (Design Mockup & Specifikáció)
+
+### Community 529 - "01. Számlák és Bizonylatkezelés — HR Lokalizációs Leltár"
+Cohesion: 0.22
+Nodes (9): 01. Számlák és Bizonylatkezelés — HR Lokalizációs Leltár, 📈 1. Modul Statisztika és Hotspotok, 🔔 2. Értesítési Ablakok (Toasts) és Modális Megerősítések, 🏷️ 3. Státusz Badge-ek, Jelvények és Feltételes Állapotok, 🖥️ 4. Felületi Kezelőszervek, Gombok, Fejlécek és Mezők (JSX & Props), 🔑 5. Hiányzó vagy Nem Szinkronizált i18n Szótárkulcsok, 🚀 6. Moduláris Javítási Javaslat, Kategóriák szerinti megoszlás (+1 more)
 
-### Community 507 - "02. Pénzügy, Könyvelés és GL — HR Lokalizációs Leltár"
-Cohesion: 0.16
-Nodes (19): buildRlbGlData(), calculateAccountBalance(), cleanAccountNumber(), compareRlbAccounts(), formatRlbPeriod(), HUNGARIAN_GL_CLASSES, HUNGARIAN_GL_GROUPS, RlbAccountInput (+11 more)
+### Community 530 - "02. Pénzügy, Könyvelés és GL — HR Lokalizációs Leltár"
+Cohesion: 0.22
+Nodes (9): 02. Pénzügy, Könyvelés és GL — HR Lokalizációs Leltár, 📈 1. Modul Statisztika és Hotspotok, 🔔 2. Értesítési Ablakok (Toasts) és Modális Megerősítések, 🏷️ 3. Státusz Badge-ek, Jelvények és Feltételes Állapotok, 🖥️ 4. Felületi Kezelőszervek, Gombok, Fejlécek és Mezők (JSX & Props), 🔑 5. Hiányzó vagy Nem Szinkronizált i18n Szótárkulcsok, 🚀 6. Moduláris Javítási Javaslat, Kategóriák szerinti megoszlás (+1 more)
 
-### Community 508 - "03. Bank, Partnerek és Tranzakciók — HR Lokalizációs Leltár"
-Cohesion: 0.07
-Nodes (36): ExportButtonProps, HtmlPreviewAdapter, DocumentEngine, CustomHtmlSection, DocumentDescriptor, DocumentMetadata, DocumentSection, DocumentType (+28 more)
+### Community 531 - "03. Bank, Partnerek és Tranzakciók — HR Lokalizációs Leltár"
+Cohesion: 0.22
+Nodes (9): 03. Bank, Partnerek és Tranzakciók — HR Lokalizációs Leltár, 📈 1. Modul Statisztika és Hotspotok, 🔔 2. Értesítési Ablakok (Toasts) és Modális Megerősítések, 🏷️ 3. Státusz Badge-ek, Jelvények és Feltételes Állapotok, 🖥️ 4. Felületi Kezelőszervek, Gombok, Fejlécek és Mezők (JSX & Props), 🔑 5. Hiányzó vagy Nem Szinkronizált i18n Szótárkulcsok, 🚀 6. Moduláris Javítási Javaslat, Kategóriák szerinti megoszlás (+1 more)
 
-### Community 509 - "04. HR, Munkaidő és Tárgyi Eszközök — HR Lokalizációs Leltár"
-Cohesion: 0.13
-Nodes (15): example, example, type, type, properties, type, page, page_size (+7 more)
+### Community 532 - "04. HR, Munkaidő és Tárgyi Eszközök — HR Lokalizációs Leltár"
+Cohesion: 0.22
+Nodes (9): 04. HR, Munkaidő és Tárgyi Eszközök — HR Lokalizációs Leltár, 📈 1. Modul Statisztika és Hotspotok, 🔔 2. Értesítési Ablakok (Toasts) és Modális Megerősítések, 🏷️ 3. Státusz Badge-ek, Jelvények és Feltételes Állapotok, 🖥️ 4. Felületi Kezelőszervek, Gombok, Fejlécek és Mezők (JSX & Props), 🔑 5. Hiányzó vagy Nem Szinkronizált i18n Szótárkulcsok, 🚀 6. Moduláris Javítási Javaslat, Kategóriák szerinti megoszlás (+1 more)
 
-### Community 510 - "05. Beállítások, Integrációk és Globális UI — HR Lokalizációs Leltár"
-Cohesion: 0.13
-Nodes (14): 00. Vezetői Összefoglaló és Üzleti Kontextus, 1.1 A projekt célja egy mondatban, 1.2 Milyen üzleti problémát old meg?, 1. Vezetői Összefoglaló — Mi a Szoftver Értelme?, 2.1 Felhasználói Szerepkörök Mátrixa, 2. Érintettek és Felhasználói Szerepkörök, 3. A Meglévő Beosztásom.hu Bemutató Elemzése, 4. Azonosított Hiányosságok és a Visibill Megkülönböztető Előnyei (Kiemelt Értékajánlat) (+6 more)
+### Community 533 - "05. Beállítások, Integrációk és Globális UI — HR Lokalizációs Leltár"
+Cohesion: 0.22
+Nodes (9): 05. Beállítások, Integrációk és Globális UI — HR Lokalizációs Leltár, 📈 1. Modul Statisztika és Hotspotok, 🔔 2. Értesítési Ablakok (Toasts) és Modális Megerősítések, 🏷️ 3. Státusz Badge-ek, Jelvények és Feltételes Állapotok, 🖥️ 4. Felületi Kezelőszervek, Gombok, Fejlécek és Mezők (JSX & Props), 🔑 5. Hiányzó vagy Nem Szinkronizált i18n Szótárkulcsok, 🚀 6. Moduláris Javítási Javaslat, Kategóriák szerinti megoszlás (+1 more)
 
-### Community 511 - "🪟 Sliding Window & Two Pointers Minták"
-Cohesion: 0.13
-Nodes (14): 01. Fogalomtár és Konceptuális Domain Modell, 1. Hivatalos Munkajogi és Rendszer Szintű Fogalomtár, 2. Konceptuális Üzleti Domain Modell, 3.1 Cég (Ügyfélszervezet), 3.2 Munkahely / Telephely, 3.3 Munkakör, 3.4 Munkavállaló, 3.5 Műszak (+6 more)
+### Community 534 - "🪟 Sliding Window & Two Pointers Minták"
+Cohesion: 0.22
+Nodes (9): 🪟 1. Sliding Window (Gördülő Ablak Minta), 👈👉 2. Two Pointers (Két Mutatós Minta), 📖 Fogalom Meghatározása, Használata a Visibillben:, Használati Esetek:, 💡 Komplexitási Haszon, Működési Elv:, Működési Elv: (+1 more)
 
-### Community 512 - "🔄 Szerver Állapot & TanStack React Query (`useQuery`, `useMutation`)"
-Cohesion: 0.30
-Nodes (11): PurchaseVoucherDialogProps, PurchaseVoucherKpiCardsProps, PurchaseVoucher, PurchaseVoucherFormData, PurchaseVoucherItem, PurchaseVouchersSummary, calculateItemTotals(), calculateVouchersSummary() (+3 more)
+### Community 535 - "🔄 Szerver Állapot & TanStack React Query (`useQuery`, `useMutation`)"
+Cohesion: 0.22
+Nodes (9): 1. `useQuery` — Adatlekérdezés & Cache-elés, 2. `useMutation` — Adatmódosítás & Cache Invalidation, 🔑 Az 2 Fő React Query Hook, 💡 Kliens Állapot vs. Szerver Állapot (Server State), Miért nem való a Szerver Állapot sima `useState` + `useEffect`-be?, 📖 Mozaikszavak Kibontása & Definíciók, ⚡ Optimista Frissítés (Optimistic Updates), 💡 `staleTime` vs. `gcTime` (korábban `cacheTime`): (+1 more)
 
-### Community 513 - "📋 NAV Bérbevallások és 08-as Modul (Payroll Filings)"
-Cohesion: 0.13
-Nodes (14): `egyszerusitett_szamla_backup`, `invoice_items`, `invoice_uploads`, `invoices`, `note_attachments`, `notes`, `pdf_export_jobs`, `proforma_backup` (+6 more)
+### Community 536 - "🛡️ Audit Napló és Biztonsági Naplózás (Audit Log)"
+Cohesion: 0.22
+Nodes (8): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 4.1 Vitás számlatörlés kivizsgálása, 4.2 Éves GDPR és IT-biztonsági audit, 4. Tipikus könyvelői munkafolyamatok (Workflow-k), 5. Kapcsolódó jogszabályok és szakmai háttér, 🛡️ Audit Napló és Biztonsági Naplózás (Audit Log), Fő feladatai és jogi megfelelősége:
 
-### Community 514 - "Onboarding Wizard Felépítése és Lépései"
-Cohesion: 0.13
-Nodes (14): `aggreg8_accounts`, `aggreg8_consents`, `aggreg8_settings`, `bank_statement_uploads`, `bank_statements`, `bank_transactions`, `match_transaction_overrides_log`, `payment_transfers` (+6 more)
+### Community 537 - "📑 Ügyfél Számlák és Bizonylatok (Client Invoices)"
+Cohesion: 0.22
+Nodes (8): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 4.1 Havi szállítói számlák tömeges kontírozása, 4.2 Számlaadatok exportálása RLB60 programba, 4. Tipikus könyvelői munkafolyamatok (Workflow-k), 5. Kapcsolódó jogszabályok és szakmai háttér, Fő feladatai és szakmai értéke:, 📑 Ügyfél Számlák és Bizonylatok (Client Invoices)
 
-### Community 515 - "P-100: Nem Levonható ÁFA Megjelenítése és Felületi Átláthatósága (1. + 2. + 3. Opció) UX"
-Cohesion: 0.13
-Nodes (14): 2026-07-04: AFTER INSERT → BEFORE INSERT trigger fix, 2026-07-07: Email Alias Dedup Bypass + Mailgun Idempotency, 2026-09-03: P3 Worker-oldali Fuzzy Duplikáció-Szűrő és Bankszámlaszám Védelem (B-commerce Incidens), 2026-09-27: P4 Mailgun Webhook SHA-256 Tartalmi Deduplikáció és Szemét-Attachment Szűrés, A-023: Upload Dedup Védelem (DB Trigger + Frontend Mutex), Bugfix History, Consequences, Context (+6 more)
+### Community 538 - "Onboarding Wizard Felépítése és Lépései"
+Cohesion: 0.22
+Nodes (9): 1. Üdvözlő képernyő (Welcome), 2. Step 1: Cég hozzáadása (Kötelező), 3. Step 2: Projektek (Opcionális), 4. Step 3: Kategóriák (Opcionális), 5. Step 4: NAV Integráció (Opcionális), Onboarding Wizard Felépítése és Lépései, P-003: Empty State Dashboard & Onboarding Wizard, Rollback és Hibakezelés (+1 more)
 
-### Community 516 - "2. Termékdöntés"
-Cohesion: 0.13
-Nodes (14): 1. Céghez rendelés és routing utáni aktiválás, 2. Többlépcsős intelligens jelöltkeresés (`find_matching_nav_invoice_and_items`), 3. Szigorú memóriabeli ellenőrzés (0 Ft tolerancia & Partner egyezés), 4. Fejléc hitelesítés és 23505 ütközésvédelem (`apply_nav_verified_status`), 5. NAV ÁFA-összeg Automatikus Átemelése (Authoritative NAV VAT Override — 2026-09-07), 6. Tételsorok Átvétele (Ideiglenesen felfüggesztve — 2026-09-07), 7. Robusztus Fallback, A-096: Hivatalos NAV Tételsor Védőháló, Sorszám Szinkronizáció és 23505 Ütközésvédelem (Authoritative NAV Line Items Crosscheck & Sync Guard) (+6 more)
+### Community 539 - "P-082: Bérszámfejtési Főkönyvi Feladás Kontírozás (Step 8), Kereshető Választó és Magyarázó Szövegezés UX"
+Cohesion: 0.22
+Nodes (9): Kapcsolódó döntések, P-033: [eaisyBooks] Bérszámfejtési Ciklus Workflow, Context, Decision, Kapcsolódó, P-082: Bérszámfejtési Főkönyvi Feladás Kontírozás (Step 8), Kereshető Választó és Magyarázó Szövegezés UX, Rationale, normalizeText() (+1 more)
 
-### Community 517 - "P-140: Számlázz.hu Saját Kimenő Számlaképek Lehívása és NAV Párosítás"
-Cohesion: 0.13
-Nodes (14): 1. Kontextus és Problémafelvetés, 2. Megoldási Architektúra és Döntések, 3. Következmények és Eredmények, 4. Kapcsolódó Döntések és Szabályzatok, A-175: Folyószámla és Analitika Architektúra, Nyitott Tételek Rendezése és Főkönyvi Integritás-Védelem, D-1: Főkönyvi számlák analitikai konfigurációja (`subledger_type`, `is_open_item_managed`), D-2: Szigorú főkönyvi integritás-védelem (`acc_post_journal_entry`), D-3: Nyitott tételek kapcsoló táblája (`acc_open_item_matches`) (+6 more)
+### Community 540 - "P-100: Nem Levonható ÁFA Megjelenítése és Felületi Átláthatósága (1. + 2. + 3. Opció) UX"
+Cohesion: 0.22
+Nodes (9): 1. Opció: Számlatételek Modál Végösszesítő Kártya, 2. Opció: Számlalista Sor (NAV & Beküldött számlák), 3. Opció: Kibontott Sor (Expanded Invoice Row), Consequences (Következmények), Decision (Döntés), P-100: Nem Levonható ÁFA Megjelenítése és Felületi Átláthatósága (1. + 2. + 3. Opció) UX, Pozitív, Question (Kérdés) (+1 more)
 
-### Community 518 - "2. Megoldás és Felületi Működés"
-Cohesion: 0.13
-Nodes (14): 1. Zéró-Szerverköltségű Google Apps Script (GAS) Begyűjtő Motor, 2. Többcéges (Multi-Tenancy) Automatikus Mappafolyamat, 3. Dinamikus Kép és PDF MIME Típus Felismerés (`customer-api`), 4. Idempotencia és Duplikáció-Védelem, 5. Multi-Project Útválasztás (Visibill PROD vs. Thinkerman Sharding), 6. Fantom Számlák Megszüntetése és Teljes Folyamat-Azonosság a Kézi Feltöltéssel (Scenario 3), 7. Szkennelt Duplex PDF Üres Oldal Kezelés és Sorszám-Védelem (Worker), A-203: Google Drive Automatikus Számlabegyűjtő Rendszer és Dinamikus MIME Kezelés (+6 more)
+### Community 541 - "Decision (Döntés)"
+Cohesion: 0.22
+Nodes (9): 1. Kettős Áfakód Megjelenítési Mód (Dual Display Mode), 2. Egyedi és Tömeges Áfakód Szerkesztés (`InvoiceItemsDialog`), 3. Vizuális Intelligencia Jelzők (Badge & Tooltip), 4. Layout és Modal Méretigazítás, Decision (Döntés), Kapcsolódó, P-101: Számlatételek Áfakód Szerkesztése, Kettős Áfakód Megjelenítés és Tömeges Módosítás UX, Question (Kérdés) (+1 more)
 
-### Community 519 - "Decision"
-Cohesion: 0.13
-Nodes (14): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Dolgozói Mobil Képernyő és Wireframe, 3.1 Fejléc és Havi Munkaidő Keret Mutató, 3.2 Heti Dátumválasztó Csík (Week Slider), 3.3 Műszakkártyák Listája (Shift Cards), 3. Mobil Felületi Zónák Specifikációja (`MobileRosterView`), 4.1 Műszakcsere Lépései a Felületen (+6 more)
+### Community 542 - "2. Termékdöntés"
+Cohesion: 0.22
+Nodes (9): 1. Termékkérdés és Célkitűzés, 2. Termékdöntés, 3. Racionálé és Számviteli Integráció, 4. Kapcsolódó Dokumentumok, A. Elhelyezés és Feltételes Aktiválás (Opt-in Feature Flag), B. Vezérlőpult és KPI Kártyák (`PurchaseVoucherKpiCards.tsx`), C. Új Felvásárlási Jegy Kiállítása Dialógus (`PurchaseVoucherDialog.tsx`), D. Bizonylatkezelés és Életciklus (+1 more)
 
-### Community 520 - "P-150: Számlatétel-szintű Kontextuális Időbeli Elhatárolások (AIE/PIE) Varázsló és Feladási UX"
-Cohesion: 0.13
-Nodes (14): 🏢 1. Az Átemelt Cégek, 🏛️ 2. Teljes Architektúra és Séma Paritás (100% Egyezés), 📬 3. Üzemeltetési Elemek: PGMQ Sorok és Karbantartó Cron Jobok, 📊 4. Átemelt Adathalmazok Részletes Bontása, ⏰ 5. Napi 06:00-s Automatikus Szinkronizáció (Cron Job) és Teljes Ökoszisztéma Szinkron, 🌙 6. Éjszakai és Hajnali pg_cron Jobok Állapota (Prod DB), A. Globális Törzsadatok és Mesterdefiníciók (100% Prod Másolat), A. PGMQ Sorok (`pgmq.list_queues()`) (+6 more)
+### Community 543 - "P-140: Számlázz.hu Saját Kimenő Számlaképek Lehívása és NAV Párosítás"
+Cohesion: 0.22
+Nodes (9): 1. Felhasználói Igény és Probléma, 2.1. Biztonságos Edge Function (`sync-szamlazz-outbound-invoices`), 2.2. Automatikus Adatbázis Párosítás (Dual-Table Upsert), 2. Architektúra és Biztonság, 3.1. Fejléc Szinkronizációs Gomb és Értesítő Jelvény, 3.2. Részletes Kötegelt Letöltő Modális Ablak (`<SzamlazzSyncModal>`), 3.3. Tételes, Egykattintásos Letöltés a Táblázatból, 3. Felhasználói Felület és UX (+1 more)
 
-### Community 521 - "P-163: Online Pénztárgép (OPG) Modul és Házipénztár Integráció UX"
-Cohesion: 0.13
-Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Munkamenet Oldalsáv és Beszélgetési Előzmények, 3.2 Cégkontextus Kiválasztása, 3.3 Gyors Kérdéssablonok (Prompt Kártyák), 3.4 Kérdésfeltevés és Válasz Generálás, 3.5 Válasz Vágólapra Másolása és Visszajelzés, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+### Community 544 - "2. Megoldás és Felületi Működés"
+Cohesion: 0.22
+Nodes (9): 1. Üzleti Háttér és Probléma, 2.1 Dedikált „A60 Közösségi” Fül az ÁFA Rendszerben (`VatCalculatorView.tsx`), 2.2 4-Kártyás Összefüggés-vizsgálati Fejléc, 2.3 4-Lapfüles Belső Szerkezet (`VatA60Table.tsx`), 2.4 Valós Idejű VIES Ellenőrzés és Partner Jelvények, 2.5 Partner Összesítés és Tételes Számlafúrás (Drill-Down), 2. Megoldás és Felületi Működés, 3. Kapcsolódó (+1 more)
 
-### Community 522 - "P-173: Termékimport és Vámhatározatok Rögzítése és Megjelenítése UX"
-Cohesion: 0.13
-Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Visszanavigálás és Fejléc Mentés Gomb, 3.2 1. Fül — Általános Irodai Törzsadatok, 3.3 2. Fül — Biztonsági és Munkamenet Szabályok, 3.4 3. Fül — Értesítési Preferenciák és Emlékeztetők, 3.5 4. Fül — NAV Integrációs Környezet, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+### Community 545 - "Decision"
+Cohesion: 0.22
+Nodes (9): 1. Lebegő / Átmeneti Folyamatjelző Sáv (Transient Live Progress Banner), 2. GlToolbar AI Gomb Élő Számláló és Letiltott Állapot, 3. Vizuális Szétválasztás: Aktív AI Munka vs. KPI Lefedettségi Kártya, 4. 15 Perces Beragadás-védelem (Stale Task Timeout UX), Current Implementation, Decision, Kapcsolódó, P-147: Főkönyvi AI Tételbesorolás Valós Idejű Folyamatjelző és Státusz-sáv UX (+1 more)
 
-### Community 523 - "P-174: NAV 26TFEJLH Nyomtatvány Replika és PDF Export UX"
-Cohesion: 0.13
-Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 1. Fül — Személyes Profil és Beosztás, 3.2 2. Fül — Vállalkozási Adatok és Csatlakozási Kód (Ügyfélkapcsolat), 3.3 3. Fül — Értesítési Beállítások, 3.4 4. Fül — Rendszer és Megjelenési Preferenciák, 3.5 5. Fül — Fiókbiztonság és Jelszócsere, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+### Community 546 - "P-173: Termékimport és Vámhatározatok Rögzítése és Megjelenítése UX"
+Cohesion: 0.22
+Nodes (9): 1. Termékimport Analitikai Szekció (`VatImportCustomsSection.tsx`), 2. Rögzítő és Szerkesztő Dialógus (`ImportCustomsDeclarationDialog.tsx`), 3. Dinamikus Nyomtatvány Integráció (NAV 2665), 🔍 Current Implementation, 💡 Decision, 🔗 Kapcsolódó, P-173: Termékimport és Vámhatározatok Rögzítése és Megjelenítése UX, 🎯 Question (+1 more)
 
-### Community 524 - "rich-text-editor.tsx"
-Cohesion: 0.13
-Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Kategória Választó Fülsor, 3.2 „Új sablon” Létrehozása Gomb, 3.3 Sablonszerkesztő Párbeszédablak és Változóbeillesztés, 3.4 Meglévő Sablon Módosítása, 3.5 Sablon Verziótörténet Megtekintése, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+### Community 547 - "P-174: NAV 26TFEJLH Nyomtatvány Replika és PDF Export UX"
+Cohesion: 0.22
+Nodes (9): 1. NAV 26TFEJLH Nyomtatvány Digitális Replika (`Nav26TfejlhReplicaContainer.tsx`, `Nav26TfejlhSheetFolap.tsx`), 2. Kliensoldali Pixelpontos PDF Generálás (`tfejlhPdf.ts`), 3. Hivatalos ÁNYK XML Export Gomb és Letöltés (`tfejlhXml.ts`), 🔍 Current Implementation, 💡 Decision, 🔗 Kapcsolódó, P-174: NAV 26TFEJLH Nyomtatvány Replika és PDF Export UX, 🎯 Question (+1 more)
 
-### Community 525 - "ManageJournalsModal.test.tsx"
-Cohesion: 0.13
-Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Szabadszavas Kereső és Állapotszűrő Gombok, 3.2 „Új kód” Felvétele Gomb, 3.3 Jogviszonykód Szerkesztő és Létrehozó Dialógus, 3.4 Kód Módosítása és NAV Referencia Megnyitása, 3.5 Táblázatos Lapozó és Tételszám, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+### Community 548 - "Decision"
+Cohesion: 0.22
+Nodes (9): 1. Infotéka AuditXML és Nyitó PDF Integráció, 2. Side-by-Side (PROCONT-stílusú) Összehasonlító Elemzés, 3. Automatizált Vegyes és Évközi Átvezetések, 4. Banki Bizonylatok Lekönyvelése és NAV Adószámla Bontás (B1 Napló), 5. Készpénzes Számlák Kettős Könyvviteli Rendezése (P1 Napló), Current Implementation & Files, Decision, P-190: Fakov Kft. Infotéka (Kontír.NET) Főkönyvi Rekonciliáció és Összehasonlító Kivonat UX (+1 more)
 
-### Community 526 - "EaisybillPermissionPanel.tsx"
-Cohesion: 0.13
-Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 „Feed frissítése” Gomb (Automatikus Szinkron), 3.2 „Új bejegyzés” Rögzítése Gomb, 3.3 Új Jogszabályi Bejegyzés Létrehozása Párbeszédablak, 3.4 Hírfolyam Kártyák és Szakmai Elemzés, 3.5 Külső Jogforrás Megnyitása, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+### Community 549 - "toggle-group.tsx"
+Cohesion: 0.31
+Nodes (7): @radix-ui/react-toggle, @radix-ui/react-toggle-group, ToggleGroup, ToggleGroupContext, ToggleGroupItem, Toggle, toggleVariants
 
-### Community 527 - "rpcPerformanceAndResilience.test.ts"
-Cohesion: 0.13
-Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Szabadszavas Keresőmező, 3.2 Eseménytípus Szűrő Legördülő Menü, 3.3 Audit Események Táblázata, 3.4 Exportálás CSV Fájlba, 3.5 Lapozó Sáv, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+### Community 550 - "ManageJournalsModal.test.tsx"
+Cohesion: 0.22
+Nodes (8): JournalItem, mockDelete, mockEq, mockInvalidateQueries, mockJournals, mockSelect, mockToast, mockUpdate
 
-### Community 528 - "Supabase Edge Functions Guidelines (Visibill / eaisybill-prod)"
-Cohesion: 0.13
-Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Fejléc és Gyorsakció Gombok, 3.2 Hiányzó Bizonylat KPI Kártyák, 3.3 Szűrősáv és Keresőmező, 3.4 Hiánylista Táblázat és Eseti Műveletek, 3.5 Tömeges Kijelölés és „Bizonylatbekérő Jóváhagyásra Küldése”, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+### Community 551 - "importCustomsAccounting.ts"
+Cohesion: 0.36
+Nodes (6): generateDeclarationJournalLines(), GeneratedJournalEntry, postImportDeclarationToGeneralLedger(), ImportCustomsDeclaration, ImportDeclarationStatus, ImportPaymentStatus
 
-### Community 529 - "Layer 2: Type Safety"
-Cohesion: 0.13
-Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégfejléc és Akciógombok, 3.2 Bérszámfejtési KPI Összegző Kártyák, 3.3 Havi Bérszámfejtési Ciklusok Táblázata, 3.4 Új Munkavállaló Beléptető Varázsló, 3.5 Bérjegyzékek és Banki Átutalási Fájl Generálása, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+### Community 552 - "FilingWorkflowPage.tsx"
+Cohesion: 0.28
+Nodes (8): exportReceiptPdf(), FILING_TYPE_LABELS, FilingWorkflowPage(), fmt(), Step, STEPS, IntegrationStep(), FilingWorkflowPage
 
-### Community 530 - "Visibill Database & Supabase Audit Framework"
-Cohesion: 0.13
-Nodes (14): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégfejléc és Akciógombok, 3.2 Bevallási KPI Statisztikai Kártyák, 3.3 Szűrősáv és Keresőmező, 3.4 Bevallások Táblázata és Műveleti Ikonok, 3.5 Lapozó Sáv, 3. Mit lehet benne a felhasználónak csinálni? (+6 more)
+### Community 553 - "grantDeferralPostingService.ts"
+Cohesion: 0.36
+Nodes (7): AvailableGrantAccounts, calculateGrantDeferralReleaseAmount(), GrantDeferralAccounts, PostGrantDeferralInput, postGrantDeferralReleaseToLedger(), PostGrantDeferralResult, resolveGrantDeferralAccounts()
 
-### Community 531 - "Célzott éles NAV szinkron + láncellenőrzés"
+### Community 554 - "subledger.ts"
 Cohesion: 0.25
-Nodes (14): CONFIG, ensureCompanyFolders(), fetchAccessibleCompanies(), findSubFolder(), getTargetProcessedFolder(), installAutoTrigger(), isSupportedFile(), moveFile() (+6 more)
+Nodes (7): SettleParams, SubledgerItemMatch, SubledgerLineDetail, SubledgerMode, SubledgerStatusFilter, SubledgerType, WriteOffParams
 
-### Community 532 - "A-022: Kategóriák és Projektek Dual-Table Szinkronizációs Stratégia"
-Cohesion: 0.10
-Nodes (38): Nav2665BankAccountBoxes(), Nav2665BankAccountBoxesProps, Nav2665CharBox(), Nav2665CharBoxProps, Nav2665DateBoxes(), Nav2665DateBoxesProps, Nav2665TaxNumberBoxes(), Nav2665TaxNumberBoxesProps (+30 more)
+### Community 555 - "Supabase Edge Functions Guidelines (Visibill / eaisybill-prod)"
+Cohesion: 0.25
+Nodes (7): 🛡️ 1. Kötelező Kliens- és Költségvédelem ([ADR A-101](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-101-direct-script-automation-restriction.md)), 🔑 2. Hitelesítés és Jogosultságkezelés (Auth & RBAC), 🦕 3. Deno Runtime és Import Konvenciók, ⚡ 4. Hibakezelés és Válasz Formátumok, ⚙️ 5. Regisztráció és Konfiguráció (`config.toml` & Deployment), 🧪 6. Kötelező Edge Function Tesztelés és Verifikáció, Supabase Edge Functions Guidelines (Visibill / eaisybill-prod)
 
-### Community 533 - "2. Decision"
-Cohesion: 0.56
-Nodes (7): buildPayslipDescriptor(), downloadPayslipPdf(), generatePayslipBlob(), generatePayslipPdf(), getPayslipPdfPreviewUrl(), getPayslipPreviewUrl(), PayslipData
+### Community 556 - "Visibill Codebase Audit"
+Cohesion: 0.25
+Nodes (7): Audit Output Template, Prerequisites — Load Related Skills First, Quick Reference, Severity Classification, The Audit Layers, Visibill Codebase Audit, When to Use
 
-### Community 534 - "2. Decision"
-Cohesion: 0.13
-Nodes (15): status, active, active_success, all, completed, empty, error, failed (+7 more)
-
-### Community 535 - "2. Decision"
-Cohesion: 0.13
-Nodes (15): kpis, booked, cash_balance, currencies_count, expenses, income, pending_receivables_short, profit (+7 more)
-
-### Community 536 - "A-081: NAV 08 (2608 / 2508 / 2408) XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor"
-Cohesion: 0.13
-Nodes (15): approved_desc, approved_title, btn_approve, btn_approve_all, btn_delete, confirm_delete_selected, deleted_desc, deleted_title (+7 more)
-
-### Community 537 - "A-090: Biztonságos Számlatükör Sablon Törlés, Függőség-Ellenőrzés és Tételek Átkötése (Remapping)"
-Cohesion: 0.13
-Nodes (15): approving, confirm_button, custom_note, custom_note_placeholder, description, gross_total, invoice_number, issue_date (+7 more)
-
-### Community 538 - "A-097: Multi-Tenant nav_invoice_items Denormalizáció, GL Statement Timeout Felszámolása és RLS Optimalizálás"
-Cohesion: 0.13
-Nodes (15): table, amount, category, days, days_ago, due_date, invoice_number, issue_date (+7 more)
-
-### Community 539 - "2. Döntések és Architektúra"
-Cohesion: 0.13
-Nodes (15): analytics, category_billing, category_bug, category_feature, category_title, count_unit, days, incoming_title (+7 more)
-
-### Community 540 - "A-122: Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés"
-Cohesion: 0.13
-Nodes (15): cod_amount, delivery_date, invoice_prefix, items_count, link_all_btn, recipient, ref, status_matched (+7 more)
-
-### Community 541 - "2. Döntések"
-Cohesion: 0.13
-Nodes (15): status, status, auto_settled, full, invoice_missing, manual, matched, no_invoice (+7 more)
-
-### Community 542 - "2. Architekturális Döntés"
-Cohesion: 0.13
-Nodes (15): history_table, col_date, col_filename, col_size, col_status, col_uploaded_by, email_source, empty (+7 more)
-
-### Community 543 - "A-179: Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra"
-Cohesion: 0.13
-Nodes (15): status, dismissed, doc_matched, errors_count, escalation, processed, processed_progress, processing (+7 more)
-
-### Community 544 - "A-190-management-dashboard-counts-caching-and-worker-vault-offloading.md"
-Cohesion: 0.15
-Nodes (13): cannot_undo, deleting, description_prefix, description_suffix, option_row_and_file_desc, option_row_and_file_title, option_row_only_desc, option_row_only_title (+5 more)
-
-### Community 545 - "A-244: Külföldi és Devizás Bejövő Számlák Integrálása az ÁFA Bevallásba és Taxology Baseline Igazítás"
-Cohesion: 0.13
-Nodes (15): status, active, active_success, all, completed, empty, error, failed (+7 more)
-
-### Community 546 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
-Cohesion: 0.13
-Nodes (15): kpis, booked, cash_balance, currencies_count, expenses, income, pending_receivables_short, profit (+7 more)
-
-### Community 547 - "Decision 061: Számlatétel Áfakód Felülbírálat és Gépi Tanulási (ML) Szabályrendszer"
-Cohesion: 0.13
-Nodes (15): approved_desc, approved_title, btn_approve, btn_approve_all, btn_delete, confirm_delete_selected, deleted_desc, deleted_title (+7 more)
-
-### Community 548 - "Decision 068: ÁFA tv. Szerinti Adófizetési Kötelezettség és Levonási Jog Keletkezése Normál vs. Pénzforgalmi Adózási Módban"
-Cohesion: 0.13
-Nodes (15): table, amount, category, days, days_ago, due_date, invoice_number, issue_date (+7 more)
-
-### Community 549 - "Szerver-Oldali Szűrt Tábla — Debounce + Skeleton Pattern"
-Cohesion: 0.13
-Nodes (15): analytics, category_billing, category_bug, category_feature, category_title, count_unit, days, incoming_title (+7 more)
-
-### Community 550 - "Design Spec — Árfolyam-különbözetek Szekció Újratervezése (FX Differences Redesign)"
-Cohesion: 0.13
-Nodes (15): cod_amount, delivery_date, invoice_prefix, items_count, link_all_btn, recipient, ref, status_matched (+7 more)
-
-### Community 551 - "2. Megvalósított Megoldás: „Fintech Dense Split” (1. Opció)"
-Cohesion: 0.13
-Nodes (15): status, status, auto_settled, full, invoice_missing, manual, matched, no_invoice (+7 more)
-
-### Community 552 - "Worker Architektúra és Dedikált Dev Worker Replica"
-Cohesion: 0.13
-Nodes (15): history_table, col_date, col_filename, col_size, col_status, col_uploaded_by, email_source, empty (+7 more)
-
-### Community 553 - "Döntések"
-Cohesion: 0.13
-Nodes (15): status, dismissed, doc_matched, errors_count, escalation, processed, processed_progress, processing (+7 more)
-
-### Community 554 - "UX Finomítások és Light Mode Optimalizáció (2026.08)"
-Cohesion: 0.14
-Nodes (13): 1. `useState` — Lokális Állapotkezelés, 2. `useEffect` — Mellékhatások Kezelése, 3. `useRef` — Változó Renderelés Nélkül & DOM Elérés, 4. `useContext` — Globális Adatátadás, 5. Custom Hooks (Saját Hook-ok), 💡 A Függőségi Tömb (Dependency Array) Szabályai:, 📜 A Hook-ok 2 Arany Szabálya (Rules of Hooks), 🧩 Az 5 Alapvető Hook Részletezve (+5 more)
-
-### Community 555 - "🖥️ Felhasználói Felület és Workflow Viselkedés"
-Cohesion: 0.14
-Nodes (18): DepreciationCards(), DepreciationCardsProps, METHOD_LABELS, calculateAssetPeriodDepreciation(), checkExistingDepreciationPosting(), DepreciationCalculationItem, DepreciationPeriodType, DepreciationPostingParams (+10 more)
-
-### Community 556 - "💡 Termék és Felületi Tervezés (UX)"
-Cohesion: 0.12
-Nodes (17): schemas, properties, required, type, properties, required, type, type (+9 more)
-
-### Community 557 - "Implementációs Terv: Discrepancy 2 — Auto-Poster RPC Refaktorálás és Cégvezetői Főkönyvi Írási Korlátozás"
+### Community 557 - "1.1 Előfeltételek és Feltételezések (Assumptions I'm Making)"
 Cohesion: 0.12
 Nodes (15): 1.0 Hipotézis & Magabiztossági Szint, 1.1 Előfeltételek és Feltételezések (Assumptions I'm Making), 🏗️ Architektúra Döntések, 🎯 FÁZIS 1: Kontextus és Hipotézis, 🤖 FÁZIS 2.1: Spec Reviewer Pre-Gate Audit (6 Dimenzió), 🧩 FÁZIS 2.5: Micro-Modul Dekomponálás, 🔍 FÁZIS 2: Döntési Mátrix, 🚦 FÁZIS 3: Verifikációs Kapuk és Kritériumok (+7 more)
 
-### Community 558 - "Decision (Döntés)"
-Cohesion: 0.16
-Nodes (11): EXCHANGE_RATE_BANKS, EXCHANGE_RATE_TYPES, ExchangeRateBank, FX_RATE_TYPES, FxRateType, FxRateTypeDef, getExchangeRateBank(), getExchangeRateTypeLabel (+3 more)
+### Community 558 - "Visibill Database & Supabase Audit Framework"
+Cohesion: 0.25
+Nodes (7): 1. FÁZIS: Előfeltételek & Referenciák Betöltése, 2. FÁZIS: Adatgyűjtés és Automatizált Vizsgálat, 3. FÁZIS: Audit Jelentés és Osztályozás, 4. FÁZIS: Javítási Terv és Kockázatértékelés (KÖTELEZŐ), 5. FÁZIS: Jóváhagyás és Láncolt Végrehajtás, 📋 Audit Jelentés Sablon, Visibill Database & Supabase Audit Framework
 
-### Community 559 - "2. Termékdöntés és Megvalósítás"
-Cohesion: 0.14
-Nodes (13): Journey 10: Havi Bérszámfejtési Ciklus & NAV 08 Bevallás, Journey 11: Új Ügyfél Onboarding & Bér/Könyvelés Rekonstrukció, Journey 12: Egyéni Vállalkozó Havi Könyvelése & Pénztárkönyv Zárás, Journey 1: Új Felhasználó Onboarding, Journey 2: Napi Számla Kezelés, Journey 3: Havi Pénzügyi Egyeztetés, Journey 4: NAV Integráció Beállítás & Használat, Journey 5: Év Végi Beszámoló Készítés (+5 more)
+### Community 559 - "Célzott éles NAV szinkron + láncellenőrzés"
+Cohesion: 0.25
+Nodes (7): 1. Cégjelölt keresése, 2. Baseline (indítás előtt), 3. Indítás (ugyanúgy, ahogy a `nav-daily-sync` pg_cron job), 4. Ellenőrzés, ⚠️ Biztonsági szabályok, Célzott éles NAV szinkron + láncellenőrzés, Riport
 
-### Community 560 - "P-127: Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX"
-Cohesion: 0.05
-Nodes (41): mockAccessState, AccountyRoleContextType, useAccountyRole(), AccountantUser, Assignment, CompanyInfo, CONFIGURABLE_MODULES, ModulePermRow (+33 more)
+### Community 560 - "A-022: Kategóriák és Projektek Dual-Table Szinkronizációs Stratégia"
+Cohesion: 0.25
+Nodes (8): 1. Keresőbar deduplikáció és mentés (Onboarding.tsx), 2. Kategória és Projekt frissítés a Számlalistában (InvoicesPage.tsx), 3. React Query Cache Invalidáció, A-022: Kategóriák és Projektek Dual-Table Szinkronizációs Stratégia, Consequences, Context, Decision, Részletes implementációs döntések:
 
-### Community 561 - "2. Felületi Kialakítás és Interakciók"
-Cohesion: 0.14
-Nodes (13): 1. Fázis: Teljes Forráselemzés és Követelmény-Leltár, 2. Fázis: Autonóm Rekordgenerálási Ciklus, 3. Fázis: Vizuális Illusztrációk Létrehozása a `diagramms/` Mappában, 4. Fázis: Tisztasági Szűrő és Csendes Audit (Zéró Fájlszemét), 5. Fázis: Központi `INDEX.md` Összeállítása, 6. Fázis: Lefedettségi és Integritási Minőségi Kapu (Kötelező Megállási Feltétel!), 📁 A Moduláris Rekordstruktúra és Mappaszerkezet, 🎯 Az 5 Nem-alkuképes Alapelv (Core Invariants) (+5 more)
+### Community 561 - "A-043: ZIP / RAR / 7z Archívum Csatolmány Kicsomagolás és Body-MIME Parsing az Email Pipeline-ban"
+Cohesion: 0.25
+Nodes (8): 1. Deno Edge Function (Mailgun webhook) — `process-mailgun-webhook/index.ts`, 2. Python Worker (IMAP & Deferred Archives) — `imap_sync_pipeline.py` & `archive_expander.py`, A-043: ZIP / RAR / 7z Archívum Csatolmány Kicsomagolás és Body-MIME Parsing az Email Pipeline-ban, Consequences, Context, Decision, Kapcsolódó, Közös szabályok mindkét pipeline-ban:
 
-### Community 562 - "P-143: eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX"
-Cohesion: 0.14
-Nodes (13): 1. Fázis: Bemenet Elemzése és Képernyőtérkép Leltár, 2. Fázis: Autonóm Rekordgenerálási Ciklus, 3. Fázis: Vizuális UI Diagramok Generálása a `diagramms/` Mappában, 4. Fázis: Tisztasági Szűrő és Csendes Audit (Zéró Fájlszemét), 5. Fázis: Központi `INDEX.md` Összeállítása, 6. Fázis: Lefedettségi és Integritási Minőségi Kapu (Kötelező Megállási Feltétel!), 📁 A Moduláris Rekordstruktúra és Mappaszerkezet, 🎯 Az 5 Nem-alkuképes Alapelv (Core Invariants) (+5 more)
+### Community 562 - "A-058: Banki Utalások és Csomagkészítés Architektúra (Bank Transfers)"
+Cohesion: 0.25
+Nodes (8): 1. Adatbázis Séma (`20260723144000_bank_transfers_feature.sql`), 2. Algoritmikus Validáció, 3. Fájl Generálás & Export Formátumok, A-058: Banki Utalások és Csomagkészítés Architektúra (Bank Transfers), Consequences, Context, Decision, Kapcsolódó
 
-### Community 563 - "P-148: Bérjegyzék Redesign, Költséghely Kezelés és FEOR Munkakör UX"
-Cohesion: 0.14
-Nodes (13): 1. Fejlesztő Azonosítása, 2. Kontextus Gyűjtése, 3. Összefoglaló Generálása, 4. Automatikus Mentés Mappába (Persistence & Git Tracking), 5. Megjelenítés a Felhasználónak, A Commit Message Felépítése:, Fejlesztő Automatikus Azonosítása (Developer Detection):, 👥 Fejlesztői Környezet & Almappák (+5 more)
+### Community 563 - "2. Decision"
+Cohesion: 0.25
+Nodes (8): 1. Context, 1. PostgreSQL Database Trigger Szintű Garancia (`public.on_company_created()`), 2. Decision, 2. Idempotens Backfill Migráció (`20260901_auto_sync_company_to_eaisybooks.sql`), 3. Consequences, 3. Frontend Cache Invalidation (`src/components/CompanySelector.tsx`), A-073: eaisybill ↔ eaisyBooks Cégfelviteli Automatikus Szinkronizáció, Pozitív:
 
-### Community 564 - "2. Termékdöntés"
-Cohesion: 0.14
-Nodes (13): 1. Lépés: Téma felmérése & Duplikáció-ellenőrzés, 2. Lépés: RAG-Optimalizált Cikk Felépítése, 3. Lépés: Adatbázis Módosítás Végrehajtása (Idempotens SQL), 4. Lépés: Frontend Fallback Szinkronizáció, 5. Lépés: RAG Retrieval Tesztelés (Rank & Keresési Validáció), 6. Lépés: Dokumentáció & Graphify Szinkronizáció, 🏛️ Architektúra Áttekintés, Elfogadási kritériumok: (+5 more)
+### Community 564 - "2. Decision"
+Cohesion: 0.25
+Nodes (8): 1. Context, 2. Decision, 3. Consequences, A-076: Statutory Reporting & VAT Return Monolith Deepening, Pure Computation Engines & Feature Slices, B. Dedikált Domain Hookok & Állapotkezelés, D. Egységesített Popover Dátumválasztó (`DatePicker`), Negatív / Trade-off:, Pozitív:
 
-### Community 565 - "2. Termékdöntések és Felhasználói Élmény (UX)"
-Cohesion: 0.14
-Nodes (13): A-007: LLM Stratégia (LiteLLM, Multi-Provider), Concurrency Control, Consequences, Context, Decision, Feladatonkénti Modell Használat, GL Besorolási Védelmi Rendszerek (Safeguards), Kapcsolódó ADR-ek (Worker) (+5 more)
+### Community 565 - "2. Decision"
+Cohesion: 0.25
+Nodes (8): 1. Context, 2. Decision, 3. Consequences, A-077: Management Stats Edge Function & Telemetry Decomposition, B. Frontend Worker Telemetria Dekomponálása (`src/features/management/`), C. Aktív Feldolgozások PostgREST Lekérdezési Invariánsai (`workerHandler.ts: buildActiveProcessing` — 2026-09-05), Megkötések (Cons):, Pozitívumok (Pros):
 
-### Community 566 - "Termékdöntések és Funkcionális Viselkedés"
-Cohesion: 0.14
-Nodes (13): 1. Külön `accounty_email_preferences` tábla (könyvelő beállítások), 2. Dual-mode `send-accounty-notification` EF, 3. Opt-in logika (v2 — javított), 4. Default értékek: minden KI, 5. Dual trigger model, 6. Felhasználó email cím source, A-030: Accounty Email Notification Architecture, Consequences (+5 more)
+### Community 566 - "A-081: NAV 08 (2608 / 2508 / 2408) XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor"
+Cohesion: 0.25
+Nodes (8): 1. Context, 2. Decision, 3. Consequences, 4. Kapcsolódó Dokumentáció, A-081: NAV 08 (2608 / 2508 / 2408) XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor, Negatív / Kockázatok és Kezelésük, Pozitív, Technikai kihívások:
 
-### Community 567 - "3.4 Beosztáskezelő – a rendszer központi modulja"
-Cohesion: 0.14
-Nodes (13): 1. Adatbázis Séma Bővítés, 2. Kétirányú Védelem, 3. Könyvelési Zárlat (`get_gl_categorized_items`), 4. Könyvelői Jóváhagyási RPC (`approve_invoice_for_accounting`), 5. Frontend UI/UX — Visibill és Accounty (eaisyBooks), 6. Dinamikus Gyorsítótár és Supabase Realtime Szinkronizáció, 7. OCR Sorszám Prefix-Csonkolás Elleni Védelem & Javasolt Összerendelés (3 Pilléres Rendszer), A-084: NAV Online Számla Cross-Check & Könyvelői Jóváhagyási Kapu (Approval Gate) (+5 more)
+### Community 567 - "A-090: Biztonságos Számlatükör Sablon Törlés, Függőség-Ellenőrzés és Tételek Átkötése (Remapping)"
+Cohesion: 0.25
+Nodes (8): 1. Context & Problem Statement, 2.1 Szerveroldali Tranzakcionális RPC Architektúra, 2.2 Frontend UI & UX Megújítás (`ManagePresetsModal.tsx`), 2. Decision, 3. Consequences, A-090: Biztonságos Számlatükör Sablon Törlés, Függőség-Ellenőrzés és Tételek Átkötése (Remapping), A felmerült incidens (2026. 09. 04. 08:55):, Kapcsolódó
 
-### Community 569 - "seed_missing_params.cjs"
-Cohesion: 0.14
-Nodes (13): 1. `(SELECT auth.uid())` InitPlan Minta Szabványosítása, 2. Single-Permissive és Write-Only RLS Konszolidáció, 3. Teljes Foreign Key B-Tree Lefedettség, 4. Célzott Lekérdezés Optimalizálás (Query Performance), 5. `search_path` Rögzítés és Séma Tisztítás, A-092: Teljes Adatbázis Biztonsági és Teljesítménybeli Audit & Optimalizáció, Consequences, Context (+5 more)
+### Community 568 - "src_locales_hr_categories"
+Cohesion: 0.47
+Nodes (3): src_locales_hr_categories, src_locales_hu_categories, Candidate
 
-### Community 570 - "seed_missing_params.js"
-Cohesion: 0.14
-Nodes (13): 1. Hosted SyncUI és Zéró Felelősség (Zero Liability) Modell, 2. Kettős Edge Function Architektúra, Megosztott Motor és Proxy Relay, 3. Adatbázis Séma és Nullability Migráció, 4. Aszinkron Háttér-feldolgozás (Python Worker & PGMQ), 5. Versenyhelyzet és UX Retesz (Race Condition Protection), 6. Felületi Elhelyezés és Kétirányú Navigáció (UI/UX Architecture), 7. Aggreg8 PSD2 és Fájlimport Cross-Deduplikáció (2026-09 Frissítés), 8. Multi-Company Consent Megosztás és Dinamikus Számlaleosztás (2026-10 Frissítés, EB-0226) (+5 more)
+### Community 569 - "A-097: Multi-Tenant nav_invoice_items Denormalizáció, GL Statement Timeout Felszámolása és RLS Optimalizálás"
+Cohesion: 0.25
+Nodes (8): A-097: Multi-Tenant nav_invoice_items Denormalizáció, GL Statement Timeout Felszámolása és RLS Optimalizálás, Consequences, Context, Decision, Gyökérok Elemzés, Kapcsolódó, Negatív / Trade-offok, Pozitív
 
-### Community 571 - "vatTypes.ts"
-Cohesion: 0.14
-Nodes (13): 1. Dinamikus Számlatükör-Preset Feloldás (`resolveActivePresetId`), 2. Rugalmas Számviteli Időszak Típusok és Determinisztikus Bizonylatszámok, 3. Kettős Könyvvitel és Kiegyensúlyozott Kontírozási Logika, 4. Idempotencia és Duplikáció Megelőzés, 5. Atomi Véglegesítés és Sorszámozás (`acc_post_journal_entry` RPC), 6. Analitikus Auditkövetés (`asset_events`), A-180: Tárgyi Eszköz Időszaki Értékcsökkenés (ÉCS) Elszámolás és Vegyes Napló Feladási Architektúra, Consequences (+5 more)
+### Community 570 - "A-098: Készpénzes és Manuális Kifizetésű Számlák Egységes Párosítási Státusza és KPI Integritása"
+Cohesion: 0.25
+Nodes (8): A-098: Készpénzes és Manuális Kifizetésű Számlák Egységes Párosítási Státusza és KPI Integritása, A Felmerült Probléma és Gyökérok Elemzés, Consequences, Context, Decision, Kapcsolódó Dokumentáció, Negatív / Trade-offok, Pozitív
 
-### Community 572 - "MonthlyBalanceCard.tsx"
-Cohesion: 0.14
-Nodes (13): 1. Kétfázisú Szétválasztott Szinkronizáció (Fast-Path & Background Queue), 2. Atomi Idempotens Tételmentés Tárolt Eljárással (RPC), 3. PGMQ Láthatóság-Elhalasztás NAV 503 Karbantartás Esetén (`public.pgmq_set_vt`), 4. Kötelező 30 Napos Catch-Up Garancia Mentéskor, 5. Automatikus Kategorizálás a Workerben, Tételsorok Után (follow-up, 2026-10-04), 6. Biztonsági Keményítés: Csak service_role Hívhatja a Belső RPC-ket (2026-10-04), A-193: Hibrid Aszinkron NAV Számlaszinkronizáció, PGMQ Tétel-feldolgozás, Atomi Idempotens Mentés és NAV 503 Reziliencia, Consequences (+5 more)
+### Community 571 - "2. Döntések és Architektúra"
+Cohesion: 0.25
+Nodes (8): 1. Kontextus és Problémafelvetés, 2. Döntések és Architektúra, 3. Következmények és Migráció, A-107: ÁFA Levonhatóság Szinkronizálása a Könyvelési Naplóval és Főkönyvvel, Valós Idejű Trigger és Zárt Tételek Védelme, D-1: Kétlábú Bruttó Könyvelés 0% Levonhatóságnál (`acc_generate_drafts_from_ledger`), D-2: Főkönyvi Karton és Egyenlegek Összhangja (`get_gl_categorized_items`, `get_gl_balances`), D-3: Valós Idejű DB Trigger és Összegkorrekciók (`sync_item_deductible_to_journal_draft`), D-4: Zárt / Véglegesített Könyvelési Tételek Védelme és UI Lakat Jelzés (`InvoiceItemsDialog.tsx`)
 
-### Community 573 - "documentUploadService.ts"
-Cohesion: 0.14
-Nodes (13): 1. Aszinkron Streaming GZIP Kitömörítés (`xml-parser.ts`), 2. Kliens és Hívó Lánc Igazítás (`nav-client.ts`), 3. Letöltési Státusz Zárási Védelem (`nav-ingestion-service.ts`), 4. Adatbázis Integritási és Trigger Védelem, A-237: NAV Online Számla v3 GZIP Kitömörítés és Többtételes Közműszámla Ingestion Architektúra, A korábbi architektúra hibája:, Consequences, Context (+5 more)
+### Community 572 - "A-122: Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés"
+Cohesion: 0.25
+Nodes (8): 1. Adatbázis Szintű Atomi Kétirányú Propagáció és Tervezet-Törlés, 2. Frontend Optimista Állapotkezelés (`InvoiceTableContainer.tsx`), A-122: Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés, Consequences, Context, Decision, Negatív / Kötöttségek, Pozitív
 
-### Community 574 - "AdminTaxParametersPage.tsx"
-Cohesion: 0.14
-Nodes (13): 1. Bizonylatszintű Tételegyesítés az Adatbázisban (`20261009220000_group_invoice_drafts_by_document.sql`), 1. Többtételes Számlák Fragmentációja a Piszkozatokban, 2. A Napló Szűrési Rendszer Inkonzisztenciája és Hibái, 2. Pozitív Unió Iránymegfeleltetés (`journalFilterUtils.ts`), 3. Státusz Szűrési Állapotgép, 4. Moduláris Felületi Integráció (`JournalFilterModal.tsx` & `JournalsPage.tsx`), A-238: Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra, Consequences (+5 more)
+### Community 573 - "2. Döntések"
+Cohesion: 0.29
+Nodes (8): 1. Kontextus és Problémafelvetés, 2.1 Adatbázis Séma és Migráció (`20260921160000_vat_code_overrides_and_learning.sql`), 2.3 Számlatételek Interaktív Kezelése (`InvoiceItemsDialog.tsx`), 2.4 Beállítások Modal Túlcsordulás Javítása (`VatCodeConfigTab.tsx`), 2. Döntések, 3. Konzekvenciák és Eredmények, A-136: Számlatételek Áfakód Szerkeszthetősége és Gépi Tanulási (Machine Learning) Memória, VatCodeDialog()
 
-### Community 575 - "TemplatesPage.tsx"
-Cohesion: 0.14
-Nodes (13): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Felületcélkitűzés, 2. Képernyőelrendezés és Portálarchitektúra, 3. Vizuális Rendszerarchitektúra Diagram, 4.1 Cégválasztó Komponens (`CompanySwitcher`), 4.2 Időszakválasztó Komponens (`PeriodSelector`), 4.3 Értesítési Központ (`NotificationBadge` & `NotificationPopover`), 4.4 Felhasználói Profil és Biztonság (`UserProfileMenu`) (+5 more)
+### Community 574 - "2. Architekturális Döntés"
+Cohesion: 0.25
+Nodes (8): 1. Kontextus és Problémafelvetés, 2.1 Adatbázis Séma Bővítés, 2.2 Worker Pipeline Frissítés, 2.3 Kötegelt Számlaszám Feloldás (Batch Resolution, Zero N+1), 2.4 UI Megjelenítés és Export Dialógus, 2. Architekturális Döntés, 3. Következmények és Előnyök, A-139: Tranzakciós jutalék (fee_amount) és kötegelt számlaszám-feloldás
 
-### Community 576 - "annualReportCsv.ts"
-Cohesion: 0.14
-Nodes (13): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Műszakszerkesztő UI Dialógus és Állapotgép, 3. Műszakszerkesztő Mezőspecifikáció (`ShiftEditorDialog`), 4.1 Táblázat Szerkezete és Oszlopai, 4.2 Billentyűzet-központú Gépelési Élmény, 4. Alternatív Táblázatos Kitöltő Nézet (`TabularShiftEntryView`), 5.1 Munkarendek Sablonjai (`WorkSchedules`) (+5 more)
+### Community 575 - "2. Architektúra és Implementációs Döntések"
+Cohesion: 0.25
+Nodes (8): 1. Kontextus és Technikai Kihívások, 1. RPC Teljesítmény & Realtime Publikáció Optimalizáció, 2. Architektúra és Implementációs Döntések, 2. Failure Modes & Resilience a JournalView Komponensben, 3. Minőségbiztosítás és Eredmények, 3. Vízszintes Scroll Sávok Méretvédelme (`overflow-x-auto`), 4. Szabványos DOM Struktúra és Akadálymentesítés, A-150: Főkönyvi Lekérdezés Teljesítmény, Hibakezelési Reziliencia & DOM/Layout Védelem
 
-### Community 577 - "uiMountSmoke.test.tsx"
-Cohesion: 0.14
-Nodes (13): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Távollét és Helyettesítés UI Munkafolyamat, 3. Távollét Rögzítő Űrlap Mezőspecifikáció (`AbsenceDialog`), 4.1 Rendes és Rendkívüli Szabadságok, 4.2 Keresőképtelenség és Egészségügyi Távollétek, 4.3 Családtámogatási és Gyermekgondozási Jogcímek, 4.4 Egyéb Törvényes és Hatósági Mentesülések (+5 more)
+### Community 576 - "A-166: Magyar Társadalombiztosítási (TB) Adómotor, Minimális Járulékalap (Tbj. 27. §), Nyugdíj és 2608 M-lap Architektúra"
+Cohesion: 0.25
+Nodes (8): 1. Döntési Kontextus és Jogszabályi Háttér, 2.1 `public.accounty_employments` módosítások:, 2.2 `public.accounty_payroll_calculations` módosítások:, 2. Adatbázis Séma Bővítés, 3. Adómotor és Számítási Logika (`taxEngine.ts`), 4. Távollét Szűrés és Dátum-határ Védelem (`usePayrollData.ts`), 5. ÁNYK 2608 M-lap XML és Többes Jogviszony (`filingGenerator.ts`), A-166: Magyar Társadalombiztosítási (TB) Adómotor, Minimális Járulékalap (Tbj. 27. §), Nyugdíj és 2608 M-lap Architektúra
 
-### Community 578 - "tickets-api/index.ts"
-Cohesion: 0.14
-Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Statisztikai Állapotkártyák (KPI Összegző), 3.2 Szabadszavas Kereső és Kategória Szűrősáv, 3.3 Archivált Riasztások Megjelenítése, 3.4 Riasztási Műveleti Kártyák és Intézkedések, 3. Mit lehet benne a felhasználónak csinálni?, 4.1 Reggeli határidő- és kockázatellenőrzés (+5 more)
+### Community 577 - "2. Architektúrális Döntés"
+Cohesion: 0.25
+Nodes (8): 1. Kontextus és Problémafelvetés, 2.1. Sablon és Cég Jogosultság Validáció, 2.2. Tranzakciós és Hierarchia Védelmi Kapuk (Pre-Deletion Guards), 2.3. Függőségi Törlés (Cascade Cleanup), 2.4. Cache Érvénytelenítés és Reaktív UI Frissítés, 2. Architektúrális Döntés, 3. Következmények és Előnyök, A-178: Egyéni Számlatükör Főkönyvi Szám Törlése és Relációs Integritás Védelem
 
-### Community 579 - "Browser Testing & Subagent Authentication Rules"
-Cohesion: 0.14
-Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Visszalépés Nyíl és Keresőmező, 3.2 Kategória Választó Fülsor, 3.3 Paraméter Táblázat és Adatlap, 3.4 Inline Értékmódosítás és Mentés, 3. Mit lehet benne a felhasználónak csinálni?, 4.1 Éves minimálbér-emelés beállítása januárban (+5 more)
+### Community 578 - "A-179: Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra"
+Cohesion: 0.25
+Nodes (8): 1. Korai Deduplikáció AI és Párosítás Előtt (`aggreg8_processor.py`), 2. Kibővített Banki Referencia-Felismerés (`db.py:extract_bank_reference`), 3. Insert-szintű Védelem és PostgreSQL 23505 Megelőzés (`db.py:insert_transactions`), A-179: Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra, Consequences, Context, Decision, Kapcsolódó
 
-### Community 580 - "Fejlesztői Környezet (DEV) és Ágkezelési Védelmi Szabályzat"
-Cohesion: 0.14
-Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégadatok Panel, 3.2 Kapcsolattartó Adatlap és Mentés Gomb, 3.3 Adóprofil Összefoglaló, 3.4 Kommunikációs Csatornák és Automatikus Emlékeztetők, 3. Mit lehet benne a felhasználónak csinálni?, 4.1 Kapcsolattartó váltás átvezetése (+5 more)
+### Community 579 - "2. Döntések és Architektúra"
+Cohesion: 0.25
+Nodes (8): 1. Kontextus és Problémafelvetés, 2. Döntések és Architektúra, 4. Kapcsolódó, A-191: Folyószámla Kettős Devizakezelés, Árfolyam-számítás és Csoportosítási Architektúra, A feltárt probléma (Bug & Root Cause), D-2: Tiszta Domain Segédmodul (`src/lib/subledgerGrouping.ts`), D-3: Kettős Devizamegjelenítés (Dual Accounting Display Pattern), D-4: Keresztdevizás Csoportos Kijelölés Védelme (Multi-Currency Guard)
 
-### Community 581 - "PRD Tisztasági Audit és Technikai Szivárgás-Megelőzés"
-Cohesion: 0.14
-Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégfejléc és TAO Lapfülek, 3.2 TAO Pénzügyi KPI Összegző Kártyák, 3.3 11 Lépéses Éves Zárási Varázsló, 3.4 KIVA Kalkulátor és TAO–KIVA Összehasonlítás, 3. Mit lehet benne a felhasználónak csinálni?, 4.1 Májusi TAO bevallás elkészítése a zárási varázslóval (+5 more)
+### Community 580 - "A-254 — Házipénztár Egyedi Név, Perzisztált Bizonylatszám és 65-ös ÁFA Motor Integráció Architektúra"
+Cohesion: 0.25
+Nodes (7): 1. Kontextus és Problémafelvetés, 2.1. Oszlopok a `petty_cash_entries` táblán, 2.2. RPC Sorszám Generálás: `public.generate_next_cash_receipt_number`, 2. Adatbázis Séma Bővítés (Migration: `20261013153000_petty_cash_receipt_vat_and_payee.sql`), 3. Adatfolyam és ÁFA Motor Integráció, 5. Verifikációs Eredmények, A-254 — Házipénztár Egyedi Név, Perzisztált Bizonylatszám és 65-ös ÁFA Motor Integráció Architektúra
 
-### Community 582 - "Workflow"
-Cohesion: 0.14
-Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 „Új szabály hozzáadása” gomb és rögzítő ablak, 3.2 Aktív Szabályok listája és kártyái, 3.3 Szabály állapota kapcsoló (Aktív / Inaktív státuszváltó), 3.4 Szabály törlése gomb, 3.5 Gyors Sablonok kártya és sablonkiválasztó gombok, 3.6 „Hogyan írj hatékony könyvelési szabályokat?” útmutató kártya (+5 more)
+### Community 581 - "Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)"
+Cohesion: 0.25
+Nodes (8): 07. Fejlesztési Roadmap, MVP Terjedelem és Nyitott Kérdések, 1. Fejlesztési Alapelvek és Ütemezési Stratégia, 2.1 A Fázisok Részletes Tartalma, 2. A 10 Fejlesztési Fázis Részletes Áttekintése (Fázis 0–9), 3. Az MVP Pontos Értelmezése (0–4. fázis), 4. Kockázati Mátrix és Kockázatkezelési Stratégia, 5. Tisztázandó Üzleti és Termékfejlesztési Kérdések, Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)
 
-### Community 583 - "🗄️ Knowledge Base Schema & Metadata Reference"
-Cohesion: 0.14
-Nodes (13): 1. Vizuális Tisztaság és Felkiáltójel Elhelyezés (`SubmittedInvoiceRow`), 2. Lenyitható Számlasor Letisztítása (`ExpandedInvoiceRow`), 3. Jóváhagyási Dialógus UX (`InvoiceApprovalDialog`), 4. Accounty (eaisyBooks) Ügyfélszámlák Integráció (`ClientInvoicesPage`), 5. Szűrősáv Bővítés (`InvoiceFilterBar`), 6. NAV Számlasor Javasolt Csatolmány & Összerendelés UX (`SuggestedInvoiceLinkDialog`), 7. Bizonylatszám Kézi Szerkesztése & Automatikus Feloldása UX, Context (+5 more)
+### Community 582 - "Decision 068: ÁFA tv. Szerinti Adófizetési Kötelezettség és Levonási Jog Keletkezése Normál vs. Pénzforgalmi Adózási Módban"
+Cohesion: 0.25
+Nodes (8): 1. Normál Adózó Fizetendő (Kimenő) ÁFA Kötelezettsége (Áfa tv. 55–58. §), 2. Normál Adózó Levonható (Bejövő) ÁFA Joga (Áfa tv. 119–120. §), 3. Pénzforgalmi Elszámolású Adóalany (`v_is_penzforgalmi = true`, Áfa tv. XIII/A. fejezet), Decision, Decision 068: ÁFA tv. Szerinti Adófizetési Kötelezettség és Levonási Jog Keletkezése Normál vs. Pénzforgalmi Adózási Módban, Kapcsolódó, Question, Rationale
 
-### Community 584 - "A-003: Multi-tenancy RLS Alapon"
-Cohesion: 0.14
-Nodes (13): 1.1 Főkönyvi Kivonat Fa Valós Idejű Szűrése és Ág-Autokibontás (`GeneralLedgerTable`), 1. Főkönyvi Globális Kereső Autocomplete (`GlSearchAutocomplete`), 2. Összehasonlító Tábla Újratervezése és Paginációja (`GeneralLedgerComparisonTable`), 3. Naplófőkönyv Terminológia és Finom Tipográfia (`JournalView`), 4. Paginációs Ugrálás Megszüntetése (`UnifiedPagination`), 5. CustomTooltip Alkalmazása, Consequences, Context (+5 more)
+### Community 583 - "Decision 075: Bankkártyás és AMEX Elfogadói Göngyölegek Feldolgozása Virtuális Bankként és Zéró-Egyenlegű Főkönyvi Elszámolása"
+Cohesion: 0.25
+Nodes (8): 1. A Számviteli Probléma és Kényszer, 2. A Virtuális Bank Modell (385 Kártyaelfogadói Elszámolás), 3. Önelszámoló Zéró Egyenleg és Fizikai Bank Kapcsolat, Decision, Decision 075: Bankkártyás és AMEX Elfogadói Göngyölegek Feldolgozása Virtuális Bankként és Zéró-Egyenlegű Főkönyvi Elszámolása, Kapcsolódó, Question, Rationale
 
-### Community 585 - "A-014: React Query Cache Stratégia"
-Cohesion: 0.15
-Nodes (12): 1. Adatbázis Modell és Atomi RPC-k (`20261012170000_payroll_reconciliation_and_payouts.sql`), 2. Algoritmikus Motorok (`src/lib/payroll/`), 3. Főoldali Tab Konszolidáció (`PayrollDashboardPage.tsx`), 4. ClientNav Longest-Prefix Match Algoritmus, 5. Impersonációs Versenyhelyzet Elhárítása (`useAppReady.ts`, `ProtectedRoute.tsx`), A-250: 14. Bérszámfejtés és Főkönyvi Bérfeladás Modul Architektúra, GIRO Motor és Tab Konszolidáció, Consequences, Context (+4 more)
+### Community 584 - "Szerver-Oldali Szűrt Tábla — Debounce + Skeleton Pattern"
+Cohesion: 0.25
+Nodes (8): 1. Debounce: `useEffect` (NEM `useMemo`!), 2. Query: `keepPreviousData` + `debouncedSearch` a queryKey-ben, 3. Skeleton vs. Opacity: `isLoading` ≠ `isFetching`, A megoldás: 3 réteg, A probléma, ❌ Anti-patternek, Szerver-Oldali Szűrt Tábla — Debounce + Skeleton Pattern, Összefoglaló szabályok
 
-### Community 586 - "A-033: Exclude Service Role Operations from Company Audit Trail"
-Cohesion: 0.14
-Nodes (13): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Mátrix Nézetváltó Fülek és Keresősáv, 3.2 Cég Hozzárendelése Könyvelőhöz, 3.3 Hozzárendelt Szerepkör Módosítása és Eltávolítása, 3.4 Modul Jogosultságok Finomhangolása (Olvasás / Írás), 3. Mit lehet benne a felhasználónak csinálni?, 4.1 Újonnan belépő junior könyvelő portfóliójának összeállítása (+5 more)
+### Community 585 - "Design Spec — Árfolyam-különbözetek Szekció Újratervezése (FX Differences Redesign)"
+Cohesion: 0.25
+Nodes (7): 🌟 1. Opció (Kiemelten Ajánlott): „Fintech Dense Split” (VatSection és RecentInvoices Analógia), 2. A 3 Kidolgozott Design Koncepció, ⚡ 2. Opció: „Executive Tabbed Cockpit” (Füles Vezérlőpult), 3. Alkalmazott Eaisybill Design Tokenek, 🏛️ 3. Opció: „Financial Ledger & Cash-Flow Impact” (Likviditási & Audit Fókusz), 4. Javasolt Következő Lépés, Design Spec — Árfolyam-különbözetek Szekció Újratervezése (FX Differences Redesign)
 
-### Community 587 - "A-049: Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete)"
-Cohesion: 0.14
-Nodes (14): days_left, days_overdue, due_today, due_tomorrow, invoices_suffix, missing, monthly_closing, no_match (+6 more)
+### Community 586 - "2. Megvalósított Megoldás: „Fintech Dense Split” (1. Opció)"
+Cohesion: 0.25
+Nodes (7): 1. Előzmények és Konzisztencia Problémák, 2. Megvalósított Megoldás: „Fintech Dense Split” (1. Opció), 3. Érintett Kódfájlok, A. Rács Elrendezés (Grid Layout), B. Legutóbbi Számlák (`RecentInvoices.tsx`), C. Projekt Összefoglaló (`ProjectBreakdown.tsx`), Design Spec: Legutóbbi Számlák & Projekt Összefoglaló Layout Újratervezés
 
-### Community 588 - "A-061: Decomposing the Monolithic Super-Admin & Management Dashboard"
-Cohesion: 0.14
-Nodes (14): quick_actions, review_invoices, title, transactions, upload_invoices, button, desc, title (+6 more)
+### Community 587 - "Worker Architektúra és Dedikált Dev Worker Replica"
+Cohesion: 0.25
+Nodes (7): 🏗️ 1. Rendszer- és Worker Áttekintés, ⚙️ 2. A Dedikált Fejlesztői Worker (`worker-dev`), 📊 3. Többprojektes Worker Monitor Architektúra, Adatfolyam és Működés, Aktív Worker Konténerek (7/7 Healthy), Konfiguráció és Futtatás, Worker Architektúra és Dedikált Dev Worker Replica
 
-### Community 589 - "2. Döntés"
-Cohesion: 0.14
-Nodes (14): pdf, closing_summary, generated_at, page_title, period, summary, closing, currency (+6 more)
+### Community 588 - "Alert"
+Cohesion: 0.29
+Nodes (8): 3. Kapcsolat Tesztelése és Státuszok, Current Implementation, Decision, P-088: Csoportos ÁFA-tagok NAV Online Számla Beállítási Figyelmeztetése és Varázsló UX, Question, Rationale, 2.5 Duplikációvédelem és Tiszta Könyvelői Visszajelzés, Alert
 
-### Community 590 - "A-103: Accounty RLS Teljesítményoptimalizálás és Postgres Hibanapló Stabilizálás"
-Cohesion: 0.14
-Nodes (14): financials, budget, days_count, deadline, duration, elapsed, hours, items_count (+6 more)
+### Community 589 - "P-051: Többprofilos Levelező Fiókok (Multi-Profile IMAP/SMTP) Kezelése UX"
+Cohesion: 0.25
+Nodes (8): 1. Kártya Alapú Profil Lista (`EmailSettingsForm.tsx` & `EmailAccountCard.tsx`), 2. Szerkesztő és Hozzáadó Modális Ablak (`EmailAccountDialog.tsx`), 3. Törlés Megerősítés (`AlertDialog`), Kapcsolódó, P-051: Többprofilos Levelező Fiókok (Multi-Profile IMAP/SMTP) Kezelése UX, Rationale, UI / UX Kialakítás, EmailAccountCard()
+
+### Community 590 - "🖥️ Felhasználói Felület és Workflow Viselkedés"
+Cohesion: 0.25
+Nodes (8): 1. Dedublikált Fájlsor és Próbálkozás Jelvény (Retry Badge), 2. Lenyitható Fallback Lánc (Audit Trail Drawer), 3. Tranzakcionális Törlés Kiterjesztés (Cascade Sibling Delete), 4. Valós Státuszok a Worker Telemetriában (`SUPERSEDED` Badge), 5. Kereszt-Tab Reaktív Cache Érvénytelenítés, 🖥️ Felhasználói Felület és Workflow Viselkedés, 🔗 Kapcsolódó Dokumentumok, P-069: Management Dashboard Hiba Dedublikáció, Fallback Lánc és Állapot Kormányzás UX
 
 ### Community 591 - "backfill_nav_items.mjs"
 Cohesion: 0.67
 Nodes (3): run(), syncCompany(), TARGET_COMPANIES
 
-### Community 592 - "2. Döntések"
-Cohesion: 0.14
-Nodes (14): assignment, apply_button, assignee_placeholder, col_company, col_current_assignee, col_subject, selected_count, status_placeholder (+6 more)
-
-### Community 593 - "A-201: NAV 2665 ÁFA Bevallás: 43. (Tárgyi eszköz értékesítés) és 45. (Előleg) Sorok Adóösszeg Implementációja"
-Cohesion: 0.14
-Nodes (14): timeline, added_comment, changed_assignee, changed_status, confirmed_resolution, created_ticket, investigation_continues, no_assignee (+6 more)
-
-### Community 594 - "2. Architektúra és Döntések"
-Cohesion: 0.14
-Nodes (14): ai_reason, amount, date, description, marked_invoice_missing, marked_no_invoice, status_invoice_missing, status_matched (+6 more)
-
-### Community 595 - "Decision 064: A60 Közösségi ÁFA Összesítő és 65-ös Bevallás Összefüggés-vizsgálat (VIES Integrációval)"
-Cohesion: 0.14
-Nodes (14): toasts, created_desc, created_title, delete_error_desc, delete_error_title, deleted_desc, deleted_title, invalid_regex_desc (+6 more)
-
-### Community 596 - "shadcn/ui Komponensek (60 fájl)"
-Cohesion: 0.14
-Nodes (14): dialog, add_own, cancel, desc, download_save, file_format, foreign_iban_notice_title, foreign_iban_sepa_only (+6 more)
-
-### Community 597 - "⚠️ Oldal-szintű Animációk & GPU ClearType Homályosodás Megelőzése (2026-09-11)"
-Cohesion: 0.14
-Nodes (14): days_left, days_overdue, due_today, due_tomorrow, invoices_suffix, missing, monthly_closing, no_match (+6 more)
-
-### Community 598 - "Hover Patternek"
-Cohesion: 0.14
-Nodes (14): quick_actions, review_invoices, title, transactions, upload_invoices, button, desc, title (+6 more)
-
-### Community 599 - "⭐ Async Confirm Dialog Pattern (DB műveletek)"
-Cohesion: 0.22
-Nodes (9): getLogicalTypeLabel(), TYPE_LABELS, exportBsExcel(), HU_GL_NAME_TO_KEY, normalizeGlAccountName(), normalizeGlKey(), getLocalizedGlAccountName(), getLocalizedGlItemDescription() (+1 more)
-
-### Community 600 - "EaisyWorks Nyilt REST API Dokumentacio (v1)"
-Cohesion: 0.14
-Nodes (14): financials, budget, days_count, deadline, duration, elapsed, hours, items_count (+6 more)
-
-### Community 601 - "3. API Vegpontok Reszletes Katalógusa"
-Cohesion: 0.14
-Nodes (14): assignment, apply_button, assignee_placeholder, col_company, col_current_assignee, col_subject, selected_count, status_placeholder (+6 more)
-
-### Community 602 - "🔑 JWT — JSON Web Token (Munkamenet Hitelesítés)"
-Cohesion: 0.14
-Nodes (14): timeline, added_comment, changed_assignee, changed_status, confirmed_resolution, created_ticket, investigation_continues, no_assignee (+6 more)
-
-### Community 603 - "💡 Hogyan Érvényesül az RBAC a Kódban?"
-Cohesion: 0.14
-Nodes (14): ai_reason, amount, date, description, marked_invoice_missing, marked_no_invoice, status_invoice_missing, status_matched (+6 more)
-
-### Community 604 - "🚨 A 4 Legfőbb Webes Sérülékenység & Védelem"
-Cohesion: 0.14
-Nodes (14): toasts, created_desc, created_title, delete_error_desc, delete_error_title, deleted_desc, deleted_title, invalid_regex_desc (+6 more)
-
-### Community 605 - "🐘 PostgreSQL — A Relációs Adatbázismotor"
-Cohesion: 0.14
-Nodes (14): dialog, add_own, cancel, desc, download_save, file_format, foreign_iban_notice_title, foreign_iban_sepa_only (+6 more)
-
-### Community 606 - "🔑 Főbb Aszinkron Minták Katalógusa"
-Cohesion: 0.24
-Nodes (9): buildHeader(), buildUserXml(), cors, queryInvoiceDataXml(), queryInvoiceDigestXml(), sha3_512UpperHex(), sha512UpperHex(), utcTimestampYYYYMMDDHHMMSS() (+1 more)
-
-### Community 607 - "⚡ Caching Stratégiák, Eviction & Cache Stampede"
-Cohesion: 0.14
-Nodes (12): container, detailsBox, detailText, errorBox, errorText, footer, h1, h2 (+4 more)
-
-### Community 608 - "🔑 A 3 Adatbázis Skálázási Stratégia"
-Cohesion: 0.14
-Nodes (12): Carousel, CarouselApi, CarouselContent, CarouselContext, CarouselContextProps, CarouselItem, CarouselNext, CarouselOptions (+4 more)
-
-### Community 609 - "🔑 Főbb Gráfbejárási & Rendezési Algoritmusok"
-Cohesion: 0.17
-Nodes (12): Assignment, COMPANIES, Company, FIFTEEN_MIN_AGO, FIVE_MIN_AGO, joinCompanyAsAccountant(), JoinResult, JUST_EXPIRED (+4 more)
-
-### Community 610 - "eaisyBill & eaisyBooks Teljes Rendszer Tudásbázis (Knowledge Base)"
-Cohesion: 0.15
-Nodes (13): enum, example, type, nullable, properties, type, completed_at, direction (+5 more)
-
-### Community 611 - "P-051: Többprofilos Levelező Fiókok (Multi-Profile IMAP/SMTP) Kezelése UX"
-Cohesion: 0.15
-Nodes (12): 14. Jövőbeli Döntések, 1. Összefoglaló, 6. NAV Integráció, 8. HR & Munkaidő (eaisyBill), 9. Előfizetés & Árazás, REQ-6.1: NAV Online Számla API v3, REQ-6.2: Szinkronizáció stratégia, REQ-8.1: Munkaidő nyilvántartás (+4 more)
-
-### Community 612 - "2. Termék & UX Döntések"
-Cohesion: 0.15
-Nodes (12): 📋 10. Letisztult Űrlap Checkbox Konvenció, 🛑 11. Fals Üres Állapot Védelem & Sorszintű Hiba-Résiliencia, 🔄 1. A 4 Kötelező UI Állapot (The 4 States Rule), ⚡ 2. Aszinkron Műveletek & Dupla-kattintás Védelem (Double-Submit Guard), 💰 3. Pénzügyi Szám- és Dátumformázási Fegyelem, ⚠️ 4. Destruktív Műveletek Megerősítése (Confirm Dialogs), 🎯 5. Interakciós Tisztaság és Villogásvédelem ([10-accessibility-ux.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/design/10-accessibility-ux.md)), 🖥️ 6. Tabok, Master-Detail és Kijelzők Stabilitása (Zero-Jitter & ClearType Védelem) (+4 more)
-
-### Community 613 - "UploadDialogManager.tsx"
-Cohesion: 0.15
-Nodes (12): `accounty_cegkapu_settings`, `accounty_data_contracts`, `accounty_filings`, `accounty_global_tax_params`, `accounty_legal_updates`, `accounty_nav_representations`, `accounty_retention_rules`, `accounty_tao_yearly` (+4 more)
-
-### Community 614 - "Részletes UI/UX Működés"
-Cohesion: 0.15
-Nodes (12): A-028: PDF Export Workflow & Lifecycle (v2 — Worker Pipeline), Architektúra, Cleanup, Consequences, Context, Decision, Elvetett megoldások, Job lifecycle & Modes (+4 more)
-
-### Community 615 - "P-099: Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX)"
-Cohesion: 0.15
-Nodes (12): 0. Tier 0: Authoritative NAV Online Számla Cross-Check (`_check_nav_invoice_info`), 1. Programmatic Override — Tax-based double-check, 2. Hallucination Detection — Seller == Buyer guard, 3. Noisy Seller Recovery — Zajos operátornév helyreállítása (NAV nélküli fallback), 4. VAT ID Zipcode Sanitization, A-048: Invoice Direction Detection — Programmatic Override Safety Net, Consequences, Context (+4 more)
-
-### Community 616 - "2. Termékdöntés és Megvalósítás"
-Cohesion: 0.15
-Nodes (12): 1. Magnum XML Streaming Parser Tükörkód Feloldás (`audit_xml_parser.py`), 2. Automatikus Számlatükör Szinkronizáció a Workerben (`audit_xml_handler.py`, Step 5.5), 3. Főkönyvi RPC Robusztusítás (`LEFT JOIN LATERAL` és Sztornó Támogatás), 4. Frontend Deviza Támogatás (`GeneralLedgerTable.tsx`), 5. `gl_journal_entries` RLS Szabályzatok Bővítése, A-087: Magnum Audit XML Főkönyvi Import, Tükörkód Feloldás, Számlatükör Auto-Szinkronizáció és RPC Robusztusság, Consequences, Context (+4 more)
-
-### Community 617 - "2. Termékdöntés"
-Cohesion: 0.15
-Nodes (12): 1. Szigorú Reguláris Token-Határ Illesztés (`_is_exact_invoice_number_in_description`), 2. Részhalmaz-Kiszűrés és Leghosszabb Egyezés Elve (`_filter_subsumed_hits`), 3. Többszörös Párosítás Jóváhagyási Kapu (Multi-Match Confidence Gate), 4. Adatbázis-szintű Törlési és Lekapcsolási Triggerek, 5. Banki Referenciaszám Alapú Import Deduplikáció (`db.py`), A-128: Szigorított Számlaszám Határ-illesztés (Boundary Matching), Részhalmaz Kiszűrés (Subsumption Filter) és Többszörös Párosítási Jóváhagyási Kapu, Consequences, Context (+4 more)
-
-### Community 618 - "P-126: NAV 2665 Hivatalos Nyomtatvány Digitális Replika UX"
-Cohesion: 0.15
-Nodes (12): 1. Kontextus és Problémafelvetés, 2.1 Adatbázis Séma Bővítés (`public.gl_accounts`), 2.2 Számlatükör Karbantartás és Automatikus Felismerés (`AddGlAccountModal`), 2.3 Safeguard: Bankszámla Deviza-Főkönyvi Egyezőség (`BankAccountsTab`), 2.4 Nyitó Varázsló Összekapcsolás (`OpeningJournalWizardModal`), 2.5 Devizás Számlakarton Egyenlegek (`GlAccountCardView`), 2.6 Többdevizás Partner Analitika (`PartnerLedgerCardView`), 2.7 Tört Időszaki Devizás Nyitó Göngyölítés az RPC-ben (`get_gl_account_card_items`) (+4 more)
-
-### Community 619 - "P-131: Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX"
-Cohesion: 0.15
-Nodes (12): 1. Context, 1. Kriptográfiai Pipeline és Kétrétegű Hitelesítés, 2. Adatbázis Séma és RLS Védelem (`20260924163000_nav_upo_m2m.sql`), 2. Decision, 3. Biztonsági Maszkolás és Revokáció RPC-k, 3. Consequences, 4. Automatizált Háttérszinkronizáció (`cron_sync_all`), 4. Kapcsolódó (+4 more)
-
-### Community 620 - "2. Felületi Megvalósítás és UX Megoldások"
-Cohesion: 0.15
-Nodes (12): 1. 4-Oszlopos Statisztikai és Analitikus Excel/CSV Export Motor (`src/lib/glExport.ts`), 1. Context, 2. Decision, 2. Kliensoldali In-Memory Metaadat-Gazdagító Pipeline (`src/lib/glInvoiceGrouping.ts`), 3. Consequences, 3. Determinisztikus Számla- és Kontírszintű Aggregáció (`groupLedgerItemsByInvoice`), 4. Kapcsolódó Dokumentumok, 4. Kliensoldali 0 ms Nézetváltás és Állapotkezelés (+4 more)
-
-### Community 621 - "2. Megoldás és UI Működés"
-Cohesion: 0.15
-Nodes (12): 1. Fülváltási URL Paraméter-Izoláció (`src/lib/navigation.ts`), 2. Deep-Link Fókusz-Védőháló (`src/features/invoices/context/InvoiceContext.tsx`), 3. Lenyitható Sor Letisztítása (`ExpandedInvoiceRow.tsx`), 4. Külföldi Számlák NAV Mentessége és Szövegfrissítés, 5. Supabase Auth GoTrue Null Token Adatbázis Sanity, A-176: Számla Mélyhivatkozás (Deep-Linking) Tab-Izoláció, Fókusz-Visszarántás Védelem és Külföldi Számla NAV Mentesség, Consequences, Context (+4 more)
-
-### Community 622 - "2. Termékdöntés és Megoldás"
-Cohesion: 0.15
-Nodes (12): 1.1 Készpénzes Számlarendezés és a Házipénztár Eltávolodása, 1.2 GLS Kompenzációs Értesítők Elcsúszott Előtagjai és Fuvardíj-részletezők Kihagyása, 1. Context & Problémameghatározás, 2.1 Készpénzes Rendezések Valós Idejű Házipénztár Bejegyzése (`record_manual_invoice_payment`), 2.2 `sync_petty_cash_entries` Szinkronizáció Kibővítése, 2.3 GLS Kompenzációs Normalizálás és Fuvardíj Részletezők Mentessége, 2. Decision & Architektúrális Megoldás, 3. Következmények és Előnyök (+4 more)
-
-### Community 623 - "2. Felületi Megvalósítás és UX Megoldások"
-Cohesion: 0.15
-Nodes (12): 1. PROCONT Számlafa Hierarchia és Aggregációs Motor (`src/lib/procontGlData.ts`), 2. Hivatalos PROCONT „EGYEZŐSÉG SZÁMÍTÁS” Motor, 3. Vektoros A4 Álló PDF Motor és Többoldalas Layout Védelem (`src/lib/procontGlPdf.ts`), 4. Excel Munkafüzet Generáló Motor (`src/lib/procontGlExcel.ts`), 5. Felhasználói Integráció (`GlToolbar.tsx`, `GeneralLedgerTable.tsx`, `GeneralLedgerPage.tsx`), A-239: PROCONT Főkönyvi Kivonat Export, Hierarchikus Számla-aggregáció és Mérleg-Eredmény Egyezőség-számítás Architektúra, ⚡ Consequences, 🏛️ Context (+4 more)
-
-### Community 624 - "2. Megvalósított Felületi Élmény (UX) és Döntések"
-Cohesion: 0.15
-Nodes (12): 1. Dátumkorlátok Visszaállítása a Kurzor WHERE Feltételében (Statutory Boundary Bounding), 2. N+1 Árfolyam-lekérdezés Felszámolása Hash / Index Joinnal, 3. Jogosultságok és Biztonsági Védelem Hardeningje, 4. Dedikált Regressziós és Teljesítmény Tesztcsomag (`vatPerformanceAndTimeout.test.ts`), A-245: calculate_hungarian_vat_return Kurzus-Dátumkorlát és N+1 Napi Árfolyam Előillesztés Teljesítmény-optimalizáció (Statement Timeout 57014 Megszüntetése), 📊 Benchmark & Mérési Eredmények (Dev DB), ⚡ Consequences, 🏛️ Context (+4 more)
-
-### Community 625 - "3. Fő Funkciók és Kezelés"
-Cohesion: 0.15
-Nodes (12): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Hóvégi Zárás és Export Munkafolyamat, 3.1 Fejléc Vezérlők, 3.2 Tervezett vs. Tényleges Eltérés-Összehasonlító Táblázat, 3. Jelenlét-Igazolás Képernyő Specifikáció (`AttendanceVerificationView`), 4. Hóvégi Zárási Varázsló (`ClosureWizardModal`), 5.1 Fájlstruktúra és Munkalapok (+4 more)
-
-### Community 626 - "Define Goal"
-Cohesion: 0.15
-Nodes (12): Alkalmazási Terület, Az Alkalmazás Dióhéjban, Brand Logó, Design Filozófia, Design System Célja, eaisybill Design System — Áttekintés, Konvenciók Új Termékekhez, Multi-Product Design System (+4 more)
-
-### Community 627 - "4. Fejlesztési roadmap"
-Cohesion: 0.15
-Nodes (12): 1. Üzlet, Márkák & Magyar Adózás, 2. Biztonság, Autentikáció & Megfelelőség, 3. Adatbázis & Szervermentes Logika, 4. Aszinkron Kommunikáció & Valós Idejű Hálózat, 5. Szoftverminták, Algoritmusok & Megbízhatóság, 6. Felhő, Konténerek & CI/CD DevOps, 7. Futtatókörnyezetek, Keretrendszerek & AI Pipeline, 8. System Design Minták & Algoritmusok (+4 more)
-
-### Community 628 - "1. Vezetői összefoglaló – mi a szoftver értelme?"
-Cohesion: 0.15
-Nodes (12): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Főkönyvi Kivonat Fa-struktúra és Számlaosztály Szűrők, 3.2 Főkönyvi Gyorskereső és Valós Idejű Fa-Szűrés, 3.3 Főkönyvi Karton Megnyitása és Bizonylatszintű Mélyfúrás, 3.4 Audit XML (SAF-T) Feltöltése és Adatimport, 3.5 Új Vegyes Könyvelési Tétel Rögzítése, 3.6 Mesterséges Intelligencia Kontírozási Asszisztens Futtatása (+4 more)
-
-### Community 629 - "ManualInvoiceCreateDialog.test.tsx"
-Cohesion: 0.15
-Nodes (12): Async Modal UX, Kapcsolódó, Korábbi viselkedés, Modal felépítés (`NavSyncDialog.tsx`), P-049: NAV Szinkronizálás Dátumtartomány Választó Modal UX, Preset gombok, Progress feedback (sync közben), Rationale (+4 more)
-
-### Community 630 - "syncStaggering.ts"
-Cohesion: 0.15
-Nodes (12): 1. 4-Oszlopos Statisztikai és Analitikus Excel Export, 1. Kontextus és Problémafelvetés, 2. Alapértelmezett Számlánkénti Tétel-összevonás (`by_invoice`), 2. Termékdöntés és Megoldás, 3. Dedikált Nézetváltó Kapcsoló az Eszköztárban (Row 2 Filter Bar), 3. Minőségbiztosítás és Verifikáció, 4. Kapcsolódó Dokumentumok, 4. Állapotmegőrzés és URL Szinkronizáció (+4 more)
-
-### Community 633 - "findDuplicateKeysInJson"
-Cohesion: 0.15
-Nodes (12): 1. Háttér és Üzleti Kontextus, 2. Felhasználói Igények és Szerepkörök, 3.1 TENY Főoldal: Két Lapfül (`/teny`), 3.2 Tárgyi Eszköz Aktiválási Varázsló (`AssetActivationDialog`), 3.3 Eszköz Részletező Panel (`AssetDetailPanel` & `DepreciationCards`), 3.4 Aktiválási Jegyzőkönyv Generálás (PDF), 3.5 Utólagos Hozzárendelés és Módosítás (`DevelopmentReserveAssignDialog`), 3.6 Automatikus Főkönyvi Könyvelés (`postDevelopmentReserveReleaseToLedger`) (+4 more)
-
-### Community 634 - "Layer 3: Data Flow & State Management"
-Cohesion: 0.15
-Nodes (12): 1. Kérdés és Célkitűzés, 2.1. Elsődleges Akciógomb az Eszköztárban (`InvoiceHeader.tsx`), 2.2. Kétfüles Modál Elrendezés (`ManualInvoiceCreateDialog.tsx`), 2.3. Zero-Jitter Kereshető Popover & Combobox Standard (`PartnerInputWithAutocomplete.tsx`), 2.4. Globális `SearchInput` és Gyors Új Partner Választás, 2.5. Kontextuális Partner Előtöltés, Irányfüggő Zárolás és Adószám Auto-Kitöltés, 2.6. Tranzakció Elrablás Megelőzése (Transaction Stealing Guard & Visual State), 2.7. Toast Visszajelzések és Nemzetközi (HR) Lokalizáció (+4 more)
-
-### Community 635 - "Audit Execution Process"
-Cohesion: 0.15
-Nodes (12): compilerOptions, allowJs, noImplicitAny, noUnusedLocals, noUnusedParameters, paths, skipLibCheck, strictNullChecks (+4 more)
-
-### Community 636 - "BRD Vizuális Diagramkészítési Irányelvek (baoyu-diagram Integráció)"
-Cohesion: 0.15
-Nodes (12): 🗄️ Adatbázis & Pénzügy, 🤖 AI & Feldolgozás, 🔒 Biztonság & Auth, 📧 Email & Integráció, 💳 Fizetés, 🖥️ Frontend, 📡 Kommunikáció & Queue, 🏛️ Rendszer Architektúra (+4 more)
-
-### Community 637 - "BRD Tisztasági Audit és Technikai Szivárgás-Megelőzés"
-Cohesion: 0.15
-Nodes (13): onboarding, or_choose_existing, step1_btn, step1_desc, step1_title, step2_btn, step2_desc, step2_title (+5 more)
-
-### Community 638 - "PRD Vizuális UI Diagram- és Mockupkészítési Irányelvek (baoyu-diagram)"
-Cohesion: 0.15
-Nodes (13): buttons, back, back_to_signin, cancel, checking, confirm, resend_email, send_code (+5 more)
-
-### Community 639 - "A-029: Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció"
-Cohesion: 0.15
-Nodes (13): apr, aug, dec, feb, jan, jul, jun, mar (+5 more)
-
-### Community 640 - "A-069: Centralized Frontend Error Ingestion, Stack Trace Preservation & Intelligent Context Deserialization"
-Cohesion: 0.15
-Nodes (13): revenue_expenses_chart, cash_flow, expense_suffix, expenses_paid, expenses_unpaid, gross, net, result (+5 more)
-
-### Community 641 - "A-113: NAV Invoice Items VAT & Gross Auto-Calculation"
-Cohesion: 0.22
-Nodes (8): 1. PostgreSQL Belső Előaggregáció (`grouped_items` CTE), 2. Atomi JSON RPC (`get_gl_balances_json`), A-257: Főkönyvi Egyenlegek Előaggregáció és Atomi JSON RPC (Upstream Timeout Felszámolás), Consequences, Context, Decision, Negatív / Költségek, Pozitív
-
-### Community 642 - "A-124: Többoldalas Számlák Folytatás-Felismerése és Téves Multi-Invoice Split Megelőzés (Multi-Page Invoice Continuation Guard)"
-Cohesion: 0.15
-Nodes (13): approval_tab, badge_cash_receipt, badge_receipt_slip, desc, empty_desc, empty_title, loading, quality_good (+5 more)
-
-### Community 643 - "A-144: Determinisztikus Számlatétel Szabály Motor (`invoice_item_rules`) és Kötegelt Illesztési Architektúra"
-Cohesion: 0.15
-Nodes (13): system, date_format, language, language_hr, language_hu, number_format, save_button, subtitle (+5 more)
-
-### Community 644 - "A-186: Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) és Szakképzési Tanulói Keret (Szkt. 84. §)"
-Cohesion: 0.15
-Nodes (13): columns, account, amount, booking_date, currency, description, gl_class, items (+5 more)
-
-### Community 645 - "exportVatCollectorAnalyticsExcel"
-Cohesion: 0.15
-Nodes (13): table, all_settled_desc, all_settled_title, amount, due_date, invoice_numbers, manual_settle, manual_settle_tooltip (+5 more)
-
-### Community 646 - "2. Architektúra Döntés"
-Cohesion: 0.15
-Nodes (13): onboarding, or_choose_existing, step1_btn, step1_desc, step1_title, step2_btn, step2_desc, step2_title (+5 more)
-
-### Community 647 - "A-246: Worker Invoice Upsert Idempotencia és Postgres 23505 Pre-Check Ütközésvédelem (Többoldalas és Kötegelt Feltöltések)"
-Cohesion: 0.15
-Nodes (13): buttons, back, back_to_signin, cancel, checking, confirm, resend_email, send_code (+5 more)
-
-### Community 648 - "Beosztásom Modul — Termékkövetelmény Dokumentáció (PRD)"
-Cohesion: 0.15
-Nodes (13): apr, aug, dec, feb, jan, jul, jun, mar (+5 more)
-
-### Community 649 - "12. Biztonság & Compliance"
-Cohesion: 0.15
-Nodes (13): revenue_expenses_chart, cash_flow, expense_suffix, expenses_paid, expenses_unpaid, gross, net, result (+5 more)
-
-### Community 650 - "2. A Három Alapszabály Master-Detail és Tab Felületeken"
-Cohesion: 0.15
-Nodes (13): approval_tab, badge_cash_receipt, badge_receipt_slip, desc, empty_desc, empty_title, loading, quality_good (+5 more)
-
-### Community 651 - "⭐ Beágyazott Popover & Kereshető Dropdown / Combobox Pattern (2026-10-05)"
-Cohesion: 0.15
-Nodes (13): system, date_format, language, language_hr, language_hu, number_format, save_button, subtitle (+5 more)
-
-### Community 652 - "📐 Big O Notation (Algoritmus Komplexitás a Visibillben)"
-Cohesion: 0.15
-Nodes (13): columns, account, amount, booking_date, currency, description, gl_class, items (+5 more)
-
-### Community 653 - "📦 AWS S3 — Simple Storage Service (Objektumtárolás)"
-Cohesion: 0.15
-Nodes (13): bulk_settle, button, confirm_button, confirming, date_mode_title, dialog_desc, dialog_title, opt_date_custom (+5 more)
-
-### Community 654 - "🐳 Docker & Konténerizáció"
-Cohesion: 0.15
-Nodes (13): table, all_settled_desc, all_settled_title, amount, due_date, invoice_numbers, manual_settle, manual_settle_tooltip (+5 more)
-
-### Community 655 - "☸️ Kubernetes (K8s) & Konténer Orkesztráció"
-Cohesion: 0.24
-Nodes (10): Toast, ToastAction, ToastActionElement, ToastClose, ToastDescription, ToastProps, ToastTitle, toastVariants (+2 more)
-
-### Community 656 - "🦕 Deno — TypeScript/JavaScript Runtime & Edge Security"
-Cohesion: 0.18
-Nodes (11): all_accountants, all_clients, all_companies, all_statuses, all_types, clear_filters, ev_individual, my_clients (+3 more)
-
-### Community 657 - "⚛️ Next.js — Fullstack React Framework"
-Cohesion: 0.20
-Nodes (9): kpis, matched, suggested, total_results, unmatched, search_placeholder, subtitle, title (+1 more)
-
-### Community 658 - "👁️ OCR & Vision Pipeline (Optikai Karakterfelismerés)"
-Cohesion: 0.13
-Nodes (15): header, all_read, critical_clients, critical_clients_title, date_picker_label, deadlines_today, deadlines_upcoming, help_tooltip (+7 more)
-
-### Community 659 - "NewClientPage"
-Cohesion: 0.17
-Nodes (11): 1. 📊 Frontend Lekérdező és Aggregációs RPC-k, 2. ✏️ Frontend Állapotmódosító és Üzleti RPC-k, 3. 📄 Kettős Könyvviteli Naplók (acc_*) RPC-k, 4. 📘 eaisyBooks és EV Modul RPC-k, 5. 🔐 Jogosultságkezelés és RLS Segédfüggvények, 6. ⚡ Queue, Worker és Job Management (PGMQ) RPC-k, 7. 🛠️ Platform és Management Üzemeltetési RPC-k, 8. 📧 Email Fiókok, Vault és Hitelesítő Adatok (+3 more)
-
-### Community 660 - "P-105: Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa Kibontás/Összecsukás UX"
-Cohesion: 0.27
-Nodes (9): FormProps, ImportCustomsDeclarationDialogProps, generateDeclarationJournalLines(), GeneratedJournalEntry, postImportDeclarationToGeneralLedger(), ImportCustomsDeclaration, ImportCustomsFormData, ImportDeclarationStatus (+1 more)
-
-### Community 661 - "Decision"
-Cohesion: 0.17
-Nodes (11): 10. Pénzügyi Korosítás Dátum-Invariánsa (Történeti Cutoff vs. Mai Nap), 1. Komponens Architektúra és Kompozíció, 2. Teljesítmény és Renderelés (Vercel Best Practices), 3. Stílus és UI Konvenciók, 4. TypeScript és Típusbiztonság, 5. Gyors Kódminőség és Hook Ellenőrzés (Oxlint), 6. Infinite Scroll és PostgREST Lapozási Architektúra (PGRST103 & Loop Védelem), 7. i18next Dinamikus Objektum és Tömb Lekérések (Tömb-Fallback Invariáns) (+3 more)
-
-### Community 662 - "2. A Döntés és Felületi Specifikáció"
-Cohesion: 0.17
-Nodes (11): 🎯 1. A BRD Alapelvei és Szerepe, 📁 2. A Dinamikus Rekordstruktúra és Mappaszerkezet, 📄 3. Egy Atomikus BRD Döntési Rekord Belső Anatómiája, 🗺️ 4. A Központi `INDEX.md` Felépítése, 🎨 5. A Dedikált Diagram Alkönyvtár Szabványa (`diagramms/`), 🔄 6. A `/goal` Teljességi és Megállási Feltétel (Completeness Gate), (Business Requirements Document Guidelines & Dynamic Record Architecture), 📌 Dinamikus Dekompozíció (Nincs Merev Kötetszám!) (+3 more)
-
-### Community 663 - "2. Felületi Megvalósítás (UX Architecture)"
-Cohesion: 0.17
-Nodes (11): A-042: Sztornó Számla Kézi Lezárás (Storno Settle) Architektúra, Biztonsági zárolás (unmark), Consequences, Context, Decision, `is_manual_payment` és row rendering, Kapcsolódó, Kétlépéses láncolat logika (+3 more)
-
-### Community 664 - "MI-Könyvelőprogram Minimálkövetelmény-Lista & Rendszerelemzés"
-Cohesion: 0.17
-Nodes (11): 1. Targeted bypass az `email_alias` INSERT-ekre, 2. Trigger hozzáadása hiányzó táblákra, 3. Trigger function bővítése, A-045: Audit Trigger Email-Alias Bypass a Service Role Guard Alatt, Alternatívák, Biztonsági elemzés, Consequences, Context (+3 more)
-
-### Community 665 - "3.15 Beállítások, navigáció, dokumentumok"
-Cohesion: 0.17
-Nodes (11): 1. Új Adatbázis Tábla: `public.company_email_accounts`, 2. Row Level Security (RLS) és Indexek, 3. Atomikus SECURITY DEFINER RPC Függvények, 4. Edge Functions & Worker Integráció, A-052: Multi-Profile IMAP/SMTP Levelező Fiókok és Vault Integráció, Consequences, Context, Decision (+3 more)
-
-### Community 666 - "🛠️ Részletes Módosítások"
-Cohesion: 0.17
-Nodes (11): 1. Adatbázis RPC Kiterjesztés (`p_posting_status`), 2. Főkönyvi Szegmentált Kapcsoló, Összehasonlítás és URL Szinkronizáció, 3. Naplók UX Tisztázás, Hibatűrő Tömeges Könyvelés és Cache Invalidation, 4. ÁFA Bevallás Könyvelési Audit Indikátor, A-086: Főkönyvi Könyvelési Státusz Szűrő (POSTED_ONLY) és Naplózási Irányelvek, Consequences, Context, Decision (+3 more)
-
-### Community 667 - "CategoryDonutChart.tsx"
-Cohesion: 0.17
-Nodes (11): 1. PostgreSQL Kereső RPC: `search_gl_entities`, 2. Számla-szintű Ablakozott Lapozás (`get_gl_categorized_items` `p_limit` és `p_offset`), 3. Keresési Elem Injektálása és Célzott Görgetés (`handleNavigateToEntity`), 4. Egységes Tooltip Rendszer: `CustomTooltip`, A-087: Főkönyvi Adatbázis-alapú Keresés, Számla-szintű Lapozás és Tooltip Architektúra, Consequences, Context, Decision (+3 more)
-
-### Community 668 - "AddGlAccountModal.test.tsx"
-Cohesion: 0.17
-Nodes (11): 1. D-1: Adatbázis Tisztítás és Karbantartás (`20260904140000_cleanup_duplicate_error_uploads.sql`), 2. D-2: Irányított Aszinkron Gráf (DAG) Ciklusvédelem a Workerben (`worker/worker.py`, `worker/db.py`), 3. D-3: Pontos Státusz-visszaadás a Worker Handlerben (`workerHandler.ts`), 4. D-4: Szerver-oldali Dedublikáció és Fallback Előzmény Nyomonkövetés, 5. D-5: Biztonságos Fizikai Tárhely Törlés (`filesHandler.ts`), 6. UI Továbbfejlesztések, A-088: Management Dashboard Adatkonzisztencia, Dedublikáció és Worker Fallback Ciklusvédelem, Consequences (+3 more)
-
-### Community 669 - "JournalsUnpostStorno.test.tsx"
-Cohesion: 0.17
-Nodes (11): 1. Context, 2. Decision, 3. Consequences, 4. Kapcsolódó Dokumentumok, A-089: Management Dashboard Hibajegy Létrehozás Felhasználó Nevében (Impersonated Ticket Creation), A. Biztonságos Backend Proxy: `management-stats` Edge Function (`action: create-ticket`), B. Adatbázis Integritás és Eseménylánc (Event Sourcing), C. Dinamikus Cégkezelés és Auto-Fill Szabály (+3 more)
-
-### Community 671 - "rich-text-content.tsx"
-Cohesion: 0.17
-Nodes (11): 1. Atomi PostgREST Upsert (`onConflict: 'company_id'`), 2. Parciális Frissítések Izolációja (Partial Payload Isolation), 3. Szigorú Típusbiztonság (`CompanySettingsInsert`), 4. UI Dupla Eseménykiváltás Megszüntetése és Pending Védelem, 5. Optimista UI Rollback Hiba Esetén, 6. Memóriabeli Referencia Stabilitás (`useMemo`), A-093: Atomi Cégbeállítások Upsert, Versenyhelyzet Megelőzés és Parciális Frissítések Izolációja, Consequences (+3 more)
-
-### Community 672 - "InvoiceBulkActionsBar.test.tsx"
-Cohesion: 0.17
-Nodes (11): 1. Főkönyvi Lekérdezések Javítása (Sztornó Kioltás és Teljes Auditnyom), 2. Közvetlen Visszanyitás RPC (`acc_unpost_journal_entry`), 3. Kétszintű Zárlati Retesz (Accounting Period & VAT Lock), 4. Sorszámmegőrzés Újrakönyveléskor (`acc_post_journal_entry`), 5. Sorszámfolytonossági Védelem (Sztv. 166. § – Opció A), 6. Import-kulcs Örökítés (`acc_storno_journal_entry`), A-111: Közvetlen Bizonylat-visszanyitás (Unpost), Főkönyvi Sztornó Kioltás és Sorszámfolytonossági Védelem, Consequences (+3 more)
-
-### Community 673 - "financeUtils.ts"
-Cohesion: 0.17
-Nodes (11): 1. Négy Hajnali Idősáv (pg_cron ütemezés), 2. Determinisztikus és Egyenletes Kvótaelosztás (UUID Hex Modulo 4), 3. Edge Function Vezérlés és Bypass Szabályok (`nav-auto-sync`), 4. Hibaszigetelés és Naplózás, 5. Időkeret, Frekvencia és Worker-átadás (2026-10-04, [A-193](./A-193-nav-hybrid-async-sync-and-atomic-item-idempotency.md)), A-130: NAV Automatikus Szinkronizáció Hajnali Idő-ablakos Terheléselosztása (Load Staggering), Consequences (Következmények), Context (Kontextus) (+3 more)
-
-### Community 674 - "navTaxpayer.test.ts"
-Cohesion: 0.17
-Nodes (11): 1. Adatbázis Séma & Migráció (`20260920180000_restructure_vat_codes_and_nav65_rows.sql`), 2. Formázás & Univerzális „mentes” Kezelés, 3. Áfa tv. 6/B. Melléklet Acélipari Analitika & Adatkezelés, 4. ÁNYK XML Pre-Export Guard Védelem, A-131: NAV 2665 ÁFA Bevallás Sormegfeleltetés, Gyűjtőkódok Tisztítása, 6/B Acélipari Nyilatkozat és Egész Kilogrammos Kerekítés, Consequences, Context, Decision (+3 more)
-
-### Community 675 - "navValidationInboundProbe.test.ts"
-Cohesion: 0.17
-Nodes (11): 1. NAV v3.0 XML Builder és Parser Bővítés (`_shared/nav`), 2. Edge Function és Platform Fallback Hitelesítés (`nav-query-taxpayer`), 3. Kliensoldali Szolgáltatás (`navTaxpayerService.ts`), 4. UI Űrlap Integrációk, 5. Automatikus Dúsítás NAV Szinkronizáció Közben (`nav-ingestion-service.ts`), A-132: NAV Online Számla v3.0 queryTaxpayer Integráció és Think AI Kft. Kulcs Fallback, Consequences (Következmények), Context (Kontextus) (+3 more)
-
-### Community 676 - "statusMappers.test.ts"
-Cohesion: 0.17
-Nodes (11): 1. Univerzális ÁFA Kulcs Normalizálás (`src/lib/utils.ts`), 2. Háromszintű Felületi Megjelenítés (1. + 2. + 3. Opció), 3. Reaktív Cache Invalidáció (11 Query Key), 4. Lefelé Irányuló Könyvelési és Bevallási Szinkronizáció, 5. Parciális B-Tree Indexek az Éles Adatbázisban, A-134: Nem Levonható ÁFA Életciklus, Reaktív ÁFA-Bontás (1. + 2. + 3. Opció) és Parciális B-Tree Indexek, Consequences (Következmények), Context (Kontextus) (+3 more)
-
-### Community 677 - "auto-categorize-invoices/index.ts"
-Cohesion: 0.17
-Nodes (11): 1. Context, 1. Kétirányú Számlakiegyenlítő RPC (`settle_invoices_via_petty_cash`), 2. Decision, 2. Időszaki Pénztárzárás és Egyenlegmodell (`CashClosingDialog`), 3. Consequences, 3. Negatív Kassza Integritási Védelem, 4. Kapcsolódó, 4. Pénztárzárási Összesítő Lábléc & PDF Záróív (2026-09-27) (+3 more)
-
-### Community 678 - "nav-tax-profile-sync/index.ts"
-Cohesion: 0.17
-Nodes (11): 1. Döntési Kontextus, 2.1 Új tábla: `public.development_reserves`, 2.2 `public.fixed_assets` bővítése, 2. Adatbázis Séma, 3. Értékcsökkenési Matematika és Algoritmus (`useDepreciation.ts`), 4. Frontend Architektúra, 5. Automatikus Főkönyvi Könyvelés (`developmentReserveAutoPoster.ts`), 6. Tao Éves Zárás Integráció (`TaoYearEndWizardPage.tsx`) (+3 more)
-
-### Community 679 - "Layer 1: Routing & Navigation"
-Cohesion: 0.17
-Nodes (11): 1. Context, 1. Kötegelt Banki Tranzakció Dátum Feloldás (`txDateMap`), 2. Decision, 2. Intelligens Banki Fül-Válogatás (`isBankOrCard`), 3. Consequences, 3. Kétkomponensű Dátumstruktúra az Excel Fejlécekben, 4. Kapcsolódó, A-168: Számla Export Banki Tranzakció Feloldás, Skontó-Dátum Architektúra és Intelligens Fül-Válogatás (+3 more)
-
-### Community 680 - "area-spec-map.md"
-Cohesion: 0.17
-Nodes (11): 1. Context, 1. Szerveroldali Atomi Aggregáció (`get_croatian_eu_vat_statements` RPC), 2. Decision, 2. Kliensoldali Hivatalos XML Generátor (`croatianPoreznaXml.ts`), 3. Consequences, 3. Interaktív Előnézeti Modál (`VatPoreznaExportDialog.tsx`), 4. Integráció a Fő ÁFA Nézetbe (`VatReturnViewTab.tsx`), 4. Kapcsolódó Dokumentáció (+3 more)
-
-### Community 681 - "🎯 RAG Optimalizációs Útmutató az eaisyBill / eaisyBooks Tudástárhoz"
-Cohesion: 0.17
-Nodes (11): 1. Kontextus & Problémafelvetés, 2. Architektúrális Döntések, 3. Következmények & Éles Eredmények, A-173: Számlalánc Tranzakció-örökítés, Díjbekérő-Végszámla Automatikus Párosítás és PostgreSQL Propagáció, D-1: Számlalánc-feloldási Szabályrendszer (Chain Resolution Engine), D-2: PostgreSQL Propagációs Motor (`propagate_transaction_to_invoice_chain`), D-3: Kétirányú Eseményvezérelt Triggerek, D-4: Teljesítmény és Indexelés (+3 more)
-
-### Community 682 - "A-036: Pénztárbizonylat (Cash Voucher) Processing"
-Cohesion: 0.17
-Nodes (11): 1. Context, 2.1 Kétirányú Dual-Source Adatgyűjtés és Deduplikáció, 2.2 Törvényi Sorbesorolási Mátrix a Számítási Motorban (`vatEngine.ts`), 2.3 Élő Európai Bizottsági VIES REST API Integráció, 2.4 4-Kártyás Összefüggés-vizsgálati Fejléc és Eltérés-Jelzés, 2. Decision, 3. Consequences, 4. Kapcsolódó (+3 more)
-
-### Community 683 - "A-071: Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity"
-Cohesion: 0.17
-Nodes (11): 1. Eseményvezérelt Realtime Progress Streaming Polling Helyett, 2. Teljeskörű Query Invalidáció Befejezéskor, 3. 15 Perces Időkorlátos Érvényesség Vizsgálat (Stale Job Guard), 4. Idempotens Tranzakció-Számla Párosítás, A-184: Real-time AI Categorization Progress Streaming, Invalidation & Idempotency Safeguards, Consequences, Context, Decision (+3 more)
-
-### Community 684 - "A-072: Robust Accounting Firm Assignment RLS & Direct Client Creation"
-Cohesion: 0.17
-Nodes (11): 1. Context, 2.1. Tiszta Architektúrájú Feloldó Motor (`resolveEmployeeLeaveInput`), 2.2. Jogszabályi Szabályok Leképezése (Mt. 116–122. § és Szkt. 84. §), 2.3. Frontend Integráció (`EmployeeDetailsPage.tsx`), 2.4. Nyomtatott Bérlap (Payslip) és PDF Szinkronizáció (`PayrollCyclePage.tsx`), 2. Decision, 3. Consequences, 4. Minőségbiztosítás & Tesztek (+3 more)
-
-### Community 685 - "A-075: Management Overview Null-Safety in SQL JSON Aggregations"
-Cohesion: 0.17
-Nodes (11): 1. Context, 2.1. Adatbázis Séma Bővítés (`is_active` mező a bankszámláknak), 2.2. Automatikus Kódgenerálás és Új Napló Modál (`CreateJournalModal.tsx`), 2.3. Bankszámla Kezelő Integráció (`BankAccountsTab.tsx`), 2.4. Globális Naplókezelő Modál (`ManageJournalsModal.tsx` & `JournalsPage.tsx`), 2. Decision, 3. Consequences, 4. Kapcsolódó Dokumentáció (+3 more)
-
-### Community 686 - "A-142: Kettős Könyvvitel Szerinti Kötelező Kontírszám Szabályok és Vevői Kontírválasztó (311–317 + ÁFA 467/466)"
-Cohesion: 0.17
-Nodes (11): 1. Adatbázis Séma, 2. Adatbázis Szintű Integrációs RPC-k, 3. Kliensoldali Réteg és Resziliencia, 4. NAV M2M OPG SOAP Proxy és Automatikus AP Kód Felderítés, A-204: Online Pénztárgép (OPG) Modul Architektúra és Házipénztár Integráció, Dátum, Döntések, Kapcsolódó (+3 more)
-
-### Community 687 - "A-195: NAV 26A60 v3.0 Közösségi Összesítő Nyilatkozat ÁNYK XML Export & 65-ös Bevallási Rekonciliáció"
-Cohesion: 0.17
-Nodes (11): 1. Kontextus és Problémafelvetés, 2. Architekturális Döntések, 3. Következmények és Előnyök, 4. Kapcsolódó Dokumentáció, A-226: Főkönyvi és Folyószámlai Lekérdezési Vihar (Concurrency Storm) Felszámolása, get_gl_analytic_reconciliation Sémajavítás és Folyószámla Pagináció, D-1: Feltételes Lusta Lapfül Renderelés (Lazy Tab Unmounting), D-2: `get_gl_analytic_reconciliation` SQL Javítás és Kliens Védelem, D-3: Folyószámla Egységes Lapozó Rendszer (`UnifiedPagination`) (+3 more)
-
-### Community 688 - "11. Support & Onboarding"
-Cohesion: 0.17
-Nodes (11): 1. Döntési Háttér és Kontextus, 2.1. Séma Módosítások, 2.2. Automatikus Rendszer-Zárolás, 2.3. Kétirányú Banki Szinkronizációs Triggerek, 2. Adatbázis Módosítások (`supabase/migrations/20261008130000_eb0257_journal_line_partner_and_bank_sync.sql`), 3.1. Bank Journal Resolver (`src/features/journals/services/bankJournalResolver.ts`), 3.2. Tételsori Partner Picker (`src/components/journals/JournalLinePartnerPicker.tsx`), 3.3. Kategorizálás és UI Túlcsordulás Megelőzés (`src/lib/journalUtils.ts`, `JournalsPage.tsx`) (+3 more)
-
-### Community 689 - "5. Számla Kezelés"
-Cohesion: 0.17
-Nodes (11): 1. Séma Bővítés a Dual-Table Modellben, 2. Atomi Tárolt Eljárások (RPC) és Védelmi Mechanizmusok, 3. ÁFA Számítási Motor Integráció (`calculate_hungarian_vat_return`), 4. Reaktivitás és Kliens Állapotkezelés, A-234: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Architektúrája, ⚡ Consequences, 🏛️ Context, 💡 Decision (+3 more)
-
-### Community 690 - "⚠️ Anti-CLS Design Szabályok (Kötelező)"
-Cohesion: 0.17
-Nodes (11): 1. Vámhatározatok Adatbázis Modellje (`import_customs_declarations`), 2. Rendszerszintű Áfakódok Bővítése, 3. ÁFA Számítási Motor Bővítése (`calculate_hungarian_vat_return`), 4. Biztonság és Jogosultság (RLS), A-235: Termékimport és Vámhatározatok ÁFA Integrációja, ⚡ Consequences, 🏛️ Context, 💡 Decision (+3 more)
-
-### Community 691 - "Toast Értesítések"
-Cohesion: 0.17
-Nodes (11): 1. Komponens Architektúra és Hivatalos Megjelenítés, 2. Kliensoldali Vektoros PDF Motor (`src/lib/tfejlhPdf.ts`), 3. Reaktív Számítás és Integráció, 4. Hivatalos NAV AbevJava v3.0 ÁNYK XML Generáló Motor (`src/lib/tfejlhXml.ts`), A-236: NAV 26TFEJLH Nyomtatvány Replika és PDF Generáló Motor, ⚡ Consequences, 🏛️ Context, 💡 Decision (+3 more)
-
-### Community 692 - "VisiBill Fejlesztői Környezet (DEV Environment)"
-Cohesion: 0.17
-Nodes (11): 1. Kétszintű Hibrid Védelmi Architektúra, 2. Vitest Golden Master Szerződésteszt (`src/test/vat/vatRegressionTaxology.test.ts`), 3. Élő Adatbázis Snapshot Guard CLI Script (`scripts/vat-snapshot-guard.mjs`, `npm run vat:guard`), 4. Kötelező Verifikációs Kapu (`.agents/rules/verification.md`), A-240: ÁFA Számítási Regresszióvédelmi Kapu: Golden Master Szerződésteszt és Élő Adatbázis Snapshot Guard Architektúra, ⚡ Consequences, 🏛️ Context, 💡 Decision (+3 more)
-
-### Community 693 - "2.1. [POST] /api/v1/auth/token"
-Cohesion: 0.17
-Nodes (11): 1. Adatbázis Séma és Táblák (`accounty_vat_snapshots`, `accounty_vat_revision_pool`), 2. Kriptográfiai Pecsétképzés és Számlaállomány Fagyasztás (`vatSnapshotService.ts`), 3. Polimorf és Védett Diff-Összehasonlító Motor (`compareCurrentInvoicesWithSnapshot`), 4. Art. 211. § Önellenőrzési Pótlék Kalkulátor (`penaltyCalculator.ts`), A-242: ÁFA Bevallás Változásvédelem, Kriptográfiai Pillanatkép és Art. 211. § Önellenőrzési Pótlék Számítási Architektúra, ⚡ Consequences, 🏛️ Context, 💡 Decision (+3 more)
-
-### Community 694 - "2.2. [POST] /api/v1/tickets"
-Cohesion: 0.17
-Nodes (11): 1.1 Kiemelt Felületi Értékajánlat, 1. Termék- és Funkciócélkitűzés, 2. Szabálymotor Visszajelzési Hierarchia, 3. A 4 Súlyossági Szint Felületi Specifikációja, 4.1 Napi és Heti Pihenőidők (Mt. 104–106. §), 4.2 Napi és Heti Munkaidő-korlátok (Mt. 99. §), 4.3 Munkaidőkeret Egyenleg és Göngyölítés (Mt. 93–95. §), 4. Ellenőrzött Munkaügyi Szabályok Katalógusa (+3 more)
-
-### Community 695 - "2.7. [PATCH] /api/v1/tasks/:id"
-Cohesion: 0.17
-Nodes (11): 1. Bizonylat-láncolatok és Kapcsolatok (Invoice-to-Invoice Relations), 2. Banki Tranzakció ↔ Számla Párosítás (Bank Matching), 3. Fuvar ↔ Számla Párosítás (Shipment Matching), 4. Manuális kifizetések (Máshogyan kiegyenlített tételek), 5. NAV Online Számla ↔ Feltöltött Számla Szinkronizáció (Twin Sync), A. Automatikus Párosítás (Backend/Worker), A. Díjbekérő (Proforma) ↔ Előlegszámla ↔ Végszámla Láncolat, B. Eredeti Számla ↔ Sztornó/Helyesbítő Számla Párok (+3 more)
-
-### Community 696 - "Session Summary — 2026-10-01 10:50"
-Cohesion: 0.17
-Nodes (11): 04 — Komponens Könyvtár, Badge Variánsok, Button Variánsok, FloatingBulkBar, FloatingBulkSelect (és `FloatingBulkBar.Select`), MetricCard (Dashboard KPI), Rich Text Komponensek, RichTextContent (+3 more)
-
-### Community 697 - "mockData.ts"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Időszakválasztó (Dátumtartomány szűrő), 3.2 Fő Teljesítménymutatók (KPI Kártyasor), 3.3 Bevételek és Költségek Trendje (Interaktív Forgalmi Grafikon), 3.4 ÁFA Pozíció és Adóteher Előrejelző Panel, 3.5 Deviza Árfolyamkülönbözet Analitika, 3.6 Gyors Teendők és Riasztások Doboz (+3 more)
-
-### Community 698 - "ticketCategories.test.ts"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Költségmegoszlási Kördiagram, 3.2 Új Kategória Hozzáadása, 3.3 Kategória Lenyitható Adatlap és Számlalista, 3.4 Kategória Szerkesztése és Módosítása, 3.5 Kategória Törlése, 3.6 Számlák Kézi Átsorolása Más Kategóriába (+3 more)
-
-### Community 699 - "accounty-ai-chat/index.ts"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Számlatípus Lapfülek, 3.2 Részletes Kereső és Szűrősáv, 3.3 Számlakép Megtekintése és Letöltése, 3.4 Tételek és Főkönyvi Kontírozás Munkalap, 3.5 Fizetettség Kézi Rögzítése, 3.6 Lebegő Kötegelt Műveleti Sáv (+3 more)
-
-### Community 700 - "fetch-legal-updates/index.ts"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Bankkivonat Feltöltése és Kezelése, 3.2 Számlapárosítás és Jóváhagyás, 3.3 Tranzakció Felbontása és Részfizetés, 3.4 Nem Számlaköteles Tétel Könyvelése, 3.5 Futár Riportok, Kompenzációs Értesítők és SZÉP Kártya Munkaterület, 3.6 Párosítási Szabályok Kezelése (+3 more)
-
-### Community 701 - "nav-m2m-proxy/index.ts"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Számlák Kijelölése és Utalási Csomag Összeállítása, 3.2 Partnerenkénti Csoportosítás Kapcsoló, 3.3 Forrás Bankszámla és Értéknap Kiválasztása, 3.4 Partner Bankszámlaszám Azonnali Rögzítése és Javítása, 3.5 GIRO és SEPA Export Fájl Generálása, 3.6 Utalási Csomagok Története és Visszavonása (+3 more)
-
-### Community 702 - "Layer 8: Dead Code & Unused Imports"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Beszámoló Varázsló Lépésválasztó Sávja, 3.2 Alapadatok és Céginformációk Beállítása (1. Lépés), 3.3 Automatikus Mérleg és Eredmény Adatimport, Validáció (2–3. Lépés), 3.4 Kiegészítő Melléklet Intelligens Szerkesztője (4. Lépés), 3.5 Osztalékfizetési Korlát Kalkulátor és Határozat Készítő (5. Lépés), 3.6 Hivatalos Beszámoló Csomag Exportálása és Üzleti Év Zárolása (6. Lépés) (+3 more)
-
-### Community 703 - "Graphify Integráció"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Időszakválasztó és ÁFA Pozíció Kártyák, 3.2 Hivatalos 65-ös NAV Űrlaptábla és Sorok Kibontása, 3.3 Törvényi Levonási Korlátozások Beállítása, 3.4 NAV M-lapos Belföldi Összesítő Jelentés Ellenőrzése, 3.5 Hivatalos NAV ÁNYK és ONYA XML Export, 3.6 Számlaszintű ÁFA Analitika Letöltése (PDF / Excel) (+3 more)
-
-### Community 704 - "Decision"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Naplótípus Választó Lapfülek és Státusz Szűrők, 3.2 Új Kézi Vegyes Könyvelési Tétel Rögzítése, 3.3 Nyitó Napló Varázsló, 3.4 Tételek Ellenőrzése és Kötegelt Jóváhagyása, 3.5 Hibás Könyvelési Tétel Sztornózása, 3.6 Időszaki Zárolás (Könyvelési Lakat) (+3 more)
-
-### Community 705 - "10. Értesítések & Kommunikáció"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Bérösszesítő Mutatók (KPI Kártyasor), 3.2 Új Havi Bér Rögzítése és Automatikus Bérkalkuláció, 3.3 Munkavállalói Kártyák és Digitális Bérlap (PDF) Kezelése, 3.4 Adókedvezmények Érvényesítése, 3.5 NAV Havi Járulékösszesítő Táblázat, 3.6 Bérkifizetési Banki Utalási Lista (+3 more)
-
-### Community 706 - "13. Integrációk"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Napi Időrögzítő Panel és Projekt Hozzárendelés, 3.2 Havi Jelenléti Ív Mátrix és Színkódos Naptár, 3.3 Vezetői Jóváhagyási Munkaterület, 3.4 Szabadságigénylési Modul és Keretellenőrző, 3.5 Alkalmazotti Óradíjak és Munkakör Beállítások, 3.6 Hivatalos Mt. Jelenléti Ív Nyomtatása (PDF) (+3 more)
-
-### Community 707 - "3. Technikai Architektúra"
-Cohesion: 0.12
-Nodes (16): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Eszköz Felvétele és Aktiválása, 3.2 Eszközlista Táblázat és Kategória Szűrők, 3.3 Kettős ÉCS Kalkulátor (Számviteli és Adózási Amortizáció), 3.4 Fizikai Leltárellenőrzés és Jegyzőkönyv, 3.5.1 Rekonciliáció & Főkönyv fül, 3.5.2 Fejlesztési tartalék riasztások (+8 more)
-
-### Community 708 - "2.10. [GET] /api/v1/workspaces/:id"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Pozíciószám Kereső és Státusz Szűrősáv, 3.2 Logisztikai KPI Kártyák és Párosítási Kördiagram, 3.3 Fuvarok Táblázata és Számlakép Megtekintése, 3.4 Kézi Számlapárosítás és Szétkapcsolás, 3.5 CMR és Fuvarokmányok Feltöltése és Csatolása, 3.6 Fuvarlista Exportálása (Excel / CSV) (+3 more)
-
-### Community 709 - "2.12. [GET] /api/v1/milestones"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Kétpaneles Összehasonlító Nézet (Számla vs. Megbízás), 3.2 Differencia és Anomália Címkék, 3.3 Jóváhagyás és Kifizetés Engedélyezése, 3.4 Vitatás és Kifizetési Zárolás, 3.5 Szétkapcsolás (Téves Gépi Összerendelés Bontása), 3.6 Csatolt CMR Okmány és Számlakép Együttes Ellenőrzése (+3 more)
-
-### Community 710 - "2.14. [POST] /api/organizations/:orgId/webhooks"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Jegyzet Létrehozása, 3.2 Láthatósági Váltókapcsoló (Privát vs. Megosztott), 3.3 Kétpaneles Munkaterület és Kategória Lapfülek, 3.4 Intelligens Jegyzet- és Számlakereső Mező, 3.5 Számla és Banki Tranzakció Hozzákapcsolása, 3.6 Csatolt Számlakép és Tranzakció Megnyitása (+3 more)
-
-### Community 711 - "2.3. [GET] /api/v1/tickets"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Nettó / Bruttó Szemléletmód Váltókapcsoló, 3.2 Megjelenítendő Rétegkapcsolók (Árbevétel, Költség, Bér), 3.3 Havi Bontású Interaktív Trendgrafikon és Értékbuborék, 3.4 Havi Időszakos Összehasonlító Panel, 3.5 ÁFA Kulcsok Szerinti Analitikai Diagram, 3.6 Pénzügyi Analitika Exportálása (PDF / Excel) (+3 more)
-
-### Community 712 - "2.4. [GET] /api/v1/tasks"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Csatornaválasztó Lapfülek (5 Specializált Csatorna), 3.2 Drag & Drop Feltöltési Zóna és Fájlböngésző, 3.3 Feltöltés Előtti Ellenőrző Lista és Előnézet, 3.4 Feldolgozás Indítása és Állapotjelző Sáv, 3.5 Feltöltési Előzmények és Feldolgozási Státuszkövető, 3.6 Eredeti Bizonylat Visszatöltése (+3 more)
-
-### Community 713 - "2.5. [POST] /api/v1/tasks"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Cégadatok és AI Cégismertető Generálása, 3.2 Csatlakozási Kód Generálása (Gyors Tagcsatlakoztatás), 3.3 Új Tag Meghívása és Jogosultságok Beállítása, 3.4 Új Bankszámla Rögzítése és IBAN Validáció, 3.5 Rendszer Téma és GDPR Adatvagyon Exportálása, 3.6 Kétlépcsős Hitelesítés (2FA) és Jelszócsere (+3 more)
-
-### Community 714 - "2.6. [GET] /api/v1/tasks/:id"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Tudástár Gyorskereső Mező, 3.2 Kategória Szűrőgombok és Cikkszámlálók, 3.3 Cikk Kártyák és Nehézségi Szint Jelvények, 3.4 Cikkolvasó Nézet és Lépésről Lépésre Útmutató, 3.5 „Hasznos volt ez a cikk?” Minősítő Visszajelzés, 3.6 Közvetlen Ugrás a Funkcióra (Műveleti Gomb) (+3 more)
-
-### Community 715 - "2.8. [DELETE] /api/v1/tasks/:id"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Hibajegy Indítása, 3.2 Hibajegyek Listája és Állapotszűrők, 3.3 Üzenetváltási Idővonal és Válasz Küldése, 3.4 Képernyőkép és Fájlmelléklet Csatolása, 3.5 Hibajegy Lezárása és Újranyitása, 3.6 Operátori Belső Jegyzet és Felelős Kijelölése (+3 more)
-
-### Community 716 - "2.9. [GET] /api/v1/workspaces"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Öregedési Szűrőkártyák (0–15 nap, 16–30 nap, 30+ nap), 3.2 Globális Hiánylista Táblázat és Cégszűrő, 3.3 Automatikus Ügyféli Bizonylatbekérő Küldése, 3.4 Kézi Számlapárosítás Keresőablak, 3.5 Nem Számlaköteles Tétel Átminősítése, 3.6 Hiánylista Riport Exportálása (Excel / PDF) (+3 more)
-
-### Community 717 - "P-084: Hierarchikus Útvonalkövető (Breadcrumbs) Rendszer és Automatikus Route Resolver UX"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Naptár és Idővonal Nézetváltó Kapcsolók, 3.2 Adónem és Kötelezettség Szűrők, 3.3 Cég és Felelős Könyvelő Szűrősáv, 3.4 Határidő Adatlap és Érintett Ügyfelek Listája, 3.5 Benyújtási Státusz Beállítása és Követése, 3.6 Naptár Szinkronizáció és Havi Teendőlista (PDF / iCal) (+3 more)
-
-### Community 718 - "P-121: ÁFA Bevallás és Analitikák Bizonylatköri Adatkör Választó (Számlaképpel Rendelkező vs. Teljes OSA) UX"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Konszolidált Portfólió Műszerfal és Kockázati Mátrix, 3.2 AI Anomália Detektáló Lista és Szakmai Bizonyítékok, 3.3 Téves Riasztás Elfogadása és AI Tanítás, 3.4 Javítás Kezdeményezése és Feladatküldés, 3.5 Hiányzó Bizonylatok Vezetői Rangsor Táblázata, 3.6 Vezetői Riport Exportálása (Excel / PDF) (+3 more)
-
-### Community 719 - "dateUtils.ts"
-Cohesion: 0.17
-Nodes (11): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Várakozó Sor Táblázat és Típus Szűrők, 3.2 Részletes Felülvizsgálati Munkalap és Bizonylatelőnézet, 3.3 Jóváhagyás és Véglegesítés, 3.4 Visszaküldés Javításra (Szakmai Instrukcióval), 3.5 Elutasítás és Érvénytelenítés, 3.6 Kötegelt Jóváhagyási Műveleti Sáv (+3 more)
-
-### Community 720 - "send-monthly-summary/index.ts"
-Cohesion: 0.17
-Nodes (11): 1. Automatikus twin sync GL módosításkor, 2. Atomikus batch RPC hívás, 3. Felhasználói visszajelzés, 4. Cache invalidáció, 5. Graceful degradation, Döntések, Implementáció részletek, Kapcsolódó döntések (+3 more)
-
-### Community 721 - "2. Termék Scope & Célcsoport"
-Cohesion: 0.17
-Nodes (11): 1. Felhasználói Igény és Célkitűzés, 2.1 Kétlépcsős Folyamat és Tiszta Szétválasztás (Two-step Timeline), 2.2 Közvetlen Számla Interaktivitás (`InvoiceDetailPopup`), 2.3 Retrospektív Működés, 2.4 Szűrés és Keresés, 2.5 Multi-Attachment Aggregáció és Fallback Zajszűrés (Deduplication), 2.6 Időrendi Stabilitás és Determinisztikus Sorrend (Szintetikus Eltolás Nélkül), 2.7 Modularizált Felületi Komponensek és Ergonómia (+3 more)
-
-### Community 722 - "8. HR & Munkaidő (eaisyBill)"
-Cohesion: 0.17
-Nodes (11): 1. Háromállású Al-Tab Nézetváltó a Bevallás Lapfülön, 2. Egységes „mentes” Megjelenítés 0% Helyett, 3. Tételszintű VTSZ és Nettó Tömeg (kg) Kezelés, 4. Hivatalos CSV Export a 2665-07 és 2665-08 Nyilatkozatokhoz, 5. ÁNYK XML Pre-Export Guard Figyelmeztető Dialógus, Current Implementation, Decision, Kapcsolódó (+3 more)
-
-### Community 723 - "9. Előfizetés & Árazás"
-Cohesion: 0.17
-Nodes (11): 1. Számlatükör Deviza Beállítás és Intelligens Felismerés (`AddGlAccountModal`), 2. Bankszámla Rögzítési Safeguard (`BankAccountsTab`), 3. Nyitó Varázsló Devizás Rögzítés (`OpeningJournalWizardModal`), 4. Főkönyvi Számlakarton Devizás UX (`GlAccountCardView`), 5. Partneri Folyószámla Analitika Kiterjesztése (`PartnerLedgerCardView`), 6. Többdevizás PDF Exportok (`ledgerCardPdfs.ts`), Decision, Kapcsolódó (+3 more)
-
-### Community 724 - "3.9 Munkavállalók"
-Cohesion: 0.17
-Nodes (11): 1. Felhasználói Igény és Célkitűzés, 2.1 Navigáció és Elhelyezés, 2.2 Főképernyő Felépítése (`SubledgerPage.tsx`), 2.3 Lebegő Kijelölési és Mérlegsáv (Sticky Balancing Bar), 2.4 Különbözet-leírási Varázslók, 2.5 Kapcsolódó Párosítások Megtekintése és Felbontása (`SubledgerItemMatchesModal.tsx`), 2.6 Kimutatások és Exportok (`SubledgerExportDialog.tsx`), 2. Megvalósított Felületi Élmény (UX) (+3 more)
-
-### Community 725 - "MissingInvoicesTimeline.tsx"
-Cohesion: 0.17
-Nodes (11): Auth Service Interface (tervezet), Döntési pontok, Edge Function Client Interface (tervezet), Fázis 0: Előkészítés (MOST — 0 kockázat) ⏱️ ~3-4 óra, Fázis 1: Auth absztrakció (~2-4 nap), Fázis 2: Edge Function előkészítés (~1 hét), Fázis 3: Tényleges migráció (CSAK amikor szükséges), Fázisonkénti terv (+3 more)
-
-### Community 726 - "rules/graphify.md"
-Cohesion: 0.17
-Nodes (11): 1. PGMQ (Postgres Message Queue) Migrációs Forgatókönyvek, 2. `pg_cron` (Időzített feladatok) Kiváltása, 3. Adatbázis Migrációs Stratégia (Downtime vs. Live Sync), 4. Helyi Tesztkörnyezet (Docker-Compose Local Replica), A) Opció: Self-Hosted `pgmq` kiterjesztés (Ajánlott), Adatszinkronizáció (Downtime minimalizálása), B) Opció: Redis + BullMQ (Node.js) és Celery (Python) Fallback, C) Opció: Tiszta SQL (Table-based) Queue Fallback (+3 more)
-
-### Community 727 - "task-brief-template.md"
-Cohesion: 0.31
-Nodes (8): AvailableGrantAccounts, calculateGrantDeferralReleaseAmount(), fetchAvailableGrantAccounts(), GrantDeferralAccounts, PostGrantDeferralInput, postGrantDeferralReleaseToLedger(), PostGrantDeferralResult, resolveGrantDeferralAccounts()
-
-### Community 728 - "workflows/graphify.md"
-Cohesion: 0.13
-Nodes (14): `chart_of_accounts_presets`, 📊 Főkönyv (General Ledger), ⚙️ Főkönyvi Lekérdező RPC Függvények & Nyitó Átgördítés (A-258), `get_gl_balances` / `get_gl_balances_json`, `get_gl_categorized_items`, `gl_accounts`, `gl_audit_accounts`, `gl_audit_imports` (+6 more)
-
-### Community 729 - "morfi-implementation-review.md"
-Cohesion: 0.17
-Nodes (12): CategoryCard, CompanySelector, EmailAliasManager, EmailPreferences, InvoiceImagePreview, Kiegészítő Standalone Komponensek, LiveNotificationProvider, NylasEmailConnect (+4 more)
-
-### Community 730 - "ticket-support.md"
-Cohesion: 0.17
-Nodes (10): container, featureItem, features, footer, h1, h2, hr, main (+2 more)
-
-### Community 731 - "visibill-ticket-support.md"
-Cohesion: 0.06
-Nodes (34): ACCOUNTY_ADMIN_ONLY, ACCOUNTY_ALWAYS_ACCESSIBLE, ACCOUNTY_SENIOR_MODULES, AccountyModule, AccountyRole, ACCOUNTING_TECH_MODULES, ADMIN_ONLY_MODULES, ALL_MODULES (+26 more)
-
-### Community 732 - "MI_konyveloprogram_minimum_csekklista_8d5839f7.md"
-Cohesion: 0.17
-Nodes (12): export_cols, contra_gl, credit, debit, description, doc_id, document_date, gl_account (+4 more)
-
-### Community 733 - "summary-004218-changelog-patchnotes.md"
-Cohesion: 0.17
-Nodes (12): bulk_desc, cancel, choose_from_list, new_category, no_results, save, search_placeholder, single_desc (+4 more)
-
-### Community 734 - "summary-011100-semver-versioning-patchnote-skill.md"
-Cohesion: 0.17
-Nodes (12): gl_classes, 0, 1, 2, 3, 4, 5, 6 (+4 more)
-
-### Community 735 - "summary-020700-gl-perf-journals-layout-button-nesting.md"
-Cohesion: 0.17
-Nodes (12): command_palette, groups, hints, no_results, placeholder, actions, clients, help (+4 more)
-
-### Community 736 - "summary-151000-accounty-access-guard-and-croatian-vat.md"
-Cohesion: 0.17
-Nodes (12): recent_invoices, description, empty, project, status, title, view_all, approved (+4 more)
-
-### Community 737 - "summary-161800-cte-refactor-partners-scroll-and-signout-clean.md"
-Cohesion: 0.17
-Nodes (12): cancel, deadline_hint, deadline_label, end_label, hours_hint, hours_label, save, saving (+4 more)
-
-### Community 738 - "summary-013651-imap-attachment-filtering-storage-sanitization-idempotency.md"
-Cohesion: 0.17
-Nodes (12): col_approved, col_date, col_employee, col_end, col_hours, col_notes, col_project, col_start (+4 more)
-
-### Community 739 - "summary-015000-invoices-multiselect-and-range-selection.md"
-Cohesion: 0.17
-Nodes (12): columns, category, currency, due_date, fulfillment_date, gross_amount, invoice_number, issue_date (+4 more)
-
-### Community 740 - "summary-020300-gl-duplicate-key-fix-and-setloadedrawaccountitems.md"
-Cohesion: 0.17
-Nodes (12): expanded, add_transaction, add_transaction_short, exclude_from_accounting, gl_final, gl_numbers_title, gl_temporary, manual_payment (+4 more)
-
-### Community 741 - "summary-031200-dashboard-redesign-fintech-split-categories-and-reorder.md"
-Cohesion: 0.17
-Nodes (12): status, elutasitva, feldolgozas_alatt, feldolgozott, feldolgozva, hiba, jovahagyasra_var, jovahagyva (+4 more)
-
-### Community 742 - "summary-042600-kpi-borders-nav-matching-quick-actions-and-badges.md"
-Cohesion: 0.17
-Nodes (12): list, invoice_multi, invoice_single, loading, no_invoice_number, no_results, no_tx_description, private_badge (+4 more)
-
-### Community 743 - "summary-051500-error-hunter-partner-upsert-race-condition-company-router-23505-fix.md"
-Cohesion: 0.17
-Nodes (12): calculator, calculated, clear_all, close, coins, discrepancy, no_coins, notes (+4 more)
-
-### Community 744 - "summary-151000-sha256-content-dedup-vision-ocr-mini-and-image001-filtering.md"
-Cohesion: 0.17
-Nodes (12): action_booked_shortage, action_booked_surplus, action_cashier_repays, actual_closing, close, discrepancy, discrepancy_match, discrepancy_reason (+4 more)
-
-### Community 745 - "summary-111200-aggreg8-prod-cutover-live-sync-and-partner-data-spec.md"
-Cohesion: 0.17
-Nodes (12): cancel, closing_balance, confirm, desc, error_header, number, period, ready_desc (+4 more)
-
-### Community 746 - "summary-034900-invoice-url-tab-sync-nav-foreign-badge-gotrue-token-fix.md"
-Cohesion: 0.17
-Nodes (12): table, col_actions, col_closing, col_expense, col_income, col_number, col_opening, col_period (+4 more)
-
-### Community 747 - "summary-045700-worker-attachment-splitting-and-partner-preservation-guard.md"
-Cohesion: 0.17
-Nodes (12): security, active_sessions, change_email, change_password, data_management, data_management_desc, delete_account, export_data (+4 more)
-
-### Community 748 - "summary-055200-unified-financial-cockpit-realized-profit-and-szamlakep-tabs.md"
-Cohesion: 0.17
-Nodes (12): toasts, all_success_desc, all_success_title, batch_all_success_desc_file_only, batch_all_success_desc_with_tx, batch_all_success_title, batch_partial_desc, batch_partial_title (+4 more)
-
-### Community 749 - "summary-074000-partners-layout-nav-query-and-hungarian-tax-standardization.md"
-Cohesion: 0.17
-Nodes (12): general_tab, accounting_rules, export, rematch, rematch_tooltip, rematching, results_count, sync (+4 more)
-
-### Community 750 - "summary-135500-eb0208-eb0211-ocr-fix-and-aggreg8-cross-import-dedup.md"
-Cohesion: 0.17
-Nodes (12): export_cols, contra_gl, credit, debit, description, doc_id, document_date, gl_account (+4 more)
-
-### Community 751 - "summary-174500-eb0219-receipt-upload-fixed-assets-coa-resolve-and-reserve-journal-rpc.md"
-Cohesion: 0.17
-Nodes (12): bulk_desc, cancel, choose_from_list, new_category, no_results, save, search_placeholder, single_desc (+4 more)
-
-### Community 752 - "summary-190500-payroll-young25-statutory-tax-engine-and-eb0222-resolution.md"
-Cohesion: 0.17
-Nodes (12): gl_classes, 0, 1, 2, 3, 4, 5, 6 (+4 more)
-
-### Community 753 - "summary-210500-anyk-vat-export-representative-persistence-and-position-fix.md"
-Cohesion: 0.17
-Nodes (12): command_palette, groups, hints, no_results, placeholder, actions, clients, help (+4 more)
-
-### Community 754 - "summary-162800-gl-realtime-progress-and-error-fixes.md"
-Cohesion: 0.17
-Nodes (12): recent_invoices, description, empty, project, status, title, view_all, approved (+4 more)
-
-### Community 755 - "summary-224800-eb-0232-payroll-payslip-abc-sorting-and-employee-filter.md"
-Cohesion: 0.17
-Nodes (12): cancel, deadline_hint, deadline_label, end_label, hours_hint, hours_label, save, saving (+4 more)
-
-### Community 756 - "summary-232500-eb-0231-nav-08-efo-and-kiva-reconstruction-support.md"
-Cohesion: 0.17
-Nodes (12): col_approved, col_date, col_employee, col_end, col_hours, col_notes, col_project, col_start (+4 more)
-
-### Community 757 - "summary-235300-eb-0230-payslip-redesign-feor-dictionary-and-cost-center.md"
-Cohesion: 0.17
-Nodes (12): columns, category, currency, due_date, fulfillment_date, gross_amount, invoice_number, issue_date (+4 more)
-
-### Community 758 - "summary-001211-eb-0223-payroll-extra-leave-entitlements-and-tests.md"
-Cohesion: 0.17
-Nodes (12): expanded, add_transaction, add_transaction_short, exclude_from_accounting, gl_final, gl_numbers_title, gl_temporary, manual_payment (+4 more)
-
-### Community 759 - "summary-013218-eb-0226-aggreg8-multi-company-consent-and-account-sync.md"
-Cohesion: 0.17
-Nodes (12): status, elutasitva, feldolgozas_alatt, feldolgozott, feldolgozva, hiba, jovahagyasra_var, jovahagyva (+4 more)
-
-### Community 760 - "summary-035600-invoice-item-accrual-and-ve-posting.md"
-Cohesion: 0.17
-Nodes (12): list, invoice_multi, invoice_single, loading, no_invoice_number, no_results, no_tx_description, private_badge (+4 more)
-
-### Community 761 - "summary-043500-dynamic-journals-management-and-bank-linking.md"
-Cohesion: 0.17
-Nodes (12): calculator, calculated, clear_all, close, coins, discrepancy, no_coins, notes (+4 more)
-
-### Community 762 - "summary-234500-eb-0223-child-leave-disabled-supplement-and-morfi-review.md"
-Cohesion: 0.17
-Nodes (12): action_booked_shortage, action_booked_surplus, action_cashier_repays, actual_closing, close, discrepancy, discrepancy_match, discrepancy_reason (+4 more)
-
-### Community 763 - "summary-001800-eb-0230-eb-0231-payroll-payslip-formatting-and-efo-audit.md"
-Cohesion: 0.17
-Nodes (12): cancel, closing_balance, confirm, desc, error_header, number, period, ready_desc (+4 more)
-
-### Community 764 - "summary-194400-anyk-vat-return-validation-and-formula-standardization.md"
-Cohesion: 0.17
-Nodes (12): table, col_actions, col_closing, col_expense, col_income, col_number, col_opening, col_period (+4 more)
-
-### Community 765 - "summary-193000-nav-hybrid-async-sync-and-atomic-item-idempotency.md"
-Cohesion: 0.17
-Nodes (12): security, active_sessions, change_email, change_password, data_management, data_management_desc, delete_account, export_data (+4 more)
-
-### Community 766 - "summary-233900-oxlint-integration-and-cockpit-missing-vouchers-range-fix.md"
-Cohesion: 0.17
-Nodes (12): toasts, all_success_desc, all_success_title, batch_all_success_desc_file_only, batch_all_success_desc_with_tx, batch_all_success_title, batch_partial_desc, batch_partial_title (+4 more)
-
-### Community 767 - "summary-023600-nav-autocategorize-worker-rpc-hardening-e2e.md"
-Cohesion: 0.17
-Nodes (12): general_tab, accounting_rules, export, rematch, rematch_tooltip, rematching, results_count, sync (+4 more)
-
-### Community 768 - "summary-174500-nav-a60-community-summary-anyk-xml-export-and-reconciliation.md"
-Cohesion: 0.27
-Nodes (10): AccrualSplitOptions, AccrualSplitResult, calculateAccrualSplit(), DateRangeExtraction, diffDaysInclusive(), estimateMonthsInclusive(), extractDateRangeFromText(), formatUtcIso() (+2 more)
-
-### Community 769 - "summary-224600-supabase-query-performance-indexes-and-vat-return-268x-speedup.md"
-Cohesion: 0.17
-Nodes (11): 1. Belső Tab-rendszer a `PayrollDashboardPage`-en, 2. URL Szinkronizáció és Deep-Linking (`?tab=...`), 3. Főcímek Tisztítása ("471" prefix eltávolítása), 4. ClientNav Egyedi Kijelölés (Zero Dual-Active), 5. Rugalmas Konténermagasság és Görgetésvédelem, Current Implementation, Decision, Kapcsolódó (+3 more)
-
-### Community 770 - "summary-072500-eb-0245-payroll-worksheet-bonus-race-condition-vocational-leave-and-overlap-guard.md"
-Cohesion: 0.24
-Nodes (9): buildSoapAuth(), DiscoveredRegister, downloadNavCashRegisterFiles(), formatCompactTimestamp(), NavCreds, ParsedOpgTransaction, queryNavCashRegisterStatus(), sha3512Hex() (+1 more)
-
-### Community 771 - "summary-085500-manual-invoice-create-dialog-search-input-and-zero-jitter.md"
-Cohesion: 0.24
-Nodes (7): CASH_TYPES, computePaymentStatus(), getPaymentStatusBadge(), MatchStatus, PaymentStatus, TransactionLike, computePaymentStatus()
-
-### Community 772 - "summary-170000-manual-invoice-create-audit-fixes-and-i18n-duplication-test.md"
-Cohesion: 0.12
-Nodes (21): isSteelCandidate(), isSteelItemComplete(), SteelItemRecord, ItemVatInput, ItemVatValidationResult, validateAndResolveItemVat(), formatVatRate(), is27PercentVatRate() (+13 more)
-
-### Community 773 - "summary-023600-nav-upsert-21000-and-gl-balances-timeout-57014.md"
-Cohesion: 0.26
-Nodes (7): createSignature(), extractAddressLocal(), extractTag(), extractTaxNumber(), formatCompactTimestamp(), parseInvoiceDigestXml(), parseNavError()
-
-### Community 774 - "summary-145000-manual-invoice-searchinput-paid-flag-and-company-lock.md"
-Cohesion: 0.31
-Nodes (7): TicketSlaBadgeProps, TicketSlaWarningBanner(), TicketSlaWarningBannerProps, computeTicketSla(), TicketSlaInfo, TicketSlaInputComment, TicketSlaInputTicket
-
-### Community 775 - "summary-161600-eb0250-worker-pdf-splitter-nav-fuzzy-matching-and-db-repair.md"
-Cohesion: 0.17
-Nodes (11): Menubar, MenubarCheckboxItem, MenubarContent, MenubarItem, MenubarLabel, MenubarRadioItem, MenubarSeparator, MenubarShortcut() (+3 more)
-
-### Community 776 - "summary-035100-invoice-notes-attachments-tig-and-layout-shift-protection.md"
-Cohesion: 0.18
-Nodes (11): image, buyer, electronic_voucher, fulfillment_issue, invoice_number, loading, nav_source_desc, net_total (+3 more)
-
-### Community 777 - "summary-042830-rlb-parser-and-batch-import.md"
-Cohesion: 0.18
-Nodes (10): 🏛️ 1. Mi a React? (Deklaratív vs. Imperatív UI), 🌳 2. A DOM és a Virtual DOM (VDOM) Működése, 📦 3. Props vs. State (Adatáramlás), 💡 Használat a Visibillben, Miért fontos a `key` prop a listáknál?, 📖 Mozaikszavak Kibontása & Definíciók, Példa Visibill Komponensre (Props + State):, ⚛️ React Alapfogalmak, Virtual DOM & JSX (+2 more)
-
-### Community 778 - "summary-175000-gl-module-audit-burst-throttling-and-partner-aging.md"
+### Community 592 - "P-113: Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX"
 Cohesion: 0.25
-Nodes (11): description, description, parameters, responses, summary, /v1/invoices/{id}, /v1/transactions/{id}, 409 (+3 more)
-
-### Community 779 - "summary-070700-rbac-capability-matrix-legacy-rpc-guards-and-period-closing.md"
-Cohesion: 0.18
-Nodes (10): email, name, info, contact, description, title, version, openapi (+2 more)
-
-### Community 780 - "summary-162000-rbac-write-rls-employee-shell-doc-sync-and-executive-diagrams.md"
-Cohesion: 0.18
-Nodes (10): 04. Távollétek, Betegszabadság és Jelenlét-igazolás, 1.1 A Meglévő Rendszer Hibájának Kiküszöbölése (Kiemelt Értékajánlat), 1. Távollét-kezelés és Mt. szerinti Jogcímek, 2. A Hivatalos Mt. Távollét-típusok Katalógusa, 3.1 Üzleti Szabályok, 3. A 15 Napos Betegszabadság → Táppénz Automatikus Átfordulás Motorja, 4. Szabadságkeret és Egyenlegkezelés, 5.1 Funkcionális Követelmények (+2 more)
-
-### Community 781 - "summary-172500-cs-es-k-fakov-gl-balances-and-worker-fix.md"
-Cohesion: 0.12
-Nodes (21): CashClosingWizardDialog(), cashReportQueryKeys, useActiveCashReport(), useCashReports(), useCreateCashReceipt(), useEnsureOpenCashReport(), useFinalizeCashReport(), usePostCashReportToGl() (+13 more)
-
-### Community 782 - "summary-201500-fokonyv-4-oszlopos-export-es-szamla-osszevonas.md"
-Cohesion: 0.18
-Nodes (10): 10.1 — Language Consistency, 10.2 — Date & Number Formatting, Audit Output Template, Layer 10: Localization & Hardcoded Strings, Prerequisites — Load Related Skills First, Quick Reference, Severity Classification, The Audit Layers (+2 more)
-
-### Community 783 - "summary-212500-purchase-vouchers-statutory-vat-views-and-fad-rules.md"
-Cohesion: 0.18
-Nodes (10): 📝 Audit & Dokumentáció, Ellenőrzés, Frissítés, 🔍 Mindig aktív, Skillek Áttekintése, Telepítés, 📋 Tervezés & Implementáció, 🤖 Visibill AI Skills (+2 more)
-
-### Community 784 - "summary-232500-vat-scope-selector-and-gl-modal-widen.md"
-Cohesion: 0.18
-Nodes (10): 1. Helyi fájlok statikus ellenőrzése, 1. Lépés: Helyi migrációk feltérképezése, 2. Lépés: Távoli adatbázis lekérdezése (`supabase-visibill`), 3. Lépés: Kétirányú Diff Analízis (Disk vs DB), A) IN DB ONLY (Ghost Migration — Adatbázisban létezik, de lemezről hiányzik), B) ON DISK ONLY (Lemezről létezik, de a DB-ben nincs bejegyezve), ⚡ Gyors Futtatás (Quick Start), 🛡️ Minőségbiztosítási Kapuk Git Push Előtt (+2 more)
-
-### Community 785 - "summary-101500-gl-ui-ux-modularization-universal-invoice-preview-and-adr163-merge.md"
-Cohesion: 0.18
-Nodes (10): 1. LÉPÉS: Bemenet Elemzés & Kép-Kiértékelés, 2. LÉPÉS: Kötelező Háttér-Docs Keresés (CSENDBEN, A HÁTTÉRBEN), 3. LÉPÉS: Tisztázó Kérdések (Csak ha valóban elágazás van!), 4. LÉPÉS: A Letisztult PM Task Brief Generálása, 5. LÉPÉS: Automatikus Mentés `.md` Fájlba (`tasks/`), 6. LÉPÉS: Asana Task Létrehozás, Szekció, Felelős & Határidő Hozzárendelése, A brief KIZÁRÓLAG az alábbi 4 blokkból állhat:, 🎯 A Skill Küldetése & Alapelvei (+2 more)
-
-### Community 786 - "summary-140500-development-reserves-related-parties-and-doc-sync.md"
-Cohesion: 0.18
-Nodes (10): 1. Rangsor adatforrás szabály, 2. Globális dátumszűrés (`p_date_from`, `p_date_to`), 3. VAT normalizáció (mindkét oldalon), 4. Treemap layout, 5. Treemap szín paletta (light/dark mode aware, 2026-07-05), A-027: Partner Ranking & Treemap — NAV-only + külföldi partner + dátumszűrő logika, Consequences, Context (+2 more)
-
-### Community 787 - "summary-150000-hungarian-tb-social-security-payroll-module-and-morfi-review.md"
-Cohesion: 0.18
-Nodes (10): 1. Adatbázis Séma és RLS, 2. Biztonságos RPC Függvények (Security Definer), 3. Szerver Oldali Feloldás és Fallback Kézbesítés, A-038: IMAP/SMTP Hitelesítő Adatok és Vault Integráció, Consequences, Context, Decision, Kapcsolódó (+2 more)
-
-### Community 788 - "vat-snapshot-guard.mjs"
-Cohesion: 0.11
-Nodes (18): ref_url, anonKeyMatch, args, baselineFile, __dirname, env, fetchCalculationData(), __filename (+10 more)
-
-### Community 789 - "summary-154500-nav-2665-official-tax-form-digital-replica-and-live-db-binding.md"
-Cohesion: 0.18
-Nodes (10): 1. Dialógus Állapotkezelés (`InvoiceDataExportDialog.tsx`), 2. Kétrétegű NAV ↔ Feltöltött Számlakép Párosítás, 3. Dinamikus Rendszer-Font Betöltés (`_get_font`), 4. Hibatűrő Numerikus Parser (`_safe_float`), 5. eaisybill Brand Design Palette, A-047: Robust PDF Export Pipeline, Paired Image Resolution & eaisybill Brand Kontírozó Lap, Consequences, Context (+2 more)
-
-### Community 790 - "summary-193000-vat-analytics-2665-petty-cash-ergonomics-and-invoice-export-dates.md"
-Cohesion: 0.18
-Nodes (10): 1. Context, 2. Decision, 3. Consequences, A-076: Statutory Reporting & VAT Return Monolith Deepening, Pure Computation Engines & Feature Slices, A. Tiszta Számítási Motorok (Pure Computation Engines), B. Dedikált Domain Hookok & Állapotkezelés, C. Dekomponált Komponensek & Thin Facade Architektúra, D. Egységesített Popover Dátumválasztó (`DatePicker`) (+2 more)
-
-### Community 791 - "summary-004500-ticket-support-fakov-vat-dedup-and-vbv-petty-cash-gl-fixes.md"
-Cohesion: 0.18
-Nodes (10): 1. Dinamikus Chunk Betöltési Hiba Auto-Recovery (`ErrorBoundary`), 2. Főkönyvi Dátum Alap Adatbázis RPC Pushdown, 3. Frontend Állapot és Reaktív Cache Stratégia, A-085: Főkönyvi Dátum Alap RPC Pushdown és Dinamikus Chunk Reload Recovery, Consequences, Context, Decision, Kapcsolódó (+2 more)
-
-### Community 792 - "summary-130700-periodic-cash-reports-schema-wizard-rpcs-and-gl-posting.md"
-Cohesion: 0.18
-Nodes (10): 1. Védelmi Vonal: PostgREST Pre-Request Hook (`check_request()`), 2. Védelmi Vonal: Edge Function Client Guard (`_shared/client-guard.ts`), 3. Zéró-CORS-Súrlódás Webapp Integráció, A-101: Közvetlen Szkript-Automatizációk Letiltása és Kettős Védelmi Retesz (PostgREST Pre-Request Hook & Edge Function Client Guard), Consequences, Context, Decision, Kapcsolódó (+2 more)
-
-### Community 793 - "summary-202200-subledger-open-items-auto-settle-and-ticket-support.md"
-Cohesion: 0.18
-Nodes (10): 1. Kontextus és Problémafelvetés, 2.1. Dual-Mode Navigáció és Kliens Kontextus Scoping, 2.2. Négyszintű Szerepkör & Adatbázis-szintű Felülbírálat (Hybrid RBAC), 2.3. Visszafelé Kompatibilitás és Márkanév Kezelés, 2. A Döntés, 3. Következmények és Előnyök, A-102: eaisyBooks Kettős Működési Mód (Dual-Mode Router), Kliens Kontextus és Hibrid Szerepkör Architektúra, Architecture Decision Record (ADR) (+2 more)
-
-### Community 794 - "summary-011500-ticket-support-szzj-reverse-journals-and-gl-grouping.md"
-Cohesion: 0.18
-Nodes (10): 1. Kontextus és Problémafelvetés, 2. Döntések és Architektúra, 3. Verifikáció és Teszteredmények, A-106: Saját Jogú Nyugdíjas Járulékmentesség, Megbízási Munkaidő Rugalmasság és Vendéglátóipari Felszolgálási Díj Adózás, D-1: Nyugdíjas Járulékmentesség a Tiszta Adómotorban (`taxEngine.ts`), D-2: Vendéglátóipari Felszolgálási Díj Modellezése és Adózási Logikája, D-3: Rugalmas Megbízási Jogviszony Felvitel (`EmployeeWizardPage.tsx`), D-4: Közvetlen Ledolgozott Munkaóra Rögzítés (`PayrollStep3.tsx` & `usePayrollData.ts`) (+2 more)
-
-### Community 795 - "summary-121500-nav-2665-sheet08-replica-width-and-custom-gl-account-deletion.md"
-Cohesion: 0.18
-Nodes (10): 1. Kétirányú `settle_compensation_for_courier_report` Függvény, 2. Adatbázis Trigger (`trg_courier_reports_auto_settle_compensation`), 3. Frontend UI Fejlesztések (`MatchedCourierReportsCard.tsx`), A-112: Futárszolgálati Kompenzációs Értesítők Kétirányú Automatikus Számlarendezése és Futárriport UI Párosítás (GLS / Courier Compensation Auto-Settlement & UI), A) Bejövő szállítói számlák (`INBOUND`) automatikus rendezése, B) Kimenő vevői COD számlák (`OUTBOUND`) automatikus rendezése (0 Ft-os átutalás esetén), Consequences, Context (+2 more)
-
-### Community 796 - "summary-171500-fixed-assets-periodic-depreciation-posting-and-ticket-support.md"
-Cohesion: 0.18
-Nodes (10): 1. Kliensoldali Csoportos ÁFA Validációs Segédfüggvények (`validationUtils.ts`), 2. Figyelmeztető UI Védőháló a NAV Kapcsolat Beállítási Felületein, 3. Hivatalos Tudástár Útmutató Integráció (`nav-group-vat-sync`), A-120: Csoportos ÁFA-alanyok Észlelése, Technikai Felhasználó Útmutatás és Szinkronizációs Védőháló, A probléma jogszabályi és technikai oka:, Consequences, Context, Decision (+2 more)
-
-### Community 797 - "summary-174500-transaction-multi-invoice-matching-and-ticket-support.md"
-Cohesion: 0.18
-Nodes (10): 1. Adatbázis-szintű Cross-Year Guard a Tervezet-Generáló Triggerekben, 2. 46671 Főkönyvi Számla Helyes Kezelése és Átfutó ÁFA Elkülönítés, 3. Véglegesített Főkönyvi Tételek Integritása (`post_accounting_journal_draft`), A-121: Évek Közötti Áthúzódó Teljesítésű Számlák Főkönyvi és ÁFA Védőhálója (Cross-Year Delivery Guard), Consequences, Context, Decision, Negatív / Kötöttségek (+2 more)
-
-### Community 798 - "summary-180400-transaction-multi-invoice-matching-and-ticket-support.md"
-Cohesion: 0.18
-Nodes (10): 1. Adatbázis Trigger és Szigorú Többségi Szabály (Phase 1 / Mentéskori besorolás), 2. Kétfázisú Edge Function (`auto-categorize-invoices`), 3. Worker Integráció (`category_classifier.py`), A-129: Partner-történeti Többségi Szabályú Számlakategorizálás & DB Triggerek, Consequences (Következmények), Context (Kontextus), Decision (Döntés), Implementation Details (Implementációs részletek) (+2 more)
-
-### Community 799 - "summary-211000-vat-m-lines-aam-proforma-exclusion-and-calc-override-fix.md"
-Cohesion: 0.18
-Nodes (10): 1. Adatbázis Séma Bővítés, 2. XML Parser & Típusdefiníciók (`_shared/nav`), 3. Ingestion & Edge Functions, 4. Frontend Megjelenítés, A-133: NAV Online Számla v3.0 Hivatalos ÁFA Összesítő (<invoiceSummary>) és Áfakulcs-Megbontás Integráció, Consequences (Következmények), Context (Kontextus), Decision (Döntés) (+2 more)
-
-### Community 800 - "summary-110000-subledger-accordion-two-sided-posting-and-net-vat.md"
-Cohesion: 0.18
-Nodes (10): 1. Kontextus és Problémafelvetés, 2.1 Adatbázis Séma Bővítés: Multi-Country Cégek és Sablonok, 2.2 Hierarchikus Horvát Kontó Fa-struktúra Beszúrása (`gl_accounts`), 2.3 Központi Joghatóság Motor: `useCompanyJurisdiction`, 2.4 Sablonkezelés Scoping: `useActivePreset`, 2.5 Horvát Számlatükör Megnevezések Védelme (`glUtils.ts`), 2.6 Dinamikus Devizakezelés a Főkönyvben, 2. Architekturális Döntések (+2 more)
-
-### Community 801 - "summary-140700-payroll-3column-efo-separation-petty-cash-rpc-fix-and-ticket-support.md"
-Cohesion: 0.18
-Nodes (10): 1. Architektúrális Háttér & Indoklás, 2. Rendszerdöntések (Decisions D-1, D-2, D-3, D-4), 3. Érintett Rendszerkomponensek, 4. Verifikáció & Minőségbiztosítás, 5. Kapcsolódó Továbbfejlesztések, A-145: Tömeges PDF Szeletelés (Physical Chunk Slicing), NAV Determinisztikus Fallback és Többszörös Mellékletkezelés, Decision D-1: Fizikai PDF Szeletelés és Üres Lapok Kiszűrése (`worker/pdf_splitter.py`), Decision D-2: Szeletelt Chunkok Feltöltése és Egyedi Tárolása (`worker/worker.py`) (+2 more)
-
-### Community 802 - "summary-151500-company-alphabetical-sorting-and-partial-payment-ticket-support.md"
-Cohesion: 0.18
-Nodes (10): 1. Kontextus és Problémafelvetés, 2. Megoldási Opciók Mérlegelése, 3.1 Adatbázis és RLS Migráció, 3.2 Megoldás Visszaigazolás (Resolution Confirmation) RPC & Versenyhelyzet Védelem, 3.3 Olvasatlan Számláló és Értesítési Izoláció (Unread Privacy), 3.4 Felhasználói Felület és Cég Keresősáv (Frontend), 3. Megvalósítás Részletei, 4. Tenant Izoláció és Biztonsági Verifikáció (+2 more)
-
-### Community 803 - "summary-102500-eb-0228-petty-cash-settlement-payment-date-fix.md"
-Cohesion: 0.18
-Nodes (10): 1. Kontextus és Problémafelvetés, 2. Megoldási Opciók Mérlegelése, 3.1 Adatmodell (`public.changelog_entries`), 3.2 Hozzáférés-szabályozás (RLS), 3.3 Felhasználói Felület & Navigáció, 3.4 Teljes Magasságú Héj és Belső Flex Görgetés (Full-Height Shell & Scroll Containment), 3.5 Automatizált AI Skill (`visibill-patchnote`), 3. Megvalósítás Részletei (+2 more)
-
-### Community 804 - "summary-114800-subledger-foreign-currency-workday-calculator-and-ticket-support.md"
-Cohesion: 0.18
-Nodes (10): 1. Kontextus és Könyvelői Követelmények, 2. Megvalósított Architektúra és Komponensek, 3. Fordított Adózás (FAD - Áfa tv. 142. §) Önadózási Adóalap és ÁFA Levezetés, 4. M-lap Szigorú Kizárási Szabályok (AAM, Díjbekérő, Biztosítás), 5. Verifikáció és Minőségbiztosítás, A-159: Hivatalos ÁFA Analitika Upgrade, M-lap Master–Detail és NAV OSA Keresztellenőrzés, A. Új Komponensek (`src/features/vat/components/`), B. Konténer Integráció (`VatReturnContainer.tsx`) (+2 more)
-
-### Community 805 - "summary-174900-accounting-rules-and-nav-a60-replica.md"
-Cohesion: 0.18
-Nodes (10): 1. Döntési Kontextus és Felhasználói Igény, 2.1 Komponens Hierarchia és Felelősségek, 2.2 Determinisztikus Adatkötés (Data Binding), 2.3 Vezérlés és Ergonómia, 2. Architektúra Döntés, 3. Következmények és Előnyök, 4. Kapcsolódó Dokumentáció, A-167: NAV 2665 Hivatalos Nyomtatvány Digitális Replika Architektúra (+2 more)
-
-### Community 806 - "summary-133000-fixed-assets-bulk-import-nav-65m-02-k-storno-and-cash-closing-support.md"
-Cohesion: 0.18
-Nodes (10): 1. Kontextus & Problémafelvetés, 2.1 Célzott Részleges és Összetett Indexelés, 2.2 RLS `(SELECT auth.uid())` Skalár Allekérdezés és FK Indexelés, 2.3 `calculate_hungarian_vat_return` — Lateral Join OR Csapda Megszüntetése, 2.4 Pénzügyi Elemző RPC-k `STABLE` Jelölése és CTE Materializálás, 2.5 Biztonsági Keményítés, Search Path és RLS Többszörös Permisszív Szabályzatok Megszüntetése, 2. Megoldás & Architektúrális Döntések, 3. Mért Eredmények (Evidence Before Assertions) (+2 more)
-
-### Community 807 - "summary-145000-payroll-advanced-reports-declarations-nav-vat-rows-43-45.md"
-Cohesion: 0.18
-Nodes (10): 1. Context, 2.1. FEOR-08 Szótár és Munkakör Feloldó Motor (`feorCodes.ts`), 2.2. Bérjegyzék Generátor Redesign (`payslipGenerator.ts`), 2.3. Költséghely és Munkakör Kezelés a Felületen, 2. Decision, 3. Consequences, 4. Kapcsolódó Dokumentáció, A-185: Bérjegyzék Megjelenítés, FEOR-08 Munkakör Szótár és Költséghely Architektúra (+2 more)
-
-### Community 808 - "summary-201000-nav-upo-m2m-multi-company-and-vat-petty-cash-fixes.md"
-Cohesion: 0.18
-Nodes (10): 1. Context, 2.1. Független Matematikai és Időszak-detektáló Motor (`src/lib/accrualMath.ts`), 2.2. Automatikus Vegyes Napló Feladó Szolgáltatás (`accrualPostingService.ts`), 2.3. Kontextuális Felületi Varázsló (`InvoiceItemAccrualModal.tsx` & `InvoiceItemsDialog.tsx`), 2. Decision, 3. Consequences, 4. Kapcsolódó, A-187: Számlatétel-szintű Kontextuális Időbeli Elhatárolások és Vegyes Napló Feladás (+2 more)
-
-### Community 809 - "summary-160200-gl-subledger-opt-opg-fixes-and-support-tickets.md"
-Cohesion: 0.18
-Nodes (10): 1. Kontextus és Problémafelvetés, 2. Döntések és Architektúra, 3. Következmények és Eredmények, 4. Kapcsolódó, A-191: Folyószámla Kettős Devizakezelés, Árfolyam-számítás és Csoportosítási Architektúra, A feltárt probléma (Bug & Root Cause), D-1: Kettős Deviza Adatmodell és Típusbővítés (`src/types/subledger.ts`), D-2: Tiszta Domain Segédmodul (`src/lib/subledgerGrouping.ts`) (+2 more)
-
-### Community 810 - "summary-113200-eb-0255-coa-subledger-and-legal-clickwrap-gate.md"
-Cohesion: 0.18
-Nodes (10): 1. Kontextus és Problémafelvetés, 2. Döntések és Architektúra, 3. Következmények és Eredmények, 4. Kapcsolódó, A-192: Munka Törvénykönyve (Mt.) Szerinti Magyar Munkanap és Törvényes Bérszámfejtési Keret Motor, A korábbi hiányosság (Root Cause), D-1: Tiszta Naptári Kalkulátor Motor (`src/lib/payroll/workdayCalculator.ts`), D-2: Dinamikus Törvényes Osztó a Bérszámfejtési Pipeline-ban (`src/hooks/usePayrollData.ts`) (+2 more)
-
-### Community 811 - "summary-130500-eb-0258-default-date-gl-aggregated-and-fx-banks.md"
-Cohesion: 0.18
-Nodes (10): 1. Kontextus és Számviteli Követelmények, 2.1 Zéró Eltérés Elv (Zero Silent Discrepancy Policy), 2.2 Nyitott Tételek Rendezésének Szabályai, 2.3 Kerekítési Különbözetek Számviteli Kezelése ($\le 10$ Ft), 2.4 Realizált Árfolyamkülönbözet Kezelése, 2.5 Javaslatok és Végleges Könyvelés Kezelése, 2. Üzleti és Számviteli Döntések, 3. Üzleti Indoklás (Rationale) (+2 more)
-
-### Community 812 - "summary-193200-gls-compensation-transfers-bulk-settle-and-petty-cash-sync.md"
-Cohesion: 0.18
-Nodes (10): 1. Kétpólusú Kizárási Rendszer (`accounting_exclusion_type`), 2. Műszerfali "Kérdéses Számlák" Vezérlőpult (`DeferredInvoicesWidget.tsx`), 3. ÁFA Bevallás & Hónapzárási Kapu (`DeferredVatPromptBanner.tsx`, `DeferredVatPromptDialog.tsx`), 4. Adatbázis & RPC Motor, BDR-065: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák Üzleti Szabályzata, 🔒 Biztonság és Jogosultság, 💡 Döntés & Megoldási Architektúra, 🔗 Kapcsolódó (+2 more)
-
-### Community 813 - "summary-131500-nav-m2m-sanitize-tfejlh-replica-import-vat-and-deferred-vat-e2e.md"
-Cohesion: 0.18
-Nodes (10): 06. Hiányossági Katalógus és Cselekvési Terv — HR Lokalizáció, 🎯 1. Bevezetés és Célkitűzés, 🟢 1. Fázis: Értékesítési Demó és Kritikus UI Felületek (P0 Showstoppers), 🟡 2. Fázis: Főbb Felhasználói Űrlapok és Modális Dialógusok (P1), 📅 2. Háromfázisú Cselekvési Terv, 🔵 3. Fázis: Teljes Rendszerfedettség, Toastok és Súgók (P2/P3), 💻 3. Javasolt Szótárstruktúra Kiegészítés (`src/locales/hr/`), 🛡️ 4. Minőségbiztosítási és Verifikációs Kapu (+2 more)
-
-### Community 814 - "summary-224200-journal-filter-fixes-and-nav-gzip-decompression.md"
-Cohesion: 0.18
-Nodes (10): 🌿 1. Git Ág-stratégia (Branching Model), 💻 2. Lokális Fejlesztés a Saját Gépeden, ⚙️ 3. Supabase CLI és Adatbázis Migrációk, 🤖 4. Automatikus GitHub Actions CI/CD ([`.github/workflows/deploy-dev.yml`](file:///d:/ThinkAI/Visibill/eaisybill-prod/.github/workflows/deploy-dev.yml)), 🛡️ 5. Fejlesztői Minőségbiztosítási Lépések (Pre-Commit), 🎫 6. Hibajegyek (Tickets) és Error Hunter Munkafolyamat (Develop-First Bugfixing), Fejlesztési Munkafolyamat és CI/CD (Development Workflow), Hogyan történik egy új adatbázis migráció? (+2 more)
-
-### Community 815 - "summary-115500-procont-gl-export-26tfejlh-anyk-xml-and-vat-regression-guard.md"
-Cohesion: 0.18
-Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Projekt Létrehozása, 3.2 Projekt Kártya és Fedezeti Műszerfal, 3.3 Szállítói és Vevői Számlák Projekthez Rendelése, 3.4 Munkaidő és Bérköltség Allokáció, 3.5 Projekt Státusz Módosítása és Zárás, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
-
-### Community 816 - "summary-200800-auditor-gl-export-mkvk-xml-isa560-settlements-and-closing-checklist.md"
-Cohesion: 0.18
-Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Partner Rögzítése, 3.2 Kétpaneles Partner Kereső és Lista, 3.3 Partner Részletező Adatlap és Kapcsolt Vállalkozás Jelölő, 3.4 Partner Számlatörténet és Számlarészletező, 3.5 TOP Partner Forgalmi Rangsor, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
-
-### Community 817 - "summary-220500-vat-return-enhancements-foreign-inbound-invoices-and-rlb-baseline.md"
-Cohesion: 0.18
-Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Korosítási Idősáv Kártyák (Aging Szűrők), 3.2 Nettó / Bruttó Nézetváltó, 3.3 Partner Kintlévőségi Táblázat (Lenyitható Partner Sávok), 3.4 Fizetési Felszólítás Küldése, 3.5 Egyenlegközlő Levél Generálása, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
-
-### Community 818 - "summary-202500-agora-gl-and-pnl-statutory-exports-and-view-fixes.md"
-Cohesion: 0.18
-Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Új Pénztárbizonylat Kiállítása, 3.2 Címletjegyzék Kalkulátor és Kasszaellenőrzés, 3.3 Hivatalos Időszaki Pénztárjelentés Generálása, 3.4 Pénztár Létrehozása és Alapadatok Kezelése, 3.5 Törvényi és Belső Készpénzlimit Beállítása, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
-
-### Community 819 - "vercel.json"
-Cohesion: 0.18
-Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Ezer Forintos Megjelenítés Kapcsoló, 3.2 Eredménysorok Kibontása és Számlaszintű Mélyfúrás, 3.3 Sankey Értékáramlás és Forgalmi Grafikon Nézet, 3.4 AI Pénzügyi Elemző Asszisztens Futtatása, 3.5 Hivatalos Eredménykimutatás Exportálása, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
-
-### Community 820 - "handoff/SKILL.md"
-Cohesion: 0.18
-Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Mérlegegyezőségi Kártya és Differencia Figyelmeztető, 3.2 Eszközök és Források Nézetváltó Kapcsoló, 3.3 Mérlegtételek Kibontása és Számlaszintű Mélyfúrás, 3.4 Pénzügyi Mutatószámok Analitikai Kártyái, 3.5 Hivatalos Mérleg Exportálása (PDF / Excel), 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
-
-### Community 821 - "plan.md"
-Cohesion: 0.18
-Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Feltöltési Zóna és Mintasablon Letöltése, 3.2 Oszlop-hozzárendelő és Validációs Előnézet, 3.3 Importálás Indítása és Automatikus Számlapárosítás, 3.4 Korábbi Import Kötegek Története, 3.5 Téves Import Köteg Visszavonása és Törlése, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
-
-### Community 822 - "setup-skills.ps1"
-Cohesion: 0.18
-Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 NAV Online Számla Kulcsok és Kapcsolat Tesztelése, 3.2 NAV Szinkronizációs Napló és Hibaelhárítás, 3.3 Számlafogadó E-mail Alias Másolása és Újragenerálása, 3.4 Számlázz.hu és Külső Számlázók API Összeköttetése, 3.5 Relax Könyvelési Adatimport Modul, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
-
-### Community 823 - "pettyCashXml.ts"
-Cohesion: 0.18
-Nodes (10): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Irodai KPI Összesítő Kártyasor, 3.2 Portfólió Szegmentáló Lapfülek, 3.3 Felelős Könyvelő és Státusz Szűrők, 3.4 Ügyféltáblázat és Feldolgozottsági Arányjelző, 3.5 Belépés az Ügyfél Munkaterületére (Kontextusváltás), 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható) (+2 more)
-
-### Community 824 - "Community 824"
-Cohesion: 0.18
-Nodes (10): 1. Multi-currency összeg megjelenítés, 2. Dual-table keresés a hozzárendelési dialógusban, 3. Kategóriák leírás frissítése, 4. Arány megjelenítés — számla darabszám alapú (2026-06-29), 5. Összeg kimutatás — vízszintes sáv diagram (2026-06-29), 6. Kategória számlák exportálása — CSV, XLSX, PDF (2026-07-22), Döntések, Kapcsolódó fájlok (+2 more)
-
-### Community 825 - "Community 825"
-Cohesion: 0.18
-Nodes (10): Egyszeri backfill (2026-06-29), Kapcsolódó, Keresés, Megjelenítés a detail panelben, Megjelenítés a táblázatban, P-044: Külföldi partner megjelenítés, Rationale, Részletek (+2 more)
-
-### Community 826 - "Community 826"
-Cohesion: 0.18
-Nodes (10): 1. Felhasználói Igény és Probléma, 2.1 Kettős Nézetváltó Kapcsoló a Ciklusoldalon (`PayrollCyclePage.tsx`), 2.2 A 3 Oszlopos Dolgozói Munkalap (`EmployeeWorksheetView.tsx`), 2.3 Munkába Járási Költségtérítés a Rendszer Többi Pontján, 2. Megoldás és UI/UX Viselkedés, 3. UI/UX Szabályok és Biztonsági Védőhálók, A) Bal Oszlop: Dolgozói Lista és Haladás (`WorksheetSidebar.tsx`), B) Középső Oszlop: All-in-One Havi Adatlap (`WorksheetEmployeeForm.tsx`) (+2 more)
-
-### Community 827 - "Community 827"
-Cohesion: 0.18
-Nodes (10): 1. ⚡ Teendők (Action Center / Sürgős feladatok), 2. 💼 Portfólió (Ügyfélmunka & Szolgáltatások), 3. ✨ Segítség (Intelligencia & Támogatás), 4. ⚙️ Beállítások (Rendszer & Biztonság), Context, Döntés (Decision), P-085: eaisyBooks Portfólió Oldalsáv 4-Kategóriás Munkafolyamat-Alapú Csoportosítása (Teendők, Portfólió, Segítség, Beállítások) UX, UX Kérdés & Döntési Folyamat (+2 more)
-
-### Community 828 - "Community 828"
-Cohesion: 0.18
-Nodes (10): 1. Kulcslista és Státusz Áttekintés, 2. Új API Kulcs Generálása Varázsló (Kétfázisú Modál), 3. Hivatalos REST API v1 Fejlesztői Portál (Önálló Oldal és Új Lap), 4. Megerősített Kulcsvisszavonás (`AlertDialog`), Addendum (2026-09-22) — Fejlesztői Portál v2.1 & OpenAPI 3 Export, Addendum (2026-09-22) — Fejlesztői Portál v2.2 (Support Tickets Modul & 33 Végpont), Decision, P-086: Programozói Hozzáférés & API Kulcsok Kezelése (ApiKeysCard) UX (+2 more)
-
-### Community 829 - "Community 829"
-Cohesion: 0.18
-Nodes (10): 1. Négy Kötelező UI Állapot, 2. SyncUI Felugró Ablak (Popup) Kezelés, 3. Versenyhelyzet- és Villogásvédelem (Anti-Flicker & Race Condition Safeguard), 4. Beszédes Hibaüzenetek és Naplózás, 5. Jogosultsági Védelem (RBAC), 6. Nagy Adatmennyiségű Szinkronizáció Visszajelzés (10 000+ Tétel), 7. Többvállalkozásos Bankkapcsolat (Multi-Company Netbank Megosztás, 2026-10 Frissítés, EB-0226), Kapcsolódó (+2 more)
-
-### Community 830 - "Community 830"
-Cohesion: 0.18
-Nodes (10): 1. Kettős Adatbeviteli Mód (40 Karakteres Auto-Split vs. 4 Mező), 1. Kérdés és Felhasználói Kontextus, 2. Termékdöntés és Megoldás, 2. Vizuális Státuszkártya és Maszkolás (`NavUpoM2mCard`), 3. Kapcsolódó, 3. Valós Idejű Kapcsolatteszt és KOMA Ellenőrzés, 4. Automatizált Napi Szinkronizáció és Manuális Gombok, 5. Biztonságos Kapcsolatbontás (Revocation Flow) (+2 more)
-
-### Community 831 - "Community 831"
-Cohesion: 0.18
-Nodes (10): 1. Termékkérdés és Célkitűzés, 2. Termékdöntés, 3. Racionálé és Számviteli Integráció, 4. Kapcsolódó Dokumentumok, A. Racionalizált 9 Fülből Álló Moduláris Rendszer (`VatReturnContainer.tsx`), B. NAV OSA Automata Keresztellenőrzés (`VatOsaCheckDialog.tsx`), C. 12 Hónapos Éves ÁFA Mátrix (`VatAnnualMatrixView.tsx`), D. Fordított Adózás (FAD) Transzparens Kettős Oszlopos Megjelenítése (+2 more)
-
-### Community 832 - "Community 832"
-Cohesion: 0.18
-Nodes (10): 1. Fül: `Obrazac PDV-S` (EU Beszerzések és Igénybe vett szolgáltatások), 1. Kontextus és Felhasználói Igény, 2.1 Kontextusfüggő Export Menü (`VatReturnViewTab.tsx`), 2.2 Interaktív Előnézeti és Export Dialógus (`VatPoreznaExportDialog.tsx`), 2. Fül: `Obrazac ZP` (EU Értékesítések és Nyújtott szolgáltatások), 2. Termékdöntés és Felhasználói Felület (UX), 3. Fül: `Sastavljač & Ispostava` (Beadó személy & Kirendeltség), 3. Rendszermegbízhatóság és Hibakezelés (+2 more)
-
-### Community 833 - "Community 833"
-Cohesion: 0.18
-Nodes (10): 1. Döntési Kontextus és Célok, 2.1 Unified Financial Cockpit (Egyesített Teendőközpont), 2.2 Tételes Adatlap Megnyitása Sorra Kattintáskor, 2.3 50 Tételes Kezdeti Letöltés & Optimisztikus Infinite Scroll, 2.4 Operatív Eredmény Nettó Invarianciája & Realizált Eredmény, 2.5 Számlák Menü Lapfül Név Egységesítés, 2. A Döntés és Felületi Specifikáció, 3. Megvalósítás és Érintett Fájlok (+2 more)
-
-### Community 834 - "Community 834"
-Cohesion: 0.18
-Nodes (10): 1. Question, 2.1. Gyors Naplórögzítés a Bankszámlák Beállításainál (`BankAccountsTab.tsx`), 2.2. Automatikus Kódgenerálás és Napló-űrlap (`CreateJournalModal.tsx`), 2.3. Átfogó Naplókezelő Központ (`ManageJournalsModal.tsx` & `JournalsPage.tsx`), 2.4. Bankszámla Érvénytelenítés és Státuszjelzés, 2.5. Inaktív Naplók Megjelenítése a Bankszámla Szerkesztőben (`filterBankJournalsForEdit`), 2. Decision, 3. Current Implementation (+2 more)
-
-### Community 835 - "Community 835"
-Cohesion: 0.18
-Nodes (10): 1. Kétpólusú Kizárási Választó Modál (`ExclusionReasonDialog.tsx`), 2. Vizuális Megkülönböztetés a Számlalistában, 3. Vezérlőpulti "Kérdéses Számlák" Widget (`DeferredInvoicesWidget.tsx`), 4. Proaktív ÁFA Bevallási Értesítő Sáv & Dialógus (`DeferredVatPromptBanner.tsx`, `DeferredVatPromptDialog.tsx`), 🔍 Current Implementation, 💡 Decision, 🔗 Kapcsolódó, P-172: ÁFA Levonásba Helyezés Halasztása és Kérdéses Számlák UX (+2 more)
-
-### Community 836 - "Community 836"
-Cohesion: 0.18
-Nodes (10): 1. Főkönyvi Eszköztár Export Menü Bővítés (`GlToolbar.tsx`), 2. A4 Álló PDF Vizuális Kialakítás és Többoldalas Védelem (`procontGlPdf.ts`), 3. Excel Munkafüzet UX (`procontGlExcel.ts`), 4. Visszajelzés és Hiba-reziliencia, 🔍 Current Implementation, 💡 Decision, 🔗 Kapcsolódó, P-177: PROCONT Főkönyvi Kivonat A4 PDF és Excel Export, Kétoldalas Egyezőség-számítás és Hibátlan Többoldalas Layout UX (+2 more)
-
-### Community 837 - "Community 837"
-Cohesion: 0.18
-Nodes (10): 🤖 Accounty AI (5 db), Deno-specifikus kötöttségek, Edge Functions Katalógus, 📦 Egyéb (11 db), 📧 Email küldés (8 db), Frontend hívási pontok, 📊 Migrációs nehézség összesítés, 🟠 NAV Integráció (7 db) — Üzletileg kritikus (+2 more)
-
-### Community 838 - "Community 838"
-Cohesion: 0.18
-Nodes (10): 👔 1. A Cégvezető / Ügyfél Élménye (100% Non-Technical), 1. Normál Visibill PROD cég bekötése:, 🛠️ 2. A ThinkAI Csapat Teendői (Egyszeri, Belső Beállítás), 2. Thinkerman projekt cég bekötése:, A) Első alkalommal (Központi motor üzembe helyezése — 5 perc), B) Új Ügyfél / Cég Bekapcsolása (1 perc/cég), 🔒 Biztonsági és Adatvédelmi Garanciák, ⚙️ Mi történik a motorháztető alatt? (+2 more)
-
-### Community 839 - "Community 839"
-Cohesion: 0.18
-Nodes (11): assign_accountant, generate_report, new_client, open_client, open_invoices, open_payroll, open_settings, start_payroll (+3 more)
-
-### Community 840 - "Community 840"
-Cohesion: 0.18
-Nodes (11): selector, all_clients, client_count, company_type_corp, full_portfolio, no_results, no_tax_number, portfolio_overview_desc (+3 more)
-
-### Community 841 - "Community 841"
-Cohesion: 0.18
-Nodes (11): selector, all_clients, client_count, company_type_corp, full_portfolio, no_results, no_tax_number, portfolio_overview_desc (+3 more)
-
-### Community 842 - "Community 842"
-Cohesion: 0.18
-Nodes (11): table, col_accountant, col_actions, col_client, col_deadline, col_missing, col_package, col_tax_number (+3 more)
-
-### Community 843 - "Community 843"
-Cohesion: 0.18
-Nodes (11): fields, confirm_password, confirm_password_placeholder, email, email_placeholder, forgot_password, name, name_placeholder (+3 more)
-
-### Community 844 - "Community 844"
-Cohesion: 0.18
-Nodes (11): toasts, error_title, file_too_large_desc, file_too_large_title, submit_error_desc, submit_success_desc, submit_success_title, too_many_attachments_desc (+3 more)
-
-### Community 845 - "Community 845"
-Cohesion: 0.18
-Nodes (11): btn_save_absence, btn_save_work, btn_submit_month, btn_submitting, description_placeholder, mode_absence, mode_work, new_entry (+3 more)
-
-### Community 846 - "Community 846"
-Cohesion: 0.29
-Nodes (6): VatCollectorGroup, downloadVatAnalyticsPdf(), fmtAmount(), generateVatAnalyticsPdf(), hu(), VatAnalyticsPdfOptions
-
-### Community 847 - "Community 847"
-Cohesion: 0.18
-Nodes (11): toast, created_desc, created_title, delete_confirm, delete_failed, deleted_desc, deleted_title, error_title (+3 more)
-
-### Community 848 - "Community 848"
-Cohesion: 0.18
-Nodes (11): toasts, post_error, posted_desc, posted_title, reopen_error, reopened_desc, reopened_title, unpost_error (+3 more)
-
-### Community 849 - "Community 849"
-Cohesion: 0.18
-Nodes (11): role_descriptions, admin, assistant, asszisztens, employee, iroda_admin, könyvelő, member (+3 more)
-
-### Community 850 - "Community 850"
-Cohesion: 0.18
-Nodes (11): roles, admin, assistant, asszisztens, employee, iroda_admin, könyvelő, member (+3 more)
-
-### Community 851 - "Community 851"
-Cohesion: 0.18
-Nodes (11): strength, check_lowercase, check_min_chars, check_number, check_special, check_uppercase, level_medium, level_strong (+3 more)
-
-### Community 852 - "Community 852"
-Cohesion: 0.18
-Nodes (11): status, assigned, created, in_progress, new_customer_reply, new_staff_reply, new_staff_reply_short, resolved (+3 more)
-
-### Community 853 - "Community 853"
-Cohesion: 0.18
-Nodes (11): cancel, deleting, irreversible, item_line, mode_prompt, option_all_desc, option_all_title, option_files_only_desc (+3 more)
-
-### Community 854 - "Community 854"
-Cohesion: 0.18
-Nodes (11): close_btn, col_amount, col_date, col_description, col_status, description, empty, status_pending (+3 more)
-
-### Community 855 - "Community 855"
-Cohesion: 0.18
-Nodes (11): assign_accountant, generate_report, new_client, open_client, open_invoices, open_payroll, open_settings, start_payroll (+3 more)
-
-### Community 856 - "Community 856"
-Cohesion: 0.17
-Nodes (6): BreadcrumbItem, COLOR_MAP, EmptyStateProps, ICON_COLOR_MAP, KpiCard(), KpiCardProps
-
-### Community 857 - "Community 857"
-Cohesion: 0.22
-Nodes (8): formatValue(), CASH_PAYMENT_KEYWORDS, getLocalizedEntryDescription(), isCashPaymentMethod(), isPendingPettyCashInvoice(), exportPnlExcel(), getLocalizedPnlRowName(), KNOWN_PNL_ROW_CODES
-
-### Community 858 - "Community 858"
-Cohesion: 0.33
-Nodes (9): CONFIG, getOrCreateSubFolder(), installAutoTrigger(), isSupportedFile(), moveFile(), syncThinkermanInvoices(), testSync(), uninstallAutoTrigger() (+1 more)
-
-### Community 859 - "Community 859"
-Cohesion: 0.18
-Nodes (11): fields, confirm_password, confirm_password_placeholder, email, email_placeholder, forgot_password, name, name_placeholder (+3 more)
-
-### Community 860 - "Community 860"
-Cohesion: 0.18
-Nodes (11): toasts, error_title, file_too_large_desc, file_too_large_title, submit_error_desc, submit_success_desc, submit_success_title, too_many_attachments_desc (+3 more)
-
-### Community 861 - "Community 861"
-Cohesion: 0.18
-Nodes (11): btn_save_absence, btn_save_work, btn_submit_month, btn_submitting, description_placeholder, mode_absence, mode_work, new_entry (+3 more)
-
-### Community 862 - "Community 862"
-Cohesion: 0.18
-Nodes (11): toast, created_desc, created_title, delete_confirm, delete_failed, deleted_desc, deleted_title, error_title (+3 more)
-
-### Community 863 - "Community 863"
-Cohesion: 0.18
-Nodes (11): toasts, post_error, posted_desc, posted_title, reopen_error, reopened_desc, reopened_title, unpost_error (+3 more)
-
-### Community 864 - "Community 864"
-Cohesion: 0.18
-Nodes (11): role_descriptions, admin, assistant, asszisztens, employee, iroda_admin, könyvelő, member (+3 more)
-
-### Community 865 - "Community 865"
-Cohesion: 0.18
-Nodes (11): roles, admin, assistant, asszisztens, employee, iroda_admin, könyvelő, member (+3 more)
-
-### Community 866 - "Community 866"
-Cohesion: 0.18
-Nodes (11): strength, check_lowercase, check_min_chars, check_number, check_special, check_uppercase, level_medium, level_strong (+3 more)
-
-### Community 867 - "Community 867"
-Cohesion: 0.18
-Nodes (11): status, assigned, created, in_progress, new_customer_reply, new_staff_reply, new_staff_reply_short, resolved (+3 more)
-
-### Community 868 - "Community 868"
-Cohesion: 0.18
-Nodes (11): cancel, deleting, irreversible, item_line, mode_prompt, option_all_desc, option_all_title, option_files_only_desc (+3 more)
-
-### Community 869 - "Community 869"
-Cohesion: 0.18
-Nodes (11): close_btn, col_amount, col_date, col_description, col_status, description, empty, status_pending (+3 more)
-
-### Community 870 - "Community 870"
-Cohesion: 0.20
-Nodes (9): 1. Sztv. 471. Jövedelemelszámolási Egyeztető Egyenlet (Reconciliation Equation), 2. Mt. 157. § Szerinti Kifizetési Határidő és Eltérés-Audit, 3. Banki GIRO XML Köteg Generálás és Tömeges Átutalási Szabályok, 4. Rendszer-szétválasztási Architektúra (Visibill vs. eaisyBooks), Decision, Decision 071: Bérszámfejtés, Sztv. 471 Főkönyvi Egyeztetés és Banki GIRO Kifizetés-ellenőrzési Szabályzat, Kapcsolódó, Question (+1 more)
-
-### Community 871 - "Community 871"
-Cohesion: 0.25
-Nodes (6): corsHeaders, NAV_ITEM_QUEUE, NavItemJobMessage, NavItemJobPlanInput, planNavItemJob(), base
-
-### Community 873 - "Community 873"
-Cohesion: 0.15
-Nodes (12): EvDepreciationPage(), BADGE_LABELS, CONFIGS, DbField, EvRecordDetailPage(), QuickDistanceCalculatorProps, RecordTypeConfig, useCreateEvRecord() (+4 more)
-
-### Community 874 - "Community 874"
-Cohesion: 0.18
-Nodes (11): image, buyer, electronic_voucher, fulfillment_issue, invoice_number, loading, nav_source_desc, net_total (+3 more)
-
-### Community 875 - "Community 875"
-Cohesion: 0.24
-Nodes (8): AgingCategory, buildHtml(), corsHeaders, formatHuf(), getIntroText(), InvoicePayload, RequestBody, resend
-
-### Community 876 - "Community 876"
-Cohesion: 0.27
-Nodes (13): excelSerialToIsoDate(), isCreditIndicator(), isDebitIndicator(), isMinimaxFormat(), normalizeKey(), OpeningImportReport, parseAmount(), parseCsvContent() (+5 more)
-
-### Community 877 - "Community 877"
-Cohesion: 0.15
-Nodes (12): 💰 10. Zero-as-Value & Falsy Védelem és RPC Tömb Pushdown, 🚀 11. Main Merge & Kötelező Éles Migráció Futtatás (Production Migration on Merge Guard), 🎯 1. Zero Silent DB Decisions, 📁 2. Migrációs Szabvány & Fájlkonvenciók, ⚙️ 3. RPC (Postgres Stored Procedures & Functions) Szabvány, 🛡️ 4. Row Level Security (RLS) és Bérlői Védelem, 🚀 5. Teljesítmény és Indexelés (Production-Grade), 🔄 6. Migrációs Nyilvántartás & Git Szinkron (Baseline Garancia) (+4 more)
-
-### Community 878 - "Community 878"
-Cohesion: 0.18
-Nodes (7): ChartConfig, ChartContainer, ChartContext, ChartContextProps, ChartLegendContent, ChartTooltipContent, THEMES
-
-### Community 879 - "Community 879"
-Cohesion: 0.20
-Nodes (9): 🪟 1. Sliding Window (Gördülő Ablak Minta), 👈👉 2. Two Pointers (Két Mutatós Minta), 📖 Fogalom Meghatározása, Használata a Visibillben:, Használati Esetek:, 💡 Komplexitási Haszon, Működési Elv:, Működési Elv: (+1 more)
-
-### Community 880 - "Community 880"
-Cohesion: 0.20
-Nodes (9): 1. `useQuery` — Adatlekérdezés & Cache-elés, 2. `useMutation` — Adatmódosítás & Cache Invalidation, 🔑 Az 2 Fő React Query Hook, 💡 Kliens Állapot vs. Szerver Állapot (Server State), Miért nem való a Szerver Állapot sima `useState` + `useEffect`-be?, 📖 Mozaikszavak Kibontása & Definíciók, ⚡ Optimista Frissítés (Optimistic Updates), 💡 `staleTime` vs. `gcTime` (korábban `cacheTime`): (+1 more)
-
-### Community 881 - "Community 881"
-Cohesion: 0.17
-Nodes (11): 1. Főkönyvi Nyitó Mérlegtételek Hiánya Évközi Szűréseknél, 1. Főkönyvi Nyitó Átgörgetés (Rollforward) RPC Szinten, 2. Bérszámfejtési Utalási Lista Duplikáció és Törlési Jogosultság Hiány, 2. Utalási Lista Integritás és Törlési RLS Policy, A-258: Főkönyvi Nyitó Mérlegtételek Évközi Átgörgetése (GL Rollforward) és Bérszámfejtési Utalási Tranzakció Integritás, Consequences, Context, Decision (+3 more)
-
-### Community 882 - "Community 882"
-Cohesion: 0.29
-Nodes (7): tabs, incoming, outgoing, proforma, receipts, submitted_incoming, submitted_outgoing
-
-### Community 883 - "Community 883"
-Cohesion: 0.36
-Nodes (8): addUTCDays(), adjustToBusinessDay(), buildDueDate(), corsHeaders, fmtDate(), getEasterSunday(), getHungarianHolidays(), TAX_DEADLINES
-
-### Community 884 - "Community 884"
-Cohesion: 0.27
-Nodes (9): downloadXml(), escapeXml(), Filing08Data, Filing08EmployeeLine, generateFiling08Xml(), generateM30Xml(), parseTaxNumber(), baseData (+1 more)
-
-### Community 885 - "Community 885"
-Cohesion: 0.03
-Nodes (79): AccountingRulesDialog(), AccountingRulesDialogProps, DEFAULTS, FormData, KauType, TarhelyType, CompanyPayrollSettingsPage(), DEFAULT_SETTINGS (+71 more)
-
-### Community 886 - "Community 886"
-Cohesion: 0.20
-Nodes (9): 05. Munkaügyi Szabálymotor és Mt. Megfelelőség, 1. Munkajogi Háttér és Célkitűzés, 2. Háromszintű Szabályöröklési Modell, 3. Ellenőrzött Munkaügyi Szabályok Katalógusa, 4. Súlyossági Szintek és Felületi Visszajelzés, 5.1 Keretszámítás Lépései, 5. Munkaidőkeret Elszámolási Logika (Mt. 93–95. §), 6. Munkaközi Szünet és Pihenőidő Előírások (Mt. 103. és 104. §) (+1 more)
-
-### Community 887 - "Community 887"
-Cohesion: 0.20
-Nodes (9): 06. Hatósági Exportok, Bérszámfejtés és Rendszerintegráció, 1.1 Munkaidő-jegyzék Excel Specifikáció (.xlsx), 1. A Rendszer Legfontosabb Kimenete: A Hivatalos Munkaidő-jegyzék, 2. Statisztikák és Lekérdezések, 3.1 Bérszámfejtési Adatstruktúra, 3. Bérszámfejtési Híd és eaisyBooks Integráció, 4. Rendszerintegrációk a Meglévő Visibill Platformmal, 5. Beléptetőrendszer és Ellenőrzőpontok Interfész Specifikáció (Jövőbeli Fázis) (+1 more)
-
-### Community 888 - "Community 888"
-Cohesion: 0.20
-Nodes (10): 7. Pénzügyi Modulok, REQ-7.1: Tranzakció kezelés, REQ-7.2: Futárszolgálat riportok, REQ-7.3: Bér & járulék modul, REQ-7.4: Adó modul, REQ-7.5: Főkönyvi rendszer (GL), REQ-7.6: Éves beszámoló, REQ-7.7: Tárgyi eszközök (+2 more)
-
-### Community 889 - "Community 889"
-Cohesion: 0.20
-Nodes (9): 🎯 1. A PRD Alapelvei és Szerepe, 📁 2. A Dinamikus Rekordstruktúra és Mappaszerkezet, 📄 3. Egy Atomikus PRD Rekord Belső Anatómiája, 🗺️ 4. A Központi `INDEX.md` Felépítése, 📌 Dinamikus Dekompozíció (Nincs Merev Kötetszám!), Mi a PRD célja?, Mi NEM a PRD feladata? (Szigorú elhatárolás!), Moduláris PRD Készítési Irányelvek és Rekordstruktúra Sablon (+1 more)
-
-### Community 890 - "Community 890"
-Cohesion: 0.20
-Nodes (9): `api_request_logs`, `companies`, `company_bank_accounts`, `company_email_accounts`, `company_fx_settings`, `company_locations`, `company_members`, `company_settings` (+1 more)
-
-### Community 891 - "Community 891"
-Cohesion: 0.20
-Nodes (9): `accounty_efo_entries`, `accounty_upo_credentials`, Kapcsolódó RPC Függvények (NAV ÜPO M2M), 🏛️ NAV Integráció, `nav_invoice_items`, `nav_invoices`, `nav_invoices` (Kimenő számlák kezelése), `nav_m2m_audit_logs` (+1 more)
-
-### Community 892 - "Community 892"
-Cohesion: 0.20
-Nodes (9): `hp_settings`, 🏦 Házipénztár, `opg_cash_registers`, `opg_sync_logs`, `opg_transactions`, `petty_cash_entries`, `petty_cash_opening_balances`, `petty_cash_registers` (+1 more)
-
-### Community 893 - "Community 893"
-Cohesion: 0.20
-Nodes (9): `categories`, `courier_reports`, `partners`, `project_labor_costs` — VIEW, `projects`, `report_uploads`, `reverse_charge_entries`, `tax` (+1 more)
-
-### Community 894 - "Community 894"
-Cohesion: 0.20
-Nodes (9): A-011: Mailgun Email Processing Pipeline, Alias Not Found: Silent Handling (2026-07-07), Consequences, Context, Cross-company Email Routing (2026-07-02), Decision, 🔴 Incident: MAILGUN_SIGNING_KEY (2026-05-15 → 2026-06-11), Mailgun Retry Idempotency (2026-07-07) (+1 more)
-
-### Community 895 - "Community 895"
-Cohesion: 0.20
-Nodes (9): 1. Push Preferences és Subscriptions táblák, 2. Frontend működés (AccountyNotificationPreferences.tsx), 3. Biztonság (RLS), 4. Backend (Edge Function), A-032: Accounty Push Notification Preferences, Consequences, Context, Decision (+1 more)
-
-### Community 896 - "Community 896"
-Cohesion: 0.20
-Nodes (9): 1. Böngésző-szintű szinkron szinkronizáció-detektálás, 2. A tiltás elszigetelése (sessionStorage), 3. Időzítők helyett Életciklus-alapú flag-kezelés, 4. Lapfrissítés (F5) támogatása, A-040: Multi-Tab Auth Flow Isolation (2026-07-18), Context, Döntések, Kapcsolódó (+1 more)
-
-### Community 897 - "Community 897"
-Cohesion: 0.20
-Nodes (9): A-041: Mailgun Webhook Concurrent Dedup — Háromrétegű Idempotency, Consequences, Context, Decision, Kapcsolódó, Layer 1: Alkalmazás szintű check (EF, upload táblák), Layer 2: Alkalmazás szintű check — llm_koltsegek (permanent audit log), Layer 3: DB-szintű UNIQUE partial index (atomi garancia) (+1 more)
-
-### Community 898 - "Community 898"
-Cohesion: 0.20
-Nodes (9): 1. InvoiceContext Dekompozíció Sub-Context Hubbá, 2. ExpandedInvoiceRow Modularizáció, A-065 — Invoice God Context Dekompozíció és Expanded Invoice Row Modularizáció, Döntés, Kapcsolódó ADR-ek, Kontextus, Következmények, Pozitív (+1 more)
-
-### Community 899 - "Community 899"
-Cohesion: 0.20
-Nodes (9): 1. Context, 2. Decision, 3. Consequences, A-077: Management Stats Edge Function & Telemetry Decomposition, A. Backend Edge Function Moduláris Architektúra (`supabase/functions/management-stats/`), B. Frontend Worker Telemetria Dekomponálása (`src/features/management/`), C. Aktív Feldolgozások PostgREST Lekérdezési Invariánsai (`workerHandler.ts: buildActiveProcessing` — 2026-09-05), Megkötések (Cons): (+1 more)
-
-### Community 900 - "Community 900"
-Cohesion: 0.20
-Nodes (9): 1. Context, 2.1. Architekturális komponensek, 2. Decision, 3. Consequences, 4. Kapcsolódó Dokumentáció, A-081: NAV 08 (2608 / 2508 / 2408) XML Feldolgozás és Tömeges Bérszámfejtés Rekonstrukciós Motor, Negatív / Kockázatok és Kezelésük, Pozitív (+1 more)
-
-### Community 901 - "Community 901"
-Cohesion: 0.20
-Nodes (9): 1. Kontextus & Követelmények, 2.1 `knowledge_base_categories`, 2.2 `knowledge_base_articles`, 2. Adatbázis Séma (`supabase/migrations/20260907165915_create_knowledge_base.sql`, `supabase/migrations/20260907170045_expand_hierarchical_knowledge_base.sql`, `supabase/migrations/20260907170112_audit_and_complete_knowledge_base.sql`, `supabase/migrations/20260907170143_audit_eaisybooks_knowledge_base.sql` és `supabase/migrations/20260907170155_search_knowledge_base_rpc.sql`), 3.1 `search_knowledge_base` RPC és RAG Keresőmotor, 3. Full-Text Search (FTS) és GIN Indexelés, 4. Hozzáférés-vezérlés (RLS) & Biztonság, 5. Frontend Fallback & Teljesítmény (+1 more)
-
-### Community 902 - "Community 902"
-Cohesion: 0.20
-Nodes (9): 1. Kontextus és Üzleti Igény, 2. Döntések és Architektúra, 3. Következmények és Migráció, A-108: Bérszámfejtési Munkába Járás Költségtérítés és Dolgozó-Központú Munkalap (Employee Worksheet View), D-1: Munkába Járás Törzsadatok és Adatbázis Séma (`accounty_employments`, `accounty_tax_profiles`), D-2: Adómotor Számítási Logika (`taxEngine.ts`), D-3: Főkönyvi Feladás és Kettős Könyvelési Egyensúly (`payrollAutoPoster.ts`, `PayrollStep8.tsx`), D-4: Kettős Nézetváltó és Állapotmegőrzés (`PayrollCyclePage.tsx`) (+1 more)
-
-### Community 903 - "Community 903"
-Cohesion: 0.20
-Nodes (9): 1. Kontextus és Problémafelvetés, 2.1. Memória-alapú Életciklus Flag-ek (Session Lifecycle Flags), 2.2. Közvetlen Célzott Útvonal Képzés (`AppModeSwitcher`), 2.3. Szinkron Útvonal-Paraméter Feloldás (`effectiveCompany`), 2.4. Scoped Layout Szinkronizáció, 2. A Döntés, 3. Következmények és Előnyök, A-115: eaisyBooks ↔ eaisyBill Szimmetrikus Hideg/Meleg (Cold/Warm) Hibrid Életciklus Átmenet és Szinkron Útvonal Feloldás (+1 more)
-
-### Community 904 - "Community 904"
-Cohesion: 0.20
-Nodes (9): 1. Dinamikus Elválasztójel-Gyakoriság Detektálás (`transaction_extractor.py`), 2. Fejléc-Alapú Strukturált Oszloptérképezés Excelhez (`transaction_extractor.py`), 3. Tranzakció Pipeline Intercept Védőháló (`worker.py`), 4. Egységteszt Csomag (`test/unit_test/test_kh_bank_exports.py`), A-116: K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem, Consequences, Context, Decision (+1 more)
-
-### Community 905 - "Community 905"
-Cohesion: 0.20
-Nodes (9): 1. Atomi Számlakiegyenlítő Tárolt Eljárás (`settle_invoices_via_petty_cash`), 2. Kliensoldali Validáció és Szanitizáció, 3. PDF Export Auth-Életciklus Védelem, 4. Bővítmény Zajszűrés, A-125: Atomi Házipénztári Számlakiegyenlítés és Auth Életciklus Védelmek, Consequences, Context, Decision (+1 more)
-
-### Community 906 - "Community 906"
-Cohesion: 0.20
-Nodes (9): 1. Kontextus és Problémafelvetés, 2.1 Inline DatePicker Companion Minta (`GlobalDatePicker.tsx`), 2.2 Méret- és Dizájn-Egységesítés (`LanguageSwitcher.tsx`), 2.3 Oldalsáv Lábléc Kitisztítása (`AppSidebar.tsx`), 2.4 Fejléc Akciók Letisztítása (`AccountyHeader.tsx` & `AppLayout.tsx`), 2. Architekturális Döntés, 3. Következmények és Előnyök, 4. Kapcsolódó Dokumentumok (+1 more)
-
-### Community 907 - "Community 907"
-Cohesion: 0.20
-Nodes (9): 1. Kontextus & Problémafelvetés, 2. Architektúrális Döntések, 3. Következmények & Előnyök, A-147: Kétirányú Számlaláncolat (Invoice Chaining), Dinamikus Kapcsolt Bizonylat Feloldás és Előnézeti Dokumentum-lapozás, D-1: Kliensoldali In-Memory Gráf Indexelés (`InvoiceContext` + `buildLinkedInvoicesMap`), D-2: Kétirányú Láncolat-feloldás (`resolveLinkedInvoices`), D-3: NAV és Beküldött Számlák Egységes Kezelése, D-4: Determinisztikus Hiányzó Bizonylat Detektálás (`LinkedInvoicesSection`) (+1 more)
-
-### Community 908 - "Community 908"
-Cohesion: 0.20
-Nodes (9): 1. Context and Problem Statement, 1. RPC Volatility Fix (`20260925031000_mark_read_only_rpcs_stable.sql`), 2. Decision and Implementation, 2. Realtime Company Isolation & Debounce Hardening (`LiveNotificationProvider.tsx`), 3. Lightweight GL Account Mapping (`JournalView.tsx`), 3. Verification & Results, 4. Cockpit Query Pagination & Progressive Loading (`UnifiedFinancialCockpit.tsx`), A-152: Analytical RPC Stability & Realtime Notification Leak Hardening (+1 more)
-
-### Community 909 - "Community 909"
-Cohesion: 0.18
-Nodes (10): 1. Context & Technikai Kihívás, 1. Reaktivált Batch Query Stratégia (`fetchAllGlCategorizedItems`), 2. Decision, 2. O(1) Fastruktúra Indexelés (`batchItemsByGL`), 3. Consequences, 3. N+1 Guard a Korábbi On-Demand Hookokon, 4. Kapcsolódó, 4. Állapotmegőrzés (`savedKontirokExpandedRef`) (+2 more)
-
-### Community 910 - "Community 910"
-Cohesion: 0.20
-Nodes (9): 1. Context, 1. Közös Adatbázis-táblák Jurisdikció-specifikus Kiterjesztése, 2. Decision, 2. Többjurisdikciós Számítási Motor (Top-level Router Pattern), 3. Consequences, 3. Frontend Nyomtatvány-replika és Nézetválasztó, A-156: Horvát ÁFA Bevallás (Obrazac PDV) és Adókód Architektúra, Negatív / Kockázatok (+1 more)
-
-### Community 911 - "Community 911"
-Cohesion: 0.20
-Nodes (9): 1. Kontextus és Üzleti Igény, 2. Megvalósított Architektúra, 3. Következmények és Előnyök, 4. Kapcsolódó, A-158: Mezőgazdasági Felvásárlási Jegyek Modul és Bérügyi Integráció, A. Adatbázis Modell (`supabase/migrations/20260926200000_purchase_vouchers_module.sql`), B. Frontend Domain Szolgáltatás (`src/features/purchase-vouchers/`), C. Rendszerintegráció (+1 more)
-
-### Community 912 - "Community 912"
-Cohesion: 0.20
-Nodes (9): 1. Döntési Kontextus és Jogszabályi Háttér, 2.1 `public.accounty_employments` módosítások:, 2.2 `public.accounty_payroll_calculations` módosítások:, 2. Adatbázis Séma Bővítés, 3. Adómotor és Számítási Logika (`taxEngine.ts`), 4. Távollét Szűrés és Dátum-határ Védelem (`usePayrollData.ts`), 5. ÁNYK 2608 M-lap XML és Többes Jogviszony (`filingGenerator.ts`), 6. Következmények és Trade-offok (+1 more)
-
-### Community 913 - "Community 913"
-Cohesion: 0.20
-Nodes (9): 1. RFC 3501 Zero-`\Seen` Non-Destructive Peek, 2. Perzisztens Adatbázis-szintű UID Deduplikáció (`imap_processed_messages`), 3. PostgreSQL Elosztott Leader Zárolás (`worker_distributed_locks`), 4. Batch Capping (`MAX_EMAILS_PER_SYNC = 50`), A-190: Non-Destructive IMAP UID Követés (Zero-\Seen), Elosztott Zárolás és Batch Capping, Consequences, Context, Decision (+1 more)
-
-### Community 914 - "Community 914"
-Cohesion: 0.20
-Nodes (9): 1. Kontextus és Problémafelvetés, 2.1. Parser Modul (`src/lib/fixed-assets/assetImportParser.ts`), 2.2. Kliensoldali Import Modál (`src/components/fixed-assets/AssetImportModal.tsx`), 2.3. Integráció a TENY felületen (`src/pages/FixedAssetsPage.tsx`, `AssetListTable.tsx`), 2.4. Vakfolt Kezelés és Adatintegritási Garanciák, 2. Megvalósítás és Architektúra, 3. Verifikáció, A-200 — Tárgyi Eszközök és Nyitó Állomány Tömeges Excel/CSV Import Architektúra (+1 more)
-
-### Community 915 - "Community 915"
-Cohesion: 0.20
-Nodes (9): 1. Architektúrális Háttér & Indoklás, 2. Rendszerdöntések (Decisions D-1 .. D-4), 3. Érintett Rendszerkomponensek, 4. Verifikáció & Minőségbiztosítás, A-225: Duplex PDF Darabolás Robusztusítás, Táblázatfejléc Védelem és Számlaszám Fuzzy NAV Párosítás (EB-0250), Decision D-1: Táblázatfejlécek és Banki Adatok Szigorú Feketelistázása (`worker/pdf_splitter.py`), Decision D-2: Determinisztikus Halmazmetszet és Token-szintű Összetartozás (`worker/pdf_splitter.py`), Decision D-3: Duplex-Tudatos Lapszámozási Arány (`worker/pdf_splitter.py`) (+1 more)
-
-### Community 916 - "Community 916"
-Cohesion: 0.20
-Nodes (9): 1. Adatbázis Séma és Migráció (`supabase/migrations/20261008140000_eb0258_accounting_settings_date_gl_fx.sql`), 2. Hivatalos Bankkatalógus (`src/lib/banking/exchangeRateBanks.ts`), 3. Főkönyvi Összevont vs Tételes Nézet Modellje (`GeneralLedgerTable.tsx`), 4. NAV Adószám Auto-kitöltés Integráció (`BusinessSection.tsx`), A-231: Cégprofil Számviteli Beállítások Kiterjesztése: Teljesítés Dátum, Összevont Főkönyvi Nézet és Devizaárfolyam Bankkatalógus, Architektúrális Döntések, Kontextus és Érintett Területek, Verifikáció és Minőségi Kapuk (+1 more)
-
-### Community 917 - "Community 917"
-Cohesion: 0.20
-Nodes (9): 1. Context & Problémafelvetés, 2.1 Zero-as-Value Elv a PostgreSQL RPC-kben, 2.2 Multi-Account Batching (`p_gl_account_ids uuid[]`), 2.3 Aszinkron Konkurencia-korlát (Concurrency Pool: 4), 2.4 Partner Folyószámla Karton Stabilizálása, 2.5 Fals Üres Állapotok Felszámolása, 2. Döntés, 3. Következmények & Számviteli Eredmények (+1 more)
-
-### Community 918 - "Community 918"
-Cohesion: 0.20
-Nodes (9): 1. Context & Business Need, 2.1 Multi-Tenancy & Integrity Tables (`accounty_audit_exports`, `accounty_audit_export_diffs`), 2.2 Standardized 20-Column General Ledger RPC (`get_auditor_gl_journal_export`), 2.3 ISA 560 Subsequent Cash Settlements RPC (`get_subsequent_settlements_report`), 2.4 Zero-Redundancy Integration with MKVK AuditXML Generator, 2. Architectural Decisions, 3. Database Schema DDL, 4. Consequences & Benefits (+1 more)
-
-### Community 919 - "Community 919"
-Cohesion: 0.20
-Nodes (9): 1. Háromirányú Egyeztető RPC (`get_vat_osa_three_way_reconciliation`), 2. Kliensoldali Egyeztető Munkaterület (`VatOsaThreeWayReconciliation.tsx`), 3. Fordított ÁFA Acéltermék és Fémhulladék Detektálás (`useSteelProductsData.ts`, `VatSteelProductsSection.tsx`), A-243: NAV Online Számla Háromirányú Keresztellenőrzés (Three-Way Reconciliation) és Fordított Adózású Acéltermék VTSZ/SZJ Detektálás Architektúra, ⚡ Consequences, 🏛️ Context, 💡 Decision, 🔗 Kapcsolódó (+1 more)
-
-### Community 920 - "Community 920"
-Cohesion: 0.20
-Nodes (9): 1.1 Kiemelt Kiadási Alapelvek, 1. Termék- és Kiadási Célkitűzés, 2. Képernyő-készültségi és Fázis Mátrix, 3.1 Mit TUD az MVP?, 3.2 Mi MARAD a Második Hullámra (Fázis 5–7)?, 3. Az Éles MVP Kiadás Terjedelme (Fázis 0–4), 4. UI/UX Teljesítmény- és Minőségi Küszöbök, 5. Elfogadási Kritériumok (Definition of Done) (+1 more)
-
-### Community 921 - "Community 921"
-Cohesion: 0.20
-Nodes (9): 1. Belföldi Adókulcsok & Értékesítési Sorok, 2. Fordított Adózás (FAD) Kettős Elszámolása, 3. Gyűjtőkód Törzs Tisztítása & Redundanciák Felszámolása, 4. Áfa tv. 6/B. Melléklet — Vas- és Acéltermékek Kötelező Analitikája, Decision, Decision 060: NAV 2665 ÁFA Bevallási Szabályok, Gyűjtőkódok és 6/B Acélipari Kötelezettség, Kapcsolódó, Question (+1 more)
-
-### Community 922 - "Community 922"
-Cohesion: 0.20
-Nodes (9): 1. Hivatalos NAV 65 ÁFA Bevallásból Való Teljes Kizárás, 2. Sor Drilldown (Részletező) Védelem, 3. ÁFA Gyűjtőkódos Analitika, 4. Tétel-Felismerési Szabály (False Positive Védelem), Decision, Decision 062: DRS Kötelező Visszaváltási Díj (Kupakdíj / Betétdíj) Kizárása az ÁFA Bevallásból, Kapcsolódó, Question (+1 more)
-
-### Community 923 - "Community 923"
-Cohesion: 0.20
-Nodes (9): 1. Vámhatározatok Elkülönített Analitikája (`import_customs_declarations`), 2. Kettős Adózási Mód Támogatása, 3. Rendszerszintű Import ÁFA Kódok, 4. ÁFA Motor és Replika Integráció, BDR-066: Termékimport és Vámhatározatok ÁFA Elszámolása, 🔗 Kapcsolódó, 📈 Racionálé és Előnyök, 💡 Üzleti Döntés (+1 more)
-
-### Community 924 - "Community 924"
-Cohesion: 0.20
-Nodes (9): 1. Hozzájárulási Alap és Kötelezettség Kalkuláció, 2. NAV 26TFEJLH Hivatalos Nyomtatvány Digitális Replika, 3. Hivatalos Vektoros PDF Export Motor (`tfejlhPdf.ts`), 4. Hivatalos NAV AbevJava v3.0 XML Export (`tfejlhXml.ts`), BDR-067: NAV 26TFEJLH Turizmusfejlesztési Hozzájárulás Bevallás és Nyomtatvány Replika, 🔗 Kapcsolódó, 📈 Racionálé és Haszon, 💡 Üzleti Döntés (+1 more)
-
-### Community 925 - "Community 925"
-Cohesion: 0.20
-Nodes (9): 1. Strukturált Éves Zárlati Folyamat (9 Lépéses Ellenőrzőlista), 2. Standardizált Könyvvizsgálói Adatszolgáltatás (20-Oszlopos Karton és MKVK Audit XML), 3. ISA 560: Mérlegfordulónap Utáni Rendezések (Subsequent Events), 4. ISA 500: Adatintegritás és Elavulás-védelem (Staleness Guard), Decision, Decision 069: Könyvvizsgálói Adatszolgáltatási, Zárlati és Integritási Szabályzat (MKVK, ISA 500, ISA 560), Kapcsolódó, Question (+1 more)
-
-### Community 926 - "Community 926"
-Cohesion: 0.20
-Nodes (9): 01. Számlák és Bizonylatkezelés — HR Lokalizációs Leltár, 📈 1. Modul Statisztika és Hotspotok, 🔔 2. Értesítési Ablakok (Toasts) és Modális Megerősítések, 🏷️ 3. Státusz Badge-ek, Jelvények és Feltételes Állapotok, 🖥️ 4. Felületi Kezelőszervek, Gombok, Fejlécek és Mezők (JSX & Props), 🔑 5. Hiányzó vagy Nem Szinkronizált i18n Szótárkulcsok, 🚀 6. Moduláris Javítási Javaslat, Kategóriák szerinti megoszlás (+1 more)
-
-### Community 927 - "Community 927"
-Cohesion: 0.20
-Nodes (9): 02. Pénzügy, Könyvelés és GL — HR Lokalizációs Leltár, 📈 1. Modul Statisztika és Hotspotok, 🔔 2. Értesítési Ablakok (Toasts) és Modális Megerősítések, 🏷️ 3. Státusz Badge-ek, Jelvények és Feltételes Állapotok, 🖥️ 4. Felületi Kezelőszervek, Gombok, Fejlécek és Mezők (JSX & Props), 🔑 5. Hiányzó vagy Nem Szinkronizált i18n Szótárkulcsok, 🚀 6. Moduláris Javítási Javaslat, Kategóriák szerinti megoszlás (+1 more)
-
-### Community 928 - "Community 928"
-Cohesion: 0.20
-Nodes (9): 03. Bank, Partnerek és Tranzakciók — HR Lokalizációs Leltár, 📈 1. Modul Statisztika és Hotspotok, 🔔 2. Értesítési Ablakok (Toasts) és Modális Megerősítések, 🏷️ 3. Státusz Badge-ek, Jelvények és Feltételes Állapotok, 🖥️ 4. Felületi Kezelőszervek, Gombok, Fejlécek és Mezők (JSX & Props), 🔑 5. Hiányzó vagy Nem Szinkronizált i18n Szótárkulcsok, 🚀 6. Moduláris Javítási Javaslat, Kategóriák szerinti megoszlás (+1 more)
-
-### Community 929 - "Community 929"
-Cohesion: 0.20
-Nodes (9): 04. HR, Munkaidő és Tárgyi Eszközök — HR Lokalizációs Leltár, 📈 1. Modul Statisztika és Hotspotok, 🔔 2. Értesítési Ablakok (Toasts) és Modális Megerősítések, 🏷️ 3. Státusz Badge-ek, Jelvények és Feltételes Állapotok, 🖥️ 4. Felületi Kezelőszervek, Gombok, Fejlécek és Mezők (JSX & Props), 🔑 5. Hiányzó vagy Nem Szinkronizált i18n Szótárkulcsok, 🚀 6. Moduláris Javítási Javaslat, Kategóriák szerinti megoszlás (+1 more)
-
-### Community 930 - "Community 930"
-Cohesion: 0.20
-Nodes (9): 05. Beállítások, Integrációk és Globális UI — HR Lokalizációs Leltár, 📈 1. Modul Statisztika és Hotspotok, 🔔 2. Értesítési Ablakok (Toasts) és Modális Megerősítések, 🏷️ 3. Státusz Badge-ek, Jelvények és Feltételes Állapotok, 🖥️ 4. Felületi Kezelőszervek, Gombok, Fejlécek és Mezők (JSX & Props), 🔑 5. Hiányzó vagy Nem Szinkronizált i18n Szótárkulcsok, 🚀 6. Moduláris Javítási Javaslat, Kategóriák szerinti megoszlás (+1 more)
-
-### Community 931 - "Community 931"
-Cohesion: 0.20
-Nodes (9): 🌐 1. Webszerver és Domain, 🗄️ 2. Dev Adatbázis (Supabase), ⚡ 3. Edge Functions, 🔒 4. Hitelesítés, Jogosultságok és Menedzsment Izoláció a Dev Környezetben, 🤖 5. Dedikált AI Worker Replikáció (`worker-dev`), Fejlesztői Környezet Architektúra (DEV Architecture), Kliens Felhasználók és Cégek, Menedzsment Felhasználók (Platform Adminisztrátorok) (+1 more)
-
-### Community 932 - "Community 932"
-Cohesion: 0.20
-Nodes (9): 1. Hol található? (Elhelyezkedés és Navigáció), 2. A menü funkciója és célja, 3.1 Kiemelt Deviza Kártyák és Testreszabás, 3.2 Kétirányú Valutaváltó Kalkulátor, 3.3 Hivatalos MNB Árfolyamtáblázat és Kereső, 3.4 Manuális Árfolyam-szinkronizálás, 3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható), Fő feladatai és jogszabályi háttere: (+1 more)
-
-### Community 933 - "Community 933"
-Cohesion: 0.20
-Nodes (9): 1. Üdvözlő képernyő (Welcome), 2. Step 1: Cég hozzáadása (Kötelező), 3. Step 2: Projektek (Opcionális), 4. Step 3: Kategóriák (Opcionális), 5. Step 4: NAV Integráció (Opcionális), Onboarding Wizard Felépítése és Lépései, P-003: Empty State Dashboard & Onboarding Wizard, Rollback és Hibakezelés (+1 more)
-
-### Community 934 - "Community 934"
-Cohesion: 0.20
-Nodes (9): 1. Opció: Számlatételek Modál Végösszesítő Kártya, 2. Opció: Számlalista Sor (NAV & Beküldött számlák), 3. Opció: Kibontott Sor (Expanded Invoice Row), Consequences (Következmények), Decision (Döntés), P-100: Nem Levonható ÁFA Megjelenítése és Felületi Átláthatósága (1. + 2. + 3. Opció) UX, Pozitív, Question (Kérdés) (+1 more)
-
-### Community 935 - "Community 935"
-Cohesion: 0.20
-Nodes (9): 1. Kettős Áfakód Megjelenítési Mód (Dual Display Mode), 2. Egyedi és Tömeges Áfakód Szerkesztés (`InvoiceItemsDialog`), 3. Vizuális Intelligencia Jelzők (Badge & Tooltip), 4. Layout és Modal Méretigazítás, Decision (Döntés), Kapcsolódó, P-101: Számlatételek Áfakód Szerkesztése, Kettős Áfakód Megjelenítés és Tömeges Módosítás UX, Question (Kérdés) (+1 more)
-
-### Community 936 - "Community 936"
-Cohesion: 0.20
-Nodes (9): 1. Kérdés és Felhasználói Igény, 1. Kézi Tétel Rögzítése Dialógus — Háromállású Számlaszűrő és Valós Idejű Multi-Mezős Keresés, 2. Időszaki Pénztárzárás Dialógus (`CashClosingDialog`), 2. Termékdöntés és Megoldás, 3. Kapcsolódó, 3. Nyomtatási és PDF Export Integritás, 4. Pénztárzárás Táblázat Lábléc & Záróegyenleg Egyeztető (2026-09-27), 5. Billentyűzet-Központú Villámgyors Rögzítés ('B', 'K', 'Enter') (+1 more)
-
-### Community 937 - "Community 937"
-Cohesion: 0.20
-Nodes (9): 1. Termékkérdés és Célkitűzés, 2. Termékdöntés, 3. Racionálé és Számviteli Integráció, 4. Kapcsolódó Dokumentumok, A. Elhelyezés és Feltételes Aktiválás (Opt-in Feature Flag), B. Vezérlőpult és KPI Kártyák (`PurchaseVoucherKpiCards.tsx`), C. Új Felvásárlási Jegy Kiállítása Dialógus (`PurchaseVoucherDialog.tsx`), D. Bizonylatkezelés és Életciklus (+1 more)
-
-### Community 938 - "Community 938"
-Cohesion: 0.20
-Nodes (9): 1. Felhasználói Igény és Probléma, 2.1. Biztonságos Edge Function (`sync-szamlazz-outbound-invoices`), 2.2. Automatikus Adatbázis Párosítás (Dual-Table Upsert), 2. Architektúra és Biztonság, 3.1. Fejléc Szinkronizációs Gomb és Értesítő Jelvény, 3.2. Részletes Kötegelt Letöltő Modális Ablak (`<SzamlazzSyncModal>`), 3.3. Tételes, Egykattintásos Letöltés a Táblázatból, 3. Felhasználói Felület és UX (+1 more)
-
-### Community 939 - "Community 939"
-Cohesion: 0.20
-Nodes (9): 1. Felületi Elhelyezés és Megjelenés, 2.1 Időszak Választó Fejléc, 2.2 Valós Idejű KPI Összesítő Kártyák, 2.3 Tételes Eszköz-Táblázat és Vizuális Státuszok, 2.4 Részletes T/K Bontás Lenézete, 2.5 Duplikációvédelem és Tiszta Könyvelői Visszajelzés, 2. A Varázsló Működési Logikája, Kapcsolódó (+1 more)
-
-### Community 940 - "Community 940"
-Cohesion: 0.20
-Nodes (9): 1. Üzleti Háttér és Probléma, 2.1 Dedikált „A60 Közösségi” Fül az ÁFA Rendszerben (`VatCalculatorView.tsx`), 2.2 4-Kártyás Összefüggés-vizsgálati Fejléc, 2.3 4-Lapfüles Belső Szerkezet (`VatA60Table.tsx`), 2.4 Valós Idejű VIES Ellenőrzés és Partner Jelvények, 2.5 Partner Összesítés és Tételes Számlafúrás (Drill-Down), 2. Megoldás és Felületi Működés, 3. Kapcsolódó (+1 more)
-
-### Community 941 - "Community 941"
-Cohesion: 0.20
-Nodes (9): 1. Lebegő / Átmeneti Folyamatjelző Sáv (Transient Live Progress Banner), 2. GlToolbar AI Gomb Élő Számláló és Letiltott Állapot, 3. Vizuális Szétválasztás: Aktív AI Munka vs. KPI Lefedettségi Kártya, 4. 15 Perces Beragadás-védelem (Stale Task Timeout UX), Current Implementation, Decision, Kapcsolódó, P-147: Főkönyvi AI Tételbesorolás Valós Idejű Folyamatjelző és Státusz-sáv UX (+1 more)
-
-### Community 942 - "Community 942"
-Cohesion: 0.20
-Nodes (9): 1. Question, 2.1. Automatikus Szöveges Dátumdetektálás a Tételsorokban, 2.2. Kontextuális Akciógombok a Tételek Táblázatában (`InvoiceItemsDialog.tsx`), 2.3. Időbeli Elhatárolás Rögzítése Varázsló (`InvoiceItemAccrualModal.tsx`), 2. Decision, 3. Current Implementation, 4. Rationale, 5. Kapcsolódó (+1 more)
-
-### Community 943 - "Community 943"
-Cohesion: 0.20
-Nodes (9): 1. Elhelyezés és Navigáció (Fejléc Címváltó), 2. Modul felépítés (Fülek), 3. Házipénztári könyvelési mód, Dátum, Kapcsolódó Architektúra Döntés, Kontextus és Problémafelvetés, P-163: Online Pénztárgép (OPG) Modul és Házipénztár Integráció UX, Státusz (+1 more)
-
-### Community 944 - "Community 944"
-Cohesion: 0.20
-Nodes (9): 1. Döntési Kontextus és Problémafelvetés, 2.1 Elhelyezés és Navigáció, 2.2 Kártyás Struktúra és Felületi Részek, 2.3 Kereshető Számlaválasztó Ajánlott Jelölőkkel (`GlAccountCombobox`), 2.4 Cégek Közötti 1-Kattintásos Másolás (`CopyCompanyRulesModal`), 2.5 Lebegő Mentési Sáv és Reaktív Dirty Tracking, 2. A Döntés és Felületi Specifikáció (UX Architecture), 3. Felhasználói Élmény és Eredmények (+1 more)
-
-### Community 945 - "Community 945"
-Cohesion: 0.20
-Nodes (9): 1. Termékimport Analitikai Szekció (`VatImportCustomsSection.tsx`), 2. Rögzítő és Szerkesztő Dialógus (`ImportCustomsDeclarationDialog.tsx`), 3. Dinamikus Nyomtatvány Integráció (NAV 2665), 🔍 Current Implementation, 💡 Decision, 🔗 Kapcsolódó, P-173: Termékimport és Vámhatározatok Rögzítése és Megjelenítése UX, 🎯 Question (+1 more)
-
-### Community 946 - "Community 946"
-Cohesion: 0.20
-Nodes (9): 1. NAV 26TFEJLH Nyomtatvány Digitális Replika (`Nav26TfejlhReplicaContainer.tsx`, `Nav26TfejlhSheetFolap.tsx`), 2. Kliensoldali Pixelpontos PDF Generálás (`tfejlhPdf.ts`), 3. Hivatalos ÁNYK XML Export Gomb és Letöltés (`tfejlhXml.ts`), 🔍 Current Implementation, 💡 Decision, 🔗 Kapcsolódó, P-174: NAV 26TFEJLH Nyomtatvány Replika és PDF Export UX, 🎯 Question (+1 more)
-
-### Community 947 - "Community 947"
-Cohesion: 0.20
-Nodes (9): 1. Kontextus és Problémafelvetés, 2.1. Önálló Tárgymező (`subject`) és Egysoros Megjelenítés, 2.2. Kezelőkonzol Vizuális Letisztítás, 2.3. Táblázat Ergonómia és Görgetésmentesítés, 2.4. Markdown és Vágólapos Csatolmányok (Ctrl+V & Drag & Drop), 2. Termékdöntések és Felületi Élmény (UX), 3. Érintett Komponensek, 4. Következmények és Eredmények (+1 more)
-
-### Community 948 - "Community 948"
-Cohesion: 0.20
-Nodes (9): 1. Reszponzív és Zsúfoltságmentes Elrendezés (`JournalFilterModal.tsx`), 2. Szűkítési Kategóriák és Pozitív Unió Irányszűrés, 3. Főoldali Gomb és Aktív Szűrők Kijelzése (`JournalsPage.tsx`), Current Implementation, Decision, Kapcsolódó, P-176: Könyvelési Napló RLB-Mintájú Szűkítés Modál, Pozitív Unió Irányszűrés és Reszponzív Panel UX, Question (+1 more)
-
-### Community 949 - "Community 949"
-Cohesion: 0.20
-Nodes (9): strength, lowercase, mismatch, number, special, uppercase, tabs, signin (+1 more)
-
-### Community 950 - "Community 950"
-Cohesion: 0.22
-Nodes (9): reasons, foreign_or_exempt, foreign_or_exempt_desc, nav_delay, nav_delay_desc, other, other_desc, paper_invoice (+1 more)
-
-### Community 951 - "Community 951"
-Cohesion: 0.20
-Nodes (9): strength, lowercase, mismatch, number, special, uppercase, tabs, signin (+1 more)
-
-### Community 952 - "Community 952"
-Cohesion: 0.20
-Nodes (9): 1. Atomi PostgreSQL RPC-k (`SECURITY DEFINER`), 2. Kettős Végrehajtási Réteg (Resilient Execution Layer), A-249: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás Atomi RPC Architektúra, Consequences, Context, Decision, Kapcsolódó, Negatív / Kockázatok: (+1 more)
-
-### Community 953 - "Community 953"
-Cohesion: 0.20
-Nodes (9): 1. „Számla hozzárendelése” gomb a lenyitott sorban (`ExpandedEntryRow`), 2. Intelligens Kereső és Számlaválasztó Modál (`AttachInvoiceDialog`), 3. „Leválasztás” Akció és Megerősítő Dialógus, Current Implementation, Decision, Kapcsolódó, P-183: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX, Question (+1 more)
-
-### Community 954 - "Community 954"
-Cohesion: 0.25
-Nodes (7): AiChatMessage, AiChatSession, messagesKey(), SESSIONS_KEY, SubmitMessageFeedbackParams, useAiChatMessages(), useAiChatSessions()
-
-### Community 955 - "Community 955"
-Cohesion: 0.20
-Nodes (10): forgot, description, link_fallback, not_received, resend, title, verify_description, verify_title (+2 more)
-
-### Community 956 - "Community 956"
-Cohesion: 0.20
-Nodes (10): verification, check_email_title, in_progress_desc, in_progress_title, sent_link_desc, spam_notice, success_desc, success_title (+2 more)
-
-### Community 957 - "Community 957"
-Cohesion: 0.20
-Nodes (10): file_preview, close, csv_error, download, excel_title, first_100_rows, loading, open_new_tab (+2 more)
-
-### Community 958 - "Community 958"
-Cohesion: 0.20
-Nodes (10): closed, open, posted, reopened, first_closing_btn, loading, no_reports, reports (+2 more)
-
-### Community 959 - "Community 959"
-Cohesion: 0.20
-Nodes (10): invoices, assign_invoice, assigned_items, no_assigned, no_matching, partial_sum, partial_tooltip, remove_tooltip (+2 more)
-
-### Community 960 - "Community 960"
-Cohesion: 0.20
-Nodes (10): already_member, email_exists, member_insert_failed, name_required, not_admin_add, not_admin_invite, password_min_6, user_create_failed (+2 more)
-
-### Community 961 - "Community 961"
-Cohesion: 0.20
-Nodes (10): integrations, badge_automation, credentials, custom_mail, generated_alias, status_active, status_setup, subtitle (+2 more)
-
-### Community 962 - "Community 962"
-Cohesion: 0.20
-Nodes (10): status_banner, assigned_sub, assigned_title, created_sub, created_title, in_progress_sub, in_progress_title, resolved_sub (+2 more)
-
-### Community 963 - "Community 963"
-Cohesion: 0.20
-Nodes (10): table, col_action, col_amount, col_date, col_nav_invoice, col_package, col_recipient, col_ref (+2 more)
-
-### Community 964 - "Community 964"
-Cohesion: 0.20
-Nodes (10): single_delete, cancel, deleting, irreversible, mode_prompt, option_all_desc, option_all_title, option_file_only_desc (+2 more)
-
-### Community 965 - "Community 965"
-Cohesion: 0.20
-Nodes (10): table, details_tooltip, empty_desc, empty_title, select_all, swipe_approval_title, swipe_approved_desc, swipe_approved_title (+2 more)
-
-### Community 966 - "Community 966"
-Cohesion: 0.20
-Nodes (10): selectors, ai_auto_hint, auto_detect, bank_format, choose_bank, choose_courier, courier_service, group_fintech (+2 more)
-
-### Community 967 - "Community 967"
-Cohesion: 0.20
-Nodes (10): forgot, description, link_fallback, not_received, resend, title, verify_description, verify_title (+2 more)
-
-### Community 968 - "Community 968"
-Cohesion: 0.20
-Nodes (10): verification, check_email_title, in_progress_desc, in_progress_title, sent_link_desc, spam_notice, success_desc, success_title (+2 more)
-
-### Community 969 - "Community 969"
-Cohesion: 0.20
-Nodes (10): file_preview, close, csv_error, download, excel_title, first_100_rows, loading, open_new_tab (+2 more)
-
-### Community 970 - "Community 970"
-Cohesion: 0.20
-Nodes (9): 1. Egységes Könyvelői Jogosultságkezelés (`has_accounty_company_access` és `rls_write_denied_company_ids`), 2. Szigorú PL/pgSQL Típusillesztés a RETURN QUERY Eljárásokban, 3. REST Lekérdezési URL Kötegelés (Chunking), A-255: Technikai Könyvelési és Bérszámfejtési RPC Jogosultságkezelés, Külső Könyvelői Hozzáférés (has_accounty_company_access) és Folyószámla Típusbiztonság, Consequences, Context, Decision, Negatív / Kockázatok (+1 more)
-
-### Community 971 - "Community 971"
-Cohesion: 0.20
-Nodes (10): invoices, assign_invoice, assigned_items, no_assigned, no_matching, partial_sum, partial_tooltip, remove_tooltip (+2 more)
-
-### Community 972 - "Community 972"
-Cohesion: 0.20
-Nodes (10): already_member, email_exists, member_insert_failed, name_required, not_admin_add, not_admin_invite, password_min_6, user_create_failed (+2 more)
-
-### Community 973 - "Community 973"
-Cohesion: 0.20
-Nodes (10): integrations, badge_automation, credentials, custom_mail, generated_alias, status_active, status_setup, subtitle (+2 more)
-
-### Community 974 - "Community 974"
-Cohesion: 0.20
-Nodes (10): status_banner, assigned_sub, assigned_title, created_sub, created_title, in_progress_sub, in_progress_title, resolved_sub (+2 more)
-
-### Community 975 - "Community 975"
-Cohesion: 0.20
-Nodes (10): table, col_action, col_amount, col_date, col_nav_invoice, col_package, col_recipient, col_ref (+2 more)
-
-### Community 976 - "Community 976"
-Cohesion: 0.20
-Nodes (10): single_delete, cancel, deleting, irreversible, mode_prompt, option_all_desc, option_all_title, option_file_only_desc (+2 more)
-
-### Community 977 - "Community 977"
-Cohesion: 0.20
-Nodes (10): table, details_tooltip, empty_desc, empty_title, select_all, swipe_approval_title, swipe_approved_desc, swipe_approved_title (+2 more)
-
-### Community 978 - "Community 978"
-Cohesion: 0.20
-Nodes (10): selectors, ai_auto_hint, auto_detect, bank_format, choose_bank, choose_courier, courier_service, group_fintech (+2 more)
-
-### Community 979 - "Community 979"
-Cohesion: 0.43
-Nodes (6): ALLOWED_EXTENSIONS, ALLOWED_TYPES, extractFilesFromClipboard(), isAllowedTicketFile(), sanitizeClipboardFile(), uploadTicketImage()
-
-### Community 980 - "Community 980"
-Cohesion: 0.38
-Nodes (9): CompanyInfo, EmployeeInfo, escapeHtml(), LeaveInfo, printCsedGyedStatement(), printHtml(), printPregnancySickLeaveStatement(), printSickLeaveStatement() (+1 more)
-
-### Community 981 - "Community 981"
-Cohesion: 0.27
-Nodes (8): buildConfirmationHtml(), buildEmailChangeHtml(), buildRecoveryHtml(), buildVerifyUrl(), corsHeaders, EdgeRuntimeType, hookSecret, resend
-
-### Community 982 - "Community 982"
-Cohesion: 0.20
-Nodes (8): ALL_EVENTS, CalendarEvent, COLOR_MAP, EVENTS_2025, EVENTS_2026, MONTH_NAMES, Q_LABELS, ViewMode
-
-### Community 983 - "Community 983"
-Cohesion: 0.20
-Nodes (8): code, container, EmailConfirmationProps, footer, h1, link, main, text
-
-### Community 984 - "Community 984"
-Cohesion: 0.03
-Nodes (105): BalanceSheetWidgets(), formatDate(), formatDateTime(), FullInvoice, InvoiceDetailPopup(), InvoiceDetailPopupProps, statusLabels, ProjectFlowchart() (+97 more)
-
-### Community 985 - "Community 985"
-Cohesion: 0.22
-Nodes (8): 1. `useMemo` — Drága Számítások Memoizálása, 2. `useCallback` — Függvény-Referenciák Memoizálása, 3. `React.memo` (vagy `memo`) — Komponens Újrarenderelés Átugrása, 💡 A 3 Fő Teljesítmény-Optimalizáló Eszköz, 💡 mikor NE használj `useMemo`-t?, 📖 Mozaikszavak Kibontása & Definíciók, 🚀 React Teljesítmény & Memoizáció (useMemo, useCallback, React.memo), 🛑 State Batching & Debouncing (Keresőmező Optimalizáció)
-
-### Community 986 - "Community 986"
-Cohesion: 0.22
-Nodes (9): content, description, content, description, content, schema, application/json, 200 (+1 more)
-
-### Community 987 - "Community 987"
-Cohesion: 0.22
-Nodes (8): 07. Fejlesztési Roadmap, MVP Terjedelem és Nyitott Kérdések, 1. Fejlesztési Alapelvek és Ütemezési Stratégia, 2.1 A Fázisok Részletes Tartalma, 2. A 10 Fejlesztési Fázis Részletes Áttekintése (Fázis 0–9), 3. Az MVP Pontos Értelmezése (0–4. fázis), 4. Kockázati Mátrix és Kockázatkezelési Stratégia, 5. Tisztázandó Üzleti és Termékfejlesztési Kérdések, Visibill & Beosztásom — Üzleti Követelmény Dokumentum (BRD)
-
-### Community 988 - "Community 988"
-Cohesion: 0.22
-Nodes (8): 🛑 1. Mikor Érvényes Ez a Szabályzat?, 🔍 2. Kötelező Verifikációs Kapuk (Verification Gates), ⚠️ 3. Szándékos Kalkuláció Módosítás / Bugfix Esetén, 🚫 4. Zéró Fantom Verifikáció, Kapu 1: Vitest Golden Master Regressziós Teszt (<150ms), Kapu 2: Élő Adatbázis Snapshot Guard (<10s), Kapu 3: Oxlint & Típusellenőrzés, Kötelező ÁFA Regresszióvédelmi és Stabilitási Kapu (VAT Safety Gate)
-
-### Community 989 - "Community 989"
-Cohesion: 0.22
-Nodes (8): 1. Előzetes ellenőrzés (Pre-Check), 2. Felhasználó Regisztrációja (Auth SignUp), 3. Jogosultságok és Email Megerősítés Beállítása (DB Elevate), 4. Hitelesítés és Végponti Ellenőrzés (Smoke Test), 📥 Elvárt Bemenetek (Inputs), Visibill Create Management User Skill, 🚀 Végrehajtási Folyamat (Workflow), 📊 Összegző Jelentés Formátum
-
-### Community 990 - "Community 990"
-Cohesion: 0.22
-Nodes (8): A-009: Supabase Auth + RBAC, Consequences, Context, Decision, Hozzáférés-kezelő Hook-ok, Hozzárendelési Mechánizmusok, Kapcsolódó, Signup Trigger Chain
-
-### Community 991 - "Community 991"
-Cohesion: 0.22
-Nodes (8): A-012: NAV Online Számla API v3 Integráció, 🔄 Adatfolyam és Szabályok, Consequences, Context, Decision, ⚡ Edge Functions Katalógus, Kapcsolódó, 🏛️ Központi Modulcsomag (`supabase/functions/_shared/nav/`)
-
-### Community 992 - "Community 992"
-Cohesion: 0.22
-Nodes (8): 1. Keresőbar deduplikáció és mentés (Onboarding.tsx), 2. Kategória és Projekt frissítés a Számlalistában (InvoicesPage.tsx), 3. React Query Cache Invalidáció, A-022: Kategóriák és Projektek Dual-Table Szinkronizációs Stratégia, Consequences, Context, Decision, Részletes implementációs döntések:
-
-### Community 993 - "Community 993"
-Cohesion: 0.22
-Nodes (8): 1. Deno Edge Function (Mailgun webhook) — `process-mailgun-webhook/index.ts`, 2. Python Worker (IMAP & Deferred Archives) — `imap_sync_pipeline.py` & `archive_expander.py`, A-043: ZIP / RAR / 7z Archívum Csatolmány Kicsomagolás és Body-MIME Parsing az Email Pipeline-ban, Consequences, Context, Decision, Kapcsolódó, Közös szabályok mindkét pipeline-ban:
-
-### Community 994 - "Community 994"
-Cohesion: 0.22
-Nodes (8): A-044: Shared FilePreviewModal Utility — Egységes Fájl Előnézet, Consequences, Context, Decision, Implementáló komponensek, Kapcsolódó, Kulcsdöntés: blob URL tiltás, Kulcsdöntés: `name` prop kiterjesztést tartalmaz
-
-### Community 995 - "Community 995"
-Cohesion: 0.22
-Nodes (8): 1. Adatbázis Séma (`20260723144000_bank_transfers_feature.sql`), 2. Algoritmikus Validáció, 3. Fájl Generálás & Export Formátumok, A-058: Banki Utalások és Csomagkészítés Architektúra (Bank Transfers), Consequences, Context, Decision, Kapcsolódó
-
-### Community 996 - "Community 996"
-Cohesion: 0.22
-Nodes (8): A-061: Decomposing the Monolithic Super-Admin & Management Dashboard, Consequences, Context, Decision, Directory & Component Structure, Negative / Trade-offs, Positive, Status
-
-### Community 997 - "Community 997"
-Cohesion: 0.22
-Nodes (8): 1. Context, 1. PostgreSQL Database Trigger Szintű Garancia (`public.on_company_created()`), 2. Decision, 2. Idempotens Backfill Migráció (`20260901_auto_sync_company_to_eaisybooks.sql`), 3. Consequences, 3. Frontend Cache Invalidation (`src/components/CompanySelector.tsx`), A-073: eaisybill ↔ eaisyBooks Cégfelviteli Automatikus Szinkronizáció, Pozitív:
-
-### Community 998 - "Community 998"
-Cohesion: 0.22
-Nodes (8): 1. Context & Problem Statement, 2.1 Szerveroldali Tranzakcionális RPC Architektúra, 2.2 Frontend UI & UX Megújítás (`ManagePresetsModal.tsx`), 2. Decision, 3. Consequences, A-090: Biztonságos Számlatükör Sablon Törlés, Függőség-Ellenőrzés és Tételek Átkötése (Remapping), A felmerült incidens (2026. 09. 04. 08:55):, Kapcsolódó
-
-### Community 999 - "GraphEngine"
-Cohesion: 0.23
-Nodes (3): GraphEngine, BFS shortest path from start_id to end_id. Returns list of (node, link_to_next)., Any
-
-### Community 1000 - "Community 1000"
-Cohesion: 0.22
-Nodes (8): A-097: Multi-Tenant nav_invoice_items Denormalizáció, GL Statement Timeout Felszámolása és RLS Optimalizálás, Consequences, Context, Decision, Gyökérok Elemzés, Kapcsolódó, Negatív / Trade-offok, Pozitív
-
-### Community 1001 - "Community 1001"
-Cohesion: 0.22
-Nodes (8): A-098: Készpénzes és Manuális Kifizetésű Számlák Egységes Párosítási Státusza és KPI Integritása, A Felmerült Probléma és Gyökérok Elemzés, Consequences, Context, Decision, Kapcsolódó Dokumentáció, Negatív / Trade-offok, Pozitív
-
-### Community 1002 - "Community 1002"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Problémafelvetés, 2. Döntések és Architektúra, 3. Következmények & Érvényesítés, A-099: Számlakép Törlés Kettős Döntési Modell (Dual Choice), Lebegő Műveletsáv Kijelölés-kezelés és Lapozási Határeset Auto-Recovery, A. Kettős Törlési Modell (Dual Choice Deletion Governance), A korábbi működés hiányosságai, B. Lebegő Csoportos Műveleti Sáv Kijelölés-kezelés és Dropdown Javítás, C. Lapozási Határeset Auto-Recovery (Pagination Boundary Auto-Recovery)
-
-### Community 1003 - "Community 1003"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Problémafelvetés, 2. Döntések és Architektúra, 3. Következmények és Migráció, A-107: ÁFA Levonhatóság Szinkronizálása a Könyvelési Naplóval és Főkönyvvel, Valós Idejű Trigger és Zárt Tételek Védelme, D-1: Kétlábú Bruttó Könyvelés 0% Levonhatóságnál (`acc_generate_drafts_from_ledger`), D-2: Főkönyvi Karton és Egyenlegek Összhangja (`get_gl_categorized_items`, `get_gl_balances`), D-3: Valós Idejű DB Trigger és Összegkorrekciók (`sync_item_deductible_to_journal_draft`), D-4: Zárt / Véglegesített Könyvelési Tételek Védelme és UI Lakat Jelzés (`InvoiceItemsDialog.tsx`)
-
-### Community 1004 - "Community 1004"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Problémafelvetés, 2.1. Központi `AccountyShellContext` és `AccountyShellProvider`, 2.2. Moduláris Kompozíciós Komponensek (Vercel Composition Patterns), 2.3. Seam Hardening és Teszt Kompatibilitás (Defensive Standalone Fallback), 2. A Döntés, 3. Következmények és Előnyök, A-114: eaisyBooks Kettős Működési Módú Navigációs Héj Összevonása (Collapse Dual-Mode Navigation Shell) és Seam Hardening, Architecture Decision Record (ADR)
-
-### Community 1005 - "Community 1005"
-Cohesion: 0.22
-Nodes (8): 1. Adatbázis Szintű Atomi Kétirányú Propagáció és Tervezet-Törlés, 2. Frontend Optimista Állapotkezelés (`InvoiceTableContainer.tsx`), A-122: Nem Könyvelt Státusz Kétirányú Szinkronizációja és Optimista UI Állapotkezelés, Consequences, Context, Decision, Negatív / Kötöttségek, Pozitív
-
-### Community 1006 - "Community 1006"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Problémafelvetés, 2.1 Adatbázis Séma és Migráció (`20260921150000_add_vat_code_legacy_code_and_display_mode.sql`), 2.2 F.AFA és Fordított Adózás Felismerése (`src/lib/utils.ts` & `src/utils/vatCodeMatching.ts`), 2.3 Megjelenítési Mód és Vizuális Kiemelés (`VatCodeConfigTab.tsx`), 2.4 Számlanézet és Tooltip Egységesítés (`InvoiceItemsDialog.tsx`), 2. Döntések, 3. Konzekvenciák és Előnyök, A-135: Kettős Áfa Kódrendszer (NAV 2665 vs Konvencionális Könyvelői Kódok) és F.AFA Fordított Adózási Felismerés
-
-### Community 1007 - "Community 1007"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Problémafelvetés, 2.1 Adatbázis Séma és Migráció (`20260921160000_vat_code_overrides_and_learning.sql`), 2.2 4-Szintű Kaszkád Felismerő és Tanulási Motor (`src/utils/vatCodeMatching.ts`), 2.3 Számlatételek Interaktív Kezelése (`InvoiceItemsDialog.tsx`), 2.4 Beállítások Modal Túlcsordulás Javítása (`VatCodeConfigTab.tsx`), 2. Döntések, 3. Konzekvenciák és Eredmények, A-136: Számlatételek Áfakód Szerkeszthetősége és Gépi Tanulási (Machine Learning) Memória
-
-### Community 1008 - "Community 1008"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Problémafelvetés, 2.1 Adatbázis Séma Bővítés, 2.2 Worker Pipeline Frissítés, 2.3 Kötegelt Számlaszám Feloldás (Batch Resolution, Zero N+1), 2.4 UI Megjelenítés és Export Dialógus, 2. Architekturális Döntés, 3. Következmények és Előnyök, A-139: Tranzakciós jutalék (fee_amount) és kötegelt számlaszám-feloldás
-
-### Community 1009 - "Community 1009"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Technikai Kihívások, 1. RPC Teljesítmény & Realtime Publikáció Optimalizáció, 2. Architektúra és Implementációs Döntések, 2. Failure Modes & Resilience a JournalView Komponensben, 3. Minőségbiztosítás és Eredmények, 3. Vízszintes Scroll Sávok Méretvédelme (`overflow-x-auto`), 4. Szabványos DOM Struktúra és Akadálymentesítés, A-150: Főkönyvi Lekérdezés Teljesítmény, Hibakezelési Reziliencia & DOM/Layout Védelem
-
-### Community 1010 - "Community 1010"
-Cohesion: 0.22
-Nodes (8): 1. Context and Problem Statement, 1. Lazy & Chunked P&L Trend Queries (`trendData`):, 2. Decision and Architecture Pattern, 2. On-Demand GL Drilldown (`fetchGlItemsForAccount`):, 3. On-Demand Excel Export Support:, 3. Verification & Results, A-151: Profit & Loss and Balance Sheet Query Storm Elimination & On-Demand Drilldown, Root Cause Analysis:
-
-### Community 1011 - "Community 1011"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Problémafelvetés, 2.1. Sablon és Cég Jogosultság Validáció, 2.2. Tranzakciós és Hierarchia Védelmi Kapuk (Pre-Deletion Guards), 2.3. Függőségi Törlés (Cascade Cleanup), 2.4. Cache Érvénytelenítés és Reaktív UI Frissítés, 2. Architektúrális Döntés, 3. Következmények és Előnyök, A-178: Egyéni Számlatükör Főkönyvi Szám Törlése és Relációs Integritás Védelem
-
-### Community 1012 - "Community 1012"
-Cohesion: 0.22
-Nodes (8): 1. Korai Deduplikáció AI és Párosítás Előtt (`aggreg8_processor.py`), 2. Kibővített Banki Referencia-Felismerés (`db.py:extract_bank_reference`), 3. Insert-szintű Védelem és PostgreSQL 23505 Megelőzés (`db.py:insert_transactions`), A-179: Aggreg8 PSD2 és Fájlimport Cross-Deduplikációs Architektúra, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1013 - "Community 1013"
-Cohesion: 0.22
-Nodes (8): 1. `calculate_vat_return` RPC Bővítése Külföldi Számlákkal, 2. Taxology Kft. Referencia Analitika (Golden Master) Megőrzése, A-244: Külföldi és Devizás Bejövő Számlák Integrálása az ÁFA Bevallásba és Taxology Baseline Igazítás, ⚡ Consequences, 🏛️ Context, 💡 Decision, 🔗 Kapcsolódó, Pozitív:
-
-### Community 1014 - "Community 1014"
-Cohesion: 0.22
-Nodes (8): 1. Kézi Szerkeszthetőség & Vizuális Kódrendszer, 2. A 4-Lépcsős Feloldási Kaszkád (Decision Cascade), 3. Audit Naplózás és Adatvédelem, Decision, Decision 061: Számlatétel Áfakód Felülbírálat és Gépi Tanulási (ML) Szabályrendszer, Kapcsolódó, Question, Rationale
-
-### Community 1015 - "Community 1015"
-Cohesion: 0.22
-Nodes (8): 1. Normál Adózó Fizetendő (Kimenő) ÁFA Kötelezettsége (Áfa tv. 55–58. §), 2. Normál Adózó Levonható (Bejövő) ÁFA Joga (Áfa tv. 119–120. §), 3. Pénzforgalmi Elszámolású Adóalany (`v_is_penzforgalmi = true`, Áfa tv. XIII/A. fejezet), Decision, Decision 068: ÁFA tv. Szerinti Adófizetési Kötelezettség és Levonási Jog Keletkezése Normál vs. Pénzforgalmi Adózási Módban, Kapcsolódó, Question, Rationale
-
-### Community 1016 - "Community 1016"
-Cohesion: 0.22
-Nodes (8): 12 — Dialógusok & Felugró Ablakok, Activity Log Sheet, AlertDialog Portal Flash Fix (2026-06-24), Overlay Komponensek Összefoglaló, Overlay Stílus Konvenciók, Sheet (Oldalsó Panel), Tooltip Portal Pattern, Z-Index Rétegek
-
-### Community 1017 - "Community 1017"
-Cohesion: 0.22
-Nodes (8): 1. Hibaok Elemzés (Root Cause Diagnosis), 💎 1. Opció (Ajánlott): „Fintech Executive” — Fő Konszolidált Érték + Deviza Címkék (Pills), 2. Megoldási Opciók & Mockup Design, 📊 2. Opció: „Structured Currency Matrix” — Strukturált Deviza-Sorok, 3. Alkalmazott Eaisybill Design Tokenek, ⚡ 3. Opció: „Interactive Segmented” — Kártyaszintű Devizaváltó, 4. Javasolt Refaktorálási Lépések a Kódbázisban, Dashboard KPI Kártyák Újratervezése (Design Mockup & Specifikáció)
-
-### Community 1018 - "Community 1018"
-Cohesion: 0.22
-Nodes (8): 1. Meglévő Felület Elemzése (As-Is State & Fájdalompontok), 🌟 1. Opció (Kiemelten Ajánlott): „Fintech Dense Split” (VatSection és RecentInvoices Analógia), 2. A 3 Kidolgozott Design Koncepció, ⚡ 2. Opció: „Executive Tabbed Cockpit” (Füles Vezérlőpult), 3. Alkalmazott Eaisybill Design Tokenek, 🏛️ 3. Opció: „Financial Ledger & Cash-Flow Impact” (Likviditási & Audit Fókusz), 4. Javasolt Következő Lépés, Design Spec — Árfolyam-különbözetek Szekció Újratervezése (FX Differences Redesign)
-
-### Community 1019 - "Community 1019"
-Cohesion: 0.22
-Nodes (8): 1. Dual-table frissítés (Szinkronizáció), 2. Keresőbar deduplikáció, 3. Fallback megjelenítés a számlalistában, 4. Reaktív szín és név frissítés (Cache Invalidáció), Döntések, Kapcsolódó fájlok, Kontextus, P-042 — Kategóriák és Projektek: Dual-table szinkronizáció és fallback megjelenítés
-
-### Community 1020 - "Community 1020"
-Cohesion: 0.22
-Nodes (8): 1. Tabs-alapú Kártya Struktúra, 2. Form Elrendezés (EmailSettingsForm), 3. Kapcsolat Tesztelése és Státuszok, 4. Jelszó Maszkolás (Masked Password), Kapcsolódó, P-048: IMAP/SMTP Levelező Beállítások és Tabs UX, Rationale, UI / UX Kialakítás
-
-### Community 1021 - "Community 1021"
-Cohesion: 0.22
-Nodes (8): 1. Kártyák interakciója és Jelzések (Navigation Hint), 2. Kártyák elrendezése és Szélessége, 3. "Belső projekt" fallback eltávolítása, 4. Projekt kód zárolása szerkesztésnél, 5. Flowchart Light/Dark Mode adaptáció, Kapcsolódó, P-050: Projekt Flowchart UX, UX Finomítások és Light Mode Optimalizáció (2026.08)
-
-### Community 1022 - "Community 1022"
-Cohesion: 0.22
-Nodes (8): 1. Question, 2. Decision, 3.1. Dolgozói Tömeges Import Oldal (`EmployeeImportPage.tsx`), 3.2. Gyors Rekonstrukciós Modál (`PayrollReconstructionDialog.tsx`), 3. Current Implementation, 4. Rationale, 5. Kapcsolódó, P-063: Bérszámfejtés Gyors Rekonstrukció és Dolgozói Tömeges Import (Excel & NAV 08) UX
-
-### Community 1023 - "Community 1023"
-Cohesion: 0.22
-Nodes (8): 1. Dedublikált Fájlsor és Próbálkozás Jelvény (Retry Badge), 2. Lenyitható Fallback Lánc (Audit Trail Drawer), 3. Tranzakcionális Törlés Kiterjesztés (Cascade Sibling Delete), 4. Valós Státuszok a Worker Telemetriában (`SUPERSEDED` Badge), 5. Kereszt-Tab Reaktív Cache Érvénytelenítés, 🖥️ Felhasználói Felület és Workflow Viselkedés, 🔗 Kapcsolódó Dokumentumok, P-069: Management Dashboard Hiba Dedublikáció, Fallback Lánc és Állapot Kormányzás UX
-
-### Community 1024 - "Community 1024"
-Cohesion: 0.22
-Nodes (8): 1. Kérdés / Problémafelvetés, 2. Döntés (Decision), 3. Rationale, 4. Kapcsolódó Dokumentumok, A. Indítógomb Elhelyezése a `TicketsPage`-en, B. Dialógus Felépítés és Mezők (`ManagementCreateTicketDialog`), C. Sikeres Beküldés Utáni UX, P-070: Management Dashboard Hibajegy Létrehozás Felhasználó Nevében UX (Impersonated Ticket Creation)
-
-### Community 1025 - "Community 1025"
-Cohesion: 0.22
-Nodes (8): 1. Kérdés és Felhasználói Probléma, 2.1. "Cold vs Warm" (Hidegindítás vs Meleg Váltás) Hibrid Navigációs Modell, 2.2. Alkalmazásváltó Komponens (`AppModeSwitcher`) Kialakítása, 2.3. Cégválasztó Folytonosság és "Zero Blank Frame", 2. A Döntés, 3. Következmények és Eredmények, P-083: eaisyBooks ↔ eaisyBill Alkalmazásváltó (AppModeSwitcher) és Hideg/Meleg (Cold/Warm) Átmenet UX, Product Decision Record (PRD)
-
-### Community 1026 - "Community 1026"
-Cohesion: 0.22
-Nodes (8): 1. Intuitív Adószám-Első Elrendezés, 2. Támogatott Formátumok és Előzetes Validáció, 3. Automatikus Mezőkitöltés, 4. Vizuális Visszajelzés (Toast & Töltésjelző), 📍 Megjelenési Helyek, P-098: NAV Adózói Adatlekérdezés és Automatikus Cégkitöltés UX, 🎯 Problémafelvetés és Célkitűzés, 💡 Termék és Felületi Tervezés (UX)
-
-### Community 1027 - "Community 1027"
-Cohesion: 0.22
-Nodes (8): 1. Kiterjesztett Fájlformátum Támogatás (.xlsx, .xls, .xml, .csv, .json, .txt), 2. Intelligens Magyar Fejléc-felismerés & Normalizálás, 3. Azonnali Mérlegegyezőségi Validáció és Előnézet, Decision (Döntés), Kapcsolódó, P-102: Főkönyvi Kivonatok és Nyitó Egyenlegek Rugalmas Fájlimportja (Microfox & XML SpreadsheetML) UX, Question (Kérdés), Rationale (Indoklás)
-
-### Community 1028 - "Community 1028"
-Cohesion: 0.22
 Nodes (8): 1. Kontextus és Problémafelvetés, 1. Kétszintű Eszköztárba Integrált Nézetváltó, 2. Szigorú Alapértelmezés (Nem Tételes), 2. Termékdöntés és Megoldás, 3. Minőségbiztosítás és Verifikáció, 3. URL Mélylinkelés és Állapotmegőrzés, 4. Kapcsolódó, P-113: Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX
 
-### Community 1029 - "Community 1029"
-Cohesion: 0.22
+### Community 593 - "2. Termékdöntés és Megvalósítás"
+Cohesion: 0.25
 Nodes (8): 1. Kontextus és Felhasználói Problémafelvetés, 2.1 Hivatalos Horvát Obrazac PDV Nyomtatvány Replika (`VatObrazacPdvReplica.tsx`), 2.2 Intelligens Fül- és Nézetválasztó (`VatReturnViewTab.tsx`), 2.3 Horvát Számítási Összesítő Nézet (`VatCalculatorView.tsx`), 2.4 Számlaszintű Horvát ÁFA Kódválasztó (`InvoiceVatCodeSelector.tsx`), 2. Termékdöntés és Megvalósítás, 3. UI/UX Minőségbiztosítás és Eredmények, P-116: Horvát ÁFA Bevallás (Obrazac PDV), Hivatalos Nyomtatvány Replika és HR Áfakód Kezelés UX
 
-### Community 1030 - "Community 1030"
-Cohesion: 0.22
-Nodes (8): 1. Döntési Kontextus, 2.1 Partner Szerkesztő / Létrehozó Dialógus Bővítése, 2.2 Felső Pill Navigáció a Partnertörzsben, 2.3 Kapcsolt Vállalkozások Forgalmi Kimutatása (`RelatedPartyTurnoverTab.tsx`), 2.4 Partner Részletező Jobb Oldali Panel, 2. Felületi Élmény és UX Tervezés, 3. Kapcsolódó Dokumentáció és Döntések, P-124: Kapcsolt Vállalkozások Kezelése és Forgalmi Kimutatása a Partnertörzsben (UX/UI)
-
-### Community 1031 - "Community 1031"
-Cohesion: 0.22
-Nodes (8): 1. Háttér és Felhasználói Probléma, 2.1 Bérszámfejtés Zárás és Pre-Flight Ellenőrző (`FilingPreFlightDialog`), 2.2 Többes Jogviszony Megjelenítés a 2608 Felületen (`Filing2608Page`), 2.3 Kilépő TB Igazolvány és Hatósági Kivonat (`ExitDocumentsPage`), 2.4 Mesterséges Intelligencia és Anomália Elemző (`AiAnomalyReportPage`), 2. Megoldás és UI/UX Munkafolyamat, 3. Kapcsolódó Döntések, P-125: Társadalombiztosítási (TB) Bérszámfejtési Modul, Pre-Flight Ellenőrzés és Kilépő Igazolványok UX
-
-### Community 1032 - "Community 1032"
-Cohesion: 0.22
-Nodes (8): 1. „Semmit a kéznek, mindent a szemnek” Elv, 2. Hivatalos ÁNYK 2665 Vizuális Formátum és Lapszerkezet, 3. Eszköztár és Ergonómiai Vezérlők, Decision, Kapcsolódó, P-126: NAV 2665 Hivatalos Nyomtatvány Digitális Replika UX, Question, Rationale
-
-### Community 1033 - "Community 1033"
-Cohesion: 0.22
+### Community 594 - "P-127: Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX"
+Cohesion: 0.25
 Nodes (8): 1. Dátumoszlopok az Excel Exportban, 1. Question, 2. Decision, 2. Intelligens Banki Fül-Besorolás, 3. Current Implementation, 4. Rationale, 5. Kapcsolódó, P-127: Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX
 
-### Community 1034 - "Community 1034"
-Cohesion: 0.22
+### Community 595 - "P-128: Könyvelési Naplók Tömeges Kontírozása és Vizuális T/K Kontíroszlop UX"
+Cohesion: 0.25
 Nodes (8): 1. Context & Problémafelvetés, 2.1 Vizuális Kontír (T / K) oszlop a naplólistában, 2.2 Tömeges Kontírozás (Bulk GL Reassignment) Akció és Modal, 2.3 Intelligens Fallback Szabályok (`draftFallbackGenerator.ts`), 2. Döntés & Felületi Megoldás (UX), 3. Felületi Állapotok & Ergonómia, 4. Minőségbiztosítás & Tesztek, P-128: Könyvelési Naplók Tömeges Kontírozása és Vizuális T/K Kontíroszlop UX
 
-### Community 1035 - "Community 1035"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Problémafelvetés, 2.1 Pénztár Beállítások Kártya és Dialógus (`RegistersTab.tsx`), 2.2 3-Lépéses Zárási Varázsló (`CashClosingWizardDialog.tsx`), 2.3 Pénztárjelentések Lista és Részlet Dialógus (`CashReportsTab.tsx`, `CashReportDetailDialog.tsx`), 2. Felületi Kialakítás és Interakciók, 3. Következmények és Eredmények, Felhasználói elvárások:, P-132: Időszaki Pénztárjelentés, Címletjegyzék, 3-lépéses Zárási Varázsló és Főkönyvi Feladás UX
-
-### Community 1036 - "Community 1036"
-Cohesion: 0.22
-Nodes (8): 1. Döntési Kontextus és Problémafelvetés, 2.1 Kétlapfüles (Dual-Tab) Egységesített Szabálykezelő (`PromptsPage.tsx`), 2.2 Reagáló Fejléc és Kontextus, 2.3 URL Szinkronizáció, 2. A Döntés és Felületi Specifikáció, 3. Érintett Komponensek és Fájlok, A felhasználói súrlódás:, P-138: Egységes Könyvelési Szabályok Kezelőfelület (Számlatétel Szabályok & AI Prompt Könyvtár) UX
-
-### Community 1037 - "Community 1037"
-Cohesion: 0.22
-Nodes (8): 1. Üzleti Háttér és Probléma, 2.1 3-oszlopos Dashboard Grid (`PayrollDashboardPage.tsx`), 2.2 120-napos Éves Keretfigyelő és Küszöbérték-Jelvények, 2.3 Dolgozók Szűrése és Kétirányú URL Szinkronizáció (`EmployeesPage.tsx`), 2. Megoldás és Felületi Működés, 3. Minőségbiztosítás és Tesztlefedettség, 4. Kapcsolódó, P-143: eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX
-
-### Community 1038 - "Community 1038"
-Cohesion: 0.22
-Nodes (8): 1. Question, 2. Decision, 3.1. Bérjegyzék Fejléc és Adatsorok, 3.2. Munkalap Fejléc, 3. Current Implementation, 4. Rationale, 5. Kapcsolódó, P-148: Bérjegyzék Redesign, Költséghely Kezelés és FEOR Munkakör UX
-
-### Community 1039 - "Community 1039"
-Cohesion: 0.22
-Nodes (8): 1. Question, 2. Decision, 3.1. Dolgozói Adatlap (`EmployeeDetailsPage.tsx`), 3.2. Szabadság Tab (`EmployeeLeaveTab.tsx`), 3. Current Implementation, 4. Rationale, 5. Kapcsolódó, P-149: Munkavállalói Pótszabadságok Törzsadat-alapú Feloldása és Szabadság Tájékoztató Kártya UX
-
-### Community 1040 - "Community 1040"
-Cohesion: 0.22
-Nodes (8): 1. Termékkérdés és Célkitűzés, 2. Termékdöntés, 3. Következmények és Eredmények, A. Webes Felület: Egységes Forintpontos Megjelenítés (Opció A), B. ÁNYK 2665M Kettős Mértékegység-kezelés, C. ÁNYK Belső Összefüggések Automatikus Feloldása (Generátori Védőháló), D. Export Modal UX (`VatXmlExportModal.tsx`), P-154: NAV ÁNYK 2665A/2665M XML Export, M-lapok Kettős Skálája (HUF vs eFt), Webes Konzisztens Forint Nézet és Összefüggés-vizsgálati Validáció UX
-
-### Community 1041 - "Community 1041"
-Cohesion: 0.22
-Nodes (8): 1. Döntési Kontextus és Ügyféligény (EB-0255), 2.1 Cégek Közötti 1-Kattintásos Számlatükör Másolás (`CopyChartOfAccountsModal`), 2.2 Új és Meglévő Számlaszám Szerkesztése (`GlAccountFormFields`, `EditGlAccountModal`), 2.3 Csoportszámla és Analitika Jelvények a Táblázatban (`GeneralLedgerTable`), 2.4 Kényszerek Érvényesítése a Vegyes Naplóban (`AddManualJournalEntryModal`), 2.5 Folyószámla Modul Szűrése (`SubledgerPage`, `useSubledgerAccounts`), 2. Felületi Megvalósítás (UX Architecture), P-168: Egységes Számlatükör, Cégek Közötti Másolás és Folyószámla Kényszer (EB-0255)
-
-### Community 1042 - "Community 1042"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Ügyféligény, 2.1. Naplók Kategória Szűrői és Gyorsugró Választó (`JournalsPage.tsx`), 2.2. Teljeskörű Naplószerkesztés (`ManageJournalsModal.tsx`, `CreateJournalModal.tsx`), 2.3. Tételsori Partnerkezelés Vegyes Bizonylatoknál (`AddManualJournalEntryModal.tsx`), 2.4. Rendszer-zárolt Naplók Kezelése, 2. Termékdöntések és Felhasználói Élmény (UX), 3. Kapcsolódó Architektúra és Verifikáció, P-169: Könyvelési Naplók Kategóriái, Szerkeszthetősége, Banki Szinkronizáció és Tételsori Partnerkezelés (EB-0257)
-
-### Community 1043 - "Community 1043"
-Cohesion: 0.22
-Nodes (8): file_list, clear_all, remove_file, selected_files, history, subtitle, title, uploading
-
-### Community 1044 - "Community 1044"
-Cohesion: 0.22
-Nodes (8): file_list, clear_all, remove_file, selected_files, history, subtitle, title, uploading
-
-### Community 1045 - "Community 1045"
-Cohesion: 0.22
-Nodes (9): columns, city, invoices, invoices_count, name, name_address, tax_number, total_volume (+1 more)
-
-### Community 1046 - "Community 1046"
-Cohesion: 0.22
-Nodes (8): 1. Készpénzes Kiegyenlítés Elismerése (Settlement Rule), 2. Kapcsolat Felbontása és Visszanyitás (Unlinking & Re-opening Policy), 3. Folyószámla Konzultáció és Duplikáció Megelőzés, Decision, Decision 070: Házipénztári Kézi Tételek és Számlák Utólagos Összerendelésének és Leválasztásának Számviteli Szabályzata, Kapcsolódó, Question, Rationale
-
-### Community 1047 - "Community 1047"
-Cohesion: 0.22
-Nodes (9): tooltips, edit_gl, final_balance, granularity_kontirok, granularity_teteles, refresh, temp_balance, view_classic (+1 more)
-
-### Community 1048 - "Community 1048"
-Cohesion: 0.22
-Nodes (9): floating_bulk_bar, cancel, empty_text, save, saving, search_placeholder, select_placeholder, selected_items (+1 more)
-
-### Community 1049 - "Community 1049"
-Cohesion: 0.22
-Nodes (9): category_breakdown, description, empty_desc, empty_title, manage_desc, manage_title, new_category_btn, title (+1 more)
-
-### Community 1050 - "Community 1050"
-Cohesion: 0.22
-Nodes (9): table, edit_gl_tooltip, gain, gl_number, items, loss, month, net (+1 more)
-
-### Community 1051 - "Community 1051"
-Cohesion: 0.22
-Nodes (9): ado, ber, calculated_rate, cost_label, cost_placeholder, edit_title, jarulek, monthly_hours (+1 more)
-
-### Community 1052 - "Community 1052"
-Cohesion: 0.22
-Nodes (9): actions, details, export_csv, export_excel, export_list, mark_paid, new_invoice, upload_invoice (+1 more)
-
-### Community 1053 - "Community 1053"
-Cohesion: 0.22
-Nodes (8): 1. Kontextus és Problémafelvetés, 2.1. Oszlopok a `petty_cash_entries` táblán, 2.2. RPC Sorszám Generálás: `public.generate_next_cash_receipt_number`, 2. Adatbázis Séma Bővítés (Migration: `20261013153000_petty_cash_receipt_vat_and_payee.sql`), 3. Adatfolyam és ÁFA Motor Integráció, 4. Frontend Architektúra és Vercel Best Practices, 5. Verifikációs Eredmények, A-254 — Házipénztár Egyedi Név, Perzisztált Bizonylatszám és 65-ös ÁFA Motor Integráció Architektúra
-
-### Community 1054 - "Community 1054"
-Cohesion: 0.22
-Nodes (9): source_types, cash_deposit, cash_expense, cash_sale, invoice_settlement, manual, opening_balance, transfer (+1 more)
-
-### Community 1055 - "Community 1055"
-Cohesion: 0.22
-Nodes (9): cancel, confirm, desc, number, period, reason_label, reason_placeholder, title (+1 more)
-
-### Community 1056 - "Community 1056"
-Cohesion: 0.22
-Nodes (9): signature_dialog, cancel, description, generate_pdf, payer_expense, payer_income, recipient_expense, recipient_income (+1 more)
-
-### Community 1057 - "Community 1057"
-Cohesion: 0.22
-Nodes (9): assign_modal, assign_selected, badge_in, badge_out, desc, no_unassigned, search_placeholder, select_all_list (+1 more)
-
-### Community 1058 - "Community 1058"
-Cohesion: 0.22
-Nodes (9): profile, company_from_selected, company_name, full_name, position, position_from_role, save_button, subtitle (+1 more)
-
-### Community 1059 - "Community 1059"
-Cohesion: 0.22
-Nodes (9): console, all_tickets, console_desc, console_title, empty_all, empty_own, empty_search, pending_tickets (+1 more)
-
-### Community 1060 - "Community 1060"
-Cohesion: 0.22
-Nodes (9): validation, digits_only, giro_length, invalid_cdv, invalid_cdv_block1, invalid_cdv_block2, invalid_cdv_block3, invalid_iban (+1 more)
-
-### Community 1061 - "Community 1061"
-Cohesion: 0.22
-Nodes (9): tooltips, edit_gl, final_balance, granularity_kontirok, granularity_teteles, refresh, temp_balance, view_classic (+1 more)
-
-### Community 1062 - "Community 1062"
-Cohesion: 0.22
-Nodes (9): floating_bulk_bar, cancel, empty_text, save, saving, search_placeholder, select_placeholder, selected_items (+1 more)
-
-### Community 1063 - "Community 1063"
-Cohesion: 0.22
-Nodes (9): category_breakdown, description, empty_desc, empty_title, manage_desc, manage_title, new_category_btn, title (+1 more)
-
-### Community 1064 - "Community 1064"
-Cohesion: 0.22
-Nodes (9): table, edit_gl_tooltip, gain, gl_number, items, loss, month, net (+1 more)
-
-### Community 1065 - "Community 1065"
-Cohesion: 0.22
-Nodes (9): ado, ber, calculated_rate, cost_label, cost_placeholder, edit_title, jarulek, monthly_hours (+1 more)
-
-### Community 1066 - "Community 1066"
-Cohesion: 0.17
-Nodes (11): 1. `get_unclassified_gl_items` Beépített Limit Védelem, 2. `company_id` Denormalizáció az `invoice_items` Táblán, 3. Automatikus Szinkronizációs Triggerek (Defense in Depth), 4. RLS Házirend és Klienshívások Optimalizálása, A-259: invoice_items Multi-Tenant Denormalizáció, PostgREST Lateral Join Timeout Felszámolása és get_unclassified_gl_items Limit Védelem, Consequences, Context, Decision (+3 more)
-
-### Community 1067 - "Community 1067"
-Cohesion: 0.22
-Nodes (8): 1. Két Új Beépített Főkönyvi Nézetsablon (`useGlViewTemplates.ts`), 2. Export Lenyíló Menü Bővítés (`GlToolbar.tsx`), 3. RLB-60 A4 Álló PDF Formátum (`rlbGlPdf.ts`), 4. Formázott Excel Munkafüzet (`rlbGlExcel.ts`), 💡 Decision, P-187: RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Exportok UX, 🎯 Question, 🔍 Érintett Fájlok
-
-### Community 1068 - "Community 1068"
-Cohesion: 0.22
-Nodes (8): 1. Háttér és Felhasználói Igény, 2.1. Közvetlen Új Pénztár Létrehozás (Dual Access), 2.2. Bizonylatszám (Sorszám) Kezelés, 2.3. Egyedi Név / Befizető / Átvevő Mező, 2.4. ÁFA-s Tétel Rögzítése és 65-ös Bevallási Sorok, 2. Felületi Élmény és Megoldás, 3. Minőségi és Regresszióvédelmi Garanciák, P-188 — Házipénztár Egyedi Név, Kézi/Auto Bizonylatszám, Gyors Pénztárkészítés és 65-ös ÁFA Rögzítés UX
-
-### Community 1069 - "Community 1069"
-Cohesion: 0.22
-Nodes (9): signature_dialog, cancel, description, generate_pdf, payer_expense, payer_income, recipient_expense, recipient_income (+1 more)
-
-### Community 1070 - "Community 1070"
-Cohesion: 0.22
-Nodes (9): assign_modal, assign_selected, badge_in, badge_out, desc, no_unassigned, search_placeholder, select_all_list (+1 more)
-
-### Community 1071 - "Community 1071"
-Cohesion: 0.22
-Nodes (9): profile, company_from_selected, company_name, full_name, position, position_from_role, save_button, subtitle (+1 more)
-
-### Community 1072 - "Community 1072"
-Cohesion: 0.22
-Nodes (9): console, all_tickets, console_desc, console_title, empty_all, empty_own, empty_search, pending_tickets (+1 more)
-
-### Community 1073 - "Community 1073"
-Cohesion: 0.22
-Nodes (9): validation, digits_only, giro_length, invalid_cdv, invalid_cdv_block1, invalid_cdv_block2, invalid_cdv_block3, invalid_iban (+1 more)
-
-### Community 1074 - "Community 1074"
-Cohesion: 0.14
-Nodes (14): pdf, closing_summary, generated_at, page_title, period, summary, closing, currency (+6 more)
-
-### Community 1075 - "Community 1075"
-Cohesion: 0.22
-Nodes (7): __dirname, envLocalPath, envVars, __filename, matchLimit, rootDir, supabase
-
-### Community 1076 - "Community 1076"
-Cohesion: 0.22
-Nodes (5): MIGRATION_FILE, MIGRATIONS_DIR, migrationSql, ROOT, SERVICE_ONLY_FUNCTIONS
-
-### Community 1077 - "Community 1077"
-Cohesion: 0.14
-Nodes (13): 1. Tárolóhely & Felelős Struktúra (`company_sub_locations`), 2. Kétnyelvű Átadás-Átvételi Nyilatkozat (Mt. 179. §) & Áthelyezési Napló, 3. Hibrid Címkenyomtatás (Code 128B SVG + QR kód), 4. Mobilbarát Leltározás és Fordulónapi Leltárív (Sztv. 69. §), 5. Pályázati Projektek és Eszköz-komponensek Sémája, 6. Komponens-szintű ÉCS és ÉCS-arányos PIE Feloldás Könyvelése (Sztv. 45. § (2)), 7. Digitális Támogatási Projektlap és Négyoldalú Rekonciliáció, 8. Blind-Spot Védelem és Adatintegritási Keményítés (Option A Implementáció) (+5 more)
-
-### Community 1078 - "Community 1078"
-Cohesion: 0.25
-Nodes (7): 1. Adatbázis Szinten (PostgreSQL RLS Policy-k), 2. Edge Function Szinten (`management-stats/index.ts`), 3. Frontend Szinten (`ProtectedLayout.tsx` & Button Guards), 🎭 A Visibill 7-Szintű Szerepkör Mátrixa, 📖 Fogalom Meghatározása, 💡 Hogyan Érvényesül az RBAC a Kódban?, 👑 RBAC — Role-Based Access Control (Szerepkör Alapú Hozzáférés-kezelés)
-
-### Community 1079 - "Community 1079"
-Cohesion: 0.25
-Nodes (7): 1. XSS (Cross-Site Scripting), 2. CSRF (Cross-Site Request Forgery), 3. CORS (Cross-Origin Resource Sharing), 4. CSP (Content Security Policy) & Multi-Tab Isolation [A-040], 🚨 A 4 Legfőbb Webes Sérülékenység & Védelem, 📖 Fogalom Meghatározása, 🌐 Web Security — XSS, CSRF, CORS & CSP (Böngészőbiztonság)
-
-### Community 1080 - "Community 1080"
-Cohesion: 0.25
-Nodes (7): 🏛️ 1. Mi a PostgreSQL (Postgres)?, 🔒 2. Az ACID Garanciák (A Tranzakciók 4 Pillére), ⚡ 3. Hibrid Relációs + NoSQL képességek (JSONB), 🔌 4. Extensions (Bővítmények), 💡 Használat & Szerep a Visibillben, 📖 Mozaikszavak Kibontása & Definíciók, 🐘 PostgreSQL — A Relációs Adatbázismotor
-
-### Community 1081 - "Community 1081"
-Cohesion: 0.25
-Nodes (7): 1. Dead Letter Queue (DLQ — Hibás Üzenetek Sora), 2. Transactional Outbox Pattern (Tranzakciós Outbox Minta), 3. BFF (Backends for Frontends) & API Gateway, 4. Bulkhead Pattern (Rekesz / Izolációs Minta), 🏗️ Aszinkron Rendszer-minták (DLQ, Outbox, BFF, Bulkhead), 📖 Fogalom Meghatározása, 🔑 Főbb Aszinkron Minták Katalógusa
-
-### Community 1082 - "Community 1082"
-Cohesion: 0.25
-Nodes (7): 💥 A "Cache Stampede" (Thundering Herd) Probléma & Megoldása, A Jelenség:, 🗑️ Cache Kiürítési Politikák (Eviction Policies), 🔄 Caching Minta-Típusok (Caching Patterns), ⚡ Caching Stratégiák, Eviction & Cache Stampede, 📖 Fogalom Meghatározása, Megoldások:
-
-### Community 1083 - "Community 1083"
-Cohesion: 0.25
-Nodes (7): 1. Read Replicas (Olvasási Másolatok), 2. Sharding (Horizontal Partitioning — Vízszintes Partícionálás), 3. Consistent Hashing (Konzisztens Hashelés), 🔑 A 3 Adatbázis Skálázási Stratégia, 💡 Alkalmazás a Visibill Architektúrában, 🗄️ Database Sharding, Partitioning & Replication, 📖 Fogalom Meghatározása
-
-### Community 1084 - "Community 1084"
-Cohesion: 0.25
-Nodes (7): 1. BFS (Breadth-First Search — Szélességi Keresés), 2. DFS (Depth-First Search — Mélységi Keresés), 3. Topological Sort (Topológiai Rendezés — DAG), 📖 Fogalom Meghatározása, 🔑 Főbb Gráfbejárási & Rendezési Algoritmusok, 🌐 Gráfalgoritmusok & Topológiai Rendezése (BFS, DFS, TopoSort), 💡 Használat a Visibill Projektben
-
-### Community 1085 - "Community 1085"
-Cohesion: 0.25
-Nodes (7): 1. Adatbázis & RPC réteg, 2. Frontend & XML Motor, 3. Tesztek & Minőségbiztosítás, 4. Dokumentáció & Architektúra, 🛠️ Részletes Módosítások, Session Summary — 2026-09-28 13:00, 🚀 Összefoglaló (Conventional Commit)
-
-### Community 1086 - "Community 1086"
-Cohesion: 0.25
-Nodes (7): 1. Adatbázis, RPC Réteg & Edge Function, 2. Frontend UI, Hookok és Kétnyelvűsítés (HR / HU), 3. Minőségbiztosítás & Verifikáció, 4. Döntési Nyilvántartás & Tudásgráf, 🛠️ Részletes Módosítások, Session Summary — 2026-09-28 14:07, 🚀 Összefoglaló (Conventional Commit)
-
-### Community 1087 - "Community 1087"
-Cohesion: 0.25
-Nodes (6): AccountyModule, AccountyRole, ADMIN_ONLY_MODULES, ALL_MODULES, ALWAYS_ACCESSIBLE, SENIOR_AND_ADMIN_MODULES
-
-### Community 1088 - "Community 1088"
-Cohesion: 0.13
-Nodes (15): status, active, approved, closed, critical, draft, in_progress, inactive (+7 more)
-
-### Community 1089 - "Community 1089"
-Cohesion: 0.18
-Nodes (12): ClientEvMainPage(), EMPLOYMENT_LABELS, EMPLOYMENT_LABELS_HR, FORM_LABELS, FORM_LABELS_HR, formatEvAmount(), ORG_TYPE_LABELS, ORG_TYPE_LABELS_HR (+4 more)
-
-### Community 1090 - "Community 1090"
-Cohesion: 0.25
-Nodes (7): Adatfolyam, Kapcsolódó Dokumentáció, Kulcsfontosságú Architekturális Döntések, MNB árfolyam szinkronizálás, Rendszer Áttekintés, Visibill — Architecture Overview, XML főkönyvi import
-
-### Community 1091 - "Community 1091"
-Cohesion: 0.25
-Nodes (7): 🛡️ 1. Kötelező Kliens- és Költségvédelem ([ADR A-101](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-101-direct-script-automation-restriction.md)), 🔑 2. Hitelesítés és Jogosultságkezelés (Auth & RBAC), 🦕 3. Deno Runtime és Import Konvenciók, ⚡ 4. Hibakezelés és Válasz Formátumok, ⚙️ 5. Regisztráció és Konfiguráció (`config.toml` & Deployment), 🧪 6. Kötelező Edge Function Tesztelés és Verifikáció, Supabase Edge Functions Guidelines (Visibill / eaisybill-prod)
-
-### Community 1092 - "Community 1092"
-Cohesion: 0.25
-Nodes (7): 1. FÁZIS: Előfeltételek & Referenciák Betöltése, 2. FÁZIS: Adatgyűjtés és Automatizált Vizsgálat, 3. FÁZIS: Audit Jelentés és Osztályozás, 4. FÁZIS: Javítási Terv és Kockázatértékelés (KÖTELEZŐ), 5. FÁZIS: Jóváhagyás és Láncolt Végrehajtás, 📋 Audit Jelentés Sablon, Visibill Database & Supabase Audit Framework
-
-### Community 1093 - "Community 1093"
-Cohesion: 0.25
-Nodes (7): 1. Cégjelölt keresése, 2. Baseline (indítás előtt), 3. Indítás (ugyanúgy, ahogy a `nav-daily-sync` pg_cron job), 4. Ellenőrzés, ⚠️ Biztonsági szabályok, Célzott éles NAV szinkron + láncellenőrzés, Riport
-
-### Community 1094 - "Community 1094"
-Cohesion: 0.25
-Nodes (7): 🔐 Auth & Felhasználók, `nylas_tokens`, `profiles`, `settings`, `user_email_preferences`, `user_nav_credentials`, `user_subscriptions`
-
-### Community 1095 - "Community 1095"
-Cohesion: 0.25
-Nodes (7): `accounty_cost_centers`, `accounty_departments`, `accounty_office_settings`, `accounty_sites`, `accounty_transfers`, `accounty_year_end_tasks`, 📘 eaisyBooks — Szervezet
-
-### Community 1096 - "Community 1096"
-Cohesion: 0.25
-Nodes (7): A-003: Multi-tenancy RLS Alapon, Consequences, Context, Cross-company Invoice Routing (2026-07-02), Decision, eaisyBooks Könyvelői és Support Admin RLS Kiterjesztés (2026-09-27), Kapcsolódó
-
-### Community 1097 - "Community 1097"
-Cohesion: 0.25
-Nodes (7): A-014: React Query Cache Stratégia, Cache Reset vs. Invalidation Mutációk Után (Eviction Pattern), Consequences, Context, Decision, Page-Level Batch Pre-fetch & Query Key Hygiene (2026-08), Realtime Cache Invalidáció
-
-### Community 1098 - "Community 1098"
-Cohesion: 0.25
-Nodes (7): A-033: Exclude Service Role Operations from Company Audit Trail, Consequences, Context, Decision, Kapcsolódó, Negatív, Pozitív
-
-### Community 1099 - "Community 1099"
-Cohesion: 0.25
-Nodes (7): A-049: Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete), Consequences, Context, Decision, Kapcsolódó, Negatív:, Pozitív:
-
-### Community 1100 - "Community 1100"
-Cohesion: 0.25
-Nodes (7): A-063 — Unified DocumentEngine & Ports-and-Adapters Exporter Architecture, Döntés, Előnézeti és Letöltési Szerződések (Preview & Download Contracts), Kapcsolódó, Kontextus & Probléma, Következmények és Előnyök, Visszafelé Kompatibilitás (Facade Pattern)
-
-### Community 1101 - "Community 1101"
-Cohesion: 0.25
-Nodes (7): 1. Context, 2. Decision, 3. Consequences, 4. Updates & Evolution, A-068: High-Performance Server-Side Management Files Pagination & Multi-Source Unified Querying (`get_management_files` RPC), Pozitív:, Trade-offs:
-
-### Community 1102 - "Community 1102"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus és Üzleti Igény, 2. Döntés, 3. Következmények, A-078: Telefonszámla ÁFA Részleges Levonhatóság (70/30 Szabály) és Tételszintű Arányosítás, A. Adatbázis Séma, B. Kalkulációs Motor (`calculate_vat_return` RPC), C. Felhasználói Élmény és Intelligens Automatizálás (`InvoiceItemsDialog.tsx`)
-
-### Community 1103 - "Community 1103"
-Cohesion: 0.25
-Nodes (7): 1. Adatbázis RLS és Hozzáférési Függvények Optimalizálása (`20260907133041_optimize_accounty_access_and_rls.sql`), 2. Frontend Kliensoldali Védelmek, A-103: Accounty RLS Teljesítményoptimalizálás és Postgres Hibanapló Stabilizálás, Context, Decision, Eredmények és Mérések (Empirical Evidence), Kapcsolódó Dokumentumok
-
-### Community 1104 - "Community 1104"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus és Problémafelvetés, 2.1 Excel 2003 XML (SpreadsheetML) Natív Dekódolás, 2.2 Intelligens Fejléc és Számlaszám Tisztítás, 2.3 UI Fájlmaszkok Bővítése, 2. Döntések és Megvalósítás, 3. Következmények és Minőségbiztosítás, A-137: Rugalmas Főkönyvi Kivonat és Nyitó Egyenleg Import Normalizáció (Microfox Fejlécek és Excel 2003 XML / SpreadsheetML Támogatás)
-
-### Community 1105 - "Community 1105"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus és Problémafelvetés, 2. Döntési Alternatívák, 3. Részletes Rendszer-Architektúra, 4. Megvalósítási Eredmények, 5. Minőségbiztosítás és Tesztelési Eredmények, A-163: Főkönyv UI & UX Modularizáció, Ergonómiai Átszervezés és Zsúfoltság-Megszüntetés, Az organikus növekedésből fakadó ergonómiai problémák (Clutter):
-
-### Community 1106 - "Community 1106"
-Cohesion: 0.25
-Nodes (7): 1. Architekturális Kontextus és Kihívás, 2.1 Adatbázis Trigger Lánc & Kétoldali Állapot-szinkronizáció, 2.2 Kliensoldali Reaktív Gazdagítás és Deduplikáció, 2.3 Prefix-Tisztítási Szabály a Bizonylatszám Illesztésben (`cleanNum`), 2. Döntés & Rendszerarchitektúra, 3. Következmények és Előnyök, A-169: B2C Kimenő Számlák NAV Anonimizáció-Feloldása, Bizonylat Normalizálás és Automatikus Jóváhagyási Trigger Lánc
-
-### Community 1107 - "Community 1107"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus és Problémafelvetés, 2.1. Adatbázis Séma és Hitelesítő Adatok Tárolása, 2.2. Supabase Edge Function (`minimax-sync`), 2.3. Frontend Jurisdictio és Komponensek, 2. Architektúrális Döntések, 3. Bizonyítékok és Eredmények (Evidence), A-171: Horvát Minimax REST API Számla-közvetítő Integráció és Szinkronizáció
-
-### Community 1108 - "Community 1108"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus, 2.1 Adatbázis Séma (`20260928120000_periodic_cash_reports_schema.sql`), 2.2 Tranzakcionális PostgreSQL RPC-k (`20260928121000_cash_report_workflow_rpcs.sql`), 2.3 Főkönyvi Feladás és Validáció (`20260928122000_post_cash_report_to_gl.sql`), 2. Döntés és Architektúra, 3. Következmények és Előnyök, A-172: Időszaki Pénztárjelentés Adatbázis Modell, Szigorú Számadású Sorszámozás és Főkönyvi Életciklus
-
-### Community 1109 - "Community 1109"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus & Problémafelvetés, 2. Architektúrális Döntések, 3. Következmények & Éles Eredmények, A-174: Bérfeladás Idempotencia-védelem, Duplakönyvelés Megelőzés és Lezárt Ciklus Adatbiztonság, D-1: Idempotens Főkönyvi Bérfeladás (`postPayrollCycleToLedger`), D-2: Állapot-perzisztencia és Lépés-védelem (`PayrollCyclePage`), D-3: Opcionális Könyvelés Cikluszáráskor
-
-### Community 1110 - "Community 1110"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus & Problémafelvetés, 2.1. Dedikált Gyorsítótár Tábla (`public.company_counts_cache`) & `pg_cron`, 2.2. Python Worker In-Memory Settings Cache (Vault Tehermentesítés), 2. Architektúrális Döntések & Megvalósítás, 3. Mért Eredmények & Verifikáció, 4. Érintett Fájlok, A-190: Menedzsment Dashboard Összesítő Gyorsítótárazás és Python Worker Vault Tehermentesítés (P2 Skálázhatósági Fejlesztés)
-
-### Community 1111 - "Community 1111"
-Cohesion: 0.25
-Nodes (7): 1. Architekturális Háttér, 2.1 Új Komponensek, 2.2 Útvonalkezelés és Jogosultságok, 2.3 Állapot és Dialógus Vezérlés a Fogyasztó Komponensekben, 2. Komponens és Adatfolyam Architektúra, 3. Minőségbiztosítás és Tesztelés, A-196: Könyvelési Szabályok Modális és Keresztmodul Integrációja (ÁFA, Napló és Főkönyvi Szabálykezelő)
-
-### Community 1112 - "Community 1112"
-Cohesion: 0.25
-Nodes (7): 1. Döntési Kontextus és Igény, 2.1 Komponens Hierarchia és Felelősségek, 2.2 Determinisztikus Adatkötés és Partner Aggregáció, 2.3 Felületi Integráció, 2. Architektúra Döntés, 3. Következmények és Előnyök, A-197: NAV 26A60 Hivatalos Nyomtatvány Digitális Replika Architektúra
-
-### Community 1113 - "Community 1113"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus, 2. Döntés és Rendszerarchitektúra, 3. Következmények és Eredmények, A-199: NAV 65M-02-K Korrekciós és Sztornó Számlák Feldolgozási és ÁNYK XML Export Architektúrája, D-1: Korrekciós Feloldó Motor (`vatCorrectionResolver.ts`), D-2: ÁNYK XML Export Bővítés (`vatReturnXml.ts`), D-3: Webes Megjelenítés (`VatMLineMasterDetail.tsx`)
-
-### Community 1114 - "Community 1114"
-Cohesion: 0.25
-Nodes (7): A-201: NAV 2665 ÁFA Bevallás: 43. (Tárgyi eszköz értékesítés) és 45. (Előleg) Sorok Adóösszeg Implementációja, Consequences, Context, Decision, Kapcsolódó, Negatív / Kockázatok, Pozitív
-
-### Community 1115 - "Community 1115"
-Cohesion: 0.25
-Nodes (7): A-202: Bérszámfejtés Haladó Riportok Motor, Kliensoldali Aggregáció és Nyilatkozatok Scoped Navigációs Architektúra, Consequences, Context, Decision, Kapcsolódó, Negatív, Pozitív
-
-### Community 1116 - "Community 1116"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus és Technikai Kihívás, 2. Architektúra és Döntések, 3. Minőségi és Verifikációs Eredmények, A-205: NAV 2665M Digitális Nyomtatvány Replika és Partner Tördelő Motor Architektúrája, D-1: Típusbiztos Tördelő és Számítási Motor (`nav65MPaginationHelper.ts`), D-2: Komponens Dekompozíció (Maker-Checker & Vercel React Purity), D-3: Partner-Izolált Lazy Renderelés
-
-### Community 1117 - "Community 1117"
-Cohesion: 0.25
-Nodes (7): 1. Context & Business Need, 2. Döntési Mátrix és Törvényi Sorbesorolás, 3.1 Dual-Source Adatgyűjtés, 3.2 4-Kártyás Statisztikai és Összefüggés Ellenőrző Fejléc, 3.3 Élő Európai Bizottsági VIES REST API Integráció, 3. Részletes Rendszerdöntések, Decision 064: A60 Közösségi ÁFA Összesítő és 65-ös Bevallás Összefüggés-vizsgálat (VIES Integrációval)
-
-### Community 1118 - "Community 1118"
-Cohesion: 0.25
-Nodes (7): 1. Előzmények és Konzisztencia Problémák, 2. Megvalósított Megoldás: „Fintech Dense Split” (1. Opció), 3. Érintett Kódfájlok, A. Rács Elrendezés (Grid Layout), B. Legutóbbi Számlák (`RecentInvoices.tsx`), C. Projekt Összefoglaló (`ProjectBreakdown.tsx`), Design Spec: Legutóbbi Számlák & Projekt Összefoglaló Layout Újratervezés
-
-### Community 1119 - "Community 1119"
-Cohesion: 0.25
-Nodes (7): 1. Előzmények és Elemzés, 🌟 1. Opció: Fintech Side-by-Side Split (Két szinkronizált 520px kártya), 2. A 3 Kidolgozott Design Koncepció, ⭐ 2. Opció: Unified Financial Cockpit (Egyesített Teendőközpont — Kiemelten Ajánlott!), ⚡ 3. Opció: Action-First Dense Grid (Maximális Sebesség Könyvelőknek), Design Spec — Nem Párosított Tételek & Bejövő Számlák Állapota Újratervezés, Meglévő Problémák:
-
-### Community 1120 - "Community 1120"
-Cohesion: 0.25
-Nodes (7): 🏗️ 1. Rendszer- és Worker Áttekintés, ⚙️ 2. A Dedikált Fejlesztői Worker (`worker-dev`), 📊 3. Többprojektes Worker Monitor Architektúra, Adatfolyam és Működés, Aktív Worker Konténerek (7/7 Healthy), Konfiguráció és Futtatás, Worker Architektúra és Dedikált Dev Worker Replica
-
-### Community 1121 - "Community 1121"
-Cohesion: 0.25
-Nodes (7): Confirm Dialog (`StornoSettleDialog`), Gomb — "Sztornó lezárása" / "Visszavonás", Kapcsolódó, P-048: Sztornó Számla Kézi Lezárás UX, Row státusz, UX Részletek, Visszavonhatóság
-
-### Community 1122 - "Community 1122"
-Cohesion: 0.25
-Nodes (7): 1. Kártya Alapú Profil Lista (`EmailSettingsForm.tsx` & `EmailAccountCard.tsx`), 2. Szerkesztő és Hozzáadó Modális Ablak (`EmailAccountDialog.tsx`), 3. Törlés Megerősítés (`AlertDialog`), Kapcsolódó, P-051: Többprofilos Levelező Fiókok (Multi-Profile IMAP/SMTP) Kezelése UX, Rationale, UI / UX Kialakítás
-
-### Community 1123 - "Community 1123"
-Cohesion: 0.25
-Nodes (7): 1. Felhasználói Igény & Háttér, 2. Termék & UX Döntések, 3. Hatás a Felhasználói Élményre, A. Éves Beszámoló 6-Lépéses Varázsló UX (`/annual-report`), B. ÁFA Bevallás (NAV 2665) Kettős Nézet UX (`/vat-return`), C. Egységesített Lebegő Popover Dátumválasztó (`<DatePicker />`), P-060: Modular UX for Statutory Reporting, VAT 2665 Calculator/Replica and Reusable Popover DatePicker
-
-### Community 1124 - "Community 1124"
-Cohesion: 0.25
-Nodes (7): Context, Current Implementation, Decision, Kapcsolódó, P-071: Biztonságos Számlatükör Törlés és Tételek Átkötése (Safe CoA Preset Remapping) UX, Question, Rationale
-
-### Community 1125 - "Community 1125"
-Cohesion: 0.25
-Nodes (7): Context, Current Implementation, Decision, Kapcsolódó, P-072: Bérszámfejtési Ciklus Jelenlét Kézi Rögzítés és Cafeteria UX Stabilitás, Question, Rationale
-
-### Community 1126 - "Community 1126"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus & Üzleti Cél, 2.1 Navigáció és Elhelyezés, 2.2 Főoldali Kereső és Kategóriaszűrők (Master Nézet), 2.3 Cikk Olvasó Nézet (Detail Nézet), 2. Felhasználói Élmény és Felépítés, 3. Jogosultsági Szabályok, P-078: [eaisyBill] Tudástár (Knowledge Base) és Funkciókalauz UX
-
-### Community 1127 - "Community 1127"
-Cohesion: 0.25
-Nodes (7): 1. Alapértelmezett Rezsi Kategóriák Auto-Provisioning, 2. Hozzárendelési Mátrix (Mapping Matrix) Testreszabás, 3. Főkönyv-Alapú Szűrés és Vizuális Megjelenítés, Döntések, Kapcsolódó Fájlok, Kontextus, P-079 — Kategóriák: Főkönyvi Számlaosztály-Alapú Rezsi-Kategorizálás és Hozzárendelési Mátrix
-
-### Community 1128 - "Community 1128"
-Cohesion: 0.25
-Nodes (7): 1. Bevételek ÁFA tartalma (Kimenő számlák), 2. Kiadások ÁFA tartalma (Bejövő számlák), 3. Párhuzamos megjelenítés és lokalizáció, 4. Hivatalos NAV 2665 Bevallási Sorbontás Nézet (`VatCollectorAnalyticsView.tsx`) (2026-09-27), Kapcsolódó, P-093: ÁFA Analitika Oszlopelrendezés és Valós Nettó Megjelenítés UX (VAT Analytics Net Revenue & Column Layout UX), Részletes UI/UX Működés
-
-### Community 1129 - "Community 1129"
-Cohesion: 0.25
-Nodes (7): 1. Kettős Megjelenítési Szint (Dual-Layer Presentation), 2. Különleges Adózási Esetek és Jogszabályi Hivatkozások, 🔍 Ellenőrzési és Használati Útmutató, 📍 Megjelenési Helyek, P-099: Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX), 🎯 Problémafelvetés és Célkitűzés, 💡 Termék és Felületi Tervezés (UX)
-
-### Community 1130 - "Community 1130"
-Cohesion: 0.25
-Nodes (7): 1. Kontextus és Problémafelvetés, 2.1 Új Főkönyvi Szám Eszköztár Gomb (`+ Novo konto`), 2.2 Dinamikus Devizakijelzés a Felület Egészén, 2.3 Teljes Horvát Nyelvi Lefedettség a Nézetekben, 2. Termékdöntés és Megvalósítás, 3. UI/UX Minőségbiztosítás és Eredmények, P-106: Horvát Főkönyvi Kivonat és Nézetek Teljes Lokalizációja, Dinamikus Pénznem és Novo Konto UX
-
-### Community 1131 - "Community 1131"
-Cohesion: 0.25
-Nodes (7): 1. Termékkérdés és Célkitűzés, 2. Termékdöntés, 3. Minőségbiztosítás és Eredmények, A. Kattintható Bizonylat-Ikon a Tétel Megnevezése Előtt, B. Intelligens Kétutas Megnyitás (Smart Resolver), C. Teljes Támogatás Mindkét Tételcsoportosításban, P-120: Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet UX
-
-### Community 1132 - "Community 1132"
-Cohesion: 0.25
-Nodes (7): 1. Felhasználói Igény és Célcsoport, 2. Terméktervezési Elvek és Megoldások, 3. Megtartott Képességek Garanciája, A. Rendszerezett felső sáv (10 gomb helyett 3 tiszta blokk), B. Kompakt / Kiterjeszthető KPI csík (+80-100px munkaterület), C. Tisztított Szűrősáv & Progressive Disclosure, P-122: Főkönyv Felhasználói Élmény (UX), Letisztult Könyvelői Ergonómia és Zsúfoltság-Megszüntetés
-
-### Community 1133 - "Community 1133"
-Cohesion: 0.25
-Nodes (7): 1. Felhasználói Igény és Probléma, 2.1. Természetes Felfedezhetőség (Natural Discoverability), 2.2. Kontextuális Törlés Gomb, 2.3. Biztonsági Megerősítő Dialógus (`<AlertDialog>`), 2.4. Intelligens Hibakezelés és Visszajelzés, 2. Termék és UX Megoldás, P-139: Egyéni Számlatükör Főkönyvi Szám Törlése és Ergonómiai UX
-
-### Community 1134 - "Community 1134"
+### Community 596 - "P-142: Tranzakció Többes Számlapárosítás és Jutalék-levonás UX"
 Cohesion: 0.25
 Nodes (7): 1. Üzleti Háttér és Probléma, 2.1 Checkbox-alapú Többes Kijelölés, 2.2 Dinamikus Összesítő és Jutalék Sáv, 2.3 Intelligens és Beszédes Mentés Gomb, 2. Megoldás és Felületi Működés, 3. Adatbázis és Szerviz Réteg Architektúra, P-142: Tranzakció Többes Számlapárosítás és Jutalék-levonás UX
 
-### Community 1135 - "Community 1135"
+### Community 597 - "P-143: eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX"
 Cohesion: 0.25
-Nodes (7): 1.1 Folyószámla Táblázat Kettős Összegformázása, 1.2 Lebegő Műveleti Sáv és Keresztdevizás Figyelmeztetés, 1.3 Modálok és Export Szinkronizáció, 1. Felhasználói Felület és Működés (UX), 2. Rationale (Indoklás), 3. Kapcsolódó, P-152: Folyószámla Kettős Devizamegjelenítés, Árfolyam Tooltip és Vegyes Devizás Kijelölés UX
+Nodes (8): 1. Üzleti Háttér és Probléma, 2.1 3-oszlopos Dashboard Grid (`PayrollDashboardPage.tsx`), 2.2 120-napos Éves Keretfigyelő és Küszöbérték-Jelvények, 2.3 Dolgozók Szűrése és Kétirányú URL Szinkronizáció (`EmployeesPage.tsx`), 2. Megoldás és Felületi Működés, 3. Minőségbiztosítás és Tesztlefedettség, 4. Kapcsolódó, P-143: eaisyBooks Bérszámfejtés 3-oszlopos Elrendezés, EFO Szétválasztás és 120-napos Keretfigyelő UX
 
-### Community 1136 - "Community 1136"
+### Community 598 - "P-148: Bérjegyzék Redesign, Költséghely Kezelés és FEOR Munkakör UX"
 Cohesion: 0.25
-Nodes (7): 1.1 Bérszámfejtési Ciklus és Jelenléti Ív Munkanapkeret, 1.2 Élő Bérlap és Levonások Dinamikus Kalkulációja, 1.3 Kilépő Munkavállaló Szabadságmegváltása (`EmployeeExitWizardPage`), 1. Felhasználói Felület és Működés (UX), 2. Rationale (Indoklás), 3. Kapcsolódó, P-153: Dinamikus Törvényes Munkanapkeret és Bérszámfejtési Munkanap Választó UX
+Nodes (8): 1. Question, 2. Decision, 3.1. Bérjegyzék Fejléc és Adatsorok, 3.2. Munkalap Fejléc, 3. Current Implementation, 4. Rationale, 5. Kapcsolódó, P-148: Bérjegyzék Redesign, Költséghely Kezelés és FEOR Munkakör UX
 
-### Community 1137 - "Community 1137"
+### Community 599 - "P-153: Dinamikus Törvényes Munkanapkeret és Bérszámfejtési Munkanap Választó UX"
+Cohesion: 0.29
+Nodes (8): 1.1 Bérszámfejtési Ciklus és Jelenléti Ív Munkanapkeret, 1.2 Élő Bérlap és Levonások Dinamikus Kalkulációja, 1.3 Kilépő Munkavállaló Szabadságmegváltása (`EmployeeExitWizardPage`), 1. Felhasználói Felület és Működés (UX), 2. Rationale (Indoklás), 3. Kapcsolódó, P-153: Dinamikus Törvényes Munkanapkeret és Bérszámfejtési Munkanap Választó UX, EmployeeExitWizardPage()
+
+### Community 600 - "2. Termékdöntés"
 Cohesion: 0.25
-Nodes (7): 1. „Semmit a kéznek, mindent a szemnek” Read-Only Elv, 2. Hivatalos ÁNYK 26A60 Vizuális Lapszerkezet, 3. Eszköztár és Felületi Integráció, Decision, Kapcsolódó, P-155: NAV 26A60 Hivatalos Nyomtatvány Digitális Replika UX, Question
+Nodes (8): 1. Termékkérdés és Célkitűzés, 2. Termékdöntés, 3. Következmények és Eredmények, A. Webes Felület: Egységes Forintpontos Megjelenítés (Opció A), B. ÁNYK 2665M Kettős Mértékegység-kezelés, C. ÁNYK Belső Összefüggések Automatikus Feloldása (Generátori Védőháló), D. Export Modal UX (`VatXmlExportModal.tsx`), P-154: NAV ÁNYK 2665A/2665M XML Export, M-lapok Kettős Skálája (HUF vs eFt), Webes Konzisztens Forint Nézet és Összefüggés-vizsgálati Validáció UX
 
-### Community 1138 - "Community 1138"
+### Community 601 - "2. Termékdöntések és Felhasználói Élmény (UX)"
 Cohesion: 0.25
-Nodes (7): 1. Döntési Kontextus és Problémafelvetés, 2.1 Azonnali Modális Dialógus a Munkafolyamat Megszakítása Nélkül (`AccountingRulesDialog`), 2.2 Fejléci Gombok Elhelyezése, 2.3 Bal Oldali Menüpont (Sidebar), 2. A Döntés és Felületi Specifikáció, 3. Felhasználói Élmény és Eredmények, P-156: Könyvelési Szabályok Elérése az ÁFA Bevallás és Napló Alól, Valamint Egységes Szabálykezelő Dialógus UX
+Nodes (8): 1. Kontextus és Ügyféligény, 2.1. Naplók Kategória Szűrői és Gyorsugró Választó (`JournalsPage.tsx`), 2.2. Teljeskörű Naplószerkesztés (`ManageJournalsModal.tsx`, `CreateJournalModal.tsx`), 2.3. Tételsori Partnerkezelés Vegyes Bizonylatoknál (`AddManualJournalEntryModal.tsx`), 2.4. Rendszer-zárolt Naplók Kezelése, 2. Termékdöntések és Felhasználói Élmény (UX), 3. Kapcsolódó Architektúra és Verifikáció, P-169: Könyvelési Naplók Kategóriái, Szerkeszthetősége, Banki Szinkronizáció és Tételsori Partnerkezelés (EB-0257)
 
-### Community 1139 - "Community 1139"
-Cohesion: 0.25
-Nodes (7): 1. Üzleti Háttér és Igény, 2.1. Gyorsszűrő Vezérlősáv (Segmented Quick Filter), 2.2. Vizuális Megkülönböztetés a Táblázatban, 2.3. Kibontható Kétkártyás 65M-02-K Részletező Nézet, 2. Felületi Megvalósítás és UX Megoldások, 3. Felhasználói Előnyök, P-158: NAV 65M-02-K Korrekciós és Sztornó Számlák Felhasználói Élménye és Tételes Megjelenítése (UX)
-
-### Community 1140 - "Community 1140"
-Cohesion: 0.25
-Nodes (7): 1. Felhasználói Igény és Probléma, 2.1. Haladó Riportok Generálója (`PayrollAdvancedReportsPage.tsx`), 2.2. Nyilatkozatok Vissza-Navigációja (`*DeclarationPage.tsx`), 2.3. Stabil Dolgozói Munkalap és Témakontraszt, 2. Megoldás és UI Működés, Kapcsolódó, P-161: Bérszámfejtés Haladó Riportok és Adóelőleg-Nyilatkozatok Munkafolyamat és Export UX
-
-### Community 1141 - "Community 1141"
-Cohesion: 0.25
-Nodes (7): 1. 2665A-01-03 Nyomtatvány Lap Bevezetése (`Nav2665Sheet0103.tsx`), 1. Kérdés és Felhasználói Kontextus, 2. Egyrovatos Adóalap Mező a 77. Sornál, 2. Termékdöntés és Megoldás, 3. Kapcsolódó, 3. Összefüggés a Tételes Analitikával és az A60 Összesítővel, P-162: NAV 2665 ÁFA Bevallás: 77. Sor (Közösségi Értékesítés) Adóalap és 01-03 Lap UX
-
-### Community 1142 - "Community 1142"
-Cohesion: 0.25
-Nodes (7): 1. Üzleti Háttér és Igény, 2.1. Szegmentált Al-nézet Váltó a Tételes M-lap Fülön, 2.2. Hibrid Nézetmód Kapcsoló: Lapozható ↔ Egybefűzve Görgethető, 2.3. Partner Navigátor és Kereső, 2. Felületi Megvalósítás és UX Megoldások, 3. Minőségbiztosítás és Eredmények, P-164: NAV 2665M Digitális Nyomtatvány Replika és Lapozható/Egybefűzött Partner UX
-
-### Community 1143 - "Community 1143"
-Cohesion: 0.25
-Nodes (7): 1. Felhasználói Igény és Problémafelvetés, 2.1 Főkönyvi Lusta Lapfül-Navigáció, 2.2 Folyószámla `UnifiedPagination` Integráció, 2.3 Napló (Journals) Finomhangolás, 2. Megvalósított Felületi Élmény (UX) és Döntések, 3. Kapcsolódó Dokumentáció, P-165: Folyószámla 50-es Lapozás (UnifiedPagination) és Főkönyv Lekérdezési Vihar Megszüntetése UX
-
-### Community 1144 - "Community 1144"
+### Community 602 - "Termékdöntések és Funkcionális Viselkedés"
 Cohesion: 0.25
 Nodes (7): 1. Teljesítés Dátumának Elsődlegessége (`gl_date_basis: 'teljesites'`), 2. Összevont (Aggregált) Főkönyvi Nézet (`gl_default_view_mode: 'osszevont'`), 3. Devizaárfolyam Pénzintézet és Árfolyamtípus Választó, 4. NAV Adószám Auto-kitöltés Cégbeállításoknál, Kontextus és Üzleti Igény, P-170: EB-0258 Könyvelési Dátum-alapértelmezés, Összevont Főkönyvi Nézet, Devizaárfolyam Bankválasztó és NAV Adószám Auto-kitöltés, Termékdöntések és Funkcionális Viselkedés
 
-### Community 1145 - "Community 1145"
+### Community 603 - "2. Termékdöntések (UX & Workflow)"
 Cohesion: 0.25
 Nodes (7): 1. Problémafelvetés & Felhasználói Igények, 2.1 Alapértelmezett Kiállítási Dátum & Dátumváltó Gyorsgombok, 2.2 Lebegő Alsó Akciósáv (Sticky Action Bar) Integráció, 2.3 Tömeges Kézi Rendezés Modál, 2. Termékdöntések (UX & Workflow), 3. Megvalósítás és Érintett Fájlok, P-171: Utalások Tömeges Rendezés, Kiállítási Dátum Alapértelmezés és Alsó Akciósáv UX
 
-### Community 1146 - "Community 1146"
+### Community 604 - "P-183: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX"
 Cohesion: 0.25
-Nodes (7): 1. Termékcél és Felhasználói Előnyök, 2. Navigáció és Felépítés, 3.1 20-Oszlopos Főkönyvi Kivonat és Karton, 3.2 ISA 560: Utólagos Pénzügyi Rendezések, 3.3 15 Elemű Analitikai Csomag, 3. Fő Funkciók és Kezelés, P-178: Könyvvizsgálói Export és Adatszolgáltatás, 20-Oszlopos Karton, 15 Analitikai Csomag és Éves Zárlati Ellenőrzőlista UX
+Nodes (8): 2. Intelligens Kereső és Számlaválasztó Modál (`AttachInvoiceDialog`), 3. „Leválasztás” Akció és Megerősítő Dialógus, Current Implementation, Decision, Kapcsolódó, P-183: Házipénztári Utólagos Számla-hozzárendelés és Leválasztás UX, Question, Rationale
 
-### Community 1147 - "Community 1147"
+### Community 605 - "💡 Decision"
 Cohesion: 0.25
-Nodes (7): Auth architektúra áttekintés, 🔐 AUTH — Részletes Audit, eaisybill Vendor Lock-in Audit & Migrációs Terv, GoTrue-specifikus viselkedések, amiket migrációnál pótolni kell, Használt Supabase Auth API-k, Érintett forrásfájlok (Auth), 📋 Összefoglaló Lock-in Mátrix
+Nodes (8): 1. Két Új Beépített Főkönyvi Nézetsablon (`useGlViewTemplates.ts`), 2. Export Lenyíló Menü Bővítés (`GlToolbar.tsx`), 3. RLB-60 A4 Álló PDF Formátum (`rlbGlPdf.ts`), 4. Formázott Excel Munkafüzet (`rlbGlExcel.ts`), 💡 Decision, P-187: RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Exportok UX, 🎯 Question, 🔍 Érintett Fájlok
 
-### Community 1148 - "Community 1148"
+### Community 606 - "P-191: Bankkártyás POS és AMEX Göngyölegek Virtuális Banki Feldolgozása, Tételes Tranzakció Generálás és Kereskedői Elszámolási UX"
 Cohesion: 0.25
-Nodes (7): categories, correctness, ignorePatterns, plugins, rules, no-unused-vars, typescript/no-unused-vars
+Nodes (8): 1. Feltöltési Csatorna és Automatikus Formátumfelismerés, 2. Tételes Tranzakciók és Önelszámoló 3-Lábú Modell, 3. Dinamikus Virtuális Bank Regisztráció és GIRO Checksum Bypass, Decision, Kapcsolódó, P-191: Bankkártyás POS és AMEX Göngyölegek Virtuális Banki Feldolgozása, Tételes Tranzakció Generálás és Kereskedői Elszámolási UX, Question, Verifikált Éles Eredmények (Mandala Fogadó Kft.)
 
-### Community 1149 - "Community 1149"
+### Community 607 - "3.4 Beosztáskezelő – a rendszer központi modulja"
 Cohesion: 0.25
-Nodes (6): CockpitRowSkeleton(), mockCapabilities, mockNavigate, mockNavInvoices, mockTransactions, mockUploadedInvoices
+Nodes (8): 3.4.1 Beosztás létrehozása („Hozzáad”), 3.4.2 Munkaidő megadása (létszámigény), 3.4.3 Beosztás szerkesztése – a rács, 3.4.4 Műszak hozzáadása és szerkesztése, 3.4.5 Kijelölés, helyettesítés, csoportos szerkesztés, 3.4.6 Mentés, lezárás, állapotok, 3.4.7 [Új] Szabályalapú automatikus beosztás-generálás, 3.4 Beosztáskezelő – a rendszer központi modulja
 
-### Community 1150 - "Community 1150"
-Cohesion: 0.25
-Nodes (7): 1. Context, 2.1 Eredménykimutatás összköltség eljárással („A” változat), 2. Decision, 3. Consequences, A-248: Agora / Novitax Formátumhű Pénzügyi Kimutatások (Főkönyvi Kivonat és Eredménykimutatás) Export Architektúra, Kapcsolódó:, Pozitív:
-
-### Community 1151 - "Community 1151"
-Cohesion: 0.25
-Nodes (8): print_preview_modal, analytical, close, layout, print, subtitle, synthetic, title
-
-### Community 1152 - "Community 1152"
-Cohesion: 0.25
-Nodes (8): buttons, cancel, close, confirm, continue, delete, edit, save
-
-### Community 1153 - "Community 1153"
-Cohesion: 0.25
-Nodes (8): user, dark_mode, default_name, language, light_mode, logout, profile, settings
-
-### Community 1154 - "Community 1154"
-Cohesion: 0.25
-Nodes (8): days_suffix, my_requests, new_request, no_requests, notes_placeholder, pending_approval, workdays, leave
-
-### Community 1155 - "Community 1155"
-Cohesion: 0.25
-Nodes (8): fields, address, email, iban, name, phone, registration_number, tax_number
-
-### Community 1156 - "Community 1156"
-Cohesion: 0.25
-Nodes (8): table, description, gl_account, gross, net, quantity, unit, vat
-
-### Community 1157 - "Community 1157"
-Cohesion: 0.25
-Nodes (8): all_registers, all_status, search_placeholder, status_closed, status_open, status_posted, status_reopened, filters
-
-### Community 1158 - "Community 1158"
-Cohesion: 0.25
-Nodes (8): bank_tab, count_period, empty_desc, empty_period, empty_title, loading, transactions_suffix, upload_btn
-
-### Community 1159 - "Community 1159"
-Cohesion: 0.25
-Nodes (8): duplicate_banner, active_badge, active_hint, button, desc, title, tooltip, turn_off
-
-### Community 1160 - "Community 1160"
-Cohesion: 0.25
-Nodes (8): status_tooltip, auto_settled, invoice_missing, matched, no_invoice, reason, suggested, unmatched
-
-### Community 1161 - "Community 1161"
-Cohesion: 0.25
-Nodes (8): calendar, click_day_hint, desc, due_on_day, items_count, no_bank_account, select_all, title
-
-### Community 1162 - "Community 1162"
-Cohesion: 0.25
-Nodes (8): cancel, description, none_selected, select_all, title, upload_count, upload_new_only, db_duplicate
-
-### Community 1163 - "Community 1163"
-Cohesion: 0.25
-Nodes (8): legend, dismissed_desc, processed_desc, processing_desc, processing_error_desc, title, unidentified_desc, uploaded_desc
-
-### Community 1164 - "Community 1164"
-Cohesion: 0.25
-Nodes (8): print_preview_modal, analytical, close, layout, print, subtitle, synthetic, title
-
-### Community 1165 - "Community 1165"
-Cohesion: 0.25
-Nodes (8): buttons, cancel, close, confirm, continue, delete, edit, save
-
-### Community 1166 - "Community 1166"
-Cohesion: 0.25
-Nodes (8): user, dark_mode, default_name, language, light_mode, logout, profile, settings
-
-### Community 1167 - "Community 1167"
-Cohesion: 0.25
-Nodes (8): days_suffix, my_requests, new_request, no_requests, notes_placeholder, pending_approval, workdays, leave
-
-### Community 1168 - "Community 1168"
-Cohesion: 0.25
-Nodes (8): fields, address, email, iban, name, phone, registration_number, tax_number
-
-### Community 1169 - "Community 1169"
-Cohesion: 0.25
-Nodes (8): table, description, gl_account, gross, net, quantity, unit, vat
-
-### Community 1170 - "Community 1170"
-Cohesion: 0.22
-Nodes (9): reasons, foreign_or_exempt, foreign_or_exempt_desc, nav_delay, nav_delay_desc, other, other_desc, paper_invoice (+1 more)
-
-### Community 1171 - "Community 1171"
-Cohesion: 0.25
-Nodes (8): bank_tab, count_period, empty_desc, empty_period, empty_title, loading, transactions_suffix, upload_btn
-
-### Community 1172 - "Community 1172"
-Cohesion: 0.25
-Nodes (8): duplicate_banner, active_badge, active_hint, button, desc, title, tooltip, turn_off
-
-### Community 1173 - "Community 1173"
-Cohesion: 0.25
-Nodes (8): status_tooltip, auto_settled, invoice_missing, matched, no_invoice, reason, suggested, unmatched
-
-### Community 1174 - "Community 1174"
-Cohesion: 0.25
-Nodes (8): calendar, click_day_hint, desc, due_on_day, items_count, no_bank_account, select_all, title
-
-### Community 1175 - "Community 1175"
-Cohesion: 0.25
-Nodes (8): cancel, description, none_selected, select_all, title, upload_count, upload_new_only, db_duplicate
-
-### Community 1176 - "Community 1176"
-Cohesion: 0.25
-Nodes (8): legend, dismissed_desc, processed_desc, processing_desc, processing_error_desc, title, unidentified_desc, uploaded_desc
-
-### Community 1177 - "Community 1177"
-Cohesion: 0.39
-Nodes (6): escHtml(), generatePayrollReminderEmail(), generatePayrollRequestEmail(), MONTHS_HU, PayrollRequestEmailInput, PayrollRequestEmailResult
-
-### Community 1178 - "Community 1178"
-Cohesion: 0.17
-Nodes (11): 1. Pénztárak Egyetlen Devizaneme (`RegisterDialog.tsx`), 2. Szallas.hu Virtuális Bankszámla Kezelés, 3. Főkönyvi Kivonat Alapértelmezések (`GeneralLedgerPage.tsx`, `GeneralLedgerTable.tsx`), 4. ÁFA Tételes Sablon Szerkesztő Modál Kiszélesítése (`VatViewSelectorModal.tsx`), 5. Nyitó Sablon Parser Ékezet- és Elválasztó Függetlenítése (`openingImportParser.ts`), Current Implementation, Decision, Kapcsolódó (+3 more)
-
-### Community 1179 - "Community 1179"
-Cohesion: 0.32
-Nodes (6): buildInvoiceChain(), ChainableInvoice, InvoiceChainResult, invoiceA, invoiceB, invoiceC
-
-### Community 1181 - "Community 1181"
-Cohesion: 0.25
-Nodes (5): { createClient }, fs, missingParams, path, supabase
-
-### Community 1182 - "Community 1182"
-Cohesion: 0.18
-Nodes (9): dummyNavInvoice, dummySubInvoice, mockContextState, mockOnRowClick, mockSetExpandedRowIds, mockSetLastViewedInvoiceId, mockSetSelectedInvoiceIds, mockSetSelectedSubmittedIds (+1 more)
-
-### Community 1183 - "Community 1183"
-Cohesion: 0.25
-Nodes (7): mockDelete, mockEq, mockMaybeSingle, mockOrder, mockSelect, mockSingle, mockUpdate
-
-### Community 1184 - "Community 1184"
-Cohesion: 0.39
-Nodes (6): authenticateRequester(), corsHeaders, errorResponse(), json(), RequesterContext, sha256()
-
-### Community 1185 - "Community 1185"
-Cohesion: 0.25
-Nodes (7): Breadcrumb, BreadcrumbEllipsis(), BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator()
-
-### Community 1186 - "Community 1186"
-Cohesion: 0.25
-Nodes (6): DrawerContent, DrawerDescription, DrawerFooter(), DrawerHeader(), DrawerOverlay, DrawerTitle
-
-### Community 1187 - "Community 1187"
-Cohesion: 0.25
-Nodes (7): NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle, NavigationMenuViewport
-
-### Community 1188 - "Community 1188"
-Cohesion: 0.29
-Nodes (7): fmtEft(), formatThousands(), FormRow, MLine, MONTHS, ReturnLine, VatCode
-
-### Community 1189 - "Community 1189"
-Cohesion: 0.25
-Nodes (3): caps, company, ResizeObserverStub
-
-### Community 1190 - "Community 1190"
-Cohesion: 0.29
-Nodes (6): 📖 Fogalom Meghatározása, 💡 Hogyan Védi a Visibill az Adatbázist?, ✅ JÓ — Paraméterezett Lekérdezés (Prepared Statement):, ❌ ROSSZ — Dinamikus SQL Sztring Összefűzés (Sérülékeny):, 🛡️ SQL Injection & Sanitization (Injekció Elleni Védelem), 🚨 Veszélyes vs Biztonságos Kódminta
-
-### Community 1191 - "Community 1191"
-Cohesion: 0.29
-Nodes (6): 1. Eset: Transaction Matcher Szűk Keresztmetszet ($O(N \times M)$ vs $O(N)$) — [A-039], 2. Eset: Adatbázis Lapozás (PostgREST Limit vs Server-Side Aggregation) — [A-046], 🚨 A "Big O Problem" a Visibillben & Megoldásai, 📐 Big O Notation (Algoritmus Komplexitás a Visibillben), 📖 Fogalom Meghatározása, 📊 Komplexitási Osztályok Gyorsáttekintése
-
-### Community 1192 - "Community 1192"
-Cohesion: 0.29
-Nodes (6): ☁️ AWS — Amazon Web Services (Felhő Infrastruktúra), AWS Vállalati Migrációs Útvonal (Nagy Vállalati Skálázódás), 📖 Fogalom Meghatározása, 🔑 Főbb AWS Szolgáltatások & Fogalmak, 💡 Hogyan Viszonyul az AWS a Visibillhez?, Jelenlegi Architektúra (Supabase + DigitalOcean)
-
-### Community 1193 - "Community 1193"
-Cohesion: 0.29
-Nodes (6): 1. Fájlok Izolációja Cégszinten, 2. Biztonságos Fájl Előnézet (A-044), 📦 AWS S3 — Simple Storage Service (Objektumtárolás), 📖 Fogalom Meghatározása, 🔑 Főbb S3 Koncepciók & Terminológia, 💡 Használat a Visibill Architektúrában
-
-### Community 1194 - "Community 1194"
-Cohesion: 0.29
-Nodes (6): 🐳 Docker & Konténerizáció, "Egy Image — Három Konténer" Minta, 📖 Fogalom Meghatározása, 🔑 Főbb Fogalmak & Termek, ⚙️ Hasznos Docker Parancsok (Worker Ops), 💡 Használat a Visibill Architektúrában
-
-### Community 1195 - "Community 1195"
-Cohesion: 0.29
-Nodes (6): 📖 Fogalom Meghatározása, 🔑 Főbb K8s Koncepciók, 💡 Hogyan viszonyul a Kubernetes a Visibillhez?, Jelenlegi Architektúra (Docker Compose egy Droplet-en), Jövőbeli Skálázódás (K8s / Managed Kubernetes), ☸️ Kubernetes (K8s) & Konténer Orkesztráció
-
-### Community 1196 - "Community 1196"
-Cohesion: 0.29
-Nodes (6): 💡 A Deno Szerepe a Visibill Architektúrában, 🦕 Deno — TypeScript/JavaScript Runtime & Edge Security, 🔑 Deno vs Node.js Összehasonlítás, 📖 Fogalom Meghatározása, 🛡️ Miért Előnyös ez a Visibillnek?, Példa Deno Edge Function Importra (`management-stats/index.ts`):
-
-### Community 1197 - "Community 1197"
-Cohesion: 0.29
-Nodes (6): A Visibill Jelenlegi Frontend Stack-je (Vite + React SPA), 📖 Fogalom Meghatározása, 🔑 Főbb Next.js Fogalmak & Funkciók, 💡 Hogyan viszonyul a Next.js a Visibill Webapphoz?, Mikor Érdemes Next.js-t Használni?, ⚛️ Next.js — Fullstack React Framework
-
-### Community 1198 - "Community 1198"
-Cohesion: 0.29
-Nodes (6): 1. Elsődleges Lépcső (Primary OCR — MarkItDown), 2. Másodlagos Lépcső (Secondary OCR — GPT-4o Vision Fallback), 🏗️ A Visibill Kétlépcsős OCR Architektúrája ([A-008]), 📖 Fogalom Meghatározása, 👁️ OCR & Vision Pipeline (Optikai Karakterfelismerés), 💡 Teljesítmény & Költség optimalizáció
-
-### Community 1199 - "Community 1199"
-Cohesion: 0.29
-Nodes (6): Előtte ($O(N \times M)$ — Egymásba Ágyazott Ciklus):, 📖 Fogalom Meghatározása, 🗝️ Hash Tables & In-Memory Indexing ($O(1)$ Adatelérés), ⚙️ Hash Ütközések (Collisions) Kezelése, 💡 Use-Case a Visibillben: $O(N)$ Transaction Matcher ([A-039]), Utána ($O(N)$ — In-Memory Hash Map Lookup):
-
-### Community 1200 - "Community 1200"
-Cohesion: 0.29
-Nodes (6): 1. Adatbázis & Backend Logikák (Supabase PostgreSQL), 2. Frontend & Kliensoldali Relációkezelés, 3. Minőségbiztosítás & Verifikáció, 🛠️ Részletes Módosítások, Session Summary — 2026-09-28 15:02, 🚀 Összefoglaló (Conventional Commit)
-
-### Community 1201 - "Community 1201"
-Cohesion: 0.20
-Nodes (6): mockEqAfterUpdate, mockRpc, mockSelectAfterUpdate, mockSingle, mockToast, mockUpdate
-
-### Community 1202 - "Community 1202"
-Cohesion: 0.22
-Nodes (8): 1. Főkönyvi Nyitó Egyenlegek Évközi Folytonossága (Sztv. 15. § (4)), 2. Virtuális Pénzforgalmi Számlák (Szallas.hu, Közvetítők, Letéti Számlák), 3. Házipénztárak Szigorú Egyetlen Devizaneme (Single Currency Cash Policy), Decision, Decision 073: Főkönyvi Nyitó Egyenlegek Folytonossága, Virtuális Bankszámlák és Egydevizás Házipénztár Szabályzat, Kapcsolódó, Question, Rationale
-
-### Community 1203 - "Community 1203"
-Cohesion: 0.44
-Nodes (8): CompanyInfo, EmployeeInfo, escapeHtml(), printAnnualLedger(), printEmploymentCertificate(), printHtml(), printIncomeCertificate(), printTimesheetTemplate()
-
-### Community 1204 - "Community 1204"
-Cohesion: 0.29
-Nodes (6): 01 — Tech Stack & Architektúra, Build & Runtime, Egyéb Függőségek, Projekt Struktúra, Provider Stack (Nesting Sorrend), shadcn/ui Konfiguráció
-
-### Community 1205 - "Community 1205"
-Cohesion: 0.22
-Nodes (7): mockContextState, mockOnRowClick, mockSetExpandedRowIds, mockSetLastViewedInvoiceId, mockSetSelectedInvoiceIds, mockSetSelectedSubmittedIds, mockToggleSelectRow
-
-### Community 1207 - "Community 1207"
-Cohesion: 0.29
-Nodes (6): 🛑 1. Szigorúan Tilos Jelszó Módosítás / Reset, 🔑 2. Hivatalos Hitelesítő Adatok & Admin Felhasználók, 🌐 3. Bejelentkezési Protokoll Böngészős Teszteléskor, Browser Testing & Subagent Authentication Rules, 👑 Elsődleges Rendszergazda / Fejlesztő (Morfi / Jani):, 🧪 Másodlagos Teszt Felhasználó (Áron):
-
-### Community 1208 - "Community 1208"
-Cohesion: 0.29
-Nodes (6): 🎯 1. Kötelező Frissítés és Dokumentáció-olvasás (Git Pull & Context Check), 🗄️ 2. Szigorú Adatbázis-határvonal (Dev DB Only), 🚨 3. Környezeti Figyelmeztetési Protokoll (Branch vs DB Mismatch Alert), 🛡️ 4. Konfigurációs Integritás, Merge Védelem és Kötelező Éles Adatbázis- és Backend-szinkronizáció, 🎫 5. Hibajegyek (Tickets) és Error Hunter Szabályzat: Develop-First Protokoll, Fejlesztői Környezet (DEV) és Ágkezelési Védelmi Szabályzat
-
-### Community 1209 - "Community 1209"
-Cohesion: 0.29
-Nodes (6): 🏛️ 1. A Három Dokumentumtípus Szigorú Elhatárolása, 🚫 2. Szigorúan Tilos Elemek a PRD-ben (Tiltólista), ✅ 3. Kötelező Elemek Minden PRD Rekordban, 📋 4. A Tisztasági Audit Lépései, (PRD Purity Audit: Zero ADR, Zero Physical SQL/DDL, Zero Backend Code), PRD Tisztasági Audit és Technikai Szivárgás-Megelőzés
-
-### Community 1210 - "Community 1210"
-Cohesion: 0.29
-Nodes (6): 1. Context Gathering (Identify User & Company), 2. Execution (Enable eaisyBooks), 3. Verification, 4. Output Summary, eaisyBooks (Accounty) Module Activation Skill, Workflow
-
-### Community 1211 - "Community 1211"
-Cohesion: 0.29
-Nodes (6): 1. Táblák Definíciója, 2. Kategória Katalógus, 3. Alkalmazásbeli Útvonalak (`menu_path`) Katalógusa, 🗄️ Knowledge Base Schema & Metadata Reference, `public.knowledge_base_articles`, `public.knowledge_base_categories`
-
-### Community 1212 - "Community 1212"
-Cohesion: 0.29
-Nodes (6): 1. Dátumok & Időszaki Szűrések, 2. Navigáció & Layout, 3. Számlák & Bizonylatok, 4. Bank, Tranzakciók & Párosítás, 5. eaisyBooks (Accounty) & Könyvelői Modulok, 📖 Visibill PM Fogalom- és Komponens Térkép (Glossary Mapping)
-
-### Community 1213 - "Community 1213"
-Cohesion: 0.29
-Nodes (6): 💰 Bér & Munkaidő, `employee_rates`, `leave_requests`, `salary`, `salary_files`, `time_entries`
-
-### Community 1214 - "Community 1214"
-Cohesion: 0.29
-Nodes (6): `cmr_documents` — VIEW, `shipment_import_batches`, `shipment_matches`, `shipments`, 🚚 Szállítmányozás, `transport_documents`
-
-### Community 1215 - "Community 1215"
-Cohesion: 0.29
-Nodes (6): A-006: Python Worker Architektúra, Consequences, Context, Decision, Kapcsolódó, Verification & Testing
-
-### Community 1216 - "Community 1216"
-Cohesion: 0.29
-Nodes (6): A-029: Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció, Consequences, Context, Decision, Kapcsolódó, Rationale
-
-### Community 1217 - "Community 1217"
-Cohesion: 0.29
-Nodes (6): A-083: Rules of Hooks Invariáns Garantálása és Teszt-Telemetria Kiszivárgás Megelőzése, Consequences, Context, Decision, Gyökérok Elemzés (RCA), Kapcsolódó
-
-### Community 1218 - "Community 1218"
-Cohesion: 0.29
-Nodes (6): A-100: Banki Tranzakció Egyediségi Megkötés Bővítése Összeggel és Csendes Duplikátum-kezelés, A Felmerült Problémák és Gyökérok Elemzés, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1219 - "Community 1219"
-Cohesion: 0.29
-Nodes (6): 1. Architektúrális Háttér & Indoklás, 2. Adatmodell & Séma Specifikáció, 3. Kötegelt Végrehajtási Motor (`apply_invoice_item_rules`), A-144: Determinisztikus Számlatétel Szabály Motor (`invoice_item_rules`) és Kötegelt Illesztési Architektúra, Indexelés & RLS, `public.invoice_item_rules` Tábla
-
-### Community 1220 - "Community 1220"
-Cohesion: 0.29
-Nodes (6): 1. Context, 2. Decision, 3. Consequences, A-146: Magánszemély Vevőnevek Gazdagítása és ÁFA Analitikai Deduplikáció, Kapcsolódó, Pozitív
-
-### Community 1221 - "Community 1221"
-Cohesion: 0.29
-Nodes (6): 1. Kontextus és Problémafelvetés, 2. Architektúra Döntés, 3. Következmények és Előnyök, A-160: Főkönyvi Bizonylatmegnyitó és NAV OSA Tételes Nézet Fallback Architektúra, A. Kiszerezett, Atomikus Bizonylatfeloldó Hook (`useGlInvoiceDocumentResolver`), B. UI Integráció mindkét tételnézetben
-
-### Community 1222 - "Community 1222"
-Cohesion: 0.29
-Nodes (6): 1. Architekturális Kontextus és Kihívás, 2. Számlakép Meghatározási Szabály (Image Resolution Invariant), 3. Adatbázis Réteg (Migration: `20260927000000_add_vat_return_image_scope.sql`), 4. Kliens Réteg és Reaktív Adatfolyam, 5. Tesztelés & Minőségbiztosítás, A-161: ÁFA Bizonylatköri Adatkör Architektúra (Backend RPC + Kliens Reaktív Szűrés)
-
-### Community 1223 - "Community 1223"
-Cohesion: 0.29
-Nodes (6): 1. Döntési Kontextus, 2. Adatbázis Séma Bővítés (`public.partners`), 3. Könyvelési Kontírozási Szabályok (`invoiceGlSides.ts` & Főkönyv), 4. Forgalmi Kimutatási és Aggregációs Logika, 5. Kapcsolódó Dokumentáció és Döntések, A-165: Kapcsolt Vállalkozások Adatmodell, Forgalmi Lekérdezések és Kontírozási Integráció
-
-### Community 1224 - "Community 1224"
-Cohesion: 0.29
-Nodes (6): 1. Kontextus, 2. Döntés, 3. Következmények, A-198: Manuális Beküldött Számlarögzítés, Dokumentum Csatolás és Többes Párosítás, Kapcsolódó, Pozitív
-
-### Community 1225 - "Community 1225"
-Cohesion: 0.29
-Nodes (6): A-203: NAV 2665 ÁFA Bevallás: 77. Sor (Közösségi Adómentes Termékértékesítés) Adóalap Implementáció és 2665A-01-03 Nyomtatvány Replika, Consequences, Context, Decision, Kapcsolódó, Pozitív
-
-### Community 1226 - "Community 1226"
-Cohesion: 0.29
-Nodes (6): 🗺️ A Moduláris PRD Kötetek Navigációs Térképe, 🎯 A Termék Célja és Működési Koncepciója, Beosztásom Modul — Termékkövetelmény Dokumentáció (PRD), (Product Requirements Document Suite & UI Specifications), 👥 Szerepkör-alapú Olvasási Útmutató, 🎨 Vizuális Felületi Diagramok Katalógusa
-
-### Community 1227 - "Community 1227"
-Cohesion: 0.29
-Nodes (6): Decision 023: Tárgyi Eszközök (TÉNY), Felelős (FELELŐS oszlop), Helyszín (HELYSZÍN oszlop), Megvalósítás részletei, Projekt hozzárendelés (PROJEKT oszlop és áthelyezés), Sandbox demo adatok (company_id: `59b545c0-...`)
-
-### Community 1228 - "Community 1228"
-Cohesion: 0.29
-Nodes (6): Decision, Decision 041: Manuális Kifizetés Rögzítése (Máshogyan kiegyenlített tételek), Implications, Kapcsolódó Dokumentáció, Question, Rationale
-
-### Community 1229 - "Community 1229"
-Cohesion: 0.29
-Nodes (6): Context, Decision, Decision 043: Könyvelési Naplók és Kettős Könyvviteli Folyószámlák, Kapcsolódó, Question, Rationale
-
-### Community 1230 - "Community 1230"
-Cohesion: 0.29
-Nodes (6): Context, Decision, Decision 044: Banki Utalási Csomagok és Kifizetési Generálás, Kapcsolódó, Question, Rationale
-
-### Community 1231 - "Community 1231"
-Cohesion: 0.29
-Nodes (6): Context, Decision, Decision 048: NAV Online Számla Megfelelőség és Könyvelői Zárlat Üzleti Szabálya, Kapcsolódó, Question, Rationale
-
-### Community 1232 - "Community 1232"
-Cohesion: 0.29
-Nodes (6): 📊 1. Vezetői Összefoglaló és Statisztikai Leltár, 🎯 2. Prioritási Mátrix (Értékesítési Demó és Éles Üzem), 🗺️ 3. Részletes Moduldokumentációk Tartalomjegyzéke, Eaisybill Horvát (HR) Lokalizációs Audit — Teljes Kódbázis Leltár és Hiányossági Térkép, Elem kategóriák szerinti bontás, Moduláris eloszlás
-
-### Community 1233 - "Community 1233"
-Cohesion: 0.29
-Nodes (6): 1. Integracios Szerepkorok & Munkaterulet (Workspace) Hozzaarendeles, 2. Altalanos Integracios es Hitelesitesi Iranyelvek, 3. Kimeno Webhookok es Alairas Ellenorzes, EaisyWorks Nyilt REST API Dokumentacio (v1), Node.js Ellenorzo Pelda:, Ratelimit Szabalyok
-
-### Community 1234 - "Community 1234"
-Cohesion: 0.29
-Nodes (6): 1. eaisyBill Vállalatirányítási Rendszer, 2.1. Portfólió Mód (Irodai Szintű Nézet), 2.2. Ügyfél Kontextus Mód (Cég Szintű Munkaterület), 2. eaisyBooks Könyvelőirodai Platform, eaisyBill & eaisyBooks Teljes Rendszer Tudásbázis (Knowledge Base), 📑 Tartalomjegyzék
-
-### Community 1235 - "Community 1235"
-Cohesion: 0.29
-Nodes (6): Cross-komponens dedup architektúra (2026-06-24), P-023: In-app Értesítési Center, Réteg 1 — Supabase Realtime (elsődleges, push alapú), Réteg 2 — Session-scoped polling (Realtime fallback), Réteg 3 — Tab focus catch-up (ritka, egyszeri), Toast típusok, cache invalidálás és Lucide ikonok
-
-### Community 1236 - "Community 1236"
-Cohesion: 0.29
-Nodes (6): Current Implementation, Decision, Kapcsolódó, P-055: Könyvelési Napló (Accounting Journals) UX, Question, Rationale
-
-### Community 1237 - "Community 1237"
-Cohesion: 0.29
-Nodes (6): Current Implementation, Decision, Kapcsolódó, P-056: Banki Utalások és Csomagkészítés (Bank Transfers) UX, Question, Rationale
-
-### Community 1238 - "Community 1238"
-Cohesion: 0.29
-Nodes (6): Context, Current Implementation, Decision, Kapcsolódó, P-082: Bérszámfejtési Főkönyvi Feladás Kontírozás (Step 8), Kereshető Választó és Magyarázó Szövegezés UX, Rationale
-
-### Community 1239 - "Community 1239"
-Cohesion: 0.29
-Nodes (6): Current Implementation, Decision, Kapcsolódó, P-092: Házipénztár Bizonylat Validáció és Számlakiegyenlítés UX, Question, Rationale
-
-### Community 1240 - "Community 1240"
-Cohesion: 0.29
-Nodes (6): 1. Kontextus és Problémafelvetés, 1. Kétszintű Eszköztár Architektúra (2-Tier Toolbar), 2. Globális Fa Kibontás és Összecsukás ("Mind kinyitása" / "Mind összecsukása"), 2. Termékdöntés és Megoldás, 3. UI/UX Tesztelés és Stabilitás, P-105: Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa Kibontás/Összecsukás UX
-
-### Community 1241 - "Community 1241"
-Cohesion: 0.29
-Nodes (6): 1. Felületi Elrendezés, 2. Viselkedési Szabályok, 3. Kapcsolódó Dokumentumok, Fejléc struktúra, Lenyíló menü állapot, P-107: Globális Nyelvválasztó Elhelyezés és Lucide Globe Ikon Felületi Élmény (Books és Bill nézet)
-
-### Community 1242 - "Community 1242"
-Cohesion: 0.29
-Nodes (6): 1. Problémafelvetés & Üzleti Kontextus, 2.1 1-Kattintásos Gyors Szabálymentő Modal (`InvoiceRuleQuickSaveDialog`), 2.2 Számlák Fejléc "Könyvelési szabályok" Menüpont (`InvoiceRulesDialog`), 2. Felületi Döntések & UX Specifikáció, 3. Minőségbiztosítás és Eredmények, P-109: Determinisztikus Számlatétel Szabály Motor és 1-Kattintásos Kontírozási Gyorsmentő (Quick Save) UX
-
-### Community 1243 - "Community 1243"
-Cohesion: 0.29
-Nodes (6): 1. Context & Problémafelvetés, 2.1 BankTransactionTab Export Dropdown, 2.2 CourierReportTab Tételes és Kijelölt Export, 2. Döntés & Felületi Megoldás (UX), 3. Minőségbiztosítás & Konzisztencia, P-129: Futárriportok és Banki Tranzakciók Teljes Időszaki Exportálása és Szűrt Letöltése UX
-
-### Community 1244 - "Community 1244"
-Cohesion: 0.29
-Nodes (6): 1. Felhasználói Igény és Célkitűzés, 2.1. Integrációk Oldal (`/integrations?tab=minimax`), 2.2. Számlák Fejléc és Szinkron Dialógus, 2. Felületi Elemek és Viselkedés, 3. Minőségbiztosítás és Eredmények, P-131: Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX
-
-### Community 1245 - "Community 1245"
-Cohesion: 0.29
-Nodes (6): Context, Current Implementation, Decision, Kapcsolódó, P-134: Bérszámfejtési Ciklus Lezárási Választó Modál, Lezárt Ciklus Védelem és Újranyitás UX, Rationale
-
-### Community 1246 - "Community 1246"
-Cohesion: 0.29
-Nodes (6): Context, Current Implementation, Decision, Kapcsolódó, P-135: Főkönyvi Kivonat Klasszikus Nézet Oszlopszélességek és Összesítő Sáv UX, Rationale
-
-### Community 1247 - "Community 1247"
-Cohesion: 0.29
-Nodes (6): 1. Főkönyvi Eszköztár Lenyíló Export Menü (`GlToolbar.tsx`), 2. Generált Fájlnevek (`procontGlPdf.ts`, `procontGlExcel.ts`), 3. Tartalmi és Layout Integritás, 🖥️ Felületi Változások, 🔗 Kapcsolódó, P-181: PRC Főkönyvi Kivonat Export Elnevezési Konvenció és Letisztult Megjelenítés UX
-
-### Community 1248 - "test_worker_on_problematic_file.py"
-Cohesion: 0.09
-Nodes (20): asyncio, collections, datetime, db, dotenv, fitz, io, os (+12 more)
-
-### Community 1249 - "Community 1249"
-Cohesion: 0.29
-Nodes (6): Clarifying Questions, Define Goal, Goal Quality Bar, Overview, Quantification Heuristics, Workflow
-
-### Community 1250 - "Community 1250"
-Cohesion: 0.29
-Nodes (6): tabs, all, invoice, private, shared, title
-
-### Community 1251 - "Community 1251"
-Cohesion: 0.29
-Nodes (6): tabs, all, invoice, private, shared, title
-
-### Community 1252 - "@supabase/supabase-js"
-Cohesion: 0.13
-Nodes (8): ref_crypto, ref_fs, env, envContent, supabase, admin, env, envContent
-
-### Community 1253 - "Community 1253"
-Cohesion: 0.17
-Nodes (11): 1. `fixed_asset_id` címke a főkönyvi soron, 2. Rekonciliáció (csak olvasás), 3. Kivezetés = kérelem → jóváhagyás (maker–checker), DB-ben kikényszerítve, 4. Egységes kivezetési motor, 5. Fejlesztési tartalék figyelés (kliensoldali, tájékoztató), 6. PDF, A-251: Tárgyi Eszköz ↔ Főkönyv Kapcsolat, Rekonciliáció és Jóváhagyás-alapú Kivezetési Workflow, Consequences (+3 more)
-
-### Community 1254 - "Community 1254"
-Cohesion: 0.29
-Nodes (7): Adat & Layout, Form, Navigáció & Menü, Overlay & Dialog, Primitív UI Elemek, shadcn/ui Komponensek (60 fájl), Űrlap Placeholder és Példa Érték Konvenciók (2026-10-05)
-
-### Community 1255 - "Community 1255"
-Cohesion: 0.29
-Nodes (7): 1. Globális CSS Felülbírálás (`src/index.css`), 2. Page Konténer Konvenció, A Probléma: GPU Compositor Layer Text Antialiasing Blur & 1px Subpixel Snap, Alapszabályok (Design & Kódolási Irányelvek), Kétlépcsős Technikai Védelem a Rendszerben, Mi történik Windows / Chromium (Chrome, Edge) alatt?, ⚠️ Oldal-szintű Animációk & GPU ClearType Homályosodás Megelőzése (2026-09-11)
-
-### Community 1256 - "Community 1256"
-Cohesion: 0.29
-Nodes (7): ⚠️ Alapszabály: Hover = Interaktív, Badge — SOHA nincs hover, Gombok (Button), Hover Patternek, Inline ikonok hover (nem Button komponens), ⚠️ Inline szín override szabály, Interactive Class
-
-### Community 1257 - "Community 1257"
-Cohesion: 0.29
-Nodes (7): A helyes minta: "Confirmed Close" — modal csak DB-szinkron után záródhat, A probléma: "Early Close" antipattern, ⭐ Async Modal UX — Általános Kötelező Irányelv (2026-07-20), Implementációs minta: operationPhase állapotgép, Mikor NEM kell await-elt refetch?, Modal loading state UI szabályok, Referencia implementáció
-
-### Community 1258 - "Community 1258"
-Cohesion: 0.29
-Nodes (7): ❌ Anti-pattern (TILOS), ⭐ Async Confirm Dialog Pattern (DB műveletek), Checklist (minden async confirm dialog-ra), Flow, ✅ Helyes implementáció, Implementálva, Szabály
-
-### Community 1259 - "Community 1259"
-Cohesion: 0.29
-Nodes (7): 2.11. [GET] /api/v1/projects, 2.13. [GET] /api/v1/members, 3. API Vegpontok Reszletes Katalógusa, Integracios Kodreszletek:, Integracios Kodreszletek:, Sikeres Valasz (200 OK):, Sikeres Valasz (200 OK):
-
-### Community 1260 - "Community 1260"
-Cohesion: 0.29
-Nodes (7): table, gl_account, name, no_data, total, total_balance, unposted_items
-
-### Community 1261 - "Community 1261"
-Cohesion: 0.29
-Nodes (7): welcome, first_visit, return_visit, signin_subtitle, signin_subtitle_books, signup_subtitle, signup_title
-
-### Community 1262 - "Community 1262"
-Cohesion: 0.29
-Nodes (7): pagination, first_page, last_page, next_page, page_size, prev_page, results
-
-### Community 1263 - "Community 1263"
-Cohesion: 0.29
-Nodes (7): monthly_summary, months, submit_month, submitting, vacation, weekdays, calendar
-
-### Community 1264 - "test_customer_api.mjs"
-Cohesion: 0.40
-Nodes (3): env, envContent, supabase
-
-### Community 1265 - "Community 1265"
-Cohesion: 0.29
-Nodes (7): tax_items, kiva, simple_emp, social_security, social_tax, szja, vocational
-
-### Community 1266 - "Community 1266"
-Cohesion: 0.29
-Nodes (10): InventoryItemState, exportInventoryReportPdf(), exportInventoryReportXlsx(), generateInventoryReportPdf(), generateInventoryReportPdfBlob(), hu(), INVENTORY_STATUS_LABELS, InventoryCheckStatus (+2 more)
-
-### Community 1267 - "Community 1267"
-Cohesion: 0.29
-Nodes (7): not_found, back_aria, back_btn, badge, desc, status_badge, title
-
-### Community 1268 - "Community 1268"
-Cohesion: 0.29
-Nodes (7): kpi, assigned, critical_sla, in_progress, open, overdue_48h, resolved
-
-### Community 1269 - "Community 1269"
-Cohesion: 0.29
-Nodes (7): legend, auto_settled, matched, no_invoice, suggested, title, unmatched
-
-### Community 1270 - "Community 1270"
-Cohesion: 0.29
-Nodes (7): dialogs, list_duplicate, add_all, cancel, description, skip, title
-
-### Community 1271 - "Community 1271"
-Cohesion: 0.29
-Nodes (7): table, gl_account, name, no_data, total, total_balance, unposted_items
-
-### Community 1272 - "Community 1272"
-Cohesion: 0.29
-Nodes (7): welcome, first_visit, return_visit, signin_subtitle, signin_subtitle_books, signup_subtitle, signup_title
-
-### Community 1273 - "Community 1273"
-Cohesion: 0.29
-Nodes (7): pagination, first_page, last_page, next_page, page_size, prev_page, results
-
-### Community 1274 - "Community 1274"
-Cohesion: 0.29
-Nodes (7): monthly_summary, months, submit_month, submitting, vacation, weekdays, calendar
-
-### Community 1275 - "Community 1275"
-Cohesion: 0.29
-Nodes (7): tax_items, kiva, simple_emp, social_security, social_tax, szja, vocational
-
-### Community 1276 - "Community 1276"
-Cohesion: 0.29
-Nodes (7): not_found, back_aria, back_btn, badge, desc, status_badge, title
-
-### Community 1277 - "Community 1277"
-Cohesion: 0.29
-Nodes (7): kpi, assigned, critical_sla, in_progress, open, overdue_48h, resolved
-
-### Community 1278 - "Community 1278"
-Cohesion: 0.29
-Nodes (7): legend, auto_settled, matched, no_invoice, suggested, title, unmatched
-
-### Community 1279 - "Community 1279"
-Cohesion: 0.29
-Nodes (7): dialogs, list_duplicate, add_all, cancel, description, skip, title
-
-### Community 1280 - "Community 1280"
-Cohesion: 0.29
-Nodes (6): suggestNextJournalCode(), mockInsert, mockInvalidateQueries, mockSelect, mockSingle, mockToast
-
-### Community 1281 - "Community 1281"
-Cohesion: 0.57
-Nodes (6): downloadEBeszamoloCsv(), EBeszamoloCsvData, generateBalanceSheetCsv(), generatePnlCsv(), generateSummaryCsv(), toCsvRow()
-
-### Community 1282 - "Community 1282"
-Cohesion: 0.33
-Nodes (4): corsHeaders, fetchAllPages(), MinimaxSyncRequest, upsertInvoice()
-
-### Community 1283 - "Community 1283"
-Cohesion: 0.60
-Nodes (4): formatToIban(), generateGiroPayrollXml(), GiroBatchParams, GiroEmployeePayoutItem
-
-### Community 1284 - "Community 1284"
+### Community 608 - "InvoiceRulesDialog.test.tsx"
 Cohesion: 0.25
 Nodes (7): dynamicRules, mockDelete, mockInvalidateQueries, mockRpc, mockToast, mockUpdate, sampleRules
 
-### Community 1285 - "Community 1285"
+### Community 609 - "InvoiceFullEditDialog.test.tsx"
+Cohesion: 0.25
+Nodes (7): mockDelete, mockEq, mockMaybeSingle, mockOrder, mockSelect, mockSingle, mockUpdate
+
+### Community 610 - "vatTypes.ts"
+Cohesion: 0.29
+Nodes (7): fmtEft(), formatThousands(), FormRow, MLine, MONTHS, ReturnLine, VatCode
+
+### Community 611 - "ClientTaoMainPage.tsx"
+Cohesion: 0.32
+Nodes (7): useAccountyTaxProfile(), ClientTaoMainPage(), formatTaoAmount(), TaoTab, WIZARD_STEPS, WIZARD_STEPS_HR, ClientTaoMainPage
+
+### Community 612 - "JobModificationPage.tsx"
+Cohesion: 0.29
+Nodes (7): useAddJobModification(), CHANGE_TYPES, ChangeType, EMPTY_PER_TYPE, JobModificationPage(), ModificationData, JobModificationPage
+
+### Community 613 - "useInvoiceMutations.test.ts"
+Cohesion: 0.25
+Nodes (6): mockDelete, mockEq, mockIn, mockRemove, mockSelect, mockUpdate
+
+### Community 614 - "barcodeGenerator.ts"
+Cohesion: 0.46
+Nodes (6): CODE128_PATTERNS, Code128Options, encodeCode128B(), escapeXml(), generateCode128Modules(), generateCode128Svg()
+
+### Community 616 - "tickets-api/index.ts"
+Cohesion: 0.39
+Nodes (6): authenticateRequester(), corsHeaders, errorResponse(), json(), RequesterContext, sha256()
+
+### Community 617 - "Browser Testing & Subagent Authentication Rules"
+Cohesion: 0.29
+Nodes (6): 🛑 1. Szigorúan Tilos Jelszó Módosítás / Reset, 🔑 2. Hivatalos Hitelesítő Adatok & Admin Felhasználók, 🌐 3. Bejelentkezési Protokoll Böngészős Teszteléskor, Browser Testing & Subagent Authentication Rules, 👑 Elsődleges Rendszergazda / Fejlesztő (Morfi / Jani):, 🧪 Másodlagos Teszt Felhasználó (Áron):
+
+### Community 618 - "Fejlesztői Környezet (DEV) és Ágkezelési Védelmi Szabályzat"
+Cohesion: 0.29
+Nodes (6): 🎯 1. Kötelező Frissítés és Dokumentáció-olvasás (Git Pull & Context Check), 🗄️ 2. Szigorú Adatbázis-határvonal (Dev DB Only), 🚨 3. Környezeti Figyelmeztetési Protokoll (Branch vs DB Mismatch Alert), 🛡️ 4. Konfigurációs Integritás, Merge Védelem és Kötelező Éles Adatbázis- és Backend-szinkronizáció, 🎫 5. Hibajegyek (Tickets) és Error Hunter Szabályzat: Develop-First Protokoll, Fejlesztői Környezet (DEV) és Ágkezelési Védelmi Szabályzat
+
+### Community 619 - "PRD Tisztasági Audit és Technikai Szivárgás-Megelőzés"
+Cohesion: 0.29
+Nodes (6): 🏛️ 1. A Három Dokumentumtípus Szigorú Elhatárolása, 🚫 2. Szigorúan Tilos Elemek a PRD-ben (Tiltólista), ✅ 3. Kötelező Elemek Minden PRD Rekordban, 📋 4. A Tisztasági Audit Lépései, (PRD Purity Audit: Zero ADR, Zero Physical SQL/DDL, Zero Backend Code), PRD Tisztasági Audit és Technikai Szivárgás-Megelőzés
+
+### Community 620 - "Workflow"
+Cohesion: 0.29
+Nodes (6): 1. Context Gathering (Identify User & Company), 2. Execution (Enable eaisyBooks), 3. Verification, 4. Output Summary, eaisyBooks (Accounty) Module Activation Skill, Workflow
+
+### Community 621 - "🗄️ Knowledge Base Schema & Metadata Reference"
+Cohesion: 0.29
+Nodes (6): 1. Táblák Definíciója, 2. Kategória Katalógus, 3. Alkalmazásbeli Útvonalak (`menu_path`) Katalógusa, 🗄️ Knowledge Base Schema & Metadata Reference, `public.knowledge_base_articles`, `public.knowledge_base_categories`
+
+### Community 622 - "A-003: Multi-tenancy RLS Alapon"
+Cohesion: 0.29
+Nodes (7): A-003: Multi-tenancy RLS Alapon, Consequences, Context, Cross-company Invoice Routing (2026-07-02), Decision, eaisyBooks Könyvelői és Support Admin RLS Kiterjesztés (2026-09-27), Kapcsolódó
+
+### Community 623 - "A-033: Exclude Service Role Operations from Company Audit Trail"
+Cohesion: 0.29
+Nodes (7): A-033: Exclude Service Role Operations from Company Audit Trail, Consequences, Context, Decision, Kapcsolódó, Negatív, Pozitív
+
+### Community 624 - "A-103: Accounty RLS Teljesítményoptimalizálás és Postgres Hibanapló Stabilizálás"
+Cohesion: 0.29
+Nodes (7): 1. Adatbázis RLS és Hozzáférési Függvények Optimalizálása (`20260907133041_optimize_accounty_access_and_rls.sql`), 2. Frontend Kliensoldali Védelmek, A-103: Accounty RLS Teljesítményoptimalizálás és Postgres Hibanapló Stabilizálás, Context, Decision, Eredmények és Mérések (Empirical Evidence), Kapcsolódó Dokumentumok
+
+### Community 625 - "2. Döntés & Rendszerarchitektúra"
+Cohesion: 0.29
+Nodes (7): 1. Architekturális Kontextus és Kihívás, 2.1 Adatbázis Trigger Lánc & Kétoldali Állapot-szinkronizáció, 2.2 Kliensoldali Reaktív Gazdagítás és Deduplikáció, 2.3 Prefix-Tisztítási Szabály a Bizonylatszám Illesztésben (`cleanNum`), 2. Döntés & Rendszerarchitektúra, 3. Következmények és Előnyök, A-169: B2C Kimenő Számlák NAV Anonimizáció-Feloldása, Bizonylat Normalizálás és Automatikus Jóváhagyási Trigger Lánc
+
+### Community 626 - "A-190: Menedzsment Dashboard Összesítő Gyorsítótárazás és Python Worker Vault Tehermentesítés (P2 Skálázhatósági Fejlesztés)"
+Cohesion: 0.29
+Nodes (7): 1. Kontextus & Problémafelvetés, 2.1. Dedikált Gyorsítótár Tábla (`public.company_counts_cache`) & `pg_cron`, 2.2. Python Worker In-Memory Settings Cache (Vault Tehermentesítés), 2. Architektúrális Döntések & Megvalósítás, 3. Mért Eredmények & Verifikáció, 4. Érintett Fájlok, A-190: Menedzsment Dashboard Összesítő Gyorsítótárazás és Python Worker Vault Tehermentesítés (P2 Skálázhatósági Fejlesztés)
+
+### Community 627 - "2. Architektúra és Döntések"
+Cohesion: 0.29
+Nodes (7): 1. Kontextus és Technikai Kihívás, 2. Architektúra és Döntések, 3. Minőségi és Verifikációs Eredmények, A-205: NAV 2665M Digitális Nyomtatvány Replika és Partner Tördelő Motor Architektúrája, D-1: Típusbiztos Tördelő és Számítási Motor (`nav65MPaginationHelper.ts`), D-2: Komponens Dekompozíció (Maker-Checker & Vercel React Purity), D-3: Partner-Izolált Lazy Renderelés
+
+### Community 628 - "A-257: Főkönyvi Egyenlegek Előaggregáció és Atomi JSON RPC (Upstream Timeout Felszámolás)"
+Cohesion: 0.29
+Nodes (7): 1. PostgreSQL Belső Előaggregáció (`grouped_items` CTE), 2. Atomi JSON RPC (`get_gl_balances_json`), A-257: Főkönyvi Egyenlegek Előaggregáció és Atomi JSON RPC (Upstream Timeout Felszámolás), Consequences, Decision, Negatív / Költségek, Pozitív
+
+### Community 629 - "shadcn/ui Komponensek (60 fájl)"
+Cohesion: 0.29
+Nodes (7): Adat & Layout, Form, Navigáció & Menü, Overlay & Dialog, Primitív UI Elemek, shadcn/ui Komponensek (60 fájl), Űrlap Placeholder és Példa Érték Konvenciók (2026-10-05)
+
+### Community 630 - "⚠️ Oldal-szintű Animációk & GPU ClearType Homályosodás Megelőzése (2026-09-11)"
+Cohesion: 0.29
+Nodes (7): 1. Globális CSS Felülbírálás (`src/index.css`), 2. Page Konténer Konvenció, A Probléma: GPU Compositor Layer Text Antialiasing Blur & 1px Subpixel Snap, Alapszabályok (Design & Kódolási Irányelvek), Kétlépcsős Technikai Védelem a Rendszerben, Mi történik Windows / Chromium (Chrome, Edge) alatt?, ⚠️ Oldal-szintű Animációk & GPU ClearType Homályosodás Megelőzése (2026-09-11)
+
+### Community 632 - "send-web-push/index.ts"
+Cohesion: 0.50
+Nodes (3): ref_npm_web_push_3_6_7, corsHeaders, PREF_MAP
+
+### Community 633 - "Hover Patternek"
+Cohesion: 0.29
+Nodes (7): ⚠️ Alapszabály: Hover = Interaktív, Badge — SOHA nincs hover, Gombok (Button), Hover Patternek, Inline ikonok hover (nem Button komponens), ⚠️ Inline szín override szabály, Interactive Class
+
+### Community 635 - "EaisyWorks Nyilt REST API Dokumentacio (v1)"
+Cohesion: 0.29
+Nodes (6): 1. Integracios Szerepkorok & Munkaterulet (Workspace) Hozzaarendeles, 2. Altalanos Integracios es Hitelesitesi Iranyelvek, 3. Kimeno Webhookok es Alairas Ellenorzes, EaisyWorks Nyilt REST API Dokumentacio (v1), Node.js Ellenorzo Pelda:, Ratelimit Szabalyok
+
+### Community 636 - "3. API Vegpontok Reszletes Katalógusa"
+Cohesion: 0.29
+Nodes (7): 2.11. [GET] /api/v1/projects, 2.13. [GET] /api/v1/members, 3. API Vegpontok Reszletes Katalógusa, Integracios Kodreszletek:, Integracios Kodreszletek:, Sikeres Valasz (200 OK):, Sikeres Valasz (200 OK):
+
+### Community 637 - "🔑 JWT — JSON Web Token (Munkamenet Hitelesítés)"
+Cohesion: 0.29
+Nodes (7): 1. Frontend & API Hívások, 2. Edge Function JWT Validation, 🧩 A JWT Felépítése (3 Rész), 📖 Fogalom Meghatározása, 💡 Használat a Visibill Architektúrában, 🔑 JWT — JSON Web Token (Munkamenet Hitelesítés), 🛡️ Multi-Tab Munkamenet Izoláció (A-040)
+
+### Community 638 - "💡 Hogyan Érvényesül az RBAC a Kódban?"
+Cohesion: 0.29
+Nodes (7): 1. Adatbázis Szinten (PostgreSQL RLS Policy-k), 2. Edge Function Szinten (`management-stats/index.ts`), 3. Frontend Szinten (`ProtectedLayout.tsx` & Button Guards), 🎭 A Visibill 7-Szintű Szerepkör Mátrixa, 📖 Fogalom Meghatározása, 💡 Hogyan Érvényesül az RBAC a Kódban?, 👑 RBAC — Role-Based Access Control (Szerepkör Alapú Hozzáférés-kezelés)
+
+### Community 639 - "🚨 A 4 Legfőbb Webes Sérülékenység & Védelem"
+Cohesion: 0.29
+Nodes (7): 1. XSS (Cross-Site Scripting), 2. CSRF (Cross-Site Request Forgery), 3. CORS (Cross-Origin Resource Sharing), 4. CSP (Content Security Policy) & Multi-Tab Isolation [A-040], 🚨 A 4 Legfőbb Webes Sérülékenység & Védelem, 📖 Fogalom Meghatározása, 🌐 Web Security — XSS, CSRF, CORS & CSP (Böngészőbiztonság)
+
+### Community 640 - "🔑 Főbb Aszinkron Minták Katalógusa"
+Cohesion: 0.29
+Nodes (7): 1. Dead Letter Queue (DLQ — Hibás Üzenetek Sora), 2. Transactional Outbox Pattern (Tranzakciós Outbox Minta), 3. BFF (Backends for Frontends) & API Gateway, 4. Bulkhead Pattern (Rekesz / Izolációs Minta), 🏗️ Aszinkron Rendszer-minták (DLQ, Outbox, BFF, Bulkhead), 📖 Fogalom Meghatározása, 🔑 Főbb Aszinkron Minták Katalógusa
+
+### Community 641 - "⚡ Caching Stratégiák, Eviction & Cache Stampede"
+Cohesion: 0.29
+Nodes (7): 💥 A "Cache Stampede" (Thundering Herd) Probléma & Megoldása, A Jelenség:, 🗑️ Cache Kiürítési Politikák (Eviction Policies), 🔄 Caching Minta-Típusok (Caching Patterns), ⚡ Caching Stratégiák, Eviction & Cache Stampede, 📖 Fogalom Meghatározása, Megoldások:
+
+### Community 642 - "🔑 A 3 Adatbázis Skálázási Stratégia"
+Cohesion: 0.29
+Nodes (7): 1. Read Replicas (Olvasási Másolatok), 2. Sharding (Horizontal Partitioning — Vízszintes Partícionálás), 3. Consistent Hashing (Konzisztens Hashelés), 🔑 A 3 Adatbázis Skálázási Stratégia, 💡 Alkalmazás a Visibill Architektúrában, 🗄️ Database Sharding, Partitioning & Replication, 📖 Fogalom Meghatározása
+
+### Community 643 - "UI / UX Kialakítás"
+Cohesion: 0.29
+Nodes (7): 1. Tabs-alapú Kártya Struktúra, 2. Form Elrendezés (EmailSettingsForm), 4. Jelszó Maszkolás (Masked Password), Kapcsolódó, P-048: IMAP/SMTP Levelező Beállítások és Tabs UX, Rationale, UI / UX Kialakítás
+
+### Community 644 - "P-072: Bérszámfejtési Ciklus Jelenlét Kézi Rögzítés és Cafeteria UX Stabilitás"
+Cohesion: 0.29
+Nodes (7): Context, Current Implementation, Decision, Kapcsolódó, P-072: Bérszámfejtési Ciklus Jelenlét Kézi Rögzítés és Cafeteria UX Stabilitás, Question, Rationale
+
+### Community 645 - "P-099: Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX)"
+Cohesion: 0.29
+Nodes (7): 1. Kettős Megjelenítési Szint (Dual-Layer Presentation), 2. Különleges Adózási Esetek és Jogszabályi Hivatkozások, 🔍 Ellenőrzési és Használati Útmutató, 📍 Megjelenési Helyek, P-099: Hivatalos NAV ÁFA Összesítő és Adókulcs-Megbontás Felületi Élmény (UX), 🎯 Problémafelvetés és Célkitűzés, 💡 Termék és Felületi Tervezés (UX)
+
+### Community 646 - "2. Terméktervezési Elvek és Megoldások"
+Cohesion: 0.29
+Nodes (7): 1. Felhasználói Igény és Célcsoport, 2. Terméktervezési Elvek és Megoldások, 3. Megtartott Képességek Garanciája, A. Rendszerezett felső sáv (10 gomb helyett 3 tiszta blokk), B. Kompakt / Kiterjeszthető KPI csík (+80-100px munkaterület), C. Tisztított Szűrősáv & Progressive Disclosure, P-122: Főkönyv Felhasználói Élmény (UX), Letisztult Könyvelői Ergonómia és Zsúfoltság-Megszüntetés
+
+### Community 647 - "P-131: Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX"
+Cohesion: 0.29
+Nodes (6): 1. Felhasználói Igény és Célkitűzés, 2.1. Integrációk Oldal (`/integrations?tab=minimax`), 2.2. Számlák Fejléc és Szinkron Dialógus, 2. Felületi Elemek és Viselkedés, 3. Minőségbiztosítás és Eredmények, P-131: Horvát Minimax Számla-közvetítő Integráció és Szinkronizáció UX
+
+### Community 648 - "2. A Varázsló Működési Logikája"
+Cohesion: 0.29
+Nodes (7): 2.1 Időszak Választó Fejléc, 2.2 Valós Idejű KPI Összesítő Kártyák, 2.3 Tételes Eszköz-Táblázat és Vizuális Státuszok, 2.4 Részletes T/K Bontás Lenézete, 2. A Varázsló Működési Logikája, Kapcsolódó, P-141: Tárgyi Eszközök Időszaki Értékcsökkenés (ÉCS) Elszámolás és Vegyes Napló Feladási Varázsló UX
+
+### Community 649 - "P-149: Munkavállalói Pótszabadságok Törzsadat-alapú Feloldása és Szabadság Tájékoztató Kártya UX"
+Cohesion: 0.29
+Nodes (7): 1. Question, 2. Decision, 3.2. Szabadság Tab (`EmployeeLeaveTab.tsx`), 3. Current Implementation, 4. Rationale, 5. Kapcsolódó, P-149: Munkavállalói Pótszabadságok Törzsadat-alapú Feloldása és Szabadság Tájékoztató Kártya UX
+
+### Community 650 - "1. „Semmit a kéznek, mindent a szemnek” Read-Only Elv"
+Cohesion: 0.29
+Nodes (7): 1. „Semmit a kéznek, mindent a szemnek” Read-Only Elv, 2. Hivatalos ÁNYK 26A60 Vizuális Lapszerkezet, 3. Eszköztár és Felületi Integráció, Decision, Kapcsolódó, P-155: NAV 26A60 Hivatalos Nyomtatvány Digitális Replika UX, Question
+
+### Community 651 - "2. Felületi Megvalósítás és UX Megoldások"
+Cohesion: 0.29
+Nodes (7): 1. Üzleti Háttér és Igény, 2.1. Gyorsszűrő Vezérlősáv (Segmented Quick Filter), 2.2. Vizuális Megkülönböztetés a Táblázatban, 2.3. Kibontható Kétkártyás 65M-02-K Részletező Nézet, 2. Felületi Megvalósítás és UX Megoldások, 3. Felhasználói Előnyök, P-158: NAV 65M-02-K Korrekciós és Sztornó Számlák Felhasználói Élménye és Tételes Megjelenítése (UX)
+
+### Community 652 - "2. Felületi Megvalósítás és UX Megoldások"
+Cohesion: 0.29
+Nodes (7): 1. Üzleti Háttér és Igény, 2.1. Szegmentált Al-nézet Váltó a Tételes M-lap Fülön, 2.2. Hibrid Nézetmód Kapcsoló: Lapozható ↔ Egybefűzve Görgethető, 2.3. Partner Navigátor és Kereső, 2. Felületi Megvalósítás és UX Megoldások, 3. Minőségbiztosítás és Eredmények, P-164: NAV 2665M Digitális Nyomtatvány Replika és Lapozható/Egybefűzött Partner UX
+
+### Community 653 - "2. Megvalósított Felületi Élmény (UX) és Döntések"
+Cohesion: 0.29
+Nodes (7): 1. Felhasználói Igény és Problémafelvetés, 2.1 Főkönyvi Lusta Lapfül-Navigáció, 2.2 Folyószámla `UnifiedPagination` Integráció, 2.3 Napló (Journals) Finomhangolás, 2. Megvalósított Felületi Élmény (UX) és Döntések, 3. Kapcsolódó Dokumentáció, P-165: Folyószámla 50-es Lapozás (UnifiedPagination) és Főkönyv Lekérdezési Vihar Megszüntetése UX
+
+### Community 654 - "🔐 AUTH — Részletes Audit"
+Cohesion: 0.29
+Nodes (7): Auth architektúra áttekintés, 🔐 AUTH — Részletes Audit, eaisybill Vendor Lock-in Audit & Migrációs Terv, GoTrue-specifikus viselkedések, amiket migrációnál pótolni kell, Használt Supabase Auth API-k, Érintett forrásfájlok (Auth), 📋 Összefoglaló Lock-in Mátrix
+
+### Community 655 - "Define Goal"
+Cohesion: 0.29
+Nodes (6): Clarifying Questions, Define Goal, Goal Quality Bar, Overview, Quantification Heuristics, Workflow
+
+### Community 656 - "4. Fejlesztési roadmap"
+Cohesion: 0.29
+Nodes (6): 2. Fogalomtár, 4.1 Alapelvek a sorrend meghatározásához, 4.2 Fázisok áttekintése, 4.4 Függőségek és kockázatok, 4.5 Sikerkritériumok, 4. Fejlesztési roadmap
+
+### Community 657 - "1. Vezetői összefoglaló – mi a szoftver értelme?"
+Cohesion: 0.29
+Nodes (7): 1.1 Egy mondatban, 1.2 Milyen problémát old meg?, 1.3 Kik használják és hogyan?, 1.4 A jelenlegi havi munkafolyamat (ahogy a bemutató végigvitte), 1.5 A bemutatóban azonosított hiányosságok – ezekre építünk, 1.6 Hogyan illeszkedik az eaisybillbe?, 1. Vezetői összefoglaló – mi a szoftver értelme?
+
+### Community 658 - "ManualInvoiceCreateDialog.test.tsx"
 Cohesion: 0.29
 Nodes (6): mockInsert, mockInvalidateQueries, mockSelect, mockStorageRemove, mockToast, mockUpdate
 
-### Community 1286 - "Community 1286"
-Cohesion: 0.20
-Nodes (10): first_closing_btn, loading, no_reports, reports, empty, unpost_modal, cancel, confirm (+2 more)
+### Community 659 - "syncStaggering.ts"
+Cohesion: 0.52
+Nodes (5): getCompanySyncBucket(), getCompanySyncSlotInfo(), SYNC_SLOTS, SyncSlotInfo, TOTAL_SYNC_BUCKETS
 
-### Community 1287 - "Community 1287"
-Cohesion: 0.33
-Nodes (5): AES-256-GCM Titkosítási Minta:, 🔐 Data Encryption (Adattitkosítás: AES-256-GCM & TLS), 📖 Fogalom Meghatározása, 💡 Használat a Visibillben: Per-User Credentials Vault ([A-010] / [A-038]), 🔑 Titkosítási Szintek a Visibillben
+### Community 660 - "accountyDefaults.ts"
+Cohesion: 0.29
+Nodes (6): ACCOUNTY_ADMIN_ONLY_MODULES, ACCOUNTY_ALWAYS_ACCESSIBLE_MODULES, ACCOUNTY_PAYROLL_SPECIALIST_MODULES, ACCOUNTY_SENIOR_AND_ADMIN_MODULES, ACCOUNTY_TAO_MODULES, ModuleDefault
 
-### Community 1288 - "Community 1288"
-Cohesion: 0.33
-Nodes (5): 🔑 A `service_role` Bypass (És mikor szabad használni), ⚠️ Biztonsági Aranyszabályok, 📖 Fogalom Meghatározása, 🔒 Hogyan működik a Visibillben?, 🛡️ RLS — Row Level Security (Sor-szintű Adatizoláció)
+### Community 661 - "crossSystemPermissions.test.ts"
+Cohesion: 0.29
+Nodes (5): ACCOUNTY_ADMIN_ONLY, ACCOUNTY_ALWAYS_ACCESSIBLE, ACCOUNTY_SENIOR_MODULES, AccountyModule, AccountyRole
 
-### Community 1289 - "Community 1289"
+### Community 662 - "Layer 2: Type Safety"
 Cohesion: 0.33
-Nodes (5): ⚠️ Biztonsági Kockázatok & "Search Path Hijack" Elleni Védelem, 📖 Fogalom Meghatározása, Kötelező Szabály a Visibillben, 💡 Miért és Hol Használjuk a Visibillben?, 🛡️ Security Definer (PostgreSQL Jogkör Kiterjesztés)
+Nodes (6): 2.0 — Graphify: Type kapcsolatok, 2.1 — `any` Usage Audit, 2.2 — Supabase Query Types, 2.3 — Interface Consistency, 2.4 — Null/Undefined Handling, Layer 2: Type Safety
 
-### Community 1290 - "Community 1290"
+### Community 663 - "Layer 3: Data Flow & State Management"
 Cohesion: 0.33
-Nodes (5): 📖 Fogalom Meghatározása, 💡 Miért használunk RPC-ket a Visibillben?, ⚡ RPC — Remote Procedure Call (Adatbázis Tárolt Eljárások), 🛡️ `SECURITY DEFINER` és Biztonság, ⚙️ Tranzakciós tulajdonságok: `VOLATILE` vs `STABLE` [A-046]
+Nodes (6): 3.0 — Graphify: Data flow térkép, 3.1 — State Location Audit, 3.2 — Fájlméret audit (Visibill-specifikus), 3.3 — Data Fetching Consistency, 3.4 — Stale Data & Cache Issues, Layer 3: Data Flow & State Management
 
-### Community 1291 - "Community 1291"
+### Community 664 - "Layer 5: Auth & Authorization"
 Cohesion: 0.33
-Nodes (5): 📖 Fogalom Meghatározása, 💡 Fő előnyök a Visibill architektúrában, 🏗️ Hogyan működik a Visibillben?, 📬 PGMQ — Message Queues (Adatbázis-Natív Üzenetsorok), 📊 Queue Katalógus és Visibility Timeout-ok
+Nodes (6): 5.0 — Graphify: Auth flow, 5.1 — Auth State Management, 5.2 — Signup Trigger Chain Audit (A-020), 5.3 — Frontend ↔ Backend Auth Mismatch, 5.4 — Session Handling, Layer 5: Auth & Authorization
 
-### Community 1292 - "Community 1292"
+### Community 665 - "Layer 7: Supabase Integration"
 Cohesion: 0.33
-Nodes (5): 📖 Fogalom Meghatározása, 🔑 Főbb Realtime Fogalmak, 💡 Használat a Visibillben, 🛡️ Severity & Zajkezelési Szabály a Visibillben, 🌐 WebSocket & Supabase Realtime Connection
+Nodes (6): 7.0 — Graphify: Supabase interakciók, 7.1 — Query Pattern Consistency, 7.2 — RPC Function Audit, 7.3 — Realtime Subscription Cleanup, 7.4 — RLS Policy ↔ Frontend Mismatch Detection, Layer 7: Supabase Integration
 
-### Community 1293 - "Community 1293"
+### Community 666 - "Audit Execution Process"
 Cohesion: 0.33
-Nodes (5): ⚙️ Akció-Alapú API Minta (Action Pattern), ⚡ EF — Edge Functions (Supabase Serverless Functions), 📖 Fogalom Meghatározása, 🏗️ Miért használunk Edge Function-öket?, 💡 Use-Case-ek a Visibillben
+Nodes (6): Audit Execution Process, Step 0: Graphify gráf frissítése (5 min), Step 1: Automated Scan (30 min), Step 2: Triage (15 min), Step 3: Deep Dive (variable), Step 4: Report (artifact)
+
+### Community 667 - "BRD Vizuális Diagramkészítési Irányelvek (baoyu-diagram Integráció)"
+Cohesion: 0.33
+Nodes (5): 🎯 1. Diagramozási Alapelvek a BRD-ben, 🗺️ 2. Üzleti Logikák Megfeleltetése Diagramtípusoknak, ⚡ 3. Végrehajtás és PNG Konverzió (Bun CLI), BRD Vizuális Diagramkészítési Irányelvek (baoyu-diagram Integráció), (Dedikált `<projekt>/docs/brd/diagramms/` alkönyvtár használata)
+
+### Community 668 - "BRD Tisztasági Audit és Technikai Szivárgás-Megelőzés"
+Cohesion: 0.33
+Nodes (5): 🏛️ 1. A Három Dokumentumtípus Szigorú Elhatárolása, 🚫 2. Szigorúan Tilos Elemek a BRD-ben (Tiltólista), 📋 3. A Tisztasági Audit Lépései, (BRD Purity Audit: Zero ADR, Zero PRD, Zero Technical Fuzzy Text), BRD Tisztasági Audit és Technikai Szivárgás-Megelőzés
+
+### Community 669 - "PRD Vizuális UI Diagram- és Mockupkészítési Irányelvek (baoyu-diagram)"
+Cohesion: 0.33
+Nodes (5): 🎯 1. Diagramozási Alapelvek a PRD-ben, 🗺️ 2. Felületi Logikák Megfeleltetése Diagramtípusoknak, ⚡ 3. Végrehajtás és PNG Konverzió (Bun CLI), (Dedikált `<projekt>/docs/prd/diagramms/` alkönyvtár használata), PRD Vizuális UI Diagram- és Mockupkészítési Irányelvek (baoyu-diagram)
+
+### Community 670 - "A-006: Python Worker Architektúra"
+Cohesion: 0.33
+Nodes (6): A-006: Python Worker Architektúra, Consequences, Context, Decision, Kapcsolódó, Verification & Testing
+
+### Community 671 - "A-029: Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció"
+Cohesion: 0.33
+Nodes (6): A-029: Aszinkron URL és Lokális Dialógus Állapot Szinkronizáció, Consequences, Context, Decision, Kapcsolódó, Rationale
+
+### Community 672 - "A-049: Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete)"
+Cohesion: 0.33
+Nodes (6): A-049: Felhasználó Törlési és Anonimizálási Stratégia (Soft Delete), Consequences, Context, Kapcsolódó, Negatív:, Pozitív:
+
+### Community 673 - "A-068: High-Performance Server-Side Management Files Pagination & Multi-Source Unified Querying (`get_management_files` RPC)"
+Cohesion: 0.33
+Nodes (6): 2. Decision, 3. Consequences, 4. Updates & Evolution, A-068: High-Performance Server-Side Management Files Pagination & Multi-Source Unified Querying (`get_management_files` RPC), Pozitív:, Trade-offs:
+
+### Community 674 - "A-100: Banki Tranzakció Egyediségi Megkötés Bővítése Összeggel és Csendes Duplikátum-kezelés"
+Cohesion: 0.33
+Nodes (6): A-100: Banki Tranzakció Egyediségi Megkötés Bővítése Összeggel és Csendes Duplikátum-kezelés, A Felmerült Problémák és Gyökérok Elemzés, Consequences, Context, Decision, Kapcsolódó
+
+### Community 675 - "A-124: Többoldalas Számlák Folytatás-Felismerése és Téves Multi-Invoice Split Megelőzés (Multi-Page Invoice Continuation Guard)"
+Cohesion: 0.33
+Nodes (5): A-124: Többoldalas Számlák Folytatás-Felismerése és Téves Multi-Invoice Split Megelőzés (Multi-Page Invoice Continuation Guard), Consequences, Context, Decision, Kapcsolódó
+
+### Community 676 - "A-126: Audit Trail Email Ingestion Metadata & Retrospective Invoice Linking"
+Cohesion: 0.33
+Nodes (6): A-126: Audit Trail Email Ingestion Metadata & Retrospective Invoice Linking, Consequences, Context, Kapcsolódó, Migrációs és Kód Állományok, Pozitív
+
+### Community 677 - "A-131: NAV 2665 ÁFA Bevallás Sormegfeleltetés, Gyűjtőkódok Tisztítása, 6/B Acélipari Nyilatkozat és Egész Kilogrammos Kerekítés"
+Cohesion: 0.33
+Nodes (6): A-131: NAV 2665 ÁFA Bevallás Sormegfeleltetés, Gyűjtőkódok Tisztítása, 6/B Acélipari Nyilatkozat és Egész Kilogrammos Kerekítés, Consequences, Context, Kapcsolódó, Pozitív, Trade-off / Megfontolások
+
+### Community 678 - "A-138: Számlák Teljesítés Dátuma és Dátum Alap RPC Szűrés"
+Cohesion: 0.33
+Nodes (4): A-138: Számlák Teljesítés Dátuma és Dátum Alap RPC Szűrés, Consequences, Context & Problem, Decision
+
+### Community 679 - "A-146: Magánszemély Vevőnevek Gazdagítása és ÁFA Analitikai Deduplikáció"
+Cohesion: 0.33
+Nodes (6): 1. Context, 2. Decision, 3. Consequences, A-146: Magánszemély Vevőnevek Gazdagítása és ÁFA Analitikai Deduplikáció, Kapcsolódó, Pozitív
+
+### Community 680 - "A-186: Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) és Szakképzési Tanulói Keret (Szkt. 84. §)"
+Cohesion: 0.33
+Nodes (6): 1. Context, 3. Consequences, 4. Minőségbiztosítás & Tesztek, 5. Kapcsolódó, A-186: Munkavállalói Pótszabadságok Dinamikus Feloldó Motorja (Mt. 116–122. §) és Szakképzési Tanulói Keret (Szkt. 84. §), Pozitív:
+
+### Community 681 - "A-198: Manuális Beküldött Számlarögzítés, Dokumentum Csatolás és Többes Párosítás"
+Cohesion: 0.33
+Nodes (6): 1. Kontextus, 2. Döntés, 3. Következmények, A-198: Manuális Beküldött Számlarögzítés, Dokumentum Csatolás és Többes Párosítás, Kapcsolódó, Pozitív
+
+### Community 682 - "A-246: Worker Invoice Upsert Idempotencia és Postgres 23505 Pre-Check Ütközésvédelem (Többoldalas és Kötegelt Feltöltések)"
+Cohesion: 0.33
+Nodes (5): 1. Kontextus és Problémafelvetés, 2. Döntés és Architektúrális Védelmi Vonalak, 3. Verifikáció és Tesztek, A-246: Worker Invoice Upsert Idempotencia és Postgres 23505 Pre-Check Ütközésvédelem (Többoldalas és Kötegelt Feltöltések), Gyökérok Elemzés
+
+### Community 683 - "Beosztásom Modul — Termékkövetelmény Dokumentáció (PRD)"
+Cohesion: 0.33
+Nodes (6): 🗺️ A Moduláris PRD Kötetek Navigációs Térképe, 🎯 A Termék Célja és Működési Koncepciója, Beosztásom Modul — Termékkövetelmény Dokumentáció (PRD), (Product Requirements Document Suite & UI Specifications), 👥 Szerepkör-alapú Olvasási Útmutató, 🎨 Vizuális Felületi Diagramok Katalógusa
+
+### Community 684 - "2. A Három Alapszabály Master-Detail és Tab Felületeken"
+Cohesion: 0.33
+Nodes (6): 1. A Probléma Anatómiája, 2. A Három Alapszabály Master-Detail és Tab Felületeken, A. Perzisztens DOM Renderelés (`block` / `hidden`), B. GPU Transzformáció Zéró Tolerancia a Részletező Konténereken, C. Stabil Görgetősáv (Scrollbar Gutter), 🗂️ Master-Detail & Tab Váltási Irányelvek (Zero-Jitter & ClearType Védelem) (2026-09-22)
+
+### Community 685 - "☸️ Kubernetes (K8s) & Konténer Orkesztráció"
+Cohesion: 0.33
+Nodes (6): 📖 Fogalom Meghatározása, 🔑 Főbb K8s Koncepciók, 💡 Hogyan viszonyul a Kubernetes a Visibillhez?, Jelenlegi Architektúra (Docker Compose egy Droplet-en), Jövőbeli Skálázódás (K8s / Managed Kubernetes), ☸️ Kubernetes (K8s) & Konténer Orkesztráció
+
+### Community 686 - "👁️ OCR & Vision Pipeline (Optikai Karakterfelismerés)"
+Cohesion: 0.33
+Nodes (6): 1. Elsődleges Lépcső (Primary OCR — MarkItDown), 2. Másodlagos Lépcső (Secondary OCR — GPT-4o Vision Fallback), 🏗️ A Visibill Kétlépcsős OCR Architektúrája ([A-008]), 📖 Fogalom Meghatározása, 👁️ OCR & Vision Pipeline (Optikai Karakterfelismerés), 💡 Teljesítmény & Költség optimalizáció
+
+### Community 687 - "P-105: Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa Kibontás/Összecsukás UX"
+Cohesion: 0.33
+Nodes (6): 1. Kontextus és Problémafelvetés, 1. Kétszintű Eszköztár Architektúra (2-Tier Toolbar), 2. Globális Fa Kibontás és Összecsukás ("Mind kinyitása" / "Mind összecsukása"), 2. Termékdöntés és Megoldás, 3. UI/UX Tesztelés és Stabilitás, P-105: Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa Kibontás/Összecsukás UX
+
+### Community 688 - "P-134: Bérszámfejtési Ciklus Lezárási Választó Modál, Lezárt Ciklus Védelem és Újranyitás UX"
+Cohesion: 0.33
+Nodes (6): Context, Current Implementation, Decision, Kapcsolódó, P-134: Bérszámfejtési Ciklus Lezárási Választó Modál, Lezárt Ciklus Védelem és Újranyitás UX, Rationale
+
+### Community 689 - "2. A Döntés és Felületi Specifikáció"
+Cohesion: 0.33
+Nodes (6): 1. Döntési Kontextus és Problémafelvetés, 2.2 Fejléci Gombok Elhelyezése, 2.3 Bal Oldali Menüpont (Sidebar), 2. A Döntés és Felületi Specifikáció, 3. Felhasználói Élmény és Eredmények, P-156: Könyvelési Szabályok Elérése az ÁFA Bevallás és Napló Alól, Valamint Egységes Szabálykezelő Dialógus UX
+
+### Community 690 - "3.15 Beállítások, navigáció, dokumentumok"
+Cohesion: 0.33
+Nodes (6): 3.15.1 Adataim (a bejelentkezett felhasználó profilja), 3.15.2 Értesítések (felhasználói), 3.15.3 Vállalkozás beállításai (cégszintű), 3.15.4 Navigáció, 3.15.5 Dokumentumok, 3.15 Beállítások, navigáció, dokumentumok
+
+### Community 691 - "🛠️ Részletes Módosítások"
+Cohesion: 0.33
+Nodes (5): 1. Adatbázis & Backend Logikák (Supabase PostgreSQL), 3. Minőségbiztosítás & Verifikáció, 🛠️ Részletes Módosítások, Session Summary — 2026-09-28 15:02, 🚀 Összefoglaló (Conventional Commit)
+
+### Community 692 - "Session Summary — 2026-10-01 10:50"
+Cohesion: 0.33
+Nodes (5): 🎯 Célkitűzés & Jegy, 🛠️ Elvégzett Módosítások, 🔍 Kivizsgálás & Gyökérok, 👤 Résztvevők, Session Summary — 2026-10-01 10:50
+
+### Community 695 - "rich-text-content.tsx"
+Cohesion: 0.53
+Nodes (4): isHtml(), RichTextContent, RichTextContentProps, sanitizeHtml()
+
+### Community 696 - "useIdleTimeout.ts"
+Cohesion: 0.47
+Nodes (5): getLastActivity(), IDLE_EVENTS, touchActivity(), useIdleTimeout(), UseIdleTimeoutReturn
+
+### Community 697 - "navTaxpayer.test.ts"
+Cohesion: 0.60
+Nodes (4): extractTag(), extractTaxpayerAddress(), parseNavError(), parseTaxpayerXml()
+
+### Community 698 - "navValidationInboundProbe.test.ts"
+Cohesion: 0.40
+Nodes (3): NavCredentials, NavValidationResult, TestableNavClient
+
+### Community 699 - "clientListFiltering.test.ts"
+Cohesion: 0.33
+Nodes (4): AccountyAssignment, ClientListItem, COMPANIES, CompanyInfo
+
+### Community 700 - "statusMappers.test.ts"
+Cohesion: 0.33
+Nodes (3): InvoiceStatus, kanbanStatusMap, kanbanStatusReverse
+
+### Community 702 - "auto-categorize-invoices/index.ts"
+Cohesion: 0.33
+Nodes (4): AICategorizationResult, CategoryInfo, corsHeaders, InvoiceItemCandidate
+
+### Community 703 - "nav-tax-profile-sync/index.ts"
+Cohesion: 0.47
+Nodes (4): corsHeaders, createSignature(), getNavToken(), hashPassword()
+
+### Community 704 - "Layer 1: Routing & Navigation"
+Cohesion: 0.40
+Nodes (5): 1.0 — Graphify: Routing térkép, 1.2 — Route Definition Audit, 1.3 — Lazy Loading & Suspense, 1.4 — Protected Route Coverage, Layer 1: Routing & Navigation
+
+### Community 705 - "area-spec-map.md"
+Cohesion: 0.40
+Nodes (4): eaisybill-prod területek, Ha nincs spec az adott területre, HRTSPED projekt területek, Közös elemek (mindkét projektben)
+
+### Community 706 - "🎯 RAG Optimalizációs Útmutató az eaisyBill / eaisyBooks Tudástárhoz"
+Cohesion: 0.40
+Nodes (4): 1. Hogyan pontoz a `search_knowledge_base` RPC?, 2. Hogyan használja fel a cikkeket az `accounty-ai-chat` Edge Function?, Kritikus tervezési következmények a cikkíró számára:, 🎯 RAG Optimalizációs Útmutató az eaisyBill / eaisyBooks Tudástárhoz
+
+### Community 707 - "A-025: Cross-company Invoice Routing"
+Cohesion: 0.40
+Nodes (5): A-025: Cross-company Invoice Routing, Consequences, Context, Decision, Related
+
+### Community 708 - "A-034: Accounty Digest Összefoglaló Működése"
+Cohesion: 0.40
+Nodes (5): A-034: Accounty Digest Összefoglaló Működése, Consequences, Context, Decision, Kapcsolódó
+
+### Community 709 - "A-035: Háromirányú Szekvenciális Pipeline Átirányítás (Invoice ↔ Transaction ↔ Report) és Hibakezelés"
+Cohesion: 0.40
+Nodes (5): A-035: Háromirányú Szekvenciális Pipeline Átirányítás (Invoice ↔ Transaction ↔ Report) és Hibakezelés, Consequences, Context, Decision, Kapcsolódó
+
+### Community 710 - "A-036: Pénztárbizonylat (Cash Voucher) Processing"
+Cohesion: 0.40
+Nodes (5): A-036: Pénztárbizonylat (Cash Voucher) Processing, Consequences, Context, Decision, Kapcsolódó
+
+### Community 711 - "A-069: Centralized Frontend Error Ingestion, Stack Trace Preservation & Intelligent Context Deserialization"
+Cohesion: 0.40
+Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-069: Centralized Frontend Error Ingestion, Stack Trace Preservation & Intelligent Context Deserialization, Pozitív:
+
+### Community 712 - "A-071: Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity"
+Cohesion: 0.40
+Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-071: Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity, Pozitív:
+
+### Community 713 - "A-072: Robust Accounting Firm Assignment RLS & Direct Client Creation"
+Cohesion: 0.40
+Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-072: Robust Accounting Firm Assignment RLS & Direct Client Creation, Pozitív:
+
+### Community 714 - "A-073: Defensive Prop Normalization & Settings Component Resilience"
+Cohesion: 0.40
+Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-073: Defensive Prop Normalization & Settings Component Resilience, Pozitív:
+
+### Community 715 - "A-074: PDF Export Edge Function Invocation Resilience"
+Cohesion: 0.40
+Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-074: PDF Export Edge Function Invocation Resilience, Pozitív:
+
+### Community 716 - "A-075: Management Overview Null-Safety in SQL JSON Aggregations"
+Cohesion: 0.40
+Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-075: Management Overview Null-Safety in SQL JSON Aggregations, Pozitív:
+
+### Community 717 - "A-082: Partially Paid Invoices Status, Server-Side Amount Aggregation & Trigger Alignment"
+Cohesion: 0.40
+Nodes (5): A-082: Partially Paid Invoices Status, Server-Side Amount Aggregation & Trigger Alignment, Consequences, Context, Decision, Kapcsolódó
+
+### Community 718 - "A-091: Bank Statement Boundary Governance & Defense-in-Depth Summary Artifact Filtering"
+Cohesion: 0.40
+Nodes (5): A-091: Bank Statement Boundary Governance & Defense-in-Depth Summary Artifact Filtering, Consequences, Context, Decision, Kapcsolódó
+
+### Community 719 - "A-095: Nemzetközi Kártyaelfogadó Terminál (Europay POS) Clearing Devizafelülírás Védelme és Kártyás Időbélyeg Kinyerés"
+Cohesion: 0.40
+Nodes (5): A-095: Nemzetközi Kártyaelfogadó Terminál (Europay POS) Clearing Devizafelülírás Védelme és Kártyás Időbélyeg Kinyerés, Consequences, Context, Decision, Kapcsolódó
+
+### Community 720 - "A-113: NAV Invoice Items VAT & Gross Auto-Calculation"
+Cohesion: 0.40
+Nodes (5): A-113: NAV Invoice Items VAT & Gross Auto-Calculation, Consequences, Context, Decision, Status
+
+### Community 721 - "Decision (Döntés)"
+Cohesion: 0.40
+Nodes (5): 1. NAV v3.0 XML Builder és Parser Bővítés (`_shared/nav`), 2. Edge Function és Platform Fallback Hitelesítés (`nav-query-taxpayer`), 3. Kliensoldali Szolgáltatás (`navTaxpayerService.ts`), 5. Automatikus Dúsítás NAV Szinkronizáció Közben (`nav-ingestion-service.ts`), Decision (Döntés)
+
+### Community 722 - "A-142: Kettős Könyvvitel Szerinti Kötelező Kontírszám Szabályok és Vevői Kontírválasztó (311–317 + ÁFA 467/466)"
+Cohesion: 0.40
+Nodes (5): A-142: Kettős Könyvvitel Szerinti Kötelező Kontírszám Szabályok és Vevői Kontírválasztó (311–317 + ÁFA 467/466), Döntések, Kontextus, Következmények és Előnyök, Státusz
+
+### Community 723 - "A-182: Részfizetés és Jutaléklevonás Számlapárosítás és Deduplikációs Architektúra"
+Cohesion: 0.40
+Nodes (5): A-182: Részfizetés és Jutaléklevonás Számlapárosítás és Deduplikációs Architektúra, Consequences, Context, Decision, Kapcsolódó
+
+### Community 724 - "Eaisybill Horvát (HR) Lokalizációs Audit — Teljes Kódbázis Leltár és Hiányossági Térkép"
+Cohesion: 0.40
+Nodes (5): 📊 1. Vezetői Összefoglaló és Statisztikai Leltár, 🗺️ 3. Részletes Moduldokumentációk Tartalomjegyzéke, Eaisybill Horvát (HR) Lokalizációs Audit — Teljes Kódbázis Leltár és Hiányossági Térkép, Elem kategóriák szerinti bontás, Moduláris eloszlás
+
+### Community 725 - "VisiBill Fejlesztői Környezet (DEV Environment)"
+Cohesion: 0.40
+Nodes (4): 📚 Dokumentációs Térkép, 🎯 Főbb Eredmények és Invariánsok, 📌 Gyors Áttekintés, VisiBill Fejlesztői Környezet (DEV Environment)
+
+### Community 726 - "2.1. [POST] /api/v1/auth/token"
+Cohesion: 0.40
+Nodes (5): 2.1. [POST] /api/v1/auth/token, Integracios Kodreszletek:, Keres Torzs (JSON Body minta):, Parameterek:, Sikeres Valasz (200 OK):
+
+### Community 727 - "2.2. [POST] /api/v1/tickets"
+Cohesion: 0.40
+Nodes (5): 2.2. [POST] /api/v1/tickets, Integracios Kodreszletek:, Keres Torzs (JSON Body minta):, Parameterek:, Sikeres Valasz (200 OK):
+
+### Community 728 - "2.7. [PATCH] /api/v1/tasks/:id"
+Cohesion: 0.40
+Nodes (5): 2.7. [PATCH] /api/v1/tasks/:id, Integracios Kodreszletek:, Keres Torzs (JSON Body minta):, Parameterek:, Sikeres Valasz (200 OK):
+
+### Community 729 - "navPartnerSync.test.ts"
+Cohesion: 0.50
+Nodes (4): buildPartnerInserts(), NavInvoiceDigest, PartnerInsertPayload, sanitizeTaxNumber()
+
+### Community 730 - "mockData.ts"
+Cohesion: 0.40
+Nodes (4): BlockingCategory, blockingCategoryMeta, BlockingItem, ClientData
+
+### Community 731 - "ticketCategories.test.ts"
+Cohesion: 0.60
+Nodes (3): isValidTicketCategory(), TICKET_CATEGORIES, TicketCategory
+
+### Community 734 - "fetch-legal-updates/index.ts"
+Cohesion: 0.40
+Nodes (3): corsHeaders, ParsedArticle, TODO: Re-enable when NJT API or structured Közlöny feed becomes available
+
+### Community 736 - "Layer 11: DB Triggers & Migrations (ÚJ)"
+Cohesion: 0.50
+Nodes (4): 11.1 — Trigger Function Audit, 11.2 — Migráció-kód konzisztencia, 11.3 — Éles DB ↔ Migráció szinkron, Layer 11: DB Triggers & Migrations (ÚJ)
+
+### Community 737 - "Layer 4: Error Handling"
+Cohesion: 0.50
+Nodes (4): 4.1 — Supabase Error Check Coverage, 4.2 — Error Boundaries, 4.3 — User Feedback Consistency, Layer 4: Error Handling
+
+### Community 738 - "Layer 8: Dead Code & Unused Imports"
+Cohesion: 0.50
+Nodes (4): 8.0 — Graphify: Orphan keresés, 8.1 — Unused Files, 8.2 — Console Statements, Layer 8: Dead Code & Unused Imports
+
+### Community 739 - "Graphify Integráció"
+Cohesion: 0.50
+Nodes (4): Community-based audit, Graphify Integráció, Használat minden audit layer előtt, Tipikus audit lekérdezések
+
+### Community 740 - "A-001: Három Rétegű Architektúra"
+Cohesion: 0.50
+Nodes (4): A-001: Három Rétegű Architektúra, Consequences, Context, Decision
+
+### Community 741 - "A-002: Supabase mint Backend-as-a-Service"
+Cohesion: 0.50
+Nodes (4): A-002: Supabase mint Backend-as-a-Service, Consequences, Context, Decision
+
+### Community 742 - "A-004: PGMQ mint Aszinkron Queue"
+Cohesion: 0.50
+Nodes (4): A-004: PGMQ mint Aszinkron Queue, Consequences, Context, Decision
+
+### Community 743 - "A-005: Edge Functions (Deno) a Serverless Logikához"
+Cohesion: 0.50
+Nodes (4): A-005: Edge Functions (Deno) a Serverless Logikához, Consequences, Context, Kapcsolódó
+
+### Community 744 - "A-008: OCR Pipeline (Vision + MarkItDown)"
+Cohesion: 0.50
+Nodes (4): A-008: OCR Pipeline (Vision + MarkItDown), Consequences, Context, Decision
+
+### Community 745 - "A-010: Credential Titkosítás (AES-256-GCM)"
+Cohesion: 0.50
+Nodes (4): A-010: Credential Titkosítás (AES-256-GCM), Consequences, Context, Decision
+
+### Community 746 - "A-026: Support Admin Ideiglenes Hozzáférés (Impersonation & Full RLS Access)"
+Cohesion: 0.50
+Nodes (4): A-026: Support Admin Ideiglenes Hozzáférés (Impersonation & Full RLS Access), Consequences, Context, Kapcsolódó
+
+### Community 747 - "Decision"
+Cohesion: 0.50
+Nodes (4): A-037: Jegyzetek Rendszer Architektúra (Notes System Architecture), Consequences, Context, Decision
+
+### Community 748 - "ADR A-059: TransactionMatchingCore & Moduláris UI Architektúra"
+Cohesion: 0.50
+Nodes (4): ADR A-059: TransactionMatchingCore & Moduláris UI Architektúra, Kontextus és Probléma, Következmények & Előnyök, Státusz
+
+### Community 749 - "A-194: ÁFA Analitika PDF Export (NAV 2665 Bevallási Sorok & Gyűjtőkódok) RLB-60 Standard Szerint"
+Cohesion: 0.50
+Nodes (3): 2. Döntések (Zero Silent Decisions Jóváhagyással), 3. Verifikáció & Tesztelés, A-194: ÁFA Analitika PDF Export (NAV 2665 Bevallási Sorok & Gyűjtőkódok) RLB-60 Standard Szerint
+
+### Community 750 - "2.10. [GET] /api/v1/workspaces/:id"
+Cohesion: 0.50
+Nodes (4): 2.10. [GET] /api/v1/workspaces/:id, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
+
+### Community 751 - "2.12. [GET] /api/v1/milestones"
+Cohesion: 0.50
+Nodes (4): 2.12. [GET] /api/v1/milestones, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
+
+### Community 752 - "2.14. [POST] /api/organizations/:orgId/webhooks"
+Cohesion: 0.50
+Nodes (4): 2.14. [POST] /api/organizations/:orgId/webhooks, Integracios Kodreszletek:, Keres Torzs (JSON Body minta):, Sikeres Valasz (200 OK):
+
+### Community 753 - "2.3. [GET] /api/v1/tickets"
+Cohesion: 0.50
+Nodes (4): 2.3. [GET] /api/v1/tickets, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
+
+### Community 754 - "2.4. [GET] /api/v1/tasks"
+Cohesion: 0.50
+Nodes (4): 2.4. [GET] /api/v1/tasks, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
+
+### Community 755 - "2.5. [POST] /api/v1/tasks"
+Cohesion: 0.50
+Nodes (4): 2.5. [POST] /api/v1/tasks, Integracios Kodreszletek:, Keres Torzs (JSON Body minta):, Sikeres Valasz (200 OK):
+
+### Community 756 - "2.6. [GET] /api/v1/tasks/:id"
+Cohesion: 0.50
+Nodes (4): 2.6. [GET] /api/v1/tasks/:id, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
+
+### Community 757 - "2.8. [DELETE] /api/v1/tasks/:id"
+Cohesion: 0.50
+Nodes (4): 2.8. [DELETE] /api/v1/tasks/:id, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
+
+### Community 758 - "2.9. [GET] /api/v1/workspaces"
+Cohesion: 0.50
+Nodes (4): 2.9. [GET] /api/v1/workspaces, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
+
+### Community 759 - "🧼 SOLID Principles & Clean Code (Tiszta Szoftvertervezés)"
+Cohesion: 0.50
+Nodes (4): 🧩 A SOLID 5 Alapelve, 📖 Fogalom Meghatározása, 📏 Kiegészítő Clean Code Alapelvek, 🧼 SOLID Principles & Clean Code (Tiszta Szoftvertervezés)
+
+### Community 761 - "evCashbookXml.ts"
+Cohesion: 0.50
+Nodes (3): EvCashbookExportData, exportEvCashbookAnykXml(), exportEvCashbookOnyaXml()
+
+### Community 768 - "Layer 10: Localization & Hardcoded Strings"
+Cohesion: 0.67
+Nodes (3): 10.1 — Language Consistency, 10.2 — Date & Number Formatting, Layer 10: Localization & Hardcoded Strings
+
+### Community 769 - "Layer 12: Edge Functions (ÚJ)"
+Cohesion: 0.67
+Nodes (3): 12.1 — Deployolt ↔ Hivatkozott EF szinkron, 12.2 — EF Auth Middleware, Layer 12: Edge Functions (ÚJ)
+
+### Community 770 - "Layer 6: UI Consistency"
+Cohesion: 0.67
+Nodes (3): 6.1 — Component Library Usage, 6.2 — Loading & Empty States, Layer 6: UI Consistency
+
+### Community 771 - "Layer 9: Environment & Configuration"
+Cohesion: 0.67
+Nodes (3): 9.1 — Environment Variables, 9.2 — Hardcoded Values, Layer 9: Environment & Configuration
+
+### Community 772 - "Decision 020: Adó Modul Scope"
+Cohesion: 0.67
+Nodes (3): Decision 020: Adó Modul Scope, eaisyBill (fő app), eaisyBooks — EV Adóforma-összehasonlítás (2026-07-08)
+
+### Community 773 - "3.9 Munkavállalók"
+Cohesion: 0.67
+Nodes (3): 3.9.1 Lista és tömeges műveletek, 3.9.2 Munkavállaló adatlapja – teljes mezőlista, 3.9 Munkavállalók
+
+### Community 788 - "ref_fs"
+Cohesion: 0.02
+Nodes (77): browserHeaders, { createClient }, fs, [mode, ...args], path, supabase, __dirname, envLocalPath (+69 more)
+
+### Community 999 - "GraphEngine"
+Cohesion: 0.23
+Nodes (3): GraphEngine, Any, BFS shortest path from start_id to end_id. Returns list of (node, link_to_next).
+
+### Community 1206 - "os"
+Cohesion: 0.10
+Nodes (18): extract_markdown_links_and_images(), BRD Verification Script (verify_brd.py) Validates: 1. Internal relative…, Extracts all markdown links and images, properly handling balanced parentheses…, verify_brd_directory(), extract_markdown_links_and_images(), PRD Verification Script (verify_prd.py) Validates: 1. Internal relative…, Extracts all markdown links and images, properly handling balanced parentheses…, verify_prd_directory() (+10 more)
+
+### Community 1248 - "test_worker_on_problematic_file.py"
+Cohesion: 0.15
+Nodes (11): asyncio, db, dotenv, fitz, io, pdf_splitter, main(), make_request() (+3 more)
 
 ### Community 1294 - "🎫 [Task] Globális Teljesítés / Keltezés dátumszűrő elhelyezése a fejlécben"
 Cohesion: 0.33
 Nodes (5): 🎯 Cél és Funkció, ✅ Elfogadási kritériumok (Teszteléshez), 📍 Felületi elhelyezkedés, ⚙️ Működési logika, 🎫 [Task] Globális Teljesítés / Keltezés dátumszűrő elhelyezése a fejlécben
 
-### Community 1295 - "Community 1295"
-Cohesion: 0.33
-Nodes (5): 🏗️ Az LLM Kontroll Réteg a Visibillben, 📖 Fogalom Meghatározása, 🔑 Főbb Fogalmak & Funkciók, 🧠 LLM Rate Limiting, Token Budgeting & Cost Tracking, ⚙️ Tenacity Retry Policy (Exponential Backoff)
-
-### Community 1296 - "Community 1296"
-Cohesion: 0.33
-Nodes (5): 💡 Best Practice Szabályok a Visibillben, 📖 Fogalom Meghatározása, 🌳 Hogyan Működik a PostgreSQL B-Tree Index?, 🔍 Keresés, Rendezés & PostgreSQL B-Tree Indexek, 📊 Keresési & Rendezési Algoritmusok Összehasonlítása
-
-### Community 1297 - "Community 1297"
-Cohesion: 0.33
-Nodes (5): 🎯 Célkitűzés & Jegy, 🛠️ Elvégzett Módosítások, 🔍 Kivizsgálás & Gyökérok, 👤 Résztvevők, Session Summary — 2026-10-01 10:50
-
-### Community 1298 - "useCompanyCapabilities"
-Cohesion: 0.22
-Nodes (9): ref_node_fs, ref_node_path, ref_node_url, auditAgainstDb(), __dirname, __filename, migrationsDir, rootDir (+1 more)
+### Community 1298 - "serviceOnlyRpcGrants.test.ts"
+Cohesion: 0.05
+Nodes (29): ref_node_fs, ref_node_path, ref_node_url, auditAgainstDb(), __dirname, __filename, migrationsDir, rootDir (+21 more)
 
 ### Community 1299 - "🎫 [Task] Kategóriák listájának rendezése százalékos arány szerint csökkenő sorrendbe"
 Cohesion: 0.33
 Nodes (5): 🎯 Cél és Funkció, ✅ Elfogadási kritériumok (Teszteléshez), 📍 Felületi elhelyezkedés, ⚙️ Működési logika, 🎫 [Task] Kategóriák listájának rendezése százalékos arány szerint csökkenő sorrendbe
 
-### Community 1300 - "Community 1300"
-Cohesion: 0.18
-Nodes (11): table, col_accountant, col_actions, col_client, col_deadline, col_missing, col_package, col_tax_number (+3 more)
-
-### Community 1301 - "Community 1301"
-Cohesion: 0.33
-Nodes (4): AccountyAssignment, ClientListItem, COMPANIES, CompanyInfo
-
-### Community 1302 - "Community 1302"
-Cohesion: 0.22
-Nodes (8): JournalItem, mockDelete, mockEq, mockInvalidateQueries, mockJournals, mockSelect, mockToast, mockUpdate
-
-### Community 1303 - "Community 1303"
-Cohesion: 0.33
-Nodes (3): InvoiceStatus, kanbanStatusMap, kanbanStatusReverse
-
-### Community 1304 - "Community 1304"
-Cohesion: 0.33
-Nodes (5): ⚡ 3. Végrehajtás és PNG Konverzió (Bun CLI), 🎯 1. Diagramozási Alapelvek a BRD-ben, 🗺️ 2. Üzleti Logikák Megfeleltetése Diagramtípusoknak, BRD Vizuális Diagramkészítési Irányelvek (baoyu-diagram Integráció), (Dedikált `<projekt>/docs/brd/diagramms/` alkönyvtár használata)
-
-### Community 1305 - "Community 1305"
-Cohesion: 0.33
-Nodes (5): ⚡ 3. Végrehajtás és PNG Konverzió (Bun CLI), 🎯 1. Diagramozási Alapelvek a PRD-ben, 🗺️ 2. Felületi Logikák Megfeleltetése Diagramtípusoknak, (Dedikált `<projekt>/docs/prd/diagramms/` alkönyvtár használata), PRD Vizuális UI Diagram- és Mockupkészítési Irányelvek (baoyu-diagram)
-
-### Community 1306 - "Community 1306"
-Cohesion: 0.40
-Nodes (4): mockRespondResolution, statusConfig, TicketStatusBadge(), TicketStatusBadgeProps
-
-### Community 1307 - "Community 1307"
-Cohesion: 0.33
-Nodes (4): AICategorizationResult, CategoryInfo, corsHeaders, InvoiceItemCandidate
-
-### Community 1308 - "Community 1308"
-Cohesion: 0.33
-Nodes (5): 🎯 A Projekt Célja 1 Mondatban, 📌 Hogyan Olvasd Ezt a Dokumentációt?, 🧭 Navigáció és Dokumentumtérkép, Visibill & Beosztásom.hu Integráció — BRD Dokumentáció, 🎨 Vizuális Architektúra és Folyamatábrák (baoyu-diagram)
-
-### Community 1309 - "Community 1309"
-Cohesion: 0.33
-Nodes (6): 12. Biztonság & Compliance, REQ-12.1: Row Level Security, REQ-12.2: Audit napló, REQ-12.3: Session kezelés, REQ-12.4: GDPR & adatvédelem, REQ-12.5: Érzékeny adatok védelme
-
-### Community 1310 - "Community 1310"
-Cohesion: 0.33
-Nodes (6): 4. Cégstruktúra & Hozzáférés-kezelés, REQ-4.1: Multi-company modell, REQ-4.2: Szerepkör-alapú hozzáférés — eaisyBill (RBAC), REQ-4.3: Szerepkör-alapú hozzáférés — eaisyBooks (RBAC), REQ-4.4: A két rendszer közötti hozzáférés, REQ-4.5: Platform-szintű szerepek
-
-### Community 1311 - "Community 1311"
-Cohesion: 0.33
-Nodes (6): 1.0 — Graphify: Routing térkép, 1.1 — Scoped Routing Pattern (Visibill-specifikus), 1.2 — Route Definition Audit, 1.3 — Lazy Loading & Suspense, 1.4 — Protected Route Coverage, Layer 1: Routing & Navigation
-
-### Community 1312 - "Community 1312"
-Cohesion: 0.33
-Nodes (6): 2.0 — Graphify: Type kapcsolatok, 2.1 — `any` Usage Audit, 2.2 — Supabase Query Types, 2.3 — Interface Consistency, 2.4 — Null/Undefined Handling, Layer 2: Type Safety
-
-### Community 1313 - "Community 1313"
-Cohesion: 0.33
-Nodes (6): 3.0 — Graphify: Data flow térkép, 3.1 — State Location Audit, 3.2 — Fájlméret audit (Visibill-specifikus), 3.3 — Data Fetching Consistency, 3.4 — Stale Data & Cache Issues, Layer 3: Data Flow & State Management
-
-### Community 1314 - "Community 1314"
-Cohesion: 0.33
-Nodes (6): 5.0 — Graphify: Auth flow, 5.1 — Auth State Management, 5.2 — Signup Trigger Chain Audit (A-020), 5.3 — Frontend ↔ Backend Auth Mismatch, 5.4 — Session Handling, Layer 5: Auth & Authorization
-
-### Community 1315 - "Community 1315"
-Cohesion: 0.33
-Nodes (6): 7.0 — Graphify: Supabase interakciók, 7.1 — Query Pattern Consistency, 7.2 — RPC Function Audit, 7.3 — Realtime Subscription Cleanup, 7.4 — RLS Policy ↔ Frontend Mismatch Detection, Layer 7: Supabase Integration
-
-### Community 1316 - "eaisybillRoutes.tsx"
-Cohesion: 0.18
-Nodes (10): 1. Tárolóhely & Felelős Kezelés és Áthelyezési Folyamat, 2. Címkenyomtatás Dialógus (`QrLabelDialog.tsx`), 3. Mobilbarát Leltározó & Év Végi Leltárív (`InventoryCheckDialog.tsx`, `inventoryReportExport.ts`), 4. Pályázati Projektek és Négyoldalú Rekonciliáció Fül (`GrantProjectsTab.tsx`), 5. Eszköz-komponensek és Forrásmegosztás Sáv (`AssetComponentsView.tsx`), Consequences, Context, Decision (+2 more)
-
-### Community 1317 - "Community 1317"
-Cohesion: 0.33
-Nodes (6): Audit Execution Process, Step 0: Graphify gráf frissítése (5 min), Step 1: Automated Scan (30 min), Step 2: Triage (15 min), Step 3: Deep Dive (variable), Step 4: Report (artifact)
-
-### Community 1318 - "Community 1318"
-Cohesion: 0.33
-Nodes (4): CATEGORY_COLORS, CategoryDonutChart(), CategoryDonutChartProps, CategoryStat
-
-### Community 1319 - "Community 1319"
-Cohesion: 0.33
-Nodes (5): 🎨 1. Új UI Elem / Komponens Kreálása (Design System Fegyelem), 🏛️ 2. Építészeti Döntések (ADR Fegyelem), 📋 3. Termék és Funkció Döntések (PRD Fegyelem), ⚖️ 4. Szabályok vs. Döntési Dokumentumok Határvonala (Thin Rule + Deep Spec Minta), Design System & Documentation Governance
-
-### Community 1320 - "Community 1320"
-Cohesion: 0.33
-Nodes (5): 🏛️ 1. A Három Dokumentumtípus Szigorú Elhatárolása, 🚫 2. Szigorúan Tilos Elemek a BRD-ben (Tiltólista), 📋 3. A Tisztasági Audit Lépései, (BRD Purity Audit: Zero ADR, Zero PRD, Zero Technical Fuzzy Text), BRD Tisztasági Audit és Technikai Szivárgás-Megelőzés
-
-### Community 1321 - "Community 1321"
-Cohesion: 0.22
-Nodes (8): `asset_events`, `company_sub_locations` (M2.1), `development_reserves`, `fixed_asset_components` (M3.1, M3.2), `fixed_assets`, `grant_projects` (M3.1, M3.4), `tao_depreciation_templates`, 📦 Tárgyi Eszközök
-
-### Community 1322 - "Community 1322"
-Cohesion: 0.33
-Nodes (5): `accounty_ai_chat_messages`, `accounty_ai_chat_sessions`, 📘 eaisyBooks — AI Chat, Kapcsolódó döntések, `view_ai_chat_feedback_reports` (Adminisztrátori Segédnézet)
-
-### Community 1323 - "Community 1323"
-Cohesion: 0.33
-Nodes (5): 🎫 Hibajegy Rendszer, 🛡️ Hozzáférés-szabályozás (Hybrid RLS Policy), `ticket_comments`, `ticket_events`, `ticket_reads`
-
-### Community 1324 - "Community 1324"
-Cohesion: 0.33
-Nodes (5): A-015: Stripe Integráció Eltávolítása, Consequences, Context, Decision, Kapcsolódó döntések
-
-### Community 1325 - "Community 1325"
-Cohesion: 0.33
-Nodes (5): A-025: Cross-company Invoice Routing, Consequences, Context, Decision, Related
-
-### Community 1326 - "Community 1326"
-Cohesion: 0.33
-Nodes (5): A-026: Support Admin Ideiglenes Hozzáférés (Impersonation & Full RLS Access), Consequences, Context, Decision, Kapcsolódó
-
-### Community 1327 - "Community 1327"
-Cohesion: 0.33
-Nodes (5): A-031: Mailgun Webhook Robustness & Error Silencing, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1328 - "Community 1328"
-Cohesion: 0.33
-Nodes (5): A-034: Accounty Digest Összefoglaló Működése, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1329 - "Community 1329"
-Cohesion: 0.33
-Nodes (5): A-035: Háromirányú Szekvenciális Pipeline Átirányítás (Invoice ↔ Transaction ↔ Report) és Hibakezelés, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1330 - "Community 1330"
-Cohesion: 0.33
-Nodes (5): A-036: Pénztárbizonylat (Cash Voucher) Processing, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1331 - "Community 1331"
-Cohesion: 0.33
-Nodes (5): A-039: Transaction Matcher Performance Optimization (O(1) Scaling), Consequences, Context, Decision, Kapcsolódó
-
-### Community 1332 - "Community 1332"
-Cohesion: 0.33
-Nodes (5): A-046: LLM Cost Aggregation via Server-Side SECURITY DEFINER RPCs, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1333 - "Community 1333"
-Cohesion: 0.33
-Nodes (5): A-050: Server-Side Aggregation & N+1 Query Optimization, Döntés, Kontextus, Következmények, Státusz
-
-### Community 1334 - "Community 1334"
-Cohesion: 0.33
-Nodes (5): A-051: ÁFA Bevallás Kalkuláció Robusztusság (Auto-Seed & Date Fallback), Consequences, Context, Decision, Kapcsolódó
-
-### Community 1335 - "Community 1335"
-Cohesion: 0.33
-Nodes (5): A-053: Tárgyi Eszközök Projektekhez Rendelése (Fixed Assets Project Assignment), Consequences, Context, Decision, Kapcsolódó
-
-### Community 1336 - "Community 1336"
-Cohesion: 0.33
-Nodes (5): A-054: Szigorított NAV ↔ Beküldött Számla Összerendelés (Strict Invoice Pairing), Consequences, Context, Decision, Kapcsolódó
-
-### Community 1337 - "Community 1337"
-Cohesion: 0.33
-Nodes (5): A-055: Server-Side Invoice Query, KPI Aggregation & GIN Trigram Optimization, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1338 - "Community 1338"
-Cohesion: 0.33
-Nodes (5): A-056: pg_cron Storage Cleanup Guard & Edge Function Schema Alignment, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1339 - "Community 1339"
-Cohesion: 0.33
-Nodes (5): ADR A-059: TransactionMatchingCore & Moduláris UI Architektúra, Döntés, Kontextus és Probléma, Következmények & Előnyök, Státusz
-
-### Community 1340 - "Community 1340"
-Cohesion: 0.33
-Nodes (5): ADR A-060: Moduláris App Router & Platform Bootstrap Architektúra, Döntés, Kontextus és Probléma, Következmények & Előnyök, Státusz
-
-### Community 1341 - "Community 1341"
-Cohesion: 0.33
-Nodes (5): A-062: Számla Feature Szelet Modularizáció és Dekompozíció (`src/features/invoices`), Consequences, Context, Decision, Kapcsolódó
-
-### Community 1342 - "Community 1342"
-Cohesion: 0.33
-Nodes (5): A-066: Management Route Access Control és NotFound Guard, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1343 - "Community 1343"
-Cohesion: 0.33
-Nodes (5): A-067: Projects Oldal Lekérdezés Párhuzamosítás és Parciális Indexelés, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1345 - "Community 1345"
-Cohesion: 0.33
-Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-069: Centralized Frontend Error Ingestion, Stack Trace Preservation & Intelligent Context Deserialization, Pozitív:
-
-### Community 1346 - "Community 1346"
-Cohesion: 0.33
-Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-070: Multi-Channel Upload Storage Bucket Alignment & Synchronized History Mapping, Pozitív:
-
-### Community 1347 - "Community 1347"
-Cohesion: 0.33
-Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-071: Missing EV & Org Database Tables Schema Restoration & Multi-Tenant Parity, Pozitív:
-
-### Community 1348 - "Community 1348"
-Cohesion: 0.33
-Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-072: Robust Accounting Firm Assignment RLS & Direct Client Creation, Pozitív:
-
-### Community 1349 - "Community 1349"
-Cohesion: 0.33
-Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-073: Defensive Prop Normalization & Settings Component Resilience, Pozitív:
-
-### Community 1350 - "Community 1350"
-Cohesion: 0.33
-Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-074: PDF Export Edge Function Invocation Resilience, Pozitív:
-
-### Community 1351 - "Community 1351"
-Cohesion: 0.33
-Nodes (5): 1. Context, 2. Decision, 3. Consequences, A-075: Management Overview Null-Safety in SQL JSON Aggregations, Pozitív:
-
-### Community 1352 - "Community 1352"
-Cohesion: 0.33
-Nodes (5): A-079: Accounty ErrorBoundary Route-Scoped Reset és Client-Scoped Prompt Szabályok, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1353 - "Community 1353"
-Cohesion: 0.33
-Nodes (5): A-080: NAV ÁNYK 2665 ÁFA-Bevallás (2665A) és 65M Összesítő Jelentés (2665M) Szabványos XML Export Architektúra, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1354 - "Community 1354"
-Cohesion: 0.33
-Nodes (5): A-082: Partially Paid Invoices Status, Server-Side Amount Aggregation & Trigger Alignment, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1355 - "Community 1355"
-Cohesion: 0.33
-Nodes (5): A-091: Bank Statement Boundary Governance & Defense-in-Depth Summary Artifact Filtering, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1356 - "Community 1356"
-Cohesion: 0.33
-Nodes (5): A-094: Bérszámfejtési Ciklus Végtelen Re-render Védelem, Stabil Függőségi Kulcsok és Kézi Jelenlét Perzisztencia, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1357 - "Community 1357"
-Cohesion: 0.33
-Nodes (5): A-095: Nemzetközi Kártyaelfogadó Terminál (Europay POS) Clearing Devizafelülírás Védelme és Kártyás Időbélyeg Kinyerés, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1358 - "Community 1358"
-Cohesion: 0.33
-Nodes (5): A-110: Bérszámfejtési Főkönyvi Számlatükör Pagináció, Cégprofilos Kontírozás Perzisztencia és Kattintási Outline Védelem, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1359 - "Community 1359"
-Cohesion: 0.33
-Nodes (5): A-113: NAV Invoice Items VAT & Gross Auto-Calculation, Consequences, Context, Decision, Status
-
-### Community 1360 - "Community 1360"
-Cohesion: 0.33
-Nodes (5): A-123: Vevő Adószám Inkonzisztencia Detektálás és Könyvelői Jóváhagyási Figyelmeztetés (Buyer Tax Number Mismatch Guard), Consequences, Context, Decision, Kapcsolódó
-
-### Community 1361 - "Community 1361"
-Cohesion: 0.33
-Nodes (5): A-124: Többoldalas Számlák Folytatás-Felismerése és Téves Multi-Invoice Split Megelőzés (Multi-Page Invoice Continuation Guard), Consequences, Context, Decision, Kapcsolódó
-
-### Community 1362 - "Community 1362"
-Cohesion: 0.33
-Nodes (5): A-127: Számlatáblázat Tab-Váltási Render-Skálázás (Lazy Combobox / DOM Pruning) és CSS Grid Accordion Re-Render Retesz, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1363 - "Community 1363"
-Cohesion: 0.33
-Nodes (5): A-142: Kettős Könyvvitel Szerinti Kötelező Kontírszám Szabályok és Vevői Kontírválasztó (311–317 + ÁFA 467/466), Döntések, Kontextus, Következmények és Előnyök, Státusz
-
-### Community 1364 - "Community 1364"
-Cohesion: 0.33
-Nodes (5): A-162: Mailgun & IMAP Csatolmány Szűrési Szinkronizáció, Storage Fájlnév-Szanálás és Body-MIME Hardening, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1365 - "Community 1365"
-Cohesion: 0.33
-Nodes (5): A-182: Részfizetés és Jutaléklevonás Számlapárosítás és Deduplikációs Architektúra, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1366 - "Community 1366"
-Cohesion: 0.33
-Nodes (5): A-227: RLB-60 Könyvvizsgálói XML és CSV Főkönyvi Kivonat Parser Motor és Kliensoldali Kötegelt Ingestion Architektúra, Consequences, Context, Decision, Kapcsolódó
-
-### Community 1367 - "Community 1367"
-Cohesion: 0.33
-Nodes (5): A-228: Automatikus Könyvelési Szabályok Konfigurációs Felülete és Cégek Közötti Klónozása (EB-0256), Consequences, Context, Decision, Kapcsolódó
-
-### Community 1368 - "Community 1368"
-Cohesion: 0.33
-Nodes (5): Cég-szintű szerepek (company_members.role), Decision 010: Felhasználói Szerepek (RBAC), Nyitott kérdések, Platform-szintű szerepek (profiles tábla), Prod vs VSWEB különbségek összefoglalása
-
-### Community 1369 - "Community 1369"
-Cohesion: 0.33
-Nodes (5): Decision 019: Bér & Járulék Modul, KPI metrikák (`useSalaryData.ts`), Megvalósítás részletei, `salary` tábla adatstruktúra, Sandbox demo adatok (company_id: `59b545c0-...`)
-
-### Community 1370 - "Community 1370"
-Cohesion: 0.33
-Nodes (5): Control Center, Decision 037: [Accounty] Management Dashboard, eaisybill modulok (14), eaisyBooks modulok (13), Superadmin Tab
-
-### Community 1371 - "Community 1371"
-Cohesion: 0.33
-Nodes (5): Context, Decision, Decision 049: Főkönyvi Dátum Alap (Teljesítés vs. Kibocsátás Kelte) Üzleti Szabály, Kapcsolódó, Rationale
-
-### Community 1372 - "Community 1372"
-Cohesion: 0.33
-Nodes (5): Decision, Decision 050: Főkönyvi Könyvelési Státusz (Csak Lekönyvelt) és Naplózási Kormányzás, Kapcsolódó, Question, Rationale
-
-### Community 1373 - "Community 1373"
-Cohesion: 0.33
-Nodes (5): Current Implementation, Decision, Kapcsolódó, P-052: Tárgyi Eszközök Projektekhez Rendelése (TENY Project Assignment) UX, Rationale
-
-### Community 1374 - "Community 1374"
-Cohesion: 0.33
-Nodes (5): Döntés, Kapcsolódó, Kontextus, Következmények, P-058 — Egységes Export & Dokumentumgeneráló Motor (DocumentEngine) UX
-
-### Community 1375 - "Community 1375"
-Cohesion: 0.33
-Nodes (5): 1. Context, 2. Decision, 3. Consequences, P-059: eaisyBooks Kliens Regisztráció és Iroda Hozzárendelés UX, Pozitív:
-
-### Community 1376 - "Community 1376"
-Cohesion: 0.33
-Nodes (5): Decision, Kapcsolódó, P-066: Főkönyvi Dátum Alap Kapcsoló és Beállítások UX, Question, Rationale
-
-### Community 1377 - "Community 1377"
-Cohesion: 0.33
-Nodes (5): Decision, Kapcsolódó, P-067: Főkönyvi Könyvelési Státusz Szűrés, Naplózási Kormányzás és ÁFA Audit Jelző UX, Question, Rationale
-
-### Community 1378 - "Community 1378"
-Cohesion: 0.33
-Nodes (5): Context, Döntés (Decision), P-084: Hierarchikus Útvonalkövető (Breadcrumbs) Rendszer és Automatikus Route Resolver UX, UX Kérdés & Problémafelvetés, Verifikáció és Tesztek
-
-### Community 1379 - "Community 1379"
-Cohesion: 0.33
-Nodes (5): Current Implementation, Decision, P-088: Csoportos ÁFA-tagok NAV Online Számla Beállítási Figyelmeztetése és Varázsló UX, Question, Rationale
-
-### Community 1380 - "Community 1380"
-Cohesion: 0.33
-Nodes (5): Current Implementation, Decision, P-089: Számla Könyvelési Kizárás ("Nem könyvelt") Optimista Kapcsoló és Zökkenőmentes UX, Question, Rationale
-
-### Community 1381 - "Community 1381"
-Cohesion: 0.33
-Nodes (5): Current Implementation, Decision, P-090: Banki Tranzakciós Fájlok és Kivonatok Kezelő Dialógus (TransactionFilesDialog) UX, Question, Rationale
-
-### Community 1382 - "Community 1382"
-Cohesion: 0.33
-Nodes (5): 1. Figyelmeztető Panel a Jóváhagyási Dialógusban (`InvoiceApprovalDialog.tsx`), 2. Számlatáblázat Vizuális Jelzés (`SubmittedInvoiceRow.tsx`), Kapcsolódó, P-091: Téves Vevőre Szóló Számlák Figyelmeztető Jelzése és Jóváhagyási Dialógus UX (Buyer Tax Mismatch Warning UX), Részletes UI/UX Működés
-
-### Community 1383 - "Community 1383"
-Cohesion: 0.33
-Nodes (5): Decision, Kapcsolódó, P-103: Számlák Teljesítés Dátuma Szűrés és Dátum Alap Kapcsoló UX, Question, Rationale
-
-### Community 1384 - "Community 1384"
-Cohesion: 0.33
-Nodes (5): 1. Felhasználói Igény és Cél, 2.1. Elérhetőség, 2.2. Varázsló lépései, 2. UX Folyamat és Képernyők, P-159 — Tárgyi Eszközök és Nyitó Állomány Tömeges Import (Excel/CSV) Felhasználói Élmény (UX)
-
-### Community 1385 - "Community 1385"
-Cohesion: 0.33
-Nodes (5): 1. Zárolási és Pecsételési Folyamat (`VatReturnVersionHeader.tsx`), 2. Változásvédelem & Önellenőrzési Munkaterület (`VatAmendmentsWorkspace.tsx`), 🖥️ Felhasználói Munkafolyamat (Workflow), 🔗 Kapcsolódó, P-179: ÁFA Bevallás Változásvédelem, Kriptográfiai Pecsét & Önellenőrzési Munkaterület UX
-
-### Community 1386 - "Community 1386"
-Cohesion: 0.33
-Nodes (5): 1. Háromirányú OSA Egyeztető Lap (`VatOsaThreeWayReconciliation.tsx`), 2. Fordított ÁFA Acéltermékek és Fémhulladék Lap (`VatSteelProductsSection.tsx`), 🖥️ Felhasználói Felület és Funkciók, 🔗 Kapcsolódó, P-180: NAV OSA Háromirányú Egyeztetés (Three-Way Reconciliation) és Fordított ÁFA Acéltermékek UX
-
-### Community 1387 - "Community 1387"
-Cohesion: 0.33
-Nodes (5): 1. Vezetői Összefoglaló (Executive Summary), 2. Témakörönkénti Összesítő Mátrix (45 Témakör), 🎯 Főbb Következtetések, 📊 Globális Eredménymutatók, MI-Könyvelőprogram Minimálkövetelmény-Lista & Rendszerelemzés
-
-### Community 1388 - "Community 1388"
-Cohesion: 0.33
-Nodes (5): Dokumentumok, Időterv, Supabase Exit Strategy — Dokumentáció Index, Teljes Lock-in Mátrix, Összesítő számok
-
-### Community 1389 - "Community 1389"
-Cohesion: 0.40
-Nodes (5): json, main(), make_request(), urllib_error, urllib_request
-
-### Community 1390 - "Community 1390"
-Cohesion: 0.33
-Nodes (5): 1. Kontextus és Problémafelvetés, 2. Döntés és Architektúrális Védelmi Vonalak, 3. Verifikáció és Tesztek, A-246: Worker Invoice Upsert Idempotencia és Postgres 23505 Pre-Check Ütközésvédelem (Többoldalas és Kötegelt Feltöltések), Gyökérok Elemzés
-
-### Community 1391 - "Community 1391"
-Cohesion: 0.33
-Nodes (6): 1. A Probléma Anatómiája, 2. A Három Alapszabály Master-Detail és Tab Felületeken, A. Perzisztens DOM Renderelés (`block` / `hidden`), B. GPU Transzformáció Zéró Tolerancia a Részletező Konténereken, C. Stabil Görgetősáv (Scrollbar Gutter), 🗂️ Master-Detail & Tab Váltási Irányelvek (Zero-Jitter & ClearType Védelem) (2026-09-22)
-
-### Community 1392 - "Community 1392"
-Cohesion: 0.33
-Nodes (6): 1. Radix Dialog + Popover Görgetés-blokkolás Védelem (`modal={true}`), 2. Kereshető Popover Fix Magassága (Zero-Jitter Ugrásvédelem), 3. DOM Szeletelés & Kezdeti Render Limit (Top 20 tétel), 4. Keresőmező Kötelező Komponens Standard (`SearchInput`), 5. Referencia Implementációk, ⭐ Beágyazott Popover & Kereshető Dropdown / Combobox Pattern (2026-10-05)
-
-### Community 1393 - "Community 1393"
-Cohesion: 0.33
-Nodes (6): Adatsor-szerkesztő Modál & Belső Táblázatgörgetés Konvenció (2026-09-04), Dialógus Típusok az Alkalmazásban, Egyéb Dialógusok & Részlet Panelek, Könyvelési Napló Dialógusok & Varázslók (2026-09-04), Számla Dialógusok, Tranzakció Dialog
-
-### Community 1395 - "Community 1395"
-Cohesion: 0.33
-Nodes (6): account_card, partner_card, reconciliation, subtitle, title, cards_view
-
-### Community 1396 - "Community 1396"
-Cohesion: 0.29
-Nodes (7): BsRowLike, getLocalizedBsRowName(), HU_NAME_TO_KEY, ID_SUFFIX_TO_KEY, LETTER_CODE_TO_KEY, normalizeName(), ORDER_NUM_TO_KEY
-
-### Community 1397 - "Community 1397"
-Cohesion: 0.33
-Nodes (6): load_more, label, loading, loading_more, more, scroll_or_click
-
-### Community 1398 - "Community 1398"
-Cohesion: 0.33
-Nodes (6): toasts, ai_error, ai_started, ai_started_title, ai_success, company_not_selected
-
-### Community 1399 - "Community 1399"
-Cohesion: 0.33
-Nodes (6): bank_reconciliation, invoices_posted, missing_requested, payroll_closed, vat_analytics, checklist
-
-### Community 1400 - "Community 1400"
-Cohesion: 0.33
-Nodes (6): date_picker, custom, period, previous_month, this_month, this_year
-
-### Community 1401 - "Community 1401"
-Cohesion: 0.33
-Nodes (6): idle_warning, description_prefix, description_suffix, logout, stay, title
-
-### Community 1402 - "backfill_customer_names.mjs"
-Cohesion: 0.40
-Nodes (5): envStr, envVars, normalizeInvNum(), run(), supabase
-
-### Community 1403 - "Community 1403"
-Cohesion: 0.33
-Nodes (6): employee_count, entries_suffix, total_gross, total_net, total_payments, kpi
-
-### Community 1404 - "Community 1404"
-Cohesion: 0.33
-Nodes (6): types, contribution, gross_salary, salary, tax, vat
-
-### Community 1405 - "Community 1405"
-Cohesion: 0.33
-Nodes (6): new_closing, post_gl, reopen, unpost_gl, view_print, actions
-
-### Community 1406 - "Community 1406"
-Cohesion: 0.33
-Nodes (6): tabs, assets, assigned_assets, invoices, overview, settings
-
-### Community 1407 - "Community 1407"
-Cohesion: 0.33
-Nodes (6): priority, all, critical, high, low, medium
-
-### Community 1408 - "Community 1408"
-Cohesion: 0.33
-Nodes (6): status_filter, active, active_count, all_count, all_statuses, default_active
-
-### Community 1409 - "Community 1409"
-Cohesion: 0.33
-Nodes (6): channels, invoices, reports, salaries, transactions, vouchers
-
-### Community 1410 - "Community 1410"
-Cohesion: 0.33
-Nodes (6): account_card, partner_card, reconciliation, subtitle, title, cards_view
-
-### Community 1411 - "Community 1411"
-Cohesion: 0.33
-Nodes (6): load_more, label, loading, loading_more, more, scroll_or_click
-
-### Community 1412 - "Community 1412"
-Cohesion: 0.33
-Nodes (6): toasts, ai_error, ai_started, ai_started_title, ai_success, company_not_selected
-
-### Community 1413 - "Community 1413"
-Cohesion: 0.33
-Nodes (6): bank_reconciliation, invoices_posted, missing_requested, payroll_closed, vat_analytics, checklist
-
-### Community 1414 - "Community 1414"
-Cohesion: 0.33
-Nodes (6): date_picker, custom, period, previous_month, this_month, this_year
-
-### Community 1415 - "Community 1415"
-Cohesion: 0.33
-Nodes (6): idle_warning, description_prefix, description_suffix, logout, stay, title
-
 ### Community 1416 - "🌟 Fő Funkciók és Képességek"
+Cohesion: 0.22
+Nodes (8): 1. 🔄 Live és Naprakész Szinkronizáció (Háttér Watcher), 3. 🧭 Architektúra & Kód Navigátor, 4. 🕸️ Interaktív Gráf Megjelenítő (Interactive Canvas), 5. ⚡ Érintettség & Függőségi Útvonalak (Impact & Path Analysis), 6. 💻 Beépített Graphify Konzol, 🌟 Fő Funkciók és Képességek, 🚀 Indítás, Visibill & Eaisybill Graphify Live Dashboard
+
+### Community 1511 - "HANDOFF – TENY (Tárgyi Eszköz Nyilvántartó) fejlesztés"
 Cohesion: 0.20
-Nodes (9): 1. 🔄 Live és Naprakész Szinkronizáció (Háttér Watcher), 2. 📊 Kódbázis Áttekintés & KPI-k, 3. 🧭 Architektúra & Kód Navigátor, 4. 🕸️ Interaktív Gráf Megjelenítő (Interactive Canvas), 5. ⚡ Érintettség & Függőségi Útvonalak (Impact & Path Analysis), 6. 💻 Beépített Graphify Konzol, 🌟 Fő Funkciók és Képességek, 🚀 Indítás (+1 more)
-
-### Community 1417 - "Community 1417"
-Cohesion: 0.50
-Nodes (3): priorityConfig, TicketPriorityBadge(), TicketPriorityBadgeProps
-
-### Community 1418 - "Community 1418"
-Cohesion: 0.27
-Nodes (10): downloadXmlFile(), generate08EXml(), generate2608Xml(), generate2658Xml(), generateT1041Xml(), generateT1042EXml(), XmlExport08EItem, XmlExportCompanyData (+2 more)
-
-### Community 1419 - "Community 1419"
-Cohesion: 0.25
-Nodes (7): 1. Kétszintű Adataggregáció (`rlbGlData.ts`), 2. Többoldalas jsPDF + AutoTable Megvalósítás (`rlbGlPdf.ts`), 3. ExcelJS Munkafüzet Export (`rlbGlExcel.ts`), A-253: RLB-60 Főkönyvi Kivonat Alap és Bővített (Vevő-Szállító) Sablonok és Export Motor Architektúra, 🏗️ Architektúrális Döntések, 🎯 Kontextus és Problémafelvetés, 🛡️ Minőségbiztosítás és Verifikáció
-
-### Community 1420 - "Community 1420"
-Cohesion: 0.33
-Nodes (6): tabs, assets, assigned_assets, invoices, overview, settings
-
-### Community 1421 - "Community 1421"
-Cohesion: 0.33
-Nodes (6): priority, all, critical, high, low, medium
-
-### Community 1422 - "Community 1422"
-Cohesion: 0.33
-Nodes (6): status_filter, active, active_count, all_count, all_statuses, default_active
-
-### Community 1423 - "Community 1423"
-Cohesion: 0.33
-Nodes (6): channels, invoices, reports, salaries, transactions, vouchers
-
-### Community 1425 - "Community 1425"
-Cohesion: 0.53
-Nodes (4): calculateVatPosition(), convertCurrency(), SalaryItem, sumNetPayroll()
-
-### Community 1426 - "Community 1426"
-Cohesion: 0.60
-Nodes (4): getCompanySyncBucket(), getCompanySyncSlotInfo(), SYNC_SLOTS, SyncSlotInfo
-
-### Community 1427 - "Community 1427"
-Cohesion: 0.47
-Nodes (4): corsHeaders, createSignature(), getNavToken(), hashPassword()
-
-### Community 1428 - "Community 1428"
-Cohesion: 0.33
-Nodes (4): cleanupSql, dir, ledgerSql, syncSql
-
-### Community 1429 - "Community 1429"
-Cohesion: 0.33
-Nodes (3): corsHeaders, PREF_MAP, resend
-
-### Community 1430 - "Community 1430"
-Cohesion: 0.25
-Nodes (5): CompanyCountsData, GlBalanceRow, GlCategorizedItemRow, UnclassifiedGlItem, VatBreakdownRow
-
-### Community 1431 - "Community 1431"
-Cohesion: 0.33
-Nodes (4): mockNavigate, mockNavInvoices, mockTransactions, mockUploadedInvoices
-
-### Community 1434 - "Community 1434"
-Cohesion: 0.60
-Nodes (4): extractTag(), extractTaxpayerAddress(), parseNavError(), parseTaxpayerXml()
-
-### Community 1435 - "Community 1435"
-Cohesion: 0.33
-Nodes (3): NavCredentials, NavValidationResult, TestableNavClient
-
-### Community 1438 - "Community 1438"
-Cohesion: 0.40
-Nodes (4): 🏷️ Brands & Naming (Márkanevek és Elnevezések), 🤖 Kötelező Szabályok AI Agent-eknek, 📋 Megnevezések Mátrixa, 🔀 Terminológia Mapping
-
-### Community 1439 - "Community 1439"
-Cohesion: 0.40
-Nodes (4): 🏊 Connection Pooling (Adatbázis Kapcsolati Pool), 📖 Fogalom Meghatározása, 💡 Használat a Visibillben, ⚙️ Pooler Módok (Transaction vs Session Mode)
-
-### Community 1440 - "Community 1440"
-Cohesion: 0.40
-Nodes (4): 🏗️ Az Esemény-Adatáramlás Láncolata a Visibillben, ⚡ Event-Driven Architecture (Eseményvezérelt Architektúra), 📖 Fogalom Meghatározása, 💡 Fő Előnyök a Visibillben
-
-### Community 1441 - "Community 1441"
-Cohesion: 0.40
-Nodes (4): 🔄 A Circuit Breaker 3 Állapota, ⚡ Circuit Breaker Pattern (Áramköri Megszakító Minta), 📖 Fogalom Meghatározása, 💡 Használat a Visibill Architektúrában
-
-### Community 1442 - "Community 1442"
-Cohesion: 0.40
-Nodes (4): 📖 Fogalom Meghatározása, 🛡️ Háromrétegű Idempotencia Architektúra a Visibillben ([A-041]), 🔄 Idempotency & Dedup (Idempotencia és Duplikáció Megelőzés), 💡 Miért Életbevágó az Idempotencia a Visibillben?
-
-### Community 1443 - "Community 1443"
-Cohesion: 0.40
-Nodes (4): 📖 Fogalom Meghatározása, 🔑 Főbb Elosztási Algoritmusok & Health Check-ek, 💡 Használat a Visibillben, ⚖️ Load Balancer (Terheléselosztó)
-
-### Community 1444 - "Community 1444"
-Cohesion: 0.40
-Nodes (4): 📖 Fogalom Meghatározása, 🚨 Rendszerelemek Kockázati Elemzése a Visibillben, 🛡️ SPOF Elleni Védekezési Stratégiák, 💥 SPOF — Single Point of Failure (Egyetlen Hibapont)
-
-### Community 1445 - "Community 1445"
-Cohesion: 0.40
-Nodes (4): 🧩 A SOLID 5 Alapelve, 📖 Fogalom Meghatározása, 📏 Kiegészítő Clean Code Alapelvek, 🧼 SOLID Principles & Clean Code (Tiszta Szoftvertervezés)
-
-### Community 1446 - "Community 1446"
-Cohesion: 0.40
-Nodes (4): 🏗️ A Visibill CI/CD Pipeline Láncolata, 🚀 CI/CD — Continuous Integration & Continuous Deployment, 💡 Előnyök a Visibill Számára, 📖 Fogalom Meghatározása
-
-### Community 1447 - "Community 1447"
-Cohesion: 0.40
-Nodes (4): 📖 Fogalom Meghatározása, 🔑 Főbb Supabase Szolgáltatások a Visibillben, 🌐 Multi-Project Struktúra a Visibillben, ⚡ Supabase — Backend-as-a-Service (BaaS) Platform
-
-### Community 1448 - "Community 1448"
-Cohesion: 0.40
-Nodes (4): 💡 A Node.js Szerepe a Visibill Projektben, 📖 Fogalom Meghatározása, 🔑 Főbb Node.js Kifejezések & Eszközök, 🟢 Node.js — JavaScript Runtime & Ökoszisztéma
-
-### Community 1449 - "Community 1449"
-Cohesion: 0.40
-Nodes (4): 📊 A 4 Fő Rate Limiting Algoritmus, 📖 Fogalom Meghatározása, ⏱️ Rate Limiting Algoritmusok (Túlterhelés Elleni Védelem), 💡 Válaszkódok & HTTP Fejlécek
-
-### Community 1452 - "Community 1452"
-Cohesion: 0.40
-Nodes (4): BlockingCategory, blockingCategoryMeta, BlockingItem, ClientData
-
-### Community 1453 - "Community 1453"
-Cohesion: 0.29
-Nodes (4): CALLS, MIGRATIONS_DIR, ROOT, RpcParam
-
-### Community 1454 - "Community 1454"
-Cohesion: 0.40
-Nodes (5): 11. Support & Onboarding, REQ-11.1: Visszajelzési rendszer, REQ-11.2: Onboarding — eaisyBill, REQ-11.3: Onboarding — eaisyBooks, REQ-11.4: Hibajegy rendszer
-
-### Community 1455 - "Community 1455"
-Cohesion: 0.40
-Nodes (5): 5. Számla Kezelés, REQ-5.1: Támogatott számla típusok, REQ-5.2: Számla beviteli csatornák, REQ-5.3: Számla kiállítás, REQ-5.4: Számla feldolgozási workflow
-
-### Community 1456 - "Community 1456"
-Cohesion: 0.40
-Nodes (4): 🛑 1. Zero Phantom Claims & Evidence Before Assertions, 🔍 2. Kötelező Ellenőrzési Lépések (Verifikációs Kapu), 🛡️ 3. Senior Quality Gate (/morfi-implementation-review), Pre-Completion Verification & Quality Gates
-
-### Community 1457 - "Community 1457"
-Cohesion: 0.40
-Nodes (4): eaisybill-prod területek, Ha nincs spec az adott területre, HRTSPED projekt területek, Közös elemek (mindkét projektben)
-
-### Community 1458 - "Community 1458"
-Cohesion: 0.40
-Nodes (4): 1. Hogyan pontoz a `search_knowledge_base` RPC?, 2. Hogyan használja fel a cikkeket az `accounty-ai-chat` Edge Function?, Kritikus tervezési következmények a cikkíró számára:, 🎯 RAG Optimalizációs Útmutató az eaisyBill / eaisyBooks Tudástárhoz
-
-### Community 1459 - "Community 1459"
-Cohesion: 0.40
-Nodes (4): A-001: Három Rétegű Architektúra, Consequences, Context, Decision
-
-### Community 1460 - "Community 1460"
-Cohesion: 0.40
-Nodes (4): A-002: Supabase mint Backend-as-a-Service, Consequences, Context, Decision
-
-### Community 1461 - "Community 1461"
-Cohesion: 0.40
-Nodes (4): A-004: PGMQ mint Aszinkron Queue, Consequences, Context, Decision
-
-### Community 1462 - "Community 1462"
-Cohesion: 0.40
-Nodes (4): A-008: OCR Pipeline (Vision + MarkItDown), Consequences, Context, Decision
-
-### Community 1463 - "Community 1463"
-Cohesion: 0.40
-Nodes (4): A-010: Credential Titkosítás (AES-256-GCM), Consequences, Context, Decision
-
-### Community 1464 - "Community 1464"
-Cohesion: 0.40
-Nodes (4): A-013: Scoped URL Routing Pattern, Consequences, Context, Decision
-
-### Community 1465 - "Community 1465"
-Cohesion: 0.40
-Nodes (4): A-037: Jegyzetek Rendszer Architektúra (Notes System Architecture), Consequences, Context, Decision
-
-### Community 1466 - "Community 1466"
-Cohesion: 0.40
-Nodes (4): A-138: Számlák Teljesítés Dátuma és Dátum Alap RPC Szűrés, Consequences, Context & Problem, Decision
-
-### Community 1467 - "Community 1467"
-Cohesion: 0.40
-Nodes (4): 1. Context, 2. Decision, 3. Consequences, A-177: Egységes Számlaszabály Kezelő Komponens és eaisyBooks Integráció
-
-### Community 1468 - "Community 1468"
-Cohesion: 0.40
-Nodes (4): 1. Kontextus & Üzleti Igény, 2. Döntések (Zero Silent Decisions Jóváhagyással), 3. Verifikáció & Tesztelés, A-194: ÁFA Analitika PDF Export (NAV 2665 Bevallási Sorok & Gyűjtőkódok) RLB-60 Standard Szerint
-
-### Community 1469 - "Community 1469"
-Cohesion: 0.40
-Nodes (4): 1. Kontextus & Üzleti Igény, 2. Döntések (A jóváhagyott D-1 – D-11 döntési mátrix alapján), 3. Verifikáció & Tesztelés, A-195: NAV 26A60 v3.0 Közösségi Összesítő Nyilatkozat ÁNYK XML Export & 65-ös Bevallási Rekonciliáció
-
-### Community 1470 - "Community 1470"
-Cohesion: 0.40
-Nodes (4): A-229: Egységes Számlatükör Cégenként, Cégek Közötti Klónozás és Folyószámla Szabályrendszer (EB-0255), Consequences, Context, Decision
-
-### Community 1471 - "Community 1471"
-Cohesion: 0.40
-Nodes (4): Decision 042: Sztornó Számla Üzleti Kezelési Szabály, Kapcsolódó, Érintett Bizonylatok, Üzleti Szabályok
-
-### Community 1472 - "Community 1472"
-Cohesion: 0.40
-Nodes (4): Decision, Decision 056: Csoportos ÁFA-alanyok és NAV Szinkronizáció Üzleti Szabályzata, Question, Rationale
-
-### Community 1473 - "Community 1473"
-Cohesion: 0.40
-Nodes (4): Decision, Decision 057: Évek Közötti Áthúzódó Teljesítésű Számlák Számviteli és ÁFA Üzleti Szabályzata, Question, Rationale
-
-### Community 1474 - "Community 1474"
-Cohesion: 0.40
-Nodes (4): 📚 Dokumentációs Térkép, 🎯 Főbb Eredmények és Invariánsok, 📌 Gyors Áttekintés, VisiBill Fejlesztői Környezet (DEV Environment)
-
-### Community 1475 - "Community 1475"
-Cohesion: 0.40
-Nodes (4): Kapcsolódó, P-046: Pénztárbizonylat feltöltési fül UX, Rationale, UI/UX Specifikáció
-
-### Community 1476 - "Community 1476"
-Cohesion: 0.40
-Nodes (4): Context, Decision, Kapcsolódó, P-064: Partially Paid Invoice Status, Badge & Filter UX
-
-### Community 1477 - "Community 1477"
-Cohesion: 0.40
-Nodes (4): 1. Kérdés, 2. Döntés, 3. Kapcsolódó, P-110: Magánszemély Vevőnevek Megjelenítése és ÁFA Analitika UX
-
-### Community 1478 - "Community 1478"
-Cohesion: 0.40
-Nodes (4): 1. Kérdés, 2. Döntés, 3. Kapcsolódó, P-111: Számlaláncolatok Megjelenítése, Kapcsolt Bizonylatok és Többdokumentumos Számlakép Lapozó UX
-
-### Community 1479 - "Community 1479"
-Cohesion: 0.40
-Nodes (4): 1. Háttér és Problémafelvetés, 2. Üzleti és Felületi Követelmények, 3. Felhasználói Interakciók & Állapotok, P-121: ÁFA Bevallás és Analitikák Bizonylatköri Adatkör Választó (Számlaképpel Rendelkező vs. Teljes OSA) UX
-
-### Community 1480 - "Community 1480"
-Cohesion: 0.40
-Nodes (4): 1. Felhasználói Igény és Probléma, 2. Megoldás és UI Működés, Kapcsolódó, P-160: NAV 2665 43. és 45. Sorok Adóösszeg Felhasználói Élménye és Tételes Megjelenítése (UX)
-
-### Community 1481 - "Community 1481"
-Cohesion: 0.40
-Nodes (4): Current Implementation, Kapcsolódó, P-166: RLB Könyvvizsgálói XML és CSV Import Modal és Valós Idejű Előnézet UX, Rationale
-
-### Community 1482 - "Community 1482"
-Cohesion: 0.40
-Nodes (4): `accounty_module_permissions`, `eaisybill_module_permissions`, 🔑 Jogosultságok & Hozzáférés, `user_company_access_cache`
-
-### Community 1483 - "Community 1483"
-Cohesion: 0.40
-Nodes (5): 1. Gomb border-space foglalás, 2. Dinamikus counter anti-CLS, 3. `scrollbar-gutter: stable` — scroll shift megelőzése, 4. Checkbox Vertikális Eltolódás — Radix Indicator Layout Bug (2026-07-22), ⚠️ Anti-CLS Design Szabályok (Kötelező)
-
-### Community 1484 - "Community 1484"
-Cohesion: 0.40
-Nodes (5): Kapcsoló Gombok (Toggle / Format Picker) — Flash és Focus Ring Bug (2026-07-22), Megoldás: `onMouseDown preventDefault()`, Probléma leírása, Érintett fájlok, Összehasonlítás: Popover Trigger vs egyszerű button
-
-### Community 1485 - "Community 1485"
-Cohesion: 0.40
-Nodes (5): ⚠️ Kijelölési Ring — Tailwind `ring` vs Inline `box-shadow`, Megoldás: Inline `box-shadow` state-alapú kijelöléshez, Probléma: Tailwind `ring-2` + `:focus-visible` specificitási ütközés, Érintett fájlok (referencia), Összefoglaló szabály
-
-### Community 1486 - "Community 1486"
-Cohesion: 0.40
-Nodes (5): 1. Layout Shift Védelem (Fix Listamagasság), 2. Akció Gombok Pozíció-Stabilitása, 3. Tisztított Kijelölési Stílus (Dupla Ring Elkerülése), 4. Tömeges Kijelölés (Bulk Selection) és Checkboxok, Kiválasztási és Kereső Dialógusok (Selection & Search Modals) Irányelvei (2026-07-14)
-
-### Community 1487 - "Community 1487"
-Cohesion: 0.40
-Nodes (5): CSV Előnézet Működése (CsvPreviewComponent), Globális Fájl Előnézet Pattern (FilePreviewContent), Kattintható Fájlok és Linkek Design Irányelvei, Reusable Komponensek, Támogatott Formátumok & Megjelenítési Technológia
-
-### Community 1488 - "Community 1488"
-Cohesion: 0.40
-Nodes (5): 2.1. [POST] /api/v1/auth/token, Integracios Kodreszletek:, Keres Torzs (JSON Body minta):, Parameterek:, Sikeres Valasz (200 OK):
-
-### Community 1489 - "Community 1489"
-Cohesion: 0.40
-Nodes (5): 2.2. [POST] /api/v1/tickets, Integracios Kodreszletek:, Keres Torzs (JSON Body minta):, Parameterek:, Sikeres Valasz (200 OK):
-
-### Community 1490 - "Community 1490"
-Cohesion: 0.40
-Nodes (5): 2.7. [PATCH] /api/v1/tasks/:id, Integracios Kodreszletek:, Keres Torzs (JSON Body minta):, Parameterek:, Sikeres Valasz (200 OK):
-
-### Community 1491 - "Community 1491"
-Cohesion: 0.54
-Nodes (6): buildTfejlhXml(), downloadTfejlhXml(), formatAnykPhoneNumber(), formatAnykTaxNumber(), TfejlhXmlData, Nav26TfejlhReplicaContainerProps
-
-### Community 1492 - "Community 1492"
-Cohesion: 0.22
-Nodes (9): actions, details, export_csv, export_excel, export_list, mark_paid, new_invoice, upload_invoice (+1 more)
-
-### Community 1493 - "Community 1493"
-Cohesion: 0.40
-Nodes (5): fulfillment, fulfillment_tooltip, issue, issue_tooltip, date_basis
-
-### Community 1494 - "Community 1494"
-Cohesion: 0.40
-Nodes (5): hide_zero, active_only, active_tooltip, all, all_tooltip
-
-### Community 1495 - "Community 1495"
-Cohesion: 0.33
-Nodes (6): kpi, accounts, classification_progress, credit, debit, leaf_accounts
-
-### Community 1496 - "Community 1496"
-Cohesion: 0.20
-Nodes (10): paths, /v1/categories, /v1/invoices, /v1/invoices/{id}/image, /v1/ledger, /v1/nav/status, /v1/projects, /v1/reports/pnl (+2 more)
-
-### Community 1497 - "Community 1497"
-Cohesion: 0.22
-Nodes (9): source_types, cash_deposit, cash_expense, cash_sale, invoice_settlement, manual, opening_balance, transfer (+1 more)
-
-### Community 1498 - "Community 1498"
-Cohesion: 0.40
-Nodes (5): contractors, no_employees, no_employees_desc, registered_employees, employee_tabs
-
-### Community 1499 - "Community 1499"
-Cohesion: 0.22
-Nodes (9): cancel, confirm, desc, number, period, reason_label, reason_placeholder, title (+1 more)
-
-### Community 1500 - "Community 1500"
-Cohesion: 0.32
-Nodes (8): description, parameters, responses, summary, /v1/partners/{id}, 404, patch, patch
-
-### Community 1501 - "Community 1501"
-Cohesion: 0.67
-Nodes (3): example, type, partner_name
-
-### Community 1502 - "Community 1502"
-Cohesion: 0.40
-Nodes (5): aging, days_180_plus, days_1_30, days_31_180, not_due
-
-### Community 1503 - "Community 1503"
-Cohesion: 0.40
-Nodes (5): gallery, close, download, next, prev
-
-### Community 1504 - "Community 1504"
-Cohesion: 0.40
-Nodes (5): tabs, analytics, assignment, console, list
-
-### Community 1505 - "Community 1505"
-Cohesion: 0.40
-Nodes (5): stats, download, due_today, overdue, selected
-
-### Community 1506 - "Community 1506"
-Cohesion: 0.40
-Nodes (5): dropzone, button, drag_active, subtitle, title
-
-### Community 1507 - "Community 1507"
-Cohesion: 0.40
-Nodes (5): fulfillment, fulfillment_tooltip, issue, issue_tooltip, date_basis
-
-### Community 1508 - "Community 1508"
-Cohesion: 0.40
-Nodes (5): hide_zero, active_only, active_tooltip, all, all_tooltip
-
-### Community 1509 - "Community 1509"
-Cohesion: 0.33
-Nodes (6): employee_count, entries_suffix, total_gross, total_net, total_payments, kpi
-
-### Community 1510 - "Community 1510"
-Cohesion: 0.33
-Nodes (6): types, contribution, gross_salary, salary, tax, vat
-
-### Community 1511 - "Community 1511"
-Cohesion: 0.18
 Nodes (10): 1. Dokumentumok (ezek a forrásigazság – ne duplikáld), 2. Hol tartunk, 5. Élesítés (Prod) – még NEM történt, 6. Munkakörnyezeti tudnivalók (hogy ne kelljen újra felfedezni), 7. Kötelező szabályok (AGENTS.md kivonat), 8. Javasolt skillek a következő sessionhöz, 9. Javasolt első lépések a release-hez, Elkészült Phase 2 modulok (M2.1–M2.5) (+2 more)
 
-### Community 1512 - "Community 1512"
-Cohesion: 0.40
-Nodes (5): aging, days_180_plus, days_1_30, days_31_180, not_due
-
-### Community 1513 - "Community 1513"
-Cohesion: 0.40
-Nodes (5): gallery, close, download, next, prev
-
-### Community 1514 - "Community 1514"
-Cohesion: 0.40
-Nodes (5): tabs, analytics, assignment, console, list
-
-### Community 1515 - "Community 1515"
-Cohesion: 0.40
-Nodes (5): stats, download, due_today, overdue, selected
-
-### Community 1516 - "Community 1516"
-Cohesion: 0.40
-Nodes (5): dropzone, button, drag_active, subtitle, title
-
-### Community 1518 - "Community 1518"
-Cohesion: 0.40
-Nodes (3): corsHeaders, PREF_MAP, resend
-
-### Community 1519 - "Community 1519"
-Cohesion: 0.40
-Nodes (3): mockCompany, sampleItemRules, samplePromptRules
-
-### Community 1520 - "Community 1520"
-Cohesion: 0.40
-Nodes (4): mockInsert, mockInvalidateQueries, mockRpc, mockToast
-
-### Community 1521 - "Community 1521"
-Cohesion: 0.50
-Nodes (4): buildPartnerInserts(), NavInvoiceDigest, PartnerInsertPayload, sanitizeTaxNumber()
-
-### Community 1522 - "Community 1522"
-Cohesion: 0.40
-Nodes (3): mockCompany, sampleItemRules, samplePromptRules
-
-### Community 1523 - "Community 1523"
-Cohesion: 0.40
-Nodes (3): mockMaybeSingle, mockSelect, mockUpsert
-
-### Community 1524 - "Community 1524"
-Cohesion: 0.12
-Nodes (23): CODE_TO_KEY, COMMON_JOURNAL_DESCRIPTIONS, CORE_JOURNAL_CODES, getJournalCategory(), getLocalizedJournalName(), getNextDocumentId(), HU_NAME_TO_KEY, isJournalCoreSystem() (+15 more)
-
-### Community 1525 - "Community 1525"
-Cohesion: 0.33
-Nodes (7): createAccrualJournalEntry(), CreateAccrualJournalParams, deleteAccrualEntry(), ExistingAccrualInfo, findActiveMixedJournal(), getExistingAccrualForInvoice(), mockToast
-
-### Community 1526 - "Community 1526"
-Cohesion: 0.40
-Nodes (4): InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot
-
-### Community 1527 - "Community 1527"
-Cohesion: 0.20
-Nodes (9): 1. Context & Technikai Kihívás, 1. Dedikált Szerveroldali Lapozó és Aggregáló RPC (`get_gl_journal_view_items`), 2. Decision, 2. Window Function Aggregációk Egyetlen Menetben (`COUNT(*) OVER()`), 3. Consequences, 3. Frontend Reaktivitás és Debounce (`JournalView.tsx`), 4. Kapcsolódó, 4. Optimalizált Kötegelt Exportálás (`handleExport`) (+1 more)
-
-### Community 1528 - "Community 1528"
-Cohesion: 0.50
-Nodes (3): 📊 Adózási Kifejezések Katalógusa, 🧾 EV (Egyéni Vállalkozó) & Adózási Domain Glossary, 💼 Use Case-ek a Visibillben
-
 ### Community 1532 - "package.json"
-Cohesion: 0.40
-Nodes (4): name, private, type, version
+Cohesion: 0.04
+Nodes (55): name, private, type, version, autoprefixer, clsx, cmdk, eslint (+47 more)
 
-### Community 1535 - "Community 1535"
-Cohesion: 0.50
-Nodes (3): EfoEntry, Employee, Employment
+### Community 1549 - "ChangeEmailDialog.tsx"
+Cohesion: 0.16
+Nodes (20): @hookform/resolvers, @radix-ui/react-label, react-hook-form, zod, ChangeEmailDialogProps, EmailFormValues, ChangePasswordDialogProps, PasswordFormValues (+12 more)
 
-### Community 1538 - "Community 1538"
-Cohesion: 0.25
-Nodes (8): all_registers, all_status, search_placeholder, status_closed, status_open, status_posted, status_reopened, filters
-
-### Community 1539 - "Community 1539"
-Cohesion: 0.50
-Nodes (4): example, format, type, delivery_date
-
-### Community 1540 - "Community 1540"
-Cohesion: 0.50
-Nodes (4): example, format, type, issue_date
-
-### Community 1541 - "Community 1541"
-Cohesion: 0.50
-Nodes (4): example, nullable, type, match_type
-
-### Community 1542 - "Community 1542"
-Cohesion: 0.50
-Nodes (4): format, nullable, type, project_id
-
-### Community 1543 - "Community 1543"
-Cohesion: 0.50
-Nodes (3): eaisybill-prod — Adatbázis Séma Áttekintés, Tartalomjegyzék, Összes Tábla (ABC rendben)
-
-### Community 1544 - "Community 1544"
-Cohesion: 0.50
-Nodes (4): 10. Értesítések & Kommunikáció, REQ-10.1: Email értesítések, REQ-10.2: Real-time értesítések, REQ-10.3: Ütemezett feladatok
-
-### Community 1545 - "Community 1545"
-Cohesion: 0.50
-Nodes (4): 13. Integrációk, REQ-13.1: Megvalósított integrációk, REQ-13.2: Banki integráció, REQ-13.3: LLM költség kezelés
-
-### Community 1546 - "Community 1546"
-Cohesion: 0.50
-Nodes (4): 2. Termék Scope & Célcsoport, REQ-2.1: Elsődleges célcsoport, REQ-2.2: Nyelv & lokalizáció, REQ-2.3: Dual-app architektúra
-
-### Community 1548 - "Community 1548"
-Cohesion: 0.50
-Nodes (4): 3. Technikai Architektúra, REQ-3.1: Tech stack, REQ-3.2: Multi-instance stratégia, REQ-3.3: Dokumentum feldolgozási pipeline
-
-### Community 1551 - "Community 1551"
-Cohesion: 0.50
-Nodes (3): corsHeaders, ManualInvoice, NavInvoice
-
-### Community 1552 - "Community 1552"
-Cohesion: 0.50
-Nodes (4): 11.1 — Trigger Function Audit, 11.2 — Migráció-kód konzisztencia, 11.3 — Éles DB ↔ Migráció szinkron, Layer 11: DB Triggers & Migrations (ÚJ)
-
-### Community 1553 - "Community 1553"
-Cohesion: 0.50
-Nodes (4): 4.1 — Supabase Error Check Coverage, 4.2 — Error Boundaries, 4.3 — User Feedback Consistency, Layer 4: Error Handling
-
-### Community 1554 - "Community 1554"
-Cohesion: 0.50
-Nodes (4): 8.0 — Graphify: Orphan keresés, 8.1 — Unused Files, 8.2 — Console Statements, Layer 8: Dead Code & Unused Imports
-
-### Community 1555 - "Community 1555"
-Cohesion: 0.50
-Nodes (4): Community-based audit, Graphify Integráció, Használat minden audit layer előtt, Tipikus audit lekérdezések
-
-### Community 1556 - "Community 1556"
-Cohesion: 0.50
-Nodes (3): A-064: Multi-Channel Document Upload Engine és Feature Szelet Modularizáció (`src/features/upload`), Context, Decision
-
-### Community 1557 - "Community 1557"
-Cohesion: 0.50
-Nodes (3): Decision 020: Adó Modul Scope, eaisyBill (fő app), eaisyBooks — EV Adóforma-összehasonlítás (2026-07-08)
-
-### Community 1558 - "Community 1558"
-Cohesion: 0.50
-Nodes (3): Decision 030: API & Third-party Hozzáférés, ⚠️ Közvetlen Felhasználói Szkript-Automatizáció Tiltása, 🚀 Ügyfél REST API (Customer REST API — 2026-09-16)
-
-### Community 1559 - "Community 1559"
-Cohesion: 0.50
-Nodes (3): Decision 058: Idegen Vevőre Szóló Számlák Jóváhagyási és Könyvelési Védelmi Szabályzata (Buyer Tax Validation & Misdirected Invoices Policy), Kapcsolódó, Üzleti Szabályok
-
-### Community 1560 - "Community 1560"
-Cohesion: 0.50
-Nodes (3): Decision 059: Partner-történeti Többségi Számlakategorizálási Szabályzat (Majority Vote Expense Categorization Policy), Kapcsolódó, Üzleti Szabályok
-
-### Community 1561 - "Community 1561"
-Cohesion: 0.50
-Nodes (3): P-012: Számla Szerkesztés, Számlakép Törlése Funkció (2026-09-06), UX Flow
-
-### Community 1562 - "Community 1562"
-Cohesion: 0.50
-Nodes (3): Kapcsolódó, P-053: Szigorított Számlakép Előnézet és Párosítás UX (Strict Invoice Attachment Pairing), UX Viselkedés a Felületen
-
-### Community 1563 - "Community 1563"
-Cohesion: 0.50
-Nodes (3): Kapcsolódó, P-061: Management Worker Telemetry Decomposition & Calendar Month LLM UX, Rationale
-
-### Community 1564 - "Community 1564"
-Cohesion: 0.50
-Nodes (3): 1. Kontextus és Üzleti Igény, 2. Termékdöntés, P-104: Tranzakció jutalék és számlaszám exportálása
-
-### Community 1565 - "Community 1565"
-Cohesion: 0.50
-Nodes (4): CSS Utility Class-ok, financial-number, glass-card, interactive
-
-### Community 1566 - "Community 1566"
-Cohesion: 0.50
-Nodes (4): Alap Dialog Felépítés, Dialog Pattern, Dialog Stílus Konvenciók, Nem Escapable Dialog (Idle Warning)
-
-### Community 1567 - "Community 1567"
-Cohesion: 0.50
-Nodes (4): Confirmation Dialog (Idle Warning), Destructive Action Dialog, Dialog Footer Konvenciók, Standard Form Dialog
-
-### Community 1568 - "Community 1568"
-Cohesion: 0.50
-Nodes (4): 2.10. [GET] /api/v1/workspaces/:id, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
-
-### Community 1569 - "Community 1569"
-Cohesion: 0.50
-Nodes (4): 2.12. [GET] /api/v1/milestones, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
-
-### Community 1570 - "Community 1570"
-Cohesion: 0.50
-Nodes (4): 2.14. [POST] /api/organizations/:orgId/webhooks, Integracios Kodreszletek:, Keres Torzs (JSON Body minta):, Sikeres Valasz (200 OK):
-
-### Community 1571 - "Community 1571"
-Cohesion: 0.50
-Nodes (4): 2.3. [GET] /api/v1/tickets, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
-
-### Community 1572 - "Community 1572"
-Cohesion: 0.50
-Nodes (4): 2.4. [GET] /api/v1/tasks, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
-
-### Community 1573 - "Community 1573"
-Cohesion: 0.50
-Nodes (4): 2.5. [POST] /api/v1/tasks, Integracios Kodreszletek:, Keres Torzs (JSON Body minta):, Sikeres Valasz (200 OK):
-
-### Community 1574 - "Community 1574"
-Cohesion: 0.50
-Nodes (4): 2.6. [GET] /api/v1/tasks/:id, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
-
-### Community 1575 - "Community 1575"
-Cohesion: 0.50
-Nodes (4): 2.8. [DELETE] /api/v1/tasks/:id, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
-
-### Community 1576 - "Community 1576"
-Cohesion: 0.50
-Nodes (4): 2.9. [GET] /api/v1/workspaces, Integracios Kodreszletek:, Parameterek:, Sikeres Valasz (200 OK):
-
-### Community 1578 - "Community 1578"
-Cohesion: 0.28
-Nodes (8): AnnualReportData, buildAnnualReportXml(), downloadAnnualReportXml(), esc(), AnnualReportData, buildAnnualReportDescriptor(), generateAnnualReportPdf(), generateAnnualReportPreviewUrl()
-
-### Community 1579 - "Community 1579"
-Cohesion: 0.50
-Nodes (4): reports, action_button, card_description, card_title
-
-### Community 1580 - "Community 1580"
-Cohesion: 0.50
-Nodes (4): reports, action_button, card_description, card_title
-
-### Community 1581 - "Community 1581"
-Cohesion: 0.50
-Nodes (3): 1. Megvalósult Rendszerelemek, 2. Nyitott Üzleti Logikai Döntések (Termék- és Roadmap Pontok), 🏁 IV. RÉSZ: Megvalósítási Audit & Státusz (2026-10-11)
-
-### Community 1583 - "Community 1583"
-Cohesion: 0.40
-Nodes (5): collapse_all, expand_all, refresh, refreshing, context_menu
-
-### Community 1585 - "Community 1585"
-Cohesion: 0.50
-Nodes (3): corsHeaders, RequestBody, resend
-
-### Community 1599 - "Community 1599"
-Cohesion: 0.67
-Nodes (3): description, $ref, 400
-
-### Community 1600 - "Community 1600"
-Cohesion: 0.67
-Nodes (3): 15. Követelmények Mátrix, eaisyBill követelmények, eaisyBooks követelmények
-
-### Community 1601 - "Community 1601"
-Cohesion: 0.67
-Nodes (3): 12.1 — Deployolt ↔ Hivatkozott EF szinkron, 12.2 — EF Auth Middleware, Layer 12: Edge Functions (ÚJ)
-
-### Community 1602 - "Community 1602"
-Cohesion: 0.67
-Nodes (3): 6.1 — Component Library Usage, 6.2 — Loading & Empty States, Layer 6: UI Consistency
-
-### Community 1603 - "Community 1603"
-Cohesion: 0.67
-Nodes (3): 9.1 — Environment Variables, 9.2 — Hardcoded Values, Layer 9: Environment & Configuration
-
-### Community 1604 - "Community 1604"
-Cohesion: 0.40
-Nodes (5): posting_status, all, all_tooltip, posted, posted_tooltip
-
-### Community 1642 - "Community 1642"
-Cohesion: 0.67
-Nodes (3): CSS Classes, ThemeContext Stabilitás, Témaváltás Animáció Megőrzés
-
-### Community 1643 - "Community 1643"
-Cohesion: 0.67
-Nodes (3): Calendar Popover (GlobalDatePicker), Company Selector Popover, Popover Pattern
-
-### Community 1645 - "Community 1645"
+### Community 1581 - "8. Addendum: RLS-szintű védelem (`20261011042300_rls_role_write_guards_and_payroll_isolation.sql`)"
 Cohesion: 0.10
-Nodes (25): InvoiceBulkActionsBar(), ExclusionDialogInvoice, ExclusionReasonDialog(), InvoiceContext, useInvoiceContext(), BulkDeleteDialog(), InvoiceDialogManager(), InvoiceTabSelector() (+17 more)
-
-### Community 1647 - "Community 1647"
-Cohesion: 0.67
-Nodes (3): chart, description, title
-
-### Community 1648 - "Community 1648"
-Cohesion: 0.67
-Nodes (3): chart, description, title
+Nodes (19): 2. Döntések, 8.10 Csomag C Addendum: Banki Utalások & Bankszámlák RLS Védelme és Munkavállalói Shell (`20261011130700_restrict_bank_accounts_and_transfers_write_rls.sql`), 8.11 Addendum: Külső Könyvelői Számlatükör Hozzáférés (chart_of_accounts_presets) és Kliensoldali Gyorsítótár-Előléptetés (EB-0280, `20261016193000_accounty_preset_access_rls.sql`), 8.1 Mit tesz a migráció, 8.2 Korrekció az előző review-hoz, 8.3 Tesztek, 8.4 Rollback, 8.5 Ismert korlátok / backlog (nem része ennek a lépésnek) (+11 more)
 
 ### Community 1653 - "backfill_partner_tax_numbers.mjs"
 Cohesion: 0.16
 Nodes (15): args, companyIdx, delayIdx, envPath, envVars, formatDuration(), isDryRun, limitIdx (+7 more)
 
-### Community 1662 - "Community 1662"
-Cohesion: 0.29
-Nodes (7): tabs, incoming, outgoing, proforma, receipts, submitted_incoming, submitted_outgoing
-
-### Community 1822 - "Community 1822"
-Cohesion: 0.40
-Nodes (5): tabs, cards, comparison, extract, journal
-
-### Community 1964 - "Community 1964"
-Cohesion: 0.40
-Nodes (5): reclassify_banner, confirm_btn, hide_checkbox, in_progress, title
-
-### Community 1967 - "Community 1967"
-Cohesion: 0.46
-Nodes (6): CODE128_PATTERNS, Code128Options, encodeCode128B(), escapeXml(), generateCode128Modules(), generateCode128Svg()
-
-### Community 1970 - "Community 1970"
-Cohesion: 0.40
-Nodes (5): posting_status, all, all_tooltip, posted, posted_tooltip
-
-### Community 1972 - "Community 1972"
-Cohesion: 0.40
-Nodes (5): contractors, no_employees, no_employees_desc, registered_employees, employee_tabs
-
-### Community 1974 - "Community 1974"
-Cohesion: 0.40
-Nodes (5): unpost_modal, cancel, confirm, desc, title
-
-### Community 1975 - "Community 1975"
-Cohesion: 0.13
-Nodes (25): autoAccountingQueryKeys, AutoAccountingRules, AutoAccountingRulesResponse, GlAccountOption, JournalOption, useAutoAccountingRules(), useCompanyGlAccountsLookup(), useCompanyJournalsLookup() (+17 more)
-
-### Community 1978 - "Community 1978"
+### Community 1856 - "Index.tsx"
 Cohesion: 0.04
-Nodes (66): CegkapuSettingsPage(), ACTION_KEY_MAP, ACTION_META, ClientDetailsPage(), DEADLINE_TITLES_HR, DEADLINE_TYPES_HR, DEFAULT_META, ClientMissingInvoicesPage() (+58 more)
+Nodes (60): recharts, DashboardMetrics, DashboardMetricsProps, PettyCashCurrencyBalance, CustomTooltip(), fmtCurrencySigned(), fmtMonth(), fmtRate() (+52 more)
 
-### Community 1979 - "Community 1979"
-Cohesion: 0.33
-Nodes (5): useManagementCreateTicket(), TicketsPageProps, mockUsers, ManagementCreateTicketDialog(), ManagementUserOption
+### Community 1885 - "InvoiceTableContainer.tsx"
+Cohesion: 0.13
+Nodes (35): Decision, D-5: Frontend Láncolat és Tranzakció Feloldás, Kapcsolódó, P-133: Számlalánc és Díjbekérő Tranzakció-örökítés és Zöld Státusz UX, 2. Frontend & Kliensoldali Relációkezelés, ExclusionDialogInvoice, ExclusionReasonDialog(), InvoiceTableContainer() (+27 more)
 
-### Community 1980 - "Community 1980"
-Cohesion: 0.33
-Nodes (6): new_closing, post_gl, reopen, unpost_gl, view_print, actions
-
-### Community 1981 - "Community 1981"
-Cohesion: 0.40
-Nodes (5): empty, adjust_filters, no_partners, no_search_results, upload_invoice_hint
-
-### Community 1982 - "Community 1982"
-Cohesion: 0.40
-Nodes (5): types, all, both, customer, supplier
-
-### Community 1983 - "Community 1983"
-Cohesion: 0.50
-Nodes (4): format, nullable, type, category_id
-
-### Community 1984 - "Community 1984"
-Cohesion: 0.40
-Nodes (5): closed, open, posted, reopened, badges
-
-### Community 1988 - "Community 1988"
-Cohesion: 0.14
-Nodes (11): mockRpc, mockToast, sampleRules, BookkeepingMode, CostRatio, EmploymentStatus, OrgType, STEPS (+3 more)
-
-### Community 1993 - "Community 1993"
-Cohesion: 0.40
-Nodes (3): capabilityState, mockMetrics, mockNavVatData
-
-### Community 1994 - "Community 1994"
-Cohesion: 0.43
-Nodes (5): DevelopmentReservePostingParams, postDevelopmentReserveReleaseToLedger(), PostingResult, removeDevelopmentReservePosting(), resolveReserveGlAccounts()
-
-### Community 1995 - "Community 1995"
-Cohesion: 0.60
-Nodes (3): isValidTicketCategory(), TICKET_CATEGORIES, TicketCategory
-
-### Community 1998 - "Community 1998"
-Cohesion: 0.33
-Nodes (6): kpi, accounts, classification_progress, credit, debit, leaf_accounts
-
-### Community 2002 - "Community 2002"
-Cohesion: 0.40
-Nodes (5): collapse_all, expand_all, refresh, refreshing, context_menu
-
-### Community 2003 - "Community 2003"
-Cohesion: 0.40
-Nodes (5): reclassify_banner, confirm_btn, hide_checkbox, in_progress, title
-
-### Community 2004 - "Community 2004"
-Cohesion: 0.40
-Nodes (5): tabs, cards, comparison, extract, journal
+### Community 1966 - "information-architecture.md"
+Cohesion: 0.03
+Nodes (58): `asset_events`, `company_sub_locations` (M2.1), `development_reserves`, `fixed_asset_components` (M3.1, M3.2), `fixed_assets`, `grant_projects` (M3.1, M3.4), `tao_depreciation_templates`, 📦 Tárgyi Eszközök (+50 more)
 
 ## Knowledge Gaps
-- **18357 isolated node(s):** `skill_name`, `evals`, `__filename`, `__dirname`, `rootDir` (+18352 more)
-  These have ≤1 connection - possible missing edges or undocumented components.
-- **389 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **7428 isolated node(s):** `fs`, `path`, `{ createClient }`, `browserHeaders`, `supabase` (+7423 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 8166 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **137 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `VatReturnContainer.tsx` to `3. A 6-Füles Munkavállalói Mesterkarton Specifikációja (`EmployeeCardDrawer`)`, `vitest`, `Adatmigráció és Napi Szinkronizáció (Data Migration & Daily Sync)`, `@testing-library/react`, `useEvData.ts`, `summary-161600-eb0250-worker-pdf-splitter-nav-fuzzy-matching-and-db-repair.md`, `architecture/decisions/index.md`, `summary-172500-cs-es-k-fakov-gl-balances-and-worker-fix.md`, `A-184: Real-time AI Categorization Progress Streaming, Invalidation & Idempotency Safeguards`, `TransactionDetailsDialog.tsx`, `information-architecture.md`, `ClientDetailsPage.tsx`, `depreciationPostingService.ts`, `☸️ Kubernetes (K8s) & Konténer Orkesztráció`, `accountyRoutes.tsx`, `product/decisions/index.md`, `A-022: Kategóriák és Projektek Dual-Table Szinkronizációs Stratégia`, `📘 eaisyBooks — EV (Egyéni Vállalkozó)`, `database-schema.md`, `Community 1437`, `minimax-sync/index.ts`, `payroll/index.ts`, `Community 1185`, `Community 1186`, `Community 1187`, `useAccountyClients`, `accountyConstants.ts`, `DocumentEngine.ts`, `P-127: Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX`, `ClientMissingInvoicesPage.tsx`, `Community 1978`, `Visibill — Architecture Decision Records (ADR)`, `InvoiceItemAccrualModal`, `ProtectedLayout`, `Visibill — Product Decision Records (PRD)`, `9. Oldal-szintű Funkciók (2026-06-26)`, `Visibill DB/SQL Best Practices Checklist`, `Visibill Scalability & Security Audit`, `Community 1089`, `Community 1988`, `GlobalDatePicker`, `rlbParser.ts`, `7. Pénzügyi Modulok`, `DashboardApp`, `Visibill Dev — Spec-First, Test-Driven Development (Lite)`, `ChangelogPage.tsx`, `escapeXml`, `useInvoiceContext`, `Community 982`, `Community 856`, `Community 984`, `tbCertificatesPdf.ts`, `Community 2011`, `🔑 A 3 Adatbázis Skálázási Stratégia`, `InvoiceDataExportDialog`, `Decision`, `3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)`, `Community 873`, `openclaw-api/index.ts`, `Community 1645`, `Community 878`, `VatFrequency`, `Community 885`, `Community 1526`, `P-052-fixed-assets-project-assignment-ux.md`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
-- **Why does `details` connect `Visibill Rendszerhibák Lekérdezési Kézikönyv (SQL Cheat Sheet)` to `Decision`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
-- **Why does `supabase` connect `product/decisions/index.md` to `🔄 Szerver Állapot & TanStack React Query (`useQuery`, `useMutation`)`, `GLOSSARY.md`, `vitest`, `react-router-dom`, `useEvData.ts`, `architecture/decisions/index.md`, `P-055-accounting-journals-ux.md`, `TransactionDetailsDialog.tsx`, `information-architecture.md`, `ClientDetailsPage.tsx`, `accountyRoutes.tsx`, `management-stats/index.ts`, `database-schema.md`, `payroll/index.ts`, `useAccountyClients`, `VatReturnContainer.tsx`, `🖥️ Felhasználói Felület és Workflow Viselkedés`, `DocumentEngine.ts`, `P-127: Számlák Többfüles Excel Exportja, Skontó- és Fizetési Dátum Feloldás és Banki Fül Routing UX`, `KnowledgeBasePage.tsx`, `ProtectedLayout`, `WorkerPanel.tsx`, `Visibill Scalability & Security Audit`, `rlbParser.ts`, `DashboardApp`, `ChangelogPage.tsx`, `escapeXml`, `useInvoiceContext`, `VatAmendmentsWorkspace.tsx`, `Community 1645`, `VatFrequency`, `HelpTabSections.tsx`, `6. Lepesrol Lepesre Megvalositasi Terv (Sprint Roadmap)`, `Dokumentáció Taxonómia — Mi mibe kerül?`, `P-052-fixed-assets-project-assignment-ux.md`, `DividendPayrollPage.tsx`, `P-105: Főkönyvi Kivonat 2-Tier Eszköztár és Hierarchikus Számlafa Kibontás/Összecsukás UX`, `📘 eaisyBooks — EV (Egyéni Vállalkozó)`, `minimax-sync/index.ts`, `1. FÁZIS: Log & Hibatábla Felderítés (Data Collection)`, `ClientMissingInvoicesPage.tsx`, `aggreg8-api/index.ts`, `9. Oldal-szintű Funkciók (2026-06-26)`, `Visibill Dev — Spec-First, Test-Driven Development (Lite)`, `task-brief-template.md`, `tbCertificatesPdf.ts`, `visibill-ticket-support.md`, `emails/invoice-processed.tsx`, `openclaw-api/index.ts`, `openclaw-api/index.ts`, `summary-170000-manual-invoice-create-audit-fixes-and-i18n-duplication-test.md`, `Adatmigráció és Napi Szinkronizáció (Data Migration & Daily Sync)`, `summary-172500-cs-es-k-fakov-gl-balances-and-worker-fix.md`, `depreciationPostingService.ts`, `A-238: Könyvelési Napló Bizonylatszintű Tételegyesítés és RLB-Mintájú Szűrési Architektúra`, `Visibill — Architecture Decision Records (ADR)`, `SharedComponents.tsx`, `React & Frontend Guidelines (Visibill / eaisybill-prod)`, `3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)`, `3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)`, `Community 885`, `A-086: Főkönyvi Könyvelési Státusz Szűrő (POSTED_ONLY) és Naplózási Irányelvek`, `JournalsPage`, `2. Architekturális Döntések`, `3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)`, `3. Részletes Funkciók és Használatuk (Hogy hívják, Mire való, Hol van, Hogyan használható)`, `Community 1973`, `Community 1975`, `Community 1978`, `Community 954`, `Community 1992`, `Community 1994`, `Community 979`, `Community 984`, `Decision`, `A-116: K&H Bankkivonatok (.xls / .csv) Robusztus Feldolgozása, Tabulátor Detektálás és Tranzakció Pipeline Intercept Védelem`, `2. Architekturális Döntések`, `Community 1525`, `03. Bank, Partnerek és Tranzakciók — HR Lokalizációs Leltár`?**
-  _High betweenness centrality (0.007) - this node is a cross-community bridge._
-- **What connects `Extracts all markdown links and images, properly handling balanced parentheses i`, `Extracts all markdown links and images, properly handling balanced parentheses i`, `skill_name` to the rest of the system?**
-  _18368 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `GLOSSARY.md` be split into smaller, more focused modules?**
-  _Cohesion score 0.08831908831908832 - nodes in this community are weakly interconnected._
-- **Should `vitest` be split into smaller, more focused modules?**
-  _Cohesion score 0.02111122089385107 - nodes in this community are weakly interconnected._
-- **Should `@testing-library/react` be split into smaller, more focused modules?**
-  _Cohesion score 0.08907563025210084 - nodes in this community are weakly interconnected._
+- **Why does `cn()` connect `cn` to `formatCurrency`, `react-i18next`, `client.ts`, `vitest`, `react`, `badge.tsx`, `card.tsx`, `react-router-dom`, `accounty/index.ts`, `useEvData.ts`, `ChangeEmailDialog.tsx`, `TicketsPage.tsx`, `reportError`, `accountyRoutes.tsx`, `useToast`, `ClientDetailsPage.tsx`, `payroll/index.ts`, `AssetActivationDialog.tsx`, `P-082: Bérszámfejtési Főkönyvi Feladás Kontírozás (Step 8), Kereshető Választó és Magyarázó Szövegezés UX`, `management/ManagementDashboard.tsx`, `useInvoiceContext`, `EntriesTab.tsx`, `vat/types.ts`, `useAccountyClients`, `EmployeeDetailsPage.tsx`, `AnnualReportContainer.tsx`, `PettyCashPage.tsx`, `KnowledgeBasePage.tsx`, `toggle-group.tsx`, `replica/index.ts`, `FilingWorkflowPage.tsx`, `useSteelProductsData.ts`, `Auth.tsx`, `AppSidebar.tsx`, `BankAccountsTab.tsx`, `AccountyApp.tsx`, `EmployeeImportPage.tsx`, `usePayrollData.ts`, `PayrollCyclePage.tsx`, `AccountyShellContext.tsx`, `openingImportParser.ts`, `AutoAccountingRulesTab.tsx`, `AiAssistantChat.tsx`, `rich-text-editor.tsx`, `FilePreviewModal`, `ChangelogPage.tsx`, `KintlevoPage.tsx`, `GeneralLedgerPage.tsx`, `ClientInvoicesPage`, `P-153: Dinamikus Törvényes Munkanapkeret és Bérszámfejtési Munkanap Választó UX`, `DeclarationArchivePage.tsx`, `VatCalculatorView.tsx`, `GlobalDatePicker`, `VatAmendmentsWorkspace.tsx`, `OutputDocumentsPage.tsx`, `invoices.ts`, `JobModificationPage.tsx`, `ClientTaoMainPage.tsx`, `Nav2665MReplicaContainer.tsx`, `TaoYearEndWizardPage.tsx`, `AiAnomalyReportPage.tsx`, `button.tsx`, `lucide-react`, `FadInvoicePanel.tsx`, `AlertsCenterPage.tsx`, `PurchaseVouchersTab.tsx`, `glExport.ts`, `AccountyScopedLayout.tsx`, `ReportsPage.tsx`, `HelpTabSections.tsx`, `ExpandedInvoiceRow`, `payrollUtils.ts`, `toast.tsx`, `VatTemplatePreview.tsx`, `InvoiceDetailPopup.tsx`, `TransactionDetailsDialog.tsx`, `PermissionMatrixPage.tsx`, `PostingGroupAccordion.tsx`, `FilesPanel`, `WorksheetLeaveModal`, `validationUtils.ts`, `journalUtils.ts`, `useCashReports.ts`, `rich-text-content.tsx`, `PayrollStep8.tsx`, `CashClosingDialog`, `ManualMatchSearchSection.tsx`, `floating-bulk-bar.tsx`, `payrollBankMatcher.ts`, `Filing08EPage.tsx`, `InvoiceDataExportDialog`, `DividendPayrollPage.tsx`, `PayrollPortfolioPage.tsx`, `NavInvoiceVatSummaryCard`, `carousel.tsx`, `ClientEvMainPage.tsx`, `P-015: Tömeges Műveletek (Bulk Actions)`, `Index.tsx`, `Nav2665ReplicaContainer`, `SharedComponents.tsx`, `InvoiceTableContainer.tsx`, `chart.tsx`, `JournalsPage`, `PayrollReconciliationTab.tsx`?**
+  _High betweenness centrality (0.148) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `formatCurrency`, `react-i18next`, `client.ts`, `vitest`, `badge.tsx`, `card.tsx`, `react-router-dom`, `accounty/index.ts`, `ChangeEmailDialog.tsx`, `useEvData.ts`, `TicketsPage.tsx`, `reportError`, `accountyRoutes.tsx`, `useToast`, `ClientDetailsPage.tsx`, `ProtectedAccountyRoute.tsx`, `cn`, `payroll/index.ts`, `AssetActivationDialog.tsx`, `management/ManagementDashboard.tsx`, `vat/types.ts`, `useInvoiceContext`, `EntriesTab.tsx`, `DocumentEngine.ts`, `useAccountyClients`, `InvoiceContext.tsx`, `EmployeeDetailsPage.tsx`, `AnnualReportContainer.tsx`, `useVatReturnData.ts`, `PettyCashPage.tsx`, `ManageJournalsModal.test.tsx`, `KnowledgeBasePage.tsx`, `toggle-group.tsx`, `useDocumentUpload.ts`, `replica/index.ts`, `useSteelProductsData.ts`, `FilingWorkflowPage.tsx`, `opg.ts`, `escapeXml`, `Auth.tsx`, `AppSidebar.tsx`, `BankAccountsTab.tsx`, `AccountyApp.tsx`, `AuditorExportWorkspace.tsx`, `EmployeeImportPage.tsx`, `usePayrollData.ts`, `fixed-assets.ts`, `WorkerPanel.tsx`, `PayrollCyclePage.tsx`, `AccountyShellContext.tsx`, `AssetReconciliationTab.tsx`, `AutoAccountingRulesTab.tsx`, `AiAssistantChat.tsx`, `NavInvoice`, `rich-text-editor.tsx`, `accrualMath.ts`, `ChangelogPage.tsx`, `KintlevoPage.tsx`, `GeneralLedgerPage.tsx`, `useAdminData.ts`, `ClientInvoicesPage`, `DeclarationArchivePage.tsx`, `VatCalculatorView.tsx`, `VatAmendmentsWorkspace.tsx`, `InvoiceRulesDialog.test.tsx`, `InvoiceFullEditDialog.test.tsx`, `matchingService.ts`, `OutputDocumentsPage.tsx`, `JobModificationPage.tsx`, `useInvoiceMutations.test.ts`, `ClientTaoMainPage.tsx`, `uiMountSmoke.test.tsx`, `depreciationPostingService.ts`, `Nav2665MReplicaContainer.tsx`, `TaoYearEndWizardPage.tsx`, `AiAnomalyReportPage.tsx`, `button.tsx`, `AccountyErrorBoundary`, `lucide-react`, `expanded-row/types.ts`, `FadInvoicePanel.tsx`, `AlertsCenterPage.tsx`, `PurchaseVouchersTab.tsx`, `AccountyScopedLayout.tsx`, `ReportsPage.tsx`, `HelpTabSections.tsx`, `toast.tsx`, `VatTemplatePreview.tsx`, `InvoiceDetailPopup.tsx`, `ManualInvoiceCreateDialog.test.tsx`, `TransactionDetailsDialog.tsx`, `assetImportParser.ts`, `PermissionMatrixPage.tsx`, `PostingGroupAccordion.tsx`, `eb0255ChartOfAccountsSubledger.test.tsx`, `OpeningJournalWizardModal.test.tsx`, `OpeningEntryEditUnpost.test.tsx`, `rich-text-content.tsx`, `useCashReports.ts`, `PayrollStep8.tsx`, `useIdleTimeout.ts`, `ManualMatchSearchSection.tsx`, `floating-bulk-bar.tsx`, `Filing08EPage.tsx`, `DividendPayrollPage.tsx`, `App.tsx`, `stickyHorizontalScrollbar.test.tsx`, `invoicePaginationRecovery.test.tsx`, `PayrollPortfolioPage.tsx`, `ActivityLogSheet.tsx`, `EaisyWorksSyncCard.tsx`, `serviceOnlyRpcGrants.test.ts`, `carousel.tsx`, `ClientEvMainPage.tsx`, `Index.tsx`, `Nav2665ReplicaContainer`, `useSubledger.ts`, `SharedComponents.tsx`, `InvoiceTableContainer.tsx`, `UploadHistory.tsx`, `chart.tsx`, `PayrollReconciliationTab.tsx`, `package.json`?**
+  _High betweenness centrality (0.098) - this node is a cross-community bridge._
+- **Why does `vitest` connect `vitest` to `formatCurrency`, `react-i18next`, `client.ts`, `react`, `badge.tsx`, `card.tsx`, `react-router-dom`, `accounty/index.ts`, `useEvData.ts`, `TicketsPage.tsx`, `reportError`, `useToast`, `ClientDetailsPage.tsx`, `ProtectedAccountyRoute.tsx`, `ref_https`, `payroll/index.ts`, `AssetActivationDialog.tsx`, `management/ManagementDashboard.tsx`, `vat/types.ts`, `useInvoiceContext`, `EntriesTab.tsx`, `DocumentEngine.ts`, `InvoiceContext.tsx`, `EmployeeDetailsPage.tsx`, `AnnualReportContainer.tsx`, `useVatReturnData.ts`, `PettyCashPage.tsx`, `ManageJournalsModal.test.tsx`, `KnowledgeBasePage.tsx`, `importCustomsAccounting.ts`, `useDocumentUpload.ts`, `grantDeferralPostingService.ts`, `useSteelProductsData.ts`, `subledger.ts`, `opg.ts`, `escapeXml`, `replica/index.ts`, `AppSidebar.tsx`, `BankAccountsTab.tsx`, `AccountyApp.tsx`, `AuditorExportWorkspace.tsx`, `EmployeeImportPage.tsx`, `usePayrollData.ts`, `fixed-assets.ts`, `WorkerPanel.tsx`, `src_locales_hr_categories`, `i18n.ts`, `PayrollCyclePage.tsx`, `AccountyShellContext.tsx`, `openingImportParser.ts`, `AssetReconciliationTab.tsx`, `process-mailgun-webhook/index.ts`, `AutoAccountingRulesTab.tsx`, `AiAssistantChat.tsx`, `NavInvoice`, `cache.test.ts`, `rich-text-editor.tsx`, `accrualMath.ts`, `ChangelogPage.tsx`, `KintlevoPage.tsx`, `GeneralLedgerPage.tsx`, `procontGlData.ts`, `ClientInvoicesPage`, `croatianPoreznaXml.ts`, `VatCalculatorView.tsx`, `VatAmendmentsWorkspace.tsx`, `InvoiceRulesDialog.test.tsx`, `InvoiceFullEditDialog.test.tsx`, `matchingService.ts`, `rlbParser.ts`, `useInvoiceMutations.test.ts`, `barcodeGenerator.ts`, `uiMountSmoke.test.tsx`, `depreciationPostingService.ts`, `Nav2665MReplicaContainer.tsx`, `AiAnomalyReportPage.tsx`, `assetDisposalPostingService.ts`, `tbCertificatesPdf.ts`, `rlbGlData.ts`, `AccountyErrorBoundary`, `lucide-react`, `FadInvoicePanel.tsx`, `PurchaseVouchersTab.tsx`, `glExport.ts`, `AccountyScopedLayout.tsx`, `normalizeHungarianForPdf`, `glInvoiceGrouping.ts`, `vatReturnXml.ts`, `payrollUtils.ts`, `VatTemplatePreview.tsx`, `ManualInvoiceCreateDialog.test.tsx`, `TransactionDetailsDialog.tsx`, `syncStaggering.ts`, `crossSystemPermissions.test.ts`, `assetImportParser.ts`, `PostingGroupAccordion.tsx`, `useTechnicalAccounting.ts`, `WorksheetLeaveModal`, `developmentReservePenaltyCalculator.ts`, `assetDisposalProtocolPdf.ts`, `eb0255ChartOfAccountsSubledger.test.tsx`, `validationUtils.ts`, `journalUtils.ts`, `OpeningJournalWizardModal.test.tsx`, `OpeningEntryEditUnpost.test.tsx`, `rich-text-content.tsx`, `useCashReports.ts`, `navTaxpayer.test.ts`, `xml-parser.ts`, `navValidationInboundProbe.test.ts`, `clientListFiltering.test.ts`, `PayrollStep8.tsx`, `statusMappers.test.ts`, `ManualMatchSearchSection.tsx`, `floating-bulk-bar.tsx`, `cashReports.test.ts`, `payrollBankMatcher.ts`, `useRelatedPartyTurnover.ts`, `useCompanySubLocations.ts`, `DividendPayrollPage.tsx`, `capabilities.ts`, `A-040: Multi-Tab Auth Flow Isolation (2026-07-18)`, `navPartnerSync.test.ts`, `3. Mit lehet benne a felhasználónak csinálni?`, `App.tsx`, `ticketCategories.test.ts`, `stickyHorizontalScrollbar.test.tsx`, `posSettlementProcessor.ts`, `invoicePaginationRecovery.test.tsx`, `payslipTemplate.ts`, `mkvkAuditXmlGenerator.ts`, `PayrollPortfolioPage.tsx`, `permissionsHandler.ts`, `dateUtils.ts`, `newFeatures.test.ts`, `partnerMajorityCategorization.test.ts`, `ActivityLogSheet.tsx`, `subledger.test.ts`, `feedback-dialog.test.ts`, `exchangeRateBanks.ts`, `EaisyWorksSyncCard.tsx`, `agoraPnlPdf.ts`, `serviceOnlyRpcGrants.test.ts`, `ref_fs`, `SubledgerItem`, `Index.tsx`, `eb0257JournalsAndPartnerLines.test.ts`, `useSubledger.ts`, `navProtocol.test.ts`, `inventoryReportExport.ts`, `inviteCodeFlow.test.ts`, `InvoiceTableContainer.tsx`, `useComputedStatus.ts`, `accountyPermissions.test.ts`, `eaisybillPermissions.test.ts`, `filingGenerator.ts`, `nav-auto-sync/index.ts`, `rpcPerformanceAndResilience.test.ts`, `journalFilterUtils.ts`, `invoiceChainUtils.test.ts`, `skontoUtils.ts`, `package.json`?**
+  _High betweenness centrality (0.089) - this node is a cross-community bridge._
+- **What connects `fs`, `path`, `{ createClient }` to the rest of the system?**
+  _7428 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `formatCurrency` be split into smaller, more focused modules?**
+  _Cohesion score 0.05225225225225225 - nodes in this community are weakly interconnected._
+- **Should `react-i18next` be split into smaller, more focused modules?**
+  _Cohesion score 0.04092473440071824 - nodes in this community are weakly interconnected._
+- **Should `client.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.0320018054615211 - nodes in this community are weakly interconnected._

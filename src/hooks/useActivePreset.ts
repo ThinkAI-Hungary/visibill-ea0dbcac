@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { reportError } from '@/lib/errorReporter';
@@ -27,7 +27,7 @@ export function useActivePreset(companyId: string | undefined, overrideCountryCo
     }
   });
 
-  const setActivePresetId = (id: string | undefined) => {
+  const setActivePresetId = useCallback((id: string | undefined) => {
     setActivePresetIdState(id);
     const targetCompanyId = companyId || (() => {
       try {
@@ -41,7 +41,7 @@ export function useActivePreset(companyId: string | undefined, overrideCountryCo
         localStorage.setItem(`visibill_active_preset_${targetCompanyId}`, id);
       } catch {}
     }
-  };
+  }, [companyId]);
 
   const { data: presets, isLoading, isFetching } = useQuery({
     queryKey: ['coaPresets', companyId, isCroatia],
@@ -89,6 +89,18 @@ export function useActivePreset(companyId: string | undefined, overrideCountryCo
             return;
           }
         }
+
+        // Auto-promote: If the user is currently on a generic template preset (e.g. from previous RLS fallback),
+        // but the company has an explicit active custom preset, automatically switch to it
+        const currentActiveObj = presets.find(p => p.id === activePresetId);
+        if (currentActiveObj && (currentActiveObj.type === 'generic' || activePresetId === 'a6c46c77-52b7-499e-bb12-419aa94349af')) {
+          const activeCustom = presets.find(p => p.company_id === companyId && p.is_active);
+          if (activeCustom && activeCustom.id !== activePresetId) {
+            setActivePresetId(activeCustom.id);
+            return;
+          }
+        }
+
         return;
       }
 
@@ -111,7 +123,7 @@ export function useActivePreset(companyId: string | undefined, overrideCountryCo
         setActivePresetId(targetId);
       }
     }
-  }, [presets, companyId, activePresetId, isCroatia, isLoading, isFetching]);
+  }, [presets, companyId, activePresetId, isCroatia, isLoading, isFetching, setActivePresetId]);
 
   return { activePresetId, setActivePresetId, presets, isLoading, isFetching };
 }

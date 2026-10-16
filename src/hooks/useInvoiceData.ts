@@ -130,6 +130,7 @@ export interface SubmittedInvoice {
 }
 
 export interface Partner {
+  id?: string;
   tax_number: string;
   name: string;
 }
@@ -218,7 +219,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('partners')
-        .select('tax_number, name')
+        .select('id, tax_number, name')
         .eq('company_id', companyId);
       if (error) throw error;
       return (data || []) as Partner[];

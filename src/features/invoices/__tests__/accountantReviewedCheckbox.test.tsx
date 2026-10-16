@@ -13,6 +13,7 @@ const mockFrom = vi.fn().mockReturnValue({
 });
 
 vi.mock('@/integrations/supabase/client', () => ({
+  SUPABASE_URL: 'https://vxxgvdlqvvchtlmqnrqf.supabase.co',
   supabase: {
     from: (...args: any[]) => mockFrom(...args),
   },
