@@ -9,6 +9,8 @@ import {
   Loader2,
   RefreshCw,
   Scale,
+  Search,
+  X,
   Zap,
 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -188,11 +190,13 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [results, setResults] = useState<RepostResult[]>([]);
 
-  // Pagináció az eszközönkénti táblázathoz
+  // Keresés és pagináció az eszközönkénti táblázathoz
+  const [assetsSearch, setAssetsSearch] = useState('');
   const [assetsPage, setAssetsPage] = useState(1);
   const [assetsPageSize, setAssetsPageSize] = useState(50);
 
-  // Pagináció a jelöletlen főkönyvi sorokhoz (orphans)
+  // Keresés és pagináció a jelöletlen főkönyvi sorokhoz (orphans)
+  const [orphansSearch, setOrphansSearch] = useState('');
   const [orphansPage, setOrphansPage] = useState(1);
   const [orphansPageSize, setOrphansPageSize] = useState(50);
 
@@ -214,8 +218,15 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
 
   const visibleRows = useMemo(() => {
     if (!report) return [];
-    return rowFilter === 'all' ? report.assets : report.assets.filter(rowHasIssue);
-  }, [report, rowFilter]);
+    const base = rowFilter === 'all' ? report.assets : report.assets.filter(rowHasIssue);
+    if (!assetsSearch.trim()) return base;
+    const q = assetsSearch.trim().toLowerCase();
+    return base.filter(
+      (row) =>
+        row.inventory_number.toLowerCase().includes(q) ||
+        row.name.toLowerCase().includes(q),
+    );
+  }, [report, rowFilter, assetsSearch]);
 
   const totalAssetsPages = Math.max(1, Math.ceil(visibleRows.length / assetsPageSize));
   const safeAssetsPage = Math.min(Math.max(1, assetsPage), totalAssetsPages);
@@ -224,7 +235,19 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
     return visibleRows.slice(start, start + assetsPageSize);
   }, [visibleRows, safeAssetsPage, assetsPageSize]);
 
-  const orphanRows = useMemo(() => report?.orphans || [], [report]);
+  const orphanRows = useMemo(() => {
+    if (!report?.orphans) return [];
+    if (!orphansSearch.trim()) return report.orphans;
+    const q = orphansSearch.trim().toLowerCase();
+    return report.orphans.filter(
+      (o) =>
+        (o.document_id && o.document_id.toLowerCase().includes(q)) ||
+        (o.gl_number && o.gl_number.toLowerCase().includes(q)) ||
+        (o.description && o.description.toLowerCase().includes(q)) ||
+        (o.posting_date && o.posting_date.includes(q)),
+    );
+  }, [report, orphansSearch]);
+
   const totalOrphansPages = Math.max(1, Math.ceil(orphanRows.length / orphansPageSize));
   const safeOrphansPage = Math.min(Math.max(1, orphansPage), totalOrphansPages);
   const paginatedOrphanRows = useMemo(() => {
@@ -236,6 +259,17 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
     setRowFilter(f);
     setAssetsPage(1);
   }, []);
+
+  // Táblázat layout-stabilitás (nem ugrál a felület kevés találatnál vagy keresésnél)
+  const assetsTableMinHeight = useMemo(
+    () => 40 + 48 + assetsPageSize * 52,
+    [assetsPageSize],
+  );
+
+  const orphansTableMinHeight = useMemo(
+    () => 40 + 48 + orphansPageSize * 44,
+    [orphansPageSize],
+  );
 
   const unpostedRows = useMemo(
     () => (report ? report.assets.filter((r) => report.repostableAssetIds.includes(r.asset_id)) : []),
@@ -474,172 +508,292 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
 
           {/* Eszközönkénti táblázat */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">{tt('assets_table', 'Eszközönkénti egyeztetés')}</h3>
-              <div className="flex rounded-lg border border-border/60 bg-muted/30 p-1">
-                {(['issues', 'all'] as const).map((f) => (
-                  <button
-                    key={f}
-                    id={`asset-recon-filter-${f}`}
-                    type="button"
-                    onClick={() => handleFilterChange(f)}
-                    className={`rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150 ${
-                      rowFilter === f
-                        ? 'bg-background text-foreground shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {f === 'issues' ? tt('filter_issues', 'Csak eltérések') : tt('filter_all', 'Mind')}
-                  </button>
-                ))}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold">{tt('assets_table', 'Eszközönkénti egyeztetés')}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {tt('assets_table_desc', 'Az analitika és a főkönyv összevetése eszközönként, a leltári szám alapján.')}
+                </p>
               </div>
-            </div>
-            <div className="overflow-x-auto rounded-xl border border-border/60 bg-card overflow-hidden">
-              <Table id="asset-recon-assets-table">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Leltári szám</TableHead>
-                    <TableHead>Megnevezés</TableHead>
-                    <TableHead>Aktiválás</TableHead>
-                    <TableHead className="text-right">Bruttó (analitika)</TableHead>
-                    <TableHead className="text-right">Bruttó (főkönyv)</TableHead>
-                    <TableHead className="text-right">ÉCS (analitika)</TableHead>
-                    <TableHead className="text-right">ÉCS (főkönyv)</TableHead>
-                    <TableHead>Státusz</TableHead>
-                    <TableHead className="w-10" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visibleRows.length === 0 ? (
-                    <TableEmptyState
-                      colSpan={9}
-                      icon={CheckCircle2}
-                      title={tt('no_issues_title', 'Nincs eltérő eszköz')}
-                      description={tt('no_issues_desc', 'Minden eszköz bruttó értéke és ÉCS-e egyezik a főkönyvvel.')}
-                      onClearFilters={() => handleFilterChange('all')}
-                      clearLabel={tt('show_all', 'Minden eszköz mutatása')}
-                    />
-                  ) : (
-                    paginatedAssetRows.map((row) => (
-                      <TableRow key={row.asset_id} id={`asset-recon-row-${row.asset_id}`}>
-                        <TableCell className="font-mono text-xs">{row.inventory_number}</TableCell>
-                        <TableCell className="max-w-[220px] truncate">{row.name}</TableCell>
-                        <TableCell className="whitespace-nowrap text-xs">
-                          {formatDateLocale(row.activation_date)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">
-                          {formatCurrency(row.expected_gross, 'HUF')}
-                        </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">
-                          {formatCurrency(row.gl_gross, 'HUF')}
-                        </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">
-                          {formatCurrency(row.expected_accum, 'HUF')}
-                        </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">
-                          {formatCurrency(row.gl_accum, 'HUF')}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            <StatusBadge ok={row.issue === 'ok'} label={`Bruttó: ${GROSS_ISSUE_LABELS[row.issue]}`} />
-                            <StatusBadge
-                              ok={row.accum_issue === 'ok'}
-                              label={`ÉCS: ${ACCUM_ISSUE_LABELS[row.accum_issue]}`}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            aria-label={`${row.inventory_number} megnyitása`}
-                            onClick={() => onOpenAsset(row.asset_id)}
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-              {visibleRows.length > 0 && (
-                <div className="border-t border-border/60 bg-card/60 px-4 py-1.5">
-                  <UnifiedPagination
-                    currentPage={safeAssetsPage}
-                    totalPages={totalAssetsPages}
-                    totalItems={visibleRows.length}
-                    pageSize={assetsPageSize}
-                    onPageChange={setAssetsPage}
-                    onPageSizeChange={(newSize) => {
-                      setAssetsPageSize(newSize);
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
+                    type="text"
+                    placeholder={tt('search_assets_placeholder', 'Keresés név vagy leltári szám...')}
+                    value={assetsSearch}
+                    onChange={(e) => {
+                      setAssetsSearch(e.target.value);
                       setAssetsPage(1);
                     }}
-                    pageSizeOptions={[25, 50, 100]}
-                    disableScrollToTop={true}
+                    className="pl-8 pr-8 h-8 text-xs bg-background/50 border-border/60"
                   />
+                  {assetsSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAssetsSearch('');
+                        setAssetsPage(1);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors"
+                      title={tt('clear_search', 'Keresés törlése')}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
-              )}
+                <div className="flex rounded-lg border border-border/60 bg-muted/30 p-1">
+                  {(['issues', 'all'] as const).map((f) => (
+                    <button
+                      key={f}
+                      id={`asset-recon-filter-${f}`}
+                      type="button"
+                      onClick={() => handleFilterChange(f)}
+                      className={`rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150 ${
+                        rowFilter === f
+                          ? 'bg-background text-foreground shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {f === 'issues' ? tt('filter_issues', 'Csak eltérések') : tt('filter_all', 'Mind')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div
+              className="rounded-xl border border-border/60 bg-card overflow-hidden flex flex-col transition-[min-height] duration-200"
+              style={{ minHeight: `${assetsTableMinHeight}px` }}
+            >
+              <div className="overflow-x-auto flex-1">
+                <Table id="asset-recon-assets-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Leltári szám</TableHead>
+                      <TableHead>Megnevezés</TableHead>
+                      <TableHead>Aktiválás</TableHead>
+                      <TableHead className="text-right">Bruttó (analitika)</TableHead>
+                      <TableHead className="text-right">Bruttó (főkönyv)</TableHead>
+                      <TableHead className="text-right">ÉCS (analitika)</TableHead>
+                      <TableHead className="text-right">ÉCS (főkönyv)</TableHead>
+                      <TableHead>Státusz</TableHead>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visibleRows.length === 0 ? (
+                      <TableEmptyState
+                        colSpan={9}
+                        icon={assetsSearch.trim() ? Search : CheckCircle2}
+                        title={
+                          assetsSearch.trim()
+                            ? tt('no_search_results_title', 'Nincs keresési találat')
+                            : tt('no_issues_title', 'Nincs eltérő eszköz')
+                        }
+                        description={
+                          assetsSearch.trim()
+                            ? tt('no_search_results_desc', 'A megadott keresési feltételre nem található eszköz.')
+                            : tt('no_issues_desc', 'Minden eszköz bruttó értéke és ÉCS-e egyezik a főkönyvvel.')
+                        }
+                        onClearFilters={() => {
+                          if (assetsSearch.trim()) {
+                            setAssetsSearch('');
+                            setAssetsPage(1);
+                          } else {
+                            handleFilterChange('all');
+                          }
+                        }}
+                        clearLabel={
+                          assetsSearch.trim()
+                            ? tt('clear_search', 'Keresés törlése')
+                            : tt('show_all', 'Minden eszköz mutatása')
+                        }
+                      />
+                    ) : (
+                      paginatedAssetRows.map((row) => (
+                        <TableRow key={row.asset_id} id={`asset-recon-row-${row.asset_id}`}>
+                          <TableCell className="font-mono text-xs">{row.inventory_number}</TableCell>
+                          <TableCell className="max-w-[220px] truncate">{row.name}</TableCell>
+                          <TableCell className="whitespace-nowrap text-xs">
+                            {formatDateLocale(row.activation_date)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {formatCurrency(row.expected_gross, 'HUF')}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {formatCurrency(row.gl_gross, 'HUF')}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {formatCurrency(row.expected_accum, 'HUF')}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {formatCurrency(row.gl_accum, 'HUF')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              <StatusBadge ok={row.issue === 'ok'} label={`Bruttó: ${GROSS_ISSUE_LABELS[row.issue]}`} />
+                              <StatusBadge
+                                ok={row.accum_issue === 'ok'}
+                                label={`ÉCS: ${ACCUM_ISSUE_LABELS[row.accum_issue]}`}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              aria-label={`${row.inventory_number} megnyitása`}
+                              onClick={() => onOpenAsset(row.asset_id)}
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="mt-auto border-t border-border/60 bg-card/60 px-4 py-1.5">
+                <UnifiedPagination
+                  currentPage={safeAssetsPage}
+                  totalPages={totalAssetsPages}
+                  totalItems={visibleRows.length}
+                  pageSize={assetsPageSize}
+                  onPageChange={setAssetsPage}
+                  onPageSizeChange={(newSize) => {
+                    setAssetsPageSize(newSize);
+                    setAssetsPage(1);
+                  }}
+                  pageSizeOptions={[25, 50, 100]}
+                  disableScrollToTop={true}
+                />
+              </div>
             </div>
           </div>
 
           {/* Jelöletlen főkönyvi sorok */}
           {report.rootCauses.orphan_gl_lines.count > 0 && (
             <div className="space-y-2" id="asset-recon-orphans">
-              <h3 className="text-sm font-semibold">{tt('orphans', 'Eszközhöz nem kötött főkönyvi sorok')}</h3>
-              <p className="text-xs text-muted-foreground">
-                {tt(
-                  'orphans_desc',
-                  'A jelölés (eszköz-azonosító a főkönyvi soron) bevezetése előtt, vagy más módon (pl. vegyes naplóban) könyvelt eszközszámla-tételek. Ellenőrizd, hogy melyik eszközhöz tartoznak.',
-                )}
-              </p>
-              <div className="overflow-x-auto rounded-xl border border-border/60 bg-card overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Könyvelés dátuma</TableHead>
-                      <TableHead>Bizonylat</TableHead>
-                      <TableHead>Főkönyvi szám</TableHead>
-                      <TableHead>T/K</TableHead>
-                      <TableHead className="text-right">Összeg</TableHead>
-                      <TableHead>Leírás</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedOrphanRows.map((o) => (
-                      <TableRow key={o.line_id}>
-                        <TableCell className="whitespace-nowrap text-xs">{formatDateLocale(o.posting_date)}</TableCell>
-                        <TableCell className="font-mono text-xs">{o.document_id || '—'}</TableCell>
-                        <TableCell className="font-mono text-xs">{o.gl_number}</TableCell>
-                        <TableCell>{o.dc_type}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">
-                          {formatCurrency(Number(o.amount), 'HUF')}
-                        </TableCell>
-                        <TableCell className="max-w-[260px] truncate text-xs text-muted-foreground">
-                          {o.description || '—'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {orphanRows.length > 0 && (
-                  <div className="border-t border-border/60 bg-card/60 px-4 py-1.5">
-                    <UnifiedPagination
-                      currentPage={safeOrphansPage}
-                      totalPages={totalOrphansPages}
-                      totalItems={orphanRows.length}
-                      pageSize={orphansPageSize}
-                      onPageChange={setOrphansPage}
-                      onPageSizeChange={(newSize) => {
-                        setOrphansPageSize(newSize);
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold">{tt('orphans', 'Eszközhöz nem kötött főkönyvi sorok')}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {tt(
+                      'orphans_desc',
+                      'A jelölés (eszköz-azonosító a főkönyvi soron) bevezetése előtt, vagy más módon (pl. vegyes naplóban) könyvelt eszközszámla-tételek. Ellenőrizd, hogy melyik eszközhöz tartoznak.',
+                    )}
+                  </p>
+                </div>
+                <div className="relative w-full sm:w-64 shrink-0">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
+                    type="text"
+                    placeholder={tt('search_orphans_placeholder', 'Keresés bizonylat, leírás, főkönyv...')}
+                    value={orphansSearch}
+                    onChange={(e) => {
+                      setOrphansSearch(e.target.value);
+                      setOrphansPage(1);
+                    }}
+                    className="pl-8 pr-8 h-8 text-xs bg-background/50 border-border/60"
+                  />
+                  {orphansSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOrphansSearch('');
                         setOrphansPage(1);
                       }}
-                      pageSizeOptions={[25, 50, 100]}
-                      disableScrollToTop={true}
-                    />
-                  </div>
-                )}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors"
+                      title={tt('clear_search', 'Keresés törlése')}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div
+                className="rounded-xl border border-border/60 bg-card overflow-hidden flex flex-col transition-[min-height] duration-200"
+                style={{ minHeight: `${orphansTableMinHeight}px` }}
+              >
+                <div className="overflow-x-auto flex-1">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Könyvelés dátuma</TableHead>
+                        <TableHead>Bizonylat</TableHead>
+                        <TableHead>Főkönyvi szám</TableHead>
+                        <TableHead>T/K</TableHead>
+                        <TableHead className="text-right">Összeg</TableHead>
+                        <TableHead>Leírás</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedOrphanRows.length === 0 ? (
+                        <TableRow className="hover:bg-transparent">
+                          <TableCell colSpan={6} className="h-48 text-center py-8 text-xs text-muted-foreground">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              {orphansSearch.trim() && (
+                                <div className="rounded-xl bg-muted/50 p-3 mb-1">
+                                  <Search className="h-6 w-6 text-muted-foreground opacity-60" />
+                                </div>
+                              )}
+                              <p className="font-medium text-sm text-foreground">
+                                {orphansSearch.trim()
+                                  ? tt('no_matching_orphans', 'Nincs a keresésnek megfelelő tétel.')
+                                  : tt('no_orphans', 'Nincsenek jelöletlen sorok.')}
+                              </p>
+                              {orphansSearch.trim() && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setOrphansSearch('');
+                                    setOrphansPage(1);
+                                  }}
+                                  className="mt-2 text-xs"
+                                >
+                                  {tt('clear_search', 'Keresés törlése')}
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedOrphanRows.map((o) => (
+                          <TableRow key={o.line_id}>
+                            <TableCell className="whitespace-nowrap text-xs">{formatDateLocale(o.posting_date)}</TableCell>
+                            <TableCell className="font-mono text-xs">{o.document_id || '—'}</TableCell>
+                            <TableCell className="font-mono text-xs">{o.gl_number}</TableCell>
+                            <TableCell>{o.dc_type}</TableCell>
+                            <TableCell className="text-right font-mono tabular-nums">
+                              {formatCurrency(Number(o.amount), 'HUF')}
+                            </TableCell>
+                            <TableCell className="max-w-[260px] truncate text-xs text-muted-foreground">
+                              {o.description || '—'}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="mt-auto border-t border-border/60 bg-card/60 px-4 py-1.5">
+                  <UnifiedPagination
+                    currentPage={safeOrphansPage}
+                    totalPages={totalOrphansPages}
+                    totalItems={orphanRows.length}
+                    pageSize={orphansPageSize}
+                    onPageChange={setOrphansPage}
+                    onPageSizeChange={(newSize) => {
+                      setOrphansPageSize(newSize);
+                      setOrphansPage(1);
+                    }}
+                    pageSizeOptions={[25, 50, 100]}
+                    disableScrollToTop={true}
+                  />
+                </div>
               </div>
             </div>
           )}
