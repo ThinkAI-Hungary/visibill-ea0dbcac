@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TableEmptyState } from '@/components/ui/table-empty-state';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import {
   Dialog,
   DialogContent,
@@ -187,6 +188,14 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [results, setResults] = useState<RepostResult[]>([]);
 
+  // Pagináció az eszközönkénti táblázathoz
+  const [assetsPage, setAssetsPage] = useState(1);
+  const [assetsPageSize, setAssetsPageSize] = useState(50);
+
+  // Pagináció a jelöletlen főkönyvi sorokhoz (orphans)
+  const [orphansPage, setOrphansPage] = useState(1);
+  const [orphansPageSize, setOrphansPageSize] = useState(50);
+
   // Perzisztens DOM: a lekérdezés az első megnyitáskor indul, utána a fül mountolva marad
   if (active && !hasBeenActive) setHasBeenActive(true);
 
@@ -207,6 +216,26 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
     if (!report) return [];
     return rowFilter === 'all' ? report.assets : report.assets.filter(rowHasIssue);
   }, [report, rowFilter]);
+
+  const totalAssetsPages = Math.max(1, Math.ceil(visibleRows.length / assetsPageSize));
+  const safeAssetsPage = Math.min(Math.max(1, assetsPage), totalAssetsPages);
+  const paginatedAssetRows = useMemo(() => {
+    const start = (safeAssetsPage - 1) * assetsPageSize;
+    return visibleRows.slice(start, start + assetsPageSize);
+  }, [visibleRows, safeAssetsPage, assetsPageSize]);
+
+  const orphanRows = useMemo(() => report?.orphans || [], [report]);
+  const totalOrphansPages = Math.max(1, Math.ceil(orphanRows.length / orphansPageSize));
+  const safeOrphansPage = Math.min(Math.max(1, orphansPage), totalOrphansPages);
+  const paginatedOrphanRows = useMemo(() => {
+    const start = (safeOrphansPage - 1) * orphansPageSize;
+    return orphanRows.slice(start, start + orphansPageSize);
+  }, [orphanRows, safeOrphansPage, orphansPageSize]);
+
+  const handleFilterChange = useCallback((f: RowFilter) => {
+    setRowFilter(f);
+    setAssetsPage(1);
+  }, []);
 
   const unpostedRows = useMemo(
     () => (report ? report.assets.filter((r) => report.repostableAssetIds.includes(r.asset_id)) : []),
@@ -453,7 +482,7 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
                     key={f}
                     id={`asset-recon-filter-${f}`}
                     type="button"
-                    onClick={() => setRowFilter(f)}
+                    onClick={() => handleFilterChange(f)}
                     className={`rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150 ${
                       rowFilter === f
                         ? 'bg-background text-foreground shadow-xs'
@@ -465,7 +494,7 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
                 ))}
               </div>
             </div>
-            <div className="overflow-x-auto rounded-xl border border-border/60">
+            <div className="overflow-x-auto rounded-xl border border-border/60 bg-card overflow-hidden">
               <Table id="asset-recon-assets-table">
                 <TableHeader>
                   <TableRow>
@@ -487,11 +516,11 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
                       icon={CheckCircle2}
                       title={tt('no_issues_title', 'Nincs eltérő eszköz')}
                       description={tt('no_issues_desc', 'Minden eszköz bruttó értéke és ÉCS-e egyezik a főkönyvvel.')}
-                      onClearFilters={() => setRowFilter('all')}
+                      onClearFilters={() => handleFilterChange('all')}
                       clearLabel={tt('show_all', 'Minden eszköz mutatása')}
                     />
                   ) : (
-                    visibleRows.map((row) => (
+                    paginatedAssetRows.map((row) => (
                       <TableRow key={row.asset_id} id={`asset-recon-row-${row.asset_id}`}>
                         <TableCell className="font-mono text-xs">{row.inventory_number}</TableCell>
                         <TableCell className="max-w-[220px] truncate">{row.name}</TableCell>
@@ -535,6 +564,23 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
                   )}
                 </TableBody>
               </Table>
+              {visibleRows.length > 0 && (
+                <div className="border-t border-border/60 bg-card/60 px-4 py-1.5">
+                  <UnifiedPagination
+                    currentPage={safeAssetsPage}
+                    totalPages={totalAssetsPages}
+                    totalItems={visibleRows.length}
+                    pageSize={assetsPageSize}
+                    onPageChange={setAssetsPage}
+                    onPageSizeChange={(newSize) => {
+                      setAssetsPageSize(newSize);
+                      setAssetsPage(1);
+                    }}
+                    pageSizeOptions={[25, 50, 100]}
+                    disableScrollToTop={true}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -548,7 +594,7 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
                   'A jelölés (eszköz-azonosító a főkönyvi soron) bevezetése előtt, vagy más módon (pl. vegyes naplóban) könyvelt eszközszámla-tételek. Ellenőrizd, hogy melyik eszközhöz tartoznak.',
                 )}
               </p>
-              <div className="overflow-x-auto rounded-xl border border-border/60">
+              <div className="overflow-x-auto rounded-xl border border-border/60 bg-card overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -561,7 +607,7 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {report.orphans.map((o) => (
+                    {paginatedOrphanRows.map((o) => (
                       <TableRow key={o.line_id}>
                         <TableCell className="whitespace-nowrap text-xs">{formatDateLocale(o.posting_date)}</TableCell>
                         <TableCell className="font-mono text-xs">{o.document_id || '—'}</TableCell>
@@ -577,12 +623,24 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
                     ))}
                   </TableBody>
                 </Table>
+                {orphanRows.length > 0 && (
+                  <div className="border-t border-border/60 bg-card/60 px-4 py-1.5">
+                    <UnifiedPagination
+                      currentPage={safeOrphansPage}
+                      totalPages={totalOrphansPages}
+                      totalItems={orphanRows.length}
+                      pageSize={orphansPageSize}
+                      onPageChange={setOrphansPage}
+                      onPageSizeChange={(newSize) => {
+                        setOrphansPageSize(newSize);
+                        setOrphansPage(1);
+                      }}
+                      pageSizeOptions={[25, 50, 100]}
+                      disableScrollToTop={true}
+                    />
+                  </div>
+                )}
               </div>
-              {report.rootCauses.orphan_gl_lines.count > report.orphans.length && (
-                <p className="text-xs text-muted-foreground">
-                  {`Megjelenítve: ${report.orphans.length} / ${report.rootCauses.orphan_gl_lines.count} sor (a legfrissebbek).`}
-                </p>
-              )}
             </div>
           )}
         </>

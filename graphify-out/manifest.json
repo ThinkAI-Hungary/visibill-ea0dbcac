@@ -315,8 +315,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetListTable.tsx": {
-    "mtime": 1792164118.6217885,
-    "ast_hash": "e573cd49ca97becaa776318bbde76c00",
+    "mtime": 1792165911.970754,
+    "ast_hash": "ba9e95fd32e8b0e787ae4e1f7befc8c0",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DepreciationCards.tsx": {
@@ -1450,8 +1450,8 @@
     "semantic_hash": ""
   },
   "src/pages/FixedAssetsPage.tsx": {
-    "mtime": 1792164433.3510807,
-    "ast_hash": "a386b58a0f57f22b1d2f5c971ec152f7",
+    "mtime": 1792165874.0517905,
+    "ast_hash": "510d45ae2cf2d08a195ba4a71f7208f6",
     "semantic_hash": ""
   },
   "src/pages/GeneralLedgerPage.tsx": {
@@ -3455,8 +3455,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/index.md": {
-    "mtime": 1792130212.3477035,
-    "ast_hash": "60a6d874ebf8f109cbf10aaea663fe75",
+    "mtime": 1792165729.8417428,
+    "ast_hash": "1a71f19cf0b4dfeef1c62e08effe868a",
     "semantic_hash": ""
   },
   "docs/product/information-architecture.md": {
@@ -12815,8 +12815,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DepreciationRunDialog.tsx": {
-    "mtime": 1791583293.0714245,
-    "ast_hash": "d8d8dff059a83e31625723ae6be64a43",
+    "mtime": 1792165028.947417,
+    "ast_hash": "dc245cd6fbf7d0abc3ae346995f28970",
     "semantic_hash": ""
   },
   "src/lib/fixed-assets/depreciationPostingService.ts": {
@@ -12850,8 +12850,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-141-fixed-assets-periodic-depreciation-posting-wizard-ux.md": {
-    "mtime": 1791583291.0933008,
-    "ast_hash": "582d95d430dc9d48c2ea78ca97fc1e22",
+    "mtime": 1792165757.280653,
+    "ast_hash": "9b77c8891313c2438f15486214a0e193",
     "semantic_hash": ""
   },
   "docs/product/decisions/P-142-transaction-multi-invoice-matching-ux.md": {
@@ -16097,8 +16097,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/AssetReconciliationTab.tsx": {
-    "mtime": 1791972991.7997868,
-    "ast_hash": "ac25414e8361a7fff6ea34c5cdebf94a",
+    "mtime": 1792166400.2016752,
+    "ast_hash": "5c8b7d6845ba2aaf04f3fd1d927c7260",
     "semantic_hash": ""
   },
   "src/components/fixed-assets/DevelopmentReserveAlienationAlert.tsx": {
@@ -16287,8 +16287,8 @@
     "semantic_hash": ""
   },
   "src/components/fixed-assets/MultiYearMovementTable.tsx": {
-    "mtime": 1791972991.8023055,
-    "ast_hash": "886999e10b080d9dba58540f42eb9431",
+    "mtime": 1792165519.845173,
+    "ast_hash": "0cdfb8abe90ea69d1b64361d58d986e6",
     "semantic_hash": ""
   },
   "src/hooks/useAssetComponents.ts": {
@@ -16432,8 +16432,8 @@
     "semantic_hash": ""
   },
   "docs/product/decisions/P-186-fixed-assets-phase2-and-phase3-ux.md": {
-    "mtime": 1791972991.723183,
-    "ast_hash": "47da11b04ed62ea17135aba464dea8d5",
+    "mtime": 1792165739.7815442,
+    "ast_hash": "98ffd3e1630fba8ced240f02af06bfca",
     "semantic_hash": ""
   },
   "implementation-plans/handoff-teny-implementation.md": {
@@ -17199,6 +17199,11 @@
   "src/components/fixed-assets/AssetDetailSkeleton.tsx": {
     "mtime": 1792164392.3922634,
     "ast_hash": "3e8711689741ff5c1b47dbd802b79e81",
+    "semantic_hash": ""
+  },
+  "docs/product/decisions/P-196-fixed-assets-ergonomics-pagination-and-skeleton-ux.md": {
+    "mtime": 1792165720.363252,
+    "ast_hash": "56c7e865ef725aab23a9fab7c425bd86",
     "semantic_hash": ""
   }
 }
