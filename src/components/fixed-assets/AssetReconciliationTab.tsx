@@ -807,7 +807,7 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
           if (!open && wizardStep !== 'running') setWizardStep('closed');
         }}
       >
-        <DialogContent className="max-w-xl" id="asset-recon-repost-dialog">
+        <DialogContent className="max-w-lg sm:max-w-xl w-[calc(100vw-2rem)] overflow-hidden" id="asset-recon-repost-dialog">
           <DialogHeader>
             <DialogTitle>{tt('repost', 'Hiányzó tételek pótlása')}</DialogTitle>
             <DialogDescription>
@@ -821,25 +821,33 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
           </DialogHeader>
 
           {wizardStep === 'confirm' && (
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between rounded-lg border border-border/60 px-3 py-2">
+            <div className="space-y-3 text-sm min-w-0">
+              <div className="flex justify-between items-center rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
                 <span className="text-muted-foreground">Érintett eszközök</span>
                 <span className="font-semibold">{unpostedRows.length} db</span>
               </div>
-              <div className="flex justify-between rounded-lg border border-border/60 px-3 py-2">
+              <div className="flex justify-between items-center rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
                 <span className="text-muted-foreground">Összes bekerülési érték</span>
                 <span className="font-mono font-semibold tabular-nums">{formatCurrency(unpostedTotal, 'HUF')}</span>
               </div>
-              <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
-                {unpostedRows.slice(0, 50).map((r) => (
-                  <li key={r.asset_id} className="flex justify-between gap-2">
-                    <span className="truncate">
-                      {r.inventory_number} — {r.name}
-                    </span>
-                    <span className="font-mono tabular-nums">{formatCurrency(r.expected_gross, 'HUF')}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="rounded-lg border border-border/60 bg-muted/10 p-2">
+                <ul className="max-h-48 space-y-1.5 overflow-y-auto text-xs text-muted-foreground pr-1">
+                  {unpostedRows.slice(0, 50).map((r) => (
+                    <li key={r.asset_id} className="flex items-center justify-between gap-3 min-w-0 py-0.5">
+                      <span
+                        className="truncate flex-1 min-w-0 text-foreground/90"
+                        title={`${r.inventory_number} — ${r.name}`}
+                      >
+                        <span className="font-mono text-muted-foreground mr-1.5 font-normal">{r.inventory_number}</span>
+                        {r.name}
+                      </span>
+                      <span className="font-mono tabular-nums font-semibold shrink-0">
+                        {formatCurrency(r.expected_gross, 'HUF')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <p className="text-xs text-muted-foreground">
                 A feladás a könyvelő jogosultságához kötött; az azonos bizonylatszámú tétel nem könyvelődik duplán.
               </p>
@@ -856,24 +864,24 @@ export function AssetReconciliationTab({ active, assets, writable, onOpenAsset }
           )}
 
           {wizardStep === 'done' && (
-            <ul className="max-h-60 space-y-1 overflow-y-auto text-sm" id="asset-recon-repost-results">
+            <ul className="max-h-60 space-y-1.5 overflow-y-auto text-sm min-w-0" id="asset-recon-repost-results">
               {results.map((r) => (
-                <li key={r.assetId} className="flex items-start gap-2">
+                <li key={r.assetId} className="flex items-start gap-2 min-w-0 py-0.5">
                   {r.success ? (
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                   ) : (
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                   )}
-                  <span>
-                    <span className="font-mono text-xs">{r.inventoryNumber}</span>
-                    {r.message && <span className="block text-xs text-muted-foreground">{r.message}</span>}
+                  <span className="min-w-0 flex-1">
+                    <span className="font-mono text-xs font-semibold">{r.inventoryNumber}</span>
+                    {r.message && <span className="block text-xs text-muted-foreground break-words">{r.message}</span>}
                   </span>
                 </li>
               ))}
             </ul>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
             {wizardStep === 'confirm' && (
               <>
                 <Button variant="outline" onClick={() => setWizardStep('closed')}>
