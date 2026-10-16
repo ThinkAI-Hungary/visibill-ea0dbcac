@@ -170,7 +170,7 @@ export function DevelopmentReservesTab() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
         {/* 1. Metrics Cards Skeleton */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Skeleton className="h-24 rounded-xl" />
@@ -192,7 +192,7 @@ export function DevelopmentReservesTab() {
   }
 
   return (
-    <div className="p-6 space-y-6 page-animate">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* 1. Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Reserves */}
