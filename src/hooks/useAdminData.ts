@@ -5,6 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 
 // ══════════════════════════════════════════════
 // 12.3 Audit Log
@@ -42,7 +43,12 @@ export function useAuditLog(filters: AuditLogFilters = {}) {
       if (filters.dateTo) query = query.lte('created_at', filters.dateTo);
 
       const { data, error, count } = await query;
-      if (error) throw error;
+      if (error) {
+        if (isPgrstRangeError(error)) {
+          return { data: [], count: count || 0 };
+        }
+        throw error;
+      }
       return { data: data as any[], count: count || 0 };
     },
   });

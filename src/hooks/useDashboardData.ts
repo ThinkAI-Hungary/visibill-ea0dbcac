@@ -8,6 +8,7 @@ import { getJurisdictionRules } from '@/hooks/useCompanyJurisdiction';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfYear, endOfYear, parseISO, format } from 'date-fns';
 import { reportError } from '@/lib/errorReporter';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 
 // Paginated fetch helper for tables that may exceed the Supabase default 1000 row limit.
 // Keep the query type intentionally loose: Supabase's generated table union can become
@@ -19,7 +20,10 @@ async function fetchAllRows<T>(query: () => any): Promise<T[]> {
 
   while (true) {
     const { data, error } = await (query() as any).range(from, from + PAGE_SIZE - 1);
-    if (error) throw error;
+    if (error) {
+      if (isPgrstRangeError(error)) break;
+      throw error;
+    }
     const page = (data || []) as T[];
     all.push(...page);
     if (page.length < PAGE_SIZE) break;

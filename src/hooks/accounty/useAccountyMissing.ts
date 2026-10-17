@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 import { AccountyMissingItem, AccountyCompanySummary, fetchAllMissingItems, fetchAllMissingItemsFull, invalidateAccountyCache } from './useAccountyHelpers';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -40,7 +41,12 @@ export function useAccountyMissingItems(companyId: string, page = 0, pageSize = 
         .order('item_date', { ascending: false, nullsFirst: false })
         .range(from, to);
 
-      if (error) throw error;
+      if (error) {
+        if (isPgrstRangeError(error)) {
+          return { items: [], totalCount: count || 0 };
+        }
+        throw error;
+      }
 
       const items = (data || []).map((item): AccountyMissingItem => ({
         id: item.id,

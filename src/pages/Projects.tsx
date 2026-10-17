@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -233,7 +234,10 @@ const Projects = () => {
               .not('project_id', 'is', null)
               .range(invFrom, invFrom + PAGE_SIZE - 1);
 
-            if (invoiceError) throw invoiceError;
+            if (invoiceError) {
+              if (isPgrstRangeError(invoiceError)) break;
+              throw invoiceError;
+            }
             directlyLinkedInvoices = directlyLinkedInvoices.concat(batch || []);
             if (!batch || batch.length < PAGE_SIZE) break;
             invFrom += PAGE_SIZE;
@@ -272,7 +276,10 @@ const Projects = () => {
               .or('project_id.not.is.null,project_allocations.not.is.null')
               .range(itemFrom, itemFrom + PAGE_SIZE - 1);
 
-            if (itemsError) throw itemsError;
+            if (itemsError) {
+              if (isPgrstRangeError(itemsError)) break;
+              throw itemsError;
+            }
             lineItemAssignments = lineItemAssignments.concat(batch || []);
             if (!batch || batch.length < PAGE_SIZE) break;
             itemFrom += PAGE_SIZE;

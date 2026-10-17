@@ -170,7 +170,14 @@ export async function reportError(opts: ReportErrorOptions): Promise<void> {
     errMsg.includes('aborterror') ||
     errMsg.includes('load failed') ||
     errDetails.name === 'AbortError' ||
-    (typeof navigator !== 'undefined' && !navigator.onLine);
+    (typeof navigator !== 'undefined' && !navigator.onLine) ||
+    // PostgREST 416 out-of-range pagination errors (PGRST103) during filter/date transitions
+    errMsg.includes('pgrst103') ||
+    errMsg.includes('requested range not satisfiable') ||
+    errDetails.name === 'PGRST103' ||
+    (opts.error as any)?.code === 'PGRST103' ||
+    (opts.error as any)?.status === 416 ||
+    (opts.error as any)?.statusCode === 416;
 
   if (isExcluded) return;
 

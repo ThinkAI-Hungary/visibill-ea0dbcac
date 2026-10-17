@@ -3,6 +3,7 @@ import { useScopedNavigate } from '@/lib/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -84,7 +85,10 @@ const fetchAllInboundInvoices = async (companyId: string, mode: 'payable' | 'mis
       .order('invoice_issue_date', { ascending: false });
 
     const { data, error } = await query.range(from, from + PAGE_SIZE - 1);
-    if (error) throw error;
+    if (error) {
+      if (isPgrstRangeError(error)) break;
+      throw error;
+    }
 
     const page = (data || []) as NavInvoice[];
     all.push(...page);

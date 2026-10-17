@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { exportToFile } from '@/lib/exportUtils';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { reportError } from '@/lib/errorReporter';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 
 export interface Transaction {
   id: string;
@@ -243,7 +244,12 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
       query = query.range(from, to);
 
       const { data, error, count } = await query;
-      if (error) throw error;
+      if (error) {
+        if (isPgrstRangeError(error)) {
+          return { rows: [], totalCount: count ?? 0 };
+        }
+        throw error;
+      }
       return { rows: (data || []) as Transaction[], totalCount: count ?? 0 };
     },
     enabled: !!user && !!selectedCompany?.id && !!dateFromStr && !!dateToStr,
@@ -289,10 +295,19 @@ export function useTransactionData(overrideDateFrom?: Date, overrideDateTo?: Dat
     filters.amountMin || filters.amountMax || filters.currency !== 'all' ||
     filters.type !== 'all' || filters.matchStatus !== 'all';
 
-  // Reset page on filter change
+  // Reset page on filter change or company change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.search, dateFrom, dateTo, filters.currency, filters.type, filters.matchStatus]);
+  }, [filters.search, dateFrom, dateTo, filters.currency, filters.type, filters.matchStatus, selectedCompany?.id]);
+
+  // Auto-clamp page if currentPage is beyond totalPages due to filtering or item deletion
+  useEffect(() => {
+    if (totalCount > 0 && currentPage > totalPages) {
+      setCurrentPage(Math.max(1, totalPages));
+    } else if (totalCount === 0 && currentPage > 1) {
+      setCurrentPage(1);
+    }
+  }, [totalCount, totalPages, currentPage]);
 
   // Sync
   const handleSync = useCallback(async () => {

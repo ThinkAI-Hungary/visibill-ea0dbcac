@@ -5,6 +5,7 @@ import { Loader2, ChevronDown, ChevronRight, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isValidUUID } from '@/lib/validationUtils';
 import { reportError } from '@/lib/errorReporter';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { formatThousands } from '@/features/vat/types';
 import {
@@ -414,7 +415,9 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
           .range(navPage * pageSize, (navPage + 1) * pageSize - 1);
 
         if (error) {
-          reportError({ type: 'db_query', component: 'VatRowDrillDown', action: 'error', message: 'drill error:', error: error });
+          if (!isPgrstRangeError(error)) {
+            reportError({ type: 'db_query', component: 'VatRowDrillDown', action: 'error', message: 'drill error:', error: error });
+          }
           break;
         }
         if (!chunk || chunk.length === 0) break;
@@ -442,7 +445,13 @@ export function VatRowDrillDown({ rowNumber, sourceVatCodes, companyId, year, mo
           .in('invoice_direction', directions)
           .range(appPage * pageSize, (appPage + 1) * pageSize - 1);
 
-        if (appErr || !chunk || chunk.length === 0) break;
+        if (appErr) {
+          if (!isPgrstRangeError(appErr)) {
+            reportError({ type: 'db_query', component: 'VatRowDrillDown', action: 'error', message: 'app drill error:', error: appErr });
+          }
+          break;
+        }
+        if (!chunk || chunk.length === 0) break;
         uploadedInvs.push(...chunk);
         if (chunk.length < pageSize) break;
         appPage++;

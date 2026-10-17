@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useDateRange } from "@/contexts/DateRangeContext";
 import { supabase } from "@/integrations/supabase/client";
+import { isPgrstRangeError } from "@/lib/supabaseErrors";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -99,7 +100,10 @@ export default function Analytics() {
           .gte("invoice_issue_date", yearStart)
           .lte("invoice_issue_date", yearEnd)
           .range(from, from + PAGE_SIZE - 1);
-        if (error) throw error;
+        if (error) {
+          if (isPgrstRangeError(error)) break;
+          throw error;
+        }
         const page = (data || []) as (RawInvoice & { invoice_number?: string | null })[];
         allNavInvoices.push(...page);
         if (page.length < PAGE_SIZE) break;
