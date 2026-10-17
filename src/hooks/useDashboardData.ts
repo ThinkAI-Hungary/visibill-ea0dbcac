@@ -506,6 +506,7 @@ export function useDashboardData() {
     },
     enabled: !!user && !!companyId,
     placeholderData: keepPreviousData,
+    staleTime: 60000,
   });
 
   // ── FX Monthly Summary (havi összesítés) ──
