@@ -1,8 +1,20 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import '@testing-library/jest-dom';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render as rtlRender, screen, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UploadChartOfAccountsModal } from '../UploadChartOfAccountsModal';
+
+const render = (ui: React.ReactElement) => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return rtlRender(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+};
 
 beforeAll(() => {
   global.ResizeObserver = class {

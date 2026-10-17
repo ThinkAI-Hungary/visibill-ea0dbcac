@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { BookOpen, Loader2, Landmark, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MNB_CURRENCIES } from '@/lib/journalUtils';
@@ -19,6 +19,10 @@ export interface CreatedJournalPayload {
   currency: string;
   connected_gl_account: string | null;
   bank_account_number?: string | null;
+  company_bank_account_id?: string | null;
+  petty_cash_register_id?: string | null;
+  sub_type?: string | null;
+  default_contra_gl_number?: string | null;
 }
 
 export interface CreateJournalModalProps {
@@ -29,10 +33,14 @@ export interface CreateJournalModalProps {
   editJournalId?: string | null;
   initialCode?: string;
   initialType?: string;
+  initialSubType?: string;
   initialName?: string;
   initialCurrency?: string;
   initialGlAccount?: string;
+  initialContraGlAccount?: string;
   initialBankAccountNumber?: string;
+  initialCompanyBankAccountId?: string;
+  initialPettyCashRegisterId?: string;
   initialIsActive?: boolean;
   existingJournals?: Array<{ id: string; code: string; type?: string; name: string }>;
   glAccounts?: Array<{ id: string; gl_number: string; short_name: string; currency?: string | null }>;
@@ -44,12 +52,12 @@ export interface CreateJournalModalProps {
 export const JOURNAL_TYPES = [
   { value: 'BANK', label: 'Banki napló (BANK)' },
   { value: 'PETTY_CASH', label: 'Házipénztár napló (PETTY_CASH)' },
-  { value: 'MIXED', label: 'Vegyes napló (MIXED)' },
-  { value: 'CUSTOMER', label: 'Vevő napló (CUSTOMER)' },
-  { value: 'SUPPLIER', label: 'Szállító napló (SUPPLIER)' },
-  { value: 'OPENING', label: 'Nyitó napló (OPENING)' },
-  { value: 'CLOSING', label: 'Záró napló (CLOSING)' },
-  { value: 'SYSTEM', label: 'Rendszer feladási napló (SYSTEM)' },
+  { value: 'CUSTOMER', label: 'Vevő napló (CUSTOMER - VF / VD)' },
+  { value: 'SUPPLIER', label: 'Szállító napló (SUPPLIER - SZF / SZD)' },
+  { value: 'MIXED', label: 'Vegyes napló (MIXED - VE)' },
+  { value: 'SYSTEM', label: 'Rendszer feladási napló (SYSTEM - TE / ARF / ELH / BER)' },
+  { value: 'OPENING', label: 'Nyitó napló (OPENING - NY)' },
+  { value: 'CLOSING', label: 'Záró napló (CLOSING - Z)' },
 ];
 
 export function suggestNextJournalCode(type: string, existingJournals: Array<{ code: string }>): string {
@@ -79,14 +87,9 @@ export function suggestNextJournalCode(type: string, existingJournals: Array<{ c
     return `P${max + 1}`;
   }
 
-  if (type === 'MIXED') {
-    if (!codes.has('VE')) return 'VE';
-    let idx = 2;
-    while (codes.has(`VE${idx}`)) idx++;
-    return `VE${idx}`;
-  }
-
   if (type === 'CUSTOMER') {
+    if (!codes.has('VF')) return 'VF';
+    if (!codes.has('VD')) return 'VD';
     if (!codes.has('V')) return 'V';
     let idx = 2;
     while (codes.has(`V${idx}`)) idx++;
@@ -94,10 +97,39 @@ export function suggestNextJournalCode(type: string, existingJournals: Array<{ c
   }
 
   if (type === 'SUPPLIER') {
+    if (!codes.has('SZF')) return 'SZF';
+    if (!codes.has('SZD')) return 'SZD';
     if (!codes.has('SZ')) return 'SZ';
     let idx = 2;
     while (codes.has(`SZ${idx}`)) idx++;
     return `SZ${idx}`;
+  }
+
+  if (type === 'SYSTEM') {
+    if (!codes.has('TE')) return 'TE';
+    if (!codes.has('ARF')) return 'ARF';
+    if (!codes.has('ELH')) return 'ELH';
+    if (!codes.has('BER')) return 'BER';
+    let idx = 1;
+    while (codes.has(`SYS${idx}`)) idx++;
+    return `SYS${idx}`;
+  }
+
+  if (type === 'MIXED') {
+    if (!codes.has('VE')) return 'VE';
+    let idx = 1;
+    while (codes.has(`V${idx}`)) idx++;
+    return `V${idx}`;
+  }
+
+  if (type === 'OPENING') {
+    if (!codes.has('NY')) return 'NY';
+    return 'NY2';
+  }
+
+  if (type === 'CLOSING') {
+    if (!codes.has('Z')) return 'Z';
+    return 'ZAR';
   }
 
   return 'UJ';
@@ -111,10 +143,14 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
   editJournalId = null,
   initialCode = '',
   initialType = 'BANK',
+  initialSubType = '',
   initialName = '',
   initialCurrency = 'HUF',
   initialGlAccount = '',
+  initialContraGlAccount = '',
   initialBankAccountNumber = '',
+  initialCompanyBankAccountId = '',
+  initialPettyCashRegisterId = '',
   initialIsActive = true,
   existingJournals = [],
   glAccounts = [],
@@ -126,40 +162,126 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [type, setType] = useState<string>(initialType);
-  const [code, setCode] = useState<string>(initialCode);
-  const [name, setName] = useState<string>(initialName);
-  const [currency, setCurrency] = useState<string>(initialCurrency);
-  const [connectedGlAccount, setConnectedGlAccount] = useState<string>(initialGlAccount);
-  const [bankAccountNumber, setBankAccountNumber] = useState<string>(initialBankAccountNumber);
-  const [isActive, setIsActive] = useState<boolean>(initialIsActive);
+  const currentType = initialType || 'BANK';
+  const [type, setType] = useState<string>(currentType);
+  const [subType, setSubType] = useState<string>(initialSubType || '');
+  const [code, setCode] = useState<string>(() => isEditMode ? (initialCode || '') : suggestNextJournalCode(currentType, existingJournals));
+  const [name, setName] = useState<string>(initialName || '');
+  const [currency, setCurrency] = useState<string>(initialCurrency || 'HUF');
+  const [connectedGlAccount, setConnectedGlAccount] = useState<string>(initialGlAccount || '');
+  const [defaultContraGlNumber, setDefaultContraGlNumber] = useState<string>(initialContraGlAccount || initialGlAccount || '');
+  const [bankAccountNumber, setBankAccountNumber] = useState<string>(initialBankAccountNumber || '');
+  const [companyBankAccountId, setCompanyBankAccountId] = useState<string>(initialCompanyBankAccountId || '');
+  const [pettyCashRegisterId, setPettyCashRegisterId] = useState<string>(initialPettyCashRegisterId || '');
+  const [isActive, setIsActive] = useState<boolean>(initialIsActive ?? true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Initialize or reset when modal opens
-  useEffect(() => {
-    if (open) {
-      const currentType = initialType || 'BANK';
-      setType(currentType);
-      if (isEditMode) {
-        setCode(initialCode || '');
-      } else {
-        const suggested = suggestNextJournalCode(currentType, existingJournals);
-        setCode(suggested);
-      }
-      setName(initialName || '');
-      setCurrency(initialCurrency || 'HUF');
-      setConnectedGlAccount(initialGlAccount || '');
-      setBankAccountNumber(initialBankAccountNumber || '');
-      setIsActive(initialIsActive ?? true);
-    }
-  }, [open, isEditMode, initialCode, initialType, initialName, initialCurrency, initialGlAccount, initialBankAccountNumber, initialIsActive, existingJournals]);
+  // Fetch company bank accounts for easy linking
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ['company_bank_accounts', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('company_bank_accounts')
+        .select('id, bank_name, account_number, currency, journal_id, gl_account_id')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; bank_name?: string | null; account_number: string; currency?: string | null; journal_id?: string | null; gl_account_id?: string | null }>;
+    },
+    enabled: open && !!companyId,
+  });
 
-  // When type changes, automatically suggest new code if creating and user hasn't customized
+  // Fetch petty cash registers for easy linking
+  const { data: cashRegisters = [] } = useQuery({
+    queryKey: ['petty_cash_registers', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('petty_cash_registers')
+        .select('id, name, currencies, gl_account')
+        .eq('company_id', companyId)
+        .order('name');
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; name: string; currencies?: string[] | null; gl_account?: string | null }>;
+    },
+    enabled: open && !!companyId,
+  });
+
+  // When type changes, automatically suggest new code and intelligent defaults
   const handleTypeChange = (newType: string) => {
     setType(newType);
     if (!isEditMode) {
       const suggested = suggestNextJournalCode(newType, existingJournals);
       setCode(suggested);
+
+      if (newType === 'CUSTOMER') {
+        if (suggested === 'VF') {
+          setName('Belföldi vevő számlák (Ft)');
+          setConnectedGlAccount('3111');
+          setDefaultContraGlNumber('3111');
+          setCurrency('HUF');
+          setSubType('DOMESTIC_CUSTOMER');
+        } else if (suggested === 'VD') {
+          setName('Devizás vevő számlák');
+          setConnectedGlAccount('316');
+          setDefaultContraGlNumber('316');
+          setCurrency('EUR');
+          setSubType('FOREIGN_CUSTOMER');
+        }
+      } else if (newType === 'SUPPLIER') {
+        if (suggested === 'SZF') {
+          setName('Belföldi szállító számlák (Ft)');
+          setConnectedGlAccount('4541');
+          setDefaultContraGlNumber('4541');
+          setCurrency('HUF');
+          setSubType('DOMESTIC_SUPPLIER');
+        } else if (suggested === 'SZD') {
+          setName('Devizás szállító számlák');
+          setConnectedGlAccount('4542');
+          setDefaultContraGlNumber('4542');
+          setCurrency('EUR');
+          setSubType('FOREIGN_SUPPLIER');
+        }
+      } else if (newType === 'SYSTEM') {
+        if (suggested === 'TE') {
+          setName('Tárgyi eszköz napló');
+          setConnectedGlAccount('571');
+          setDefaultContraGlNumber('571');
+          setSubType('ASSET');
+        } else if (suggested === 'ARF') {
+          setName('Árfolyamkülönbözet napló');
+          setConnectedGlAccount('876');
+          setDefaultContraGlNumber('876');
+          setSubType('FX');
+        } else if (suggested === 'ELH') {
+          setName('Időbeli elhatárolások naplója');
+          setConnectedGlAccount('391');
+          setDefaultContraGlNumber('391');
+          setSubType('ACCRUAL');
+        } else if (suggested === 'BER') {
+          setName('Bérfeladási napló');
+          setConnectedGlAccount('471');
+          setDefaultContraGlNumber('471');
+          setSubType('PAYROLL');
+        }
+      } else if (newType === 'BANK') {
+        setConnectedGlAccount('3841');
+        setDefaultContraGlNumber('3841');
+        setCurrency('HUF');
+        setSubType('BANK_HUF');
+      } else if (newType === 'PETTY_CASH') {
+        setConnectedGlAccount('3811');
+        setDefaultContraGlNumber('3811');
+        setCurrency('HUF');
+        setSubType('PETTY_CASH_HUF');
+      } else if (newType === 'OPENING') {
+        setConnectedGlAccount('491');
+        setDefaultContraGlNumber('491');
+        setSubType('OPENING');
+      } else if (newType === 'CLOSING') {
+        setConnectedGlAccount('492');
+        setDefaultContraGlNumber('492');
+        setSubType('CLOSING');
+      }
     }
   };
 
@@ -188,6 +310,7 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
     const trimmedName = name.trim();
     const trimmedCurrency = currency.trim().toUpperCase() || 'HUF';
     const trimmedBankAccount = bankAccountNumber.trim();
+    const effectiveContraGl = defaultContraGlNumber.trim() || connectedGlAccount.trim() || null;
 
     if (!trimmedCode) {
       toast({
@@ -226,13 +349,17 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
     setIsSubmitting(true);
     try {
       if (isEditMode && editJournalId) {
-        const payload = {
+        const payload: any = {
           code: trimmedCode,
           name: trimmedName,
           type: type,
           currency: trimmedCurrency,
           connected_gl_account: connectedGlAccount.trim() || null,
+          default_contra_gl_number: effectiveContraGl,
           bank_account_number: type === 'BANK' && trimmedBankAccount ? trimmedBankAccount : null,
+          company_bank_account_id: type === 'BANK' && companyBankAccountId ? companyBankAccountId : null,
+          petty_cash_register_id: type === 'PETTY_CASH' && pettyCashRegisterId ? pettyCashRegisterId : null,
+          sub_type: subType || null,
           is_active: isActive,
         };
 
@@ -241,7 +368,7 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
           .update(payload)
           .eq('id', editJournalId)
           .eq('company_id', companyId)
-          .select('id, code, name, type, currency, connected_gl_account, bank_account_number')
+          .select('id, code, name, type, currency, connected_gl_account, bank_account_number, company_bank_account_id, petty_cash_register_id, sub_type, default_contra_gl_number')
           .single();
 
         if (error) throw error;
@@ -261,21 +388,25 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
 
         onOpenChange(false);
       } else {
-        const payload = {
+        const payload: any = {
           company_id: companyId,
           code: trimmedCode,
           name: trimmedName,
           type: type,
           currency: trimmedCurrency,
           connected_gl_account: connectedGlAccount.trim() || null,
+          default_contra_gl_number: effectiveContraGl,
           bank_account_number: type === 'BANK' && trimmedBankAccount ? trimmedBankAccount : null,
+          company_bank_account_id: type === 'BANK' && companyBankAccountId ? companyBankAccountId : null,
+          petty_cash_register_id: type === 'PETTY_CASH' && pettyCashRegisterId ? pettyCashRegisterId : null,
+          sub_type: subType || null,
           is_active: true,
         };
 
         const { data, error } = await supabase
           .from('acc_journals')
           .insert(payload)
-          .select('id, code, name, type, currency, connected_gl_account, bank_account_number')
+          .select('id, code, name, type, currency, connected_gl_account, bank_account_number, company_bank_account_id, petty_cash_register_id, sub_type, default_contra_gl_number')
           .single();
 
         if (error) throw error;
@@ -415,25 +546,130 @@ export const CreateJournalModal: React.FC<CreateJournalModalProps> = ({
               </div>
             </div>
 
-            {/* Bank account number input when journal is of type BANK */}
+            {/* Bank account selector or number input when journal is of type BANK */}
             {type === 'BANK' && (
-              <div className="space-y-1.5 pt-1 border-t border-border/50">
+              <div className="space-y-2 pt-2 border-t border-border/50">
                 <Label htmlFor="journal-bank-account" className="flex items-center gap-1.5 text-xs font-semibold">
                   <Landmark className="w-3.5 h-3.5 text-primary" />
-                  <span>{t('accounting:journals.create_modal.field_bank_account', 'Bankszámlaszám (szinkron a cég bankszámláival)')}</span>
+                  <span>{t('accounting:journals.create_modal.field_bank_account', 'Kapcsolt Céges Bankszámla')}</span>
                 </Label>
-                <Input
-                  id="journal-bank-account"
-                  placeholder="pl. 11773016-12345678-00000000 vagy IBAN"
-                  value={bankAccountNumber}
-                  onChange={e => setBankAccountNumber(e.target.value)}
-                  className="font-mono text-xs"
-                />
+
+                {bankAccounts.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <Select
+                      value={companyBankAccountId || 'custom'}
+                      onValueChange={(val) => {
+                        if (val === 'custom') {
+                          setCompanyBankAccountId('');
+                        } else {
+                          setCompanyBankAccountId(val);
+                          const matched = bankAccounts.find(b => b.id === val);
+                          if (matched) {
+                            setBankAccountNumber(matched.account_number);
+                            if (matched.currency) setCurrency(matched.currency);
+                            if (!name) setName(`${matched.bank_name || 'Bank'} ${matched.currency || 'HUF'}`);
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="text-xs">
+                        <SelectValue placeholder="Válassz meglévő bankszámlát..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="custom">Egyéni számlaszám megadása...</SelectItem>
+                        {bankAccounts.map(b => (
+                          <SelectItem key={b.id} value={b.id} className="text-xs font-mono">
+                            {b.bank_name ? `${b.bank_name} - ` : ''}{b.account_number} ({b.currency || 'HUF'})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Input
+                      id="journal-bank-account"
+                      placeholder="pl. 11773016-12345678-00000000 vagy IBAN"
+                      value={bankAccountNumber}
+                      onChange={e => {
+                        setBankAccountNumber(e.target.value);
+                        setCompanyBankAccountId('');
+                      }}
+                      className="font-mono text-xs mt-1"
+                    />
+                  </div>
+                ) : (
+                  <Input
+                    id="journal-bank-account"
+                    placeholder="pl. 11773016-12345678-00000000 vagy IBAN"
+                    value={bankAccountNumber}
+                    onChange={e => setBankAccountNumber(e.target.value)}
+                    className="font-mono text-xs"
+                  />
+                )}
+
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  {t('accounting:journals.create_modal.bank_account_desc', 'A megadott számlaszám automatikusan szinkronizálódik a cég Bankszámlák beállításaiba, és a beolvasott bankkivonatok alapján azonosítja a naplót.')}
+                  {t('accounting:journals.create_modal.bank_account_desc', 'A számlaszám és az IBAN alapján a bankkivonat (CAMT.053, MT940, CSV) és a PSD2 banki szinkron automatikusan ebbe a naplóba kontíroz.')}
                 </p>
               </div>
             )}
+
+            {/* Petty cash register selector when journal is of type PETTY_CASH */}
+            {type === 'PETTY_CASH' && cashRegisters.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-border/50">
+                <Label className="flex items-center gap-1.5 text-xs font-semibold">
+                  <BookOpen className="w-3.5 h-3.5 text-primary" />
+                  <span>Kapcsolt Házipénztár / Kassza</span>
+                </Label>
+                <Select
+                  value={pettyCashRegisterId || 'none'}
+                  onValueChange={(val) => {
+                    if (val === 'none') {
+                      setPettyCashRegisterId('');
+                    } else {
+                      setPettyCashRegisterId(val);
+                      const matched = cashRegisters.find(r => r.id === val);
+                      if (matched) {
+                        if (!name) setName(`Pénztár - ${matched.name}`);
+                        if (matched.gl_account) setConnectedGlAccount(matched.gl_account);
+                        if (matched.currencies?.[0]) setCurrency(matched.currencies[0]);
+                      }
+                    }
+                  }}
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="Válassz kasszát az összerendeléshez..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nincs konkrét kasszához kötve</SelectItem>
+                    {cashRegisters.map(r => (
+                      <SelectItem key={r.id} value={r.id} className="text-xs">
+                        {r.name} {r.gl_account ? `(Főkönyv: ${r.gl_account})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  A házipénztár bizonylatok lezárásakor a rendszer automatikusan a kapcsolt kassza naplójába generálja a könyvelési tételt.
+                </p>
+              </div>
+            )}
+
+            {/* Smart Contra GL info badge */}
+            <div className="rounded-md bg-muted/60 p-2.5 border border-border/60 text-[11px] text-muted-foreground space-y-1">
+              <div className="font-semibold text-foreground flex items-center justify-between">
+                <span>Automatikus könyvelési irányítás:</span>
+                <span className="font-mono text-primary font-bold">{code || '—'}</span>
+              </div>
+              <p>
+                {type === 'CUSTOMER' && (code === 'VF' ? 'Belföldi adószámmal rendelkező partnerek vevőszámlái a 3111 követelés számlára.' : code === 'VD' ? 'Külföldi / EU partnerek vevőszámlái a 316 devizás követelés számlára.' : 'Vevőszámlák automatikus vagy kézi könyvelése.')}
+                {type === 'SUPPLIER' && (code === 'SZF' ? 'Belföldi adószámmal rendelkező szállítói számlák a 4541 kötelezettség számlára.' : code === 'SZD' ? 'Külföldi / EU szállítói számlák a 4542 devizás kötelezettség számlára.' : 'Szállítói számlák automatikus vagy kézi könyvelése.')}
+                {type === 'BANK' && 'Bankkivonatok és banki tranzakciók kontírozása a kijelölt 384x számlára.'}
+                {type === 'PETTY_CASH' && 'Készpénzes bizonylatok és pénztárjelentések a 381x/382x számlára.'}
+                {type === 'SYSTEM' && 'Zárt gépi rendszernapló: ide kizárólag automatikus számítások (értékcsökkenés, árfolyam, elhatárolás, bér) könyvelnek.'}
+                {type === 'MIXED' && 'Vegyes gazdasági események és kézi bizonylatok könyvelése.'}
+                {type === 'OPENING' && 'Nyitó tételek és előző évi mérleg/főkönyv nyitás a 491-es számlával.'}
+                {type === 'CLOSING' && 'Év végi rendező és mérlegzáró tételek a 492-es számlával.'}
+              </p>
+            </div>
           </div>
 
           <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-2 pt-2">

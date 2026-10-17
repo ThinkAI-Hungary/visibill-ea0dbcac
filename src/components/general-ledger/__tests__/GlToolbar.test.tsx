@@ -32,7 +32,8 @@ describe('GlToolbar', () => {
   it('renders presets selector and main action buttons', () => {
     render(<GlToolbar {...defaultProps} />);
 
-    expect(screen.getByText('Aktív Számlatükör:')).toBeInTheDocument();
+    expect(screen.getByText('Számlatükör')).toBeInTheDocument();
+    expect(screen.getByText('Alapértelmezett számlatükör')).toBeInTheDocument();
     expect(screen.getByText('Vegyes bizonylat')).toBeInTheDocument();
     expect(screen.getByText('Új főkönyvi szám')).toBeInTheDocument();
     expect(screen.getByText('Audit XML')).toBeInTheDocument();

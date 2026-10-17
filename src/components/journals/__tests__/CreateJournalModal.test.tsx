@@ -32,6 +32,7 @@ vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({
     invalidateQueries: mockInvalidateQueries,
   }),
+  useQuery: () => ({ data: [] }),
 }));
 
 describe('suggestNextJournalCode', () => {
@@ -58,8 +59,12 @@ describe('suggestNextJournalCode', () => {
     expect(suggestNextJournalCode('MIXED', [])).toBe('VE');
   });
 
-  it('suggests VE2 when VE exists', () => {
-    expect(suggestNextJournalCode('MIXED', [{ code: 'VE' }])).toBe('VE2');
+  it('suggests V1 when VE exists', () => {
+    expect(suggestNextJournalCode('MIXED', [{ code: 'VE' }])).toBe('V1');
+  });
+
+  it('suggests V2 when VE and V1 exist', () => {
+    expect(suggestNextJournalCode('MIXED', [{ code: 'VE' }, { code: 'V1' }])).toBe('V2');
   });
 });
 
@@ -156,6 +161,10 @@ describe('CreateJournalModal Component', () => {
         currency: 'HUF',
         connected_gl_account: null,
         bank_account_number: null,
+        company_bank_account_id: null,
+        petty_cash_register_id: null,
+        sub_type: null,
+        default_contra_gl_number: null,
         is_active: true,
       });
       expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['acc-journals', 'test-company-123'] });

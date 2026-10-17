@@ -42,12 +42,9 @@ import {
   Copy,
   Settings2,
   Sliders,
-  ChevronLeft,
   ChevronRight,
   ChevronDown,
   Layers,
-  LayoutGrid,
-  ChevronsLeftRight,
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
@@ -63,6 +60,8 @@ import PeriodClosingSettings from '@/components/journals/PeriodClosingSettings';
 import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import AuditTrailDialog from '@/components/journals/AuditTrailDialog';
 import { ManageJournalsModal } from '@/components/journals/ManageJournalsModal';
+import { CreateJournalModal } from '@/components/journals/CreateJournalModal';
+import { GroupedJournalSelector } from '@/components/journals/GroupedJournalSelector';
 import { JournalFilterModal } from '@/components/journals/JournalFilterModal';
 import {
   JournalFilterCriteria,
@@ -482,47 +481,11 @@ export default function JournalsPage() {
   const [selectedTargetGlId, setSelectedTargetGlId] = useState<string>('');
   const [bulkGlSearch, setBulkGlSearch] = useState<string>('');
 
-  // Manage Journals dialog state
+  // Manage Journals & Create Journal dialog state
   const [manageJournalsOpen, setManageJournalsOpen] = useState(false);
+  const [isCreateJournalModalOpen, setIsCreateJournalModalOpen] = useState(false);
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
-
-  // Wrap vs Scroll horizontal layout for journal cards
-  const [isWrapLayout, setIsWrapLayout] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('visibill_journals_wrap_layout');
-      if (saved !== null) return saved === 'true';
-    } catch (e) {}
-    return true; // Default to true so all journals are visible without clipping
-  });
-
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const checkScroll = useCallback(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 6);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 6);
-  }, []);
-
-  useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el || isWrapLayout) return;
-    checkScroll();
-    el.addEventListener('scroll', checkScroll, { passive: true });
-    window.addEventListener('resize', checkScroll);
-    return () => {
-      el.removeEventListener('scroll', checkScroll);
-      window.removeEventListener('resize', checkScroll);
-    };
-  }, [isWrapLayout, checkScroll]);
-
-  const scrollByAmount = (delta: number) => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: delta, behavior: 'smooth' });
-    }
-  };
+  const [partnerOriginFilter, setPartnerOriginFilter] = useState<'ALL' | 'DOMESTIC' | 'FOREIGN'>('ALL');
 
   // Lookup GL accounts for preset
   const { data: glAccounts = [] } = useQuery({
@@ -627,32 +590,7 @@ export default function JournalsPage() {
     }
   }, [journals, loadingJournals, selectedCompany, seedMutation]);
 
-  // EB-0257: Journal Category Filter State
-  const [activeCategoryKey, setActiveCategoryKey] = useState<JournalCategoryKey>('ALL');
 
-  const categoryCounts = React.useMemo(() => {
-    const counts: Record<string, number> = {
-      ALL: journals.length,
-      OPENING: 0,
-      BANK: 0,
-      PETTY_CASH: 0,
-      INVOICE: 0,
-      MIXED: 0,
-      CLOSING: 0,
-    };
-    journals.forEach((j: any) => {
-      const cat = getJournalCategory(j);
-      if (counts[cat] !== undefined) {
-        counts[cat]++;
-      }
-    });
-    return counts;
-  }, [journals]);
-
-  const visibleJournals = React.useMemo(() => {
-    if (activeCategoryKey === 'ALL') return journals;
-    return journals.filter((j: any) => getJournalCategory(j) === activeCategoryKey);
-  }, [journals, activeCategoryKey]);
 
   // Fetch MNB daily exchange rates for currency conversion and tooltips
   const { data: dailyExchangeRates = [] } = useQuery({
@@ -1338,10 +1276,32 @@ export default function JournalsPage() {
     setCurrentPage(1);
   }, [sortColumn, sortDirection]);
 
-  // Filtered entries using RLB filterJournalEntries
+  // Filtered entries using RLB filterJournalEntries and Partner Origin Filter
   const filteredEntries = React.useMemo(() => {
-    return filterJournalEntries(entries, filterCriteria, search, stornoFilter);
-  }, [entries, filterCriteria, search, stornoFilter]);
+    let result = filterJournalEntries(entries, filterCriteria, search, stornoFilter);
+    if (partnerOriginFilter === 'DOMESTIC') {
+      result = result.filter((e: any) => {
+        const curr = e.currency || 'HUF';
+        const partnerTax = (e.partner?.tax_number || e.partner_tax_number || '').trim().toUpperCase();
+        const partnerCountry = (e.partner?.country || '').trim().toUpperCase();
+        const isForeign = curr !== 'HUF' || 
+          (partnerCountry && partnerCountry !== 'HU' && partnerCountry !== 'MAGYARORSZÁG' && partnerCountry !== 'HUNGARY') || 
+          (partnerTax && !partnerTax.startsWith('HU') && !/^\d{8}/.test(partnerTax));
+        return !isForeign;
+      });
+    } else if (partnerOriginFilter === 'FOREIGN') {
+      result = result.filter((e: any) => {
+        const curr = e.currency || 'HUF';
+        const partnerTax = (e.partner?.tax_number || e.partner_tax_number || '').trim().toUpperCase();
+        const partnerCountry = (e.partner?.country || '').trim().toUpperCase();
+        const isForeign = curr !== 'HUF' || 
+          (partnerCountry && partnerCountry !== 'HU' && partnerCountry !== 'MAGYARORSZÁG' && partnerCountry !== 'HUNGARY') || 
+          (partnerTax && !partnerTax.startsWith('HU') && !/^\d{8}/.test(partnerTax));
+        return isForeign;
+      });
+    }
+    return result;
+  }, [entries, filterCriteria, search, stornoFilter, partnerOriginFilter]);
 
   // Sorted entries based on selected table header
   const sortedEntries = React.useMemo(() => {
@@ -1904,6 +1864,14 @@ export default function JournalsPage() {
                 </TooltipContent>
               )}
             </Tooltip>
+            <Button
+              size="sm"
+              className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm"
+              onClick={() => setIsCreateJournalModalOpen(true)}
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t('accounting:journals.create_new', 'Új Napló Létrehozása')}</span>
+            </Button>
             <Tooltip delayDuration={200}>
               <TooltipTrigger asChild>
                 <span>
@@ -1930,277 +1898,25 @@ export default function JournalsPage() {
         }
       />
 
-      {/* EB-0257: Category Filter Tabs & Quick Jump Dropdown */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none max-w-full">
-          <Button
-            type="button"
-            variant={activeCategoryKey === 'ALL' ? 'default' : 'outline'}
-            size="sm"
-            className="h-7 text-xs px-2.5 rounded-full"
-            onClick={() => setActiveCategoryKey('ALL')}
-          >
-            Összes napló
-            <span className="ml-1.5 px-1.5 py-0.2 text-[10px] rounded-full bg-background/20 font-mono">
-              {journals.length}
-            </span>
-          </Button>
-
-          {JOURNAL_CATEGORIES.filter(c => c.key !== 'ALL').map((cat) => {
-            const count = categoryCounts[cat.key] || 0;
-            return (
-              <Button
-                key={cat.key}
-                type="button"
-                variant={activeCategoryKey === cat.key ? 'default' : 'outline'}
-                size="sm"
-                className="h-7 text-xs px-2.5 rounded-full"
-                onClick={() => {
-                  setActiveCategoryKey(cat.key);
-                  if (selectedJournalId !== 'munkalista') {
-                    const inCat = journals.find((j: any) => getJournalCategory(j) === cat.key);
-                    if (inCat && getJournalCategory(selectedJournal || {}) !== cat.key) {
-                      setSelectedJournalId(inCat.id);
-                    }
-                  }
-                }}
-              >
-                <span>{cat.label}</span>
-                {cat.codeRange && (
-                  <span className="ml-1 text-[10px] opacity-75 font-mono">({cat.codeRange})</span>
-                )}
-                <span className="ml-1.5 px-1.5 py-0.2 text-[10px] rounded-full bg-muted font-mono">
-                  {count}
-                </span>
-              </Button>
-            );
-          })}
-        </div>
-
-        {/* Quick Jump Dropdown & Layout Mode Toggle */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Tooltip delayDuration={200}>
-            <TooltipTrigger asChild>
-              <Button
-                variant={isWrapLayout ? "secondary" : "outline"}
-                size="sm"
-                className="h-8 px-2.5 gap-1.5 text-xs font-medium border-border"
-                onClick={() => {
-                  setIsWrapLayout(prev => {
-                    const next = !prev;
-                    try { localStorage.setItem('visibill_journals_wrap_layout', String(next)); } catch (e) {}
-                    return next;
-                  });
-                }}
-              >
-                {isWrapLayout ? (
-                  <>
-                    <LayoutGrid className="w-3.5 h-3.5 text-primary" />
-                    <span className="hidden sm:inline">Többsoros nézet</span>
-                  </>
-                ) : (
-                  <>
-                    <ChevronsLeftRight className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="hidden sm:inline">Görgethető nézet</span>
-                  </>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs shadow-md">
-              {isWrapLayout ? 'Váltás vízszintesen görgethető egy soros nézetre' : 'Váltás többsoros elrendezésre (hogy minden napló egyszerre látszódjon)'}
-            </TooltipContent>
-          </Tooltip>
-
-          <Select 
-            value={selectedJournalId} 
-            onValueChange={(val) => {
-              setSelectedJournalId(val);
-              if (val !== 'munkalista') {
-                const target = journals.find((j: any) => j.id === val);
-                if (target) {
-                  const cat = getJournalCategory(target);
-                  setActiveCategoryKey(cat);
-                }
-              }
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs w-[240px]">
-              <SelectValue placeholder="Gyors naplóválasztó..." />
-            </SelectTrigger>
-            <SelectContent className="max-h-[360px] z-[1200]">
-              <SelectItem value="munkalista" className="font-semibold text-primary">
-                ⚠️ Munkalista ({munkalistaCount} piszkozat)
-              </SelectItem>
-              {JOURNAL_CATEGORIES.filter(c => c.key !== 'ALL').map((cat) => {
-                const catJournals = journals.filter((j: any) => getJournalCategory(j) === cat.key);
-                if (catJournals.length === 0) return null;
-                return (
-                  <div key={cat.key} className="py-1">
-                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/40">
-                      {cat.label} ({cat.codeRange})
-                    </div>
-                    {catJournals.map((j: any) => (
-                      <SelectItem key={j.id} value={j.id} className="text-xs pl-4 font-mono">
-                        <span className="font-bold mr-1.5">{j.code}</span>
-                        <span>{getLocalizedJournalName(j, j.name, t)}</span>
-                        <span className="text-[10px] text-muted-foreground ml-2">({j.currency})</span>
-                        {isJournalSystemLocked(j) && (
-                          <span className="ml-1 text-[9px] text-amber-600 dark:text-amber-400">🔒</span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </div>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Journals Selector (Wrap or Scroll with Navigation Controls) */}
-      <div className="relative w-full group">
-        {!isWrapLayout && canScrollLeft && (
-          <button
-            type="button"
-            onClick={() => scrollByAmount(-280)}
-            className="absolute -left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-background/95 hover:bg-background border border-border shadow-md flex items-center justify-center text-foreground transition-all hover:scale-110"
-            aria-label="Görgetés balra"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-        )}
-
-        <div
-          ref={scrollContainerRef}
-          onWheel={(e) => {
-            if (!isWrapLayout && e.deltaY !== 0) {
-              e.currentTarget.scrollLeft += e.deltaY;
+      {/* EB-0257 / NAPLÓ EXTENDED: Grouped Hierarchical Journal Selector */}
+      <GroupedJournalSelector
+        journals={journals}
+        selectedJournalId={selectedJournalId}
+        onSelectJournal={(id) => {
+          setSelectedJournalId(id);
+          if (id !== 'munkalista') {
+            const target = journals.find((j: any) => j.id === id);
+            if (target?.code === 'NY' && nyEntriesCount === 0) {
+              setOpeningWizardOpen(true);
             }
-          }}
-          className={cn(
-            "w-full flex items-center gap-1.5 select-none transition-all",
-            isWrapLayout
-              ? "flex-wrap py-1.5 min-h-[3.5rem]"
-              : "overflow-x-auto scrollbar-thin scrollbar-thumb-border hover:scrollbar-thumb-muted-foreground/40 scroll-smooth py-1 min-h-[3.5rem]"
-          )}
-        >
-          <button
-            onClick={() => setSelectedJournalId('munkalista')}
-            className={cn(
-              "flex items-center gap-3 pl-3 pr-4 h-12 rounded-lg text-xs transition-all border shrink-0 justify-between text-left",
-              selectedJournalId === 'munkalista'
-                ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
-            )}
-          >
-            <div className="flex items-center gap-1.5 min-w-0 shrink-0">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <div className="flex flex-col leading-tight min-w-0 pr-1 shrink-0">
-                <span className={cn("font-bold text-[11px] leading-tight whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground" : "text-foreground")}>
-                  {t('accounting:journals.worklist', 'Munkalista')}
-                </span>
-                <span className={cn("text-[8px] leading-none whitespace-nowrap", selectedJournalId === 'munkalista' ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                  {t('accounting:journals.drafts_sub', 'Drafts')}
-                </span>
-              </div>
-            </div>
-            <Badge variant={selectedJournalId === 'munkalista' ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal mr-1">
-              {t('accounting:journals.pending_badge', {
-                count: munkalistaCount,
-                defaultValue: `${munkalistaCount} db jóváhagyásra vár`,
-              })}
-            </Badge>
-          </button>
-
-          {loadingJournals ? (
-            <div className="flex items-center pl-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
-          ) : (
-            visibleJournals.map((j: any) => {
-              const locked = isJournalSystemLocked(j);
-              return (
-                <Tooltip key={j.id} delayDuration={300}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => {
-                        setSelectedJournalId(j.id);
-                        if (j.code === 'NY' && nyEntriesCount === 0) {
-                          setOpeningWizardOpen(true);
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center gap-2 pl-3 pr-3 h-12 rounded-lg text-xs transition-all border shrink-0 text-left justify-between min-w-[120px]",
-                        selectedJournalId === j.id
-                          ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
-                          : "bg-card hover:bg-muted/60 text-muted-foreground border-border"
-                      )}
-                    >
-                      <div className="flex flex-col min-w-0 pr-1 leading-tight flex-1">
-                        <div className="flex items-center gap-1">
-                          <span className={cn("font-bold text-[11px] leading-tight truncate", selectedJournalId === j.id ? "text-primary-foreground" : "text-foreground")}>
-                            {j.code}
-                          </span>
-                          {locked && (
-                            <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
-                          )}
-                        </div>
-                        <span className={cn("text-[8px] leading-none truncate max-w-[100px]", selectedJournalId === j.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                          {getLocalizedJournalName(j, j.name, t)}
-                        </span>
-                      </div>
-                      <Badge variant={selectedJournalId === j.id ? 'secondary' : 'outline'} className="px-1.5 py-0.5 text-[8px] shrink-0 font-normal">
-                        {j.currency}
-                      </Badge>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
-                    <p className="font-semibold text-popover-foreground">
-                      {j.code} - {getLocalizedJournalName(j, j.name, t)}
-                      {locked && " 🔒 (Zárt gépi napló)"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {t('accounting:journals.currency_label', { currency: j.currency, defaultValue: `Pénznem: ${j.currency}` })}
-                    </p>
-                    {j.bank_account_number && (
-                      <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                        Bankszámla: {j.bank_account_number}
-                      </p>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })
-          )}
-
-          {/* Manage Journals Button */}
-          <Tooltip delayDuration={300}>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setManageJournalsOpen(true)}
-                className="flex items-center gap-1.5 px-3 h-12 rounded-lg text-xs transition-all border border-dashed border-border hover:border-primary/50 hover:bg-muted/50 text-muted-foreground hover:text-foreground shrink-0"
-                title="Naplótörzs kezelése / Új napló"
-              >
-                <Settings2 className="w-3.5 h-3.5 text-primary" />
-                <span className="font-semibold text-[11px] whitespace-nowrap">Naplók kezelése</span>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="p-2 text-xs shadow-md">
-              <p className="font-semibold text-popover-foreground">Könyvelési Naplótörzs Kezelése</p>
-              <p className="text-[10px] text-muted-foreground">Új napló felvétele, meglévő naplók átnevezése és testreszabása.</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        {!isWrapLayout && canScrollRight && (
-          <button
-            type="button"
-            onClick={() => scrollByAmount(280)}
-            className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-background/95 hover:bg-background border border-border shadow-md flex items-center justify-center text-foreground transition-all hover:scale-110"
-            aria-label="Görgetés jobbra"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        )}
-      </div>
+          }
+        }}
+        munkalistaCount={munkalistaCount}
+        loadingJournals={loadingJournals}
+        onOpenCreateJournal={() => setIsCreateJournalModalOpen(true)}
+        onOpenManageJournals={() => setManageJournalsOpen(true)}
+        t={t}
+      />
 
       <div className="grid grid-cols-12 gap-4 items-start">
         {/* Full-width list table */}
@@ -2279,6 +1995,50 @@ export default function JournalsPage() {
                   }}
                   className="pl-9 bg-card border-border shadow-none"
                 />
+              </div>
+
+              {/* Partner Origin Quick Filter (Belföldi vs Külföldi) */}
+              <div className="inline-flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 text-xs shrink-0">
+                <button
+                  type="button"
+                  onClick={() => { setPartnerOriginFilter('ALL'); setCurrentPage(1); }}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md font-medium transition-all text-xs",
+                    partnerOriginFilter === 'ALL'
+                      ? "bg-background text-foreground shadow-2xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Minden
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setPartnerOriginFilter('DOMESTIC'); setCurrentPage(1); }}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md font-medium transition-all text-xs flex items-center gap-1",
+                    partnerOriginFilter === 'DOMESTIC'
+                      ? "bg-background text-foreground shadow-2xs font-semibold text-emerald-600 dark:text-emerald-400"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  title="Csak belföldi számlák és partnerek (HUF, 3111 / 4541)"
+                >
+                  <span>🇭🇺</span>
+                  <span>Csak belföldi</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setPartnerOriginFilter('FOREIGN'); setCurrentPage(1); }}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md font-medium transition-all text-xs flex items-center gap-1",
+                    partnerOriginFilter === 'FOREIGN'
+                      ? "bg-background text-foreground shadow-2xs font-semibold text-blue-600 dark:text-blue-400"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  title="Csak külföldi és devizás számlák és partnerek (EUR/USD, 316 / 4542)"
+                >
+                  <span>🌍</span>
+                  <span>Csak külföldi</span>
+                </button>
               </div>
 
               {/* RLB Szűkítés Button */}
@@ -4275,6 +4035,19 @@ export default function JournalsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Journal Modal (NAPLÓ EXTENDED) */}
+      <CreateJournalModal
+        open={isCreateJournalModalOpen}
+        onOpenChange={setIsCreateJournalModalOpen}
+        companyId={selectedCompany?.id || ''}
+        existingJournals={journals}
+        glAccounts={glAccounts}
+        onJournalCreated={(newJournal) => {
+          refetchJournals?.();
+          setSelectedJournalId(newJournal.id);
+        }}
+      />
 
       {/* Manage Journals Modal */}
       <ManageJournalsModal

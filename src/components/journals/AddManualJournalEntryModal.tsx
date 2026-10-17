@@ -639,15 +639,25 @@ export default function AddManualJournalEntryModal({
       return;
     }
 
-    // EB-0255 & EB-0257: Partnerkényszeres folyószámla ellenőrzés TÉTELENKÉNT
+    // 6. Pont: Kötelező Partner Blokkoló Szabály (requires_partner)
+    // 7. Pont: Kötelező Projekt Blokkoló Szabály (requires_project)
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (line.gl_account_id) {
         const gl = glAccounts.find((g: any) => g.id === line.gl_account_id);
-        if (gl && gl.subledger_type === 'partner' && (!line.partner_id || line.partner_id === 'none')) {
+        if (gl && (gl.subledger_type === 'partner' || (gl as any).requires_partner) && (!line.partner_id || line.partner_id === 'none')) {
           toast({
             title: "Partner megadása kötelező",
-            description: `A(z) ${i + 1}. tételsorban megadott (${gl?.gl_number || ''} — ${gl?.short_name || ''}) főkönyvi számlánál partnerkényszeres folyószámla van beállítva. Kérjük, válasszon partnert a tételhez!`,
+            description: `A(z) ${i + 1}. tételsorban megadott (${gl?.gl_number || ''} — ${gl?.short_name || ''}) főkönyvi számlánál a partner megadása kötelező. Kérjük, válasszon partnert a tételhez!`,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        if (gl && (gl as any).requires_project && (!line.project_id || line.project_id === 'none')) {
+          toast({
+            title: "Projekt megadása kötelező",
+            description: `A(z) ${i + 1}. tételsorban megadott (${gl?.gl_number || ''} — ${gl?.short_name || ''}) főkönyvi számlánál kötelező projektkód van előírva. Kérjük, rendeljen hozzá projektet a tételhez!`,
             variant: "destructive"
           });
           return;
@@ -932,7 +942,8 @@ export default function AddManualJournalEntryModal({
                   <tbody className="divide-y divide-border/20">
                     {lines.map((line, index) => {
                       const lineGl = glAccounts.find((g: any) => g.id === line.gl_account_id);
-                      const isPartnerRequired = lineGl?.subledger_type === 'partner';
+                      const isPartnerRequired = Boolean(lineGl?.subledger_type === 'partner' || (lineGl as any)?.requires_partner);
+                      const isProjectRequired = Boolean((lineGl as any)?.requires_project);
                       return (
                         <tr key={index} className="hover:bg-muted/10">
                           {/* GL Account Select */}
@@ -1115,8 +1126,14 @@ export default function AddManualJournalEntryModal({
                               value={line.project_id || 'none'}
                               onValueChange={v => handleUpdateLine(index, 'project_id', v === 'none' ? null : v)}
                             >
-                              <SelectTrigger id={`project-trigger-${index}`} className="h-8 text-xs w-full">
-                                <SelectValue placeholder={t('accounting:dialogs.manual_journal.no_project')} />
+                              <SelectTrigger 
+                                id={`project-trigger-${index}`} 
+                                className={cn(
+                                  "h-8 text-xs w-full",
+                                  isProjectRequired && (!line.project_id || line.project_id === 'none') && "border-amber-500/80 bg-amber-500/5 text-amber-900 dark:text-amber-200"
+                                )}
+                              >
+                                <SelectValue placeholder={isProjectRequired ? "Projekt (Kötelező)*" : t('accounting:dialogs.manual_journal.no_project')} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">{t('accounting:dialogs.manual_journal.no_project')}</SelectItem>

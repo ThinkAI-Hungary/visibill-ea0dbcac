@@ -17,6 +17,7 @@ const mockRpc = vi.fn();
 const mockFrom = vi.fn();
 
 vi.mock('@/integrations/supabase/client', () => ({
+  SUPABASE_URL: 'https://qhvcdqkqpgpdxogqqvyr.supabase.co',
   supabase: {
     auth: {
       getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'usr-123' } } }),
@@ -24,6 +25,12 @@ vi.mock('@/integrations/supabase/client', () => ({
     rpc: (...args: any[]) => mockRpc(...args),
     from: (...args: any[]) => mockFrom(...args),
   },
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'usr-123', email: 'test@example.com' },
+  }),
 }));
 
 vi.mock('@/contexts/CompanyContext', () => ({
@@ -34,6 +41,9 @@ vi.mock('@/contexts/CompanyContext', () => ({
 
 vi.mock('@/contexts/DateRangeContext', () => ({
   useDateRange: () => ({
+    dateRange: { from: new Date('2026-01-01'), to: new Date('2026-12-31') },
+  }),
+  useOptionalDateRange: () => ({
     dateRange: { from: new Date('2026-01-01'), to: new Date('2026-12-31') },
   }),
 }));
@@ -133,14 +143,18 @@ describe('JournalsPage - Unpost and Storno Workflow', () => {
       </QueryClientProvider>
     );
 
-    // Wait for journals list to load, then click the "V" journal tab
+    // Wait for journals list to load, then open Számlák dropdown and click Vevő
     await waitFor(() => {
-      expect(screen.getByText(/Vevő/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Számlák/i })).toBeInTheDocument();
+    });
+    fireEvent.pointerDown(screen.getByRole('button', { name: /Számlák/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('menuitem', { name: /Vevő/i })).toBeInTheDocument();
     });
 
-    const vTab = screen.getByText(/Vevő/i).closest('button');
-    expect(vTab).toBeInTheDocument();
-    fireEvent.click(vTab!);
+    const vTab = screen.getByRole('menuitem', { name: /Vevő/i });
+    fireEvent.click(vTab);
 
     // Wait for the entry to load in Vevő napló
     await waitFor(() => {
@@ -232,12 +246,18 @@ describe('JournalsPage - Unpost and Storno Workflow', () => {
       </QueryClientProvider>
     );
 
+    // Open Számlák dropdown and select Vevő
     await waitFor(() => {
-      expect(screen.getByText(/Vevő/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Számlák/i })).toBeInTheDocument();
+    });
+    fireEvent.pointerDown(screen.getByRole('button', { name: /Számlák/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('menuitem', { name: /Vevő/i })).toBeInTheDocument();
     });
 
-    const vTab = screen.getByText(/Vevő/i).closest('button');
-    fireEvent.click(vTab!);
+    const vTab = screen.getByRole('menuitem', { name: /Vevő/i });
+    fireEvent.click(vTab);
 
     await waitFor(() => {
       expect(screen.getByText('VBV-2026-27')).toBeInTheDocument();
@@ -323,12 +343,18 @@ describe('JournalsPage - Unpost and Storno Workflow', () => {
       </QueryClientProvider>
     );
 
+    // Open Számlák dropdown and select Vevő
     await waitFor(() => {
-      expect(screen.getByText(/Vevő/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Számlák/i })).toBeInTheDocument();
+    });
+    fireEvent.pointerDown(screen.getByRole('button', { name: /Számlák/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('menuitem', { name: /Vevő/i })).toBeInTheDocument();
     });
 
-    const vTab = screen.getByText(/Vevő/i).closest('button');
-    fireEvent.click(vTab!);
+    const vTab = screen.getByRole('menuitem', { name: /Vevő/i });
+    fireEvent.click(vTab);
 
     await waitFor(() => {
       expect(screen.getByText('VBV-2026-27')).toBeInTheDocument();

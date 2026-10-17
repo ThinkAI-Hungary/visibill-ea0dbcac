@@ -13,15 +13,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Search, Download, FileText, Printer, RefreshCw, ChevronLeft, ChevronRight, 
-  ChevronsLeft, ChevronsRight, Filter 
+  ChevronsLeft, ChevronsRight, Filter, Edit2, Link2, CheckCircle2, Circle, Loader2 
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { formatNumberLocale } from '@/lib/locale/formatters';
 import { generateGlAccountCardPdf, GlAccountCardPdfData } from '@/lib/ledgerCardPdfs';
 import { GlDateBasis, GlPostingStatus } from '@/lib/glData';
 import { useTranslation } from 'react-i18next';
 import { getLocalizedJournalName } from '@/lib/journalUtils';
 import { getLocalizedGlAccountName } from '@/lib/glUtils';
+import { EditGlAccountModal, EditableGlAccount } from './EditGlAccountModal';
 import * as XLSX from 'xlsx';
 
 interface GlAccountCardViewProps {
@@ -52,6 +53,10 @@ export function GlAccountCardView({
   const [includeOpening, setIncludeOpening] = useState<boolean>(true);
   const [journalFilter, setJournalFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [matchFilter, setMatchFilter] = useState<'all' | 'open' | 'matched'>('all');
+  const [editAccountModalOpen, setEditAccountModalOpen] = useState<boolean>(false);
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
+  const [isMatching, setIsMatching] = useState<boolean>(false);
 
   // ── Pagination State ──
   const [pageSize, setPageSize] = useState<number | 'all'>(50);
@@ -60,7 +65,8 @@ export function GlAccountCardView({
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedGlNumber, journalFilter, searchTerm, pageSize, dateFrom, dateTo, dateBasis, postingStatus]);
+    setSelectedRowIds(new Set());
+  }, [selectedGlNumber, journalFilter, searchTerm, matchFilter, pageSize, dateFrom, dateTo, dateBasis, postingStatus]);
 
   // ── Query G/L accounts for dropdown (Optimized to combine preset_id, company_id & active ledger accounts) ──
   const { data: glAccounts = [] } = useQuery({
@@ -69,7 +75,23 @@ export function GlAccountCardView({
       if (!companyId && !presetId) return [];
 
       // 1. Fetch from gl_accounts by preset_id or company_id
-      let query = supabase.from('gl_accounts').select('id, gl_number, short_name, currency, is_multicurrency');
+      let query = supabase.from('gl_accounts').select(`
+        id, 
+        gl_number, 
+        short_name, 
+        description,
+        account_type,
+        subledger_type,
+        is_open_item_managed,
+        is_multicurrency,
+        currency,
+        parent_id,
+        requires_partner,
+        requires_project,
+        requires_cost_center,
+        is_reconcilable,
+        is_monthly_fx_reval
+      `);
       if (presetId && companyId) {
         query = query.or(`preset_id.eq.${presetId},company_id.eq.${companyId}`);
       } else if (presetId) {
@@ -80,15 +102,12 @@ export function GlAccountCardView({
 
       const { data: presetAccs, error } = await query.order('gl_number', { ascending: true }).limit(2000);
       
-      const accMap = new Map<string, { id: string; gl_number: string; short_name: string; currency?: string | null; is_multicurrency?: boolean }>();
-      (presetAccs || []).forEach(a => {
+      const accMap = new Map<string, EditableGlAccount>();
+      (presetAccs || []).forEach((a: any) => {
         const cleanNum = a.gl_number.replace(/\.$/, '');
         accMap.set(cleanNum, { 
-          id: a.id, 
+          ...a,
           gl_number: cleanNum, 
-          short_name: a.short_name,
-          currency: a.currency || null,
-          is_multicurrency: a.is_multicurrency || false,
         });
       });
 
@@ -103,6 +122,12 @@ export function GlAccountCardView({
     staleTime: 5 * 60 * 1000,
     enabled: !!companyId || !!presetId,
   });
+
+  const currentAccount = useMemo(() => {
+    if (!glAccounts.length) return null;
+    const clean = selectedGlNumber.replace(/\.$/, '');
+    return glAccounts.find(g => g.gl_number === clean || g.gl_number.startsWith(clean)) || null;
+  }, [selectedGlNumber, glAccounts]);
 
   // Update selectedGlName when selectedGlNumber matches
   useEffect(() => {
@@ -397,25 +422,104 @@ export function GlAccountCardView({
     });
   };
 
-  // Filtered items based on local controls (Journal, Search)
+  // Filtered items based on local controls (Journal, Search, Match status)
   const filteredItems = useMemo(() => {
     if (!cardData?.items) return [];
     return cardData.items.filter((item: any) => {
       if (item.document_id === 'NYITÓ') return true;
+      if (matchFilter === 'open' && item.is_matched) return false;
+      if (matchFilter === 'matched' && !item.is_matched) return false;
       if (journalFilter !== 'all' && item.journal_code !== journalFilter) return false;
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         const docId = (item.document_id || '').toLowerCase();
+        const origNo = (item.original_invoice_number || '').toLowerCase();
         const desc = (item.description || '').toLowerCase();
         const part = (item.partner_name || '').toLowerCase();
         const contra = (item.contra_gl_number || '').toLowerCase();
-        if (!docId.includes(term) && !desc.includes(term) && !part.includes(term) && !contra.includes(term)) {
+        if (!docId.includes(term) && !origNo.includes(term) && !desc.includes(term) && !part.includes(term) && !contra.includes(term)) {
           return false;
         }
       }
       return true;
     });
-  }, [cardData?.items, journalFilter, searchTerm]);
+  }, [cardData?.items, matchFilter, journalFilter, searchTerm]);
+
+  const handleToggleRow = (lineId: string) => {
+    setSelectedRowIds(prev => {
+      const next = new Set(prev);
+      if (next.has(lineId)) {
+        next.delete(lineId);
+      } else {
+        next.add(lineId);
+      }
+      return next;
+    });
+  };
+
+  const selectedRows = useMemo(() => {
+    return (cardData?.items || []).filter((i: any) => selectedRowIds.has(i.line_id));
+  }, [cardData?.items, selectedRowIds]);
+
+  // Ellenőrzés: pontosan 2 tétel, 1 Tartozik és 1 Követel
+  const canMatch = selectedRows.length === 2 && 
+    selectedRows.some((r: any) => (r.debit_amount || 0) > 0) &&
+    selectedRows.some((r: any) => (r.credit_amount || 0) > 0);
+
+  const handleMatchSelected = async () => {
+    if (!canMatch || !companyId) return;
+    const tRow = selectedRows.find((r: any) => (r.debit_amount || 0) > 0);
+    const kRow = selectedRows.find((r: any) => (r.credit_amount || 0) > 0);
+    if (!tRow || !kRow) return;
+
+    // Ha 31-es számla (vevő): Tartozik a számla, Követel a bank/pénztár jóváírás
+    // Ha 45-ös számla (szállító): Követel a számla, Tartozik a kifizetés
+    const isVevo = selectedGlNumber.startsWith('31');
+    const invRow = isVevo ? tRow : kRow;
+    const settleRow = isVevo ? kRow : tRow;
+
+    const amountHuf = Math.min(
+      invRow.debit_amount || invRow.credit_amount,
+      settleRow.debit_amount || settleRow.credit_amount
+    );
+    const amountFx = (invRow.foreign_amount && settleRow.foreign_amount)
+      ? Math.min(Number(invRow.foreign_amount), Number(settleRow.foreign_amount))
+      : 0;
+
+    setIsMatching(true);
+    try {
+      const { data, error } = await supabase.rpc('settle_open_items_with_fx', {
+        p_company_id: companyId,
+        p_invoice_line_id: invRow.line_id,
+        p_settling_line_id: settleRow.line_id,
+        p_amount_huf: amountHuf,
+        p_amount_foreign: amountFx,
+        p_match_type: 'MANUAL',
+      });
+
+      if (error) throw error;
+
+      setSelectedRowIds(new Set());
+      await queryClient.invalidateQueries({ queryKey: ['glAccountCardItems'] });
+      await refetch();
+
+      const fxDiff = (data as any)?.fx_diff_huf;
+      const fxMsg = fxDiff ? ` (Árfolyamkülönbözet: ${Number(fxDiff).toLocaleString('hu-HU')} Ft)` : '';
+      toast({
+        title: 'Sikeres párosítás!',
+        description: `A kiválasztott tételek sikeresen összepárosítva (${amountHuf.toLocaleString('hu-HU')} Ft értékben).${fxMsg}`,
+        className: 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Párosítási hiba',
+        description: err.message || 'Nem sikerült a tételek összerendelése.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsMatching(false);
+    }
+  };
 
   // ── Pagination Math ──
   const totalItems = filteredItems.length;
@@ -531,6 +635,18 @@ export function GlAccountCardView({
                 placeholder={t('accounting:general_ledger.account_card.gl_input_placeholder')}
                 title={t('accounting:general_ledger.account_card.gl_input_title')}
               />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditAccountModalOpen(true)}
+                disabled={!currentAccount}
+                className="h-9 px-2.5 text-xs gap-1.5 shrink-0"
+                title="Főkönyvi számla tulajdonságainak módosítása"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-primary" />
+                <span className="hidden sm:inline">Szerkesztés</span>
+              </Button>
             </div>
           </div>
 
@@ -568,17 +684,69 @@ export function GlAccountCardView({
           </div>
         </div>
 
-        {/* Second Row: Checkbox & Actions */}
+        {/* Second Row: Checkbox, 3-Way Match Filter & Actions */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/50">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="opening-check"
-              checked={includeOpening}
-              onCheckedChange={(v) => setIncludeOpening(!!v)}
-            />
-            <Label htmlFor="opening-check" className="text-xs cursor-pointer select-none">
-              {t('accounting:general_ledger.account_card.show_opening')}
-            </Label>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="opening-check"
+                checked={includeOpening}
+                onCheckedChange={(v) => setIncludeOpening(!!v)}
+              />
+              <Label htmlFor="opening-check" className="text-xs cursor-pointer select-none">
+                {t('accounting:general_ledger.account_card.show_opening')}
+              </Label>
+            </div>
+
+            {/* 3-állású párosítási szűrő */}
+            <div className="flex items-center rounded-lg border bg-muted/40 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setMatchFilter('open')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1",
+                  matchFilter === 'open' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Circle className="w-3 h-3 text-amber-500 fill-amber-500/20" />
+                <span>Csak Nyitott</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMatchFilter('matched')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1",
+                  matchFilter === 'matched' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                <span>Csak Rendezett</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMatchFilter('all')}
+                className={cn(
+                  "px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1",
+                  matchFilter === 'all' ? "bg-background text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <FileText className="w-3 h-3 text-primary" />
+                <span>Teljes Nézet</span>
+              </button>
+            </div>
+
+            {/* Tételpárosítás gomb ha van kijelölés */}
+            {selectedRows.length > 0 && (
+              <Button
+                size="sm"
+                onClick={handleMatchSelected}
+                disabled={!canMatch || isMatching}
+                className="h-8 text-xs gap-1.5 bg-primary text-primary-foreground shadow-xs animate-in fade-in"
+              >
+                {isMatching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+                <span>🔗 Tételek Összepárosítása ({selectedRows.length}/2)</span>
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -762,8 +930,11 @@ export function GlAccountCardView({
             <table className="w-full text-xs text-left">
               <thead className="bg-muted/50 border-b text-muted-foreground font-semibold">
                 <tr>
+                  <th className="py-2.5 px-2 w-8 text-center"></th>
                   <th className="py-2.5 px-3">{t('accounting:general_ledger.account_card.col_date')}</th>
                   <th className="py-2.5 px-3">{t('accounting:general_ledger.account_card.col_doc_id')}</th>
+                  <th className="py-2.5 px-3">Eredeti számlaszám</th>
+                  <th className="py-2.5 px-3 text-center">Státusz</th>
                   <th className="py-2.5 px-3 text-center">{t('accounting:general_ledger.account_card.col_journal')}</th>
                   <th className="py-2.5 px-3">{t('accounting:general_ledger.account_card.col_contra_gl')}</th>
                   <th className="py-2.5 px-3">{t('accounting:general_ledger.account_card.col_partner')}</th>
@@ -776,16 +947,41 @@ export function GlAccountCardView({
               <tbody className="divide-y divide-border/60">
                 {paginatedItems.map((item: any, idx: number) => {
                   const isOpening = item.document_id === 'NYITÓ';
+                  const isChecked = selectedRowIds.has(item.line_id);
                   return (
                     <tr
                       key={item.line_id || idx}
-                      className={`hover:bg-muted/40 transition-colors ${isOpening ? 'bg-muted/30 font-semibold' : ''}`}
+                      className={`hover:bg-muted/40 transition-colors ${isChecked ? 'bg-primary/10' : ''} ${isOpening ? 'bg-muted/30 font-semibold' : ''}`}
                     >
+                      <td className="py-2 px-2 text-center">
+                        {!isOpening && item.line_id && (
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={() => handleToggleRow(item.line_id)}
+                          />
+                        )}
+                      </td>
                       <td className="py-2 px-3 font-mono text-muted-foreground">
                         {item.posting_date ? item.posting_date.replace(/-/g, '.') : '-'}
                       </td>
                       <td className="py-2 px-3 font-mono font-bold text-foreground">
                         {item.document_id}
+                      </td>
+                      <td className="py-2 px-3 font-mono text-xs text-foreground/80">
+                        {item.original_invoice_number || '-'}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        {isOpening ? (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">Nyitó</Badge>
+                        ) : item.is_matched ? (
+                          <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
+                            Rendezett
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-amber-600 dark:text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
+                            Nyitott
+                          </Badge>
+                        )}
                       </td>
                       <td className="py-2 px-3 text-center">
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
@@ -836,6 +1032,18 @@ export function GlAccountCardView({
           )}
         </CardContent>
       </Card>
+
+      <EditGlAccountModal
+        open={editAccountModalOpen}
+        onOpenChange={setEditAccountModalOpen}
+        account={currentAccount as EditableGlAccount}
+        companyId={companyId}
+        presetId={presetId}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['glAccountsListCombined'] });
+          queryClient.invalidateQueries({ queryKey: ['glAccountCardItems'] });
+        }}
+      />
     </div>
   );
 }

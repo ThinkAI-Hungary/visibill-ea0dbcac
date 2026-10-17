@@ -2778,7 +2778,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                 <Edit2 className="w-3.5 h-3.5" />
               </Button>
             </CustomTooltip>
-          ) : !row.isItem && isCustomPreset ? (
+          ) : !row.isItem && row.id !== 'UNCLASSIFIED' ? (
             <CustomTooltip content={t('accounting:general_ledger.tooltips.edit_account', 'Számlaszám és beállítások szerkesztése')} side="left">
               <Button
                 variant="ghost" 
@@ -2789,7 +2789,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   handleOpenEditAccount(row);
                 }}
               >
-                <Settings2 className="w-3.5 h-3.5" />
+                <Edit2 className="w-3.5 h-3.5" />
               </Button>
             </CustomTooltip>
           ) : (
@@ -2798,7 +2798,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         )}
       </div>
     );
-  }, [t, isCustomPreset, handleOpenEditAccount]);
+  }, [t, handleOpenEditAccount]);
 
   if (isDataLoading) {
     return (

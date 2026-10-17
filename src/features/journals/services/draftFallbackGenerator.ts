@@ -56,7 +56,7 @@ export async function generateDraftsFallback(
   const glSuppId = glSupp1Id || glAccounts?.[0]?.id;
 
   const glCust1Id = glAccounts?.find(g => glClean(g) === '3111')?.id || glAccounts?.find(g => glClean(g).startsWith('311'))?.id;
-  const glCust2Id = glAccounts?.find(g => glClean(g) === '3112')?.id || glCust1Id;
+  const glCust2Id = glAccounts?.find(g => glClean(g) === '316')?.id || glAccounts?.find(g => glClean(g) === '3112')?.id || glCust1Id;
   const glCust3Id = glAccounts?.find(g => glClean(g) === '3113')?.id || glCust1Id;
   const glCustId = glCust1Id || glAccounts?.[0]?.id;
 
@@ -247,10 +247,22 @@ export async function generateDraftsFallback(
       const invoiceNum = parentNav?.invoice_number || parentInv?.bizonylatsorszam;
       docId = invoiceNum || `INV-${item.item_id.substring(0, 8).toUpperCase()}`;
 
+      const vatDetail = vatDetailsMap.get(item.item_id);
+      const partnerTaxNum = (vatDetail?.partner_tax_number || parentNav?.supplier_tax_number || parentNav?.customer_tax_number || parentInv?.elado_vat_id || parentInv?.vevo_vat_id || '').trim().toUpperCase();
+      const isForeignInvoice = currency !== 'HUF' || (partnerTaxNum ? (!partnerTaxNum.startsWith('HU') && !/^\d{8}/.test(partnerTaxNum)) : false);
+
       if (item.amount >= 0) {
-        journalId = journals?.find(j => j.code === 'V')?.id || journalId;
+        if (isForeignInvoice) {
+          journalId = journals?.find(j => j.code === 'VD')?.id || journals?.find(j => j.code === 'V')?.id || journalId;
+        } else {
+          journalId = journals?.find(j => j.code === 'VF')?.id || journals?.find(j => j.code === 'V')?.id || journalId;
+        }
       } else {
-        journalId = journals?.find(j => j.code === 'SZ')?.id || journalId;
+        if (isForeignInvoice) {
+          journalId = journals?.find(j => j.code === 'SZD')?.id || journals?.find(j => j.code === 'SZ')?.id || journalId;
+        } else {
+          journalId = journals?.find(j => j.code === 'SZF')?.id || journals?.find(j => j.code === 'SZ')?.id || journalId;
+        }
       }
     }
 
@@ -635,7 +647,7 @@ export async function generatePettyCashDrafts(
 ): Promise<number> {
   const { data: journals } = await supabase
     .from('acc_journals')
-    .select('id, code, name, type, connected_gl_account, currency')
+    .select('id, code, name, type, connected_gl_account, currency, petty_cash_register_id')
     .eq('company_id', companyId);
 
   const p1Journal = journals?.find(j => j.code === 'P1' || j.type === 'PETTY_CASH' || j.type === 'CASH') || journals?.[0];
@@ -647,24 +659,24 @@ export async function generatePettyCashDrafts(
     .select('id, gl_number')
     .or(`preset_id.eq.${activePresetId},company_id.eq.${companyId}`);
 
-  let glCashId: string | undefined;
+  let defaultGlCashId: string | undefined;
   if (p1Journal?.connected_gl_account) {
-    glCashId = glAccounts?.find(g => g.gl_number === p1Journal.connected_gl_account)?.id;
+    defaultGlCashId = glAccounts?.find(g => g.gl_number === p1Journal.connected_gl_account)?.id;
   }
-  if (!glCashId) {
-    glCashId = glAccounts?.find(g => g.gl_number.startsWith('381') && g.gl_number !== '381')?.id
-            || glAccounts?.find(g => g.gl_number.startsWith('381'))?.id
-            || glAccounts?.[0]?.id;
+  if (!defaultGlCashId) {
+    defaultGlCashId = glAccounts?.find(g => g.gl_number.startsWith('381') && g.gl_number !== '381')?.id
+                   || glAccounts?.find(g => g.gl_number.startsWith('381'))?.id
+                   || glAccounts?.[0]?.id;
   }
 
   const glCustId = glAccounts?.find(g => g.gl_number === '3111')?.id || glAccounts?.find(g => g.gl_number.startsWith('311'))?.id || glAccounts?.[0]?.id;
   const glSuppId = glAccounts?.find(g => g.gl_number === '4541')?.id || glAccounts?.find(g => g.gl_number.startsWith('454'))?.id || glAccounts?.[0]?.id;
-  const glRevId = glAccounts?.find(g => g.gl_number === '9111')?.id || glAccounts?.find(g => g.gl_number.startsWith('91'))?.id || glCashId;
-  const glExpId = glAccounts?.find(g => g.gl_number === '529')?.id || glAccounts?.find(g => g.gl_number.startsWith('52'))?.id || glCashId;
+  const glRevId = glAccounts?.find(g => g.gl_number === '9111')?.id || glAccounts?.find(g => g.gl_number.startsWith('91'))?.id || defaultGlCashId;
+  const glExpId = glAccounts?.find(g => g.gl_number === '529')?.id || glAccounts?.find(g => g.gl_number.startsWith('52'))?.id || defaultGlCashId;
   const glPayrollId = glAccounts?.find(g => g.gl_number === '4711')?.id || glAccounts?.find(g => g.gl_number.startsWith('471'))?.id || glExpId;
   const glDelegationId = glAccounts?.find(g => g.gl_number === '526')?.id || glAccounts?.find(g => g.gl_number.startsWith('526'))?.id;
 
-  if (!glCashId) return 0;
+  if (!defaultGlCashId) return 0;
 
   if (cleanExisting) {
     await supabase
@@ -676,7 +688,7 @@ export async function generatePettyCashDrafts(
 
   let pceQuery: any = supabase
     .from('petty_cash_entries')
-    .select('id, entry_date, description, amount, currency, source_type, source_table, source_id, partner_id')
+    .select('id, entry_date, description, amount, currency, source_type, source_table, source_id, partner_id, register_id')
     .eq('company_id', companyId);
 
   if (typeof pceQuery.order === 'function') {
@@ -753,6 +765,19 @@ export async function generatePettyCashDrafts(
     const partnerId = pce.partner_id || linkedInv?.partner_id || null;
     const isExpense = Number(pce.amount) < 0;
 
+    const targetJournal = (pce.register_id && journals?.find(j => j.petty_cash_register_id === pce.register_id))
+      || journals?.find(j => j.code === 'P1' || j.type === 'PETTY_CASH' || j.type === 'CASH')
+      || journals?.[0];
+    const targetJournalId = targetJournal?.id || p1JournalId;
+
+    let glCashId: string | undefined;
+    if (targetJournal?.connected_gl_account) {
+      glCashId = glAccounts?.find(g => g.gl_number === targetJournal.connected_gl_account)?.id;
+    }
+    if (!glCashId) {
+      glCashId = defaultGlCashId;
+    }
+
     let line1: any;
     let line2: any;
     let desc = pce.description || 'Pénztárbizonylat javaslat';
@@ -787,7 +812,7 @@ export async function generatePettyCashDrafts(
       .from('acc_journal_headers')
       .insert({
         company_id: companyId,
-        journal_id: p1JournalId,
+        journal_id: targetJournalId,
         accounting_year: year,
         status: 'GEPI_JAVASLAT',
         entry_type: 'NORMAL',

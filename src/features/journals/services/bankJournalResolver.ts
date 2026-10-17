@@ -16,9 +16,12 @@ export interface BankJournalEntity {
   code: string;
   name: string;
   type?: string | null;
+  sub_type?: string | null;
   currency?: string | null;
   bank_account_number?: string | null;
+  company_bank_account_id?: string | null;
   connected_gl_account?: string | null;
+  default_contra_gl_number?: string | null;
   is_system_locked?: boolean | null;
 }
 
@@ -40,6 +43,32 @@ export function sanitizeAccountNumber(accountNum?: string | null): string {
 }
 
 /**
+ * Normalizes Hungarian IBAN (HU42...) to local 16/24 digit account number and trims trailing zeros.
+ */
+export function normalizeAccountKey(accountNum?: string | null): string {
+  const sanitized = sanitizeAccountNumber(accountNum);
+  if (!sanitized) return '';
+  if (sanitized.startsWith('hu') && sanitized.length === 28) {
+    return sanitized.substring(4);
+  }
+  return sanitized;
+}
+
+/**
+ * Checks if two bank account numbers match, taking into account HU IBAN and 2x8 / 3x8 format variations.
+ */
+export function doBankAccountsMatch(accA?: string | null, accB?: string | null): boolean {
+  const a = normalizeAccountKey(accA);
+  const b = normalizeAccountKey(accB);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a.startsWith(b) || b.startsWith(a)) return true;
+  const aNoZero = a.replace(/0+$/, '');
+  const bNoZero = b.replace(/0+$/, '');
+  return Boolean(aNoZero && bNoZero && (aNoZero === bNoZero || aNoZero.startsWith(bNoZero) || bNoZero.startsWith(aNoZero)));
+}
+
+/**
  * Resolves the matching bank journal given transaction/statement details.
  */
 export function resolveBankJournal(
@@ -55,24 +84,22 @@ export function resolveBankJournal(
   const descLower = (criteria.description || '').toLowerCase();
   const descSanitized = descLower.replace(/[-\s./]/g, '');
 
-  // 1. Direct match on acc_journals.bank_account_number
+  // 1. Direct match on acc_journals.bank_account_number (with IBAN & BBAN support)
   if (targetAccSanitized) {
-    const directMatch = bankJournals.find(j => {
-      const jSanitized = sanitizeAccountNumber(j.bank_account_number);
-      return jSanitized && (jSanitized === targetAccSanitized || jSanitized.includes(targetAccSanitized) || targetAccSanitized.includes(jSanitized));
-    });
+    const directMatch = bankJournals.find(j => doBankAccountsMatch(j.bank_account_number, targetAccSanitized));
     if (directMatch) return directMatch;
   }
 
-  // 2. Match via company_bank_accounts linked to journal_id
+  // 2. Match via company_bank_accounts linked to journal_id or company_bank_account_id
   if (targetAccSanitized && companyBankAccounts.length > 0) {
-    const matchedCba = companyBankAccounts.find(cba => {
-      const cbaSanitized = sanitizeAccountNumber(cba.account_number);
-      return cbaSanitized && (cbaSanitized === targetAccSanitized || cbaSanitized.includes(targetAccSanitized) || targetAccSanitized.includes(cbaSanitized));
-    });
-    if (matchedCba?.journal_id) {
-      const j = bankJournals.find(bj => bj.id === matchedCba.journal_id);
-      if (j) return j;
+    const matchedCba = companyBankAccounts.find(cba => doBankAccountsMatch(cba.account_number, targetAccSanitized));
+    if (matchedCba) {
+      if (matchedCba.journal_id) {
+        const j = bankJournals.find(bj => bj.id === matchedCba.journal_id);
+        if (j) return j;
+      }
+      const jByFk = bankJournals.find(bj => bj.company_bank_account_id === matchedCba.id);
+      if (jByFk) return jByFk;
     }
   }
 

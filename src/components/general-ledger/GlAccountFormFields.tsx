@@ -18,6 +18,11 @@ export interface GlAccountFormData {
   isOpenItemManaged: boolean;
   isMulticurrency: boolean;
   currency: string;
+  requiresPartner: boolean;
+  requiresProject: boolean;
+  requiresCostCenter: boolean;
+  isReconcilable: boolean;
+  isMonthlyFxReval: boolean;
 }
 
 interface GlAccountFormFieldsProps {
@@ -203,36 +208,103 @@ export function GlAccountFormFields({
           )}
         </div>
 
-        <div className="pt-1 border-t border-border/50">
-          <label htmlFor="open-item-check" className="flex items-start gap-2.5 cursor-pointer mt-1">
+        <div className="pt-2 border-t border-border/50 space-y-2.5">
+          <label htmlFor="requires-partner-check" className="flex items-start gap-2.5 cursor-pointer">
             <Checkbox
-              id="open-item-check"
-              checked={data.isOpenItemManaged}
-              onCheckedChange={(checked) => onChange({ isOpenItemManaged: !!checked })}
+              id="requires-partner-check"
+              checked={data.requiresPartner}
+              onCheckedChange={(checked) => onChange({ requiresPartner: !!checked })}
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <span>Kötelező partner megadása</span>
+                <span className="text-[10px] bg-red-500/10 text-red-600 dark:text-red-400 px-1.5 py-0.2 rounded font-mono">
+                  Mentési blokkoló
+                </span>
+              </span>
+              <span className="text-[11px] text-muted-foreground block leading-tight">
+                Ha be van kapcsolva, a rendszer fizikailag letiltja a könyvelést partner megadása nélkül (pl. 31, 35, 45, 47 számlákon).
+              </span>
+            </div>
+          </label>
+
+          <label htmlFor="reconcilable-check" className="flex items-start gap-2.5 cursor-pointer">
+            <Checkbox
+              id="reconcilable-check"
+              checked={data.isReconcilable}
+              onCheckedChange={(checked) => onChange({ isReconcilable: !!checked, isOpenItemManaged: !!checked })}
               className="mt-0.5"
             />
             <div className="space-y-0.5">
               <span className="text-xs font-medium text-foreground block">
-                Folyószámla modulban párosítható számla (Nyitott tételek kezelése)
+                Párosítási kötelezettség / Karton szintű nyitott tétel kezelés
               </span>
               <span className="text-[11px] text-muted-foreground block leading-tight">
-                Bekapcsolásakor a számla megjelenik a Folyószámla modul párosítási felületén.
+                Bekapcsolásakor a tételek összepárosíthatók a főkönyvi kartonon és a folyószámla modulban.
               </span>
             </div>
           </label>
         </div>
       </div>
 
-      {/* 4. Deviza beállítások */}
+      {/* 4. Projekt és Költséghely kényszer */}
+      <div className="rounded-lg border border-border/70 p-3.5 bg-muted/20 space-y-2.5">
+        <Label className="font-semibold text-foreground flex items-center gap-1.5">
+          <FileSpreadsheet className="h-4 w-4 text-amber-500" />
+          <span>Projekt és költséghely szabályok</span>
+        </Label>
+        
+        <div className="space-y-2.5">
+          <label htmlFor="requires-project-check" className="flex items-start gap-2.5 cursor-pointer">
+            <Checkbox
+              id="requires-project-check"
+              checked={data.requiresProject}
+              onCheckedChange={(checked) => onChange({ requiresProject: !!checked })}
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <span>Kötelező projektkód megadása</span>
+                <span className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.2 rounded font-mono">
+                  Mentési blokkoló
+                </span>
+              </span>
+              <span className="text-[11px] text-muted-foreground block leading-tight">
+                Projektalapú könyvelésnél a közvetlen költségek és bevételek nem könyvelhetők projektkód nélkül.
+              </span>
+            </div>
+          </label>
+
+          <label htmlFor="requires-cost-center-check" className="flex items-start gap-2.5 cursor-pointer">
+            <Checkbox
+              id="requires-cost-center-check"
+              checked={data.requiresCostCenter}
+              onCheckedChange={(checked) => onChange({ requiresCostCenter: !!checked })}
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <span className="text-xs font-medium text-foreground block">
+                Kötelező költséghely megadása
+              </span>
+              <span className="text-[11px] text-muted-foreground block leading-tight">
+                Megköveteli a szervezeti egység / költséghely megjelölését rögzítéskor.
+              </span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* 5. Deviza beállítások */}
       <div className="rounded-lg border border-border/70 p-3.5 bg-muted/20 space-y-3">
         <div className="flex items-center justify-between">
           <Label className="font-semibold text-foreground flex items-center gap-1.5">
             <Coins className="h-4 w-4 text-emerald-500" />
-            <span>Deviza kezelés</span>
+            <span>Deviza és átértékelési kezelés</span>
           </Label>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <label htmlFor="multicurrency-check" className="flex items-start gap-2.5 cursor-pointer">
             <Checkbox
               id="multicurrency-check"
@@ -250,7 +322,7 @@ export function GlAccountFormFields({
             </div>
           </label>
 
-          <div className="pt-2 flex items-center gap-3">
+          <div className="pt-1 flex items-center gap-3">
             <Label htmlFor="gl-currency" className="text-xs text-muted-foreground shrink-0">
               Dedikált devizanem:
             </Label>
@@ -258,12 +330,12 @@ export function GlAccountFormFields({
               value={data.currency}
               onValueChange={(val) => onChange({ currency: val })}
             >
-              <SelectTrigger id="gl-currency" className="w-[140px] h-8 text-xs">
+              <SelectTrigger id="gl-currency" className="w-[150px] h-8 text-xs">
                 <SelectValue placeholder="Devizanem" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ANY">Bármely deviza</SelectItem>
-                <SelectItem value="HUF">HUF (Forint)</SelectItem>
+                <SelectItem value="HUF">HUF (kizárólag forint)</SelectItem>
                 <SelectItem value="EUR">EUR (Euró)</SelectItem>
                 <SelectItem value="USD">USD (Dollár)</SelectItem>
                 <SelectItem value="GBP">GBP (Font)</SelectItem>
@@ -271,6 +343,26 @@ export function GlAccountFormFields({
               </SelectContent>
             </Select>
           </div>
+
+          <label htmlFor="monthly-fx-reval-check" className="flex items-start gap-2.5 cursor-pointer pt-2 border-t border-border/50">
+            <Checkbox
+              id="monthly-fx-reval-check"
+              checked={data.isMonthlyFxReval}
+              onCheckedChange={(checked) => onChange({ isMonthlyFxReval: !!checked })}
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <span>Hó végi nem realizált devizaátértékelés</span>
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 rounded font-mono">
+                  8763 / 9763
+                </span>
+              </span>
+              <span className="text-[11px] text-muted-foreground block leading-tight">
+                A számla nyitott devizás tételeit az időszaki záráskor az MNB hivatalos árfolyam alapján automatikusan átértékeli.
+              </span>
+            </div>
+          </label>
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { 
   Database, Settings2, Plus, BookOpen, FileUp, UploadCloud, 
   FileText, Bot, Loader2, Download, Eye, Printer, FileSpreadsheet, 
-  Table2, Layers, Filter, ChevronDown, Copy, FileCode 
+  Table2, Layers, Filter, ChevronDown, Copy, FileCode, ArrowRightLeft 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,7 @@ interface GlToolbarProps {
   isCroatia: boolean;
   selectedCompanyName?: string;
   isAIRunning: boolean;
+  onOpenMonthlyFxRevaluation?: () => void;
   aiProgress?: { processed: number; total: number } | null;
   onSelectPreset: (presetId: string) => void;
   onOpenManagePresets: () => void;
@@ -60,6 +61,7 @@ export function GlToolbar({
   isCroatia,
   selectedCompanyName,
   isAIRunning,
+  onOpenMonthlyFxRevaluation,
   aiProgress,
   activeViewTemplateName,
   activeViewTemplateType,
@@ -90,49 +92,23 @@ export function GlToolbar({
 }: GlToolbarProps) {
   const { t } = useTranslation(['accounting', 'common']);
 
-  const getPresetDisplayName = (preset: { name: string; type?: string }) => {
-    if (preset.name === 'számla_hr') {
-      return isCroatia
-        ? t('accounting:general_ledger.toolbar.builtin_hr_preset', 'Ugrađeni sustavni predložak (számla_hr)')
-        : t('accounting:general_ledger.toolbar.builtin_hr_preset', 'Beépített Horvát Számlatükör (számla_hr)');
-    }
-    if (preset.type === 'generic' || preset.name === 'Beépített Rendszerszintű Sablon' || preset.name.toLowerCase().includes('beépített')) {
-      return t('accounting:general_ledger.toolbar.builtin_system_preset', 'Beépített Rendszerszintű Sablon');
-    }
-    return preset.name;
-  };
+  const activePreset = presets?.find(p => p.id === activePresetId);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 bg-card p-2.5 sm:p-3 rounded-xl border border-border shadow-xs print:hidden">
       {/* ── 1. Számlatükör Sablon & Nézetválasztó Blokkpár (Bal oldal) ── */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Database className="w-4 h-4 text-primary shrink-0" />
-          <Label className="whitespace-nowrap font-medium text-xs text-foreground/80">
-            {t('accounting:general_ledger.toolbar.active_preset', 'Számlatükör sablon:')}
-          </Label>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/60">
+          <Database className="w-3.5 h-3.5 text-primary shrink-0" />
+          <div className="flex flex-col">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+              Számlatükör
+            </span>
+            <span className="text-xs font-semibold text-foreground truncate max-w-[170px] sm:max-w-[210px]" title={activePreset?.name || 'Aktív Számlatükör'}>
+              {activePreset?.name || 'Aktív Számlatükör'}
+            </span>
+          </div>
         </div>
-        
-        <Select 
-          value={activePresetId || ''} 
-          onValueChange={onSelectPreset} 
-          disabled={isPresetsPending || isPresetsLoading}
-        >
-          <SelectTrigger className="w-[190px] sm:w-[230px] h-9 text-xs sm:text-sm font-medium">
-            <SelectValue placeholder={t('accounting:general_ledger.toolbar.select_preset', 'Sablon kiválasztása')} />
-          </SelectTrigger>
-          <SelectContent className="max-h-[300px]">
-            {presets?.map(preset => {
-              const isGeneric = preset.type === 'generic' || preset.name === 'számla_hr';
-              const displayName = getPresetDisplayName(preset);
-              return (
-                <SelectItem key={preset.id} value={preset.id} className="text-xs">
-                  {displayName} {isGeneric ? ` ${t('accounting:general_ledger.toolbar.builtin_badge', '(Beépített)')}` : ''}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
 
         {/* Sablon adminisztrációs műveletek (Fogaskerék menü) */}
         <DropdownMenu>
@@ -218,6 +194,21 @@ export function GlToolbar({
             <span>{t('accounting:general_ledger.toolbar.manual_entry', 'Vegyes bizonylat')}</span>
           </Button>
         </CustomTooltip>
+
+        {/* Hó végi devizaátértékelés */}
+        {onOpenMonthlyFxRevaluation && (
+          <CustomTooltip content="Hó végi nem realizált devizaátértékelés (8763 / 9763) elszámolása és automatikus másnapi stornója" side="bottom">
+            <Button
+              onClick={onOpenMonthlyFxRevaluation}
+              size="sm"
+              variant="outline"
+              className="h-9 gap-1.5 font-medium border-primary/30 hover:border-primary/60 text-xs"
+            >
+              <ArrowRightLeft className="w-4 h-4 text-primary" />
+              <span className="hidden sm:inline">Devizaátértékelés</span>
+            </Button>
+          </CustomTooltip>
+        )}
 
         {/* Új főkönyvi szám hozzáadása */}
         <CustomTooltip content={t('accounting:general_ledger.toolbar.add_account_tooltip', 'Új egyedi számlaszám felvitele a számlatükörbe')} side="bottom">

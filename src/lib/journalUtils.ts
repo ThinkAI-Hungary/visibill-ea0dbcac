@@ -14,15 +14,23 @@ export interface LocalizeJournalOptions {
   short?: boolean;
 }
 
-const CODE_TO_KEY: Record<string, string> = {
+export const CODE_TO_KEY: Record<string, string> = {
   NY: 'NY',
   V: 'V',
+  VF: 'VF',
+  VD: 'VD',
   SZ: 'SZ',
+  SZF: 'SZF',
+  SZD: 'SZD',
   VE: 'VE',
   BER: 'BER',
   'BÉR': 'BER',
+  TE: 'TE',
+  ARF: 'ARF',
+  ELH: 'ELH',
   Z: 'Z',
   P1: 'P1',
+  PV: 'PV',
   B1: 'B1',
   B2: 'B2',
   B_USD: 'B_USD',
@@ -30,15 +38,23 @@ const CODE_TO_KEY: Record<string, string> = {
   ALL: 'all',
 };
 
-const SHORT_CODE_TO_KEY: Record<string, string> = {
+export const SHORT_CODE_TO_KEY: Record<string, string> = {
   NY: 'nyito',
   V: 'vevo',
+  VF: 'vevo_belfoldi',
+  VD: 'vevo_deviza',
   SZ: 'szallito',
+  SZF: 'szallito_belfoldi',
+  SZD: 'szallito_deviza',
   VE: 'vegyes',
   BER: 'BER',
   'BÉR': 'BER',
+  TE: 'targyi_eszkoz',
+  ARF: 'arfolyam',
+  ELH: 'elhatarolas',
   Z: 'zaro',
   P1: 'penztar',
+  PV: 'valutapenztar',
   B1: 'bank',
   B2: 'bank',
   B_USD: 'bank',
@@ -61,14 +77,28 @@ const HU_NAME_TO_KEY: Record<string, string> = {
   'nyito naplo': 'NY',
   'nyito': 'NY',
   'vevo szamlak': 'V',
+  'belfoldi vevo szamlak': 'VF',
+  'belfoldi vevo': 'VF',
+  'devizas vevo szamlak': 'VD',
+  'devizas vevo': 'VD',
   'vevo naplo': 'V',
   'vevo': 'V',
   'szallito szamlak': 'SZ',
+  'belfoldi szallito szamlak': 'SZF',
+  'belfoldi szallito': 'SZF',
+  'devizas szallito szamlak': 'SZD',
+  'devizas szallito': 'SZD',
   'szallito naplo': 'SZ',
   'szallito': 'SZ',
   'vegyes tetelek': 'VE',
   'vegyes naplo': 'VE',
   'vegyes': 'VE',
+  'targyi eszkoz': 'TE',
+  'targyi eszkoz naplo': 'TE',
+  'arfolyamkulonbozet': 'ARF',
+  'arfolyamkulonbozet naplo': 'ARF',
+  'idobeli elhatarolasok': 'ELH',
+  'idobeli elhatarolasok naploja': 'ELH',
   'berfeladas': 'BER',
   'berfeladas naplo': 'BER',
   'ber': 'BER',
@@ -77,6 +107,8 @@ const HU_NAME_TO_KEY: Record<string, string> = {
   'zaro': 'Z',
   'hazipenztar huf': 'P1',
   'hazipenztar': 'P1',
+  'valutapenztar': 'PV',
+  'valutapenztar eur': 'PV',
   'penztar huf': 'P1',
   'penztar': 'P1',
   'k h bank huf': 'B1',
@@ -223,10 +255,11 @@ export function getJournalCategory(journal: JournalLike): JournalCategoryKey {
 export function isJournalSystemLocked(journal: JournalLike & { is_system_locked?: boolean }): boolean {
   if (journal.is_system_locked) return true;
   const code = (journal.code || '').trim().toUpperCase();
-  return ['603', '605', '901'].includes(code);
+  const type = (journal.type || '').trim().toUpperCase();
+  return ['603', '605', '901', 'TE', 'ARF', 'ELH', 'BER', 'BÉR'].includes(code) || (type === 'SYSTEM' && code !== 'VE');
 }
 
-export const CORE_JOURNAL_CODES = ['NY', 'SZ', 'V', 'Z', 'BÉR', 'BER', 'VE'];
+export const CORE_JOURNAL_CODES = ['NY', 'SZ', 'SZF', 'SZD', 'V', 'VF', 'VD', 'Z', 'BÉR', 'BER', 'VE', 'TE', 'ARF', 'ELH'];
 
 export function isJournalCoreSystem(journal: JournalLike & { is_system_locked?: boolean }): boolean {
   if (isJournalSystemLocked(journal)) return true;

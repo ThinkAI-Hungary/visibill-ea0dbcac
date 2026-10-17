@@ -30,6 +30,7 @@ import { AddGlAccountModal } from '@/components/general-ledger/AddGlAccountModal
 import { CopyChartOfAccountsModal } from '@/components/general-ledger/CopyChartOfAccountsModal';
 import { CustomTooltip } from '@/components/ui/custom-tooltip';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
+import { MonthlyFxRevaluationModal } from '@/components/general-ledger/MonthlyFxRevaluationModal';
 import JournalView from '@/components/general-ledger/JournalView'; // F7
 import { AddManualJournalEntryModal } from '@/components/general-ledger/AddManualJournalEntryModal';
 import { GeneralLedgerComparisonTable } from '@/components/general-ledger/GeneralLedgerComparisonTable';
@@ -73,6 +74,7 @@ export default function GeneralLedgerPage() {
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [auditXmlModalOpen, setAuditXmlModalOpen] = useState(false);
   const [exportAuditXmlModalOpen, setExportAuditXmlModalOpen] = useState(false);
+  const [monthlyFxModalOpen, setMonthlyFxModalOpen] = useState(false);
   const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
   const [aiProgress, setAiProgress] = useState<{ processed: number; total: number } | null>(null);
@@ -827,6 +829,7 @@ export default function GeneralLedgerPage() {
             onOpenCopyPreset={() => setCopyCoaModalOpen(true)}
             onOpenAddAccount={() => setAddGlAccountOpen(true)}
             onOpenManualEntry={() => setManualEntryOpen(true)}
+            onOpenMonthlyFxRevaluation={() => setMonthlyFxModalOpen(true)}
             onOpenExportAuditXml={() => setExportAuditXmlModalOpen(true)}
             onOpenUploadAuditXml={() => setAuditXmlModalOpen(true)}
             onOpenAuditHistory={() => setAuditHistoryOpen(true)}
@@ -1169,6 +1172,13 @@ export default function GeneralLedgerPage() {
         onOpenChange={handleCloseManage}
         presets={presets || []}
         companyId={selectedCompany?.id}
+      />
+
+      <MonthlyFxRevaluationModal
+        open={monthlyFxModalOpen}
+        onOpenChange={setMonthlyFxModalOpen}
+        companyId={selectedCompany?.id}
+        activePresetId={activePresetId}
       />
 
       <AuditImportHistoryModal

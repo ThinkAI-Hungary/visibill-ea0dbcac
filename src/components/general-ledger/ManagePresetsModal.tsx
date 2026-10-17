@@ -72,8 +72,59 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
 
   // Csak a céghez tartozó egyéni sablonokat listázzuk a fő listában
   const customPresets = presets.filter(p => p.type === 'custom' && p.company_id === companyId);
+  const inactiveCustomPresets = customPresets.filter(p => !p.is_active);
+  const activePreset = presets.find(p => p.is_active && p.company_id === companyId) || presets.find(p => p.is_active);
   // Lehetséges célsablonok: a cég többi sablonja vagy a beépített sablonok
   const availableTargetPresets = presets.filter(p => p.id !== confirmDialogState?.preset.id);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+
+  const handleCleanupInactivePresets = async () => {
+    if (!activePreset) {
+      toast({
+        title: 'Hiba',
+        description: 'Nincs kijelölt aktív számlatükör sablon, amelybe az adatokat át lehetne kötni.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCleaningUp(true);
+    try {
+      let deletedCount = 0;
+      for (const p of inactiveCustomPresets) {
+        const { error } = await supabase.rpc('delete_chart_of_accounts_preset', {
+          p_preset_id: p.id,
+          p_target_preset_id: activePreset.id,
+        });
+        if (error) {
+          console.error('Error deleting preset:', p.name, error);
+        } else {
+          deletedCount++;
+        }
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['coaPresets', companyId] });
+      if (companyId) {
+        await invalidateGlQueries(queryClient, companyId, activePreset.id);
+        await queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+        await queryClient.invalidateQueries({ queryKey: ['glItems'] });
+      }
+
+      toast({
+        title: 'Sikeres tisztítás',
+        description: `${deletedCount} inaktív számlatükör sablon sikeresen eltávolítva, a hivatkozások átkötve az aktív sablonba (${activePreset.name}).`,
+        className: 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Hiba a tisztítás során',
+        description: err.message || 'Nem sikerült az inaktív sablonok törlése.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
 
   const deleteMutation = useMutation({
     mutationKey: ['deletePreset', companyId],
@@ -228,6 +279,29 @@ export function ManagePresetsModal({ open, onOpenChange, presets, companyId }: M
               {t('accounting:dialogs.manage_presets.description')}
             </DialogDescription>
           </DialogHeader>
+
+          {inactiveCustomPresets.length > 0 && (
+            <div className="flex items-center justify-between p-3 mt-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <div className="text-xs">
+                <span className="font-semibold text-amber-900 dark:text-amber-200">
+                  {inactiveCustomPresets.length} db inaktív sablon található.
+                </span>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  A korábbi feltöltésekből maradt felesleges sablonok törölhetők, a hivatkozások átkerülnek az aktív sablonba ({activePreset?.name || 'aktív'}).
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs shrink-0 border-amber-500/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200"
+                onClick={handleCleanupInactivePresets}
+                disabled={isCleaningUp}
+              >
+                {isCleaningUp ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Trash2 className="w-3.5 h-3.5 mr-1.5" />}
+                Inaktívak tisztítása
+              </Button>
+            </div>
+          )}
 
           <div className="mt-4 space-y-3 max-h-[300px] overflow-y-auto pr-2">
             {customPresets.length === 0 ? (

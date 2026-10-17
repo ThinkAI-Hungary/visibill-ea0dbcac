@@ -34,9 +34,23 @@ export interface ExistingAccrualInfo {
 }
 
 /**
- * Megkeresi a céghez tartozó aktív Vegyes (VE) naplót.
+ * Megkeresi a céghez tartozó aktív Elhatárolási (ELH) vagy Vegyes (VE) naplót.
  */
 export async function findActiveMixedJournal(companyId: string) {
+  // 1. Prioritize dedicated ELH journal (Point 5)
+  const { data: elhJournal } = await supabase
+    .from('acc_journals')
+    .select('id, code, name, type')
+    .eq('company_id', companyId)
+    .eq('is_active', true)
+    .or('code.eq.ELH,sub_type.eq.ACCRUAL')
+    .limit(1)
+    .maybeSingle();
+
+  if (elhJournal) {
+    return elhJournal;
+  }
+
   const { data, error } = await supabase
     .from('acc_journals')
     .select('id, code, name, type')

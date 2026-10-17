@@ -40,6 +40,11 @@ export function AddGlAccountModal({
     isOpenItemManaged: false,
     isMulticurrency: false,
     currency: 'ANY',
+    requiresPartner: false,
+    requiresProject: false,
+    requiresCostCenter: false,
+    isReconcilable: false,
+    isMonthlyFxReval: false,
   });
 
   // Fetch current preset accounts to detect duplicates and parent accounts
@@ -64,6 +69,11 @@ export function AddGlAccountModal({
         isOpenItemManaged: false,
         isMulticurrency: false,
         currency: 'ANY',
+        requiresPartner: false,
+        requiresProject: false,
+        requiresCostCenter: false,
+        isReconcilable: false,
+        isMonthlyFxReval: false,
       });
     }
   }, [open]);

@@ -73,6 +73,7 @@ vi.mock('@/integrations/supabase/client', () => {
   };
 
   return {
+    SUPABASE_URL: 'https://qhvcdqkqpgpdxogqqvyr.supabase.co',
     supabase: {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user-1' } } }),
