@@ -260,8 +260,8 @@
     "semantic_hash": ""
   },
   "src/components/dashboard/InvoiceStatusTables.tsx": {
-    "mtime": 1792220872.1207047,
-    "ast_hash": "dc9e4f7e2b0f503a4da222d2fba82999",
+    "mtime": 1792223945.706861,
+    "ast_hash": "bbace867c5f9ea2bd9f60e6f9c2298b4",
     "semantic_hash": ""
   },
   "src/components/dashboard/MetricCard.tsx": {
@@ -905,13 +905,13 @@
     "semantic_hash": "0ba3609c61b509303221c1f1dd673d5c"
   },
   "src/hooks/useCourierReportData.ts": {
-    "mtime": 1791583293.224826,
-    "ast_hash": "5f199a891b964321fba9e151e7495021",
+    "mtime": 1792223737.063259,
+    "ast_hash": "4f7d9f542cb9d055d5634d5e0dd7b86d",
     "semantic_hash": ""
   },
   "src/hooks/useDashboardData.ts": {
-    "mtime": 1792218518.2998407,
-    "ast_hash": "2895babb3095e65d7ffb4ae7fd05f7c2",
+    "mtime": 1792223792.2344458,
+    "ast_hash": "cc3f0397ba938efdbb63e443393e2613",
     "semantic_hash": ""
   },
   "src/hooks/useDashboardPreferences.ts": {
@@ -970,8 +970,8 @@
     "semantic_hash": "c8a45492cf43fe887b6acd48ec916c1a"
   },
   "src/hooks/useKintlevoData.ts": {
-    "mtime": 1791583293.2293558,
-    "ast_hash": "052334315ffd7aec674657fbbe6e758a",
+    "mtime": 1792223822.1404617,
+    "ast_hash": "68a15ca5d557c3c36b940dbe5d1d422e",
     "semantic_hash": ""
   },
   "src/hooks/useLeaveRequests.ts": {
@@ -1015,8 +1015,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionData.ts": {
-    "mtime": 1791972991.8192308,
-    "ast_hash": "2d3facf4bd6dcb4284d892c8dec7664c",
+    "mtime": 1792223760.5752294,
+    "ast_hash": "9a114acd1193576e588ad2f2025b62b8",
     "semantic_hash": ""
   },
   "src/hooks/useUnsavedChanges.ts": {
@@ -1235,9 +1235,9 @@
     "semantic_hash": "9f23eea2187884517125ea7dc5c6874f"
   },
   "src/lib/supabaseErrors.ts": {
-    "mtime": 1780305936.323897,
-    "ast_hash": "09015c83ce8704d677e2a14d30bafc91",
-    "semantic_hash": "09015c83ce8704d677e2a14d30bafc91"
+    "mtime": 1792223698.9291582,
+    "ast_hash": "be273183a22dd8a00ae31ddbfaeb586d",
+    "semantic_hash": ""
   },
   "src/lib/upload-ticket-image.ts": {
     "mtime": 1791583293.272546,
@@ -1415,8 +1415,8 @@
     "semantic_hash": ""
   },
   "src/pages/Analytics.tsx": {
-    "mtime": 1791583293.333793,
-    "ast_hash": "89956212815bf232660a439ad4d6a1fa",
+    "mtime": 1792223914.056323,
+    "ast_hash": "3fc4e5656a8d29f2ca62fca22b1a36e3",
     "semantic_hash": ""
   },
   "src/pages/AnnualReportPage.tsx": {
@@ -1515,8 +1515,8 @@
     "semantic_hash": ""
   },
   "src/pages/Projects.tsx": {
-    "mtime": 1792222990.188957,
-    "ast_hash": "18c9894754efb2a5610fe63c0f680cf4",
+    "mtime": 1792223897.2158234,
+    "ast_hash": "8433e63f2b00256603491a6a7a443cd1",
     "semantic_hash": ""
   },
   "src/pages/ResetPassword.tsx": {
@@ -1540,8 +1540,8 @@
     "semantic_hash": ""
   },
   "src/pages/TransactionsPage.tsx": {
-    "mtime": 1792215276.9469519,
-    "ast_hash": "5738e2cdbb6cb205e5584cb9ec107245",
+    "mtime": 1792223781.9541519,
+    "ast_hash": "5ada4873ec4c117fce69e904c720bcbb",
     "semantic_hash": ""
   },
   "src/pages/VatReturnPage.tsx": {
@@ -3475,8 +3475,8 @@
     "semantic_hash": ""
   },
   "src/lib/errorReporter.ts": {
-    "mtime": 1791583293.2491255,
-    "ast_hash": "f553a231851e4fda2f912318d98c643e",
+    "mtime": 1792223706.4025052,
+    "ast_hash": "3d18151217960d33359ebe2687a7527e",
     "semantic_hash": ""
   },
   "supabase/functions/_shared/error-logger.ts": {
@@ -3685,8 +3685,8 @@
     "semantic_hash": ""
   },
   "src/components/vat/VatRowDrillDown.tsx": {
-    "mtime": 1791583293.1563134,
-    "ast_hash": "258a3d75ee30844ceec329c0acd32862",
+    "mtime": 1792223998.0189059,
+    "ast_hash": "df5a600dd7196a2cbeb3fb6831201599",
     "semantic_hash": ""
   },
   "src/components/vat/VatTrendChart.tsx": {
@@ -3710,8 +3710,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useAdminData.ts": {
-    "mtime": 1791583293.222826,
-    "ast_hash": "933afdccd836b47d9aa0785a36c48ea1",
+    "mtime": 1792223929.6807635,
+    "ast_hash": "f109521476bd53b6589d40879f8f03e5",
     "semantic_hash": ""
   },
   "src/hooks/useAiChatSessions.ts": {
@@ -4525,13 +4525,13 @@
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyHelpers.ts": {
-    "mtime": 1791583293.219826,
-    "ast_hash": "69804bfb001ffc8d3537711be27fa1d5",
+    "mtime": 1792223865.1977227,
+    "ast_hash": "1aae36d616bc4cd3f3fa048c3d1ece5b",
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyMissing.ts": {
-    "mtime": 1791583293.219826,
-    "ast_hash": "ea03a01abb2a93e5a1c88fbb16a67967",
+    "mtime": 1792223878.1928258,
+    "ast_hash": "210564b0b1ceeb8f9747f5bea67c87c8",
     "semantic_hash": ""
   },
   "src/hooks/accounty/useAccountyPayroll.ts": {
@@ -6830,8 +6830,8 @@
     "semantic_hash": ""
   },
   "src/app/queryClient.ts": {
-    "mtime": 1791583293.0327785,
-    "ast_hash": "e2d7665b3b581309b750dc0d8b81b28b",
+    "mtime": 1792223713.906314,
+    "ast_hash": "8ee513ce88fe2a2687268bf5fc5e9a74",
     "semantic_hash": ""
   },
   "src/features/management/ManagementDashboard.tsx": {
@@ -7880,8 +7880,8 @@
     "semantic_hash": ""
   },
   "src/lib/glData.ts": {
-    "mtime": 1791983164.5239842,
-    "ast_hash": "7cbcea7458f0940f25996f7d2a1cb918",
+    "mtime": 1792223844.6303325,
+    "ast_hash": "ed8b8e5e9fd08d56b9701c9075954a4f",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-079-accounty-errorboundary-route-reset-and-prompt-rules-scoping.md": {
@@ -9120,8 +9120,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/GlAccountCardView.tsx": {
-    "mtime": 1791583293.0804224,
-    "ast_hash": "a7c952a0ac0685ead0f0bce8decb324d",
+    "mtime": 1792223980.2912326,
+    "ast_hash": "366e2dba6468b12b84ec833f0e672130",
     "semantic_hash": ""
   },
   "src/components/general-ledger/GlAnalyticReconciliationView.tsx": {
@@ -9130,8 +9130,8 @@
     "semantic_hash": ""
   },
   "src/components/general-ledger/PartnerLedgerCardView.tsx": {
-    "mtime": 1791583293.0834224,
-    "ast_hash": "5c918b460a03dfdf8ab53e569acbf43a",
+    "mtime": 1792223963.221495,
+    "ast_hash": "bf625bb32795a4e07e05321c34bbc632",
     "semantic_hash": ""
   },
   "src/lib/assetActivationProtocolPdf.ts": {
@@ -17314,6 +17314,11 @@
   "supabase/migrations/20261017093000_optimize_get_gl_categorized_items_timeout.sql": {
     "mtime": 1792222849.7495997,
     "ast_hash": "619d9210883ec46a9cdd708ecf820242",
+    "semantic_hash": ""
+  },
+  "src/test/pgrstPaginationRangeHandling.test.ts": {
+    "mtime": 1792224022.9465928,
+    "ast_hash": "3cb5951e0004ec695ceb7253bdc3a9c5",
     "semantic_hash": ""
   }
 }
