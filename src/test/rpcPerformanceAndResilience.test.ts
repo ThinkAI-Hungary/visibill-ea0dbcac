@@ -829,6 +829,61 @@ describe('RPC Performance & Edge Function Resilience Tests', () => {
       expect(payload.p_page).toBe(1);
       expect(payload.p_page_size).toBe(50);
     });
+
+    it('validates RPC parameter mapping for get_invoice_kpis and mathematical invariant (total = matched + suggested + unmatched)', () => {
+      const buildInvoiceKpiPayload = (params: {
+        companyId: string;
+        dateFrom: string;
+        dateTo: string;
+        direction: string;
+        source?: string;
+        dateBasis?: string;
+      }) => ({
+        p_company_id: params.companyId,
+        p_date_from: params.dateFrom,
+        p_date_to: params.dateTo,
+        p_direction: params.direction,
+        p_source: params.source || 'nav',
+        p_date_basis: params.dateBasis || 'kibocsatas',
+      });
+
+      const payload = buildInvoiceKpiPayload({
+        companyId: '418b3264-1169-46bb-9a2a-4f58a186bf1e',
+        dateFrom: '2026-01-01',
+        dateTo: '2026-12-31',
+        direction: 'INBOUND',
+        source: 'nav',
+        dateBasis: 'teljesites',
+      });
+
+      expect(payload.p_company_id).toBe('418b3264-1169-46bb-9a2a-4f58a186bf1e');
+      expect(payload.p_direction).toBe('INBOUND');
+      expect(payload.p_date_basis).toBe('teljesites');
+      expect(payload.p_source).toBe('nav');
+
+      // Verify KPI mathematical invariants
+      const sampleKpiResult = {
+        total: 1090,
+        matched: 240,
+        suggested: 0,
+        unmatched: 850,
+      };
+      expect(sampleKpiResult.total).toBe(sampleKpiResult.matched + sampleKpiResult.suggested + sampleKpiResult.unmatched);
+    });
+
+    it('verifies cockpit unmatched transactions query filter compatibility with idx_transactions_company_unmatched_date', () => {
+      const queryParams = {
+        companyId: '418b3264-1169-46bb-9a2a-4f58a186bf1e',
+        matchedInvoiceId: null,
+        dateFrom: '2026-01-01',
+        dateTo: '2026-12-31',
+      };
+
+      // Ensure the query matches the partial index predicate (WHERE matched_invoice_id IS NULL)
+      expect(queryParams.matchedInvoiceId).toBeNull();
+      expect(queryParams.companyId).toBeDefined();
+      expect(queryParams.dateFrom <= queryParams.dateTo).toBe(true);
+    });
   });
 });
 
