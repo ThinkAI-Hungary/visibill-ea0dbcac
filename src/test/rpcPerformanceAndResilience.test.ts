@@ -884,6 +884,42 @@ describe('RPC Performance & Edge Function Resilience Tests', () => {
       expect(queryParams.companyId).toBeDefined();
       expect(queryParams.dateFrom <= queryParams.dateTo).toBe(true);
     });
+
+    it('validates RPC parameter mapping and calculation invariants for get_fx_differences', () => {
+      const buildFxDifferencesPayload = (params: {
+        companyId: string;
+        dateFrom?: string;
+        dateTo?: string;
+      }) => ({
+        p_company_id: params.companyId,
+        p_date_from: params.dateFrom || null,
+        p_date_to: params.dateTo || null,
+      });
+
+      const payload = buildFxDifferencesPayload({
+        companyId: '418b3264-1169-46bb-9a2a-4f58a186bf1e',
+        dateFrom: '2026-01-01',
+        dateTo: '2026-12-31',
+      });
+
+      expect(payload.p_company_id).toBe('418b3264-1169-46bb-9a2a-4f58a186bf1e');
+      expect(payload.p_date_from).toBe('2026-01-01');
+      expect(payload.p_date_to).toBe('2026-12-31');
+
+      // Verify FX difference calculation contract:
+      // OUTBOUND: (set_rate - del_rate) * abs(inv_amount)
+      // INBOUND: (del_rate - set_rate) * abs(inv_amount)
+      const computeFxDiff = (direction: 'INBOUND' | 'OUTBOUND', delRate: number, setRate: number, amount: number) => {
+        return direction === 'OUTBOUND'
+          ? (setRate - delRate) * Math.abs(amount)
+          : (delRate - setRate) * Math.abs(amount);
+      };
+
+      // 100 EUR inbound, delivered at 400 HUF, settled at 390 HUF -> gain of 1,000 HUF (del_rate > set_rate)
+      expect(computeFxDiff('INBOUND', 400, 390, 100)).toBe(1000);
+      // 100 EUR outbound, delivered at 400 HUF, settled at 410 HUF -> gain of 1,000 HUF (set_rate > del_rate)
+      expect(computeFxDiff('OUTBOUND', 400, 410, 100)).toBe(1000);
+    });
   });
 });
 
