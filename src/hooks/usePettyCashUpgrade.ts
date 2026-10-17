@@ -62,7 +62,74 @@ export function useGlReconciliation(companyId: string, year: number, dateTo?: st
       });
 
       if (error) throw error;
-      return data as GlReconciliationResult;
+      const raw = (data || {}) as any;
+
+      const totalAnalytic = Number(raw.total_analytic_balance ?? raw.analytics_total_huf ?? 0);
+      const totalGl = Number(raw.total_gl_balance ?? raw.gl_total_huf ?? 0);
+      const totalDiff = Number(raw.total_difference ?? raw.discrepancy_huf ?? (totalAnalytic - totalGl));
+      const isReconciled = Boolean(raw.is_fully_reconciled ?? raw.is_reconciled ?? (Math.abs(totalDiff) <= 0.01));
+
+      const registers = (raw.registers || []).map((r: any) => {
+        const cur = r.currency || (Array.isArray(r.currencies) && r.currencies[0]) || 'HUF';
+        const glAcc = r.gl_account || r.gl_account_code || (cur === 'HUF' ? '381' : '382');
+        const anBal = Number(r.analytic_balance ?? r.analytics_balance_huf ?? r.analytics_balance_fx ?? 0);
+        const glBal = Number(r.gl_balance ?? r.gl_balance_huf ?? 0);
+        const diff = Number(r.difference ?? r.diff_huf ?? (anBal - glBal));
+        const isMatch = Boolean(r.is_matching ?? (Math.abs(diff) <= 0.01));
+
+        return {
+          register_id: r.register_id || '',
+          register_name: r.register_name || 'Pénztár',
+          currency: cur,
+          currencies: Array.isArray(r.currencies) && r.currencies.length > 0 ? r.currencies : [cur],
+          gl_account: glAcc,
+          gl_account_code: glAcc,
+          analytic_balance: anBal,
+          analytics_balance_fx: Number(r.analytics_balance_fx ?? anBal),
+          analytics_balance_huf: Number(r.analytics_balance_huf ?? anBal),
+          gl_balance: glBal,
+          gl_balance_huf: glBal,
+          difference: diff,
+          diff_huf: diff,
+          is_matching: isMatch,
+        };
+      });
+
+      const unpostedDiscrepancies = (raw.unposted_entries || []).map((e: any) => ({
+        discrepancy_type: 'unposted_entry',
+        date: e.entry_date || '',
+        description: `${e.register_name || 'Pénztár'}: ${e.description || 'Pénztárbizonylat'}${e.receipt_number ? ` (${e.receipt_number})` : ''}`,
+        amount_huf: Number(e.amount || 0),
+        remedy_suggestion: 'Pénztárjelentés lezárása és feladása a főkönyvbe',
+      }));
+
+      const directGlDiscrepancies = (raw.direct_gl_entries || []).map((g: any) => ({
+        discrepancy_type: 'direct_gl_posting',
+        date: g.posting_date || '',
+        description: `Napló #${g.journal_number ?? ''} | ${g.description || 'Közvetlen főkönyvi tétel'} (${g.gl_number || ''})`,
+        amount_huf: g.dc_type === 'T' ? Number(g.amount || 0) : -Number(g.amount || 0),
+        remedy_suggestion: 'Közvetlenül könyvelt főkönyvi tétel felülvizsgálata vagy stornózása',
+      }));
+
+      const itemizedDiscrepancies = raw.itemized_discrepancies || [...unpostedDiscrepancies, ...directGlDiscrepancies];
+
+      return {
+        year: Number(raw.year ?? year),
+        date_to: String(raw.date_to ?? dateTo ?? ''),
+        is_reconciled: isReconciled,
+        is_fully_reconciled: isReconciled,
+        status_message: raw.status_message || (isReconciled ? 'Minden tétel egyezik a főkönyvvel.' : 'Különbözet detektálva az Analitika és a Főkönyv között.'),
+        analytics_total_huf: totalAnalytic,
+        total_analytic_balance: totalAnalytic,
+        gl_total_huf: totalGl,
+        total_gl_balance: totalGl,
+        discrepancy_huf: totalDiff,
+        total_difference: totalDiff,
+        registers,
+        itemized_discrepancies: itemizedDiscrepancies,
+        unposted_entries: raw.unposted_entries || [],
+        direct_gl_entries: raw.direct_gl_entries || [],
+      } as GlReconciliationResult;
     },
     enabled: !!companyId && !!year,
     staleTime: 30_000,

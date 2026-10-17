@@ -96,8 +96,11 @@ export default function PettyCashGlReconciliationPanel({
     }
   };
 
-  const isMatched = recon?.is_reconciled;
-  const hasDiscrepancy = recon && !recon.is_reconciled;
+  const isMatched = recon?.is_fully_reconciled ?? recon?.is_reconciled ?? false;
+  const hasDiscrepancy = recon ? !isMatched : false;
+  const analyticsTotal = recon?.total_analytic_balance ?? recon?.analytics_total_huf ?? 0;
+  const glTotal = recon?.total_gl_balance ?? recon?.gl_total_huf ?? 0;
+  const discrepancy = recon?.total_difference ?? recon?.discrepancy_huf ?? (analyticsTotal - glTotal);
 
   return (
     <div className="space-y-6">
@@ -200,7 +203,7 @@ export default function PettyCashGlReconciliationPanel({
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {recon?.status_message || 'Főkönyvi ellenőrzés folyamatban...'}
+                  {recon?.status_message || (isMatched ? 'Minden tétel egyezik a főkönyvvel.' : 'Főkönyvi ellenőrzés folyamatban...')}
                 </p>
               </div>
             </div>
@@ -225,7 +228,7 @@ export default function PettyCashGlReconciliationPanel({
                 Pénztáranalitika egyenlege
               </div>
               <div className="text-lg font-bold font-mono text-foreground">
-                {recon ? fmtBalance(recon.analytics_total_huf, 'HUF') : '—'}
+                {recon ? fmtBalance(analyticsTotal, 'HUF') : '—'}
               </div>
               <div className="text-[10px] text-muted-foreground">
                 Valamennyi aktív forint- és valutakassza összege
@@ -237,7 +240,7 @@ export default function PettyCashGlReconciliationPanel({
                 Főkönyvi 381 & 382 Számlák egyenlege
               </div>
               <div className="text-lg font-bold font-mono text-foreground">
-                {recon ? fmtBalance(recon.gl_total_huf, 'HUF') : '—'}
+                {recon ? fmtBalance(glTotal, 'HUF') : '—'}
               </div>
               <div className="text-[10px] text-muted-foreground">
                 general_ledger_entries (381* és 382* számlák)
@@ -246,7 +249,7 @@ export default function PettyCashGlReconciliationPanel({
 
             <div className={cn(
               "p-3.5 rounded-lg border space-y-1",
-              recon && Math.abs(recon.discrepancy_huf) > 0
+              recon && Math.abs(discrepancy) > 0.01
                 ? "border-destructive/40 bg-destructive/5"
                 : "border-emerald-500/30 bg-emerald-500/5"
             )}>
@@ -255,12 +258,12 @@ export default function PettyCashGlReconciliationPanel({
               </div>
               <div className={cn(
                 "text-lg font-bold font-mono",
-                recon && Math.abs(recon.discrepancy_huf) > 0 ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"
+                recon && Math.abs(discrepancy) > 0.01 ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"
               )}>
-                {recon ? fmtBalance(recon.discrepancy_huf, 'HUF') : '—'}
+                {recon ? fmtBalance(discrepancy, 'HUF') : '—'}
               </div>
               <div className="text-[10px] text-muted-foreground">
-                {recon && Math.abs(recon.discrepancy_huf) === 0 ? 'Hézagmentes egyezőség' : 'Könyvelendő vagy rendezendő'}
+                {recon && Math.abs(discrepancy) <= 0.01 ? 'Hézagmentes egyezőség' : 'Könyvelendő vagy rendezendő'}
               </div>
             </div>
           </div>
@@ -287,8 +290,13 @@ export default function PettyCashGlReconciliationPanel({
                   </TableHeader>
                   <TableBody className="text-xs">
                     {recon.registers.map((r) => {
-                      const diff = Number(r.diff_huf || 0);
-                      const isOk = Math.abs(diff) < 1;
+                      const cur = r.currency || (Array.isArray(r.currencies) && r.currencies[0]) || 'HUF';
+                      const glAccount = r.gl_account_code || r.gl_account || (cur === 'HUF' ? '381' : '382');
+                      const anFx = r.analytics_balance_fx ?? r.analytic_balance ?? 0;
+                      const anHuf = r.analytics_balance_huf ?? r.analytic_balance ?? 0;
+                      const glHuf = r.gl_balance_huf ?? r.gl_balance ?? 0;
+                      const diff = Number(r.diff_huf ?? r.difference ?? (anHuf - glHuf));
+                      const isOk = r.is_matching ?? (Math.abs(diff) <= 0.01);
                       return (
                         <TableRow key={r.register_id} className="hover:bg-muted/30">
                           <TableCell className="font-semibold text-foreground">
@@ -296,20 +304,20 @@ export default function PettyCashGlReconciliationPanel({
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="font-mono text-[10px]">
-                              {r.currency}
+                              {cur}
                             </Badge>
                           </TableCell>
                           <TableCell className="font-mono text-muted-foreground">
-                            {r.gl_account_code}
+                            {glAccount}
                           </TableCell>
                           <TableCell className="text-right font-mono">
-                            {fmtBalance(r.analytics_balance_fx, r.currency)}
+                            {fmtBalance(anFx, cur)}
                           </TableCell>
                           <TableCell className="text-right font-mono font-medium">
-                            {fmtBalance(r.analytics_balance_huf, 'HUF')}
+                            {fmtBalance(anHuf, 'HUF')}
                           </TableCell>
                           <TableCell className="text-right font-mono font-medium">
-                            {fmtBalance(r.gl_balance_huf, 'HUF')}
+                            {fmtBalance(glHuf, 'HUF')}
                           </TableCell>
                           <TableCell className={cn(
                             "text-right font-mono font-bold",

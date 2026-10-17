@@ -397,25 +397,30 @@ export const SOURCE_COLORS: Record<string, string> = {
 };
 
 /** Round HUF to nearest 5 */
-export const roundHuf = (amount: number, currency: string): number => {
+export const roundHuf = (amount: number | null | undefined, currency: string = 'HUF'): number => {
+  if (amount == null || typeof amount !== 'number' || isNaN(amount)) return 0;
   if (currency !== 'HUF') return Math.round(amount * 100) / 100;
   return Math.round(amount / 5) * 5;
 };
 
 import { getActiveLocale } from '@/lib/locale/formatters';
 
-export const fmtAmount = (amount: number, currency: string): string => {
-  const rounded = roundHuf(amount, currency);
+export const fmtAmount = (amount: number | null | undefined, currency: string = 'HUF'): string => {
+  const safeCurrency = currency || 'HUF';
+  const val = (amount == null || typeof amount !== 'number' || isNaN(amount)) ? 0 : amount;
+  const rounded = roundHuf(val, safeCurrency);
   const locale = getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU';
-  const formatted = Math.abs(rounded).toLocaleString(locale, { maximumFractionDigits: currency === 'HUF' ? 0 : 2 });
+  const formatted = Math.abs(rounded).toLocaleString(locale, { maximumFractionDigits: safeCurrency === 'HUF' ? 0 : 2 });
   const sign = rounded >= 0 ? '+' : '-';
-  return `${sign}${formatted} ${currency}`;
+  return `${sign}${formatted} ${safeCurrency}`;
 };
 
-export const fmtBalance = (amount: number, currency: string): string => {
-  const rounded = roundHuf(amount, currency);
+export const fmtBalance = (amount: number | null | undefined, currency: string = 'HUF'): string => {
+  const safeCurrency = currency || 'HUF';
+  const val = (amount == null || typeof amount !== 'number' || isNaN(amount)) ? 0 : amount;
+  const rounded = roundHuf(val, safeCurrency);
   const locale = getActiveLocale() === 'hr' ? 'hr-HR' : 'hu-HU';
-  return `${rounded.toLocaleString(locale, { maximumFractionDigits: currency === 'HUF' ? 0 : 2 })} ${currency}`;
+  return `${rounded.toLocaleString(locale, { maximumFractionDigits: safeCurrency === 'HUF' ? 0 : 2 })} ${safeCurrency}`;
 };
 
 /** Sanitize partner ID to avoid passing empty strings or 'none' to UUID columns */
