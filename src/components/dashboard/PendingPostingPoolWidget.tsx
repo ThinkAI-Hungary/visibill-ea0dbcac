@@ -37,6 +37,7 @@ export function PendingPostingPoolWidget({
       return data as PostingSummary;
     },
     enabled: !!companyId && !!activePresetId,
+    staleTime: 60000,
     refetchInterval: 60000,
   });
 

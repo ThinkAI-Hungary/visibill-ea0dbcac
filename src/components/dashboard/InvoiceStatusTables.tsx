@@ -153,6 +153,8 @@ const InvoiceStatusTables = () => {
       return (data || []) as Partner[];
     },
     enabled: !!companyId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const loading = loadingPayable || loadingMissing;
