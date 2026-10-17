@@ -2855,8 +2855,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/visibill-db-checklist/SKILL.md": {
-    "mtime": 1792222990.0687437,
-    "ast_hash": "3895673cadad264f96c51f2a8945e69f",
+    "mtime": 1792223297.31695,
+    "ast_hash": "7765e93869263aea17da0f3d002478a0",
     "semantic_hash": ""
   },
   ".agents/skills/visibill-doc-audit/SKILL.md": {
@@ -9965,8 +9965,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/database.md": {
-    "mtime": 1792222990.0667377,
-    "ast_hash": "9dd2fe6b02c34c299e24594a0373cb5f",
+    "mtime": 1792223285.2523685,
+    "ast_hash": "d58c02ea70a1137a0c1a288272413dce",
     "semantic_hash": ""
   },
   ".agents/rules/documentation.md": {
@@ -16777,8 +16777,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/database-guidelines.md": {
-    "mtime": 1792044677.8864577,
-    "ast_hash": "f627c26be3c66fda9d3773dc3519bd02",
+    "mtime": 1792223318.1207712,
+    "ast_hash": "3072feac1b59a16ee8eab65ab03a17f8",
     "semantic_hash": ""
   },
   "docs/architecture/decisions/A-258-gl-opening-balances-rollforward-and-transfers-dedup-integrity.md": {
