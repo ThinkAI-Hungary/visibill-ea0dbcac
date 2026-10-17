@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-10-15  
-> **Összesen:** 74 döntés | ✅ Decided: 61 | 🟡 Partially Decided: 7 | ⛔ Superseded: 1 | 🔴 Open: 5
+> **Utoljára frissítve:** 2026-10-17  
+> **Összesen:** 79 döntés | ✅ Decided: 66 | 🟡 Partially Decided: 7 | ⛔ Superseded: 1 | 🔴 Open: 5
 
 ---
 
@@ -162,5 +162,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 074-fakov | Fakov Kft. Infotéka (Kontír.NET) AuditXML Főkönyvi Egyeztetés és Könyvelési Összehangolás | ✅ Decided | [074-fakov-infoteka-auditxml-reconciliation-and-gl-alignment.md](./074-fakov-infoteka-auditxml-reconciliation-and-gl-alignment.md) |
 | 075 | Bankkártyás és AMEX Elfogadói Göngyölegek Feldolgozása Virtuális Bankként és Zéró-Egyenlegű Főkönyvi Elszámolása | ✅ Decided | [075-pos-and-amex-card-settlement-virtual-banking-and-gl-clearing.md](./075-pos-and-amex-card-settlement-virtual-banking-and-gl-clearing.md) |
 | 076 | RLB-60 FOKTORZS (.RFT / .DBF) Számlatükör Formátum Feldolgozása és Importálása | ✅ Decided | [076-rlb-foktorzs-rft-dbf-chart-of-accounts-parsing-and-import.md](./076-rlb-foktorzs-rft-dbf-chart-of-accounts-parsing-and-import.md) |
+| 077 | Korlátlan Egyedi Könyvelési Naplók, Rendszernapló Védelem és Devizás Folyószámla Különbözet-rendezés Számviteli Szabályzata | ✅ Decided | [077-custom-accounting-journals-system-isolation-and-fx-settlement-policy.md](./077-custom-accounting-journals-system-isolation-and-fx-settlement-policy.md) |
+| 078 | Főkönyvi Számlamódosítás, Csoportszámla Kényszerek és Évközi/Év Végi Devizás Értékelés Számviteli Szabályzata | ✅ Decided | [078-gl-account-mutation-cascading-constraints-and-monthly-fx-revaluation-policy.md](./078-gl-account-mutation-cascading-constraints-and-monthly-fx-revaluation-policy.md) |
 
 

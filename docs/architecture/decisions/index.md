@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-10-16  
-> **Összesen:** 263 döntés (248 egyedi döntési fájl) | ✅ Decided: 261 | ⛔ Superseded: 2
+> **Utoljára frissítve:** 2026-10-17  
+> **Összesen:** 266 döntés (251 egyedi döntési fájl) | ✅ Decided: 264 | ⛔ Superseded: 2
 
 
 ---
@@ -303,6 +303,9 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-261 | Csoportos Számla Könyvelési Kizárás Atomi RPC és Reaktivitás | ✅ Decided | [A-261](./A-261-bulk-invoice-accounting-exclusion-rpc-and-cache-invalidation.md) |
 | A-262 | Számlák Kontírozási Státusz Szerveroldali Szűrése (get_filtered_nav_invoices és get_filtered_submitted_invoices p_gl_status) | ✅ Decided | [A-262](./A-262-invoice-gl-classification-status-filter-rpc.md) |
 | A-263 | Készpénzes Számlák 381-es Kontírozása, Házipénztár Hozzárendelés és Routing Szabály Létrehozás | ✅ Decided | [A-263](./A-263-cash-invoices-gl381-and-petty-cash-routing.md) |
+| A-264 | Napló Extended — Korlátlan Egyedi Naplótörzs, Céges Bankszámla Útválasztás, Gépi Rendszernapló Védelem és Devizás Folyószámla Különbözet-rendezés | ✅ Decided | [A-264](./A-264-naplo-extended-custom-journals-bank-routing-and-fx-settlement.md) |
+| A-265 | Számlatükör Extended — Főkönyvi Számlamódosítás, Csoportszámla Kaszkádolt Beállítás-öröklődés, Kliensoldali RLB FOKTORZS dBASE III Bináris Parser és Hóközi Devizás Átértékelés Varázsló | ✅ Decided | [A-265](./A-265-szamlatukor-extended-gl-account-mutation-cascading-settings-rlb-dbf-parser-and-fx-reval.md) |
+| A-266 | ÁFA és Főkönyvi Lekérdező Motorok Skálázási Optimalizálása — 2-Fázisú Bázisszűrés (CTE Pushdown), Feltételes MNB Laterális Illesztés és Bizonylatsorszám Indexelés (Statement Timeout 57014 Felszámolás) | ✅ Decided | [A-266](./A-266-vat-return-and-gl-engine-scaling-and-statement-timeout-elimination.md) |
 
 
 

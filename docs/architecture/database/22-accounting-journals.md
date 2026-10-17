@@ -14,15 +14,22 @@
 |--------|-------|------|---------|--------|
 | `id` | uuid | — | `gen_random_uuid()` | Elsődleges kulcs |
 | `company_id` | uuid | — | — | FK → `companies.id` (CASCADE) |
-| `code` | varchar(8) | — | — | Napló kódja (pl. `V`, `SZ`, `B1`, `P1`, `VE`, `BÉR`, `NY`, `Z`) |
+| `code` | varchar(8) | — | — | Napló kódja (pl. `V`, `SZ`, `B1`, `B2`, `P1`, `VE`, `BER`, `TE`, `ELH`, `ARF`, `NY`, `Z`) |
 | `name` | text | — | — | Napló megnevezése |
 | `type` | varchar(32) | — | — | Típus: `CUSTOMER`, `SUPPLIER`, `BANK`, `PETTY_CASH`, `MIXED`, `SYSTEM`, `OPENING`, `CLOSING` |
+| `sub_type` | varchar(32) | ✓ | NULL | Altípus (`BANK_HUF`, `BANK_FX`, `PETTY_CASH_HUF`, `DOMESTIC_CUSTOMER`, `FOREIGN_CUSTOMER`, `DOMESTIC_SUPPLIER`, `FOREIGN_SUPPLIER`, `GENERAL_MIXED`, `ASSET`, `FX`, `ACCRUAL`, `PAYROLL`, `OPENING`, `CLOSING`) |
 | `connected_gl_account` | varchar(10) | ✓ | NULL | Kapcsolódó alapértelmezett főkönyvi számlaszám |
+| `default_contra_gl_number` | varchar(16) | ✓ | NULL | Alapértelmezett ellenszámla (pl. 3841, 3861, 3811, 491, 492) |
+| `company_bank_account_id` | uuid | ✓ | NULL | FK → `company_bank_accounts.id` (ON DELETE SET NULL) |
+| `petty_cash_register_id` | uuid | ✓ | NULL | FK → `petty_cash_registers.id` (ON DELETE SET NULL) |
+| `bank_account_number` | varchar(64) | ✓ | NULL | Cég bankszámlaszáma banknaplónál |
 | `currency` | char(3) | — | `'HUF'` | Napló alapértelmezett devizaneme |
 | `is_active` | boolean | — | `true` | Aktív-e a napló |
+| `is_system_locked` | boolean | — | `false` | Gépi rendszernapló-e (TE, ELH, BER, ARF — nem törölhető, nem átnevezhető) |
 | `created_at` | timestamptz | — | `now()` | Létrehozás időpontja |
 
-**Egyediség:** `UNIQUE (company_id, code)`
+**Egyediség:** `UNIQUE (company_id, code)`  
+**Indexek:** `idx_acc_journals_company_bank_acc`, `idx_acc_journals_petty_cash_reg`, `idx_acc_journals_company_sub_type`
 
 ---
 
@@ -320,3 +327,33 @@ A számviteli adatok konzisztenciájának ellenőrzésére, az inverz számlaegy
   - Zárt időszak és főkönyvi számlák ellenőrzése, új Vegyes (`VE`) bizonylat (`V-ATV-YYYY-XXXX`) és tételsorok (T cél, K forrás) létrehozása, valamint bejegyzés az `acc_reclassifications` táblába. Támogatja az előzetes szimulációs módot (`p_is_simulation`). Védve: `has_accounty_company_access` + `rls_write_denied_company_ids`.
 - `rollback_journal_reclassification(p_company_id uuid, p_reclassification_id uuid, p_reason text)`:
   - Átvezetési köteg visszagörgetése szigorú ellentétes előjelű sztornó bizonylattal (`V-STV-YYYY-XXXX`), az eredeti bizonylat `SZTORNOZOTT` státuszra állításával és a köteg `ROLLED_BACK` jelölésével. Zárolásvédett (A-255).
+
+---
+
+### 8. Napló Extended & Devizás Folyószámla-rendezés (A-264, BDR-077)
+
+#### Triggerek & Szinkronizáció:
+- `acc_sync_bank_account_to_journal`: Automatikusan frissíti a kapcsolt banknapló bankszámlaszámát, devizáját és `company_bank_account_id` FK-ját, ha a `company_bank_accounts` táblában módosulás történik.
+- `acc_sync_journal_to_bank_account`: Banknapló (`type = 'BANK'`) felvétele vagy szerkesztése esetén automatikusan felveszi vagy összeköti a megfelelő rekordot a `company_bank_accounts` táblában.
+
+#### Bővített Alapértelmezett Naplókészlet (`acc_seed_default_journals`):
+Cégenként 14 standard naplót inicializál:
+1. `NY` — Nyitó tételek (`OPENING`, ellenszámla: 491)
+2. `B1` — K&H bank HUF (`BANK_HUF`, ellenszámla: 3841, HUF)
+3. `B2` — K&H bank EUR (`BANK_FX`, ellenszámla: 3861, EUR)
+4. `P1` — Házipénztár HUF (`PETTY_CASH_HUF`, ellenszámla: 3811, HUF)
+5. `VF` — Belföldi vevő számlák (Ft) (`DOMESTIC_CUSTOMER`, ellenszámla: 3111, HUF)
+6. `VD` — Devizás vevő számlák (`FOREIGN_CUSTOMER`, ellenszámla: 316, EUR)
+7. `SZF` — Belföldi szállító számlák (Ft) (`DOMESTIC_SUPPLIER`, ellenszámla: 4541, HUF)
+8. `SZD` — Devizás szállító számlák (`FOREIGN_SUPPLIER`, ellenszámla: 4542, EUR)
+9. `VE` — Vegyes tételek (`GENERAL_MIXED`, HUF)
+10. `TE` — Tárgyi eszköz napló (`ASSET`, ellenszámla: 571, `is_system_locked = true`)
+11. `ARF` — Árfolyamkülönbözet napló (`FX`, ellenszámla: 876/976, `is_system_locked = true`)
+12. `ELH` — Időbeli elhatárolások naplója (`ACCRUAL`, ellenszámla: 391, `is_system_locked = true`)
+13. `BER` — Bérfeladási napló (`PAYROLL`, ellenszámla: 471, `is_system_locked = true`)
+14. `Z` — Záró tételek (`CLOSING`, ellenszámla: 492, HUF)
+
+#### Devizás Folyószámla Rendezés RPC:
+- `acc_settle_open_items_with_fx(p_company_id uuid, p_invoice_line_id uuid, p_settling_line_id uuid, p_settled_amount_foreign numeric, p_exchange_rate_invoice numeric, p_exchange_rate_payment numeric, p_match_type text, p_notes text, p_user_id uuid)`:
+  - Kiszámolja a fizetési és számla-árfolyam eltéréséből adódó realizált árfolyamnyereséget (`976`) vagy veszteséget (`876`).
+  - Automatikusan bizonylatot generál az `ARF` (vagy `VE`) naplóba, rögzíti a párosítást az `acc_open_item_matches` táblában és frissíti a folyószámla nyitott egyenlegeket.

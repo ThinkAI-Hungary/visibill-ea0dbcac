@@ -20,13 +20,18 @@
 | parent_id | uuid | ✓ |  |
 | currency | text | ✓ | `NULL` |
 | is_multicurrency | boolean | — | `false` |
+| requires_partner | boolean | — | `false` |
+| requires_project | boolean | — | `false` |
+| requires_cost_center | boolean | — | `false` |
+| is_reconcilable | boolean | — | `false` |
+| is_monthly_fx_reval | boolean | — | `false` |
 | created_at | timestamp with time zone | ✓ | `now()` |
 | updated_at | timestamp with time zone | ✓ | `now()` |
 | company_id | uuid | ✓ |  |
 
 **FK:** `company_id` → `companies.id`, `parent_id` → `gl_accounts.id`, `preset_id` → `chart_of_accounts_presets.id`
 
-**Indexek:** `gl_accounts_preset_id_gl_number_key`, `idx_gl_accounts_company_id`, `idx_gl_accounts_parent_id`, `idx_gl_accounts_preset_id`, `idx_gl_accounts_multicurrency`
+**Indexek:** `gl_accounts_preset_id_gl_number_key`, `idx_gl_accounts_company_id`, `idx_gl_accounts_parent_id`, `idx_gl_accounts_preset_id`, `idx_gl_accounts_multicurrency`, `idx_gl_accounts_requires_partner`, `idx_gl_accounts_requires_project`, `idx_gl_accounts_is_reconcilable`, `idx_gl_accounts_is_monthly_fx_reval`
 
 ---
 
@@ -275,4 +280,17 @@ A főkönyvi kivonatok és kartonok számítását PostgreSQL tárolt eljáráso
   - Tételes főkönyvi és analitikai listázás bizonylatszintű sorbontással.
   - Támogatja a rollforward nyitó tételek tételes megjelenítését és a göngyölített egyenlegek precíz kalkulációját.
 
----
+### `acc_cascade_gl_account_settings` (A-265)
+- **Szignatúra:** `(p_account_id uuid, p_company_id uuid, p_requires_partner boolean, p_requires_project boolean, p_requires_cost_center boolean, p_is_reconcilable boolean, p_is_monthly_fx_reval boolean)`
+- **Biztonság:** `SECURITY DEFINER`
+- **Működés:**
+  - Csoportszámla beállításainak atomi kaszkádolása az alá tartozó összes analitikus alszámlára számlaszám-prefix (`LIKE parent_gl_number || '%'`) és `parent_id` alapján. Visszaadja a frissített alszámlák számát.
+
+### `calculate_monthly_fx_revaluation` / `post_monthly_fx_revaluation` (A-265, BDR-078)
+- **Szignatúra:**
+  - `calculate_monthly_fx_revaluation(p_company_id uuid, p_cutoff_date date, p_user_id uuid)` -> `jsonb`
+  - `post_monthly_fx_revaluation(p_company_id uuid, p_cutoff_date date, p_user_id uuid, p_selected_items jsonb, p_journal_id uuid)` -> `jsonb`
+- **Biztonság:** `SECURITY DEFINER`
+- **Működés:**
+  - A fordulónapi hivatalos MNB devizaárfolyamok alapján kalkulálja a nyitott devizás követelések (316), kötelezettségek (4542), devizaszámlák (386) és devizapénztárak (382) nem realizált árfolyamkülönbözetét.
+  - A feladás automatikusan kiállít és lekönyvel egy összevont vegyes könyvelési bizonylatot a cég `ARF` (vagy `VE`) naplójába az Sztv. 60. § szerint (nyereség: K 976, veszteség: T 876).

@@ -1,7 +1,7 @@
 # Visibill — Product Decision Records (PRD)
 
-> **Utoljára frissítve:** 2026-10-16  
-> **Összesen:** 189 egyedi döntés (189 döntési fájl, 221 kategória-bejegyzés) | ✅ Decided: 185 | 🔴 Open: 1 | ⛔ Superseded: 3
+> **Utoljára frissítve:** 2026-10-17  
+> **Összesen:** 191 egyedi döntés (191 döntési fájl, 224 kategória-bejegyzés) | ✅ Decided: 187 | 🔴 Open: 1 | ⛔ Superseded: 3
 
 
 ---
@@ -88,6 +88,7 @@
 | P-106 | Horvát Főkönyvi Kivonat és Nézetek Teljes Lokalizációja, Dinamikus Pénznem és Novo Konto UX | ✅ Decided | [P-106](./P-106-croatian-general-ledger-and-multicurrency-views.md) |
 | P-108 | Devizás Főkönyvi Számlakezelés, Bankszámla Safeguard és Többdevizás Karton/Analitika UX | ✅ Decided | [P-108](./P-108-multicurrency-chart-of-accounts-and-gl-card-ux.md) |
 | P-113 | Főkönyvi Kivonat Kontírok vs. Tételes Nézetváltó UX | ✅ Decided | [P-113](./P-113-general-ledger-granularity-kontirok-teteles-view.md) |
+| P-198 | Főkönyvi Számla Szerkesztés, Csoportszámla Beállítás-öröklődés és Hóközi Devizás Átértékelés Varázsló UX | ✅ Decided | [P-198](./P-198-szamlatukor-extended-gl-account-editing-and-monthly-fx-reval-ux.md) |
 
 ## 🔔 Értesítések & Kommunikáció
 
@@ -326,5 +327,7 @@
 | P-194 | Számlák Kontírozási Státusz Gyorsszűrő Chip és Valós Idejű Kontírozatlansági Szűrés UX | ✅ Decided | [P-194](./P-194-invoices-gl-classification-quick-filter-chip.md) |
 | P-195 | Készpénzes Számlák Házipénztár Kiválasztása és Gyors Szabálymentés UX | ✅ Decided | [P-195](./P-195-cash-invoice-petty-cash-assignment-and-rule-prompt.md) |
 | P-196 | Tárgyi Eszközök Ergonómia, Content Splitting (38/62%), Név Csonkolás és Többéves Mozgástábla UX | ✅ Decided | [P-196](./P-196-fixed-assets-ergonomics-pagination-and-skeleton-ux.md) |
+| P-197 | Dinamikus Könyvelési Naplók (Napló Extended), Csoportosított Választó és Bankkapcsolat UX | ✅ Decided | [P-197](./P-197-naplo-extended-custom-journals-and-bank-routing-ux.md) |
+| P-198 | Főkönyvi Számla Szerkesztés, Csoportszámla Beállítás-öröklődés és Hóközi Devizás Átértékelés Varázsló UX | ✅ Decided | [P-198](./P-198-szamlatukor-extended-gl-account-editing-and-monthly-fx-reval-ux.md) |
 
 
