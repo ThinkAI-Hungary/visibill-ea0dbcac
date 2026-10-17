@@ -131,6 +131,55 @@ A projekt Supabase Git-alapú automatikus deploymentet használ. A migrációs m
   * A `company_id, status`, `created_at DESC` típusú lekérdezésekhez készíts összetett (composite) indexet.
 * **Szimmetrikus Parciális Indexelés:**
   * Ha egy nullable mezőre (pl. `matched_invoice_id`) parciális indexet hozol létre a kitöltött értékekre (`WHERE matched_invoice_id IS NOT NULL`), és az üzleti logika a nyitott/párosítatlan elemeket is lekérdezi (`WHERE matched_invoice_id IS NULL`), **kötelező mindkét ágra célzott indexet definiálni**!
+* **⚠️ Nested Loop Anti-Join Tilalom (Hashed SubPlan Invariáns):**
+  * Szigorúan tilos inline kifejezéseken alapuló `NOT EXISTS` anti-joint használni számlák vagy tételek kizárásánál!
+  * **A csapda:** Ha a feltétel mindkét oldalán nem-indexelt transzformáció fut (pl. `uin.clean_num = REPLACE(LOWER(n.invoice_number), ' ', '')`), a PostgreSQL kénytelen Nested Loopot indítani (100k+ iteráció), ami millió sztringműveletet végez és azonnali statement timeoutot okoz.
+  * **A kötelező megoldás:** A kizáró halmazt előszámolva materializálni kell, és `NOT IN` operátort kell használni explicit `WHERE clean_num IS NOT NULL` szűréssel, ami azonnali `Hashed SubPlan` / `Hash Anti-Join` végrehajtást kényszerít ki:
+    ```sql
+    -- ❌ ROSSZ (Nested Loop O(N*M), 137k+ iteráció, statement timeout):
+    WHERE NOT EXISTS (
+      SELECT 1 FROM uploaded_invoice_nums uin 
+      WHERE uin.clean_num = REPLACE(LOWER(n.invoice_number), ' ', '')
+    )
+
+    -- ✅ HELYES (Azonnali Hashed SubPlan O(1), 3ms futásidő):
+    WITH uploaded_invoice_nums AS MATERIALIZED (
+      SELECT DISTINCT REPLACE(LOWER(bizonylatsorszam), ' ', '') AS clean_num
+      FROM public.invoices
+      WHERE company_id = p_company_id
+        AND bizonylatsorszam IS NOT NULL
+    )
+    ...
+    WHERE REPLACE(LOWER(n.invoice_number), ' ', '') NOT IN (
+      SELECT uin.clean_num 
+      FROM uploaded_invoice_nums uin 
+      WHERE uin.clean_num IS NOT NULL
+    )
+    ```
+* **⚠️ CTE Predikátum Pushdown & Materialization Barrier:**
+  * Az `AS MATERIALIZED` direktíva egy optimalizációs korlát (Optimization Fence). A PostgreSQL nem tolhatja át a külső `WHERE` vagy `LIMIT` feltételeket a materializált CTE-be.
+  * **Mikor TILOS `AS MATERIALIZED`:** Ha a CTE 5-10 forrást (`UNION ALL`) fog össze, és a külső lekérdezés célzottan szűr (pl. `WHERE r.mapped_id = p_gl_account_id LIMIT 100`). A `MATERIALIZED` kényszeríti a teljes cég adatbázisának beolvasását a memóriába/lemezre, mielőtt a limit érvényesülhetne. Hagyd inlinolva a CTE-t (`raw_items AS (...)`), hogy a tervező azonnal megállhasson az első 100 találat után!
+* **⚠️ Polimorfikus RPC Elágazási Invariáns (PL/pgSQL IF/ELSE Branching):**
+  * Tilos több, eltérő hozzáférési profilú lekérdezést (pl. egyedi számla kibontás, nem besorolt tételek listázása, tömeges számlák, összesített lista) egyetlen dinamikus SQL lekérdezésbe préselni `WHERE ((p_id IS NULL ...) OR (mapped_id = p_id) OR ...)` feltételekkel.
+  * A PostgreSQL nem tudja előre, melyik ág érvényes, ezért általános, szuboptimális szekvenciális vizsgálatot tervez.
+  * **Kötelező megoldás:** PL/pgSQL szinten bontsd 4 tiszta ágra a végrehajtást:
+    ```sql
+    IF p_gl_account_id IS NOT NULL AND p_gl_account_id != '00000000-0000-0000-0000-000000000000'::uuid THEN
+      -- 1. Dedikált indexelt lekérdezés egyedi számlára (WHERE r.mapped_id = p_gl_account_id LIMIT p_limit)
+      RETURN QUERY ...
+    ELSIF p_gl_account_id = '00000000-0000-0000-0000-000000000000'::uuid THEN
+      -- 2. Nem besorolt tételek célzott lekérdezése
+      RETURN QUERY ...
+    ELSIF p_gl_account_ids IS NOT NULL AND cardinality(p_gl_account_ids) > 0 THEN
+      -- 3. Tömeges számlák (WHERE r.mapped_id = ANY(p_gl_account_ids))
+      RETURN QUERY ...
+    ELSE
+      -- 4. Összesített lekérdezés
+      RETURN QUERY ...
+    END IF;
+    ```
+* **⚠️ Közvetlen Bérlő-szűrés Gyermektáblákon (Child Tenant Pushdown):**
+  * Minden olyan tárolt eljárásban, ahol tételtáblát kötsz össze szülő számlával (pl. `nav_invoice_items nii JOIN nav_invoices ni ON ni.id = nii.nav_invoice_id`), a tételtáblán is KÖTELEZŐ közvetlenül szűrni a cégre: `WHERE nii.company_id = p_company_id`. Enélkül a tervező hajlamos a teljes táblát bevonni a hash joinba, még mielőtt a szülő táblán szűrne.
 * **RLS Szülő-Gyermek Index Kényszer:**
   * Ha egy gyermek tábla RLS szabálya allekérdezéssel a szülő táblához fordul, a szülő táblán kötelező a közvetlen index a szűrt oszlopra (`company_id`).
 * **Tömeges Adatmozgatás utáni VACUUM:**

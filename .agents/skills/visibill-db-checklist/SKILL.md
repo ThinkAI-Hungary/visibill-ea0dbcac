@@ -48,6 +48,10 @@ Az AI **KÖTELES** első lépésként megnyitni és elolvasni:
 | DB-14 | **🔴 CREATE OR REPLACE attribútum-megőrzés (A-020)** | `CREATE OR REPLACE` NEM örökli SECURITY DEFINER-t — explicit újra kell adni! | ✅/❌ |
 | DB-15 | **🔴 Monolitikus RPC & Unified Ledger ellenőrzés** | Ha az RPC > 150 sor vagy 3+ forrást kapcsol össze: indokolt-e az on-the-fly unió, vagy egységes tételtáblából (`acc_journal_lines`) kell olvasni? | ✅/❌ |
 | DB-16 | **🔴 pgTAP Adatbázis Tesztelés (Pénzügyi RPC-k)** | Számítási/főkönyvi RPC-khez (`calculate_*`, `get_gl_*`, `get_pnl_*`) kötelező pgTAP tesztfájl (`supabase/tests/database/`) | ✅/❌ |
+| DB-17 | **🔴 Anti-Join Hashed SubPlan** | Számlakizárásoknál `NOT IN (SELECT clean_num FROM ... WHERE clean_num IS NOT NULL)` a Nested Loop elkerülésére? | ✅/❌ |
+| DB-18 | **🔴 CTE Predicate Pushdown Audit** | Külső `LIMIT` és `WHERE` esetén nincs indokolatlan `AS MATERIALIZED` ami elzárja a predikátum-áttolást? | ✅/❌ |
+| DB-19 | **🔴 Polimorfikus RPC Elágazás** | Egyedi azonosítós fúrás külön `IF` ágon fut, nem pedig dinamikus `OR (p_id IS NULL)` feltételben? | ✅/❌ |
+| DB-20 | **🔴 Gyermektábla Bérlőszűrés** | Gyermektábla joinoknál közvetlenül szerepel a `child.company_id = p_company_id` szűrő? | ✅/❌ |
 ```
 
 ---
@@ -94,6 +98,10 @@ Az AI **KÖTELES** első lépésként megnyitni és elolvasni:
 | F-13 | **🔴 Többágú Tranzakciós Próbahívás** | `BEGIN; SELECT public.<func>(...); ROLLBACK;` futtatása minden `IF/ELSE` és `NULL` ágra valós rekordokkal |
 | F-14 | **Check Constraint & Literál Egyezőség** | Táblába írt konstans értékek (irány, státusz) összevetése a céltábla `pg_constraint` szabályaival (kisbetű/nagybetű) |
 | F-15 | **Trigger Override Védelem** | `BEFORE UPDATE` triggerek ne írják felül a felhasználó szándékos leválasztását (`NULL`), automatizmus csak `TG_OP = 'INSERT'` esetén fusson |
+| F-16 | **🔴 Anti-Join Teljesítmény** | Kizáró lekérdezések nem végeznek O(N*M) kifejezés-összehasonlítást soronként? (`NOT IN` + materializált IS NOT NULL lookup) |
+| F-17 | **🔴 Predikátum Pushdown & Limit Áttolás** | A belső uniók és nézetek átengedik a külső `WHERE` és `LIMIT` szűrőket? (Ne legyen `MATERIALIZED` ha korai kilépés kell) |
+| F-18 | **🔴 Dedikált Branching Plan** | Tömeges vs egyedi hívások külön PL/pgSQL ágra bontva a hatékony indexeléshez? (`IF / ELSIF / ELSE`) |
+| F-19 | **🔴 Gyermektábla Bérlőszűrő** | Denormalizált tételtábláknál van explicit `child.company_id = p_company_id` feltétel? |
 ```
 
 ---
