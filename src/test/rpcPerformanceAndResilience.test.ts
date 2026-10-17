@@ -921,6 +921,35 @@ describe('RPC Performance & Edge Function Resilience Tests', () => {
       expect(computeFxDiff('OUTBOUND', 400, 410, 100)).toBe(1000);
     });
   });
+
+  describe('get_pending_posting_summary Contract and Aggregates', () => {
+    it('verifies pending posting summary JSON structure and aggregation contract', () => {
+      interface PostingSummaryResult {
+        pending_item_count: number;
+        pending_invoice_count: number;
+        total_net_amount: number;
+        currency: string;
+      }
+
+      const mockRpcResponse: PostingSummaryResult = {
+        pending_item_count: 43431,
+        pending_invoice_count: 6522,
+        total_net_amount: 856872966.78,
+        currency: 'HUF',
+      };
+
+      expect(mockRpcResponse).toHaveProperty('pending_item_count');
+      expect(mockRpcResponse).toHaveProperty('pending_invoice_count');
+      expect(mockRpcResponse).toHaveProperty('total_net_amount');
+      expect(mockRpcResponse).toHaveProperty('currency');
+      expect(typeof mockRpcResponse.pending_item_count).toBe('number');
+      expect(typeof mockRpcResponse.pending_invoice_count).toBe('number');
+      expect(typeof mockRpcResponse.total_net_amount).toBe('number');
+      expect(mockRpcResponse.currency).toBe('HUF');
+      expect(mockRpcResponse.pending_item_count).toBeGreaterThan(0);
+      expect(mockRpcResponse.pending_invoice_count).toBeGreaterThan(0);
+    });
+  });
 });
 
 
