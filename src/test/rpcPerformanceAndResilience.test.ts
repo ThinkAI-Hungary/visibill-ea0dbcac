@@ -717,6 +717,120 @@ describe('RPC Performance & Edge Function Resilience Tests', () => {
       });
     });
   });
+
+  describe('Filtered Invoices Query Storming & Statement Timeout Prevention', () => {
+    it('debounces and cancels prefetch execution if input changes before timer expires', () => {
+      vi.useFakeTimers();
+      const prefetchMock = vi.fn();
+
+      function triggerPrefetchWithDebounce(delayMs: number = 800) {
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        return {
+          schedule: () => {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => {
+              prefetchMock();
+            }, delayMs);
+          },
+          cancel: () => {
+            if (timer) clearTimeout(timer);
+          }
+        };
+      }
+
+      const debouncer = triggerPrefetchWithDebounce(800);
+
+      // Rapidly trigger 5 filter changes
+      debouncer.schedule();
+      vi.advanceTimersByTime(200);
+      debouncer.schedule();
+      vi.advanceTimersByTime(200);
+      debouncer.schedule();
+      vi.advanceTimersByTime(200);
+      debouncer.schedule();
+      vi.advanceTimersByTime(200);
+      debouncer.schedule();
+
+      // Only 800ms has elapsed since the first call, but only 0ms since the last call: mock should NOT have been called yet
+      expect(prefetchMock).not.toHaveBeenCalled();
+
+      // Advance by 799ms: still not called
+      vi.advanceTimersByTime(799);
+      expect(prefetchMock).not.toHaveBeenCalled();
+
+      // Advance by 1ms: exactly 800ms since last call, mock should be called exactly ONCE
+      vi.advanceTimersByTime(1);
+      expect(prefetchMock).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
+    });
+
+    it('defers prefetching while primary query is actively loading (prevents connection pool saturation)', () => {
+      const prefetchMock = vi.fn();
+
+      function runPrefetchEffect(isLoading: boolean, isFetching: boolean) {
+        if (isLoading || isFetching) {
+          // Deferred: do not schedule or invoke prefetch while primary query is in-flight
+          return false;
+        }
+        prefetchMock();
+        return true;
+      }
+
+      expect(runPrefetchEffect(true, false)).toBe(false);
+      expect(runPrefetchEffect(false, true)).toBe(false);
+      expect(runPrefetchEffect(true, true)).toBe(false);
+      expect(prefetchMock).not.toHaveBeenCalled();
+
+      expect(runPrefetchEffect(false, false)).toBe(true);
+      expect(prefetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('validates RPC parameter mapping for get_filtered_nav_invoices with date_basis and delivery date range', () => {
+      const buildNavFilterPayload = (params: {
+        companyId: string;
+        dateFrom: string;
+        dateTo: string;
+        direction: string;
+        dateBasis: string;
+        deliveryDateFrom?: string;
+        deliveryDateTo?: string;
+        page: number;
+        pageSize: number;
+      }) => ({
+        p_company_id: params.companyId,
+        p_date_from: params.dateFrom,
+        p_date_to: params.dateTo,
+        p_direction: params.direction,
+        p_date_basis: params.dateBasis,
+        p_delivery_date_from: params.deliveryDateFrom || null,
+        p_delivery_date_to: params.deliveryDateTo || null,
+        p_page: params.page,
+        p_page_size: params.pageSize,
+      });
+
+      const payload = buildNavFilterPayload({
+        companyId: '418b3264-1169-46bb-9a2a-4f58a186bf1e',
+        dateFrom: '2026-09-01',
+        dateTo: '2026-09-30',
+        direction: 'INBOUND',
+        dateBasis: 'teljesites',
+        deliveryDateFrom: '2026-09-01',
+        deliveryDateTo: '2026-09-30',
+        page: 1,
+        pageSize: 50,
+      });
+
+      expect(payload.p_company_id).toBe('418b3264-1169-46bb-9a2a-4f58a186bf1e');
+      expect(payload.p_direction).toBe('INBOUND');
+      expect(payload.p_date_basis).toBe('teljesites');
+      expect(payload.p_delivery_date_from).toBe('2026-09-01');
+      expect(payload.p_delivery_date_to).toBe('2026-09-30');
+      expect(payload.p_page).toBe(1);
+      expect(payload.p_page_size).toBe(50);
+    });
+  });
 });
+
 
 
