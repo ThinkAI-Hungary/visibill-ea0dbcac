@@ -1,5 +1,6 @@
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
 import { reportError } from "@/lib/errorReporter";
+import { isPgrstRangeError } from "@/lib/supabaseErrors";
 import { extractErrorInfo } from "./bootstrap";
 
 export const queryClient = new QueryClient({
@@ -16,6 +17,8 @@ export const queryClient = new QueryClient({
       // Don't report to DB if user is offline or fetch was aborted
       if (typeof navigator !== 'undefined' && !navigator.onLine) return;
       if (error instanceof DOMException && error.name === 'AbortError') return;
+      // Don't report out-of-range pagination errors (PGRST103 / HTTP 416) caused by filter transitions
+      if (isPgrstRangeError(error)) return;
       // Log every final query failure (after retries exhausted)
       const { message, details } = extractErrorInfo(error);
       reportError({

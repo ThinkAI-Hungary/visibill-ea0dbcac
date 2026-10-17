@@ -6,6 +6,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 
 export interface CourierReport {
   id: string;
@@ -108,7 +109,12 @@ export function useCourierReportData(
       query = query.range(from, to);
 
       const { data, error, count } = await query;
-      if (error) throw error;
+      if (error) {
+        if (isPgrstRangeError(error)) {
+          return { rows: [], totalCount: count ?? 0 };
+        }
+        throw error;
+      }
       return { rows: (data || []) as CourierReport[], totalCount: count ?? 0 };
     },
     enabled: !!user && !!selectedCompany?.id,
@@ -155,10 +161,19 @@ export function useCourierReportData(
   const hasActiveFilters = filters.search || filters.matchStatus !== 'all' ||
     filters.amountMin || filters.amountMax;
 
-  // Reset page on filter change
+  // Reset page on filter, company or report type change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.search, dateFrom, dateTo, filters.matchStatus]);
+  }, [filters.search, dateFrom, dateTo, filters.matchStatus, selectedCompany?.id, reportType]);
+
+  // Auto-clamp page if currentPage is beyond totalPages due to filtering or item deletion
+  useEffect(() => {
+    if (totalCount > 0 && currentPage > totalPages) {
+      setCurrentPage(Math.max(1, totalPages));
+    } else if (totalCount === 0 && currentPage > 1) {
+      setCurrentPage(1);
+    }
+  }, [totalCount, totalPages, currentPage]);
 
   const handlePageSizeChange = useCallback((size: number) => {
     setPageSize(size);

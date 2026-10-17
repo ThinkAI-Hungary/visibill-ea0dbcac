@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, QueryClient } from '@tanstack/react-query';
 import type { Tables } from '@/integrations/supabase/types';
 import { queryKeys } from '@/lib/queryKeys';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 
 // ── Cache Invalidation Helpers ──
 
@@ -213,7 +214,10 @@ export async function fetchAllMissingItems(companyIds: string[], dateFrom?: stri
 
     const { data, error } = await query.range(from, to);
 
-    if (error) throw error;
+    if (error) {
+      if (isPgrstRangeError(error)) break;
+      throw error;
+    }
     if (data && data.length > 0) {
       allItems = allItems.concat(data);
       hasMore = data.length === PAGE_SIZE;
@@ -244,7 +248,10 @@ export async function fetchAllMissingItemsFull(companyIds: string[]) {
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    if (error) throw error;
+    if (error) {
+      if (isPgrstRangeError(error)) break;
+      throw error;
+    }
     if (data && data.length > 0) {
       allItems = allItems.concat(data);
       hasMore = data.length === PAGE_SIZE;

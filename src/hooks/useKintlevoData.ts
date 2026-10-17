@@ -6,6 +6,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { getCategory, worstOf, filterInvoicesByDate } from '@/lib/kintlevo-helpers';
 import type { AgingCategory, UnifiedInvoice, CompanyGroup, DateFilterBasis } from '@/lib/kintlevo-helpers';
@@ -42,7 +43,10 @@ export function useKintlevoData() {
           .is('transaction_id', null)
           .or('paid.is.null,paid.eq.false')
           .range(from, to);
-        if (error) throw error;
+        if (error) {
+          if (isPgrstRangeError(error)) break;
+          throw error;
+        }
         if (data && data.length > 0) {
           allData = allData.concat(data);
           hasMore = data.length === PAGE_SIZE;
@@ -76,7 +80,10 @@ export function useKintlevoData() {
           .is('transaction_id', null)
           .or('fizetve.is.null,fizetve.eq.false')
           .range(from, to);
-        if (error) throw error;
+        if (error) {
+          if (isPgrstRangeError(error)) break;
+          throw error;
+        }
         if (data && data.length > 0) {
           allData = allData.concat(data);
           hasMore = data.length === PAGE_SIZE;

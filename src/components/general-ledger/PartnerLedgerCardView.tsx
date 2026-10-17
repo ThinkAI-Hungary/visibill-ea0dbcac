@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -105,7 +106,10 @@ export function PartnerLedgerCardView({
         }
 
         const { data: lines, error } = await query.range(from, to);
-        if (error) throw error;
+        if (error) {
+          if (isPgrstRangeError(error)) break;
+          throw error;
+        }
 
         if (lines && lines.length > 0) {
           allLines = allLines.concat(lines);

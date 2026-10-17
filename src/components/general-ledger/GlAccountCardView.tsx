@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -238,7 +239,10 @@ export function GlAccountCardView({
         }
 
         const { data: pageData, error: linesErr } = await query.range(from, to);
-        if (linesErr) throw linesErr;
+        if (linesErr) {
+          if (isPgrstRangeError(linesErr)) break;
+          throw linesErr;
+        }
 
         if (pageData && pageData.length > 0) {
           rawLines = rawLines.concat(pageData);

@@ -30,6 +30,7 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { reportError } from '@/lib/errorReporter';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { useCompanyCapabilities } from '@/hooks/useCompanyCapabilities';
 import { useScopedNavigate } from '@/lib/navigation';
@@ -1153,7 +1154,13 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
       query = query.range(from, to);
 
       const { data, error, count } = await query;
-      if (error) { reportError({ type: 'db_query', component: 'TransactionsPage', action: 'error', message: 'bank-tx error:', error }); return { rows: [], totalCount: 0 }; }
+      if (error) {
+        if (isPgrstRangeError(error)) {
+          return { rows: [], totalCount: count ?? 0 };
+        }
+        reportError({ type: 'db_query', component: 'TransactionsPage', action: 'error', message: 'bank-tx error:', error });
+        return { rows: [], totalCount: 0 };
+      }
       return { rows: (data || []) as unknown as Transaction[], totalCount: count ?? 0 };
     },
     enabled: uploadIds.length > 0 && !!companyId,
@@ -1164,6 +1171,15 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
   const transactions = queryResult?.rows ?? [];
   const totalCount = queryResult?.totalCount ?? 0;
   const totalPages = Math.ceil(totalCount / pageSize);
+
+  // Auto-clamp page if currentPage is beyond totalPages
+  useEffect(() => {
+    if (totalCount > 0 && currentPage > totalPages) {
+      setCurrentPage(Math.max(1, totalPages));
+    } else if (totalCount === 0 && currentPage > 1) {
+      setCurrentPage(1);
+    }
+  }, [totalCount, totalPages, currentPage]);
 
   // Query to fetch statistics for all transactions in the period
   const { data: statsData } = useQuery({

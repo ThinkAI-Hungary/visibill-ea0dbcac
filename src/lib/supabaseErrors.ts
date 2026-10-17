@@ -17,6 +17,26 @@ interface SupabaseError {
 }
 
 /**
+ * Checks if a Supabase PostgREST error is an out-of-bounds pagination error
+ * (PGRST103 / HTTP 416 "Requested range not satisfiable").
+ *
+ * This occurs legitimately when a filter, date range, or company change reduces
+ * total records while currentPage > 1, or when a paginated batch loop exceeds the total count.
+ */
+export function isPgrstRangeError(error: unknown): boolean {
+  if (!error) return false;
+  const err = error as any;
+  return (
+    err.code === 'PGRST103' ||
+    err.statusCode === 416 ||
+    err.status === 416 ||
+    (typeof err.message === 'string' && /satisfiable/i.test(err.message)) ||
+    (typeof err.details === 'string' && /satisfiable/i.test(err.details)) ||
+    (typeof err.error === 'string' && /satisfiable/i.test(err.error))
+  );
+}
+
+/**
  * Checks if a Supabase error is a rate limit (429) response
  * and shows a friendly toast if so.
  *

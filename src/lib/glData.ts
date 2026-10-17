@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Database, Json } from '@/integrations/supabase/types';
+import { isPgrstRangeError } from '@/lib/supabaseErrors';
 
 export interface GlBalanceItem {
   gl_account_id: string | null;
@@ -111,7 +112,10 @@ export async function fetchAllGlBalances(params: {
       })
       .range(from, to);
 
-    if (error) throw error;
+    if (error) {
+      if (isPgrstRangeError(error)) break;
+      throw error;
+    }
 
     if (data && data.length > 0) {
       allBalances = allBalances.concat(data as unknown as GlBalanceItem[]);
@@ -213,7 +217,10 @@ export async function fetchAllGlAccountsByPreset(presetId: string): Promise<GlAc
       .order('gl_number')
       .range(from, to);
 
-    if (error) throw error;
+    if (error) {
+      if (isPgrstRangeError(error)) break;
+      throw error;
+    }
 
     if (data && data.length > 0) {
       allAccounts = allAccounts.concat(data);
