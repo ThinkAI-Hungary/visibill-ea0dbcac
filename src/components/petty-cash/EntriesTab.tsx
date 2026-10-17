@@ -1502,6 +1502,7 @@ export default function EntriesTab() {
       <FilePreviewModal previewFile={previewFile} onClose={closePreview} />
       {attachSourceEntry && (
         <AttachSourceDocDialog
+          companyId={companyId}
           open={!!attachSourceEntry}
           onOpenChange={(open) => !open && setAttachSourceEntry(null)}
           entry={attachSourceEntry}
@@ -1668,6 +1669,7 @@ function ExpandedEntryRow({
         </TableRow>
         {attachOpen && (
           <AttachSourceDocDialog
+            companyId={entry.company_id}
             open={attachOpen}
             onOpenChange={setAttachOpen}
             entry={entry}

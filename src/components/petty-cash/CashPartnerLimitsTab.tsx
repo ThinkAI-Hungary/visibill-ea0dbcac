@@ -337,7 +337,7 @@ export default function CashPartnerLimitsTab({ companyId }: CashPartnerLimitsTab
                   ) : (
                     limitData.partners.map((p, idx) => {
                       const pct = Math.min((p.total_amount_huf / p.monthly_threshold_huf) * 100, 100);
-                      const isExceeded = Boolean(p.is_exceeded || p.status === 'exceeded' || p.status === 'violating');
+                      const isExceeded = Boolean(p.is_exceeded || p.status === 'exceeded');
                       const isWarning = Boolean(!isExceeded && (p.status === 'warning' || p.total_amount_huf >= p.monthly_threshold_huf * 0.8));
 
                       return (
